@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LocalAI Bridge</string>
+    <string name="model_tab">Model</string>
+    <string name="logs_tab">Logs</string>
+    <string name="select_model">Select Model File</string>
+    <string name="load_model">Load Model</string>
+    <string name="unload_model">Unload Model</string>
+    <string name="model_status">Status: %1$s</string>
+    <string name="model_path">Path: %1$s</string>
+    <string name="no_model_selected">No model selected</string>
+    <string name="status_ready">Ready</string>
+    <string name="status_loading">Loading…</string>
+    <string name="status_error">Error</string>
+    <string name="status_unloaded">Unloaded</string>
+    <string name="logs_empty">No requests yet</string>
+    <string name="request_text">Text Request</string>
+    <string name="request_audio">Audio Request</string>
+</resources>
