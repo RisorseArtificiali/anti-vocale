@@ -55,7 +55,8 @@ class ModelViewModel(
         val downloadState: ModelDownloader.DownloadState = ModelDownloader.DownloadState.Idle,
         val downloadError: ModelDownloader.DownloadError? = null,
         val downloadedModels: Set<ModelDownloader.ModelVariant> = emptySet(),
-        val hasToken: Boolean = false
+        val hasToken: Boolean = false,
+        val modelToDelete: ModelDownloader.ModelVariant? = null
     )
 
     data class UiState(
@@ -448,9 +449,10 @@ class ModelViewModel(
             }
 
             _downloadUiState.update { it.copy(
+                selectedVariant = variant,
                 isDownloading = true,
                 downloadProgress = 0f,
-                downloadState = ModelDownloader.DownloadState.Idle,
+                downloadState = ModelDownloader.DownloadState.Connecting(""),
                 downloadError = null
             )}
 
@@ -573,6 +575,53 @@ class ModelViewModel(
                 )}
             }
         }
+    }
+
+
+    /**
+     * Deletes a downloaded model and refreshes the state.
+     */
+    fun deleteModel(variant: ModelDownloader.ModelVariant) {
+        viewModelScope.launch {
+            val success = ModelDownloader.deleteModel(AppContainer.applicationContext, variant)
+            if (success) {
+                refreshDownloadedModels()
+                // Clear model path if this was the selected model
+                if (_uiState.value.modelPath.contains(variant.fileName)) {
+                    preferencesManager.saveModelPath("")
+                    _uiState.update { it.copy(
+                        modelPath = "",
+                        modelName = "",
+                        isModelPathValid = false
+                    )}
+                }
+            }
+        }
+    }
+
+
+    /**
+     * Shows the delete confirmation dialog for a model.
+     */
+    fun showDeleteDialog(variant: ModelDownloader.ModelVariant) {
+        _downloadUiState.update { it.copy(modelToDelete = variant) }
+    }
+
+    /**
+     * Dismisses the delete confirmation dialog.
+     */
+    fun dismissDeleteDialog() {
+        _downloadUiState.update { it.copy(modelToDelete = null) }
+    }
+
+    /**
+     * Confirms deletion of the model.
+     */
+    fun confirmDeleteModel() {
+        _downloadUiState.value.modelToDelete?.let { variant ->
+            deleteModel(variant)
+        }
+        dismissDeleteDialog()
     }
 
     /**

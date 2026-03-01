@@ -202,6 +202,35 @@ fun ModelTab(
         }
     }
 
+    // Delete confirmation dialog
+    if (downloadUiState.modelToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                viewModel.dismissDeleteDialog()
+            },
+            title = { Text("Delete Model?") },
+            text = {
+                Text("This will permanently remove '${downloadUiState.modelToDelete?.displayName}' from your device. You can download it again later.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.confirmDeleteModel()
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    viewModel.dismissDeleteDialog()
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
     Scaffold(
         snackbarHost = {
             SnackbarHost(
@@ -655,6 +684,9 @@ private fun ModelDownloadSection(
                 onCancelClick = { viewModel.cancelDownload() },
                 onUseClick = { viewModel.useDownloadedModel(variant) },
                 onClearError = { viewModel.clearDownloadError() },
+                onDeleteClick = {
+                    viewModel.showDeleteDialog(variant)
+                },
                 context = context
             )
         }
@@ -678,6 +710,7 @@ private fun ModelVariantCard(
     onCancelClick: () -> Unit,
     onUseClick: () -> Unit,
     onClearError: () -> Unit,
+    onDeleteClick: () -> Unit,
     context: android.content.Context
 ) {
     var showInfo by remember { mutableStateOf(false) }
@@ -889,19 +922,14 @@ private fun ModelVariantCard(
                             Spacer(modifier = Modifier.width(8.dp))
                             Text("Use Model")
                         }
-                        // View in browser
+                        // Delete button
                         OutlinedButton(
-                            onClick = {
-                                val intent = Intent(Intent.ACTION_VIEW).apply {
-                                    data = Uri.parse("https://huggingface.co/${variant.huggingFaceRepo}")
-                                }
-                                context.startActivity(intent)
-                            },
-                            modifier = Modifier.weight(1f)
+                            onClick = onDeleteClick,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
                         ) {
-                            Icon(Icons.Default.OpenInBrowser, contentDescription = null)
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text("Info")
+                            Icon(Icons.Default.Delete, contentDescription = "Delete")
                         }
                     }
                     else -> {
