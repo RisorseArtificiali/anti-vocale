@@ -2,13 +2,15 @@ package com.localai.bridge.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AudioFile
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import com.localai.bridge.ui.tabs.LogsTab
 import com.localai.bridge.ui.tabs.ModelTab
+import com.localai.bridge.ui.tabs.SettingsTab
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -16,8 +18,9 @@ fun MainScreen() {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
     val tabs = listOf(
-        TabItem("Model", Icons.Default.Settings) { ModelTab() },
-        TabItem("Logs", Icons.Default.AudioFile) { LogsTab() }
+        TabItem("Model", Icons.Default.Storage) { ModelTab() },
+        TabItem("Logs", Icons.Default.History) { LogsTab() },
+        TabItem("Settings", Icons.Default.Settings) { SettingsTab() }
     )
 
     Column(modifier = Modifier.fillMaxSize()) {

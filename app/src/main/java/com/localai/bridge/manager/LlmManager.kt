@@ -411,7 +411,11 @@ object LlmManager {
         currentBackend = null
     }
 
-    private fun resetKeepAliveTimer() {
+    /**
+     * Resets the keep-alive timer, extending the time before auto-unload.
+     * Call this when the model is used to prevent premature unloading.
+     */
+    fun resetKeepAliveTimer() {
         if (!isInitialized) return
         cancelKeepAliveTimer()
         startKeepAliveTimer()

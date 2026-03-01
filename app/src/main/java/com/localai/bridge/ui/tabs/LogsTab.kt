@@ -8,11 +8,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import android.content.ClipData
+import android.content.Context
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.localai.bridge.R
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.ui.viewmodel.LogEntry
@@ -99,6 +105,7 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
 @Composable
 fun LogEntryItem(log: LogEntry) {
     var expanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
     Card(
         modifier = Modifier
@@ -234,6 +241,50 @@ fun LogEntryItem(log: LogEntry) {
                             maxLines = if (expanded) Int.MAX_VALUE else 2,
                             overflow = TextOverflow.Ellipsis
                         )
+                        // Share and Copy buttons
+                        if (log.result.isNotEmpty()) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                // Copy button
+                                IconButton(onClick = {
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                                        as android.content.ClipboardManager
+                                    val clip = ClipData.newPlainText("transcription", log.result)
+                                    clipboard.setPrimaryClip(clip)
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.copied_to_clipboard),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }) {
+                                    Icon(
+                                        Icons.Default.ContentCopy,
+                                        contentDescription = context.getString(R.string.copy_transcription)
+                                    )
+                                }
+                                // Share button
+                                IconButton(onClick = {
+                                    val sendIntent = Intent().apply {
+                                        action = Intent.ACTION_SEND
+                                        putExtra(Intent.EXTRA_TEXT, log.result)
+                                        type = "text/plain"
+                                    }
+                                    val shareIntent = Intent.createChooser(
+                                        sendIntent,
+                                        context.getString(R.string.share_transcription)
+                                    )
+                                    context.startActivity(shareIntent)
+                                }) {
+                                    Icon(
+                                        Icons.Default.Share,
+                                        contentDescription = context.getString(R.string.share_transcription)
+                                    )
+                                }
+                            }
+                        }
                     }
                     LogEntry.Status.ERROR -> {
                         Text(

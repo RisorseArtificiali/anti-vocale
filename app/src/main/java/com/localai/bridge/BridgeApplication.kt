@@ -8,5 +8,7 @@ class BridgeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         AppContainer.initialize(this)
+        // Clean up old shared audio files
+        com.localai.bridge.util.SharedAudioHandler.cleanupOldFiles(this)
     }
 }
