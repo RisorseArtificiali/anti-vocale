@@ -8,6 +8,10 @@ on:
   release:
     types: [ published ]
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to attach APK to (e.g., 0.1)'
+        required: false
 
 jobs:
   build:
@@ -37,10 +41,19 @@ jobs:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Attach APK to GitHub Release
+      - name: Attach APK to GitHub Release (release event)
         if: github.event_name == 'release'
         uses: softprops/action-gh-release@v2
         with:
+          files: app/build/outputs/apk/debug/app-debug.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Attach APK to GitHub Release (manual with tag)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
           files: app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
