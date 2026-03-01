@@ -17,10 +17,15 @@ import com.localai.bridge.ui.tabs.SettingsTab
 fun MainScreen() {
     var selectedTabIndex by remember { mutableIntStateOf(0) }
 
+    // Navigation callback to switch tabs
+    fun navigateToTab(index: Int) {
+        selectedTabIndex = index
+    }
+
     val tabs = listOf(
-        TabItem("Model", Icons.Default.Storage) { ModelTab() },
+        TabItem("Model", Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }) },
         TabItem("Logs", Icons.Default.History) { LogsTab() },
-        TabItem("Settings", Icons.Default.Settings) { SettingsTab() }
+        TabItem("Settings", Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(0) }) }
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
