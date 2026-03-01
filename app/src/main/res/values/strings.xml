@@ -23,6 +23,7 @@
     <string name="transcription_complete">Transcription complete</string>
     <string name="transcription_failed">Transcription failed</string>
     <string name="copy">Copy</string>
+    <string name="char_counter">%1$d of %2$d chars</string>
     <string name="no_audio_file">No audio file received</string>
     <string name="failed_to_process_audio">Failed to process audio file</string>
     <string name="transcription_started">Transcription started…</string>

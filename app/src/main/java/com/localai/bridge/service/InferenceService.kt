@@ -405,13 +405,14 @@ class InferenceService : Service() {
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
 
-        val previewText = if (transcriptionText.length > 100) {
+        val isTruncated = transcriptionText.length > 100
+        val previewText = if (isTruncated) {
             transcriptionText.take(100) + "…"
         } else {
             transcriptionText
         }
 
-        val notification = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
+        val builder = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
             .setContentTitle(getString(R.string.transcription_complete))
             .setContentText(previewText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(transcriptionText))
@@ -424,7 +425,13 @@ class InferenceService : Service() {
                 copyPendingIntent
             )
             .setAutoCancel(true)
-            .build()
+
+        // Show character counter in subtext when content is truncated
+        if (isTruncated) {
+            builder.setSubText(getString(R.string.char_counter, 100, transcriptionText.length))
+        }
+
+        val notification = builder.build()
 
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(RESULT_NOTIFICATION_ID, notification)
