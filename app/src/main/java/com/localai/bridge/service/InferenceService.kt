@@ -14,10 +14,12 @@ import com.localai.bridge.audio.AudioPreprocessor.PreprocessingError
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.manager.LlmManager
 import com.localai.bridge.ui.viewmodel.LogEntry
+import com.localai.bridge.receiver.NotificationActionReceiver
 import com.localai.bridge.receiver.TaskerRequestReceiver
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import java.util.concurrent.ConcurrentLinkedQueue
 
 /**
@@ -34,7 +36,17 @@ class InferenceService : Service() {
     companion object {
         const val TAG = "InferenceService"
         const val CHANNEL_ID = "inference_channel"
+        const val RESULT_CHANNEL_ID = "transcription_result_channel"
         const val NOTIFICATION_ID = 1001
+        const val RESULT_NOTIFICATION_ID = 1002
+
+        // Extras for share source detection
+        const val EXTRA_SOURCE = "source"
+        const val SOURCE_SHARE = "share"
+
+        // Extras for URI-based audio sharing (vs file path)
+        const val EXTRA_SHARED_URI = "shared_uri"
+        const val EXTRA_MIME_TYPE = "mime_type"
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -46,20 +58,25 @@ class InferenceService : Service() {
         val requestType: String,
         val prompt: String,
         val filePath: String?,
-        val startTime: Long = System.currentTimeMillis()
+        val startTime: Long = System.currentTimeMillis(),
+        val source: String? = null
     )
 
     override fun onCreate() {
         super.onCreate()
         createNotificationChannel()
+        createResultNotificationChannel()
         Log.i(TAG, "Service created")
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.d(TAG, "onStartCommand")
+        Log.i(TAG, "onStartCommand called")
 
         // Start foreground
         startForeground(NOTIFICATION_ID, createNotification("Processing request..."))
+
+        // File path is already a local path (copied by ShareReceiverActivity before we got here)
+        val filePath = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
 
         // Extract request parameters
         val request = PendingRequest(
@@ -67,12 +84,13 @@ class InferenceService : Service() {
                 ?: "unknown_${System.currentTimeMillis()}",
             requestType = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE) ?: "text",
             prompt = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_PROMPT) ?: "",
-            filePath = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
+            filePath = filePath,
+            source = intent?.getStringExtra(EXTRA_SOURCE)
         )
 
         // Enqueue request
         requestQueue.add(request)
-        Log.i(TAG, "Request enqueued: ${request.taskId}, queue size: ${requestQueue.size}")
+        Log.i(TAG, "Request enqueued: ${request.taskId}, source=${request.source}, filePath=$filePath")
 
         // Process queue
         processQueue()
@@ -125,14 +143,54 @@ class InferenceService : Service() {
         )
 
         val startTime = System.currentTimeMillis()
+        val isShareRequest = request.source == SOURCE_SHARE
 
         try {
-            // Check if model is ready
+            // Check if model is ready, auto-load if not
             if (!LlmManager.isReady()) {
-                val error = "Model is not loaded. Please load model in the app first."
-                logsViewModel.logError(request.taskId, error, System.currentTimeMillis() - startTime)
-                sendErrorReply(request.taskId, "MODEL_NOT_LOADED", error)
-                return
+                Log.i(TAG, "Model not ready, attempting auto-load")
+                
+                val modelPath = getSavedModelPath()
+                
+                if (modelPath.isNullOrBlank()) {
+                    val error = "No model configured. Open the app to select a model."
+                    logsViewModel.logError(request.taskId, error, System.currentTimeMillis() - startTime)
+                    sendErrorReply(request.taskId, "NO_MODEL_CONFIGURED", error)
+                    if (isShareRequest) showErrorNotification(error)
+                    return
+                }
+                
+                // Validate model file exists
+                val modelFile = java.io.File(modelPath)
+                if (!modelFile.exists()) {
+                    val error = "Model file not found: $modelPath"
+                    logsViewModel.logError(request.taskId, error, System.currentTimeMillis() - startTime)
+                    sendErrorReply(request.taskId, "MODEL_NOT_FOUND", error)
+                    if (isShareRequest) showErrorNotification(error)
+                    return
+                }
+                
+                // Auto-load the model
+                updateNotification("Loading model...")
+                Log.i(TAG, "Auto-loading model from: $modelPath")
+                
+                val loadResult = LlmManager.initialize(applicationContext, modelPath)
+                
+                loadResult.fold(
+                    onSuccess = {
+                        Log.i(TAG, "Model auto-loaded successfully")
+                        // Apply saved keep-alive timeout
+                        val timeout = AppContainer.preferencesManager.keepAliveTimeout.first()
+                        LlmManager.setKeepAliveTimeout(timeout)
+                    },
+                    onFailure = { error ->
+                        val errorMsg = "Failed to load model: ${error.message}"
+                        logsViewModel.logError(request.taskId, errorMsg, System.currentTimeMillis() - startTime)
+                        sendErrorReply(request.taskId, "MODEL_LOAD_FAILED", errorMsg)
+                        if (isShareRequest) showErrorNotification(errorMsg)
+                        return
+                    }
+                )
             }
 
             val result = when (request.requestType) {
@@ -146,10 +204,13 @@ class InferenceService : Service() {
                 onSuccess = { response ->
                     logsViewModel.logSuccess(request.taskId, response, duration)
                     sendSuccessReply(request.taskId, response)
+                    // Show result notification for share requests
+                    if (isShareRequest) showResultNotification(response)
                 },
                 onFailure = { error ->
                     logsViewModel.logError(request.taskId, error.message ?: "Unknown error", duration)
                     sendErrorReply(request.taskId, "INFERENCE_ERROR", error.message ?: "Unknown error")
+                    if (isShareRequest) showErrorNotification(error.message ?: "Unknown error")
                 }
             )
 
@@ -158,7 +219,15 @@ class InferenceService : Service() {
             val duration = System.currentTimeMillis() - startTime
             logsViewModel.logError(request.taskId, e.message ?: "Unknown error", duration)
             sendErrorReply(request.taskId, "PROCESSING_ERROR", e.message ?: "Unknown error")
+            if (isShareRequest) showErrorNotification(e.message ?: "Unknown error")
         }
+    }
+
+    /**
+     * Gets the saved model path from preferences.
+     */
+    private suspend fun getSavedModelPath(): String? {
+        return AppContainer.preferencesManager.modelPath.first()
     }
 
     private suspend fun processTextRequest(request: PendingRequest): Result<String> {
@@ -293,5 +362,93 @@ class InferenceService : Service() {
     private fun updateNotification(contentText: String) {
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(NOTIFICATION_ID, createNotification(contentText))
+    }
+
+
+    private fun createResultNotificationChannel() {
+        val channel = NotificationChannel(
+            RESULT_CHANNEL_ID,
+            "Transcription Results",
+            NotificationManager.IMPORTANCE_HIGH
+        ).apply {
+            description = "Transcription completion notifications"
+            setShowBadge(true)
+        }
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.createNotificationChannel(channel)
+    }
+
+    private fun showResultNotification(transcriptionText: String) {
+        val copyIntent = Intent(this, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_COPY_TRANSCRIPTION
+            putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, transcriptionText)
+        }
+        val copyPendingIntent = android.app.PendingIntent.getBroadcast(
+            this,
+            System.currentTimeMillis().toInt(),
+            copyIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val openIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        val openPendingIntent = android.app.PendingIntent.getActivity(
+            this,
+            0,
+            openIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val previewText = if (transcriptionText.length > 100) {
+            transcriptionText.take(100) + "…"
+        } else {
+            transcriptionText
+        }
+
+        val notification = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
+            .setContentTitle(getString(R.string.transcription_complete))
+            .setContentText(previewText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(transcriptionText))
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(openPendingIntent)
+            .addAction(
+                android.R.drawable.ic_menu_save,
+                getString(R.string.copy),
+                copyPendingIntent
+            )
+            .setAutoCancel(true)
+            .build()
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(RESULT_NOTIFICATION_ID, notification)
+        Log.i(TAG, "Showed result notification (${transcriptionText.length} chars)")
+    }
+
+    private fun showErrorNotification(errorMessage: String) {
+        val openIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        val openPendingIntent = android.app.PendingIntent.getActivity(
+            this,
+            0,
+            openIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
+            .setContentTitle(getString(R.string.transcription_failed))
+            .setContentText(errorMessage)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(openPendingIntent)
+            .setAutoCancel(true)
+            .build()
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(RESULT_NOTIFICATION_ID, notification)
+        Log.i(TAG, "Showed error notification: $errorMessage")
     }
 }
