@@ -321,23 +321,39 @@ object LlmManager {
 
     /**
      * Generates text from audio using LiteRT-LM backend.
-     * Note: LiteRT-LM only supports ONE conversation at a time, so we reuse the main conversation.
+     * Temporarily replaces the main conversation to avoid context accumulation,
+     * then restores it after processing. This is critical for multi-chunk processing.
      */
     private suspend fun generateFromAudioLiteRT(prompt: String, audioData: ByteArray): Result<String> {
         return try {
-            // Reuse existing conversation (LiteRT-LM only supports one session at a time)
-            val conversation = litertConversation
-                ?: return Result.failure(IllegalStateException("LiteRT conversation not available"))
+            val engine = litertEngine
+                ?: return Result.failure(IllegalStateException("LiteRT engine not available"))
 
-            Log.d(TAG, "Starting LiteRT audio processing...")
-            Log.d(TAG, "Audio data size: ${audioData.size} bytes (WAV format with header)")
+            // Save the existing conversation reference
+            val originalConversation = litertConversation
 
-            // LiteRT's Content.AudioBytes uses miniaudio decoder which expects
-            // formatted audio (WAV with header), NOT raw PCM
+            Log.d(TAG, "Creating fresh conversation for audio (temporarily replacing main session)...")
+
+            // Delete the existing session to create a fresh one
+            // LiteRT only supports ONE session at a time
+            originalConversation?.close()
+
+            // Create a FRESH conversation for this single request
+            val conversationConfig = ConversationConfig(
+                samplerConfig = SamplerConfig(
+                    topK = 40,
+                    topP = 0.95,
+                    temperature = 0.8
+                )
+            )
+            val freshConversation = engine.createConversation(conversationConfig)
+
+            Log.d(TAG, "Processing audio in fresh conversation...")
+            Log.d(TAG, "Audio data size: ${audioData.size} bytes")
+
             val response = StringBuilder()
 
-            // Send audio with text prompt using multimodal content
-            conversation.sendMessageAsync(
+            freshConversation.sendMessageAsync(
                 Contents.of(
                     Content.AudioBytes(audioData),
                     Content.Text(prompt)
@@ -351,11 +367,28 @@ object LlmManager {
                 }
 
             val result = response.toString()
-            Log.d(TAG, "LiteRT audio processing complete: ${result.length} chars")
+            Log.d(TAG, "Fresh conversation audio processing complete: ${result.length} chars")
+
+            // Close the fresh conversation and recreate the main one for text chat
+            freshConversation.close()
+            litertConversation = engine.createConversation(conversationConfig)
+            Log.d(TAG, "Restored main conversation for text chat")
+
             Result.success(result)
 
         } catch (e: Exception) {
             Log.e(TAG, "LiteRT audio processing failed", e)
+            // Try to restore conversation on error
+            try {
+                litertConversation?.close()
+                litertConversation = litertEngine?.createConversation(
+                    ConversationConfig(
+                        samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8)
+                    )
+                )
+            } catch (restoreError: Exception) {
+                Log.e(TAG, "Failed to restore conversation after error", restoreError)
+            }
             Result.failure(e)
         } catch (e: Error) {
             // Catch native errors (SIGSEGV, etc.)

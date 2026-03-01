@@ -288,11 +288,15 @@ class InferenceService : Service() {
 
             chunkResult.fold(
                 onSuccess = { text ->
+                    Log.d(TAG, "Chunk ${index + 1} result: '${text.take(50)}...' (${text.length} chars)")
                     if (text.isNotBlank()) {
                         results.add(text.trim())
+                    } else {
+                        Log.w(TAG, "Chunk ${index + 1} returned blank result, skipping")
                     }
                 },
                 onFailure = { error ->
+                    Log.e(TAG, "Chunk ${index + 1} failed", error)
                     return Result.failure(Exception("Chunk ${index + 1} failed: ${error.message}"))
                 }
             )
@@ -300,7 +304,7 @@ class InferenceService : Service() {
 
         // Join results with spaces
         val combinedResult = results.joinToString(" ")
-        Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars")
+        Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.size}/${preprocessingResult.chunkCount} chunks")
 
         if (combinedResult.isBlank()) {
             return Result.failure(IllegalStateException("No transcription produced"))
