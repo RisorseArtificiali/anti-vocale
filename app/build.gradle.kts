@@ -19,6 +19,9 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        // AppAuth redirect scheme for HuggingFace OAuth
+        manifestPlaceholders["appAuthRedirectScheme"] = "com.localai.bridge"
     }
 
     buildTypes {
@@ -89,6 +92,12 @@ dependencies {
 
     // OkHttp for model downloads
     implementation("com.squareup.okhttp3:okhttp:4.12.0")
+
+    // Security for encrypted shared preferences
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+
+    // AppAuth for OAuth authentication (HuggingFace)
+    implementation("net.openid:appauth:0.11.1")
 
     // Debug
     debugImplementation("androidx.compose.ui:ui-tooling")
