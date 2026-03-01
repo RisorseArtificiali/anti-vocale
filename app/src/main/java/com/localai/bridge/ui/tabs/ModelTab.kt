@@ -12,17 +12,20 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.animateContentSize
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.localai.bridge.data.ModelDownloader
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.ui.viewmodel.ModelViewModel
 
@@ -98,10 +101,21 @@ private fun getNotificationPermissions(): Array<String> {
 fun ModelTab(
     viewModel: ModelViewModel = viewModel(
         factory = ModelViewModel.Factory(AppContainer.preferencesManager)
-    )
+    ),
+    onNavigateToSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
+    val downloadUiState by viewModel.downloadUiState.collectAsState()
+
+    // Snackbar host state for displaying errors
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Observe token state changes and refresh ModelViewModel
+    val tokenState by AppContainer.huggingFaceTokenManager.tokenState.collectAsState()
+    LaunchedEffect(tokenState) {
+        viewModel.refreshTokenState()
+    }
 
     // State for permission request type
     var pendingAction by remember { mutableStateOf<PendingAction?>(null) }
@@ -134,9 +148,14 @@ fun ModelTab(
     val manageStorageLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()) {
-            // Permission granted, refresh gallery models and perform pending action
-            viewModel.refreshGalleryModels()
+        android.util.Log.d("ModelTab", "manageStorageLauncher callback triggered")
+        val hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()
+        android.util.Log.d("ModelTab", "hasPermission = $hasPermission")
+
+        // Always refresh gallery models when returning from settings
+        viewModel.refreshGalleryModels()
+
+        if (hasPermission) {
             when (pendingAction) {
                 PendingAction.USE_GALLERY_MODEL -> viewModel.useGalleryModel()
                 else -> {}
@@ -160,16 +179,47 @@ fun ModelTab(
     }
 
     val scrollState = rememberScrollState()
+    val coroutineScope = rememberCoroutineScope()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .navigationBarsPadding()
-            .verticalScroll(scrollState),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    // Auto-scroll only when download starts (not for errors - those go to Snackbar)
+    LaunchedEffect(downloadUiState.isDownloading) {
+        if (downloadUiState.isDownloading) {
+            // Scroll to bottom to show the downloading card
+            delay(150) // Small delay to let the UI update first
+            scrollState.animateScrollTo(scrollState.maxValue)
+        }
+    }
+
+    // Collect one-time Snackbar events from ViewModel (Channel-based for guaranteed delivery)
+    LaunchedEffect(Unit) {
+        viewModel.snackbarEvent.collect { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                actionLabel = "Dismiss",
+                duration = SnackbarDuration.Long
+            )
+            viewModel.clearDownloadError()
+        }
+    }
+
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    ) { paddingValues ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(16.dp)
+                .navigationBarsPadding()
+                .verticalScroll(scrollState),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
         // Status Card
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -240,6 +290,63 @@ fun ModelTab(
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
+            }
+        }
+
+        // Previous Model Restore Card
+        if (uiState.previousModelPath != null && uiState.previousModelName != null) {
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            Icons.Default.Restore,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Previous Model Available",
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = uiState.previousModelName ?: "",
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+
+                    Text(
+                        text = "Switch back to your previously selected model",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedButton(
+                        onClick = { viewModel.restorePreviousModel() },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.secondary
+                        )
+                    ) {
+                        Icon(Icons.Default.Undo, contentDescription = null)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Restore Previous Model")
+                    }
                 }
             }
         }
@@ -412,8 +519,9 @@ fun ModelTab(
                     }
                 }
             }
-        } else if (needsManageStoragePermission()) {
-            // Show permission request card if Gallery model might be available
+        } else {
+            // Show option to browse for Edge Gallery model manually
+            // Note: Android scoped storage blocks direct access to other apps' private directories
             Spacer(modifier = Modifier.height(8.dp))
 
             OutlinedCard(modifier = Modifier.fillMaxWidth()) {
@@ -430,7 +538,7 @@ fun ModelTab(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Check for Google AI Gallery Model",
+                            text = "Import from Google AI Gallery",
                             style = MaterialTheme.typography.titleSmall
                         )
                     }
@@ -438,7 +546,7 @@ fun ModelTab(
                     Spacer(modifier = Modifier.height(8.dp))
 
                     Text(
-                        text = "If you have Google AI Edge Gallery installed with a downloaded model, grant storage permission to reuse it.",
+                        text = "If you have a model in Google AI Edge Gallery, use the file picker below to select it. Look in: Android/data/com.google.ai.edge.gallery/files/",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -447,92 +555,412 @@ fun ModelTab(
 
                     OutlinedButton(
                         onClick = {
-                            val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                                data = Uri.parse("package:${context.packageName}")
+                            if (needsStoragePermission(context)) {
+                                pendingAction = PendingAction.PICK_FILE
+                                permissionLauncher.launch(getStoragePermissions())
+                            } else {
+                                viewModel.openFilePicker()
                             }
-                            manageStorageLauncher.launch(intent)
                         }
                     ) {
-                        Icon(Icons.Default.Key, contentDescription = null)
+                        Icon(Icons.Default.FolderOpen, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Grant Permission")
+                        Text("Browse for Model File")
                     }
                 }
             }
         }
 
-        // Download help section
+        // Download models section
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+        ModelDownloadSection(
+            viewModel = viewModel,
+            context = context,
+            onNavigateToSettings = onNavigateToSettings
+        )
+
+        // Extra spacer to ensure downloading card can be fully scrolled into view
+        Spacer(modifier = Modifier.height(200.dp))
+        }
+    }
+}
+
+// ==================== Model Download Section ====================
+
+/**
+ * Model download section with cards for each available model variant.
+ */
+@Composable
+private fun ModelDownloadSection(
+    viewModel: ModelViewModel,
+    context: android.content.Context,
+    onNavigateToSettings: () -> Unit
+) {
+    val downloadState by viewModel.downloadUiState.collectAsState()
+
+    Column(
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        // Section header
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                Icons.Default.CloudDownload,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp)
+            )
+            Text(
+                text = "Download Models",
+                style = MaterialTheme.typography.titleSmall
+            )
+        }
+
+        // Show token requirement only if no token is configured
+        if (!downloadState.hasToken) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Need a model?",
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
                 Text(
-                    text = "Download Gemma 3n from HuggingFace LiteRT Community. " +
-                            "The E2B model (~2GB) is recommended for most devices. " +
-                            "The E4B model (~4GB) offers better quality but requires more RAM.",
+                    text = "Requires HuggingFace token.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                TextButton(onClick = onNavigateToSettings) {
+                    Text(
+                        "Add in Settings",
+                        style = MaterialTheme.typography.labelSmall
+                    )
+                }
+            }
+        }
 
-                Spacer(modifier = Modifier.height(12.dp))
+        // Model variant cards
+        ModelDownloader.ModelVariant.entries.forEach { variant ->
+            ModelVariantCard(
+                variant = variant,
+                downloadState = downloadState,
+                isDownloaded = downloadState.downloadedModels.contains(variant),
+                isDownloading = downloadState.isDownloading &&
+                    downloadState.selectedVariant == variant,
+                downloadProgress = downloadState.downloadProgress,
+                currentDownloadState = downloadState.downloadState,
+                downloadError = downloadState.downloadError,
+                onSelect = { viewModel.selectModel(variant) },
+                onDownloadClick = { viewModel.startDownload(variant) },
+                onCancelClick = { viewModel.cancelDownload() },
+                onUseClick = { viewModel.useDownloadedModel(variant) },
+                onClearError = { viewModel.clearDownloadError() },
+                context = context
+            )
+        }
+    }
+}
 
+/**
+ * Card for a single model variant showing its info and download status.
+ */
+@Composable
+private fun ModelVariantCard(
+    variant: ModelDownloader.ModelVariant,
+    downloadState: ModelViewModel.DownloadUiState,
+    isDownloaded: Boolean,
+    isDownloading: Boolean,
+    downloadProgress: Float,
+    currentDownloadState: ModelDownloader.DownloadState,
+    downloadError: ModelDownloader.DownloadError?,
+    onSelect: () -> Unit,
+    onDownloadClick: () -> Unit,
+    onCancelClick: () -> Unit,
+    onUseClick: () -> Unit,
+    onClearError: () -> Unit,
+    context: android.content.Context
+) {
+    var showInfo by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .animateContentSize(),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                isDownloaded -> MaterialTheme.colorScheme.primaryContainer
+                isDownloading -> MaterialTheme.colorScheme.secondaryContainer
+                downloadError != null && downloadState.selectedVariant == variant ->
+                    MaterialTheme.colorScheme.errorContainer
+                else -> MaterialTheme.colorScheme.surface
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.weight(1f)
                 ) {
-                    OutlinedButton(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                data = Uri.parse("https://huggingface.co/litert-community/Gemma-3n-E2B-IQ4_S-0001-of-0001")
-                            }
-                            context.startActivity(intent)
-                        }
-                    ) {
-                        Icon(
-                            Icons.Default.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("E2B Model")
-                    }
+                    // Status icon
+                    Icon(
+                        imageVector = when {
+                            isDownloaded -> Icons.Default.CheckCircle
+                            isDownloading -> Icons.Default.CloudDownload
+                            downloadError != null && downloadState.selectedVariant == variant ->
+                                Icons.Default.Error
+                            variant == ModelDownloader.ModelVariant.GEMMA_3N_E2B ->
+                                Icons.Default.Star
+                            else -> Icons.Default.Storage
+                        },
+                        contentDescription = null,
+                        tint = when {
+                            isDownloaded -> MaterialTheme.colorScheme.primary
+                            isDownloading -> MaterialTheme.colorScheme.secondary
+                            downloadError != null && downloadState.selectedVariant == variant ->
+                                MaterialTheme.colorScheme.error
+                            variant == ModelDownloader.ModelVariant.GEMMA_3N_E2B ->
+                                MaterialTheme.colorScheme.tertiary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
 
-                    OutlinedButton(
-                        onClick = {
-                            val intent = Intent(Intent.ACTION_VIEW).apply {
-                                data = Uri.parse("https://huggingface.co/litert-community/Gemma-3n-E4B-IQ4_S-0001-of-0001")
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    // Model name and badge
+                    Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = variant.displayName.substringBefore("(").trim().removeSuffix(" "),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            // Recommended badge for E2B
+                            if (variant == ModelDownloader.ModelVariant.GEMMA_3N_E2B) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = "Recommended",
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onTertiary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
                             }
-                            context.startActivity(intent)
                         }
-                    ) {
-                        Icon(
-                            Icons.Default.Download,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
+                        Text(
+                            text = "${variant.estimatedSizeMB}MB",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("E4B Model")
+                        Text(
+                            text = variant.description,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Info toggle
+                IconButton(onClick = { showInfo = !showInfo }) {
+                    Icon(
+                        if (showInfo) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                        contentDescription = if (showInfo) "Show less" else "Show more"
+                    )
+                }
+            }
+
+            // Expanded info section
+            if (showInfo) {
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    InfoRow("File name", variant.fileName)
+                    InfoRow(
+                        "Supports audio",
+                        if (variant.supportsAudio) "Yes (multimodal)" else "No (text only)"
+                    )
+                    InfoRow("HuggingFace", variant.huggingFaceRepo)
+
+                    if (variant.galleryModelName != null) {
+                        InfoRow("AI Gallery name", variant.galleryModelName)
+                    }
+                }
+            }
+
+            // Download progress
+            if (isDownloading) {
+                Spacer(modifier = Modifier.height(16.dp))
+
+                when (currentDownloadState) {
+                    is ModelDownloader.DownloadState.Downloading -> {
+                        val state = currentDownloadState as ModelDownloader.DownloadState.Downloading
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(
+                                    text = "Downloading...",
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                                Text(
+                                    text = "${(downloadProgress * 100).toInt()}%",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            LinearProgressIndicator(
+                                progress = { downloadProgress },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                text = formatBytes(state.bytesDownloaded) +
+                                    if (state.totalBytes > 0) {
+                                        " / ${formatBytes(state.totalBytes)}"
+                                    } else {
+                                        ""
+                                    },
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    is ModelDownloader.DownloadState.Connecting -> {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Text(
+                                text = "Connecting to HuggingFace...",
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    else -> {}
+                }
+            }
+
+            // Action buttons
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                when {
+                    isDownloading -> {
+                        // Cancel button
+                        OutlinedButton(
+                            onClick = onCancelClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Cancel Download")
+                        }
+                    }
+                    isDownloaded -> {
+                        // Use button
+                        Button(
+                            onClick = onUseClick,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Use Model")
+                        }
+                        // View in browser
+                        OutlinedButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse("https://huggingface.co/${variant.huggingFaceRepo}")
+                                }
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.OpenInBrowser, contentDescription = null)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Info")
+                        }
+                    }
+                    else -> {
+                        // Download button
+                        Button(
+                            onClick = onDownloadClick,
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Download")
+                        }
+                        // View on HuggingFace
+                        OutlinedButton(
+                            onClick = {
+                                val intent = Intent(Intent.ACTION_VIEW).apply {
+                                    data = Uri.parse("https://huggingface.co/${variant.huggingFaceRepo}")
+                                }
+                                context.startActivity(intent)
+                            },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Icon(Icons.Default.OpenInBrowser, contentDescription = null)
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("View")
+                        }
                     }
                 }
             }
         }
     }
 }
+
+@Composable
+private fun InfoRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text(
+            text = "$label:",
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.width(100.dp)
+        )
+        Text(
+            text = value,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+private fun formatBytes(bytes: Long): String {
+    return when {
+        bytes < 1024 -> "$bytes B"
+        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
+        bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
+        else -> String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024))
+    }
+}
+

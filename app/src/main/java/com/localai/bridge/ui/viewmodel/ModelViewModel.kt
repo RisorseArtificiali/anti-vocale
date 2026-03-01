@@ -6,10 +6,14 @@ import android.os.Environment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.localai.bridge.data.HuggingFaceTokenManager
 import com.localai.bridge.data.ModelDownloader
+import com.localai.bridge.data.ModelDownloader.DownloadError
 import com.localai.bridge.data.PreferencesManager
+import com.localai.bridge.di.AppContainer
 import com.localai.bridge.manager.LlmManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -17,6 +21,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -25,7 +30,8 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 
 class ModelViewModel(
-    private val preferencesManager: PreferencesManager
+    private val preferencesManager: PreferencesManager,
+    private val tokenManager: HuggingFaceTokenManager
 ) : ViewModel() {
 
     // Set up auto-unload callback
@@ -39,6 +45,19 @@ class ModelViewModel(
         UNLOADED, LOADING, READY, ERROR
     }
 
+    /**
+     * Download UI state for model download management
+     */
+    data class DownloadUiState(
+        val selectedVariant: ModelDownloader.ModelVariant? = null,
+        val isDownloading: Boolean = false,
+        val downloadProgress: Float = 0f,
+        val downloadState: ModelDownloader.DownloadState = ModelDownloader.DownloadState.Idle,
+        val downloadError: ModelDownloader.DownloadError? = null,
+        val downloadedModels: Set<ModelDownloader.ModelVariant> = emptySet(),
+        val hasToken: Boolean = false
+    )
+
     data class UiState(
         val status: ModelStatus = ModelStatus.UNLOADED,
         val statusMessage: String = "",
@@ -50,7 +69,12 @@ class ModelViewModel(
         val galleryModelPath: String? = null,
         val galleryModelName: String? = null,
         val isGalleryModelAvailable: Boolean = false,
-        val needsStoragePermission: Boolean = false
+        val needsStoragePermission: Boolean = false,
+        // Download state
+        val downloadState: DownloadUiState = DownloadUiState(),
+        // Previous model (for rollback)
+        val previousModelPath: String? = null,
+        val previousModelName: String? = null
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -59,11 +83,32 @@ class ModelViewModel(
     private val _filePickerEvent = MutableSharedFlow<Unit>()
     val filePickerEvent: SharedFlow<Unit> = _filePickerEvent.asSharedFlow()
 
+    // Download state
+    private val _downloadUiState = MutableStateFlow(DownloadUiState())
+    val downloadUiState: StateFlow<DownloadUiState> = _downloadUiState.asStateFlow()
+
+    // Channel for one-time Snackbar events (guarantees delivery)
+    private val _snackbarEvent = Channel<String>()
+    val snackbarEvent: kotlinx.coroutines.flow.Flow<String> = _snackbarEvent.receiveAsFlow()
+
     init {
         // Load saved model path on initialization
         loadSavedModelPath()
+        // Load previous model path for rollback
+        loadPreviousModelPath()
         // Check for Google AI Edge Gallery models
         checkForGalleryModels()
+        // Check for downloaded models
+        refreshDownloadedModels()
+        // Check for HuggingFace token
+        refreshTokenState()
+    }
+
+    /**
+     * Refreshes the token state from the token manager.
+     */
+    fun refreshTokenState() {
+        _downloadUiState.update { it.copy(hasToken = tokenManager.hasToken()) }
     }
 
     /**
@@ -71,14 +116,27 @@ class ModelViewModel(
      */
     private fun checkForGalleryModels() {
         viewModelScope.launch {
+            android.util.Log.d("ModelViewModel", "checkForGalleryModels: Starting check...")
+            
             val variant = ModelDownloader.ModelVariant.GEMMA_3N_E2B
             val galleryPath = ModelDownloader.getGalleryModelPath(variant)
 
+            android.util.Log.d("ModelViewModel", "checkForGalleryModels: Result path = $galleryPath")
+
             if (galleryPath != null) {
+                android.util.Log.i("ModelViewModel", "checkForGalleryModels: ✅ Gallery model FOUND at $galleryPath")
                 _uiState.update { it.copy(
                     galleryModelPath = galleryPath,
                     galleryModelName = "Gemma 3n E2B (from AI Gallery)",
                     isGalleryModelAvailable = true
+                )}
+            } else {
+                android.util.Log.w("ModelViewModel", "checkForGalleryModels: ❌ Gallery model NOT found")
+                // Ensure state is updated even when not found
+                _uiState.update { it.copy(
+                    isGalleryModelAvailable = false,
+                    galleryModelPath = null,
+                    galleryModelName = null
                 )}
             }
         }
@@ -137,6 +195,55 @@ class ModelViewModel(
                     statusMessage = if (isValid) "Saved model found" else "Saved model not found"
                 )}
             }
+        }
+    }
+
+
+    private fun loadPreviousModelPath() {
+        viewModelScope.launch {
+            preferencesManager.previousModelPath.collect { prevPath ->
+                _uiState.update { it.copy(
+                    previousModelPath = prevPath,
+                    previousModelName = if (!prevPath.isNullOrBlank()) extractFileName(prevPath) else null
+                )}
+            }
+        }
+    }
+
+    /**
+     * Restores the previously selected model.
+     * Returns true if a previous model was restored, false otherwise.
+     */
+    fun restorePreviousModel() {
+        viewModelScope.launch {
+            val prevPath = _uiState.value.previousModelPath
+            if (prevPath.isNullOrBlank()) {
+                _uiState.update { it.copy(
+                    status = ModelStatus.ERROR,
+                    statusMessage = "No previous model to restore"
+                )}
+                return@launch
+            }
+
+            val isValid = validateModelPath(prevPath)
+            if (!isValid) {
+                _uiState.update { it.copy(
+                    status = ModelStatus.ERROR,
+                    statusMessage = "Previous model file no longer exists"
+                )}
+                return@launch
+            }
+
+            // This will swap current and previous in preferences
+            preferencesManager.restorePreviousModel()
+
+            _uiState.update { it.copy(
+                modelPath = prevPath,
+                modelName = extractFileName(prevPath),
+                isModelPathValid = true,
+                status = ModelStatus.UNLOADED,
+                statusMessage = "Restored previous model"
+            )}
         }
     }
 
@@ -296,6 +403,203 @@ class ModelViewModel(
         )}
     }
 
+    // ==================== Model Download Management ====================
+
+    /**
+     * Refreshes the list of downloaded models.
+     */
+    fun refreshDownloadedModels() {
+        viewModelScope.launch {
+            val downloaded = ModelDownloader.ModelVariant.entries
+                .filter { variant ->
+                    ModelDownloader.isModelDownloaded(
+                        AppContainer.applicationContext,
+                        variant
+                    )
+                }
+                .toSet()
+
+            _downloadUiState.update { it.copy(downloadedModels = downloaded) }
+        }
+    }
+
+    /**
+     * Selects a model variant for info/download.
+     */
+    fun selectModel(variant: ModelDownloader.ModelVariant) {
+        _downloadUiState.update { it.copy(selectedVariant = variant) }
+    }
+
+    /**
+     * Starts an authenticated download for the selected model variant.
+     */
+    fun startDownload(variant: ModelDownloader.ModelVariant) {
+        viewModelScope.launch(Dispatchers.IO) {
+            // Check if token is available (OAuth or manual PAT)
+            val token = tokenManager.getEffectiveToken()
+            if (token.isNullOrEmpty()) {
+                _downloadUiState.update { it.copy(
+                    downloadError = ModelDownloader.DownloadError.AuthError(
+                        "No HuggingFace token. Please add your token in Settings."
+                    )
+                )}
+                _snackbarEvent.send("Invalid token. Check Settings.")
+                return@launch
+            }
+
+            _downloadUiState.update { it.copy(
+                isDownloading = true,
+                downloadProgress = 0f,
+                downloadState = ModelDownloader.DownloadState.Idle,
+                downloadError = null
+            )}
+
+            val result = ModelDownloader.downloadModel(
+                context = AppContainer.applicationContext,
+                variant = variant,
+                tokenManager = tokenManager,
+                onProgress = { progress ->
+                    _downloadUiState.update { it.copy(downloadProgress = progress) }
+                    // Also update main UI state for progress display
+                    _uiState.update { it.copy(
+                        downloadState = _downloadUiState.value.copy(
+                            isDownloading = true,
+                            downloadProgress = progress
+                        )
+                    )}
+                },
+                onStateChange = { state ->
+                    _downloadUiState.update { it.copy(downloadState = state) }
+                    when (state) {
+                        is ModelDownloader.DownloadState.Error -> {
+                            val error = when (state.throwable) {
+                                is ModelDownloader.DownloadError -> state.throwable
+                                else -> ModelDownloader.DownloadError.NetworkError(
+                                    state.message,
+                                    state.throwable
+                                )
+                            }
+                            _downloadUiState.update { it.copy(
+                                isDownloading = false,
+                                downloadError = error
+                            )}
+                            // Emit user-friendly message to Snackbar
+                            val message = when (error) {
+                                is DownloadError.AuthError -> "Invalid token. Check Settings."
+                                is DownloadError.LicenseError -> "Accept license on HuggingFace"
+                                is DownloadError.StorageError -> "Not enough storage"
+                                is DownloadError.NetworkError -> "Network error: ${error.message}"
+                            }
+                            viewModelScope.launch { _snackbarEvent.send(message) }
+                        }
+                        is ModelDownloader.DownloadState.Complete -> {
+                            _downloadUiState.update { it.copy(
+                                isDownloading = false,
+                                downloadProgress = 1f
+                            )}
+                            // Refresh downloaded models list
+                            refreshDownloadedModels()
+                            // Auto-select the newly downloaded model by path
+                            setDownloadedModel(state.file)
+                        }
+                        is ModelDownloader.DownloadState.Cancelled -> {
+                            _downloadUiState.update { it.copy(isDownloading = false) }
+                        }
+                        else -> {}
+                    }
+                }
+            )
+
+            result.fold(
+                onSuccess = { file ->
+                    // Auto-select newly downloaded model
+                    setDownloadedModel(file)
+                },
+                onFailure = { error ->
+                    // Only update state here - Snackbar is already emitted via onStateChange
+                    _downloadUiState.update { it.copy(
+                        isDownloading = false,
+                        downloadError = if (error is ModelDownloader.DownloadError) {
+                            error
+                        } else {
+                            ModelDownloader.DownloadError.NetworkError(
+                                error.message ?: "Download failed",
+                                error
+                            )
+                        }
+                    )}
+                    // Note: Snackbar event is emitted in onStateChange callback, not here
+                    // to avoid double emission
+                }
+            )
+        }
+    }
+
+    /**
+     * Cancels the ongoing download.
+     */
+    fun cancelDownload() {
+        ModelDownloader.cancel()
+        _downloadUiState.update { it.copy(
+            isDownloading = false,
+            downloadState = ModelDownloader.DownloadState.Cancelled("User cancelled")
+        )}
+    }
+
+    /**
+     * Checks if a model variant is already downloaded.
+     */
+    fun isModelDownloaded(variant: ModelDownloader.ModelVariant): Boolean {
+        return _downloadUiState.value.downloadedModels.contains(variant)
+    }
+
+    /**
+     * Sets a downloaded model as the active model.
+     */
+    fun useDownloadedModel(variant: ModelDownloader.ModelVariant) {
+        viewModelScope.launch {
+            val modelPath = ModelDownloader.getLocalModelPath(
+                AppContainer.applicationContext,
+                variant
+            )
+            if (modelPath != null) {
+                preferencesManager.saveModelPath(modelPath)
+                _uiState.update { it.copy(
+                    modelPath = modelPath,
+                    modelName = variant.displayName,
+                    isModelPathValid = true,
+                    status = ModelStatus.UNLOADED,
+                    statusMessage = "${variant.displayName} selected"
+                )}
+            }
+        }
+    }
+
+    /**
+     * Clears the download error state.
+     */
+    fun clearDownloadError() {
+        _downloadUiState.update { it.copy(downloadError = null) }
+    }
+
+    /**
+     * Sets a downloaded File as the active model.
+     * Used internally after successful download.
+     */
+    private fun setDownloadedModel(file: File) {
+        viewModelScope.launch {
+            val modelPath = file.absolutePath
+            preferencesManager.saveModelPath(modelPath)
+            _uiState.update { it.copy(
+                modelPath = modelPath,
+                modelName = file.name,
+                isModelPathValid = true,
+                status = ModelStatus.UNLOADED,
+                statusMessage = "Downloaded model selected"
+            )}
+        }
+    }
+
     override fun onCleared() {
         super.onCleared()
         // Don't unload on config changes, only on actual destruction
@@ -305,12 +609,13 @@ class ModelViewModel(
      * Factory for creating ModelViewModel with dependencies
      */
     class Factory(
-        private val preferencesManager: PreferencesManager
+        private val preferencesManager: PreferencesManager,
+        private val tokenManager: HuggingFaceTokenManager = AppContainer.huggingFaceTokenManager
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(ModelViewModel::class.java)) {
-                return ModelViewModel(preferencesManager) as T
+                return ModelViewModel(preferencesManager, tokenManager) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }
