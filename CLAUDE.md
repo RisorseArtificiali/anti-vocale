@@ -11,6 +11,8 @@ Android application written in Kotlin for reading voice messages.
 - Default branch: `main`
 - Git protocol: SSH
 
+@import docs/BUILD.md
+
 <!-- BACKLOG.MD MCP GUIDELINES START -->
 
 <CRITICAL_INSTRUCTION>
