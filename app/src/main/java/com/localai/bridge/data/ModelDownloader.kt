@@ -1,6 +1,7 @@
 package com.localai.bridge.data
 
 import android.content.Context
+import android.os.Build
 import android.os.Environment
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
@@ -66,14 +67,6 @@ object ModelDownloader {
             estimatedSizeMB = 4235L,
             supportsAudio = true,
             galleryModelName = "Gemma_3n_E4B_it"
-        ),
-        GEMMA3_1B(
-            displayName = "Gemma3 1B (Lightweight)",
-            huggingFaceRepo = "litert-community/Gemma3-1B-IT",
-            fileName = "Gemma3-1B-IT_multi-prefill-seq_q4_ekv4096.litertlm",
-            description = "557MB - Text only, fast and lightweight",
-            estimatedSizeMB = 557L,
-            supportsAudio = false
         )
     }
 
@@ -93,6 +86,16 @@ object ModelDownloader {
         data class Cancelled(val reason: String) : DownloadState()
     }
 
+    /**
+     * Download error types for authenticated HuggingFace downloads.
+     */
+    sealed class DownloadError(message: String, cause: Throwable? = null) : Exception(message, cause) {
+        class AuthError(message: String) : DownloadError(message)
+        class LicenseError(message: String) : DownloadError(message)
+        class NetworkError(message: String, cause: Throwable? = null) : DownloadError(message, cause)
+        class StorageError(message: String, val requiredBytes: Long, val availableBytes: Long) : DownloadError(message)
+    }
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
@@ -102,10 +105,11 @@ object ModelDownloader {
     private var isCancelled = false
 
     /**
-     * Downloads a model from HuggingFace.
+     * Downloads a model from HuggingFace with authentication.
      *
      * @param context Application context
      * @param variant Model variant to download
+     * @param tokenManager HuggingFace token manager for authenticated downloads
      * @param onProgress Callback for download progress (0.0 to 1.0)
      * @param onStateChange Callback for state changes
      * @return Result containing the downloaded file or an error
@@ -113,10 +117,22 @@ object ModelDownloader {
     suspend fun downloadModel(
         context: Context,
         variant: ModelVariant = ModelVariant.GEMMA_3N_E2B,
+        tokenManager: HuggingFaceTokenManager,
         onProgress: (Float) -> Unit = {},
         onStateChange: (DownloadState) -> Unit = {}
     ): Result<File> = withContext(Dispatchers.IO) {
         isCancelled = false
+
+        // Pre-download storage check
+        val requiredBytes = variant.estimatedSizeMB * 1024 * 1024
+        val availableBytes = context.filesDir.usableSpace
+        if (availableBytes < requiredBytes) {
+            val errorMsg = "Insufficient storage. Need ${variant.estimatedSizeMB}MB, have ${availableBytes / (1024*1024)}MB available."
+            val error = DownloadError.StorageError(errorMsg, requiredBytes, availableBytes)
+            Log.e(TAG, errorMsg)
+            onStateChange(DownloadState.Error(errorMsg, error))
+            return@withContext Result.failure(error)
+        }
 
         val targetDir = File(context.filesDir, "models")
         if (!targetDir.exists()) {
@@ -132,22 +148,42 @@ object ModelDownloader {
             return@withContext Result.success(targetFile)
         }
 
+        // Get HuggingFace token for authenticated download
+        val token = tokenManager.getEffectiveToken()
+            ?: run {
+                val errorMsg = "No HuggingFace token found. Please add your token in settings."
+                val error = DownloadError.AuthError(errorMsg)
+                Log.e(TAG, errorMsg)
+                onStateChange(DownloadState.Error(errorMsg, error))
+                return@withContext Result.failure(error)
+            }
+
         val url = "https://huggingface.co/${variant.huggingFaceRepo}/resolve/main/${variant.fileName}"
-        Log.i(TAG, "Starting download: $url")
+        Log.i(TAG, "Starting authenticated download: $url")
         onStateChange(DownloadState.Connecting(url))
 
         return@withContext try {
             val request = Request.Builder()
                 .url(url)
+                .addHeader("Authorization", "Bearer $token")
                 .build()
 
             val response = client.newCall(request).execute()
 
             if (!response.isSuccessful) {
-                val error = "Download failed: HTTP ${response.code}"
-                Log.e(TAG, error)
-                onStateChange(DownloadState.Error(error))
-                return@withContext Result.failure(Exception(error))
+                val errorMsg = when (response.code) {
+                    401 -> "Invalid or expired HuggingFace token"
+                    403 -> "License not accepted. Visit huggingface.co/${variant.huggingFaceRepo} to accept the license."
+                    else -> "Download failed: HTTP ${response.code}"
+                }
+                val error = when (response.code) {
+                    401 -> DownloadError.AuthError(errorMsg)
+                    403 -> DownloadError.LicenseError(errorMsg)
+                    else -> DownloadError.NetworkError(errorMsg)
+                }
+                Log.e(TAG, errorMsg)
+                onStateChange(DownloadState.Error(errorMsg, error))
+                return@withContext Result.failure(error)
             }
 
             val body = response.body ?: run {
@@ -317,24 +353,57 @@ object ModelDownloader {
      * The hash folder name changes between downloads/versions, so we search recursively.
      */
     fun findGalleryModel(variant: ModelVariant): File? {
-        val galleryName = variant.galleryModelName ?: return null
-        val galleryDir = File(GALLERY_MODELS_PATH, galleryName)
-
-        if (!galleryDir.exists()) {
-            Log.d(TAG, "Gallery model directory not found: ${galleryDir.path}")
+        // Check for storage permission first (Android 11+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
+            Log.w(TAG, "findGalleryModel: ❌ No MANAGE_EXTERNAL_STORAGE permission - cannot access Gallery models")
+            Log.w(TAG, "  Grant 'All files access' permission to use Gallery models")
             return null
         }
 
+        val galleryName = variant.galleryModelName ?: return null
+        val galleryDir = File(GALLERY_MODELS_PATH, galleryName)
+
+        Log.d(TAG, "Searching for Gallery model: ${variant.displayName}")
+        Log.d(TAG, "  Expected path: ${galleryDir.path}")
+        Log.d(TAG, "  Permission granted: ${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) Environment.isExternalStorageManager() else "N/A (pre-Android 11)"}")
+
+        if (!galleryDir.exists()) {
+            Log.w(TAG, "  Gallery model directory NOT FOUND: ${galleryDir.path}")
+            // Try to list parent directory to debug
+            val parentDir = File(GALLERY_MODELS_PATH)
+            if (parentDir.exists()) {
+                Log.d(TAG, "  Parent directory exists, contents: ${parentDir.listFiles()?.map { it.name }}")
+            } else {
+                Log.w(TAG, "  Parent directory also not found: ${parentDir.path}")
+            }
+            return null
+        }
+
+        Log.d(TAG, "  Gallery directory exists, searching for .litertlm files...")
+
         // Find the model file in subdirectories (hash-named folders)
         // The hash changes between versions, so we search all subdirectories
+        var foundFiles = 0
         galleryDir.walkTopDown()
-            .filter { it.isFile && it.extension == "litertlm" && it.length() > 100_000_000 }
+            .onEnter { dir ->
+                Log.v(TAG, "    Scanning: ${dir.name}")
+                true
+            }
+            .filter { 
+                val matches = it.isFile && it.extension == "litertlm" && it.length() > 100_000_000
+                if (it.isFile && it.extension == "litertlm") {
+                    Log.d(TAG, "    Found .litertlm file: ${it.name}, size: ${it.length()}, matches: $matches")
+                }
+                matches
+            }
+            .onEach { foundFiles++ }
             .firstOrNull()
             ?.let { file ->
-                Log.i(TAG, "Found Gallery model: ${file.path} (${file.length()} bytes)")
+                Log.i(TAG, "  ✅ Found Gallery model: ${file.path} (${file.length()} bytes)")
                 return file
             }
 
+        Log.w(TAG, "  ❌ No matching .litertlm files found (scanned $foundFiles files)")
         return null
     }
 
