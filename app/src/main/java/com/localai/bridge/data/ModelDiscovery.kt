@@ -19,8 +19,7 @@ data class DiscoveredModel(
  */
 enum class ModelSource {
     DOWNLOADED,    // Downloaded via HuggingFace
-    GALLERY,       // Google AI Edge Gallery
-    PREVIOUS       // Previously used model (not in current lists)
+    GALLERY        // Google AI Edge Gallery
 }
 
 /**
@@ -33,16 +32,8 @@ enum class ModelSource {
  */
 object ModelDiscovery {
 
-    /**
-     * Discovers all available models from all sources.
-     *
-     * @param context Application context
-     * @param previousModelPath Optional path to a previously used model
-     * @return List of discovered models, ordered by source priority
-     */
     fun discoverAvailableModels(
-        context: Context,
-        previousModelPath: String? = null
+        context: Context
     ): List<DiscoveredModel> {
         val models = mutableListOf<DiscoveredModel>()
         val discoveredPaths = mutableSetOf<String>()
@@ -69,19 +60,6 @@ object ModelDiscovery {
                 variant = variant
             ))
             discoveredPaths.add(file.absolutePath)
-        }
-
-        // Add previous model if not already in the list
-        if (!previousModelPath.isNullOrEmpty() && previousModelPath !in discoveredPaths) {
-            val file = File(previousModelPath)
-            if (file.exists()) {
-                models.add(DiscoveredModel(
-                    name = file.name,
-                    path = previousModelPath,
-                    source = ModelSource.PREVIOUS,
-                    sizeMB = file.length() / (1024 * 1024)
-                ))
-            }
         }
 
         return models

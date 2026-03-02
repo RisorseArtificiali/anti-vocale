@@ -20,7 +20,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import com.localai.bridge.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -53,6 +55,7 @@ fun SettingsTab(
 
     val uiState by viewModel.uiState.collectAsState()
     val currentTimeout by viewModel.keepAliveTimeout.collectAsState()
+    val currentLanguage by viewModel.languagePreference.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
     val tokenInput by viewModel.tokenInput.collectAsState()
     val oauthState by viewModel.oauthState.collectAsState()
@@ -114,7 +117,7 @@ fun SettingsTab(
                             MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = if (isModelLoaded) "Model Loaded" else "Model Not Loaded",
+                        text = if (isModelLoaded) stringResource(R.string.model_loaded) else stringResource(R.string.model_not_loaded),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -124,7 +127,7 @@ fun SettingsTab(
                     val minutes = remainingTime / 60
                     val seconds = remainingTime % 60
                     Text(
-                        text = "Auto-unload in: ${minutes}m ${seconds}s",
+                        text = stringResource(R.string.auto_unload_in, minutes, seconds),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
@@ -132,7 +135,7 @@ fun SettingsTab(
 
                 if (!isModelLoaded) {
                     Text(
-                        text = "Load a model from the Model tab to enable inference",
+                        text = stringResource(R.string.load_model_from_tab),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -158,7 +161,7 @@ fun SettingsTab(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Active Model",
+                        text = stringResource(R.string.active_model),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -202,7 +205,7 @@ fun SettingsTab(
                             modifier = Modifier.size(16.dp)
                         )
                         Text(
-                            text = "No model selected",
+                            text = stringResource(R.string.no_model_selected_error),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -214,13 +217,13 @@ fun SettingsTab(
                 // Available models list
                 if (settingsState.availableModels.isEmpty()) {
                     Text(
-                        text = "No models found. Download a model or add one via the Model tab.",
+                        text = stringResource(R.string.no_models_found),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 } else {
                     Text(
-                        text = "Available models:",
+                        text = stringResource(R.string.available_models),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -260,9 +263,8 @@ fun SettingsTab(
                                         // Source badge
                                         Text(
                                             text = when (model.source) {
-                                                ModelSource.DOWNLOADED -> "HF"
-                                                ModelSource.GALLERY -> "Gallery"
-                                                ModelSource.PREVIOUS -> "Previous"
+                                                ModelSource.DOWNLOADED -> stringResource(R.string.source_hf)
+                                                ModelSource.GALLERY -> stringResource(R.string.source_gallery)
                                             },
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.outline,
@@ -291,7 +293,7 @@ fun SettingsTab(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Manage Models")
+                    Text(stringResource(R.string.manage_models))
                 }
             }
         }
@@ -314,14 +316,14 @@ fun SettingsTab(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "HuggingFace Authentication",
+                        text = stringResource(R.string.huggingface_auth),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
                 Text(
-                    text = "Only needed to download models from HuggingFace on your behalf. Local models work without authentication.",
+                    text = stringResource(R.string.huggingface_auth_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -351,7 +353,7 @@ fun SettingsTab(
                                         modifier = Modifier.size(18.dp)
                                     )
                                     Text(
-                                        "Setup Guide",
+                                        stringResource(R.string.setup_guide),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
@@ -362,7 +364,7 @@ fun SettingsTab(
                                 ) {
                                     Icon(
                                         if (showSetupGuide) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                        contentDescription = if (showSetupGuide) "Collapse" else "Expand",
+                                        contentDescription = if (showSetupGuide) stringResource(R.string.show_less) else stringResource(R.string.show_more),
                                         tint = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
                                 }
@@ -371,22 +373,22 @@ fun SettingsTab(
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                     Text(
-                                        "1. Tap 'Login with HuggingFace' below",
+                                        stringResource(R.string.setup_step1),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
                                     Text(
-                                        "2. Sign in to your HuggingFace account",
+                                        stringResource(R.string.setup_step2),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
                                     Text(
-                                        "3. Authorize the app",
+                                        stringResource(R.string.setup_step3),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
                                     Text(
-                                        "4. You'll be redirected back automatically",
+                                        stringResource(R.string.setup_step4),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onTertiaryContainer
                                     )
@@ -727,15 +729,14 @@ fun SettingsTab(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Auto-Unload Timeout",
+                        text = stringResource(R.string.auto_unload_timeout),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                 }
 
                 Text(
-                    text = "Automatically unload the model after a period of inactivity to free memory. " +
-                           "The model will be automatically reloaded when needed.",
+                    text = stringResource(R.string.timeout_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -769,9 +770,9 @@ fun SettingsTab(
                             )
                             Text(
                                 text = when (minutes) {
-                                    1 -> "1 minute"
-                                    60 -> "1 hour"
-                                    else -> "$minutes minutes"
+                                    1 -> stringResource(R.string.timeout_1_minute)
+                                    60 -> stringResource(R.string.timeout_1_hour)
+                                    else -> stringResource(R.string.timeout_minutes, minutes)
                                 },
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = if (isSelected)
@@ -796,7 +797,7 @@ fun SettingsTab(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Saving...",
+                            text = stringResource(R.string.saving),
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -817,7 +818,7 @@ fun SettingsTab(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Settings saved",
+                            text = stringResource(R.string.settings_saved),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -831,6 +832,82 @@ fun SettingsTab(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
+                }
+            }
+        }
+
+        // Language Setting
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Language,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.language_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.language_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                // Language options
+                Column(modifier = Modifier.selectableGroup()) {
+                    viewModel.languageOptions.forEach { option ->
+                        val isSelected = currentLanguage == option.code
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = isSelected,
+                                    role = Role.RadioButton,
+                                    onClick = {
+                                        if (!isSelected && !uiState.isSaving) {
+                                            viewModel.saveLanguagePreference(option.code)
+                                        }
+                                    }
+                                )
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = null,
+                                enabled = !uiState.isSaving
+                            )
+                            Text(
+                                text = when (option.code) {
+                                    "system" -> stringResource(R.string.language_system)
+                                    "en" -> stringResource(R.string.language_english)
+                                    "it" -> stringResource(R.string.language_italian)
+                                    else -> option.displayName
+                                },
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (isSelected)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -856,7 +933,7 @@ fun SettingsTab(
                         tint = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Text(
-                        text = "Auto-Load & Preload",
+                        text = stringResource(R.string.preload_title),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -864,8 +941,7 @@ fun SettingsTab(
                 }
 
                 Text(
-                    text = "The model will automatically load when a request is received and the model is not in memory. " +
-                           "You can also preload the model explicitly:",
+                    text = stringResource(R.string.preload_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
@@ -873,7 +949,7 @@ fun SettingsTab(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Via Tasker:",
+                    text = stringResource(R.string.via_tasker),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
@@ -887,7 +963,7 @@ fun SettingsTab(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "Via ADB:",
+                    text = stringResource(R.string.via_adb),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )

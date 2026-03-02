@@ -47,12 +47,28 @@ class SettingsViewModel(
     // Keep-alive timeout options in minutes
     val timeoutOptions = listOf(1, 2, 5, 10, 15, 30, 60)
 
+    // Language options with display names
+    data class LanguageOption(val code: String, val displayName: String)
+    val languageOptions = listOf(
+        LanguageOption("system", "System Default"),
+        LanguageOption("en", "English"),
+        LanguageOption("it", "Italiano")
+    )
+
     // Current keep-alive timeout from preferences
     val keepAliveTimeout: StateFlow<Int> = preferencesManager.keepAliveTimeout
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = 5
+        )
+
+    // Current language preference from preferences
+    val languagePreference: StateFlow<String> = preferencesManager.languagePreference
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = "system"
         )
 
     // HuggingFace token state
@@ -120,6 +136,31 @@ class SettingsViewModel(
                     isSaving = false,
                     saveSuccess = false,
                     errorMessage = e.message ?: "Failed to save settings"
+                )}
+            }
+        }
+    }
+
+    /**
+     * Saves the language preference.
+     * Note: Changes will take effect after app restart.
+     */
+    fun saveLanguagePreference(language: String) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, saveSuccess = null, errorMessage = null) }
+
+            try {
+                preferencesManager.saveLanguagePreference(language)
+                _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+
+                // Clear success message after delay
+                kotlinx.coroutines.delay(2000)
+                _uiState.update { it.copy(saveSuccess = null) }
+            } catch (e: Exception) {
+                _uiState.update { it.copy(
+                    isSaving = false,
+                    saveSuccess = false,
+                    errorMessage = e.message ?: "Failed to save language preference"
                 )}
             }
         }
@@ -304,8 +345,7 @@ class SettingsViewModel(
      */
     fun scanAvailableModels() {
         viewModelScope.launch {
-            val previousPath = preferencesManager.previousModelPath.first()
-            val models = ModelDiscovery.discoverAvailableModels(getApplication(), previousPath)
+            val models = ModelDiscovery.discoverAvailableModels(getApplication())
             _uiState.update { it.copy(availableModels = models) }
         }
     }

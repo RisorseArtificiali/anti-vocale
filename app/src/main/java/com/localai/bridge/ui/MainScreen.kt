@@ -8,6 +8,8 @@ import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import com.localai.bridge.R
 import com.localai.bridge.ui.tabs.LogsTab
 import com.localai.bridge.ui.tabs.ModelTab
 import com.localai.bridge.ui.tabs.SettingsTab
@@ -24,14 +26,14 @@ fun MainScreen() {
 
     // Logs tab is first since it's the primary use case (viewing transcription history)
     val tabs = listOf(
-        TabItem("Logs", Icons.Default.History) { LogsTab() },
-        TabItem("Model", Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }) },
-        TabItem("Settings", Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(1) }) }
+        TabItem(R.string.logs_tab, Icons.Default.History) { LogsTab() },
+        TabItem(R.string.model_tab, Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }) },
+        TabItem(R.string.settings_tab, Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(1) }) }
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
         TopAppBar(
-            title = { Text("LocalAI Bridge") },
+            title = { Text(stringResource(R.string.app_name)) },
             colors = TopAppBarDefaults.topAppBarColors(
                 containerColor = MaterialTheme.colorScheme.surface
             )
@@ -46,8 +48,8 @@ fun MainScreen() {
                 Tab(
                     selected = selectedTabIndex == index,
                     onClick = { selectedTabIndex = index },
-                    text = { Text(tab.title) },
-                    icon = { Icon(tab.icon, contentDescription = tab.title) }
+                    text = { Text(stringResource(tab.titleResId)) },
+                    icon = { Icon(tab.icon, contentDescription = stringResource(tab.titleResId)) }
                 )
             }
         }
@@ -57,7 +59,7 @@ fun MainScreen() {
 }
 
 data class TabItem(
-    val title: String,
+    val titleResId: Int,
     val icon: androidx.compose.ui.graphics.vector.ImageVector,
     val content: @Composable () -> Unit
 )

@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Build
 import android.os.Environment
 import android.util.Log
+import com.localai.bridge.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -45,7 +46,7 @@ object ModelDownloader {
         val displayName: String,
         val huggingFaceRepo: String,
         val fileName: String,
-        val description: String,
+        val descriptionResId: Int?,
         val estimatedSizeMB: Long,
         val supportsAudio: Boolean,
         val galleryModelName: String? = null  // Name in Google AI Edge Gallery
@@ -54,7 +55,7 @@ object ModelDownloader {
             displayName = "Gemma 3n E2B (Recommended)",
             huggingFaceRepo = "google/gemma-3n-E2B-it-litert-lm",
             fileName = "gemma-3n-E2B-it-int4.litertlm",
-            description = "3.3GB - Multimodal (text + audio), best for most devices",
+            descriptionResId = R.string.model_desc_gemma_3n_e2b,
             estimatedSizeMB = 3300L,
             supportsAudio = true,
             galleryModelName = "Gemma_3n_E2B_it"
@@ -63,7 +64,7 @@ object ModelDownloader {
             displayName = "Gemma 3n E4B",
             huggingFaceRepo = "google/gemma-3n-E4B-it-litert-lm",
             fileName = "gemma-3n-E4B-it-int4.litertlm",
-            description = "4.2GB - Multimodal (text + audio), higher quality",
+            descriptionResId = R.string.model_desc_gemma_3n_e4b,
             estimatedSizeMB = 4235L,
             supportsAudio = true,
             galleryModelName = "Gemma_3n_E4B_it"

@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">LocalAI Bridge</string>
+
+    <!-- Tab names -->
+    <string name="model_tab">Modello</string>
+    <string name="logs_tab">Registro</string>
+    <string name="settings_tab">Impostazioni</string>
+
+    <!-- Model selection -->
+    <string name="select_model">Seleziona File Modello</string>
+    <string name="select_model_from_device">Seleziona Modello dal Dispositivo</string>
+    <string name="load_model">Carica Modello</string>
+    <string name="unload_model">Scarica Modello</string>
+
+    <!-- Model status -->
+    <string name="model_status">Stato: %1$s</string>
+    <string name="model_path">Percorso: %1$s</string>
+    <string name="no_model_selected">Nessun modello selezionato</string>
+    <string name="status_ready">Pronto</string>
+    <string name="status_loading">Caricamento Modello…</string>
+    <string name="status_error">Errore</string>
+    <string name="status_unloaded">Scaricato</string>
+    <string name="status_model_selected">Modello Selezionato</string>
+    <string name="status_no_model">Nessun Modello</string>
+
+    <!-- Logs -->
+    <string name="logs_empty">Nessuna richiesta</string>
+    <string name="request_text">Richiesta Testo</string>
+    <string name="request_audio">Richiesta Audio</string>
+    <string name="logs_recent_requests">Richieste Recenti (%1$d/10)</string>
+    <string name="logs_clear">Cancella</string>
+    <string name="logs_empty_hint">Invia una richiesta da Tasker per vedere i log qui</string>
+    <string name="logs_prompt_label">Prompt:</string>
+    <string name="logs_result_label">Risultato:</string>
+    <string name="logs_error_label">Errore:</string>
+    <string name="logs_task_id">ID Task: %1$s</string>
+    <string name="logs_unknown_error">Errore sconosciuto</string>
+
+    <!-- Model descriptions -->
+    <string name="model_desc_gemma_3n_e2b">3.3GB - Multimodale (testo + audio), migliore per la maggior parte dei dispositivi</string>
+    <string name="model_desc_gemma_3n_e4b">4.2GB - Multimodale (testo + audio), qualità superiore</string>
+
+    <!-- Transcription -->
+    <string name="share_transcription">Condividi Trascrizione</string>
+    <string name="copy_transcription">Copia negli Appunti</string>
+    <string name="copied_to_clipboard">Copiato negli appunti</string>
+    <string name="audio_received_for_transcription">Audio ricevuto per la trascrizione</string>
+    <string name="transcription_complete">Trascrizione completata</string>
+    <string name="transcription_failed">Trascrizione fallita</string>
+    <string name="copy">Copia</string>
+    <string name="char_counter">%1$d di %2$d caratteri</string>
+    <string name="no_audio_file">Nessun file audio ricevuto</string>
+    <string name="failed_to_process_audio">Impossibile elaborare il file audio</string>
+    <string name="transcription_started">Trascrizione avviata…</string>
+
+    <!-- Model Tab - Download section -->
+    <string name="download_models">Scarica Modelli</string>
+    <string name="requires_huggingface_token">Richiede token HuggingFace.</string>
+    <string name="add_in_settings">Aggiungi in Impostazioni</string>
+    <string name="recommended">Consigliato</string>
+    <string name="downloading">Download in corso…</string>
+    <string name="connecting_to_huggingface">Connessione a HuggingFace…</string>
+    <string name="cancel_download">Annulla Download</string>
+    <string name="use_model">Usa Modello</string>
+    <string name="delete">Elimina</string>
+    <string name="download">Scarica</string>
+    <string name="view">Visualizza</string>
+
+    <!-- Model Tab - Info labels -->
+    <string name="label_filename">Nome file</string>
+    <string name="label_supports_audio">Supporta audio</string>
+    <string name="label_yes_multimodal">Sì (multimodale)</string>
+    <string name="label_no_text_only">No (solo testo)</string>
+    <string name="label_huggingface">HuggingFace</string>
+    <string name="label_ai_gallery_name">Nome AI Gallery</string>
+    <string name="show_less">Mostra meno</string>
+    <string name="show_more">Mostra di più</string>
+
+    <!-- Model Tab - Delete dialog -->
+    <string name="dialog_delete_title">Eliminare il Modello?</string>
+    <string name="dialog_delete_message">Questo rimuoverà permanentemente \'%1$s\' dal tuo dispositivo. Potrai scaricarlo nuovamente in seguito.</string>
+    <string name="action_delete">Elimina</string>
+    <string name="action_cancel">Annulla</string>
+
+    <!-- Settings Tab - Model status -->
+    <string name="model_loaded">Modello Caricato</string>
+    <string name="model_not_loaded">Modello Non Caricato</string>
+    <string name="auto_unload_in">Scarico automatico tra: %1$dm %2$ds</string>
+    <string name="load_model_from_tab">Carica un modello dalla scheda Modello per abilitare l\'inferenza</string>
+
+    <!-- Settings Tab - Active Model -->
+    <string name="active_model">Modello Attivo</string>
+    <string name="no_model_selected_error">Nessun modello selezionato</string>
+    <string name="available_models">Modelli disponibili:</string>
+    <string name="no_models_found">Nessun modello trovato. Scarica un modello o aggiungine uno tramite la scheda Modello.</string>
+    <string name="manage_models">Gestisci Modelli</string>
+    <string name="source_hf">HF</string>
+    <string name="source_gallery">Gallery</string>
+
+    <!-- Settings Tab - HuggingFace Authentication -->
+    <string name="huggingface_auth">Autenticazione HuggingFace</string>
+    <string name="huggingface_auth_description">Necessario solo per scaricare modelli da HuggingFace per tuo conto. I modelli locali funzionano senza autenticazione.</string>
+    <string name="setup_guide">Guida all\'Installazione</string>
+    <string name="setup_step1">1. Tocca \'Accedi con HuggingFace\' qui sotto</string>
+    <string name="setup_step2">2. Accedi al tuo account HuggingFace</string>
+    <string name="setup_step3">3. Autorizza l\'app</string>
+    <string name="setup_step4">4. Verrai reindirizzato automaticamente</string>
+    <string name="oauth_connected">OAuth Connesso</string>
+    <string name="token_valid">Token Valido</string>
+    <string name="username_label">Nome utente: %1$s</string>
+    <string name="token_label">Token: %1$s</string>
+    <string name="expires_label">Scade: %1$s</string>
+    <string name="expired">Scaduto</string>
+    <string name="login_with_huggingface">Accedi con HuggingFace</string>
+    <string name="oauth_login_description">Accesso rapido tramite browser. Se hai già effettuato l\'accesso a HuggingFace in Chrome, verrai reindirizzato istantaneamente.</string>
+    <string name="create_account_link">Non hai un account? Creane uno su huggingface.co</string>
+    <string name="authenticating">Autenticazione con HuggingFace…</string>
+    <string name="logged_in_as">Accesso effettuato come %1$s</string>
+    <string name="logout">Disconnetti</string>
+    <string name="clear_token">Cancella token</string>
+
+    <!-- Settings Tab - Manual Token -->
+    <string name="advanced_manual_token">Avanzate: Inserimento Manuale Token</string>
+    <string name="hide_advanced">Nascondi Avanzate: Token Manuale</string>
+    <string name="manual_token_scope_info">Per i token manuali, è richiesto lo scope \'read\' per scaricare i modelli.</string>
+    <string name="huggingface_token_label">Token HuggingFace</string>
+    <string name="token_placeholder">hf_…</string>
+    <string name="paste_from_clipboard">Incolla dagli appunti</string>
+    <string name="show_token">Mostra token</string>
+    <string name="hide_token">Nascondi token</string>
+    <string name="create_token">Crea Token</string>
+    <string name="get_token">Ottieni Token</string>
+    <string name="retry">Riprova</string>
+    <string name="validating">Validazione…</string>
+    <string name="validate_and_save">Valida e Salva</string>
+    <string name="validating_token">Validazione token…</string>
+
+    <!-- Settings Tab - Timeout -->
+    <string name="auto_unload_timeout">Timeout Scaricamento Automatico</string>
+    <string name="timeout_description">Scarica automaticamente il modello dopo un periodo di inattività per liberare memoria. Il modello verrà ricaricato automaticamente quando necessario.</string>
+    <string name="timeout_1_minute">1 minuto</string>
+    <string name="timeout_1_hour">1 ora</string>
+    <string name="timeout_minutes">%1$d minuti</string>
+    <string name="saving">Salvataggio…</string>
+    <string name="settings_saved">Impostazioni salvate</string>
+
+    <!-- Settings Tab - Preload Info -->
+    <string name="preload_title">Caricamento Automatico e Preload</string>
+    <string name="preload_description">Il modello verrà caricato automaticamente quando viene ricevuta una richiesta e il modello non è in memoria. Puoi anche precaricare il modello esplicitamente:</string>
+    <string name="via_tasker">Tramite Tasker:</string>
+    <string name="via_adb">Tramite ADB:</string>
+
+    <!-- Settings Tab - Language -->
+    <string name="language_title">Lingua</string>
+    <string name="language_description">Scegli la lingua di visualizzazione dell\'app. Le modifiche avranno effetto dopo il riavvio dell\'app.</string>
+    <string name="language_system">Predefinito di Sistema</string>
+    <string name="language_english">English</string>
+    <string name="language_italian">Italiano</string>
+
+    <!-- Dismiss -->
+    <string name="dismiss">Chiudi</string>
+</resources>

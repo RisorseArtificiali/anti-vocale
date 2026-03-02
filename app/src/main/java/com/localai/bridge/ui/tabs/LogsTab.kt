@@ -15,11 +15,11 @@ import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.localai.bridge.R
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.ui.viewmodel.LogEntry
 import com.localai.bridge.ui.viewmodel.LogsViewModel
@@ -44,7 +44,7 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "Recent Requests (${logs.size}/10)",
+                    text = stringResource(R.string.logs_recent_requests, logs.size),
                     style = MaterialTheme.typography.titleSmall
                 )
                 TextButton(onClick = { viewModel.clearLogs() }) {
@@ -54,7 +54,7 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Clear")
+                    Text(stringResource(R.string.logs_clear))
                 }
             }
         }
@@ -73,12 +73,12 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "No requests yet",
+                        text = stringResource(R.string.logs_empty),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Send a request from Tasker to see logs here",
+                        text = stringResource(R.string.logs_empty_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
@@ -188,7 +188,7 @@ fun LogEntryItem(log: LogEntry) {
 
             // Task ID
             Text(
-                text = "Task ID: ${log.taskId}",
+                text = stringResource(R.string.logs_task_id, log.taskId),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -200,7 +200,7 @@ fun LogEntryItem(log: LogEntry) {
                 // Prompt
                 if (log.prompt.isNotEmpty()) {
                     Text(
-                        text = "Prompt:",
+                        text = stringResource(R.string.logs_prompt_label),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -223,7 +223,7 @@ fun LogEntryItem(log: LogEntry) {
                 when (log.status) {
                     LogEntry.Status.SUCCESS -> {
                         Text(
-                            text = "Result:",
+                            text = stringResource(R.string.logs_result_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -288,12 +288,12 @@ fun LogEntryItem(log: LogEntry) {
                     }
                     LogEntry.Status.ERROR -> {
                         Text(
-                            text = "Error:",
+                            text = stringResource(R.string.logs_error_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error
                         )
                         Text(
-                            text = log.errorMessage ?: "Unknown error",
+                            text = log.errorMessage ?: stringResource(R.string.logs_unknown_error),
                             style = MaterialTheme.typography.bodySmall,
                             fontFamily = FontFamily.Monospace,
                             color = MaterialTheme.colorScheme.error,

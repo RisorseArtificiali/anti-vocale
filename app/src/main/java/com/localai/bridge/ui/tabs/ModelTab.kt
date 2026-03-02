@@ -21,6 +21,8 @@ import androidx.compose.ui.Alignment
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import com.localai.bridge.R
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -181,9 +183,9 @@ fun ModelTab(
             onDismissRequest = {
                 viewModel.dismissDeleteDialog()
             },
-            title = { Text("Delete Model?") },
+            title = { Text(stringResource(R.string.dialog_delete_title)) },
             text = {
-                Text("This will permanently remove '${downloadUiState.modelToDelete?.displayName}' from your device. You can download it again later.")
+                Text(stringResource(R.string.dialog_delete_message, downloadUiState.modelToDelete?.displayName ?: ""))
             },
             confirmButton = {
                 TextButton(
@@ -191,14 +193,14 @@ fun ModelTab(
                         viewModel.confirmDeleteModel()
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = {
                     viewModel.dismissDeleteDialog()
                 }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.action_cancel))
                 }
             }
         )
@@ -272,10 +274,10 @@ fun ModelTab(
                 // Status text - centered
                 Text(
                     text = when (uiState.status) {
-                        ModelViewModel.ModelStatus.READY -> "Ready"
-                        ModelViewModel.ModelStatus.LOADING -> "Loading Model..."
-                        ModelViewModel.ModelStatus.ERROR -> "Error"
-                        ModelViewModel.ModelStatus.UNLOADED -> if (uiState.modelPath.isNotEmpty()) "Model Selected" else "No Model"
+                        ModelViewModel.ModelStatus.READY -> stringResource(R.string.status_ready)
+                        ModelViewModel.ModelStatus.LOADING -> stringResource(R.string.status_loading)
+                        ModelViewModel.ModelStatus.ERROR -> stringResource(R.string.status_error)
+                        ModelViewModel.ModelStatus.UNLOADED -> if (uiState.modelPath.isNotEmpty()) stringResource(R.string.status_model_selected) else stringResource(R.string.status_no_model)
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     textAlign = TextAlign.Center,
@@ -319,7 +321,7 @@ fun ModelTab(
         ) {
             Icon(Icons.Default.FolderOpen, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Select Model from Device")
+            Text(stringResource(R.string.select_model_from_device))
         }
 
         // Extra spacer to ensure downloading card can be fully scrolled into view
@@ -356,7 +358,7 @@ private fun ModelDownloadSection(
                 modifier = Modifier.size(20.dp)
             )
             Text(
-                text = "Download Models",
+                text = stringResource(R.string.download_models),
                 style = MaterialTheme.typography.titleSmall
             )
         }
@@ -368,13 +370,13 @@ private fun ModelDownloadSection(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Text(
-                    text = "Requires HuggingFace token.",
+                    text = stringResource(R.string.requires_huggingface_token),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 TextButton(onClick = onNavigateToSettings) {
                     Text(
-                        "Add in Settings",
+                        stringResource(R.string.add_in_settings),
                         style = MaterialTheme.typography.labelSmall
                     )
                 }
@@ -496,7 +498,7 @@ private fun ModelVariantCard(
                                     shape = MaterialTheme.shapes.small
                                 ) {
                                     Text(
-                                        text = "Recommended",
+                                        text = stringResource(R.string.recommended),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onTertiary,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -509,11 +511,13 @@ private fun ModelVariantCard(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Text(
-                            text = variant.description,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        variant.descriptionResId?.let {
+                            Text(
+                                text = stringResource(it),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
 
@@ -533,15 +537,15 @@ private fun ModelVariantCard(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    InfoRow("File name", variant.fileName)
+                    InfoRow(getLocalizedLabel("File name"), variant.fileName)
                     InfoRow(
-                        "Supports audio",
-                        if (variant.supportsAudio) "Yes (multimodal)" else "No (text only)"
+                        getLocalizedLabel("Supports audio"),
+                        if (variant.supportsAudio) stringResource(R.string.label_yes_multimodal) else stringResource(R.string.label_no_text_only)
                     )
-                    InfoRow("HuggingFace", variant.huggingFaceRepo)
+                    InfoRow(getLocalizedLabel("HuggingFace"), variant.huggingFaceRepo)
 
                     if (variant.galleryModelName != null) {
-                        InfoRow("AI Gallery name", variant.galleryModelName)
+                        InfoRow(getLocalizedLabel("AI Gallery name"), variant.galleryModelName)
                     }
                 }
             }
@@ -559,7 +563,7 @@ private fun ModelVariantCard(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "Downloading...",
+                                    text = stringResource(R.string.downloading),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 Text(
@@ -594,7 +598,7 @@ private fun ModelVariantCard(
                                 strokeWidth = 2.dp
                             )
                             Text(
-                                text = "Connecting to HuggingFace...",
+                                text = stringResource(R.string.connecting_to_huggingface),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
@@ -619,7 +623,7 @@ private fun ModelVariantCard(
                         ) {
                             Icon(Icons.Default.Close, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Cancel Download")
+                            Text(stringResource(R.string.cancel_download))
                         }
                     }
                     isDownloaded -> {
@@ -633,7 +637,7 @@ private fun ModelVariantCard(
                         ) {
                             Icon(Icons.Default.Check, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Use Model")
+                            Text(stringResource(R.string.use_model))
                         }
                         // Delete button
                         OutlinedButton(
@@ -642,7 +646,7 @@ private fun ModelVariantCard(
                                 contentColor = MaterialTheme.colorScheme.error
                             )
                         ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Delete")
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                         }
                     }
                     else -> {
@@ -653,7 +657,7 @@ private fun ModelVariantCard(
                         ) {
                             Icon(Icons.Default.Download, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text("Download")
+                            Text(stringResource(R.string.download))
                         }
                         // View on HuggingFace
                         OutlinedButton(
@@ -667,7 +671,7 @@ private fun ModelVariantCard(
                         ) {
                             Icon(Icons.Default.OpenInBrowser, contentDescription = null)
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text("View")
+                            Text(stringResource(R.string.view))
                         }
                     }
                 }
@@ -693,6 +697,18 @@ private fun InfoRow(label: String, value: String) {
             style = MaterialTheme.typography.labelSmall,
             modifier = Modifier.weight(1f)
         )
+    }
+}
+
+// Helper function to get localized label strings
+@Composable
+private fun getLocalizedLabel(labelKey: String): String {
+    return when (labelKey) {
+        "File name" -> stringResource(R.string.label_filename)
+        "Supports audio" -> stringResource(R.string.label_supports_audio)
+        "HuggingFace" -> stringResource(R.string.label_huggingface)
+        "AI Gallery name" -> stringResource(R.string.label_ai_gallery_name)
+        else -> labelKey
     }
 }
 

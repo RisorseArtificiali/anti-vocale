@@ -1,21 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">LocalAI Bridge</string>
+
+    <!-- Tab names -->
     <string name="model_tab">Model</string>
     <string name="logs_tab">Logs</string>
+    <string name="settings_tab">Settings</string>
+
+    <!-- Model selection -->
     <string name="select_model">Select Model File</string>
+    <string name="select_model_from_device">Select Model from Device</string>
     <string name="load_model">Load Model</string>
     <string name="unload_model">Unload Model</string>
+
+    <!-- Model status -->
     <string name="model_status">Status: %1$s</string>
     <string name="model_path">Path: %1$s</string>
     <string name="no_model_selected">No model selected</string>
     <string name="status_ready">Ready</string>
-    <string name="status_loading">Loading…</string>
+    <string name="status_loading">Loading Model…</string>
     <string name="status_error">Error</string>
     <string name="status_unloaded">Unloaded</string>
+    <string name="status_model_selected">Model Selected</string>
+    <string name="status_no_model">No Model</string>
+
+    <!-- Logs -->
     <string name="logs_empty">No requests yet</string>
     <string name="request_text">Text Request</string>
     <string name="request_audio">Audio Request</string>
+    <string name="logs_recent_requests">Recent Requests (%1$d/10)</string>
+    <string name="logs_clear">Clear</string>
+    <string name="logs_empty_hint">Send a request from Tasker to see logs here</string>
+    <string name="logs_prompt_label">Prompt:</string>
+    <string name="logs_result_label">Result:</string>
+    <string name="logs_error_label">Error:</string>
+    <string name="logs_task_id">Task ID: %1$s</string>
+    <string name="logs_unknown_error">Unknown error</string>
+
+    <!-- Model descriptions -->
+    <string name="model_desc_gemma_3n_e2b">3.3GB - Multimodal (text + audio), best for most devices</string>
+    <string name="model_desc_gemma_3n_e4b">4.2GB - Multimodal (text + audio), higher quality</string>
+
+    <!-- Transcription -->
     <string name="share_transcription">Share Transcription</string>
     <string name="copy_transcription">Copy to Clipboard</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
@@ -27,4 +53,111 @@
     <string name="no_audio_file">No audio file received</string>
     <string name="failed_to_process_audio">Failed to process audio file</string>
     <string name="transcription_started">Transcription started…</string>
+
+    <!-- Model Tab - Download section -->
+    <string name="download_models">Download Models</string>
+    <string name="requires_huggingface_token">Requires HuggingFace token.</string>
+    <string name="add_in_settings">Add in Settings</string>
+    <string name="recommended">Recommended</string>
+    <string name="downloading">Downloading…</string>
+    <string name="connecting_to_huggingface">Connecting to HuggingFace…</string>
+    <string name="cancel_download">Cancel Download</string>
+    <string name="use_model">Use Model</string>
+    <string name="delete">Delete</string>
+    <string name="download">Download</string>
+    <string name="view">View</string>
+
+    <!-- Model Tab - Info labels -->
+    <string name="label_filename">File name</string>
+    <string name="label_supports_audio">Supports audio</string>
+    <string name="label_yes_multimodal">Yes (multimodal)</string>
+    <string name="label_no_text_only">No (text only)</string>
+    <string name="label_huggingface">HuggingFace</string>
+    <string name="label_ai_gallery_name">AI Gallery name</string>
+    <string name="show_less">Show less</string>
+    <string name="show_more">Show more</string>
+
+    <!-- Model Tab - Delete dialog -->
+    <string name="dialog_delete_title">Delete Model?</string>
+    <string name="dialog_delete_message">This will permanently remove \'%1$s\' from your device. You can download it again later.</string>
+    <string name="action_delete">Delete</string>
+    <string name="action_cancel">Cancel</string>
+
+    <!-- Settings Tab - Model status -->
+    <string name="model_loaded">Model Loaded</string>
+    <string name="model_not_loaded">Model Not Loaded</string>
+    <string name="auto_unload_in">Auto-unload in: %1$dm %2$ds</string>
+    <string name="load_model_from_tab">Load a model from the Model tab to enable inference</string>
+
+    <!-- Settings Tab - Active Model -->
+    <string name="active_model">Active Model</string>
+    <string name="no_model_selected_error">No model selected</string>
+    <string name="available_models">Available models:</string>
+    <string name="no_models_found">No models found. Download a model or add one via the Model tab.</string>
+    <string name="manage_models">Manage Models</string>
+    <string name="source_hf">HF</string>
+    <string name="source_gallery">Gallery</string>
+
+    <!-- Settings Tab - HuggingFace Authentication -->
+    <string name="huggingface_auth">HuggingFace Authentication</string>
+    <string name="huggingface_auth_description">Only needed to download models from HuggingFace on your behalf. Local models work without authentication.</string>
+    <string name="setup_guide">Setup Guide</string>
+    <string name="setup_step1">1. Tap \'Login with HuggingFace\' below</string>
+    <string name="setup_step2">2. Sign in to your HuggingFace account</string>
+    <string name="setup_step3">3. Authorize the app</string>
+    <string name="setup_step4">4. You\'ll be redirected back automatically</string>
+    <string name="oauth_connected">OAuth Connected</string>
+    <string name="token_valid">Token Valid</string>
+    <string name="username_label">Username: %1$s</string>
+    <string name="token_label">Token: %1$s</string>
+    <string name="expires_label">Expires: %1$s</string>
+    <string name="expired">Expired</string>
+    <string name="login_with_huggingface">Login with HuggingFace</string>
+    <string name="oauth_login_description">Quick login using your browser. If you\'re already logged into HuggingFace in Chrome, you\'ll be redirected back instantly.</string>
+    <string name="create_account_link">Don\'t have an account? Create one at huggingface.co</string>
+    <string name="authenticating">Authenticating with HuggingFace…</string>
+    <string name="logged_in_as">Logged in as %1$s</string>
+    <string name="logout">Logout</string>
+    <string name="clear_token">Clear token</string>
+
+    <!-- Settings Tab - Manual Token -->
+    <string name="advanced_manual_token">Advanced: Manual Token Input</string>
+    <string name="hide_advanced">Hide Advanced: Manual Token</string>
+    <string name="manual_token_scope_info">For manual tokens, the \'read\' scope is required to download models.</string>
+    <string name="huggingface_token_label">HuggingFace Token</string>
+    <string name="token_placeholder">hf_…</string>
+    <string name="paste_from_clipboard">Paste from clipboard</string>
+    <string name="show_token">Show token</string>
+    <string name="hide_token">Hide token</string>
+    <string name="create_token">Create Token</string>
+    <string name="get_token">Get Token</string>
+    <string name="retry">Retry</string>
+    <string name="validating">Validating…</string>
+    <string name="validate_and_save">Validate &amp; Save</string>
+    <string name="validating_token">Validating token…</string>
+
+    <!-- Settings Tab - Timeout -->
+    <string name="auto_unload_timeout">Auto-Unload Timeout</string>
+    <string name="timeout_description">Automatically unload the model after a period of inactivity to free memory. The model will be automatically reloaded when needed.</string>
+    <string name="timeout_1_minute">1 minute</string>
+    <string name="timeout_1_hour">1 hour</string>
+    <string name="timeout_minutes">%1$d minutes</string>
+    <string name="saving">Saving…</string>
+    <string name="settings_saved">Settings saved</string>
+
+    <!-- Settings Tab - Preload Info -->
+    <string name="preload_title">Auto-Load &amp; Preload</string>
+    <string name="preload_description">The model will automatically load when a request is received and the model is not in memory. You can also preload the model explicitly:</string>
+    <string name="via_tasker">Via Tasker:</string>
+    <string name="via_adb">Via ADB:</string>
+
+    <!-- Settings Tab - Language -->
+    <string name="language_title">Language</string>
+    <string name="language_description">Choose the app display language. Changes will take effect after restarting the app.</string>
+    <string name="language_system">System Default</string>
+    <string name="language_english">English</string>
+    <string name="language_italian">Italiano</string>
+
+    <!-- Dismiss -->
+    <string name="dismiss">Dismiss</string>
 </resources>

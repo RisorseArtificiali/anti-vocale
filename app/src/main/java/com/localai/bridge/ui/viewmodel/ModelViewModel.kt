@@ -72,10 +72,7 @@ class ModelViewModel(
         val isGalleryModelAvailable: Boolean = false,
         val needsStoragePermission: Boolean = false,
         // Download state
-        val downloadState: DownloadUiState = DownloadUiState(),
-        // Previous model (for rollback)
-        val previousModelPath: String? = null,
-        val previousModelName: String? = null
+        val downloadState: DownloadUiState = DownloadUiState()
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -93,10 +90,12 @@ class ModelViewModel(
     val snackbarEvent: kotlinx.coroutines.flow.Flow<String> = _snackbarEvent.receiveAsFlow()
 
     init {
+        // Set up auto-unload callback
+        LlmManager.setOnAutoUnloadCallback {
+            onModelAutoUnloaded()
+        }
         // Load saved model path on initialization
         loadSavedModelPath()
-        // Load previous model path for rollback
-        loadPreviousModelPath()
         // Check for Google AI Edge Gallery models
         checkForGalleryModels()
         // Check for downloaded models
@@ -200,53 +199,9 @@ class ModelViewModel(
     }
 
 
-    private fun loadPreviousModelPath() {
-        viewModelScope.launch {
-            preferencesManager.previousModelPath.collect { prevPath ->
-                _uiState.update { it.copy(
-                    previousModelPath = prevPath,
-                    previousModelName = if (!prevPath.isNullOrBlank()) extractFileName(prevPath) else null
-                )}
-            }
-        }
-    }
+    
 
-    /**
-     * Restores the previously selected model.
-     * Returns true if a previous model was restored, false otherwise.
-     */
-    fun restorePreviousModel() {
-        viewModelScope.launch {
-            val prevPath = _uiState.value.previousModelPath
-            if (prevPath.isNullOrBlank()) {
-                _uiState.update { it.copy(
-                    status = ModelStatus.ERROR,
-                    statusMessage = "No previous model to restore"
-                )}
-                return@launch
-            }
-
-            val isValid = validateModelPath(prevPath)
-            if (!isValid) {
-                _uiState.update { it.copy(
-                    status = ModelStatus.ERROR,
-                    statusMessage = "Previous model file no longer exists"
-                )}
-                return@launch
-            }
-
-            // This will swap current and previous in preferences
-            preferencesManager.restorePreviousModel()
-
-            _uiState.update { it.copy(
-                modelPath = prevPath,
-                modelName = extractFileName(prevPath),
-                isModelPathValid = true,
-                status = ModelStatus.UNLOADED,
-                statusMessage = "Restored previous model"
-            )}
-        }
-    }
+    
 
     fun openFilePicker() {
         viewModelScope.launch {
