@@ -153,7 +153,7 @@
 
     <!-- Settings Tab - Language -->
     <string name="language_title">Language</string>
-    <string name="language_description">Choose the app display language. Changes will take effect after restarting the app.</string>
+    <string name="language_description">Choose the app display language.</string>
     <string name="language_system">System Default</string>
     <string name="language_english">English</string>
     <string name="language_italian">Italiano</string>
