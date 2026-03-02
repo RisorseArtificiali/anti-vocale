@@ -36,6 +36,10 @@
     <string name="logs_error_label">Errore:</string>
     <string name="logs_task_id">ID Task: %1$s</string>
     <string name="logs_unknown_error">Errore sconosciuto</string>
+    <string name="voice_message_duration">messaggio vocale</string>
+    <string name="processed_in">Elaborato in %1$s</string>
+    <string name="today">Oggi</string>
+    <string name="yesterday">Ieri</string>
 
     <!-- Model descriptions -->
     <string name="model_desc_gemma_3n_e2b">3.3GB - Multimodale (testo + audio), migliore per la maggior parte dei dispositivi</string>
@@ -47,6 +51,24 @@
     <string name="parakeet_download">Scarica Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Scaricare Parakeet TDT?</string>
     <string name="parakeet_download_confirm_message">Verranno scaricati ~640MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
+
+    <!-- Whisper model -->
+    <string name="whisper_title">Whisper (Multilingue)</string>
+    <string name="whisper_description">Ideale per italiano e altre lingue</string>
+    <string name="whisper_tiny_title">Whisper Tiny</string>
+    <string name="whisper_tiny_description">~75MB • Veloce • Buono per trascrizione rapida</string>
+    <string name="whisper_base_title">Whisper Base</string>
+    <string name="whisper_base_description">~150MB • Miglior equilibrio velocità/precisione</string>
+    <string name="whisper_download">Scarica Whisper</string>
+    <string name="whisper_download_confirm_title">Scaricare %1$s?</string>
+    <string name="whisper_download_confirm_message">Verranno scaricati ~%1$dMB. Whisper offre eccellente supporto multilingue con punteggiatura corretta.</string>
+
+    <!-- Download status -->
+    <string name="download_status_downloading">Download in corso…</string>
+    <string name="download_status_extracting">Estrazione di %1$s…</string>
+    <string name="download_status_extracting_files">Estrazione file…</string>
+    <string name="download_status_connecting">Connessione…</string>
+    <string name="download_status_file_progress">%1$d/%2$d</string>
 
     <!-- Transcription -->
     <string name="share_transcription">Condividi Trascrizione</string>
@@ -92,9 +114,9 @@
 
     <!-- Settings Tab - Model status -->
     <string name="model_loaded">Modello Caricato</string>
-    <string name="model_not_loaded">Modello Non Caricato</string>
+    <string name="model_not_loaded">Modello Scaricato (Caricamento automatico)</string>
     <string name="auto_unload_in">Scarico automatico tra: %1$dm %2$ds</string>
-    <string name="load_model_from_tab">Carica un modello dalla scheda Modello per abilitare l\'inferenza</string>
+    <string name="load_model_from_tab">Il modello si carica automaticamente all\'occorrenza. Lo scaricamento risparmia memoria.</string>
 
     <!-- Settings Tab - Active Model -->
     <string name="active_model">Modello Attivo</string>

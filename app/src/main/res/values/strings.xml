@@ -36,6 +36,10 @@
     <string name="logs_error_label">Error:</string>
     <string name="logs_task_id">Task ID: %1$s</string>
     <string name="logs_unknown_error">Unknown error</string>
+    <string name="voice_message_duration">voice message</string>
+    <string name="processed_in">Processed in %1$s</string>
+    <string name="today">Today</string>
+    <string name="yesterday">Yesterday</string>
 
     <!-- Model descriptions -->
     <string name="model_desc_gemma_3n_e2b">3.3GB - Multimodal (text + audio), best for most devices</string>
@@ -47,6 +51,24 @@
     <string name="parakeet_download">Download Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Download Parakeet TDT?</string>
     <string name="parakeet_download_confirm_message">This will download ~640MB. Parakeet is faster but less accurate than Gemma for transcription.</string>
+
+    <!-- Whisper model -->
+    <string name="whisper_title">Whisper (Multilingual)</string>
+    <string name="whisper_description">Best for Italian and other languages</string>
+    <string name="whisper_tiny_title">Whisper Tiny</string>
+    <string name="whisper_tiny_description">~75MB • Fast • Good for quick transcription</string>
+    <string name="whisper_base_title">Whisper Base</string>
+    <string name="whisper_base_description">~150MB • Best balance of speed and accuracy</string>
+    <string name="whisper_download">Download Whisper</string>
+    <string name="whisper_download_confirm_title">Download %1$s?</string>
+    <string name="whisper_download_confirm_message">This will download ~%1$dMB. Whisper provides excellent multilingual support with proper punctuation.</string>
+
+    <!-- Download status -->
+    <string name="download_status_downloading">Downloading…</string>
+    <string name="download_status_extracting">Extracting %1$s…</string>
+    <string name="download_status_extracting_files">Extracting files…</string>
+    <string name="download_status_connecting">Connecting…</string>
+    <string name="download_status_file_progress">%1$d/%2$d</string>
 
     <!-- Transcription -->
     <string name="share_transcription">Share Transcription</string>
@@ -92,9 +114,9 @@
 
     <!-- Settings Tab - Model status -->
     <string name="model_loaded">Model Loaded</string>
-    <string name="model_not_loaded">Model Not Loaded</string>
+    <string name="model_not_loaded">Model Unloaded (Auto-loads on demand)</string>
     <string name="auto_unload_in">Auto-unload in: %1$dm %2$ds</string>
-    <string name="load_model_from_tab">Load a model from the Model tab to enable inference</string>
+    <string name="load_model_from_tab">Model auto-loads when needed. Unloading saves memory.</string>
 
     <!-- Settings Tab - Active Model -->
     <string name="active_model">Active Model</string>

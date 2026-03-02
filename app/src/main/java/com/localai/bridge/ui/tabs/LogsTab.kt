@@ -114,112 +114,97 @@ fun LogEntryItem(log: LogEntry) {
         onClick = { expanded = !expanded }
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
-            // Header row
+            // === COLLAPSED VIEW ===
+            // Header row: Audio duration + Status icon + Relative time
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Request type badge
-                AssistChip(
-                    onClick = {},
-                    label = {
+                // Left: Audio duration with mic icon
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Default.Mic,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = formatAudioDuration(log.audioDurationSeconds),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    if (log.type == LogEntry.Type.AUDIO) {
+                        Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = log.type.name,
-                            style = MaterialTheme.typography.labelSmall
+                            text = stringResource(R.string.voice_message_duration),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = if (log.type == LogEntry.Type.AUDIO)
-                                Icons.Default.AudioFile else Icons.Default.TextFields,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp)
-                        )
-                    },
-                    colors = AssistChipDefaults.assistChipColors(
-                        containerColor = when (log.status) {
-                            LogEntry.Status.SUCCESS -> MaterialTheme.colorScheme.primaryContainer
-                            LogEntry.Status.ERROR -> MaterialTheme.colorScheme.errorContainer
-                            LogEntry.Status.PENDING -> MaterialTheme.colorScheme.secondaryContainer
+                    }
+                }
+
+                // Right: Status icon + Relative time
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = when (log.status) {
+                            LogEntry.Status.SUCCESS -> Icons.Default.CheckCircle
+                            LogEntry.Status.ERROR -> Icons.Default.Error
+                            LogEntry.Status.PENDING -> Icons.Default.HourglassEmpty
+                        },
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = when (log.status) {
+                            LogEntry.Status.SUCCESS -> MaterialTheme.colorScheme.primary
+                            LogEntry.Status.ERROR -> MaterialTheme.colorScheme.error
+                            LogEntry.Status.PENDING -> MaterialTheme.colorScheme.secondary
                         }
                     )
-                )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = formatRelativeTime(log.timestamp, context),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
 
-                // Timestamp
+            // Preview text (transcription preview for successful audio)
+            if (log.status == LogEntry.Status.SUCCESS && log.result.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = formatTimestamp(log.timestamp),
-                    style = MaterialTheme.typography.labelSmall,
+                    text = getPreviewText(log.result),
+                    style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            } else if (log.status == LogEntry.Status.ERROR) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = log.errorMessage ?: stringResource(R.string.logs_unknown_error),
+                    style = MaterialTheme.typography.bodySmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.error
+                )
+            } else if (log.status == LogEntry.Status.PENDING) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = stringResource(R.string.transcription_started),
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Status
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = when (log.status) {
-                        LogEntry.Status.SUCCESS -> Icons.Default.CheckCircle
-                        LogEntry.Status.ERROR -> Icons.Default.Error
-                        LogEntry.Status.PENDING -> Icons.Default.HourglassEmpty
-                    },
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = when (log.status) {
-                        LogEntry.Status.SUCCESS -> MaterialTheme.colorScheme.primary
-                        LogEntry.Status.ERROR -> MaterialTheme.colorScheme.error
-                        LogEntry.Status.PENDING -> MaterialTheme.colorScheme.secondary
-                    }
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = log.status.name,
-                    style = MaterialTheme.typography.labelMedium
-                )
-                if (log.durationMs > 0) {
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "(${log.durationMs}ms)",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            // Task ID
-            Text(
-                text = stringResource(R.string.logs_task_id, log.taskId),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            // Expanded content
+            // === EXPANDED VIEW ===
             if (expanded) {
                 Spacer(modifier = Modifier.height(12.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                // Prompt
-                if (log.prompt.isNotEmpty()) {
-                    Text(
-                        text = stringResource(R.string.logs_prompt_label),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = log.prompt,
-                        style = MaterialTheme.typography.bodySmall,
-                        fontFamily = FontFamily.Monospace,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant,
-                                shape = MaterialTheme.shapes.small
-                            )
-                            .padding(8.dp)
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                // Result or Error
+                // Full transcription result
                 when (log.status) {
                     LogEntry.Status.SUCCESS -> {
                         Text(
@@ -227,21 +212,68 @@ fun LogEntryItem(log: LogEntry) {
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = log.result,
-                            style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
+                            style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .background(
                                     MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
                                     shape = MaterialTheme.shapes.small
                                 )
-                                .padding(8.dp),
-                            maxLines = if (expanded) Int.MAX_VALUE else 2,
-                            overflow = TextOverflow.Ellipsis
+                                .padding(8.dp)
                         )
-                        // Share and Copy buttons
+
+                        // Metadata row
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            // Timestamp
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = formatFullTimestamp(log.timestamp, context),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            // Processing time
+                            if (log.durationMs > 0) {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        Icons.Default.Timer,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = stringResource(R.string.processed_in, formatProcessingTime(log.durationMs)),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        // Task ID (less prominent)
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = stringResource(R.string.logs_task_id, log.taskId.take(8)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+
+                        // Action buttons
                         if (log.result.isNotEmpty()) {
                             Spacer(modifier = Modifier.height(8.dp))
                             Row(
@@ -249,7 +281,7 @@ fun LogEntryItem(log: LogEntry) {
                                 horizontalArrangement = Arrangement.End
                             ) {
                                 // Copy button
-                                IconButton(onClick = {
+                                TextButton(onClick = {
                                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
                                         as android.content.ClipboardManager
                                     val clip = ClipData.newPlainText("transcription", log.result)
@@ -262,11 +294,14 @@ fun LogEntryItem(log: LogEntry) {
                                 }) {
                                     Icon(
                                         Icons.Default.ContentCopy,
-                                        contentDescription = context.getString(R.string.copy_transcription)
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
                                     )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(stringResource(R.string.copy))
                                 }
                                 // Share button
-                                IconButton(onClick = {
+                                TextButton(onClick = {
                                     val sendIntent = Intent().apply {
                                         action = Intent.ACTION_SEND
                                         putExtra(Intent.EXTRA_TEXT, log.result)
@@ -280,8 +315,11 @@ fun LogEntryItem(log: LogEntry) {
                                 }) {
                                     Icon(
                                         Icons.Default.Share,
-                                        contentDescription = context.getString(R.string.share_transcription)
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
                                     )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(stringResource(R.string.share_transcription))
                                 }
                             }
                         }
@@ -292,10 +330,10 @@ fun LogEntryItem(log: LogEntry) {
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.error
                         )
+                        Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = log.errorMessage ?: stringResource(R.string.logs_unknown_error),
                             style = MaterialTheme.typography.bodySmall,
-                            fontFamily = FontFamily.Monospace,
                             color = MaterialTheme.colorScheme.error,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -313,8 +351,66 @@ fun LogEntryItem(log: LogEntry) {
     }
 }
 
-private val timeFormat = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+// Format audio duration: 83.5 -> "1:23", 45.0 -> "0:45"
+private fun formatAudioDuration(seconds: Double): String {
+    if (seconds <= 0) return "0:00"
+    val totalSeconds = seconds.toInt()
+    val minutes = totalSeconds / 60
+    val secs = totalSeconds % 60
+    return "$minutes:${secs.toString().padStart(2, '0')}"
+}
 
-private fun formatTimestamp(timestamp: Long): String {
-    return timeFormat.format(Date(timestamp))
+// Format relative time: "5 min ago", "Yesterday 14:32", "Mar 2, 14:32"
+private fun formatRelativeTime(timestamp: Long, context: Context): String {
+    val now = System.currentTimeMillis()
+    val diff = now - timestamp
+    val locale = context.resources.configuration.locales.get(0)
+    return when {
+        diff < 60_000 -> "${diff / 1000}s ago"
+        diff < 3_600_000 -> "${diff / 60_000}m ago"
+        diff < 86_400_000 -> "${diff / 3_600_000}h ago"
+        else -> {
+            val date = Date(timestamp)
+            val today = Date(now)
+            val cal1 = Calendar.getInstance().apply { time = date }
+            val cal2 = Calendar.getInstance().apply { time = today }
+            val timeFormat = SimpleDateFormat("HH:mm", locale)
+            if (cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR) - 1) {
+                "${context.getString(R.string.yesterday)} ${timeFormat.format(date)}"
+            } else {
+                SimpleDateFormat("MMM d, HH:mm", locale).format(date)
+            }
+        }
+    }
+}
+
+// Format full timestamp: "Today 14:32" or "Mar 2, 14:32"
+private fun formatFullTimestamp(timestamp: Long, context: Context): String {
+    val date = Date(timestamp)
+    val now = Date(System.currentTimeMillis())
+    val cal1 = Calendar.getInstance().apply { time = date }
+    val cal2 = Calendar.getInstance().apply { time = now }
+    val locale = context.resources.configuration.locales.get(0)
+    val timeFormat = SimpleDateFormat("HH:mm", locale)
+    return if (cal1.get(Calendar.DAY_OF_YEAR) == cal2.get(Calendar.DAY_OF_YEAR) &&
+        cal1.get(Calendar.YEAR) == cal2.get(Calendar.YEAR)) {
+        "${context.getString(R.string.today)} ${timeFormat.format(date)}"
+    } else {
+        SimpleDateFormat("MMM d, HH:mm", locale).format(date)
+    }
+}
+
+// Format processing time: 2300ms -> "2.3s", 500ms -> "0.5s"
+private fun formatProcessingTime(durationMs: Long): String {
+    return if (durationMs >= 1000) {
+        String.format("%.1fs", durationMs / 1000.0)
+    } else {
+        "${durationMs}ms"
+    }
+}
+
+// Get preview text with ellipsis
+private fun getPreviewText(text: String, maxLength: Int = 50): String {
+    if (text.length <= maxLength) return text
+    return text.take(maxLength) + "…"
 }

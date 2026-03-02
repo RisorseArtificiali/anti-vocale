@@ -14,6 +14,8 @@ import com.localai.bridge.di.AppContainer
 import com.localai.bridge.manager.LlmManager
 import com.localai.bridge.transcription.ParakeetDownloader
 import com.localai.bridge.transcription.ParakeetModelManager
+import com.localai.bridge.transcription.WhisperDownloader
+import com.localai.bridge.transcription.WhisperModelManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -76,6 +78,23 @@ class ModelViewModel(
         val showDeleteDialog: Boolean = false
     )
 
+    /**
+     * Whisper download UI state
+     */
+    data class WhisperUiState(
+        val selectedVariant: WhisperModelManager.Variant? = null,
+        val downloadedVariants: Set<WhisperModelManager.Variant> = emptySet(),
+        val isDownloading: Boolean = false,
+        val downloadProgress: Float = 0f,
+        val downloadState: WhisperDownloader.DownloadState = WhisperDownloader.DownloadState.Idle,
+        val modelPath: String? = null,
+        val errorMessage: String? = null,
+        // Confirmation dialogs
+        val showDownloadDialog: Boolean = false,
+        val showDeleteDialog: Boolean = false,
+        val variantToDelete: WhisperModelManager.Variant? = null
+    )
+
     data class UiState(
         val status: ModelStatus = ModelStatus.UNLOADED,
         val statusMessage: String = "",
@@ -106,6 +125,10 @@ class ModelViewModel(
     private val _parakeetState = MutableStateFlow(ParakeetUiState())
     val parakeetState: StateFlow<ParakeetUiState> = _parakeetState.asStateFlow()
 
+    // Whisper state - must be declared before init block
+    private val _whisperState = MutableStateFlow(WhisperUiState())
+    val whisperState: StateFlow<WhisperUiState> = _whisperState.asStateFlow()
+
     // Channel for one-time Snackbar events (guarantees delivery)
     private val _snackbarEvent = Channel<String>()
     val snackbarEvent: kotlinx.coroutines.flow.Flow<String> = _snackbarEvent.receiveAsFlow()
@@ -125,6 +148,8 @@ class ModelViewModel(
         refreshTokenState()
         // Check for Parakeet model
         refreshParakeetState()
+        // Check for Whisper model
+        refreshWhisperState()
     }
 
     /**
@@ -195,6 +220,8 @@ class ModelViewModel(
             }
 
             preferencesManager.saveModelPath(galleryPath)
+            // Switch to LLM backend when selecting an LLM model
+            preferencesManager.saveTranscriptionBackend("llm")
 
             _uiState.update { it.copy(
                 modelPath = galleryPath,
@@ -211,29 +238,49 @@ class ModelViewModel(
             // Check which backend is selected
             val backend = preferencesManager.transcriptionBackend.first()
 
-            if (backend == "sherpa-onnx") {
-                // Load Parakeet model path
-                val parakeetPath = preferencesManager.parakeetModelPath.first()
-                if (!parakeetPath.isNullOrBlank()) {
-                    val isValid = File(parakeetPath).exists()
-                    _uiState.update { it.copy(
-                        modelPath = parakeetPath,
-                        modelName = "Parakeet TDT",
-                        isModelPathValid = isValid,
-                        statusMessage = if (isValid) "Parakeet TDT ready" else "Parakeet model not found"
-                    )}
+            when (backend) {
+                "sherpa-onnx" -> {
+                    // Load Parakeet model path
+                    val parakeetPath = preferencesManager.parakeetModelPath.first()
+                    if (!parakeetPath.isNullOrBlank()) {
+                        val isValid = File(parakeetPath).exists()
+                        _uiState.update { it.copy(
+                            modelPath = parakeetPath,
+                            modelName = "Parakeet TDT",
+                            isModelPathValid = isValid,
+                            statusMessage = if (isValid) "Parakeet TDT ready" else "Parakeet model not found"
+                        )}
+                    }
                 }
-            } else {
-                // Load LLM model path (Gemma, etc.)
-                val savedPath = preferencesManager.modelPath.first()
-                if (!savedPath.isNullOrBlank()) {
-                    val isValid = validateModelPath(savedPath)
-                    _uiState.update { it.copy(
-                        modelPath = savedPath,
-                        modelName = extractFileName(savedPath),
-                        isModelPathValid = isValid,
-                        statusMessage = if (isValid) "Saved model found" else "Saved model not found"
-                    )}
+                "whisper" -> {
+                    // Load Whisper model path
+                    val whisperPath = preferencesManager.whisperModelPath.first()
+                    if (!whisperPath.isNullOrBlank()) {
+                        val modelDir = File(whisperPath)
+                        val isValid = modelDir.exists() && modelDir.isDirectory
+                        val model = WhisperModelManager.validateModelDirectory(modelDir)
+                        _uiState.update { it.copy(
+                            modelPath = whisperPath,
+                            modelName = model?.variant?.let { v ->
+                                AppContainer.applicationContext.getString(v.titleResId)
+                            } ?: whisperPath.substringAfterLast("/"),
+                            isModelPathValid = isValid,
+                            statusMessage = if (isValid) "Whisper model ready" else "Whisper model not found"
+                        )}
+                    }
+                }
+                else -> {
+                    // Load LLM model path (Gemma, etc.)
+                    val savedPath = preferencesManager.modelPath.first()
+                    if (!savedPath.isNullOrBlank()) {
+                        val isValid = validateModelPath(savedPath)
+                        _uiState.update { it.copy(
+                            modelPath = savedPath,
+                            modelName = extractFileName(savedPath),
+                            isModelPathValid = isValid,
+                            statusMessage = if (isValid) "Saved model found" else "Saved model not found"
+                        )}
+                    }
                 }
             }
         }
@@ -562,6 +609,8 @@ class ModelViewModel(
             )
             if (modelPath != null) {
                 preferencesManager.saveModelPath(modelPath)
+                // Switch to LLM backend when selecting an LLM model
+                preferencesManager.saveTranscriptionBackend("llm")
                 _uiState.update { it.copy(
                     modelPath = modelPath,
                     modelName = variant.displayName,
@@ -569,6 +618,7 @@ class ModelViewModel(
                     status = ModelStatus.UNLOADED,
                     statusMessage = "${variant.displayName} selected"
                 )}
+                _snackbarEvent.send("Selected ${variant.displayName}")
             }
         }
     }
@@ -801,6 +851,206 @@ class ModelViewModel(
                 preferencesManager.saveParakeetModelPath("")
                 _parakeetState.update { it.copy(modelPath = null) }
                 _snackbarEvent.send("Parakeet model deleted")
+            }
+        }
+    }
+
+    // ==================== Whisper Model Download ====================
+
+    /**
+     * Refreshes the Whisper model state.
+     */
+    fun refreshWhisperState() {
+        viewModelScope.launch {
+            val context = AppContainer.applicationContext
+            val downloadedVariants = WhisperModelManager.Variant.entries
+                .filter { WhisperDownloader.isModelDownloaded(context, it) }
+                .toSet()
+
+            _whisperState.update { it.copy(
+                isDownloading = false,
+                downloadedVariants = downloadedVariants
+            )}
+        }
+    }
+
+    // ==================== Whisper Confirmation Dialogs ====================
+
+    /**
+     * Shows the Whisper download confirmation dialog.
+     */
+    fun showWhisperDownloadDialog(variant: WhisperModelManager.Variant) {
+        _whisperState.update { it.copy(
+            selectedVariant = variant,
+            showDownloadDialog = true
+        )}
+    }
+
+    /**
+     * Dismisses the Whisper download confirmation dialog.
+     */
+    fun dismissWhisperDownloadDialog() {
+        _whisperState.update { it.copy(showDownloadDialog = false) }
+    }
+
+    /**
+     * Confirms and starts the Whisper download.
+     */
+    fun confirmWhisperDownload() {
+        val variant = _whisperState.value.selectedVariant ?: return
+        _whisperState.update { it.copy(showDownloadDialog = false) }
+        startWhisperDownload(variant)
+    }
+
+    /**
+     * Shows the Whisper delete confirmation dialog.
+     */
+    fun showWhisperDeleteDialog(variant: WhisperModelManager.Variant) {
+        _whisperState.update { it.copy(
+            variantToDelete = variant,
+            showDeleteDialog = true
+        )}
+    }
+
+    /**
+     * Dismisses the Whisper delete confirmation dialog.
+     */
+    fun dismissWhisperDeleteDialog() {
+        _whisperState.update { it.copy(
+            showDeleteDialog = false,
+            variantToDelete = null
+        )}
+    }
+
+    /**
+     * Confirms and deletes the Whisper model.
+     */
+    fun confirmWhisperDelete() {
+        val variant = _whisperState.value.variantToDelete ?: return
+        _whisperState.update { it.copy(showDeleteDialog = false) }
+        deleteWhisperModel(variant)
+    }
+
+    /**
+     * Starts downloading a Whisper model variant.
+     */
+    fun startWhisperDownload(variant: WhisperModelManager.Variant) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = AppContainer.applicationContext
+
+            _whisperState.update { it.copy(
+                selectedVariant = variant,
+                isDownloading = true,
+                downloadProgress = 0f,
+                downloadState = WhisperDownloader.DownloadState.Connecting(""),
+                errorMessage = null
+            )}
+
+            val result = WhisperDownloader.downloadModel(
+                context = context,
+                variant = variant,
+                onProgress = { progress ->
+                    _whisperState.update { it.copy(downloadProgress = progress) }
+                },
+                onStateChange = { state ->
+                    _whisperState.update { it.copy(downloadState = state) }
+                    when (state) {
+                        is WhisperDownloader.DownloadState.Error -> {
+                            _whisperState.update { it.copy(
+                                isDownloading = false,
+                                errorMessage = state.message
+                            )}
+                            viewModelScope.launch { _snackbarEvent.send(state.message) }
+                        }
+                        is WhisperDownloader.DownloadState.Complete -> {
+                            _whisperState.update { it.copy(
+                                isDownloading = false,
+                                modelPath = state.modelDir.absolutePath,
+                                downloadedVariants = _whisperState.value.downloadedVariants + variant
+                            )}
+                            val displayName = AppContainer.applicationContext.getString(variant.titleResId)
+                            viewModelScope.launch { _snackbarEvent.send("Whisper $displayName downloaded successfully!") }
+                        }
+                        is WhisperDownloader.DownloadState.Cancelled -> {
+                            _whisperState.update { it.copy(isDownloading = false) }
+                        }
+                        else -> {}
+                    }
+                }
+            )
+
+            result.fold(
+                onSuccess = { modelDir ->
+                    _whisperState.update { it.copy(
+                        isDownloading = false,
+                        modelPath = modelDir.absolutePath
+                    )}
+                },
+                onFailure = { error ->
+                    _whisperState.update { it.copy(
+                        isDownloading = false,
+                        errorMessage = error.message
+                    )}
+                }
+            )
+        }
+    }
+
+    /**
+     * Cancels the Whisper download.
+     */
+    fun cancelWhisperDownload() {
+        WhisperDownloader.cancel()
+        _whisperState.update { it.copy(
+            isDownloading = false,
+            downloadState = WhisperDownloader.DownloadState.Cancelled("User cancelled"),
+            errorMessage = null
+        )}
+    }
+
+    /**
+     * Uses the Whisper model (switches backend to whisper).
+     */
+    fun useWhisperModel(variant: WhisperModelManager.Variant) {
+        viewModelScope.launch {
+            val context = AppContainer.applicationContext
+            val modelPath = WhisperDownloader.getModelPath(context, variant)
+            if (modelPath != null) {
+                val displayName = context.getString(variant.titleResId)
+                // Save Whisper model path and switch backend preference
+                preferencesManager.saveWhisperModelPath(modelPath)
+                preferencesManager.saveTranscriptionBackend("whisper")
+
+                _uiState.update { it.copy(
+                    modelName = displayName,
+                    status = ModelStatus.UNLOADED,
+                    statusMessage = "$displayName selected. Restart app to use."
+                )}
+
+                _snackbarEvent.send("$displayName selected. Restart app to use.")
+            }
+        }
+    }
+
+    /**
+     * Deletes a Whisper model variant.
+     */
+    fun deleteWhisperModel(variant: WhisperModelManager.Variant) {
+        viewModelScope.launch {
+            val context = AppContainer.applicationContext
+            val success = WhisperDownloader.deleteModel(context, variant)
+            if (success) {
+                val displayName = context.getString(variant.titleResId)
+                // Update state to remove the variant
+                _whisperState.update { it.copy(
+                    downloadedVariants = _whisperState.value.downloadedVariants - variant
+                )}
+                // Clear saved path if this was the selected variant
+                val savedPath = preferencesManager.whisperModelPath.first()
+                if (savedPath?.contains(variant.dirName) == true) {
+                    preferencesManager.clearWhisperModelPath()
+                }
+                _snackbarEvent.send("Whisper $displayName deleted")
             }
         }
     }

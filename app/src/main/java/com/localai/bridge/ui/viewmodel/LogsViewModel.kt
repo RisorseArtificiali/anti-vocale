@@ -17,7 +17,8 @@ data class LogEntry(
     val result: String = "",
     val errorMessage: String? = null,
     val durationMs: Long = 0,
-    val filePath: String? = null
+    val filePath: String? = null,
+    val audioDurationSeconds: Double = 0.0  // Original voice message duration
 ) {
     enum class Type { TEXT, AUDIO }
     enum class Status { PENDING, SUCCESS, ERROR }
@@ -53,7 +54,8 @@ class LogsViewModel : ViewModel() {
         taskId: String,
         type: LogEntry.Type,
         prompt: String,
-        filePath: String? = null
+        filePath: String? = null,
+        audioDurationSeconds: Double = 0.0
     ) {
         addLog(
             LogEntry(
@@ -61,7 +63,8 @@ class LogsViewModel : ViewModel() {
                 type = type,
                 status = LogEntry.Status.PENDING,
                 prompt = prompt,
-                filePath = filePath
+                filePath = filePath,
+                audioDurationSeconds = audioDurationSeconds
             )
         )
     }
@@ -73,6 +76,12 @@ class LogsViewModel : ViewModel() {
                 result = result,
                 durationMs = durationMs
             )
+        }
+    }
+
+    fun updateAudioDuration(taskId: String, audioDurationSeconds: Double) {
+        updateLog(taskId) { log ->
+            log.copy(audioDurationSeconds = audioDurationSeconds)
         }
     }
 

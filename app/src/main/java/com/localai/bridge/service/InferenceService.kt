@@ -334,6 +334,9 @@ class InferenceService : Service() {
 
         Log.i(TAG, "Audio preprocessed: ${preprocessingResult.chunkCount} chunks, ${preprocessingResult.totalDurationSeconds}s")
 
+        // Update log entry with audio duration
+        AppContainer.logsViewModel.updateAudioDuration(request.taskId, preprocessingResult.totalDurationSeconds)
+
         // Process chunks sequentially and concatenate results
         val results = mutableListOf<String>()
         val prompt = request.prompt.ifEmpty { "Transcribe this speech:" }
