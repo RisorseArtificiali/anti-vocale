@@ -41,6 +41,13 @@
     <string name="model_desc_gemma_3n_e2b">3.3GB - Multimodale (testo + audio), migliore per la maggior parte dei dispositivi</string>
     <string name="model_desc_gemma_3n_e4b">4.2GB - Multimodale (testo + audio), qualità superiore</string>
 
+    <!-- Parakeet model -->
+    <string name="parakeet_title">Parakeet TDT (Alternativo)</string>
+    <string name="parakeet_description">~640MB • 25 lingue • Più veloce ma meno preciso</string>
+    <string name="parakeet_download">Scarica Parakeet TDT</string>
+    <string name="parakeet_download_confirm_title">Scaricare Parakeet TDT?</string>
+    <string name="parakeet_download_confirm_message">Verranno scaricati ~640MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
+
     <!-- Transcription -->
     <string name="share_transcription">Condividi Trascrizione</string>
     <string name="copy_transcription">Copia negli Appunti</string>

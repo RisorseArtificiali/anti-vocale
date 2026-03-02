@@ -12,6 +12,8 @@ import com.localai.bridge.data.ModelDownloader.DownloadError
 import com.localai.bridge.data.PreferencesManager
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.manager.LlmManager
+import com.localai.bridge.transcription.ParakeetDownloader
+import com.localai.bridge.transcription.ParakeetModelManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -59,6 +61,21 @@ class ModelViewModel(
         val modelToDelete: ModelDownloader.ModelVariant? = null
     )
 
+    /**
+     * Parakeet download UI state
+     */
+    data class ParakeetUiState(
+        val isDownloaded: Boolean = false,
+        val isDownloading: Boolean = false,
+        val downloadProgress: Float = 0f,
+        val downloadState: ParakeetDownloader.DownloadState = ParakeetDownloader.DownloadState.Idle,
+        val modelPath: String? = null,
+        val errorMessage: String? = null,
+        // Confirmation dialogs
+        val showDownloadDialog: Boolean = false,
+        val showDeleteDialog: Boolean = false
+    )
+
     data class UiState(
         val status: ModelStatus = ModelStatus.UNLOADED,
         val statusMessage: String = "",
@@ -85,6 +102,10 @@ class ModelViewModel(
     private val _downloadUiState = MutableStateFlow(DownloadUiState())
     val downloadUiState: StateFlow<DownloadUiState> = _downloadUiState.asStateFlow()
 
+    // Parakeet state - must be declared before init block
+    private val _parakeetState = MutableStateFlow(ParakeetUiState())
+    val parakeetState: StateFlow<ParakeetUiState> = _parakeetState.asStateFlow()
+
     // Channel for one-time Snackbar events (guarantees delivery)
     private val _snackbarEvent = Channel<String>()
     val snackbarEvent: kotlinx.coroutines.flow.Flow<String> = _snackbarEvent.receiveAsFlow()
@@ -102,6 +123,8 @@ class ModelViewModel(
         refreshDownloadedModels()
         // Check for HuggingFace token
         refreshTokenState()
+        // Check for Parakeet model
+        refreshParakeetState()
     }
 
     /**
@@ -185,15 +208,33 @@ class ModelViewModel(
 
     private fun loadSavedModelPath() {
         viewModelScope.launch {
-            val savedPath = preferencesManager.modelPath.first()
-            if (!savedPath.isNullOrBlank()) {
-                val isValid = validateModelPath(savedPath)
-                _uiState.update { it.copy(
-                    modelPath = savedPath,
-                    modelName = extractFileName(savedPath),
-                    isModelPathValid = isValid,
-                    statusMessage = if (isValid) "Saved model found" else "Saved model not found"
-                )}
+            // Check which backend is selected
+            val backend = preferencesManager.transcriptionBackend.first()
+
+            if (backend == "sherpa-onnx") {
+                // Load Parakeet model path
+                val parakeetPath = preferencesManager.parakeetModelPath.first()
+                if (!parakeetPath.isNullOrBlank()) {
+                    val isValid = File(parakeetPath).exists()
+                    _uiState.update { it.copy(
+                        modelPath = parakeetPath,
+                        modelName = "Parakeet TDT",
+                        isModelPathValid = isValid,
+                        statusMessage = if (isValid) "Parakeet TDT ready" else "Parakeet model not found"
+                    )}
+                }
+            } else {
+                // Load LLM model path (Gemma, etc.)
+                val savedPath = preferencesManager.modelPath.first()
+                if (!savedPath.isNullOrBlank()) {
+                    val isValid = validateModelPath(savedPath)
+                    _uiState.update { it.copy(
+                        modelPath = savedPath,
+                        modelName = extractFileName(savedPath),
+                        isModelPathValid = isValid,
+                        statusMessage = if (isValid) "Saved model found" else "Saved model not found"
+                    )}
+                }
             }
         }
     }
@@ -584,6 +625,184 @@ class ModelViewModel(
      */
     fun clearDownloadError() {
         _downloadUiState.update { it.copy(downloadError = null) }
+    }
+
+    // ==================== Parakeet Model Download ====================
+
+    /**
+     * Refreshes the Parakeet model state.
+     */
+    fun refreshParakeetState() {
+        viewModelScope.launch {
+            val context = AppContainer.applicationContext
+            val isDownloaded = ParakeetDownloader.isModelDownloaded(context)
+            val modelPath = if (isDownloaded) ParakeetDownloader.getModelPath(context) else null
+
+            _parakeetState.update { it.copy(
+                isDownloading = false,
+                modelPath = modelPath
+            )}
+        }
+    }
+
+    // ==================== Parakeet Confirmation Dialogs ====================
+
+    /**
+     * Shows the Parakeet download confirmation dialog.
+     */
+    fun showParakeetDownloadDialog() {
+        _parakeetState.update { it.copy(showDownloadDialog = true) }
+    }
+
+    /**
+     * Dismisses the Parakeet download confirmation dialog.
+     */
+    fun dismissParakeetDownloadDialog() {
+        _parakeetState.update { it.copy(showDownloadDialog = false) }
+    }
+
+    /**
+     * Confirms and starts the Parakeet download.
+     */
+    fun confirmParakeetDownload() {
+        _parakeetState.update { it.copy(showDownloadDialog = false) }
+        startParakeetDownload()
+    }
+
+    /**
+     * Shows the Parakeet delete confirmation dialog.
+     */
+    fun showParakeetDeleteDialog() {
+        _parakeetState.update { it.copy(showDeleteDialog = true) }
+    }
+
+    /**
+     * Dismisses the Parakeet delete confirmation dialog.
+     */
+    fun dismissParakeetDeleteDialog() {
+        _parakeetState.update { it.copy(showDeleteDialog = false) }
+    }
+
+    /**
+     * Confirms and deletes the Parakeet model.
+     */
+    fun confirmParakeetDelete() {
+        _parakeetState.update { it.copy(showDeleteDialog = false) }
+        deleteParakeetModel()
+    }
+
+    /**
+     * Starts downloading the Parakeet model.
+     */
+    fun startParakeetDownload() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = AppContainer.applicationContext
+
+            _parakeetState.update { it.copy(
+                isDownloading = true,
+                downloadProgress = 0f,
+                downloadState = ParakeetDownloader.DownloadState.Connecting(""),
+                errorMessage = null
+            )}
+
+            val result = ParakeetDownloader.downloadModel(
+                context = context,
+                onProgress = { progress ->
+                    _parakeetState.update { it.copy(downloadProgress = progress) }
+                },
+                onStateChange = { state ->
+                    _parakeetState.update { it.copy(downloadState = state) }
+                    when (state) {
+                        is ParakeetDownloader.DownloadState.Error -> {
+                            _parakeetState.update { it.copy(
+                                isDownloading = false,
+                                errorMessage = state.message
+                            )}
+                            viewModelScope.launch { _snackbarEvent.send(state.message) }
+                        }
+                        is ParakeetDownloader.DownloadState.Complete -> {
+                            _parakeetState.update { it.copy(
+                                isDownloading = false,
+                                modelPath = state.modelDir.absolutePath
+                            )}
+                            // Save to preferences
+                            viewModelScope.launch {
+                                preferencesManager.saveParakeetModelPath(state.modelDir.absolutePath)
+                            }
+                            viewModelScope.launch { _snackbarEvent.send("Parakeet model downloaded successfully!") }
+                        }
+                        is ParakeetDownloader.DownloadState.Cancelled -> {
+                            _parakeetState.update { it.copy(isDownloading = false) }
+                        }
+                        else -> {}
+                    }
+                }
+            )
+
+            result.fold(
+                onSuccess = { modelDir ->
+                    _parakeetState.update { it.copy(
+                        isDownloading = false,
+                        modelPath = modelDir.absolutePath
+                    )}
+                },
+                onFailure = { error ->
+                    _parakeetState.update { it.copy(
+                        isDownloading = false,
+                        errorMessage = error.message
+                    )}
+                }
+            )
+        }
+    }
+
+    /**
+     * Cancels the Parakeet download.
+     */
+    fun cancelParakeetDownload() {
+        ParakeetDownloader.cancel()
+        _parakeetState.update { it.copy(
+            isDownloading = false,
+            downloadState = ParakeetDownloader.DownloadState.Cancelled("User cancelled"),
+            errorMessage = null
+        )}
+    }
+
+    /**
+     * Uses the Parakeet model (switches backend to sherpa-onnx).
+     */
+    fun useParakeetModel() {
+        viewModelScope.launch {
+            val modelPath = _parakeetState.value.modelPath
+            if (modelPath != null) {
+                // Save Parakeet model path and switch backend preference
+                preferencesManager.saveParakeetModelPath(modelPath)
+                preferencesManager.saveTranscriptionBackend("sherpa-onnx")
+
+                _uiState.update { it.copy(
+                    modelName = "Parakeet TDT",
+                    status = ModelStatus.UNLOADED,
+                    statusMessage = "Parakeet TDT selected. Restart app to use."
+                )}
+
+                _snackbarEvent.send("Parakeet TDT selected. Restart app to use.")
+            }
+        }
+    }
+
+    /**
+     * Deletes the Parakeet model.
+     */
+    fun deleteParakeetModel() {
+        viewModelScope.launch {
+            val context = AppContainer.applicationContext
+            val success = ParakeetDownloader.deleteModel(context)
+            if (success) {
+                preferencesManager.saveParakeetModelPath("")
+                _parakeetState.update { it.copy(modelPath = null) }
+                _snackbarEvent.send("Parakeet model deleted")
+            }
+        }
     }
 
     /**

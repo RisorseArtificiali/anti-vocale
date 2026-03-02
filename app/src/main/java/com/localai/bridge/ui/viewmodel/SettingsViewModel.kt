@@ -124,7 +124,9 @@ class SettingsViewModel(
         // Model selection state
         val currentModelPath: String? = null,
         val currentModelName: String? = null,
-        val availableModels: List<DiscoveredModel> = emptyList()
+        val availableModels: List<DiscoveredModel> = emptyList(),
+        // Backend preference
+        val transcriptionBackend: String = "llm"
     )
 
     /**
@@ -373,14 +375,30 @@ class SettingsViewModel(
 
     /**
      * Loads the current model path from preferences.
+     * Checks backend preference to determine which model to show.
      */
     fun loadCurrentModel() {
         viewModelScope.launch {
-            preferencesManager.modelPath.collect { path ->
-                _uiState.update { it.copy(
-                    currentModelPath = path,
-                    currentModelName = path?.let { File(it).name }
-                )}
+            // Check which backend is selected
+            val backend = preferencesManager.transcriptionBackend.first()
+            _uiState.update { it.copy(transcriptionBackend = backend) }
+
+            if (backend == "sherpa-onnx") {
+                // Show Parakeet model
+                preferencesManager.parakeetModelPath.collect { path ->
+                    _uiState.update { it.copy(
+                        currentModelPath = path,
+                        currentModelName = if (!path.isNullOrBlank()) "Parakeet TDT" else null
+                    )}
+                }
+            } else {
+                // Show LLM model (Gemma, etc.)
+                preferencesManager.modelPath.collect { path ->
+                    _uiState.update { it.copy(
+                        currentModelPath = path,
+                        currentModelName = path?.let { File(it).name }
+                    )}
+                }
             }
         }
     }

@@ -83,7 +83,8 @@ fun SettingsTab(
         viewModel.scanAvailableModels()
     }
 
-    // Check if model is currently loaded
+    // Check if model is currently loaded (only relevant for LLM backend)
+    val isLlmBackend = settingsState.transcriptionBackend != "sherpa-onnx"
     val isModelLoaded = LlmManager.isReady()
     val remainingTime = LlmManager.getRemainingTimeSeconds() ?: 0L
 
@@ -94,34 +95,35 @@ fun SettingsTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Model Status Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = if (isModelLoaded)
-                    MaterialTheme.colorScheme.primaryContainer
-                else
-                    MaterialTheme.colorScheme.surfaceVariant
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        // Model Status Card (only show for LLM backend)
+        if (isLlmBackend) {
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (isModelLoaded)
+                        MaterialTheme.colorScheme.primaryContainer
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant
+                )
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Icon(
-                        imageVector = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.Cancel,
-                        contentDescription = null,
-                        tint = if (isModelLoaded)
-                            MaterialTheme.colorScheme.primary
-                        else
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = if (isModelLoaded) stringResource(R.string.model_loaded) else stringResource(R.string.model_not_loaded),
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                            contentDescription = null,
+                            tint = if (isModelLoaded)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = if (isModelLoaded) stringResource(R.string.model_loaded) else stringResource(R.string.model_not_loaded),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -145,6 +147,7 @@ fun SettingsTab(
                     )
                 }
             }
+        }
         }
 
         // Active Model Selection Card
