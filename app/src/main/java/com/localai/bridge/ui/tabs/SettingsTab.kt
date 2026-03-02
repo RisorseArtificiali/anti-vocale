@@ -1,6 +1,8 @@
 package com.localai.bridge.ui.tabs
 
 import android.app.Activity
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -319,14 +321,84 @@ fun SettingsTab(
                 }
 
                 Text(
-                    text = "Your HuggingFace token is required for downloading models from the HuggingFace Hub.",
+                    text = "Only needed to download models from HuggingFace on your behalf. Local models work without authentication.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
+                // Setup Guide (expandable) - only show when no valid token
+                if (tokenState !is HuggingFaceTokenManager.TokenState.Valid) {
+                    var showSetupGuide by remember { mutableStateOf(false) }
+                    Card(
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                        )
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.HelpOutline,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Text(
+                                        "Setup Guide",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                                IconButton(
+                                    onClick = { showSetupGuide = !showSetupGuide },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        if (showSetupGuide) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = if (showSetupGuide) "Collapse" else "Expand",
+                                        tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                            }
+                            if (showSetupGuide) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                    Text(
+                                        "1. Tap 'Login with HuggingFace' below",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Text(
+                                        "2. Sign in to your HuggingFace account",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Text(
+                                        "3. Authorize the app",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                    Text(
+                                        "4. You'll be redirected back automatically",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                // OAuth Login Section (if configured)
+                // OAuth Login Section (if configured) - PRIMARY OPTION
                 if (viewModel.isOAuthConfigured && activity != null) {
                     OAuthLoginSection(
                         oauthState = oauthState,
@@ -342,208 +414,297 @@ fun SettingsTab(
                         onLogoutClick = { viewModel.clearToken() },
                         onDismissError = { viewModel.clearOAuthState() }
                     )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    Text(
-                        text = "Or enter a token manually:",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
 
-                when (tokenState) {
+                // Show token status if valid
+                when (val currentState = tokenState) {
                     is HuggingFaceTokenManager.TokenState.Valid -> {
-                        val state = tokenState as HuggingFaceTokenManager.TokenState.Valid
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(
-                                modifier = Modifier.weight(1f),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                        // Already handled by OAuth section or show here for manual tokens
+                        if (currentState.authType == HuggingFaceTokenManager.AuthType.MANUAL) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                Column(
+                                    modifier = Modifier.weight(1f),
+                                    verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = "Token Valid",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+                                    Text(
+                                        text = "Username: ${currentState.username}",
+                                        style = MaterialTheme.typography.bodyMedium
                                     )
                                     Text(
-                                        text = "Token Valid",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary
+                                        text = "Token: ${currentState.maskedToken}",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                Text(
-                                    text = "Username: ${state.username}",
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                Text(
-                                    text = "Token: ${state.maskedToken}",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            IconButton(onClick = { viewModel.clearToken() }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Clear token",
-                                    tint = MaterialTheme.colorScheme.error
-                                )
+                                IconButton(onClick = { viewModel.clearToken() }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Clear token",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
                             }
                         }
                     }
 
-                    is HuggingFaceTokenManager.TokenState.Invalid -> {
-                        val state = tokenState as HuggingFaceTokenManager.TokenState.Invalid
-                        OutlinedTextField(
-                            value = tokenInput,
-                            onValueChange = { viewModel.onTokenInputChanged(it) },
-                            label = { Text("HuggingFace Token") },
-                            placeholder = { Text("hf_...") },
-                            singleLine = true,
-                            visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
-                                    Icon(
-                                        imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = if (tokenPasswordVisible) "Hide token" else "Show token"
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            modifier = Modifier.fillMaxWidth(),
-                            isError = true
-                        )
-                        Text(
-                            text = state.error,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            FilledTonalButton(
-                                onClick = { viewModel.validateAndSaveToken() },
-                                enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken
-                            ) {
-                                if (uiState.isValidatingToken) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp
-                                    )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(if (uiState.isValidatingToken) "Validating..." else "Validate & Save")
-                            }
-                        }
-                    }
+                    else -> {
+                        // Advanced: Manual Token Section (collapsible)
+                        var showAdvanced by remember { mutableStateOf(false) }
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                    is HuggingFaceTokenManager.TokenState.Validating -> {
-                        OutlinedTextField(
-                            value = tokenInput,
-                            onValueChange = { viewModel.onTokenInputChanged(it) },
-                            label = { Text("HuggingFace Token") },
-                            placeholder = { Text("hf_...") },
-                            singleLine = true,
-                            visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
-                                    Icon(
-                                        imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = if (tokenPasswordVisible) "Hide token" else "Show token"
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                            modifier = Modifier.fillMaxWidth(),
-                            enabled = false
-                        )
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                            Text("Validating token...")
-                        }
-                    }
-
-                    is HuggingFaceTokenManager.TokenState.Idle -> {
-                        OutlinedTextField(
-                            value = tokenInput,
-                            onValueChange = { viewModel.onTokenInputChanged(it) },
-                            label = { Text("HuggingFace Token") },
-                            placeholder = { Text("hf_...") },
-                            singleLine = true,
-                            visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                            trailingIcon = {
-                                IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
-                                    Icon(
-                                        imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                        contentDescription = if (tokenPasswordVisible) "Hide token" else "Show token"
-                                    )
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                        TextButton(
+                            onClick = { showAdvanced = !showAdvanced },
                             modifier = Modifier.fillMaxWidth()
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
                         ) {
-                            FilledTonalButton(
-                                onClick = { viewModel.validateAndSaveToken() },
-                                enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken
-                            ) {
-                                if (uiState.isValidatingToken) {
-                                    CircularProgressIndicator(
-                                        modifier = Modifier.size(16.dp),
-                                        strokeWidth = 2.dp
+                            Icon(
+                                imageVector = if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(if (showAdvanced) "Hide Advanced: Manual Token" else "Advanced: Manual Token Input")
+                        }
+
+                        if (!showAdvanced) {
+                            Text(
+                                text = "For manual tokens, the 'read' scope is required to download models.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        if (showAdvanced) {
+                            val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                            when (val innerState = tokenState) {
+                                is HuggingFaceTokenManager.TokenState.Invalid -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        OutlinedTextField(
+                                            value = tokenInput,
+                                            onValueChange = { viewModel.onTokenInputChanged(it) },
+                                            label = { Text("HuggingFace Token") },
+                                            placeholder = { Text("hf_...") },
+                                            singleLine = true,
+                                            visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                            trailingIcon = {
+                                                Row {
+                                                    IconButton(onClick = {
+                                                        clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()?.let {
+                                                            viewModel.onTokenInputChanged(it)
+                                                        }
+                                                    }) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.ContentPaste,
+                                                            contentDescription = "Paste from clipboard"
+                                                        )
+                                                    }
+                                                    IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
+                                                        Icon(
+                                                            imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                                            contentDescription = if (tokenPasswordVisible) "Hide token" else "Show token"
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                            modifier = Modifier.weight(1f),
+                                            isError = true
+                                        )
+                                    }
+                                    Text(
+                                        text = innerState.error,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.error
                                     )
-                                } else {
-                                    Icon(
-                                        imageVector = Icons.Default.Check,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
+                                    // Fix buttons
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        FilledTonalButton(
+                                            onClick = {
+                                                val intent = android.content.Intent(
+                                                    android.content.Intent.ACTION_VIEW,
+                                                    android.net.Uri.parse("https://huggingface.co/settings/tokens")
+                                                )
+                                                context.startActivity(intent)
+                                            }
+                                        ) {
+                                            Icon(
+                                                Icons.AutoMirrored.Filled.OpenInNew,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(Modifier.width(4.dp))
+                                            Text("Create Token")
+                                        }
+                                        OutlinedButton(
+                                            onClick = { viewModel.validateAndSaveToken() },
+                                            enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken
+                                        ) {
+                                            Text("Retry")
+                                        }
+                                    }
                                 }
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(if (uiState.isValidatingToken) "Validating..." else "Validate & Save")
+
+                                is HuggingFaceTokenManager.TokenState.Validating -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        OutlinedTextField(
+                                            value = tokenInput,
+                                            onValueChange = { viewModel.onTokenInputChanged(it) },
+                                            label = { Text("HuggingFace Token") },
+                                            placeholder = { Text("hf_...") },
+                                            singleLine = true,
+                                            visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                            trailingIcon = {
+                                                Row {
+                                                    IconButton(onClick = {
+                                                        clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()?.let {
+                                                            viewModel.onTokenInputChanged(it)
+                                                        }
+                                                    }) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.ContentPaste,
+                                                            contentDescription = "Paste from clipboard"
+                                                        )
+                                                    }
+                                                    IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
+                                                        Icon(
+                                                            imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                                            contentDescription = if (tokenPasswordVisible) "Hide token" else "Show token"
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                            modifier = Modifier.weight(1f),
+                                            enabled = false
+                                        )
+                                    }
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                                        Text("Validating token...")
+                                    }
+                                }
+
+                                is HuggingFaceTokenManager.TokenState.Idle -> {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        OutlinedTextField(
+                                            value = tokenInput,
+                                            onValueChange = { viewModel.onTokenInputChanged(it) },
+                                            label = { Text("HuggingFace Token") },
+                                            placeholder = { Text("hf_...") },
+                                            singleLine = true,
+                                            visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                                            trailingIcon = {
+                                                Row {
+                                                    IconButton(onClick = {
+                                                        clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()?.let {
+                                                            viewModel.onTokenInputChanged(it)
+                                                        }
+                                                    }) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.ContentPaste,
+                                                            contentDescription = "Paste from clipboard"
+                                                        )
+                                                    }
+                                                    IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
+                                                        Icon(
+                                                            imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
+                                                            contentDescription = if (tokenPasswordVisible) "Hide token" else "Show token"
+                                                        )
+                                                    }
+                                                }
+                                            },
+                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        FilledTonalButton(
+                                            onClick = { viewModel.validateAndSaveToken() },
+                                            enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken
+                                        ) {
+                                            if (uiState.isValidatingToken) {
+                                                CircularProgressIndicator(
+                                                    modifier = Modifier.size(16.dp),
+                                                    strokeWidth = 2.dp
+                                                )
+                                            } else {
+                                                Icon(
+                                                    imageVector = Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(18.dp)
+                                                )
+                                            }
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Text(if (uiState.isValidatingToken) "Validating..." else "Validate & Save")
+                                        }
+                                        // Link to token creation page
+                                        TextButton(
+                                            onClick = {
+                                                val intent = android.content.Intent(
+                                                    android.content.Intent.ACTION_VIEW,
+                                                    android.net.Uri.parse("https://huggingface.co/settings/tokens")
+                                                )
+                                                context.startActivity(intent)
+                                            }
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Get Token")
+                                        }
+                                    }
+                                }
+
+                                is HuggingFaceTokenManager.TokenState.Valid -> {
+                                    // Already handled above
+                                }
                             }
                         }
                     }
-                }
-
-                // Link to token creation page
-                TextButton(
-                    onClick = {
-                        val intent = android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            android.net.Uri.parse("https://huggingface.co/settings/tokens")
-                        )
-                        context.startActivity(intent)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Get a token at huggingface.co/settings/tokens")
                 }
             }
         }
@@ -830,7 +991,7 @@ private fun OAuthLoginSection(
                     }
                 }
                 else -> {
-                    // No valid token - show login button
+                    // No valid token - show login button prominently
                     Button(
                         onClick = onLoginClick,
                         modifier = Modifier.fillMaxWidth(),
@@ -847,6 +1008,25 @@ private fun OAuthLoginSection(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    // Alternative: Get token manually link
+                    val context = LocalContext.current
+                    TextButton(
+                        onClick = {
+                            val intent = android.content.Intent(
+                                android.content.Intent.ACTION_VIEW,
+                                android.net.Uri.parse("https://huggingface.co/settings/tokens")
+                            )
+                            context.startActivity(intent)
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Don't have an account? Create one at huggingface.co")
+                    }
                 }
             }
         }
