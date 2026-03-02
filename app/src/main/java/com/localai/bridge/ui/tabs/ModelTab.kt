@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -29,12 +30,8 @@ import com.localai.bridge.data.ModelDownloader
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.ui.viewmodel.ModelViewModel
 
-/**
- * Enum to track what action is pending after permission request
- */
 private enum class PendingAction {
     PICK_FILE,
-    LOAD_MODEL,
     USE_GALLERY_MODEL
 }
 
@@ -62,17 +59,7 @@ private fun needsManageStoragePermission(): Boolean {
     }
 }
 
-/**
- * Check if notification permission is needed (Android 13+)
- */
-private fun needsNotificationPermission(context: android.content.Context): Boolean {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
-                PackageManager.PERMISSION_GRANTED
-    } else {
-        false
-    }
-}
+
 
 /**
  * Get storage permissions to request
@@ -85,16 +72,7 @@ private fun getStoragePermissions(): Array<String> {
     }
 }
 
-/**
- * Get notification permissions to request (Android 13+)
- */
-private fun getNotificationPermissions(): Array<String> {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        arrayOf(Manifest.permission.POST_NOTIFICATIONS)
-    } else {
-        emptyArray()
-    }
-}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -120,7 +98,7 @@ fun ModelTab(
     // State for permission request type
     var pendingAction by remember { mutableStateOf<PendingAction?>(null) }
 
-    // Permission launcher for storage and notifications
+    // Permission launcher for storage
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
@@ -129,11 +107,6 @@ fun ModelTab(
             PendingAction.PICK_FILE -> {
                 if (allGranted || !needsStoragePermission(context)) {
                     viewModel.openFilePicker()
-                }
-            }
-            PendingAction.LOAD_MODEL -> {
-                if (allGranted || !needsNotificationPermission(context)) {
-                    viewModel.loadModel(context)
                 }
             }
             PendingAction.USE_GALLERY_MODEL -> {
@@ -249,7 +222,7 @@ fun ModelTab(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-        // Status Card
+        // Status Card - compact and centered
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
@@ -262,7 +235,7 @@ fun ModelTab(
             )
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
+                modifier = Modifier.padding(12.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Icon(
@@ -273,7 +246,7 @@ fun ModelTab(
                         ModelViewModel.ModelStatus.UNLOADED -> Icons.Default.Storage
                     },
                     contentDescription = null,
-                    modifier = Modifier.size(48.dp),
+                    modifier = Modifier.size(32.dp),
                     tint = when (uiState.status) {
                         ModelViewModel.ModelStatus.READY -> MaterialTheme.colorScheme.primary
                         ModelViewModel.ModelStatus.LOADING -> MaterialTheme.colorScheme.secondary
@@ -282,332 +255,72 @@ fun ModelTab(
                     }
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(4.dp))
 
+                // Show model name if available - centered
+                if (uiState.modelName.isNotEmpty()) {
+                    Text(
+                        text = uiState.modelName,
+                        style = MaterialTheme.typography.titleMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                // Status text - centered
                 Text(
                     text = when (uiState.status) {
                         ModelViewModel.ModelStatus.READY -> "Ready"
                         ModelViewModel.ModelStatus.LOADING -> "Loading Model..."
                         ModelViewModel.ModelStatus.ERROR -> "Error"
-                        ModelViewModel.ModelStatus.UNLOADED -> "No Model Loaded"
+                        ModelViewModel.ModelStatus.UNLOADED -> if (uiState.modelPath.isNotEmpty()) "Model Selected" else "No Model"
                     },
-                    style = MaterialTheme.typography.titleMedium
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(),
+                    color = if (uiState.status == ModelViewModel.ModelStatus.ERROR) {
+                        MaterialTheme.colorScheme.error
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    }
                 )
 
-                if (uiState.statusMessage.isNotEmpty()) {
+                // Show error message only when status is ERROR
+                if (uiState.status == ModelViewModel.ModelStatus.ERROR && uiState.statusMessage.isNotEmpty()) {
                     Text(
                         text = uiState.statusMessage,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        color = MaterialTheme.colorScheme.error
                     )
                 }
             }
         }
 
-        // Model Path
-        if (uiState.modelPath.isNotEmpty()) {
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Model Path",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = uiState.modelPath,
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
-            }
-        }
-
-        // Previous Model Restore Card
-        if (uiState.previousModelPath != null && uiState.previousModelName != null) {
-            OutlinedCard(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Restore,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.secondary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Previous Model Available",
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = uiState.previousModelName ?: "",
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-
-                    Text(
-                        text = "Switch back to your previously selected model",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedButton(
-                        onClick = { viewModel.restorePreviousModel() },
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.secondary
-                        )
-                    ) {
-                        Icon(Icons.Default.Undo, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Restore Previous Model")
-                    }
-                }
-            }
-        }
-
-        // Memory Info (when loaded)
-        if (uiState.status == ModelViewModel.ModelStatus.READY && uiState.memoryUsage > 0) {
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Memory Usage",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "~${uiState.memoryUsage} MB",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.weight(1f))
-
-        // Action Buttons
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Select Model Button
-            Button(
-                onClick = {
-                    if (needsStoragePermission(context)) {
-                        pendingAction = PendingAction.PICK_FILE
-                        permissionLauncher.launch(getStoragePermissions())
-                    } else {
-                        viewModel.openFilePicker()
-                    }
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.FolderOpen, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Select Model")
-            }
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            // Load/Unload Button
-            when (uiState.status) {
-                ModelViewModel.ModelStatus.UNLOADED, ModelViewModel.ModelStatus.ERROR -> {
-                    Button(
-                        onClick = {
-                            // Check notification permission for Android 13+
-                            if (needsNotificationPermission(context)) {
-                                pendingAction = PendingAction.LOAD_MODEL
-                                permissionLauncher.launch(getNotificationPermissions())
-                            } else {
-                                viewModel.loadModel(context)
-                            }
-                        },
-                        modifier = Modifier.weight(1f),
-                        enabled = uiState.modelPath.isNotEmpty()
-                    ) {
-                        Icon(Icons.Default.PlayArrow, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Load Model")
-                    }
-                }
-                ModelViewModel.ModelStatus.READY -> {
-                    OutlinedButton(
-                        onClick = { viewModel.unloadModel() },
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(Icons.Default.Stop, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Unload Model")
-                    }
-                }
-                else -> {
-                    Button(
-                        onClick = {},
-                        modifier = Modifier.weight(1f),
-                        enabled = false
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(18.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Loading...")
-                    }
-                }
-            }
-        }
-
-        // Info text
-        Text(
-            text = "Place your Gemma 3n .litertlm model file in Downloads or Documents folder",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp)
-        )
-
-        // Google AI Edge Gallery model section
-        if (uiState.isGalleryModelAvailable) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                )
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.tertiary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Google AI Edge Gallery Model Found!",
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = uiState.galleryModelName ?: "Gemma 3n E2B",
-                        style = MaterialTheme.typography.bodyMedium
-                    )
-
-                    Text(
-                        text = "Reuse the model you already downloaded in AI Gallery",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Button(
-                        onClick = {
-                            // Check if MANAGE_EXTERNAL_STORAGE is needed for Gallery access
-                            if (needsManageStoragePermission()) {
-                                pendingAction = PendingAction.USE_GALLERY_MODEL
-                                val intent = Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION).apply {
-                                    data = Uri.parse("package:${context.packageName}")
-                                }
-                                manageStorageLauncher.launch(intent)
-                            } else {
-                                viewModel.useGalleryModel()
-                            }
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary
-                        )
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Use Gallery Model")
-                    }
-                }
-            }
-        } else {
-            // Show option to browse for Edge Gallery model manually
-            // Note: Android scoped storage blocks direct access to other apps' private directories
-            Spacer(modifier = Modifier.height(8.dp))
-
-            OutlinedCard(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Folder,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Import from Google AI Gallery",
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "If you have a model in Google AI Edge Gallery, use the file picker below to select it. Look in: Android/data/com.google.ai.edge.gallery/files/",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    OutlinedButton(
-                        onClick = {
-                            if (needsStoragePermission(context)) {
-                                pendingAction = PendingAction.PICK_FILE
-                                permissionLauncher.launch(getStoragePermissions())
-                            } else {
-                                viewModel.openFilePicker()
-                            }
-                        }
-                    ) {
-                        Icon(Icons.Default.FolderOpen, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Browse for Model File")
-                    }
-                }
-            }
-        }
-
-        // Download models section
-        Spacer(modifier = Modifier.height(16.dp))
-
+        // Download models section - primary UX
         ModelDownloadSection(
             viewModel = viewModel,
             context = context,
             onNavigateToSettings = onNavigateToSettings
         )
+
+        // Select Model Button - secondary option for local files
+        OutlinedButton(
+            onClick = {
+                if (needsStoragePermission(context)) {
+                    pendingAction = PendingAction.PICK_FILE
+                    permissionLauncher.launch(getStoragePermissions())
+                } else {
+                    viewModel.openFilePicker()
+                }
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Icon(Icons.Default.FolderOpen, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Select Model from Device")
+        }
 
         // Extra spacer to ensure downloading card can be fully scrolled into view
         Spacer(modifier = Modifier.height(200.dp))

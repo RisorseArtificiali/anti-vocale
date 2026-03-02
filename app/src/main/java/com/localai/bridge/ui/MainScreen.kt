@@ -22,10 +22,11 @@ fun MainScreen() {
         selectedTabIndex = index
     }
 
+    // Logs tab is first since it's the primary use case (viewing transcription history)
     val tabs = listOf(
-        TabItem("Model", Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }) },
         TabItem("Logs", Icons.Default.History) { LogsTab() },
-        TabItem("Settings", Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(0) }) }
+        TabItem("Model", Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }) },
+        TabItem("Settings", Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(1) }) }
     )
 
     Column(modifier = Modifier.fillMaxSize()) {
