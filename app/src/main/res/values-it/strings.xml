@@ -158,6 +158,13 @@
     <string name="language_english">English</string>
     <string name="language_italian">Italiano</string>
 
+    <!-- Settings Tab - Theme -->
+    <string name="theme_title">Tema</string>
+    <string name="theme_description">Scegli il tema cromatico dell\'app.</string>
+    <string name="theme_default">Predefinito (Indaco)</string>
+    <string name="theme_whatsapp">WhatsApp</string>
+    <string name="theme_telegram">Telegram</string>
+
     <!-- Dismiss -->
     <string name="dismiss">Chiudi</string>
 </resources>

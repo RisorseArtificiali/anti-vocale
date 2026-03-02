@@ -20,7 +20,9 @@ class PreferencesManager(private val context: Context) {
     companion object {
         private val MODEL_PATH = stringPreferencesKey("model_path")
         private val KEEP_ALIVE_TIMEOUT = stringPreferencesKey("keep_alive_timeout")
+        // Kept for migration purposes only
         private val LANGUAGE_PREFERENCE = stringPreferencesKey("language_preference")
+        private val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
     }
 
     /**
@@ -65,20 +67,29 @@ class PreferencesManager(private val context: Context) {
     }
 
     /**
-     * Flow of the language preference.
-     * Returns "system" by default (follows system locale).
+     * Reads the legacy language preference for migration purposes.
+     * Returns "system" by default.
      */
-    val languagePreference: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[LANGUAGE_PREFERENCE] ?: "system"
+    suspend fun getLegacyLanguagePreference(): String {
+        return context.dataStore.data.map { preferences ->
+            preferences[LANGUAGE_PREFERENCE] ?: "system"
+        }.first()
     }
 
     /**
-     * Saves the language preference.
-     * @param language "system", "en", or "it"
+     * Flow of the saved theme preference.
+     * Returns "DEFAULT" by default.
      */
-    suspend fun saveLanguagePreference(language: String) {
+    val themePreference: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[THEME_PREFERENCE] ?: "DEFAULT"
+    }
+
+    /**
+     * Saves the theme preference.
+     */
+    suspend fun saveThemePreference(theme: String) {
         context.dataStore.edit { preferences ->
-            preferences[LANGUAGE_PREFERENCE] = language
+            preferences[THEME_PREFERENCE] = theme
         }
     }
 }

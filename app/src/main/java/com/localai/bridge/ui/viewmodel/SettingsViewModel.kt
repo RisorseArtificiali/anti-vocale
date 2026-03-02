@@ -15,6 +15,8 @@ import com.localai.bridge.data.ModelDiscovery
 import com.localai.bridge.data.PreferencesManager
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.manager.LlmManager
+import com.localai.bridge.ui.theme.ThemeType
+import com.localai.bridge.util.LocaleManager
 import java.io.File
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -55,6 +57,9 @@ class SettingsViewModel(
         LanguageOption("it", "Italiano")
     )
 
+    // Theme options
+    val themeOptions = ThemeType.entries
+
     // Current keep-alive timeout from preferences
     val keepAliveTimeout: StateFlow<Int> = preferencesManager.keepAliveTimeout
         .stateIn(
@@ -63,13 +68,13 @@ class SettingsViewModel(
             initialValue = 5
         )
 
-    // Current language preference from preferences
-    val languagePreference: StateFlow<String> = preferencesManager.languagePreference
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = "system"
-        )
+    // Current language from Per-App Language API (not DataStore)
+    private val _currentLanguage = MutableStateFlow(LocaleManager.getCurrentLocaleCode())
+    val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()
+
+    // Current theme from preferences
+    private val _currentTheme = MutableStateFlow(ThemeType.DEFAULT)
+    val currentTheme: StateFlow<ThemeType> = _currentTheme.asStateFlow()
 
     // HuggingFace token state
     val tokenState = huggingFaceTokenManager.tokenState
@@ -87,6 +92,19 @@ class SettingsViewModel(
     // OAuth flow state
     private val _oauthState = MutableStateFlow<OAuthState>(OAuthState.Idle)
     val oauthState: StateFlow<OAuthState> = _oauthState.asStateFlow()
+
+    init {
+        // Load theme from preferences
+        viewModelScope.launch {
+            preferencesManager.themePreference.collect { themeName ->
+                _currentTheme.value = try {
+                    ThemeType.valueOf(themeName)
+                } catch (e: IllegalArgumentException) {
+                    ThemeType.DEFAULT
+                }
+            }
+        }
+    }
 
     /**
      * OAuth flow state.
@@ -142,15 +160,42 @@ class SettingsViewModel(
     }
 
     /**
-     * Saves the language preference.
-     * Note: Changes will take effect after app restart.
+     * Saves the language preference using Per-App Language API.
+     * Changes take effect immediately without app restart.
      */
     fun saveLanguagePreference(language: String) {
+        _uiState.update { it.copy(isSaving = true, saveSuccess = null, errorMessage = null) }
+
+        try {
+            LocaleManager.setLocale(language)
+            _currentLanguage.value = language
+            _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+
+            // Clear success message after delay
+            viewModelScope.launch {
+                kotlinx.coroutines.delay(2000)
+                _uiState.update { it.copy(saveSuccess = null) }
+            }
+        } catch (e: Exception) {
+            _uiState.update { it.copy(
+                isSaving = false,
+                saveSuccess = false,
+                errorMessage = e.message ?: "Failed to save language preference"
+            )}
+        }
+    }
+
+    /**
+     * Saves the theme preference.
+     * Changes take effect immediately via StateFlow.
+     */
+    fun saveThemePreference(theme: ThemeType) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, saveSuccess = null, errorMessage = null) }
 
             try {
-                preferencesManager.saveLanguagePreference(language)
+                preferencesManager.saveThemePreference(theme.name)
+                _currentTheme.value = theme
                 _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
 
                 // Clear success message after delay
@@ -160,7 +205,7 @@ class SettingsViewModel(
                 _uiState.update { it.copy(
                     isSaving = false,
                     saveSuccess = false,
-                    errorMessage = e.message ?: "Failed to save language preference"
+                    errorMessage = e.message ?: "Failed to save theme preference"
                 )}
             }
         }

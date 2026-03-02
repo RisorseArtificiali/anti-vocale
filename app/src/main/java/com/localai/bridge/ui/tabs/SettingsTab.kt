@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -19,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -35,6 +37,7 @@ import com.localai.bridge.data.HuggingFaceOAuthConfig
 import com.localai.bridge.data.ModelSource
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.manager.LlmManager
+import com.localai.bridge.ui.theme.ThemeType
 import com.localai.bridge.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -55,7 +58,8 @@ fun SettingsTab(
 
     val uiState by viewModel.uiState.collectAsState()
     val currentTimeout by viewModel.keepAliveTimeout.collectAsState()
-    val currentLanguage by viewModel.languagePreference.collectAsState()
+    val currentLanguage by viewModel.currentLanguage.collectAsState()
+    val currentTheme by viewModel.currentTheme.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
     val tokenInput by viewModel.tokenInput.collectAsState()
     val oauthState by viewModel.oauthState.collectAsState()
@@ -900,6 +904,131 @@ fun SettingsTab(
                                     "it" -> stringResource(R.string.language_italian)
                                     else -> option.displayName
                                 },
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = if (isSelected)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Theme Setting
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Palette,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.theme_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.theme_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                // Theme options
+                Column(modifier = Modifier.selectableGroup()) {
+                    viewModel.themeOptions.forEach { theme ->
+                        val isSelected = currentTheme == theme
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .selectable(
+                                    selected = isSelected,
+                                    role = Role.RadioButton,
+                                    onClick = {
+                                        if (!isSelected && !uiState.isSaving) {
+                                            viewModel.saveThemePreference(theme)
+                                        }
+                                    }
+                                )
+                                .padding(vertical = 8.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            RadioButton(
+                                selected = isSelected,
+                                onClick = null,
+                                enabled = !uiState.isSaving
+                            )
+                            // Theme color preview
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .padding(2.dp)
+                            ) {
+                                when (theme) {
+                                    ThemeType.DEFAULT -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(2.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Star,
+                                                contentDescription = null,
+                                                tint = Color(0xFF818CF8),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                    ThemeType.WHATSAPP -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(2.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Chat,
+                                                contentDescription = null,
+                                                tint = Color(0xFF25D366),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                    ThemeType.TELEGRAM -> {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .padding(2.dp),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Send,
+                                                contentDescription = null,
+                                                tint = Color(0xFF64B5F6),
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                            Text(
+                                text = theme.displayName,
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = if (isSelected)
                                     MaterialTheme.colorScheme.primary
