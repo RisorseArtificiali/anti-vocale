@@ -1,9 +1,10 @@
 ---
 id: task-11
 title: Add model selection from Settings tab
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-02-28 19:43'
+updated_date: '2026-03-01 20:35'
 labels:
   - settings
   - enhancement

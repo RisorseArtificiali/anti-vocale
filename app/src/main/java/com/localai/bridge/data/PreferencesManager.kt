@@ -23,6 +23,10 @@ class PreferencesManager(private val context: Context) {
         // Kept for migration purposes only
         private val LANGUAGE_PREFERENCE = stringPreferencesKey("language_preference")
         private val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
+        // Transcription backend preference
+        private val TRANSCRIPTION_BACKEND = stringPreferencesKey("transcription_backend")
+        // Parakeet model path (for sherpa-onnx backend)
+        private val PARAKEET_MODEL_PATH = stringPreferencesKey("parakeet_model_path")
     }
 
     /**
@@ -90,6 +94,48 @@ class PreferencesManager(private val context: Context) {
     suspend fun saveThemePreference(theme: String) {
         context.dataStore.edit { preferences ->
             preferences[THEME_PREFERENCE] = theme
+        }
+    }
+
+    /**
+     * Flow of the selected transcription backend.
+     * Returns "llm" by default (LiteRT-LM backend).
+     */
+    val transcriptionBackend: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[TRANSCRIPTION_BACKEND] ?: "llm"
+    }
+
+    /**
+     * Saves the transcription backend preference.
+     */
+    suspend fun saveTranscriptionBackend(backendId: String) {
+        context.dataStore.edit { preferences ->
+            preferences[TRANSCRIPTION_BACKEND] = backendId
+        }
+    }
+
+    /**
+     * Flow of the Parakeet model path (for sherpa-onnx backend).
+     */
+    val parakeetModelPath: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[PARAKEET_MODEL_PATH]
+    }
+
+    /**
+     * Saves the Parakeet model path.
+     */
+    suspend fun saveParakeetModelPath(path: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PARAKEET_MODEL_PATH] = path
+        }
+    }
+
+    /**
+     * Clears the Parakeet model path.
+     */
+    suspend fun clearParakeetModelPath() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(PARAKEET_MODEL_PATH)
         }
     }
 }

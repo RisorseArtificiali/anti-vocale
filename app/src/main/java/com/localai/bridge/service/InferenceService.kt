@@ -12,7 +12,8 @@ import com.localai.bridge.R
 import com.localai.bridge.audio.AudioPreprocessor
 import com.localai.bridge.audio.AudioPreprocessor.PreprocessingError
 import com.localai.bridge.di.AppContainer
-import com.localai.bridge.manager.LlmManager
+import com.localai.bridge.transcription.BackendConfig
+import com.localai.bridge.transcription.TranscriptionBackendManager
 import com.localai.bridge.ui.viewmodel.LogEntry
 import com.localai.bridge.receiver.NotificationActionReceiver
 import com.localai.bridge.receiver.TaskerRequestReceiver
@@ -146,47 +147,31 @@ class InferenceService : Service() {
         val isShareRequest = request.source == SOURCE_SHARE
 
         try {
-            // Check if model is ready, auto-load if not
-            if (!LlmManager.isReady()) {
-                Log.i(TAG, "Model not ready, attempting auto-load")
-                
-                val modelPath = getSavedModelPath()
-                
-                if (modelPath.isNullOrBlank()) {
-                    val error = "No model configured. Open the app to select a model."
-                    logsViewModel.logError(request.taskId, error, System.currentTimeMillis() - startTime)
-                    sendErrorReply(request.taskId, "NO_MODEL_CONFIGURED", error)
-                    if (isShareRequest) showErrorNotification(error)
-                    return
+            // Check if backend is ready, auto-load if not
+            if (!TranscriptionBackendManager.hasActiveBackend()) {
+                Log.i(TAG, "No active backend, attempting auto-load")
+
+                // Get the selected backend from preferences
+                val backendId = AppContainer.preferencesManager.transcriptionBackend.first()
+                Log.i(TAG, "Selected backend from preferences: $backendId")
+
+                // Load the appropriate backend based on backend ID
+                val loadResult = when (backendId) {
+                    "sherpa-onnx" -> loadSherpaOnnxBackend()
+                    else -> loadLlmBackend()
                 }
-                
-                // Validate model file exists
-                val modelFile = java.io.File(modelPath)
-                if (!modelFile.exists()) {
-                    val error = "Model file not found: $modelPath"
-                    logsViewModel.logError(request.taskId, error, System.currentTimeMillis() - startTime)
-                    sendErrorReply(request.taskId, "MODEL_NOT_FOUND", error)
-                    if (isShareRequest) showErrorNotification(error)
-                    return
-                }
-                
-                // Auto-load the model
-                updateNotification("Loading model...")
-                Log.i(TAG, "Auto-loading model from: $modelPath")
-                
-                val loadResult = LlmManager.initialize(applicationContext, modelPath)
-                
+
                 loadResult.fold(
                     onSuccess = {
-                        Log.i(TAG, "Model auto-loaded successfully")
+                        Log.i(TAG, "Backend auto-loaded successfully: $backendId")
                         // Apply saved keep-alive timeout
                         val timeout = AppContainer.preferencesManager.keepAliveTimeout.first()
-                        LlmManager.setKeepAliveTimeout(timeout)
+                        TranscriptionBackendManager.setKeepAliveTimeout(timeout)
                     },
                     onFailure = { error ->
-                        val errorMsg = "Failed to load model: ${error.message}"
+                        val errorMsg = "Failed to load backend: ${error.message}"
                         logsViewModel.logError(request.taskId, errorMsg, System.currentTimeMillis() - startTime)
-                        sendErrorReply(request.taskId, "MODEL_LOAD_FAILED", errorMsg)
+                        sendErrorReply(request.taskId, "BACKEND_LOAD_FAILED", errorMsg)
                         if (isShareRequest) showErrorNotification(errorMsg)
                         return
                     }
@@ -230,6 +215,58 @@ class InferenceService : Service() {
         return AppContainer.preferencesManager.modelPath.first()
     }
 
+    /**
+     * Loads the LLM (LiteRT-LM) backend with the saved model path.
+     */
+    private suspend fun loadLlmBackend(): Result<Unit> {
+        val modelPath = AppContainer.preferencesManager.modelPath.first()
+
+        if (modelPath.isNullOrBlank()) {
+            return Result.failure(IllegalStateException("No LLM model configured. Open the app to select a model."))
+        }
+
+        // Validate model file exists
+        val modelFile = java.io.File(modelPath)
+        if (!modelFile.exists()) {
+            return Result.failure(IllegalStateException("LLM model file not found: $modelPath"))
+        }
+
+        updateNotification("Loading LLM model...")
+        Log.i(TAG, "Auto-loading LLM model from: $modelPath")
+
+        return TranscriptionBackendManager.setActiveBackend(
+            backendId = "llm",
+            context = applicationContext,
+            config = BackendConfig.LiteRTConfig(modelPath = modelPath)
+        )
+    }
+
+    /**
+     * Loads the sherpa-onnx backend with the saved Parakeet model path.
+     */
+    private suspend fun loadSherpaOnnxBackend(): Result<Unit> {
+        val modelPath = AppContainer.preferencesManager.parakeetModelPath.first()
+
+        if (modelPath.isNullOrBlank()) {
+            return Result.failure(IllegalStateException("No Parakeet model configured. Open the app to download a model."))
+        }
+
+        // Validate model directory exists
+        val modelDir = java.io.File(modelPath)
+        if (!modelDir.exists() || !modelDir.isDirectory) {
+            return Result.failure(IllegalStateException("Parakeet model directory not found: $modelPath"))
+        }
+
+        updateNotification("Loading Parakeet model...")
+        Log.i(TAG, "Auto-loading Parakeet model from: $modelPath")
+
+        return TranscriptionBackendManager.setActiveBackend(
+            backendId = "sherpa-onnx",
+            context = applicationContext,
+            config = BackendConfig.SherpaOnnxConfig(modelDir = modelPath)
+        )
+    }
+
     private suspend fun processTextRequest(request: PendingRequest): Result<String> {
         Log.d(TAG, "Processing text request: ${request.taskId}")
         updateNotification("Generating text response...")
@@ -238,7 +275,17 @@ class InferenceService : Service() {
             return Result.failure(IllegalArgumentException("Empty prompt provided"))
         }
 
-        return LlmManager.generateText(prompt)
+        val backend = TranscriptionBackendManager.getActiveBackend()
+            ?: return Result.failure(IllegalStateException("No active backend"))
+
+        if (!backend.supportsText) {
+            return Result.failure(IllegalStateException(
+                "Current backend (${backend.displayName}) does not support text generation. " +
+                "Switch to LLM backend in Settings."
+            ))
+        }
+
+        return backend.generateText(prompt)
     }
 
     private suspend fun processAudioRequest(request: PendingRequest): Result<String> {
@@ -254,6 +301,9 @@ class InferenceService : Service() {
         if (!audioFile.exists()) {
             return Result.failure(PreprocessingError.FileNotFound)
         }
+
+        val backend = TranscriptionBackendManager.getActiveBackend()
+            ?: return Result.failure(IllegalStateException("No active backend"))
 
         updateNotification("Preprocessing audio...")
 
@@ -281,7 +331,7 @@ class InferenceService : Service() {
             updateNotification("Processing chunk ${index + 1}/${preprocessingResult.chunkCount}...")
             Log.d(TAG, "Processing chunk ${index + 1}/${preprocessingResult.chunkCount}")
 
-            val chunkResult = LlmManager.generateFromAudio(
+            val chunkResult = backend.transcribeAudio(
                 prompt = prompt,
                 audioData = chunk
             )

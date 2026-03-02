@@ -5,6 +5,9 @@ import com.localai.bridge.data.HuggingFaceApiClient
 import com.localai.bridge.data.HuggingFaceAuthManager
 import com.localai.bridge.data.HuggingFaceTokenManager
 import com.localai.bridge.data.PreferencesManager
+import com.localai.bridge.transcription.LlmTranscriptionBackend
+import com.localai.bridge.transcription.SherpaOnnxBackend
+import com.localai.bridge.transcription.TranscriptionBackendManager
 import com.localai.bridge.ui.viewmodel.LogsViewModel
 
 /**
@@ -53,5 +56,9 @@ object AppContainer {
             context.applicationContext,
             huggingFaceTokenManager
         )
+
+        // Register transcription backends
+        TranscriptionBackendManager.registerBackend(LlmTranscriptionBackend())
+        TranscriptionBackendManager.registerBackend(SherpaOnnxBackend())
     }
 }

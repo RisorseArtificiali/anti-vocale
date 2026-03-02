@@ -1,10 +1,10 @@
 ---
 id: task-1.2
 title: Model Download with Progress Tracking
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-02-28 17:59'
-updated_date: '2026-02-28 18:00'
+updated_date: '2026-03-01 10:43'
 labels:
   - download
   - networking
@@ -35,3 +35,76 @@ Implement authenticated model downloads from HuggingFace with progress indicatio
 - [ ] #3 [Completion] Downloaded file size matches expected size
 - [ ] #4 [Resume] Partial downloads can be resumed after interruption
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+## Implementation Notes
+
+### Modify `data/ModelDownloader.kt`
+
+1. **Add DownloadError sealed class:**
+```kotlin
+sealed class DownloadError(message: String, cause: Throwable? = null) : Exception(message, cause) {
+    class AuthError(message: String) : DownloadError(message)
+    class LicenseError(message: String) : DownloadError(message)
+    class NetworkError(message: String, cause: Throwable? = null) : DownloadError(message)
+    class StorageError(message: String, val requiredBytes: Long, val availableBytes: Long) : DownloadError(message)
+}
+```
+
+2. **Modify downloadModel() signature** - add `tokenManager: HuggingFaceTokenManager` parameter
+
+3. **Add Authorization header:**
+```kotlin
+val token = tokenManager.getToken()
+if (!token.isNullOrBlank()) {
+    requestBuilder.addHeader("Authorization", "Bearer $token")
+}
+```
+
+4. **Handle error codes:** 401 → AuthError, 403 → LicenseError
+
+5. **Pre-download storage check:**
+```kotlin
+val requiredBytes = variant.estimatedSizeMB * 1024 * 1024
+val availableBytes = context.filesDir.usableSpace
+if (availableBytes < requiredBytes) return StorageError
+```
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+### Modify `data/ModelDownloader.kt`
+
+1. **Add DownloadError sealed class:**
+```kotlin
+sealed class DownloadError(message: String, cause: Throwable? = null) : Exception(message, cause) {
+    class AuthError(message: String) : DownloadError(message)
+    class LicenseError(message: String) : DownloadError(message)
+    class NetworkError(message: String, cause: Throwable? = null) : DownloadError(message)
+    class StorageError(message: String, val requiredBytes: Long, val availableBytes: Long) : DownloadError(message)
+}
+```
+
+2. **Modify downloadModel() signature** - add `tokenManager: HuggingFaceTokenManager` parameter
+
+3. **Add Authorization header:**
+```kotlin
+val token = tokenManager.getToken()
+if (!token.isNullOrBlank()) {
+    requestBuilder.addHeader("Authorization", "Bearer $token")
+}
+```
+
+4. **Handle error codes:** 401 → AuthError, 403 → LicenseError
+
+5. **Pre-download storage check:**
+```kotlin
+val requiredBytes = variant.estimatedSizeMB * 1024 * 1024
+val availableBytes = context.filesDir.usableSpace
+if (availableBytes < requiredBytes) return StorageError
+```
+<!-- SECTION:PLAN:END -->
+<!-- SECTION:NOTES:END -->

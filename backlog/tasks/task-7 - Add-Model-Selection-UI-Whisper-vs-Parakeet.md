@@ -1,9 +1,10 @@
 ---
-id: task-7
+id: TASK-7
 title: Add Model Selection UI (Whisper vs Parakeet)
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-02-28 17:52'
+updated_date: '2026-03-02 18:09'
 labels:
   - UI
   - settings
@@ -28,3 +29,9 @@ Create user interface for selecting between Whisper and Parakeet ASR models.
 - Parakeet v3: 25 European languages, faster, automatic language detection
 - Show estimated storage requirements
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Model selection UI implemented in ModelTab.kt (Parakeet section) and SettingsTab.kt (shows active model). Users can switch between Gemma (LLM) and Parakeet (sherpa-onnx) backends.
+<!-- SECTION:FINAL_SUMMARY:END -->

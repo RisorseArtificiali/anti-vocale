@@ -103,6 +103,12 @@ dependencies {
     // AppAuth for OAuth authentication (HuggingFace)
     implementation("net.openid:appauth:0.11.1")
 
+    // sherpa-onnx for ONNX-based ASR (Parakeet TDT)
+    implementation(files("libs/sherpa-onnx.aar"))
+
+    // Apache Commons Compress for tar.bz2 extraction
+    implementation("org.apache.commons:commons-compress:1.26.1")
+
     // Debug
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")

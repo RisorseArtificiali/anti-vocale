@@ -1,9 +1,10 @@
 ---
-id: task-3
+id: TASK-3
 title: Add sherpa-onnx Native Library Dependency
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-02-28 17:52'
+updated_date: '2026-03-02 18:08'
 labels:
   - android
   - native
@@ -26,3 +27,9 @@ Integrate the sherpa-onnx native library into the Android project for ONNX-based
 
 **Depends on:** None (can be done in parallel with model download task)
 <!-- SECTION:DESCRIPTION:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+sherpa-onnx native library integrated via AAR dependency. SherpaOnnxBackend.kt implements the transducer inference using sherpa-onnx API.
+<!-- SECTION:FINAL_SUMMARY:END -->

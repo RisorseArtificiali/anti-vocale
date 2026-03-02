@@ -1,10 +1,10 @@
 ---
 id: task-1.3
 title: Download Error Handling and User Feedback
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-02-28 17:59'
-updated_date: '2026-02-28 18:00'
+updated_date: '2026-03-01 10:43'
 labels:
   - error-handling
   - ux
@@ -36,3 +36,64 @@ Implement user-friendly error handling for download failures.
 - [ ] #3 [Network Error] User sees retry button
 - [ ] #4 [Storage Error] User sees required vs available storage
 <!-- AC:END -->
+
+## Implementation Plan
+
+<!-- SECTION:PLAN:BEGIN -->
+## Implementation Notes
+
+### Modify `ui/tabs/ModelTab.kt` - Add Error Cards
+
+1. **AuthError (401):** "Invalid or expired token" → Button to Settings tab
+2. **LicenseError (403):** "Accept model license" → Link to HF model page
+3. **NetworkError:** "Network error" → Retry button
+4. **StorageError:** "Insufficient storage" → Show required vs available bytes
+
+### Error Card Pattern
+```kotlin
+Card(colors = CardDefaults.cardColors(containerColor = errorContainer)) {
+    Row {
+        Icon(Icons.Default.Error, tint = errorColor)
+        Column {
+            Text(error.message)
+            when (error) {
+                is AuthError -> TextButton({ navToSettings() }) { Text("Go to Settings") }
+                is LicenseError -> TextButton({ openBrowser(url) }) { Text("Accept License") }
+                is NetworkError -> Button({ retry() }) { Text("Retry") }
+                is StorageError -> Text("Need ${error.requiredBytes}, have ${error.availableBytes}")
+            }
+        }
+    }
+}
+```
+<!-- SECTION:PLAN:END -->
+
+## Implementation Notes
+
+<!-- SECTION:NOTES:BEGIN -->
+### Modify `ui/tabs/ModelTab.kt` - Add Error Cards
+
+1. **AuthError (401):** "Invalid or expired token" → Button to Settings tab
+2. **LicenseError (403):** "Accept model license" → Link to HF model page
+3. **NetworkError:** "Network error" → Retry button
+4. **StorageError:** "Insufficient storage" → Show required vs available bytes
+
+### Error Card Pattern
+```kotlin
+Card(colors = CardDefaults.cardColors(containerColor = errorContainer)) {
+    Row {
+        Icon(Icons.Default.Error, tint = errorColor)
+        Column {
+            Text(error.message)
+            when (error) {
+                is AuthError -> TextButton({ navToSettings() }) { Text("Go to Settings") }
+                is LicenseError -> TextButton({ openBrowser(url) }) { Text("Accept License") }
+                is NetworkError -> Button({ retry() }) { Text("Retry") }
+                is StorageError -> Text("Need ${error.requiredBytes}, have ${error.availableBytes}")
+            }
+        }
+    }
+}
+```
+<!-- SECTION:PLAN:END -->
+<!-- SECTION:NOTES:END -->

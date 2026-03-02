@@ -1,9 +1,10 @@
 ---
 id: task-13
 title: Fix multi-chunk audio transcription only showing first chunk result
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-01 08:15'
+updated_date: '2026-03-01 09:00'
 labels:
   - bug
   - audio
