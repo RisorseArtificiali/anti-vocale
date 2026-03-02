@@ -4,6 +4,9 @@ import android.content.Context
 import android.util.Log
 import com.google.ai.edge.litertlm.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import java.io.File
@@ -30,6 +33,10 @@ object LlmManager {
     private const val TAG = "LlmManager"
     private const val MAX_TOKENS = 2048
     private const val DEFAULT_KEEP_ALIVE_MINUTES = 5
+
+    // Reactive state for UI observation
+    private val _isReady = MutableStateFlow(false)
+    val isReadyFlow: StateFlow<Boolean> = _isReady.asStateFlow()
 
     // Backend enum
     enum class Backend {
@@ -166,6 +173,7 @@ object LlmManager {
             currentBackend = Backend.LITERT_LM
             modelPath = path
             isInitialized = true
+            _isReady.value = true
             startKeepAliveTimer()
 
             Log.i(TAG, "LiteRT-LM engine initialized successfully (multimodal)")
@@ -206,6 +214,7 @@ object LlmManager {
             currentBackend = Backend.MEDIAPIPE_GENAI
             modelPath = path
             isInitialized = true
+            _isReady.value = true
             startKeepAliveTimer()
 
             Log.i(TAG, "MediaPipe backend initialized (text only)")
@@ -441,6 +450,7 @@ object LlmManager {
 
         modelPath = null
         isInitialized = false
+        _isReady.value = false
         currentBackend = null
     }
 
@@ -486,6 +496,7 @@ object LlmManager {
 
         modelPath = null
         isInitialized = false
+        _isReady.value = false
         currentBackend = null
         keepAliveJob = null
 

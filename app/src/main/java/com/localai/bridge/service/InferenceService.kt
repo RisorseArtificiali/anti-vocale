@@ -148,8 +148,19 @@ class InferenceService : Service() {
 
         try {
             // Check if backend is ready, auto-load if not
-            if (!TranscriptionBackendManager.hasActiveBackend()) {
-                Log.i(TAG, "No active backend, attempting auto-load")
+            // We need to check BOTH hasActiveBackend() AND isReady() because
+            // after auto-unload, hasActiveBackend() returns true but the model is unloaded
+            val hasBackend = TranscriptionBackendManager.hasActiveBackend()
+            val backendReady = TranscriptionBackendManager.getActiveBackend()?.isReady() ?: false
+
+            if (!hasBackend || !backendReady) {
+                Log.i(TAG, "No active backend or backend not ready, attempting auto-load (hasBackend=$hasBackend, ready=$backendReady)")
+
+                // If backend exists but isn't ready, unload it first
+                if (hasBackend && !backendReady) {
+                    Log.i(TAG, "Unloading stale backend")
+                    TranscriptionBackendManager.unloadActiveBackend()
+                }
 
                 // Get the selected backend from preferences
                 val backendId = AppContainer.preferencesManager.transcriptionBackend.first()

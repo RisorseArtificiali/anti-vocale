@@ -84,8 +84,9 @@ fun SettingsTab(
     }
 
     // Check if model is currently loaded (only relevant for LLM backend)
-    val isLlmBackend = settingsState.transcriptionBackend != "sherpa-onnx"
-    val isModelLoaded = LlmManager.isReady()
+    // Use StateFlow for reactive updates when model state changes
+    val isLlmBackend = settingsState.transcriptionBackend == "llm"
+    val isModelLoaded by LlmManager.isReadyFlow.collectAsState()
     val remainingTime = LlmManager.getRemainingTimeSeconds() ?: 0L
 
     Column(
@@ -115,7 +116,7 @@ fun SettingsTab(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.Cancel,
+                            imageVector = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.RemoveCircleOutline,
                             contentDescription = null,
                             tint = if (isModelLoaded)
                                 MaterialTheme.colorScheme.primary
@@ -137,6 +138,26 @@ fun SettingsTab(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )
+                }
+
+                // Unload button - show when model is loaded
+                if (isModelLoaded) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.unloadModel() },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(stringResource(R.string.unload_model))
+                    }
                 }
 
                 if (!isModelLoaded) {
@@ -217,90 +238,6 @@ fun SettingsTab(
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                // Available models list
-                if (settingsState.availableModels.isEmpty()) {
-                    Text(
-                        text = stringResource(R.string.no_models_found),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.available_models),
-                        style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Column(modifier = Modifier.selectableGroup()) {
-                        settingsState.availableModels.forEach { model ->
-                            val isSelected = settingsState.currentModelPath == model.path
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .selectable(
-                                        selected = isSelected,
-                                        role = Role.RadioButton,
-                                        onClick = { viewModel.selectModel(model) }
-                                    )
-                                    .padding(vertical = 4.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = null
-                                )
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Text(
-                                            text = model.name,
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = if (isSelected)
-                                                MaterialTheme.colorScheme.primary
-                                            else
-                                                MaterialTheme.colorScheme.onSurface
-                                        )
-                                        // Source badge
-                                        Text(
-                                            text = when (model.source) {
-                                                ModelSource.DOWNLOADED -> stringResource(R.string.source_hf)
-                                                ModelSource.GALLERY -> stringResource(R.string.source_gallery)
-                                            },
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.outline,
-                                            modifier = Modifier.padding(horizontal = 4.dp)
-                                        )
-                                    }
-                                    Text(
-                                        text = "${model.sizeMB} MB",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                // Manage Models button
-                OutlinedButton(
-                    onClick = onNavigateToModelTab,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(stringResource(R.string.manage_models))
                 }
             }
         }

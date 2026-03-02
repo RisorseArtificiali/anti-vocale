@@ -15,6 +15,7 @@ import com.localai.bridge.data.ModelDiscovery
 import com.localai.bridge.data.PreferencesManager
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.manager.LlmManager
+import com.localai.bridge.transcription.TranscriptionBackendManager
 import com.localai.bridge.ui.theme.ThemeType
 import com.localai.bridge.util.LocaleManager
 import java.io.File
@@ -158,6 +159,23 @@ class SettingsViewModel(
                     errorMessage = e.message ?: "Failed to save settings"
                 )}
             }
+        }
+    }
+
+    /**
+     * Unloads the currently loaded model.
+     * Works for both LLM backend and other backends via TranscriptionBackendManager.
+     */
+    fun unloadModel() {
+        viewModelScope.launch {
+            // Unload via LlmManager (for LLM backend)
+            if (LlmManager.isReady()) {
+                LlmManager.unload()
+            }
+            // Also unload via backend manager (covers all backends)
+            TranscriptionBackendManager.unloadActiveBackend()
+
+            Log.i(TAG, "Model unloaded manually")
         }
     }
 
@@ -383,21 +401,40 @@ class SettingsViewModel(
             val backend = preferencesManager.transcriptionBackend.first()
             _uiState.update { it.copy(transcriptionBackend = backend) }
 
-            if (backend == "sherpa-onnx") {
-                // Show Parakeet model
-                preferencesManager.parakeetModelPath.collect { path ->
-                    _uiState.update { it.copy(
-                        currentModelPath = path,
-                        currentModelName = if (!path.isNullOrBlank()) "Parakeet TDT" else null
-                    )}
+            when (backend) {
+                "sherpa-onnx" -> {
+                    // Show Parakeet model
+                    preferencesManager.parakeetModelPath.collect { path ->
+                        _uiState.update { it.copy(
+                            currentModelPath = path,
+                            currentModelName = if (!path.isNullOrBlank()) "Parakeet TDT" else null
+                        )}
+                    }
                 }
-            } else {
-                // Show LLM model (Gemma, etc.)
-                preferencesManager.modelPath.collect { path ->
-                    _uiState.update { it.copy(
-                        currentModelPath = path,
-                        currentModelName = path?.let { File(it).name }
-                    )}
+                "whisper" -> {
+                    // Show Whisper model
+                    preferencesManager.whisperModelPath.collect { path ->
+                        val modelName = if (!path.isNullOrBlank()) {
+                            val modelDir = java.io.File(path)
+                            val model = com.localai.bridge.transcription.WhisperModelManager.validateModelDirectory(modelDir)
+                            model?.variant?.let { v ->
+                                getApplication<Application>().getString(v.titleResId)
+                            } ?: path.substringAfterLast("/")
+                        } else null
+                        _uiState.update { it.copy(
+                            currentModelPath = path,
+                            currentModelName = modelName
+                        )}
+                    }
+                }
+                else -> {
+                    // Show LLM model (Gemma, etc.)
+                    preferencesManager.modelPath.collect { path ->
+                        _uiState.update { it.copy(
+                            currentModelPath = path,
+                            currentModelName = path?.let { File(it).name }
+                        )}
+                    }
                 }
             }
         }
@@ -419,6 +456,8 @@ class SettingsViewModel(
     fun selectModel(model: DiscoveredModel) {
         viewModelScope.launch {
             preferencesManager.saveModelPath(model.path)
+            // Switch to LLM backend when selecting an LLM model
+            preferencesManager.saveTranscriptionBackend("llm")
             // Refresh the list to update current selection
             scanAvailableModels()
             // Update current model display

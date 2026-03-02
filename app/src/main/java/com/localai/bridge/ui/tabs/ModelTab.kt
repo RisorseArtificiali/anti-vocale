@@ -31,6 +31,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.localai.bridge.data.ModelDownloader
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.transcription.ParakeetDownloader
+import com.localai.bridge.transcription.WhisperDownloader
+import com.localai.bridge.transcription.WhisperModelManager
 import com.localai.bridge.ui.viewmodel.ModelViewModel
 
 private enum class PendingAction {
@@ -89,6 +91,7 @@ fun ModelTab(
     val uiState by viewModel.uiState.collectAsState()
     val downloadUiState by viewModel.downloadUiState.collectAsState()
     val parakeetState by viewModel.parakeetState.collectAsState()
+    val whisperState by viewModel.whisperState.collectAsState()
 
     // Snackbar host state for displaying errors
     val snackbarHostState = remember { SnackbarHostState() }
@@ -158,10 +161,10 @@ fun ModelTab(
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
 
-    // Auto-scroll only when download starts (not for errors - those go to Snackbar)
-    LaunchedEffect(downloadUiState.isDownloading) {
-        if (downloadUiState.isDownloading) {
-            // Scroll to bottom to show the downloading card
+    // Auto-scroll when download error occurs (license requirement, auth error, etc.)
+    // This scrolls to the error area so user can see what went wrong
+    LaunchedEffect(downloadUiState.downloadError) {
+        if (downloadUiState.downloadError != null) {
             delay(150) // Small delay to let the UI update first
             scrollState.animateScrollTo(scrollState.maxValue)
         }
@@ -240,6 +243,46 @@ fun ModelTab(
             },
             dismissButton = {
                 TextButton(onClick = { viewModel.dismissParakeetDeleteDialog() }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    // Whisper download confirmation dialog
+    if (whisperState.showDownloadDialog) {
+        val variant = whisperState.selectedVariant
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissWhisperDownloadDialog() },
+            title = { Text(stringResource(R.string.whisper_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "Whisper")) },
+            text = { Text(stringResource(R.string.whisper_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 75)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmWhisperDownload() }) {
+                    Text(stringResource(R.string.download))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissWhisperDownloadDialog() }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    // Whisper delete confirmation dialog
+    if (whisperState.showDeleteDialog) {
+        val variant = whisperState.variantToDelete
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissWhisperDeleteDialog() },
+            title = { Text(stringResource(R.string.dialog_delete_title)) },
+            text = { Text(stringResource(R.string.dialog_delete_message, variant?.let { stringResource(it.titleResId) } ?: "Whisper")) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmWhisperDelete() }) {
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissWhisperDeleteDialog() }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }
@@ -349,6 +392,11 @@ fun ModelTab(
 
         // Parakeet TDT section - alternative ASR backend
         ParakeetDownloadSection(
+            viewModel = viewModel
+        )
+
+        // Whisper section - multilingual ASR backend
+        WhisperDownloadSection(
             viewModel = viewModel
         )
 
@@ -841,7 +889,7 @@ private fun ParakeetDownloadSection(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
-                                Text("Downloading...", style = MaterialTheme.typography.bodySmall)
+                                Text(stringResource(R.string.download_status_downloading), style = MaterialTheme.typography.bodySmall)
                                 Text("${(parakeetState.downloadProgress * 100).toInt()}%", style = MaterialTheme.typography.bodySmall)
                             }
                             LinearProgressIndicator(
@@ -867,7 +915,7 @@ private fun ParakeetDownloadSection(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    "Extracting ${state.fileName.takeIf { it.isNotEmpty() } ?: "file ${state.fileIndex}/${state.totalFiles}"}",
+                                    stringResource(R.string.download_status_extracting, state.fileName.takeIf { it.isNotEmpty() } ?: stringResource(R.string.download_status_file_progress, state.fileIndex, state.totalFiles)),
                                     style = MaterialTheme.typography.bodySmall
                                 )
                                 if (state.currentFileSize > 0) {
@@ -886,7 +934,7 @@ private fun ParakeetDownloadSection(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                            Text("Connecting...", style = MaterialTheme.typography.bodySmall)
+                            Text(stringResource(R.string.download_status_connecting), style = MaterialTheme.typography.bodySmall)
                         }
                     }
                     else -> {}
@@ -951,6 +999,270 @@ private fun ParakeetDownloadSection(
                             Icon(Icons.Default.Download, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(stringResource(R.string.parakeet_download))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ==================== Whisper Download Section ====================
+
+/**
+ * Section for downloading Whisper models (sherpa-onnx backend).
+ * No authentication required - downloads from GitHub releases.
+ * Excellent multilingual support with proper punctuation.
+ */
+@Composable
+private fun WhisperDownloadSection(
+    viewModel: ModelViewModel
+) {
+    val whisperState by viewModel.whisperState.collectAsState()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                whisperState.isDownloading -> MaterialTheme.colorScheme.secondaryContainer
+                whisperState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primaryContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = when {
+                            whisperState.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
+                            whisperState.isDownloading -> Icons.Default.CloudDownload
+                            else -> Icons.Default.Translate
+                        },
+                        contentDescription = null,
+                        tint = when {
+                            whisperState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
+                            whisperState.isDownloading -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.whisper_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = stringResource(R.string.whisper_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Model variant selection
+            WhisperModelManager.Variant.entries.forEach { variant ->
+                WhisperVariantCard(
+                    variant = variant,
+                    isDownloaded = whisperState.downloadedVariants.contains(variant),
+                    isDownloading = whisperState.isDownloading && whisperState.selectedVariant == variant,
+                    downloadProgress = whisperState.downloadProgress,
+                    downloadState = whisperState.downloadState,
+                    errorMessage = if (whisperState.selectedVariant == variant) whisperState.errorMessage else null,
+                    onDownloadClick = { viewModel.showWhisperDownloadDialog(variant) },
+                    onCancelClick = { viewModel.cancelWhisperDownload() },
+                    onUseClick = { viewModel.useWhisperModel(variant) },
+                    onDeleteClick = { viewModel.showWhisperDeleteDialog(variant) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Card for a single Whisper variant showing its info and download status.
+ */
+@Composable
+private fun WhisperVariantCard(
+    variant: WhisperModelManager.Variant,
+    isDownloaded: Boolean,
+    isDownloading: Boolean,
+    downloadProgress: Float,
+    downloadState: WhisperDownloader.DownloadState,
+    errorMessage: String?,
+    onDownloadClick: () -> Unit,
+    onCancelClick: () -> Unit,
+    onUseClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                isDownloaded -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                isDownloading -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.surface
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            // Header row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = when {
+                            isDownloaded -> Icons.Default.CheckCircle
+                            isDownloading -> Icons.Default.CloudDownload
+                            else -> Icons.Default.Storage
+                        },
+                        contentDescription = null,
+                        tint = when {
+                            isDownloaded -> MaterialTheme.colorScheme.primary
+                            isDownloading -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Text(
+                            text = stringResource(variant.titleResId),
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        Text(
+                            text = stringResource(variant.descriptionResId),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Download progress
+            if (isDownloading) {
+                Spacer(modifier = Modifier.height(12.dp))
+
+                when (val state = downloadState) {
+                    is WhisperDownloader.DownloadState.Downloading -> {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text(stringResource(R.string.download_status_downloading), style = MaterialTheme.typography.bodySmall)
+                                Text("${(downloadProgress * 100).toInt()}%", style = MaterialTheme.typography.bodySmall)
+                            }
+                            LinearProgressIndicator(
+                                progress = { downloadProgress },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                text = formatBytes(state.bytesDownloaded) +
+                                    if (state.totalBytes > 0) " / ${formatBytes(state.totalBytes)}" else "",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    is WhisperDownloader.DownloadState.Extracting -> {
+                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            LinearProgressIndicator(
+                                progress = { downloadProgress },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Text(
+                                stringResource(R.string.download_status_extracting, state.fileName.takeIf { it.isNotEmpty() } ?: stringResource(R.string.download_status_extracting_files)),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    is WhisperDownloader.DownloadState.Connecting -> {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                            Text(stringResource(R.string.download_status_connecting), style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                    else -> {}
+                }
+            }
+
+            // Error message
+            errorMessage?.let { error ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            // Action buttons
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                when {
+                    isDownloading -> {
+                        OutlinedButton(
+                            onClick = onCancelClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.cancel_download))
+                        }
+                    }
+                    isDownloaded -> {
+                        Button(
+                            onClick = onUseClick,
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.Check, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.use_model))
+                        }
+                        OutlinedButton(
+                            onClick = onDeleteClick,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
+                        }
+                    }
+                    else -> {
+                        Button(
+                            onClick = onDownloadClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.whisper_download))
                         }
                     }
                 }
