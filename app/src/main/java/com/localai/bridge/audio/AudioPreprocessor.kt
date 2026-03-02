@@ -46,7 +46,7 @@ object AudioPreprocessor {
     sealed class PreprocessingError(message: String) : Exception(message) {
         data object FileNotFound : PreprocessingError("Audio file not found")
         data object FileTooLarge : PreprocessingError("Audio file exceeds 100MB limit")
-        data object InvalidFormat : PreprocessingError("Unable to process audio format")
+        data object InvalidFormat : PreprocessingError("Unable to determine audio format")
         data object DurationTooLong : PreprocessingError("Audio exceeds 10 minute limit")
         data object DurationUnknown : PreprocessingError("Could not determine audio duration")
         data class ConversionFailed(val reason: String) : PreprocessingError("Conversion failed: $reason")

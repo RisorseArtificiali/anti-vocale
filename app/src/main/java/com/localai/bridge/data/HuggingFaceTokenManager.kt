@@ -182,19 +182,25 @@ class HuggingFaceTokenManager(context: Context) {
     }
 
     /**
-     * Masks the token for display purposes.
-     * Shows only the last 3 characters: `hf_****abc`
+     * Masks the token for display purposes using a condensed format.
+     * Examples: `hf_abc...i789`, `hf_sho...ort`, `abc...123`
      */
     fun maskToken(token: String): String {
         return when {
-            token.length <= 3 -> "***"
-            token.startsWith("hf_") && token.length <= 6 -> "hf_***"
+            token.isEmpty() -> ""
+            token.length <= 8 -> "${token.take(4)}...${token.takeLast(2)}"
+            token.startsWith("hf_") -> {
+                // For HuggingFace tokens: show "hf_" + 3 chars + "..." + last 4 chars
+                val afterPrefix = token.substring(3)
+                if (afterPrefix.length <= 4) {
+                    "hf_${afterPrefix}..."
+                } else {
+                    "hf_${afterPrefix.take(3)}...${afterPrefix.takeLast(4)}"
+                }
+            }
             else -> {
-                val prefix = if (token.startsWith("hf_")) "hf_" else ""
-                val body = if (token.startsWith("hf_")) token.substring(3) else token
-                val visiblePart = body.takeLast(3)
-                val maskedLength = body.length - 3
-                "${prefix}${"*".repeat(maskedLength)}$visiblePart"
+                // For other tokens: show first 4 + "..." + last 4
+                "${token.take(4)}...${token.takeLast(4)}"
             }
         }
     }

@@ -11,6 +11,8 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        // AppAuth-Android is published here
+        maven { url = uri("https://jitpack.io") }
     }
 }
 
