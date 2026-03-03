@@ -3,10 +3,13 @@
     <color name="primary">#6366f1</color>
     <color name="primary_dark">#4f46e5</color>
     <color name="secondary">#818cf8</color>
+    <color name="secondary_dark">#5a6d71</color>
     <color name="background">#0f172a</color>
     <color name="surface">#1e293b</color>
+    <color name="surface_variant">#121C24</color>
     <color name="on_primary">#ffffff</color>
     <color name="on_secondary">#ffffff</color>
     <color name="on_background">#f1f5f9</color>
     <color name="on_surface">#e2e8f0</color>
+    <color name="on_surface_variant">#e2e8f0</color>
 </resources>

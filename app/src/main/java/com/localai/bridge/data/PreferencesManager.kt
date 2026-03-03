@@ -27,6 +27,8 @@ class PreferencesManager(private val context: Context) {
         private val TRANSCRIPTION_BACKEND = stringPreferencesKey("transcription_backend")
         // Parakeet model path (for sherpa-onnx backend)
         private val PARAKEET_MODEL_PATH = stringPreferencesKey("parakeet_model_path")
+        // Whisper model path (for sherpa-onnx Whisper backend)
+        private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
     }
 
     /**
@@ -136,6 +138,31 @@ class PreferencesManager(private val context: Context) {
     suspend fun clearParakeetModelPath() {
         context.dataStore.edit { preferences ->
             preferences.remove(PARAKEET_MODEL_PATH)
+        }
+    }
+
+    /**
+     * Flow of the Whisper model path (for sherpa-onnx Whisper backend).
+     */
+    val whisperModelPath: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[WHISPER_MODEL_PATH]
+    }
+
+    /**
+     * Saves the Whisper model path.
+     */
+    suspend fun saveWhisperModelPath(path: String) {
+        context.dataStore.edit { preferences ->
+            preferences[WHISPER_MODEL_PATH] = path
+        }
+    }
+
+    /**
+     * Clears the Whisper model path.
+     */
+    suspend fun clearWhisperModelPath() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(WHISPER_MODEL_PATH)
         }
     }
 }
