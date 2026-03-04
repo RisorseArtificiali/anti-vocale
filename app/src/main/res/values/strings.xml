@@ -78,6 +78,7 @@
     <string name="transcription_complete">Transcription complete</string>
     <string name="transcription_failed">Transcription failed</string>
     <string name="copy">Copy</string>
+    <string name="share">Share</string>
     <string name="char_counter">%1$d of %2$d chars</string>
     <string name="no_audio_file">No audio file received</string>
     <string name="failed_to_process_audio">Failed to process audio file</string>
@@ -173,6 +174,10 @@
     <string name="timeout_minutes">%1$d minutes</string>
     <string name="saving">Saving…</string>
     <string name="settings_saved">Settings saved</string>
+
+    <!-- Settings Tab - Auto-Copy -->
+    <string name="auto_copy_title">Auto-Copy Transcription</string>
+    <string name="auto_copy_description">Automatically copy transcription results to clipboard. You can still manually copy from the notification.</string>
 
     <!-- Settings Tab - Preload Info -->
     <string name="preload_title">Auto-Load &amp; Preload</string>

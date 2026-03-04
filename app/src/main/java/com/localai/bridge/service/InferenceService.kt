@@ -4,9 +4,15 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.localai.bridge.R
 import com.localai.bridge.audio.AudioPreprocessor
@@ -48,11 +54,16 @@ class InferenceService : Service() {
         // Extras for URI-based audio sharing (vs file path)
         const val EXTRA_SHARED_URI = "shared_uri"
         const val EXTRA_MIME_TYPE = "mime_type"
+
+        // Action for canceling transcription
+        const val ACTION_CANCEL = "com.localai.bridge.CANCEL_TRANSCRIPTION"
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val requestQueue = ConcurrentLinkedQueue<PendingRequest>()
     private val isProcessing = MutableStateFlow(false)
+    private var currentProcessingJob: Job? = null
+    private var transcriptionStartTime: Long = 0
 
     data class PendingRequest(
         val taskId: String,
@@ -71,7 +82,13 @@ class InferenceService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.i(TAG, "onStartCommand called")
+        Log.i(TAG, "onStartCommand called, action=${intent?.action}")
+
+        // Handle cancel action
+        if (intent?.action == ACTION_CANCEL) {
+            handleCancelRequest()
+            return START_NOT_STICKY
+        }
 
         // Start foreground
         startForeground(NOTIFICATION_ID, createNotification("Processing request..."))
@@ -108,7 +125,7 @@ class InferenceService : Service() {
     }
 
     private fun processQueue() {
-        serviceScope.launch {
+        currentProcessingJob = serviceScope.launch {
             // Only process one at a time
             if (isProcessing.value) {
                 Log.d(TAG, "Already processing, request will wait in queue")
@@ -117,17 +134,37 @@ class InferenceService : Service() {
 
             isProcessing.value = true
 
-            while (requestQueue.isNotEmpty()) {
-                val request = requestQueue.poll() ?: continue
-                processRequest(request)
+            try {
+                while (requestQueue.isNotEmpty()) {
+                    val request = requestQueue.poll() ?: continue
+                    processRequest(request)
+                }
+            } catch (e: CancellationException) {
+                Log.i(TAG, "Processing cancelled by user")
+                // Clear any remaining queue on cancel
+                requestQueue.clear()
+            } finally {
+                isProcessing.value = false
             }
-
-            isProcessing.value = false
 
             // Stop service when queue is empty
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
+    }
+
+    private fun handleCancelRequest() {
+        Log.i(TAG, "Cancel request received")
+
+        // Cancel the current processing job
+        currentProcessingJob?.cancel()
+
+        // Clear the queue
+        requestQueue.clear()
+
+        // Dismiss notification and stop service
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     private suspend fun processRequest(request: PendingRequest) {
@@ -201,7 +238,11 @@ class InferenceService : Service() {
                     logsViewModel.logSuccess(request.taskId, response, duration)
                     sendSuccessReply(request.taskId, response)
                     // Show result notification for share requests
-                    if (isShareRequest) showResultNotification(response)
+                    if (isShareRequest) {
+                        // Auto-copy if enabled
+                        autoCopyIfEnabled(response)
+                        showResultNotification(response)
+                    }
                 },
                 onFailure = { error ->
                     logsViewModel.logError(request.taskId, error.message ?: "Unknown error", duration)
@@ -325,10 +366,14 @@ class InferenceService : Service() {
         }
 
         val chunkCount = preprocessingResult.chunkCount
-        Log.i(TAG, "Audio preprocessed: $chunkCount chunks, ${preprocessingResult.totalDurationSeconds}s")
+        val audioDurationSeconds = preprocessingResult.totalDurationSeconds.toInt()
+        Log.i(TAG, "Audio preprocessed: $chunkCount chunks, ${audioDurationSeconds}s")
 
         // Update log entry with audio duration
         AppContainer.logsViewModel.updateAudioDuration(request.taskId, preprocessingResult.totalDurationSeconds)
+
+        // Track transcription start time for chronometer
+        transcriptionStartTime = System.currentTimeMillis()
 
         // Process chunks sequentially and concatenate results
         val results = mutableListOf<String>()
@@ -336,7 +381,7 @@ class InferenceService : Service() {
 
         for ((index, chunk) in preprocessingResult.chunks.withIndex()) {
             val chunkNumber = index + 1
-            
+
             // Show determinate progress during chunk processing
             // Only show progress bar if there's more than one chunk
             if (chunkCount > 1) {
@@ -344,12 +389,14 @@ class InferenceService : Service() {
                     contentText = "Processing chunk $chunkNumber/$chunkCount...",
                     progress = chunkNumber,
                     maxProgress = chunkCount,
-                    indeterminate = false
+                    indeterminate = false,
+                    durationSeconds = audioDurationSeconds,
+                    startTimeMillis = transcriptionStartTime
                 )
             } else {
-                updateNotification("Processing audio...")
+                updateNotification("Processing audio...", durationSeconds = audioDurationSeconds, startTimeMillis = transcriptionStartTime)
             }
-            
+
             Log.d(TAG, "Processing chunk $chunkNumber/$chunkCount")
 
             val chunkResult = backend.transcribeAudio(
@@ -427,9 +474,22 @@ class InferenceService : Service() {
         contentText: String,
         progress: Int = 0,
         maxProgress: Int = 0,
-        indeterminate: Boolean = false
+        indeterminate: Boolean = false,
+        durationSeconds: Int = 0,
+        startTimeMillis: Long = 0
     ): Notification {
-        return NotificationCompat.Builder(this, CHANNEL_ID)
+        // Create cancel intent
+        val cancelIntent = Intent(this, InferenceService::class.java).apply {
+            action = ACTION_CANCEL
+        }
+        val cancelPendingIntent = android.app.PendingIntent.getService(
+            this,
+            System.currentTimeMillis().toInt(),
+            cancelIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("LocalAI Bridge")
             .setContentText(contentText)
             .setSmallIcon(android.R.drawable.ic_menu_manage)
@@ -437,27 +497,85 @@ class InferenceService : Service() {
             .setOngoing(true)
             .setSilent(true)
             .setProgress(maxProgress, progress, indeterminate)
-            .build()
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                getString(R.string.action_cancel),
+                cancelPendingIntent
+            )
+
+        // Show elapsed time chronometer if start time provided
+        if (startTimeMillis > 0) {
+            builder.setWhen(startTimeMillis)
+            builder.setUsesChronometer(true)
+        }
+
+        // Show duration in subtext if available
+        if (durationSeconds > 0) {
+            builder.setSubText(formatDuration(durationSeconds))
+        }
+
+        return builder.build()
     }
 
-    private fun updateNotification(contentText: String) {
+    private fun updateNotification(contentText: String, durationSeconds: Int = 0, startTimeMillis: Long = 0) {
         val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(NOTIFICATION_ID, createNotification(contentText))
+        notificationManager.notify(NOTIFICATION_ID, createNotification(contentText, durationSeconds = durationSeconds, startTimeMillis = startTimeMillis))
     }
 
     private fun updateNotificationWithProgress(
         contentText: String,
         progress: Int = 0,
         maxProgress: Int = 0,
-        indeterminate: Boolean = false
+        indeterminate: Boolean = false,
+        durationSeconds: Int = 0,
+        startTimeMillis: Long = 0
     ) {
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(
             NOTIFICATION_ID,
-            createNotification(contentText, progress, maxProgress, indeterminate)
+            createNotification(contentText, progress, maxProgress, indeterminate, durationSeconds, startTimeMillis)
         )
     }
 
+    /**
+     * Formats duration in seconds to MM:SS or HH:MM:SS format.
+     */
+    private fun formatDuration(seconds: Int): String {
+        val hours = seconds / 3600
+        val minutes = (seconds % 3600) / 60
+        val secs = seconds % 60
+
+        return if (hours > 0) {
+            String.format("%d:%02d:%02d", hours, minutes, secs)
+        } else {
+            String.format("%d:%02d", minutes, secs)
+        }
+    }
+
+    /**
+     * Auto-copies transcription to clipboard if the setting is enabled.
+     * Shows a toast notification to the user.
+     */
+    private fun autoCopyIfEnabled(transcriptionText: String) {
+        serviceScope.launch {
+            val autoCopyEnabled = AppContainer.preferencesManager.autoCopyEnabled.first()
+            if (autoCopyEnabled) {
+                val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                val clip = ClipData.newPlainText("Transcription", transcriptionText)
+                clipboardManager.setPrimaryClip(clip)
+                Log.i(TAG, "Auto-copied transcription to clipboard (${transcriptionText.length} chars)")
+
+                // Show toast on main thread
+                Handler(Looper.getMainLooper()).post {
+                    Toast.makeText(
+                        this@InferenceService,
+                        R.string.copied_to_clipboard,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+        }
+    }
 
     private fun createResultNotificationChannel() {
         val channel = NotificationChannel(
@@ -474,6 +592,7 @@ class InferenceService : Service() {
     }
 
     private fun showResultNotification(transcriptionText: String) {
+        // Copy action
         val copyIntent = Intent(this, NotificationActionReceiver::class.java).apply {
             action = NotificationActionReceiver.ACTION_COPY_TRANSCRIPTION
             putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, transcriptionText)
@@ -482,6 +601,18 @@ class InferenceService : Service() {
             this,
             System.currentTimeMillis().toInt(),
             copyIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // Share action
+        val shareIntent = Intent(this, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_SHARE_TRANSCRIPTION
+            putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, transcriptionText)
+        }
+        val sharePendingIntent = android.app.PendingIntent.getBroadcast(
+            this,
+            System.currentTimeMillis().toInt() + 1,
+            shareIntent,
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
 
@@ -513,6 +644,11 @@ class InferenceService : Service() {
                 android.R.drawable.ic_menu_save,
                 getString(R.string.copy),
                 copyPendingIntent
+            )
+            .addAction(
+                android.R.drawable.ic_menu_share,
+                getString(R.string.share),
+                sharePendingIntent
             )
             .setAutoCancel(true)
 

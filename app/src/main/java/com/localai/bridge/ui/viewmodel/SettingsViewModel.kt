@@ -69,6 +69,14 @@ class SettingsViewModel(
             initialValue = 5
         )
 
+    // Auto-copy transcription results preference
+    val autoCopyEnabled: StateFlow<Boolean> = preferencesManager.autoCopyEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = false
+        )
+
     // Current language from Per-App Language API (not DataStore)
     private val _currentLanguage = MutableStateFlow(LocaleManager.getCurrentLocaleCode())
     val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()
@@ -159,6 +167,15 @@ class SettingsViewModel(
                     errorMessage = e.message ?: "Failed to save settings"
                 )}
             }
+        }
+    }
+
+    /**
+     * Saves the auto-copy enabled preference.
+     */
+    fun saveAutoCopyEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveAutoCopyEnabled(enabled)
         }
     }
 

@@ -3,6 +3,7 @@ package com.localai.bridge.data
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -29,6 +30,8 @@ class PreferencesManager(private val context: Context) {
         private val PARAKEET_MODEL_PATH = stringPreferencesKey("parakeet_model_path")
         // Whisper model path (for sherpa-onnx Whisper backend)
         private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
+        // Auto-copy transcription results to clipboard
+        private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
     }
 
     /**
@@ -163,6 +166,23 @@ class PreferencesManager(private val context: Context) {
     suspend fun clearWhisperModelPath() {
         context.dataStore.edit { preferences ->
             preferences.remove(WHISPER_MODEL_PATH)
+        }
+    }
+
+    /**
+     * Flow of auto-copy enabled preference.
+     * Returns false by default (user must manually copy).
+     */
+    val autoCopyEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[AUTO_COPY_ENABLED] ?: false
+    }
+
+    /**
+     * Saves the auto-copy enabled preference.
+     */
+    suspend fun saveAutoCopyEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[AUTO_COPY_ENABLED] = enabled
         }
     }
 }

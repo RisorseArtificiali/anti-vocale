@@ -87,7 +87,10 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(vertical = 8.dp)
+                contentPadding = PaddingValues(
+                    top = 8.dp,
+                    bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                )
             ) {
                 items(logs, key = { it.id }) { log ->
                     LogEntryItem(log = log)
