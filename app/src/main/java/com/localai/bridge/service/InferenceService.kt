@@ -226,23 +226,14 @@ class InferenceService : Service() {
         return AppContainer.preferencesManager.modelPath.first()
     }
 
-    /**
-     * Loads the LLM (LiteRT-LM) backend with the saved model path.
-     */
     private suspend fun loadLlmBackend(): Result<Unit> {
         val modelPath = AppContainer.preferencesManager.modelPath.first()
 
         if (modelPath.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("No LLM model configured. Open the app to select a model."))
+            return Result.failure(IllegalStateException("No LLM model configured. Open the app to download a model."))
         }
 
-        // Validate model file exists
-        val modelFile = java.io.File(modelPath)
-        if (!modelFile.exists()) {
-            return Result.failure(IllegalStateException("LLM model file not found: $modelPath"))
-        }
-
-        updateNotification("Loading LLM model...")
+        updateNotificationWithProgress("Loading LLM model...", indeterminate = true)
         Log.i(TAG, "Auto-loading LLM model from: $modelPath")
 
         return TranscriptionBackendManager.setActiveBackend(
@@ -268,7 +259,7 @@ class InferenceService : Service() {
             return Result.failure(IllegalStateException("Parakeet model directory not found: $modelPath"))
         }
 
-        updateNotification("Loading Parakeet model...")
+        updateNotificationWithProgress("Loading Parakeet model...", indeterminate = true)
         Log.i(TAG, "Auto-loading Parakeet model from: $modelPath")
 
         return TranscriptionBackendManager.setActiveBackend(
@@ -316,7 +307,8 @@ class InferenceService : Service() {
         val backend = TranscriptionBackendManager.getActiveBackend()
             ?: return Result.failure(IllegalStateException("No active backend"))
 
-        updateNotification("Preprocessing audio...")
+        // Show indeterminate progress during preprocessing
+        updateNotificationWithProgress("Preprocessing audio...", indeterminate = true)
 
         // Preprocess audio with proper error handling
         val preprocessingResult = try {
@@ -332,7 +324,8 @@ class InferenceService : Service() {
             return Result.failure(IllegalStateException("Audio preprocessing failed: ${e.message}"))
         }
 
-        Log.i(TAG, "Audio preprocessed: ${preprocessingResult.chunkCount} chunks, ${preprocessingResult.totalDurationSeconds}s")
+        val chunkCount = preprocessingResult.chunkCount
+        Log.i(TAG, "Audio preprocessed: $chunkCount chunks, ${preprocessingResult.totalDurationSeconds}s")
 
         // Update log entry with audio duration
         AppContainer.logsViewModel.updateAudioDuration(request.taskId, preprocessingResult.totalDurationSeconds)
@@ -342,8 +335,22 @@ class InferenceService : Service() {
         val prompt = request.prompt.ifEmpty { "Transcribe this speech:" }
 
         for ((index, chunk) in preprocessingResult.chunks.withIndex()) {
-            updateNotification("Processing chunk ${index + 1}/${preprocessingResult.chunkCount}...")
-            Log.d(TAG, "Processing chunk ${index + 1}/${preprocessingResult.chunkCount}")
+            val chunkNumber = index + 1
+            
+            // Show determinate progress during chunk processing
+            // Only show progress bar if there's more than one chunk
+            if (chunkCount > 1) {
+                updateNotificationWithProgress(
+                    contentText = "Processing chunk $chunkNumber/$chunkCount...",
+                    progress = chunkNumber,
+                    maxProgress = chunkCount,
+                    indeterminate = false
+                )
+            } else {
+                updateNotification("Processing audio...")
+            }
+            
+            Log.d(TAG, "Processing chunk $chunkNumber/$chunkCount")
 
             val chunkResult = backend.transcribeAudio(
                 prompt = prompt,
@@ -352,23 +359,23 @@ class InferenceService : Service() {
 
             chunkResult.fold(
                 onSuccess = { text ->
-                    Log.d(TAG, "Chunk ${index + 1} result: '${text.take(50)}...' (${text.length} chars)")
+                    Log.d(TAG, "Chunk $chunkNumber result: '${text.take(50)}...' (${text.length} chars)")
                     if (text.isNotBlank()) {
                         results.add(text.trim())
                     } else {
-                        Log.w(TAG, "Chunk ${index + 1} returned blank result, skipping")
+                        Log.w(TAG, "Chunk $chunkNumber returned blank result, skipping")
                     }
                 },
                 onFailure = { error ->
-                    Log.e(TAG, "Chunk ${index + 1} failed", error)
-                    return Result.failure(Exception("Chunk ${index + 1} failed: ${error.message}"))
+                    Log.e(TAG, "Chunk $chunkNumber failed", error)
+                    return Result.failure(Exception("Chunk $chunkNumber failed: ${error.message}"))
                 }
             )
         }
 
         // Join results with spaces
         val combinedResult = results.joinToString(" ")
-        Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.size}/${preprocessingResult.chunkCount} chunks")
+        Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.size}/$chunkCount chunks")
 
         if (combinedResult.isBlank()) {
             return Result.failure(IllegalStateException("No transcription produced"))
@@ -416,7 +423,12 @@ class InferenceService : Service() {
         notificationManager.createNotificationChannel(channel)
     }
 
-    private fun createNotification(contentText: String): Notification {
+    private fun createNotification(
+        contentText: String,
+        progress: Int = 0,
+        maxProgress: Int = 0,
+        indeterminate: Boolean = false
+    ): Notification {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("LocalAI Bridge")
             .setContentText(contentText)
@@ -424,12 +436,26 @@ class InferenceService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setSilent(true)
+            .setProgress(maxProgress, progress, indeterminate)
             .build()
     }
 
     private fun updateNotification(contentText: String) {
         val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(NOTIFICATION_ID, createNotification(contentText))
+    }
+
+    private fun updateNotificationWithProgress(
+        contentText: String,
+        progress: Int = 0,
+        maxProgress: Int = 0,
+        indeterminate: Boolean = false
+    ) {
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(
+            NOTIFICATION_ID,
+            createNotification(contentText, progress, maxProgress, indeterminate)
+        )
     }
 
 
