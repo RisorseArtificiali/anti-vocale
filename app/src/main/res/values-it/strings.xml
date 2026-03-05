@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LocalAI Bridge</string>
+    <string name="app_name">Anti-Vocale</string>
 
     <!-- Tab names -->
     <string name="model_tab">Modello</string>
@@ -185,6 +185,7 @@
     <string name="default_prompt_description">Questo prompt verrà utilizzato per trascrivere l\'audio. Lascia vuoto per usare il prompt di sistema predefinito.</string>
     <string name="default_prompt_placeholder">es., Trascrivi questo discorso:</string>
     <string name="default_prompt_chars">%1$d / 500</string>
+    <string name="default_prompt_compatibility_info">Applica solo ai modelli LLM (Gemma). I modelli Whisper e Parakeet ignorano questa impostazione.</string>
 
     <!-- Settings Tab - Preload Info -->
     <string name="preload_title">Caricamento Automatico e Preload</string>

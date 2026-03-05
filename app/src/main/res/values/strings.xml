@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">LocalAI Bridge</string>
+    <string name="app_name">Anti-Vocale</string>
 
     <!-- Tab names -->
     <string name="model_tab">Model</string>
@@ -185,6 +185,7 @@
     <string name="default_prompt_description">This prompt will be used when transcribing audio. Leave empty to use the default system prompt.</string>
     <string name="default_prompt_placeholder">e.g., Transcribe this speech:</string>
     <string name="default_prompt_chars">%1$d / 500</string>
+    <string name="default_prompt_compatibility_info">Only applies to LLM models (Gemma). Whisper and Parakeet models ignore this setting.</string>
 
     <!-- Settings Tab - Preload Info -->
     <string name="preload_title">Auto-Load &amp; Preload</string>
