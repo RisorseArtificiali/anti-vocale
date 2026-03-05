@@ -92,6 +92,9 @@ class ModelPreloadReceiver : BroadcastReceiver() {
                         val timeout = AppContainer.preferencesManager.keepAliveTimeout.first()
                         LlmManager.setKeepAliveTimeout(timeout)
 
+                        // Notify ViewModel to update UI state
+                        LlmManager.notifyExternalLoad(modelPath)
+
                         if (!isSilent) {
                             sendReply(context, "SUCCESS", "Model loaded successfully")
                         }

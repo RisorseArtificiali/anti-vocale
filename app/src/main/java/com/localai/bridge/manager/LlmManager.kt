@@ -67,6 +67,9 @@ object LlmManager {
     // Callback for when model is auto-unloaded
     private val onAutoUnloadCallback = AtomicReference<(() -> Unit)?>(null)
 
+    // Callback for when model is externally loaded (e.g., via ModelPreloadReceiver)
+    private val onExternalLoadCallback = AtomicReference<((String) -> Unit)?>(null)
+
     /**
      * Sets the keep-alive timeout in minutes.
      * After this period of inactivity, the model will be automatically unloaded.
@@ -81,6 +84,26 @@ object LlmManager {
      */
     fun setOnAutoUnloadCallback(callback: (() -> Unit)?) {
         onAutoUnloadCallback.set(callback)
+    }
+
+    /**
+     * Sets a callback to be invoked when the model is loaded externally (e.g., via ModelPreloadReceiver).
+     * The callback receives the model path as parameter.
+     */
+    fun setOnExternalLoadCallback(callback: ((String) -> Unit)?) {
+        onExternalLoadCallback.set(callback)
+    }
+
+    /**
+     * Notifies listeners that the model was loaded externally.
+     * Called by ModelPreloadReceiver after successful model loading.
+     */
+    fun notifyExternalLoad(path: String) {
+        onExternalLoadCallback.get()?.let { callback ->
+            managerScope.launch(Dispatchers.Main) {
+                callback.invoke(path)
+            }
+        }
     }
 
     /**

@@ -138,6 +138,10 @@ class ModelViewModel(
         LlmManager.setOnAutoUnloadCallback {
             onModelAutoUnloaded()
         }
+        // Set up external load callback (e.g., from ModelPreloadReceiver)
+        LlmManager.setOnExternalLoadCallback { modelPath ->
+            onModelExternallyLoaded(modelPath)
+        }
         // Load saved model path on initialization
         loadSavedModelPath()
         // Check for Google AI Edge Gallery models
@@ -447,6 +451,23 @@ class ModelViewModel(
         )}
     }
 
+    /**
+     * Called when the model is loaded externally (e.g., via ModelPreloadReceiver).
+     * Updates the UI state to reflect the model is ready for inference.
+     */
+    private fun onModelExternallyLoaded(modelPath: String) {
+        val modelName = extractFileName(modelPath)
+        val memoryUsage = estimateMemoryUsage(modelPath)
+        _uiState.update { it.copy(
+            modelPath = modelPath,
+            modelName = modelName,
+            isModelPathValid = true,
+            status = ModelStatus.READY,
+            statusMessage = "Model ready (externally loaded)",
+            memoryUsage = memoryUsage
+        )}
+    }
+
     // ==================== Model Download Management ====================
 
     /**
@@ -638,7 +659,9 @@ class ModelViewModel(
                     _uiState.update { it.copy(
                         modelPath = "",
                         modelName = "",
-                        isModelPathValid = false
+                        isModelPathValid = false,
+                        status = ModelStatus.UNLOADED,
+                        statusMessage = "Model deleted"
                     )}
                 }
             }
