@@ -689,42 +689,54 @@ fun SettingsTab(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                // Timeout options
-                Column(modifier = Modifier.selectableGroup()) {
-                    viewModel.timeoutOptions.forEach { minutes ->
-                        val isSelected = currentTimeout == minutes
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(
-                                    selected = isSelected,
-                                    role = Role.RadioButton,
-                                    onClick = {
-                                        if (!isSelected && !uiState.isSaving) {
-                                            viewModel.saveKeepAliveTimeout(minutes)
+                // Timeout dropdown
+                var expanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it }
+                ) {
+                    TextField(
+                        value = when (currentTimeout) {
+                            1 -> stringResource(R.string.timeout_1_minute)
+                            60 -> stringResource(R.string.timeout_1_hour)
+                            else -> stringResource(R.string.timeout_minutes, currentTimeout)
+                        },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.auto_unload_timeout)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        enabled = !uiState.isSaving,
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.exposedDropdownSize()
+                    ) {
+                        viewModel.timeoutOptions.forEach { minutes ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        when (minutes) {
+                                            1 -> stringResource(R.string.timeout_1_minute)
+                                            60 -> stringResource(R.string.timeout_1_hour)
+                                            else -> stringResource(R.string.timeout_minutes, minutes)
                                         }
-                                    }
-                                )
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            RadioButton(
-                                selected = isSelected,
-                                onClick = null,
-                                enabled = !uiState.isSaving
-                            )
-                            Text(
-                                text = when (minutes) {
-                                    1 -> stringResource(R.string.timeout_1_minute)
-                                    60 -> stringResource(R.string.timeout_1_hour)
-                                    else -> stringResource(R.string.timeout_minutes, minutes)
+                                    )
                                 },
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurface
+                                onClick = {
+                                    viewModel.saveKeepAliveTimeout(minutes)
+                                    expanded = false
+                                },
+                                trailingIcon = if (currentTimeout == minutes) {
+                                    { Icon(Icons.Default.Check, contentDescription = null) }
+                                } else null
                             )
                         }
                     }
@@ -863,6 +875,31 @@ fun SettingsTab(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+
+                // Compatibility info banner
+                Surface(
+                    modifier = Modifier.fillMaxWidth(),
+                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+                    shape = MaterialTheme.shapes.small
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = null,
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                        Text(
+                            text = stringResource(R.string.default_prompt_compatibility_info),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
 
                 OutlinedTextField(
                     value = promptInput,
