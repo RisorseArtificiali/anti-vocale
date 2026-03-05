@@ -5,7 +5,7 @@ status: Done
 assignee:
   - claude
 created_date: '2026-02-28 19:43'
-updated_date: '2026-03-05 11:31'
+updated_date: '2026-03-05 13:04'
 labels:
   - settings
   - enhancement
@@ -119,4 +119,8 @@ All criteria met:
 
 ### Build Status
 `gradle assembleDebug` completed successfully.
+
+### Bug Fix (2026-03-05)
+
+Fixed critical bug where ShareReceiverActivity was hardcoding the prompt to "Transcribe this speech:", completely bypassing the user's custom default prompt. The fix removes the hardcoded prompt so the cascade works correctly: request prompt → saved default → hardcoded fallback.
 <!-- SECTION:FINAL_SUMMARY:END -->
