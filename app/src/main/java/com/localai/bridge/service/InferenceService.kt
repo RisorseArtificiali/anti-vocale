@@ -377,7 +377,17 @@ class InferenceService : Service() {
 
         // Process chunks sequentially and concatenate results
         val results = mutableListOf<String>()
-        val prompt = request.prompt.ifEmpty { "Transcribe this speech:" }
+        // Use request prompt -> default prompt from settings -> hardcoded fallback
+        val savedDefaultPrompt = AppContainer.preferencesManager.defaultPrompt.first()
+        val prompt = request.prompt.ifEmpty {
+            savedDefaultPrompt.ifEmpty { "Transcribe this speech:" }
+        }
+        Log.i(TAG, "=== TRANSCRIPTION DEBUG ===")
+        Log.i(TAG, "Request prompt: '${request.prompt}'")
+        Log.i(TAG, "Saved default prompt: '$savedDefaultPrompt'")
+        Log.i(TAG, "Final prompt: '$prompt'")
+        Log.i(TAG, "Active backend: ${TranscriptionBackendManager.getActiveBackend()?.displayName}")
+        Log.i(TAG, "===========================")
 
         for ((index, chunk) in preprocessingResult.chunks.withIndex()) {
             val chunkNumber = index + 1

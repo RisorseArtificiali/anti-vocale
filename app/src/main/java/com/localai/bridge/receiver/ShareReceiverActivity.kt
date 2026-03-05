@@ -70,7 +70,7 @@ class ShareReceiverActivity : Activity() {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
             putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, localPath)
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
-            putExtra(TaskerRequestReceiver.EXTRA_PROMPT, "Transcribe this speech:")
+            // Don't pass a prompt - let InferenceService use the default from settings
             putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_SHARE)
         }
 

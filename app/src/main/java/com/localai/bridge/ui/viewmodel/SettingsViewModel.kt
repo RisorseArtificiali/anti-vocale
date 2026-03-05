@@ -77,6 +77,14 @@ class SettingsViewModel(
             initialValue = false
         )
 
+    // Default prompt for transcription
+    val defaultPrompt: StateFlow<String> = preferencesManager.defaultPrompt
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ""
+        )
+
     // Current language from Per-App Language API (not DataStore)
     private val _currentLanguage = MutableStateFlow(LocaleManager.getCurrentLocaleCode())
     val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()
@@ -176,6 +184,22 @@ class SettingsViewModel(
     fun saveAutoCopyEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveAutoCopyEnabled(enabled)
+        }
+    }
+
+    /**
+     * Saves the default prompt for transcription.
+     * Enforces a maximum length of 500 characters.
+     */
+    fun saveDefaultPrompt(prompt: String) {
+        viewModelScope.launch {
+            Log.d(TAG, "Saving default prompt: '$prompt'")
+            preferencesManager.saveDefaultPrompt(prompt)
+            _uiState.update { it.copy(saveSuccess = true) }
+
+            // Clear success message after delay
+            kotlinx.coroutines.delay(2000)
+            _uiState.update { it.copy(saveSuccess = null) }
         }
     }
 

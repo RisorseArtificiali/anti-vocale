@@ -32,6 +32,8 @@ class PreferencesManager(private val context: Context) {
         private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
         // Auto-copy transcription results to clipboard
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
+        // Default prompt for transcription
+        private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
     }
 
     /**
@@ -183,6 +185,24 @@ class PreferencesManager(private val context: Context) {
     suspend fun saveAutoCopyEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[AUTO_COPY_ENABLED] = enabled
+        }
+    }
+
+    /**
+     * Flow of the default prompt for transcription.
+     * Returns empty string by default (use system default).
+     */
+    val defaultPrompt: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[DEFAULT_PROMPT] ?: ""
+    }
+
+    /**
+     * Saves the default prompt.
+     * Enforces a maximum length of 500 characters.
+     */
+    suspend fun saveDefaultPrompt(prompt: String) {
+        context.dataStore.edit { preferences ->
+            preferences[DEFAULT_PROMPT] = prompt.take(500)
         }
     }
 }

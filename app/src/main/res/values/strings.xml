@@ -174,10 +174,17 @@
     <string name="timeout_minutes">%1$d minutes</string>
     <string name="saving">Saving…</string>
     <string name="settings_saved">Settings saved</string>
+    <string name="save">Save</string>
 
     <!-- Settings Tab - Auto-Copy -->
     <string name="auto_copy_title">Auto-Copy Transcription</string>
     <string name="auto_copy_description">Automatically copy transcription results to clipboard. You can still manually copy from the notification.</string>
+
+    <!-- Settings Tab - Default Prompt -->
+    <string name="default_prompt_title">Default Transcription Prompt</string>
+    <string name="default_prompt_description">This prompt will be used when transcribing audio. Leave empty to use the default system prompt.</string>
+    <string name="default_prompt_placeholder">e.g., Transcribe this speech:</string>
+    <string name="default_prompt_chars">%1$d / 500</string>
 
     <!-- Settings Tab - Preload Info -->
     <string name="preload_title">Auto-Load &amp; Preload</string>

@@ -27,6 +27,7 @@ import androidx.compose.ui.semantics.Role
 import com.localai.bridge.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -820,6 +821,79 @@ fun SettingsTab(
                     checked = autoCopyEnabled,
                     onCheckedChange = { enabled ->
                         viewModel.saveAutoCopyEnabled(enabled)
+                    }
+                )
+            }
+        }
+
+        // Default Prompt Setting
+        val defaultPrompt by viewModel.defaultPrompt.collectAsState()
+        var promptInput by remember { mutableStateOf(defaultPrompt) }
+
+        // Sync promptInput with defaultPrompt when it changes
+        LaunchedEffect(defaultPrompt) {
+            promptInput = defaultPrompt
+        }
+
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.default_prompt_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.default_prompt_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                OutlinedTextField(
+                    value = promptInput,
+                    onValueChange = { newValue ->
+                        // Enforce max 500 characters
+                        if (newValue.length <= 500) {
+                            promptInput = newValue
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text(stringResource(R.string.default_prompt_placeholder)) },
+                    minLines = 2,
+                    maxLines = 4,
+                    supportingText = {
+                        Text(
+                            text = stringResource(R.string.default_prompt_chars, promptInput.length),
+                            modifier = Modifier.fillMaxWidth(),
+                            textAlign = TextAlign.End
+                        )
+                    },
+                    trailingIcon = {
+                        if (promptInput != defaultPrompt) {
+                            IconButton(onClick = {
+                                viewModel.saveDefaultPrompt(promptInput)
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = stringResource(R.string.save)
+                                )
+                            }
+                        }
                     }
                 )
             }

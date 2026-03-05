@@ -78,6 +78,7 @@
     <string name="transcription_complete">Trascrizione completata</string>
     <string name="transcription_failed">Trascrizione fallita</string>
     <string name="copy">Copia</string>
+    <string name="share">Condividi</string>
     <string name="char_counter">%1$d di %2$d caratteri</string>
     <string name="no_audio_file">Nessun file audio ricevuto</string>
     <string name="failed_to_process_audio">Impossibile elaborare il file audio</string>
@@ -173,6 +174,17 @@
     <string name="timeout_minutes">%1$d minuti</string>
     <string name="saving">Salvataggio…</string>
     <string name="settings_saved">Impostazioni salvate</string>
+    <string name="save">Salva</string>
+
+    <!-- Settings Tab - Auto-Copy -->
+    <string name="auto_copy_title">Copia Automatica Trascrizione</string>
+    <string name="auto_copy_description">Copia automaticamente i risultati della trascrizione negli appunti. Puoi ancora copiare manualmente dalla notifica.</string>
+
+    <!-- Settings Tab - Default Prompt -->
+    <string name="default_prompt_title">Prompt Predefinito Trascrizione</string>
+    <string name="default_prompt_description">Questo prompt verrà utilizzato per trascrivere l\'audio. Lascia vuoto per usare il prompt di sistema predefinito.</string>
+    <string name="default_prompt_placeholder">es., Trascrivi questo discorso:</string>
+    <string name="default_prompt_chars">%1$d / 500</string>
 
     <!-- Settings Tab - Preload Info -->
     <string name="preload_title">Caricamento Automatico e Preload</string>
