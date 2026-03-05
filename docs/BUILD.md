@@ -1,6 +1,6 @@
 # Build Guide
 
-This document describes the verified steps to build the Voice Message Reader app with LiteRT-LM multimodal inference support.
+This document describes the verified steps to build the Anti-Vocale app with LiteRT-LM multimodal inference support.
 
 ## Prerequisites
 

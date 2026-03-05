@@ -1,9 +1,9 @@
-# Voice Message Reader
+# Anti-Vocale
 
-Android application written in Kotlin for reading voice messages.
+Android application written in Kotlin for transcribing voice messages locally on-device.
 
 ## Project Info
-- **GitHub:** Private repo at `paoloantinori/voice_message_reader`
+- **GitHub:** Private repo at `paoloantinori/voice_message_reader` (being renamed to `anti-vocale`)
 - **Language:** Kotlin
 - **Platform:** Android
 

@@ -1,10 +1,10 @@
 # Tasker Integration Guide
 
-This guide explains how to configure Tasker to use LocalAI Bridge for on-device text generation and audio transcription.
+This guide explains how to configure Tasker to use Anti-Vocale for on-device text generation and audio transcription.
 
 ## Prerequisites
 
-1. **Install LocalAI Bridge** from the APK
+1. **Install Anti-Vocale** from the APK
 2. **Download a Gemma 3n model** from [HuggingFace LiteRT Community](https://huggingface.co/litert-community)
    - Recommended: `gemma-3n-e2b.litertlm` (smaller, faster)
    - Alternative: `gemma-3n-e4b.litertlm` (larger, more capable)
@@ -214,7 +214,7 @@ Audio is automatically converted to 16kHz mono WAV internally.
 ## Troubleshooting
 
 ### "MODEL_NOT_LOADED" Error
-- Open the LocalAI Bridge app
+- Open the Anti-Vocale app
 - Tap "Load Model" and wait for "Ready" status
 - Retry your Tasker task
 
