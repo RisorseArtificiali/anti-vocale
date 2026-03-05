@@ -1,16 +1,17 @@
 ---
-id: task-8
+id: TASK-8
 title: Fix "Need a Model" Box Visibility and Scrolling
 status: Done
 assignee: []
 created_date: '2026-02-28 18:03'
-updated_date: '2026-03-01 09:21'
+updated_date: '2026-03-04 18:25'
 labels:
   - bug
   - ui
   - scroll
 dependencies: []
 priority: high
+ordinal: 34000
 ---
 
 ## Description

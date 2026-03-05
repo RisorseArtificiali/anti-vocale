@@ -1,16 +1,17 @@
 ---
-id: task-25
+id: TASK-25
 title: Center the selected model display in Status Card
 status: Done
 assignee: []
 created_date: '2026-03-02 07:39'
-updated_date: '2026-03-02 10:37'
+updated_date: '2026-03-04 18:25'
 labels:
   - ui
   - model-tab
   - polish
 dependencies: []
 priority: low
+ordinal: 11000
 ---
 
 ## Description

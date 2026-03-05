@@ -4,13 +4,14 @@ title: Implement Parakeet Transducer Inference Engine
 status: Done
 assignee: []
 created_date: '2026-02-28 17:52'
-updated_date: '2026-03-02 18:09'
+updated_date: '2026-03-04 18:25'
 labels:
   - inference
   - transducer
   - core-feature
 dependencies: []
 priority: high
+ordinal: 36000
 ---
 
 ## Description

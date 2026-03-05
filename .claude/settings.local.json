@@ -79,7 +79,14 @@
       "Bash(git tag:*)",
       "mcp__plugin_serena_serena__get_symbols_overview",
       "Bash(tar:*)",
-      "mcp__backlog__task_complete"
+      "mcp__backlog__task_complete",
+      "Bash(grep:*)",
+      "Bash(ls:*)",
+      "Bash(gh run:*)",
+      "mcp__backlog__definition_of_done_defaults_get",
+      "mcp__backlog__definition_of_done_defaults_upsert",
+      "mcp__serena__write_memory",
+      "Bash(mv voice_message_reader:*)"
     ]
   }
 }

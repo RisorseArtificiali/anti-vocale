@@ -1,16 +1,17 @@
 ---
-id: task-28
+id: TASK-28
 title: Make Logs tab the default/first tab
 status: Done
 assignee: []
 created_date: '2026-03-02 07:39'
-updated_date: '2026-03-02 10:37'
+updated_date: '2026-03-04 18:25'
 labels:
   - ui
   - navigation
   - ux
 dependencies: []
 priority: high
+ordinal: 8000
 ---
 
 ## Description

@@ -1,17 +1,18 @@
 ---
-id: task-1.1
+id: TASK-1.1
 title: HuggingFace Token Input and Secure Storage
 status: Done
 assignee: []
 created_date: '2026-02-28 17:59'
-updated_date: '2026-03-01 10:43'
+updated_date: '2026-03-04 18:25'
 labels:
   - auth
   - storage
   - ui
 dependencies: []
-parent_task_id: task-1
+parent_task_id: TASK-1
 priority: high
+ordinal: 44000
 ---
 
 ## Description

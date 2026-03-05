@@ -1,17 +1,18 @@
 ---
-id: task-17.8
+id: TASK-17.8
 title: Update ModelDownloader to Use Bearer Token
 status: Done
 assignee: []
 created_date: '2026-03-01 12:18'
-updated_date: '2026-03-01 13:12'
+updated_date: '2026-03-04 18:25'
 labels:
   - network
   - download
   - authentication
 dependencies: []
-parent_task_id: task-17
+parent_task_id: TASK-17
 priority: medium
+ordinal: 26000
 ---
 
 ## Description

@@ -1,16 +1,17 @@
 ---
-id: task-18
+id: TASK-18
 title: Add Model Deletion with Confirmation Dialog
 status: Done
 assignee: []
 created_date: '2026-03-01 18:28'
-updated_date: '2026-03-01 19:25'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - ui
   - storage
 dependencies: []
 priority: medium
+ordinal: 17000
 ---
 
 ## Description

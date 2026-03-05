@@ -5,14 +5,14 @@ status: Done
 assignee:
   - Claude
 created_date: '2026-03-01 19:44'
-updated_date: '2026-03-02 14:29'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - ui
   - theming
 dependencies: []
 priority: low
-ordinal: 1000
+ordinal: 2000
 ---
 
 ## Description

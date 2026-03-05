@@ -1,17 +1,18 @@
 ---
-id: task-2.1
+id: TASK-2.1
 title: Share Intent Receiver Activity
 status: Done
 assignee: []
 created_date: '2026-02-28 17:59'
-updated_date: '2026-03-01 08:16'
+updated_date: '2026-03-04 18:25'
 labels:
   - android
   - intent
   - manifest
 dependencies: []
-parent_task_id: task-2
+parent_task_id: TASK-2
 priority: high
+ordinal: 40000
 ---
 
 ## Description

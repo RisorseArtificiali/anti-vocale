@@ -1,16 +1,17 @@
 ---
-id: task-26
+id: TASK-26
 title: Reduce Status Card size and visual footprint
 status: Done
 assignee: []
 created_date: '2026-03-02 07:39'
-updated_date: '2026-03-02 10:37'
+updated_date: '2026-03-04 18:25'
 labels:
   - ui
   - model-tab
   - polish
 dependencies: []
 priority: low
+ordinal: 10000
 ---
 
 ## Description

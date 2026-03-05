@@ -1,16 +1,17 @@
 ---
-id: task-23
+id: TASK-23
 title: Remove Non-Multimodal Gemma Model from Selection
 status: Done
 assignee: []
 created_date: '2026-03-01 19:44'
-updated_date: '2026-03-01 20:04'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - models
   - cleanup
 dependencies: []
 priority: low
+ordinal: 13000
 ---
 
 ## Description

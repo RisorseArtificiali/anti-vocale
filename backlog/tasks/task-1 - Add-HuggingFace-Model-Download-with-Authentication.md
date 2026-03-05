@@ -1,14 +1,15 @@
 ---
-id: task-1
+id: TASK-1
 title: Add HuggingFace Model Download with Authentication
 status: Done
 assignee: []
 created_date: '2026-02-28'
-updated_date: '2026-03-01 10:43'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - model-management
 dependencies: []
+ordinal: 43000
 ---
 
 ## Description

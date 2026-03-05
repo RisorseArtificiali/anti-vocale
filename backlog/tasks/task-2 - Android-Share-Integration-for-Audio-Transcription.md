@@ -1,16 +1,17 @@
 ---
-id: task-2
+id: TASK-2
 title: Android Share Integration for Audio Transcription
 status: Done
 assignee:
   - claude
 created_date: '2026-02-28'
-updated_date: '2026-03-01 08:16'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - ux
   - sharing
 dependencies: []
+ordinal: 39000
 ---
 
 ## Description

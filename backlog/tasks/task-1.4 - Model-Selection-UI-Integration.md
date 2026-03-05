@@ -1,17 +1,18 @@
 ---
-id: task-1.4
+id: TASK-1.4
 title: Model Selection UI Integration
 status: Done
 assignee: []
 created_date: '2026-02-28 17:59'
-updated_date: '2026-03-01 10:43'
+updated_date: '2026-03-04 18:25'
 labels:
   - ui
   - model-selection
 dependencies:
   - task-1.2
-parent_task_id: task-1
+parent_task_id: TASK-1
 priority: medium
+ordinal: 47000
 ---
 
 ## Description

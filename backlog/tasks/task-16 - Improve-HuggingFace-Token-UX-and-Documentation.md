@@ -1,10 +1,10 @@
 ---
-id: task-16
+id: TASK-16
 title: Improve HuggingFace Token UX and Documentation
 status: Done
 assignee: []
 created_date: '2026-03-01 11:37'
-updated_date: '2026-03-02 06:16'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - ux
@@ -12,6 +12,7 @@ labels:
   - onboarding
 dependencies: []
 priority: medium
+ordinal: 28000
 ---
 
 ## Description

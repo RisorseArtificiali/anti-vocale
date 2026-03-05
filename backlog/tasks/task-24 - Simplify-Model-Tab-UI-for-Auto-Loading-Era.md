@@ -1,16 +1,17 @@
 ---
-id: task-24
+id: TASK-24
 title: Simplify Model Tab UI for Auto-Loading Era
 status: Done
 assignee: []
 created_date: '2026-03-02 06:42'
-updated_date: '2026-03-02 10:37'
+updated_date: '2026-03-04 18:25'
 labels:
   - ui
   - refactor
   - ux-improvement
 dependencies: []
 priority: medium
+ordinal: 12000
 ---
 
 ## Description

@@ -30,6 +30,11 @@ import java.util.*
 fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
     val logs by viewModel.logs.collectAsState()
 
+    // Group logs by date
+    val groupedLogs = remember(logs) {
+        groupLogsByDate(logs)
+    }
+
     Column(modifier = Modifier.fillMaxSize()) {
         // Header
         Surface(
@@ -92,16 +97,113 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
                     bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 )
             ) {
-                items(logs, key = { it.id }) { log ->
-                    LogEntryItem(log = log)
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                    )
+                groupedLogs.forEach { (dateLabel, dateLogs) ->
+                    // Date group header
+                    item(key = "header_$dateLabel") {
+                        DateGroupHeader(label = dateLabel, count = dateLogs.size)
+                    }
+
+                    // Logs for this date
+                    items(dateLogs, key = { it.id }) { log ->
+                        LogEntryItem(log = log)
+                        HorizontalDivider(
+                            modifier = Modifier.padding(horizontal = 16.dp),
+                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun DateGroupHeader(label: String, count: Int) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "($count)",
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+            )
+        }
+    }
+}
+
+private data class DateGroup(val label: String, val logs: List<LogEntry>)
+
+private fun groupLogsByDate(logs: List<LogEntry>): List<DateGroup> {
+    val now = System.currentTimeMillis()
+    val todayStart = startOfDay(now)
+    val yesterdayStart = startOfDay(now - 86_400_000)
+
+    val today = mutableListOf<LogEntry>()
+    val yesterday = mutableListOf<LogEntry>()
+    val older = mutableListOf<LogEntry>()
+
+    logs.forEach { log ->
+        when {
+            log.timestamp >= todayStart -> today.add(log)
+            log.timestamp >= yesterdayStart -> yesterday.add(log)
+            else -> older.add(log)
+        }
+    }
+
+    val result = mutableListOf<DateGroup>()
+    if (today.isNotEmpty()) {
+        result.add(DateGroup("Today", today))
+    }
+    if (yesterday.isNotEmpty()) {
+        result.add(DateGroup("Yesterday", yesterday))
+    }
+    if (older.isNotEmpty()) {
+        // Group older entries by date
+        val olderByDate = older.groupBy { log ->
+            val date = Date(log.timestamp)
+            val cal = Calendar.getInstance().apply { time = date }
+            "${cal.get(Calendar.MONTH) + 1}/${cal.get(Calendar.DAY_OF_YEAR)}"
+        }
+        olderByDate.forEach { (dateKey, dateLogs) ->
+            val date = Date(dateLogs.first().timestamp)
+            val cal = Calendar.getInstance().apply { time = date }
+            val month = cal.getDisplayName(Calendar.MONTH, Calendar.SHORT, Locale.ENGLISH)
+            val day = cal.get(Calendar.DAY_OF_MONTH)
+            val year = cal.get(Calendar.YEAR)
+            val label = if (year == Calendar.getInstance().get(Calendar.YEAR)) {
+                "$month $day"
+            } else {
+                "$month $day, $year"
+            }
+            result.add(DateGroup(label, dateLogs))
+        }
+    }
+
+    return result
+}
+
+private fun startOfDay(timestamp: Long): Long {
+    val cal = Calendar.getInstance().apply { timeInMillis = timestamp }
+    cal.set(Calendar.HOUR_OF_DAY, 0)
+    cal.set(Calendar.MINUTE, 0)
+    cal.set(Calendar.SECOND, 0)
+    cal.set(Calendar.MILLISECOND, 0)
+    return cal.timeInMillis
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

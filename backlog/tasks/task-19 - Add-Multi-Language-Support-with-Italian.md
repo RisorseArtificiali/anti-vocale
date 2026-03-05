@@ -1,17 +1,18 @@
 ---
-id: task-19
+id: TASK-19
 title: Add Multi-Language Support with Italian
 status: Done
 assignee:
   - Claude
 created_date: '2026-03-01 19:44'
-updated_date: '2026-03-02 09:58'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - i18n
   - ui
 dependencies: []
 priority: medium
+ordinal: 16000
 ---
 
 ## Description

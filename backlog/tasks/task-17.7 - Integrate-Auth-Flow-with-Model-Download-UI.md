@@ -1,17 +1,18 @@
 ---
-id: task-17.7
+id: TASK-17.7
 title: Integrate Auth Flow with Model Download UI
 status: Done
 assignee: []
 created_date: '2026-03-01 12:18'
-updated_date: '2026-03-01 13:12'
+updated_date: '2026-03-04 18:25'
 labels:
   - ui
   - viewmodel
   - integration
 dependencies: []
-parent_task_id: task-17
+parent_task_id: TASK-17
 priority: medium
+ordinal: 25000
 ---
 
 ## Description

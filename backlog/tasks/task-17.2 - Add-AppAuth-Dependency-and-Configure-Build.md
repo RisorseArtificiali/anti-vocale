@@ -1,17 +1,18 @@
 ---
-id: task-17.2
+id: TASK-17.2
 title: Add AppAuth Dependency and Configure Build
 status: Done
 assignee: []
 created_date: '2026-03-01 12:18'
-updated_date: '2026-03-01 13:12'
+updated_date: '2026-03-04 18:25'
 labels:
   - android
   - build
   - dependency
 dependencies: []
-parent_task_id: task-17
+parent_task_id: TASK-17
 priority: high
+ordinal: 20000
 ---
 
 ## Description

@@ -1,16 +1,17 @@
 ---
-id: task-21
+id: TASK-21
 title: Shorten Token Display with Condensed Format
 status: Done
 assignee: []
 created_date: '2026-03-01 19:44'
-updated_date: '2026-03-01 19:53'
+updated_date: '2026-03-04 18:25'
 labels:
   - bug
   - ui
   - settings
 dependencies: []
 priority: low
+ordinal: 15000
 ---
 
 ## Description

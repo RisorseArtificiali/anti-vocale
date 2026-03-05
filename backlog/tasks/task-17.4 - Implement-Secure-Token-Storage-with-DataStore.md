@@ -1,18 +1,19 @@
 ---
-id: task-17.4
+id: TASK-17.4
 title: Implement Secure Token Storage with DataStore
 status: Done
 assignee: []
 created_date: '2026-03-01 12:18'
-updated_date: '2026-03-01 13:12'
+updated_date: '2026-03-04 18:25'
 labels:
   - kotlin
   - datastore
   - security
   - storage
 dependencies: []
-parent_task_id: task-17
+parent_task_id: TASK-17
 priority: high
+ordinal: 22000
 ---
 
 ## Description

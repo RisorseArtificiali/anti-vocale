@@ -1,11 +1,11 @@
 ---
-id: task-29
+id: TASK-29
 title: Migrate to AndroidX Per-App Language API
 status: Done
 assignee:
   - Claude
 created_date: '2026-03-02 11:00'
-updated_date: '2026-03-02 13:58'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - i18n
@@ -13,6 +13,7 @@ labels:
   - tech-debt
 dependencies: []
 priority: medium
+ordinal: 7000
 ---
 
 ## Description

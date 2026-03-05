@@ -1,17 +1,18 @@
 ---
-id: task-9
+id: TASK-9
 title: Share Transcription Back to Source App
 status: Done
 assignee:
   - Claude
 created_date: '2026-02-28 18:10'
-updated_date: '2026-02-28 20:24'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - sharing
   - ux
 dependencies: []
 priority: medium
+ordinal: 33000
 ---
 
 ## Description

@@ -1,14 +1,16 @@
 ---
-id: task-14
+id: TASK-14
 title: Add Settings tab with keep-alive timeout configuration
 status: Done
 assignee: []
 created_date: '2026-03-01 08:25'
+updated_date: '2026-03-04 18:25'
 labels:
   - settings
   - ui
   - keep-alive
 dependencies: []
+ordinal: 30000
 ---
 
 ## Description

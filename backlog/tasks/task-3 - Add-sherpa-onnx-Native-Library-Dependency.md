@@ -4,13 +4,14 @@ title: Add sherpa-onnx Native Library Dependency
 status: Done
 assignee: []
 created_date: '2026-02-28 17:52'
-updated_date: '2026-03-02 18:08'
+updated_date: '2026-03-04 18:25'
 labels:
   - android
   - native
   - infrastructure
 dependencies: []
 priority: high
+ordinal: 38000
 ---
 
 ## Description

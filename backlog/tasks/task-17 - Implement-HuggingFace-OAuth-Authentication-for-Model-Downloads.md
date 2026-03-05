@@ -1,17 +1,18 @@
 ---
-id: task-17
+id: TASK-17
 title: Implement HuggingFace OAuth Authentication for Model Downloads
 status: Done
 assignee:
   - Claude
 created_date: '2026-03-01 12:17'
-updated_date: '2026-03-01 13:12'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - authentication
   - huggingface
 dependencies: []
 priority: high
+ordinal: 18000
 ---
 
 ## Description

@@ -1,16 +1,17 @@
 ---
-id: task-22
+id: TASK-22
 title: Show Character Counter in Transcription Notification
 status: Done
 assignee: []
 created_date: '2026-03-01 19:44'
-updated_date: '2026-03-01 20:17'
+updated_date: '2026-03-04 18:25'
 labels:
   - enhancement
   - notification
   - ux
 dependencies: []
 priority: medium
+ordinal: 14000
 ---
 
 ## Description

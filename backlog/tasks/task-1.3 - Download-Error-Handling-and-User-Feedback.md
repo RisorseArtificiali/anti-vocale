@@ -1,17 +1,18 @@
 ---
-id: task-1.3
+id: TASK-1.3
 title: Download Error Handling and User Feedback
 status: Done
 assignee: []
 created_date: '2026-02-28 17:59'
-updated_date: '2026-03-01 10:43'
+updated_date: '2026-03-04 18:25'
 labels:
   - error-handling
   - ux
 dependencies:
   - task-1.2
-parent_task_id: task-1
+parent_task_id: TASK-1
 priority: medium
+ordinal: 46000
 ---
 
 ## Description

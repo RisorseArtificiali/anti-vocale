@@ -4,13 +4,14 @@ title: Download and Integrate Parakeet TDT v3 ONNX Model
 status: Done
 assignee: []
 created_date: '2026-02-28 17:52'
-updated_date: '2026-03-02 18:08'
+updated_date: '2026-03-04 18:25'
 labels:
   - model-download
   - huggingface
   - parakeet
 dependencies: []
 priority: high
+ordinal: 37000
 ---
 
 ## Description

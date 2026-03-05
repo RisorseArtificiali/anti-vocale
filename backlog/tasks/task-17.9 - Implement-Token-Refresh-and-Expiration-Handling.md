@@ -1,17 +1,18 @@
 ---
-id: task-17.9
+id: TASK-17.9
 title: Implement Token Refresh and Expiration Handling
 status: Done
 assignee: []
 created_date: '2026-03-01 12:18'
-updated_date: '2026-03-01 13:12'
+updated_date: '2026-03-04 18:25'
 labels:
   - authentication
   - token-refresh
   - security
 dependencies: []
-parent_task_id: task-17
+parent_task_id: TASK-17
 priority: medium
+ordinal: 27000
 ---
 
 ## Description
