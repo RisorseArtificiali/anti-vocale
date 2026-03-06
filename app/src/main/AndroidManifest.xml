@@ -129,6 +129,12 @@
             android:enabled="true"
             android:exported="false" />
 
+        <!-- BroadcastReceiver for capturing chosen app from share chooser -->
+        <receiver
+            android:name=".receiver.ChooserBroadcastReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
         <!-- Foreground service for inference processing -->
         <service
             android:name=".service.InferenceService"
