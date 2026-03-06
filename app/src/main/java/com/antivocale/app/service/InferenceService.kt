@@ -412,7 +412,7 @@ class InferenceService : Service() {
         // Use request prompt -> default prompt from settings -> hardcoded fallback
         val savedDefaultPrompt = AppContainer.preferencesManager.defaultPrompt.first()
         val prompt = request.prompt.ifEmpty {
-            savedDefaultPrompt.ifEmpty { "Transcribe this speech:" }
+            savedDefaultPrompt.ifEmpty { getString(R.string.default_system_prompt) }
         }
         Log.i(TAG, "=== TRANSCRIPTION DEBUG ===")
         Log.i(TAG, "Request prompt: '${request.prompt}'")

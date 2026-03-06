@@ -59,9 +59,9 @@
     <string name="whisper_title">Whisper (Multilingue)</string>
     <string name="whisper_description">Ideale per italiano e altre lingue</string>
     <string name="whisper_tiny_title">Whisper Tiny</string>
-    <string name="whisper_tiny_description">~75MB • Veloce • Buono per trascrizione rapida</string>
+    <string name="whisper_tiny_description">~110MB • Veloce • Buono per trascrizione rapida</string>
     <string name="whisper_base_title">Whisper Base</string>
-    <string name="whisper_base_description">~150MB • Miglior equilibrio velocità/precisione</string>
+    <string name="whisper_base_description">~197MB • Miglior equilibrio velocità/precisione</string>
     <string name="whisper_download">Scarica Whisper</string>
     <string name="whisper_download_confirm_title">Scaricare %1$s?</string>
     <string name="whisper_download_confirm_message">Verranno scaricati ~%1$dMB. Whisper offre eccellente supporto multilingue con punteggiatura corretta.</string>
@@ -189,6 +189,18 @@
     <string name="default_prompt_placeholder">es., Trascrivi questo discorso:</string>
     <string name="default_prompt_chars">%1$d / 500</string>
     <string name="default_prompt_compatibility_info">Applica solo ai modelli LLM (Gemma). I modelli Whisper e Parakeet ignorano questa impostazione.</string>
+    <string name="current_default_prompt_label">Attualmente in uso:</string>
+    <string name="default_system_prompt">Trascrivi questo discorso:</string>
+    <string name="builtin_default_prompt">Trascrivi questo discorso: (predefinito di sistema)</string>
+    <string name="example_prompts_title">Prompt di Esempio</string>
+    <string name="example_prompts_description">Tocca un prompt per utilizzarlo</string>
+    <string name="example_prompt_transcribe">Trascrivi questo audio con precisione, mantenendo la lingua originale.</string>
+    <string name="example_prompt_summarize">Trascrivi e riassumi brevemente i punti chiave di questo messaggio audio.</string>
+    <string name="example_prompt_formal">Trascrivi questo audio in modo formale e pulito. Rimuovi le parole di riempimento e le false partenze.</string>
+    <string name="example_prompt_translate_en">Trascrivi e traduci questo audio in inglese.</string>
+    <string name="example_prompt_translate_it">Trascrivi e traduci questo audio in italiano.</string>
+    <string name="example_prompt_notes">Trascrivi questo audio e formattalo come note a punti.</string>
+    <string name="prompt_applied">Prompt applicato</string>
 
     <!-- Settings Tab - Preload Info -->
     <string name="preload_title">Caricamento Automatico e Preload</string>

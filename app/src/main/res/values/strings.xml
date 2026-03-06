@@ -59,9 +59,9 @@
     <string name="whisper_title">Whisper (Multilingual)</string>
     <string name="whisper_description">Best for Italian and other languages</string>
     <string name="whisper_tiny_title">Whisper Tiny</string>
-    <string name="whisper_tiny_description">~75MB • Fast • Good for quick transcription</string>
+    <string name="whisper_tiny_description">~110MB • Fast • Good for quick transcription</string>
     <string name="whisper_base_title">Whisper Base</string>
-    <string name="whisper_base_description">~150MB • Best balance of speed and accuracy</string>
+    <string name="whisper_base_description">~197MB • Best balance of speed and accuracy</string>
     <string name="whisper_download">Download Whisper</string>
     <string name="whisper_download_confirm_title">Download %1$s?</string>
     <string name="whisper_download_confirm_message">This will download ~%1$dMB. Whisper provides excellent multilingual support with proper punctuation.</string>
@@ -189,6 +189,18 @@
     <string name="default_prompt_placeholder">e.g., Transcribe this speech:</string>
     <string name="default_prompt_chars">%1$d / 500</string>
     <string name="default_prompt_compatibility_info">Only applies to LLM models (Gemma). Whisper and Parakeet models ignore this setting.</string>
+    <string name="current_default_prompt_label">Currently using:</string>
+    <string name="default_system_prompt">Transcribe this speech:</string>
+    <string name="builtin_default_prompt">Transcribe this speech: (built-in default)</string>
+    <string name="example_prompts_title">Example Prompts</string>
+    <string name="example_prompts_description">Tap a prompt to use it</string>
+    <string name="example_prompt_transcribe">Transcribe this audio accurately, preserving the original language.</string>
+    <string name="example_prompt_summarize">Transcribe and briefly summarize the key points of this audio message.</string>
+    <string name="example_prompt_formal">Transcribe this audio in a formal, clean style. Remove filler words and false starts.</string>
+    <string name="example_prompt_translate_en">Transcribe and translate this audio into English.</string>
+    <string name="example_prompt_translate_it">Trascrivi e traduci questo audio in italiano.</string>
+    <string name="example_prompt_notes">Transcribe this audio and format it as bullet-point notes.</string>
+    <string name="prompt_applied">Prompt applied</string>
 
     <!-- Settings Tab - Preload Info -->
     <string name="preload_title">Auto-Load &amp; Preload</string>
