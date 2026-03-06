@@ -49,6 +49,7 @@ class InferenceService : Service() {
 
         // Extras for share source detection
         const val EXTRA_SOURCE = "source"
+        const val EXTRA_SOURCE_PACKAGE = "source_package"
         const val SOURCE_SHARE = "share"
 
         // Extras for URI-based audio sharing (vs file path)
@@ -71,7 +72,8 @@ class InferenceService : Service() {
         val prompt: String,
         val filePath: String?,
         val startTime: Long = System.currentTimeMillis(),
-        val source: String? = null
+        val source: String? = null,
+        val sourcePackage: String? = null  // Calling app package name (e.g., com.whatsapp)
     )
 
     override fun onCreate() {
@@ -103,12 +105,13 @@ class InferenceService : Service() {
             requestType = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE) ?: "text",
             prompt = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_PROMPT) ?: "",
             filePath = filePath,
-            source = intent?.getStringExtra(EXTRA_SOURCE)
+            source = intent?.getStringExtra(EXTRA_SOURCE),
+            sourcePackage = intent?.getStringExtra(EXTRA_SOURCE_PACKAGE)
         )
 
         // Enqueue request
         requestQueue.add(request)
-        Log.i(TAG, "Request enqueued: ${request.taskId}, source=${request.source}, filePath=$filePath")
+        Log.i(TAG, "Request enqueued: ${request.taskId}, source=${request.source}, sourcePackage=${request.sourcePackage}, filePath=$filePath")
 
         // Process queue
         processQueue()
