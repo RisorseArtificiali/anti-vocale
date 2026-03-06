@@ -99,14 +99,35 @@ class ShareReceiverActivity : Activity() {
             }
         }
 
+        val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM, Uri::class.java)
+
+        // If still null, try extracting from content URI authority
+        if (sourcePackage == null && uri != null && uri.scheme == "content") {
+            val authority = uri.authority
+            if (authority != null) {
+                // Common patterns: com.whatsapp.provider.media, org.telegram.messenger
+                // Extract package from authority (e.g., "com.whatsapp.provider.media" -> "com.whatsapp")
+                val detectedFromUri = when {
+                    authority.startsWith("com.whatsapp") -> "com.whatsapp"
+                    authority.startsWith("org.telegram") -> "org.telegram.messenger"
+                    authority.startsWith("org.thoughtcrime.securesms") -> "org.thoughtcrime.securesms"
+                    // If authority is already a package name
+                    authority.matches(Regex("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$")) -> authority
+                    else -> null
+                }
+                if (detectedFromUri != null) {
+                    sourcePackage = detectedFromUri
+                    Log.i(TAG, "Detected source app from URI authority: $sourcePackage (authority: $authority)")
+                }
+            }
+        }
+
         // Log detection result
         if (sourcePackage != null) {
             Log.i(TAG, "Source app detected: $sourcePackage")
         } else {
             Log.d(TAG, "Source app not detected - will use default preferences")
         }
-
-        val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM, Uri::class.java)
 
         Log.i(TAG, "Handle share: URI=$uri, MIME=${intent.type}, source=$sourcePackage")
 

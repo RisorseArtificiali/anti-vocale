@@ -5,13 +5,14 @@ status: Done
 assignee:
   - claude
 created_date: '2026-02-28 19:43'
-updated_date: '2026-03-05 13:04'
+updated_date: '2026-03-05 15:58'
 labels:
   - settings
   - enhancement
   - future
 dependencies: []
 priority: low
+ordinal: 49000
 ---
 
 ## Description

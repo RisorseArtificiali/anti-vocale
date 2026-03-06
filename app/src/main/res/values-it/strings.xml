@@ -36,6 +36,9 @@
     <string name="logs_error_label">Errore:</string>
     <string name="logs_task_id">ID Task: %1$s</string>
     <string name="logs_unknown_error">Errore sconosciuto</string>
+    <string name="logs_search_placeholder">Cerca trascrizioni…</string>
+    <string name="logs_search_no_results">Nessuna trascrizione trovata</string>
+    <string name="logs_search_no_results_hint">Prova un termine di ricerca diverso</string>
     <string name="voice_message_duration">messaggio vocale</string>
     <string name="processed_in">Elaborato in %1$s</string>
     <string name="today">Oggi</string>
@@ -206,6 +209,48 @@
     <string name="theme_default">Predefinito (Indaco)</string>
     <string name="theme_whatsapp">WhatsApp</string>
     <string name="theme_telegram">Telegram</string>
+
+    <!-- Per-App Settings -->
+    <string name="per_app_settings_title">Impostazioni per App</string>
+    <string name="per_app_settings_description">Personalizza il comportamento delle notifiche per ogni app</string>
+    <string name="per_app_settings_info">Tocca un\'app per configurare il comportamento delle notifiche quando l\'audio viene condiviso da quell\'app.</string>
+    <string name="per_app_settings_loading">Caricamento preferenze...</string>
+    <string name="per_app_settings_manually_added">Aggiunte Manualmente</string>
+    <string name="per_app_settings_add_app">Aggiungi App</string>
+    <string name="per_app_settings_search">Cerca app...</string>
+    <string name="per_app_settings_no_apps">Nessuna app trovata</string>
+    <string name="per_app_settings_no_matching_apps">Nessuna app corrispondente</string>
+    <string name="per_app_settings_using_defaults">Uso predefiniti</string>
+    <string name="per_app_settings_auto_copy_on">Copia auto attiva</string>
+    <string name="per_app_settings_auto_copy_off">Copia auto disattiva</string>
+    <string name="per_app_settings_share_on">Pulsante condividi attivo</string>
+    <string name="per_app_settings_share_off">Pulsante condividi disattivo</string>
+    <string name="per_app_settings_sound">Suono: %1$s</string>
+    <string name="per_app_settings_dialog_title">Impostazioni per %1$s</string>
+    <string name="per_app_settings_auto_copy_title">Copia automatica trascrizione</string>
+    <string name="per_app_settings_auto_copy_description">Copia automaticamente la trascrizione negli appunti</string>
+    <string name="per_app_settings_show_share_title">Mostra pulsante condividi</string>
+    <string name="per_app_settings_show_share_description">Mostra il pulsante condividi nella notifica</string>
+    <string name="per_app_settings_notification_sound">Suono notifica</string>
+    <string name="per_app_settings_sound_label">Suono</string>
+    <string name="per_app_settings_close">Chiudi</string>
+    <string name="per_app_settings_sound_default">Predefinito</string>
+    <string name="per_app_settings_sound_silent">Silenzioso</string>
+    <string name="per_app_settings_sound_chime">Campanello</string>
+    <string name="per_app_settings_sound_bell">Campana</string>
+    <string name="per_app_settings_quick_share_back_title">Condividi Indietro Rapido</string>
+    <string name="per_app_settings_quick_share_back_description">Tocco unico per inviare la trascrizione all\'app</string>
+
+    <!-- Share Back -->
+    <string name="share_back">Condividi Indietro</string>
+    <string name="share_back_description">Condividi la trascrizione nell\'app di origine</string>
+    <string name="send_to_app">Invia a %1$s</string>
+
+    <!-- Notification Channels -->
+    <string name="notification_channel_inference">Servizio di Trascrizione</string>
+    <string name="notification_channel_inference_description">Elaborazione trascrizione audio in background</string>
+    <string name="notification_channel_result">Risultato Trascrizione</string>
+    <string name="notification_channel_result_description">Notifica quando la trascrizione è completa</string>
 
     <!-- Dismiss -->
     <string name="dismiss">Chiudi</string>

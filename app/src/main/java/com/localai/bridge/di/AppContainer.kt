@@ -4,6 +4,7 @@ import android.content.Context
 import com.localai.bridge.data.HuggingFaceApiClient
 import com.localai.bridge.data.HuggingFaceAuthManager
 import com.localai.bridge.data.HuggingFaceTokenManager
+import com.localai.bridge.data.PerAppPreferencesManager
 import com.localai.bridge.data.PreferencesManager
 import com.localai.bridge.transcription.LlmTranscriptionBackend
 import com.localai.bridge.transcription.SherpaOnnxBackend
@@ -23,6 +24,7 @@ object AppContainer {
     private var _huggingFaceTokenManager: HuggingFaceTokenManager? = null
     private var _huggingFaceApiClient: HuggingFaceApiClient? = null
     private var _huggingFaceAuthManager: HuggingFaceAuthManager? = null
+    private var _perAppPreferencesManager: PerAppPreferencesManager? = null
 
     val preferencesManager: PreferencesManager
         get() = _preferencesManager!!
@@ -42,12 +44,16 @@ object AppContainer {
     val huggingFaceAuthManager: HuggingFaceAuthManager
         get() = _huggingFaceAuthManager!!
 
+    val perAppPreferencesManager: PerAppPreferencesManager
+        get() = _perAppPreferencesManager!!
+
     /**
      * Initialize the container. Must be called in Application.onCreate()
      */
     fun initialize(context: Context) {
         _applicationContext = context.applicationContext
         _preferencesManager = PreferencesManager(context.applicationContext)
+        _perAppPreferencesManager = PerAppPreferencesManager(context.applicationContext)
         _logsViewModel = LogsViewModel()
         _huggingFaceTokenManager = HuggingFaceTokenManager(context.applicationContext).apply {
             initialize()

@@ -1,10 +1,10 @@
 ---
 id: TASK-47
 title: Rename app from "Voice Message Reader" to "Anti-Vocale"
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-05 15:27'
-updated_date: '2026-03-05 15:28'
+updated_date: '2026-03-05 15:58'
 labels:
   - refactoring
   - branding
@@ -12,6 +12,7 @@ labels:
 milestone: App Rebrand
 dependencies: []
 priority: high
+ordinal: 15.625
 ---
 
 ## Description

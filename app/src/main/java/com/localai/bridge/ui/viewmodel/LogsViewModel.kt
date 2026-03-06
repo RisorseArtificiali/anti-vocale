@@ -1,9 +1,13 @@
 package com.localai.bridge.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import java.util.UUID
 
@@ -28,6 +32,14 @@ class LogsViewModel : ViewModel() {
 
     private val _logs = MutableStateFlow<List<LogEntry>>(emptyList())
     val logs: StateFlow<List<LogEntry>> = _logs.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    val filteredLogs: StateFlow<List<LogEntry>> = combine(_logs, _searchQuery) { logs, query ->
+        if (query.isBlank()) logs
+        else logs.filter { it.result.contains(query, ignoreCase = true) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val maxLogs = 10
 
@@ -93,5 +105,13 @@ class LogsViewModel : ViewModel() {
                 durationMs = durationMs
             )
         }
+    }
+
+    fun onSearchQueryChanged(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun clearSearch() {
+        _searchQuery.value = ""
     }
 }

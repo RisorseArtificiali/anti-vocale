@@ -1,10 +1,10 @@
 ---
 id: TASK-50
 title: Rename repository directory to anti-vocale
-status: In Progress
+status: Done
 assignee: []
 created_date: '2026-03-05 15:28'
-updated_date: '2026-03-05 15:34'
+updated_date: '2026-03-05 15:58'
 labels:
   - branding
   - git
@@ -15,6 +15,7 @@ dependencies:
   - TASK-48
   - TASK-49
 priority: low
+ordinal: 31.25
 ---
 
 ## Description

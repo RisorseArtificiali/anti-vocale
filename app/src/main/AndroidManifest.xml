@@ -127,7 +127,13 @@
         <receiver
             android:name=".receiver.NotificationActionReceiver"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.localai.bridge.COPY_TRANSCRIPTION" />
+                <action android:name="com.localai.bridge.SHARE_TRANSCRIPTION" />
+                <action android:name="com.localai.bridge.SHARE_BACK" />
+            </intent-filter>
+        </receiver>
 
         <!-- BroadcastReceiver for capturing chosen app from share chooser -->
         <receiver

@@ -1,16 +1,17 @@
 ---
 id: TASK-45
 title: Add search functionality to Logs tab
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-03 05:36'
-updated_date: '2026-03-04 15:58'
+updated_date: '2026-03-05 16:50'
 labels:
   - enhancement
   - logs
   - ux
 dependencies: []
 priority: high
+ordinal: 1000
 ---
 
 ## Description
@@ -40,8 +41,6 @@ Implement full-text search within transcriptions in the Logs tab to allow users 
 - [ ] #2 always validate visually with Playwright MCP and attache screenshots
 <!-- DOD:END -->
 
-
-
 ## Acceptance Criteria
 <!-- AC:BEGIN -->
 - [ ] #1 Search bar visible in Logs tab header
@@ -51,3 +50,14 @@ Implement full-text search within transcriptions in the Logs tab to allow users 
 - [ ] #5 Clear button resets search and shows all logs
 - [ ] #6 Search works offline (no network required)
 <!-- AC:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Added search functionality to the Logs tab with real-time filtering and match highlighting.
+
+**Changes:**
+- **LogsViewModel.kt** — Added `searchQuery` StateFlow, `filteredLogs` derived via `combine()`, `onSearchQueryChanged()` and `clearSearch()` methods
+- **LogsTab.kt** — Added `OutlinedTextField` search bar in header, three-state display (no logs / no results / filtered list), and `highlightText()` function using `AnnotatedString` to highlight matches in both collapsed preview and expanded full text
+- **strings.xml (EN/IT)** — Added `logs_search_placeholder`, `logs_search_no_results`, `logs_search_no_results_hint`
+<!-- SECTION:FINAL_SUMMARY:END -->

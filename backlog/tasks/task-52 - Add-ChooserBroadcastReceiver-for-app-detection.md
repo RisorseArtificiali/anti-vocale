@@ -1,10 +1,10 @@
 ---
 id: TASK-52
 title: Add ChooserBroadcastReceiver for app detection
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-06 07:47'
-updated_date: '2026-03-06 10:16'
+updated_date: '2026-03-06 10:29'
 labels:
   - feature
   - broadcast-receiver
@@ -65,6 +65,18 @@ Implement BroadcastReceiver to capture EXTRA_CHOSEN_COMPONENT from Android share
 - ⚠️ Build verification pending (Java toolchain needs JDK 17, currently using 25)
 
 Next: TASK-53 - Integrate PendingIntent with ShareReceiverActivity
+
+✅ COMPLETED 2026-03-06
+
+Implementation complete with all tests passing
+
+Extracted to ComponentInfoParser utility for clean testing
+
+All 9 unit tests: 0 failures, 0 errors
+
+Builds successfully with JDK 17
+
+Next: TASK-53 - PendingIntent integration
 <!-- SECTION:PLAN:END -->
 
 ## Definition of Done

@@ -16,8 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.localai.bridge.R
 import com.localai.bridge.di.AppContainer
@@ -29,10 +34,12 @@ import java.util.*
 @Composable
 fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
     val logs by viewModel.logs.collectAsState()
+    val filteredLogs by viewModel.filteredLogs.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
 
-    // Group logs by date
-    val groupedLogs = remember(logs) {
-        groupLogsByDate(logs)
+    // Group filtered logs by date
+    val groupedLogs = remember(filteredLogs) {
+        groupLogsByDate(filteredLogs)
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
@@ -41,26 +48,50 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
             modifier = Modifier.fillMaxWidth(),
             tonalElevation = 2.dp
         ) {
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = stringResource(R.string.logs_recent_requests, logs.size),
-                    style = MaterialTheme.typography.titleSmall
-                )
-                TextButton(onClick = { viewModel.clearLogs() }) {
-                    Icon(
-                        Icons.Default.DeleteSweep,
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp)
+            Column {
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.logs_recent_requests, logs.size),
+                        style = MaterialTheme.typography.titleSmall
                     )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.logs_clear))
+                    TextButton(onClick = { viewModel.clearLogs() }) {
+                        Icon(
+                            Icons.Default.DeleteSweep,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(stringResource(R.string.logs_clear))
+                    }
                 }
+
+                // Search bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChanged(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .padding(bottom = 8.dp),
+                    placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.clearSearch() }) {
+                                Icon(Icons.Default.Clear, contentDescription = null)
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
             }
         }
 
@@ -89,6 +120,32 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
                     )
                 }
             }
+        } else if (filteredLogs.isEmpty()) {
+            // Search yielded no results
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(
+                        Icons.Default.SearchOff,
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = stringResource(R.string.logs_search_no_results),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = stringResource(R.string.logs_search_no_results_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
+            }
         } else {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
@@ -105,7 +162,7 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
 
                     // Logs for this date
                     items(dateLogs, key = { it.id }) { log ->
-                        LogEntryItem(log = log)
+                        LogEntryItem(log = log, searchQuery = searchQuery)
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
@@ -208,7 +265,7 @@ private fun startOfDay(timestamp: Long): Long {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogEntryItem(log: LogEntry) {
+fun LogEntryItem(log: LogEntry, searchQuery: String = "") {
     var expanded by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
@@ -279,7 +336,11 @@ fun LogEntryItem(log: LogEntry) {
             if (log.status == LogEntry.Status.SUCCESS && log.result.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = getPreviewText(log.result),
+                    text = highlightText(
+                        getPreviewText(log.result),
+                        searchQuery,
+                        MaterialTheme.colorScheme.tertiary
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -319,7 +380,11 @@ fun LogEntryItem(log: LogEntry) {
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = log.result,
+                            text = highlightText(
+                                log.result,
+                                searchQuery,
+                                MaterialTheme.colorScheme.tertiary
+                            ),
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -518,4 +583,41 @@ private fun formatProcessingTime(durationMs: Long): String {
 private fun getPreviewText(text: String, maxLength: Int = 50): String {
     if (text.length <= maxLength) return text
     return text.take(maxLength) + "…"
+}
+
+// Highlight all occurrences of query in text (case-insensitive)
+@Composable
+private fun highlightText(
+    text: String,
+    query: String,
+    highlightColor: androidx.compose.ui.graphics.Color
+): AnnotatedString {
+    if (query.isBlank()) return AnnotatedString(text)
+
+    return buildAnnotatedString {
+        var currentIndex = 0
+        val lowerText = text.lowercase()
+        val lowerQuery = query.lowercase()
+
+        while (currentIndex < text.length) {
+            val matchIndex = lowerText.indexOf(lowerQuery, currentIndex)
+            if (matchIndex == -1) {
+                append(text.substring(currentIndex))
+                break
+            }
+            // Append text before the match
+            if (matchIndex > currentIndex) {
+                append(text.substring(currentIndex, matchIndex))
+            }
+            // Append the matched text with highlight
+            withStyle(SpanStyle(
+                color = highlightColor,
+                fontWeight = FontWeight.Bold,
+                background = highlightColor.copy(alpha = 0.15f)
+            )) {
+                append(text.substring(matchIndex, matchIndex + query.length))
+            }
+            currentIndex = matchIndex + query.length
+        }
+    }
 }

@@ -8,6 +8,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -38,6 +39,7 @@ import com.localai.bridge.data.HuggingFaceOAuthConfig
 import com.localai.bridge.data.ModelSource
 import com.localai.bridge.di.AppContainer
 import com.localai.bridge.manager.LlmManager
+import com.localai.bridge.ui.screens.PerAppSettingsScreen
 import com.localai.bridge.ui.theme.ThemeType
 import com.localai.bridge.ui.viewmodel.SettingsViewModel
 
@@ -68,6 +70,7 @@ fun SettingsTab(
     val scrollState = rememberScrollState()
     var tokenPasswordVisible by remember { mutableStateOf(false) }
     var showOAuthConfigDialog by remember { mutableStateOf(false) }
+    var showPerAppSettings by remember { mutableStateOf(false) }
 
     // OAuth launcher
     val oauthLauncher = rememberLauncherForActivityResult(
@@ -91,6 +94,13 @@ fun SettingsTab(
     val isModelLoaded by LlmManager.isReadyFlow.collectAsState()
     val remainingTime = LlmManager.getRemainingTimeSeconds() ?: 0L
 
+    // Show per-app settings screen or main settings
+    if (showPerAppSettings) {
+        PerAppSettingsScreen(
+            preferencesManager = AppContainer.perAppPreferencesManager,
+            onBack = { showPerAppSettings = false }
+        )
+    } else {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -1201,9 +1211,54 @@ fun SettingsTab(
             }
         }
 
+        // Per-App Settings Navigation Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showPerAppSettings = true },
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Settings,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column {
+                        Text(
+                            text = stringResource(R.string.per_app_settings_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(R.string.per_app_settings_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Open per-app settings",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
         // Spacer for scroll
         Spacer(modifier = Modifier.height(32.dp))
     }
+    } // End of if-else for showPerAppSettings
 }
 
 // ==================== OAuth Login Section ====================

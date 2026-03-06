@@ -21,6 +21,7 @@ import kotlinx.coroutines.flow.map
  * - autoCopy: Auto-copy transcription to clipboard
  * - showShareAction: Show share button in notification
  * - notificationSound: Notification sound identifier
+ * - quickShareBack: Use one-tap "Send to [App]" vs share sheet
  */
 class PerAppPreferencesManager(private val context: Context) {
 
@@ -36,6 +37,7 @@ class PerAppPreferencesManager(private val context: Context) {
         private const val AUTO_COPY_SUFFIX = "_auto_copy"
         private const val SHOW_SHARE_ACTION_SUFFIX = "_show_share_action"
         private const val NOTIFICATION_SOUND_SUFFIX = "_notification_sound"
+        private const val QUICK_SHARE_BACK_SUFFIX = "_quick_share_back"
 
         /**
          * Package names for common apps
@@ -69,6 +71,12 @@ class PerAppPreferencesManager(private val context: Context) {
         stringPreferencesKey("${packageName}${NOTIFICATION_SOUND_SUFFIX}")
 
     /**
+     * Get preference key for Quick Share Back for a specific package
+     */
+    private fun quickShareBackKeyForPackage(packageName: String) =
+        booleanPreferencesKey("${packageName}${QUICK_SHARE_BACK_SUFFIX}")
+
+    /**
      * Observe notification preferences for a specific package.
      *
      * @param packageName Package name (e.g., "com.whatsapp")
@@ -80,7 +88,8 @@ class PerAppPreferencesManager(private val context: Context) {
             AppNotificationPreferences(
                 autoCopy = preferences[autoCopyKeyForPackage(packageName)] ?: defaultPrefs.autoCopy,
                 showShareAction = preferences[showShareActionKeyForPackage(packageName)] ?: defaultPrefs.showShareAction,
-                notificationSound = preferences[notificationSoundKeyForPackage(packageName)] ?: defaultPrefs.notificationSound
+                notificationSound = preferences[notificationSoundKeyForPackage(packageName)] ?: defaultPrefs.notificationSound,
+                quickShareBack = preferences[quickShareBackKeyForPackage(packageName)] ?: defaultPrefs.quickShareBack
             )
         }
     }
@@ -112,6 +121,7 @@ class PerAppPreferencesManager(private val context: Context) {
             preferences[autoCopyKeyForPackage(packageName)] = updated.autoCopy
             preferences[showShareActionKeyForPackage(packageName)] = updated.showShareAction
             preferences[notificationSoundKeyForPackage(packageName)] = updated.notificationSound
+            preferences[quickShareBackKeyForPackage(packageName)] = updated.quickShareBack
         }
     }
 
@@ -147,6 +157,7 @@ class PerAppPreferencesManager(private val context: Context) {
             preferences.remove(autoCopyKeyForPackage(packageName))
             preferences.remove(showShareActionKeyForPackage(packageName))
             preferences.remove(notificationSoundKeyForPackage(packageName))
+            preferences.remove(quickShareBackKeyForPackage(packageName))
         }
     }
 

@@ -5,7 +5,7 @@ status: Done
 assignee:
   - claude
 created_date: '2026-03-02 21:08'
-updated_date: '2026-03-05 07:47'
+updated_date: '2026-03-05 15:58'
 labels:
   - bug
   - ui
@@ -13,6 +13,7 @@ labels:
   - state-management
 dependencies: []
 priority: medium
+ordinal: 48000
 ---
 
 ## Description
