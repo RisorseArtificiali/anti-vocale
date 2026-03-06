@@ -10,8 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,10 +19,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import com.antivocale.app.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -71,6 +67,7 @@ fun SettingsTab(
     var tokenPasswordVisible by remember { mutableStateOf(false) }
     var showOAuthConfigDialog by remember { mutableStateOf(false) }
     var showPerAppSettings by remember { mutableStateOf(false) }
+    var showPromptSettings by remember { mutableStateOf(false) }
 
     // OAuth launcher
     val oauthLauncher = rememberLauncherForActivityResult(
@@ -94,11 +91,16 @@ fun SettingsTab(
     val isModelLoaded by LlmManager.isReadyFlow.collectAsState()
     val remainingTime = LlmManager.getRemainingTimeSeconds() ?: 0L
 
-    // Show per-app settings screen or main settings
+    // Show sub-screens or main settings
     if (showPerAppSettings) {
         PerAppSettingsScreen(
             preferencesManager = AppContainer.perAppPreferencesManager,
             onBack = { showPerAppSettings = false }
+        )
+    } else if (showPromptSettings) {
+        PromptSettingsScreen(
+            viewModel = viewModel,
+            onBack = { showPromptSettings = false }
         )
     } else {
     Column(
@@ -379,31 +381,50 @@ fun SettingsTab(
                     is HuggingFaceTokenManager.TokenState.Valid -> {
                         // Already handled by OAuth section or show here for manual tokens
                         if (currentState.authType == HuggingFaceTokenManager.AuthType.MANUAL) {
+                            var showManualDetails by remember { mutableStateOf(false) }
                             Row(
-                                modifier = Modifier.fillMaxWidth(),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { showManualDetails = !showManualDetails },
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Column(
+                                Row(
                                     modifier = Modifier.weight(1f),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Token Valid",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                    Icon(
+                                        imageVector = if (showManualDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = if (showManualDetails) "Hide details" else "Show details",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
+                                IconButton(onClick = { viewModel.clearToken() }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Clear token",
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                }
+                            }
+                            if (showManualDetails) {
+                                Column(
+                                    modifier = Modifier.padding(start = 24.dp),
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CheckCircle,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Text(
-                                            text = "Token Valid",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
                                     Text(
                                         text = "Username: ${currentState.username}",
                                         style = MaterialTheme.typography.bodyMedium
@@ -413,13 +434,6 @@ fun SettingsTab(
                                         style = MaterialTheme.typography.bodySmall,
                                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                                IconButton(onClick = { viewModel.clearToken() }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Clear token",
-                                        tint = MaterialTheme.colorScheme.error
                                     )
                                 }
                             }
@@ -848,100 +862,46 @@ fun SettingsTab(
             }
         }
 
-        // Default Prompt Setting
-        val defaultPrompt by viewModel.defaultPrompt.collectAsState()
-        var promptInput by remember { mutableStateOf(defaultPrompt) }
-
-        // Sync promptInput with defaultPrompt when it changes
-        LaunchedEffect(defaultPrompt) {
-            promptInput = defaultPrompt
-        }
-
+        // Default Prompt Setting Navigation Card
         Card(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showPromptSettings = true },
+            shape = MaterialTheme.shapes.medium
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary
                     )
-                    Text(
-                        text = stringResource(R.string.default_prompt_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.default_prompt_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Compatibility info banner
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                    shape = MaterialTheme.shapes.small
-                ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp),
-                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                    Column {
+                        Text(
+                            text = stringResource(R.string.default_prompt_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = stringResource(R.string.default_prompt_compatibility_info),
+                            text = stringResource(R.string.default_prompt_description),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
-
-                OutlinedTextField(
-                    value = promptInput,
-                    onValueChange = { newValue ->
-                        // Enforce max 500 characters
-                        if (newValue.length <= 500) {
-                            promptInput = newValue
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text(stringResource(R.string.default_prompt_placeholder)) },
-                    minLines = 2,
-                    maxLines = 4,
-                    supportingText = {
-                        Text(
-                            text = stringResource(R.string.default_prompt_chars, promptInput.length),
-                            modifier = Modifier.fillMaxWidth(),
-                            textAlign = TextAlign.End
-                        )
-                    },
-                    trailingIcon = {
-                        if (promptInput != defaultPrompt) {
-                            IconButton(onClick = {
-                                viewModel.saveDefaultPrompt(promptInput)
-                            }) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = stringResource(R.string.save)
-                                )
-                            }
-                        }
-                    }
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Open prompt settings",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -978,43 +938,56 @@ fun SettingsTab(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                // Language options
-                Column(modifier = Modifier.selectableGroup()) {
-                    viewModel.languageOptions.forEach { option ->
-                        val isSelected = currentLanguage == option.code
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(
-                                    selected = isSelected,
-                                    role = Role.RadioButton,
-                                    onClick = {
-                                        if (!isSelected && !uiState.isSaving) {
-                                            viewModel.saveLanguagePreference(option.code)
+                // Language dropdown
+                var languageExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = languageExpanded,
+                    onExpandedChange = { languageExpanded = it }
+                ) {
+                    TextField(
+                        value = when (currentLanguage) {
+                            "system" -> stringResource(R.string.language_system)
+                            "en" -> stringResource(R.string.language_english)
+                            "it" -> stringResource(R.string.language_italian)
+                            else -> currentLanguage
+                        },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.language_title)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        enabled = !uiState.isSaving,
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = languageExpanded,
+                        onDismissRequest = { languageExpanded = false },
+                        modifier = Modifier.exposedDropdownSize()
+                    ) {
+                        viewModel.languageOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        when (option.code) {
+                                            "system" -> stringResource(R.string.language_system)
+                                            "en" -> stringResource(R.string.language_english)
+                                            "it" -> stringResource(R.string.language_italian)
+                                            else -> option.displayName
                                         }
-                                    }
-                                )
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            RadioButton(
-                                selected = isSelected,
-                                onClick = null,
-                                enabled = !uiState.isSaving
-                            )
-                            Text(
-                                text = when (option.code) {
-                                    "system" -> stringResource(R.string.language_system)
-                                    "en" -> stringResource(R.string.language_english)
-                                    "it" -> stringResource(R.string.language_italian)
-                                    else -> option.displayName
+                                    )
                                 },
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurface
+                                onClick = {
+                                    viewModel.saveLanguagePreference(option.code)
+                                    languageExpanded = false
+                                },
+                                trailingIcon = if (currentLanguage == option.code) {
+                                    { Icon(Icons.Default.Check, contentDescription = null) }
+                                } else null
                             )
                         }
                     }
@@ -1054,160 +1027,46 @@ fun SettingsTab(
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                // Theme options
-                Column(modifier = Modifier.selectableGroup()) {
-                    viewModel.themeOptions.forEach { theme ->
-                        val isSelected = currentTheme == theme
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .selectable(
-                                    selected = isSelected,
-                                    role = Role.RadioButton,
-                                    onClick = {
-                                        if (!isSelected && !uiState.isSaving) {
-                                            viewModel.saveThemePreference(theme)
-                                        }
-                                    }
-                                )
-                                .padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            RadioButton(
-                                selected = isSelected,
-                                onClick = null,
-                                enabled = !uiState.isSaving
-                            )
-                            // Theme color preview
-                            Box(
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .padding(2.dp)
-                            ) {
-                                when (theme) {
-                                    ThemeType.DEFAULT -> {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(2.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Star,
-                                                contentDescription = null,
-                                                tint = Color(0xFF818CF8),
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                    ThemeType.WHATSAPP -> {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(2.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Chat,
-                                                contentDescription = null,
-                                                tint = Color(0xFF25D366),
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                    ThemeType.TELEGRAM -> {
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .padding(2.dp),
-                                            contentAlignment = Alignment.Center
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Default.Send,
-                                                contentDescription = null,
-                                                tint = Color(0xFF64B5F6),
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                            Text(
-                                text = theme.displayName,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = if (isSelected)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurface
+                // Theme dropdown
+                var themeExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = themeExpanded,
+                    onExpandedChange = { themeExpanded = it }
+                ) {
+                    TextField(
+                        value = currentTheme.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.theme_title)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = themeExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        enabled = !uiState.isSaving,
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = themeExpanded,
+                        onDismissRequest = { themeExpanded = false },
+                        modifier = Modifier.exposedDropdownSize()
+                    ) {
+                        viewModel.themeOptions.forEach { theme ->
+                            DropdownMenuItem(
+                                text = { Text(theme.displayName) },
+                                onClick = {
+                                    viewModel.saveThemePreference(theme)
+                                    themeExpanded = false
+                                },
+                                trailingIcon = if (currentTheme == theme) {
+                                    { Icon(Icons.Default.Check, contentDescription = null) }
+                                } else null
                             )
                         }
                     }
                 }
-            }
-        }
-
-        // Preload Info Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Info,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                    Text(
-                        text = stringResource(R.string.preload_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.preload_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = stringResource(R.string.via_tasker),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Text(
-                    text = "Action: com.antivocale.app.PRELOAD_MODEL",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = stringResource(R.string.via_adb),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                Text(
-                    text = "adb shell am broadcast -a com.antivocale.app.PRELOAD_MODEL",
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                    color = MaterialTheme.colorScheme.onSecondaryContainer
-                )
             }
         }
 
@@ -1261,6 +1120,204 @@ fun SettingsTab(
     } // End of if-else for showPerAppSettings
 }
 
+// ==================== Prompt Settings Screen ====================
+
+@Composable
+private fun PromptSettingsScreen(
+    viewModel: SettingsViewModel,
+    onBack: () -> Unit
+) {
+    val defaultPrompt by viewModel.defaultPrompt.collectAsState()
+    var promptInput by remember { mutableStateOf(defaultPrompt) }
+    val context = LocalContext.current
+
+    LaunchedEffect(defaultPrompt) {
+        promptInput = defaultPrompt
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Header with back button
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Back"
+                )
+            }
+            Text(
+                text = stringResource(R.string.default_prompt_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        // Description
+        Text(
+            text = stringResource(R.string.default_prompt_description),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        // Current default info
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = MaterialTheme.shapes.small
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.current_default_prompt_label),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = defaultPrompt.ifEmpty { stringResource(R.string.builtin_default_prompt) },
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontStyle = if (defaultPrompt.isEmpty()) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal
+                )
+            }
+        }
+
+        // Compatibility info banner
+        Surface(
+            modifier = Modifier.fillMaxWidth(),
+            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
+            shape = MaterialTheme.shapes.small
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Info,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = stringResource(R.string.default_prompt_compatibility_info),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+        }
+
+        // Prompt input field
+        OutlinedTextField(
+            value = promptInput,
+            onValueChange = { newValue ->
+                if (newValue.length <= 500) {
+                    promptInput = newValue
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(R.string.default_prompt_placeholder)) },
+            minLines = 3,
+            maxLines = 6,
+            supportingText = {
+                Text(
+                    text = stringResource(R.string.default_prompt_chars, promptInput.length),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.End
+                )
+            },
+            trailingIcon = {
+                if (promptInput != defaultPrompt) {
+                    IconButton(onClick = {
+                        viewModel.saveDefaultPrompt(promptInput)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = stringResource(R.string.save)
+                        )
+                    }
+                }
+            }
+        )
+
+        HorizontalDivider()
+
+        // Example Prompts Section
+        Text(
+            text = stringResource(R.string.example_prompts_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = stringResource(R.string.example_prompts_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+
+        val examplePrompts = listOf(
+            R.string.example_prompt_transcribe,
+            R.string.example_prompt_summarize,
+            R.string.example_prompt_formal,
+            R.string.example_prompt_translate_en,
+            R.string.example_prompt_translate_it,
+            R.string.example_prompt_notes
+        )
+
+        examplePrompts.forEach { promptResId ->
+            val promptText = stringResource(promptResId)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        promptInput = promptText
+                        viewModel.saveDefaultPrompt(promptText)
+                        android.widget.Toast.makeText(
+                            context,
+                            context.getString(R.string.prompt_applied),
+                            android.widget.Toast.LENGTH_SHORT
+                        ).show()
+                    },
+                colors = CardDefaults.cardColors(
+                    containerColor = if (defaultPrompt == promptText)
+                        MaterialTheme.colorScheme.primaryContainer
+                    else
+                        MaterialTheme.colorScheme.surfaceVariant
+                )
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    if (defaultPrompt == promptText) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                    Text(
+                        text = promptText,
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
 // ==================== OAuth Login Section ====================
 
 /**
@@ -1279,40 +1336,59 @@ private fun OAuthLoginSection(
             // Show current token status or login button
             when (val state = tokenState) {
                 is HuggingFaceTokenManager.TokenState.Valid -> {
+                    var showDetails by remember { mutableStateOf(false) }
                     Row(
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showDetails = !showDetails },
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Column(
+                        Row(
                             modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = when (state.authType) {
+                                    HuggingFaceTokenManager.AuthType.OAUTH -> MaterialTheme.colorScheme.tertiary
+                                    HuggingFaceTokenManager.AuthType.MANUAL -> MaterialTheme.colorScheme.primary
+                                },
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = when (state.authType) {
+                                    HuggingFaceTokenManager.AuthType.OAUTH -> "OAuth Connected"
+                                    HuggingFaceTokenManager.AuthType.MANUAL -> "Token Valid"
+                                },
+                                style = MaterialTheme.typography.labelLarge,
+                                color = when (state.authType) {
+                                    HuggingFaceTokenManager.AuthType.OAUTH -> MaterialTheme.colorScheme.tertiary
+                                    HuggingFaceTokenManager.AuthType.MANUAL -> MaterialTheme.colorScheme.primary
+                                }
+                            )
+                            Icon(
+                                imageVector = if (showDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                contentDescription = if (showDetails) "Hide details" else "Show details",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        IconButton(onClick = onLogoutClick) {
+                            Icon(
+                                imageVector = Icons.Default.Logout,
+                                contentDescription = "Logout",
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                    if (showDetails) {
+                        Column(
+                            modifier = Modifier.padding(start = 24.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = when (state.authType) {
-                                        HuggingFaceTokenManager.AuthType.OAUTH -> MaterialTheme.colorScheme.tertiary
-                                        HuggingFaceTokenManager.AuthType.MANUAL -> MaterialTheme.colorScheme.primary
-                                    },
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Text(
-                                    text = when (state.authType) {
-                                        HuggingFaceTokenManager.AuthType.OAUTH -> "OAuth Connected"
-                                        HuggingFaceTokenManager.AuthType.MANUAL -> "Token Valid"
-                                    },
-                                    style = MaterialTheme.typography.labelLarge,
-                                    color = when (state.authType) {
-                                        HuggingFaceTokenManager.AuthType.OAUTH -> MaterialTheme.colorScheme.tertiary
-                                        HuggingFaceTokenManager.AuthType.MANUAL -> MaterialTheme.colorScheme.primary
-                                    }
-                                )
-                            }
                             Text(
                                 text = "Username: ${state.username}",
                                 style = MaterialTheme.typography.bodyMedium
@@ -1323,7 +1399,6 @@ private fun OAuthLoginSection(
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            // Show expiration for OAuth tokens
                             if (state.authType == HuggingFaceTokenManager.AuthType.OAUTH && state.expiresAt != null) {
                                 val expiresText = formatExpiration(state.expiresAt)
                                 val isExpiringSoon = state.needsRefresh()
@@ -1336,13 +1411,6 @@ private fun OAuthLoginSection(
                                         MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                        }
-                        IconButton(onClick = onLogoutClick) {
-                            Icon(
-                                imageVector = Icons.Default.Logout,
-                                contentDescription = "Logout",
-                                tint = MaterialTheme.colorScheme.error
-                            )
                         }
                     }
                 }

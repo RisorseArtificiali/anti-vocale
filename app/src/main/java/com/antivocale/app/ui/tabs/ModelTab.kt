@@ -1188,7 +1188,11 @@ private fun WhisperVariantCard(
                                 modifier = Modifier.fillMaxWidth()
                             )
                             Text(
-                                stringResource(R.string.download_status_extracting, state.fileName.takeIf { it.isNotEmpty() } ?: stringResource(R.string.download_status_extracting_files)),
+                                if (state.fileName.isNotEmpty()) {
+                                    stringResource(R.string.download_status_extracting, state.fileName)
+                                } else {
+                                    stringResource(R.string.download_status_extracting_files)
+                                },
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
