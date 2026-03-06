@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit
  *
  * Model source: https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/
  * Model sizes:
- * - Tiny: ~75MB (int8 quantized)
- * - Base: ~150MB (int8 quantized)
+ * - Tiny: ~110MB (int8 quantized)
+ * - Base: ~197MB (int8 quantized)
  *
  * Languages: Multilingual (99+ languages including excellent Italian support)
  */

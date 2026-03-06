@@ -19,7 +19,7 @@ import java.nio.ByteOrder
  * Key features:
  * - Uses ONNX Runtime (same as Parakeet, separate from LiteRT-LM's TFLite)
  * - Excellent multilingual support with proper punctuation
- * - ~75MB (Tiny) or ~150MB (Base) model sizes
+ * - ~110MB (Tiny) or ~197MB (Base) model sizes
  * - Slower than Parakeet but more accurate for non-English languages
  */
 class WhisperBackend : TranscriptionBackend {

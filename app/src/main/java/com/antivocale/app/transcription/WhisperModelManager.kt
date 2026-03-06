@@ -14,7 +14,7 @@ import java.io.File
  *
  * Supported variants:
  * - Tiny: ~75MB, fastest, least accurate
- * - Base: ~150MB, good balance
+ * - Base: ~197MB, good balance
  */
 object WhisperModelManager {
 
@@ -88,7 +88,7 @@ object WhisperModelManager {
             titleResId = R.string.whisper_base_title,
             descriptionResId = R.string.whisper_base_description,
             dirName = "sherpa-onnx-whisper-base",
-            estimatedSizeMB = 150
+            estimatedSizeMB = 197
         )
     }
 
