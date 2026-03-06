@@ -50,18 +50,20 @@
 
     <!-- Parakeet model -->
     <string name="parakeet_title">Parakeet TDT (Alternativo)</string>
-    <string name="parakeet_description">~640MB • 25 lingue • Più veloce ma meno preciso</string>
+    <string name="parakeet_description">~464MB • 25 lingue • Più veloce ma meno preciso</string>
     <string name="parakeet_download">Scarica Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Scaricare Parakeet TDT?</string>
-    <string name="parakeet_download_confirm_message">Verranno scaricati ~640MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
+    <string name="parakeet_download_confirm_message">Verranno scaricati ~464MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper (Multilingue)</string>
     <string name="whisper_description">Ideale per italiano e altre lingue</string>
-    <string name="whisper_tiny_title">Whisper Tiny</string>
-    <string name="whisper_tiny_description">~110MB • Veloce • Buono per trascrizione rapida</string>
-    <string name="whisper_base_title">Whisper Base</string>
-    <string name="whisper_base_description">~197MB • Miglior equilibrio velocità/precisione</string>
+    <string name="whisper_small_title">Whisper Small</string>
+    <string name="whisper_small_description">~610MB • Buona precisione • Punto di partenza consigliato</string>
+    <string name="whisper_turbo_title">Whisper Turbo</string>
+    <string name="whisper_turbo_description">~538MB • Qualità vicina a large-v3 • Miglior rapporto</string>
+    <string name="whisper_medium_title">Whisper Medium</string>
+    <string name="whisper_medium_description">~1.8GB • Molto preciso • Ideale per l\'italiano</string>
     <string name="whisper_download">Scarica Whisper</string>
     <string name="whisper_download_confirm_title">Scaricare %1$s?</string>
     <string name="whisper_download_confirm_message">Verranno scaricati ~%1$dMB. Whisper offre eccellente supporto multilingue con punteggiatura corretta.</string>
@@ -86,6 +88,10 @@
     <string name="no_audio_file">Nessun file audio ricevuto</string>
     <string name="failed_to_process_audio">Impossibile elaborare il file audio</string>
     <string name="transcription_started">Trascrizione avviata…</string>
+    <string name="processing_chunk">Elaborazione segmento %1$d/%2$d…</string>
+    <string name="processing_audio">Elaborazione audio…</string>
+    <string name="processing_request">Elaborazione richiesta %1$s…</string>
+    <string name="generating_text">Generazione risposta testuale…</string>
 
     <!-- Model Tab - Download section -->
     <string name="download_models">Scarica Modelli</string>
@@ -96,6 +102,8 @@
     <string name="connecting_to_huggingface">Connessione a HuggingFace…</string>
     <string name="cancel_download">Annulla Download</string>
     <string name="use_model">Usa Modello</string>
+    <string name="active_badge">Attivo</string>
+    <string name="model_selected_message">%1$s selezionato</string>
     <string name="delete">Elimina</string>
     <string name="download">Scarica</string>
     <string name="view">Visualizza</string>

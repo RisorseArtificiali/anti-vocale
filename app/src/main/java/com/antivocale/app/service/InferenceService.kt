@@ -173,7 +173,7 @@ class InferenceService : Service() {
 
     private suspend fun processRequest(request: PendingRequest) {
         Log.i(TAG, "Processing request: ${request.taskId}")
-        updateNotification("Processing ${request.requestType} request...")
+        updateNotification(getString(R.string.processing_request, request.requestType))
 
         // Log request start
         val logsViewModel = AppContainer.logsViewModel
@@ -344,7 +344,7 @@ class InferenceService : Service() {
 
     private suspend fun processTextRequest(request: PendingRequest): Result<String> {
         Log.d(TAG, "Processing text request: ${request.taskId}")
-        updateNotification("Generating text response...")
+        updateNotification(getString(R.string.generating_text))
 
         val prompt = request.prompt.ifEmpty {
             return Result.failure(IllegalArgumentException("Empty prompt provided"))
@@ -428,7 +428,7 @@ class InferenceService : Service() {
             // Only show progress bar if there's more than one chunk
             if (chunkCount > 1) {
                 updateNotificationWithProgress(
-                    contentText = "Processing chunk $chunkNumber/$chunkCount...",
+                    contentText = getString(R.string.processing_chunk, chunkNumber, chunkCount),
                     progress = chunkNumber,
                     maxProgress = chunkCount,
                     indeterminate = false,
@@ -436,7 +436,7 @@ class InferenceService : Service() {
                     startTimeMillis = transcriptionStartTime
                 )
             } else {
-                updateNotification("Processing audio...", durationSeconds = audioDurationSeconds, startTimeMillis = transcriptionStartTime)
+                updateNotification(getString(R.string.processing_audio), durationSeconds = audioDurationSeconds, startTimeMillis = transcriptionStartTime)
             }
 
             Log.d(TAG, "Processing chunk $chunkNumber/$chunkCount")

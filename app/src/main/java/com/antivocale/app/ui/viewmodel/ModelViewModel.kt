@@ -10,6 +10,7 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.ModelDownloader.DownloadError
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.R
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.transcription.ParakeetDownloader
@@ -632,14 +633,15 @@ class ModelViewModel(
                 preferencesManager.saveModelPath(modelPath)
                 // Switch to LLM backend when selecting an LLM model
                 preferencesManager.saveTranscriptionBackend("llm")
+                val message = AppContainer.applicationContext.getString(R.string.model_selected_message, variant.displayName)
                 _uiState.update { it.copy(
                     modelPath = modelPath,
                     modelName = variant.displayName,
                     isModelPathValid = true,
                     status = ModelStatus.UNLOADED,
-                    statusMessage = "${variant.displayName} selected"
+                    statusMessage = message
                 )}
-                _snackbarEvent.send("Selected ${variant.displayName}")
+                _snackbarEvent.send(message)
             }
         }
     }
@@ -852,13 +854,15 @@ class ModelViewModel(
                 preferencesManager.saveParakeetModelPath(modelPath)
                 preferencesManager.saveTranscriptionBackend("sherpa-onnx")
 
+                val context = AppContainer.applicationContext
+                val message = context.getString(R.string.model_selected_message, "Parakeet TDT")
                 _uiState.update { it.copy(
                     modelName = "Parakeet TDT",
                     status = ModelStatus.UNLOADED,
-                    statusMessage = "Parakeet TDT selected. Restart app to use."
+                    statusMessage = message
                 )}
 
-                _snackbarEvent.send("Parakeet TDT selected. Restart app to use.")
+                _snackbarEvent.send(message)
             }
         }
     }
@@ -1044,13 +1048,14 @@ class ModelViewModel(
                 preferencesManager.saveWhisperModelPath(modelPath)
                 preferencesManager.saveTranscriptionBackend("whisper")
 
+                val message = context.getString(R.string.model_selected_message, displayName)
                 _uiState.update { it.copy(
                     modelName = displayName,
                     status = ModelStatus.UNLOADED,
-                    statusMessage = "$displayName selected. Restart app to use."
+                    statusMessage = message
                 )}
 
-                _snackbarEvent.send("$displayName selected. Restart app to use.")
+                _snackbarEvent.send(message)
             }
         }
     }
