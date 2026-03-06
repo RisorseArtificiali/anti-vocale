@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit
  * Downloads and extracts the Parakeet TDT model for sherpa-onnx.
  *
  * Model source: https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/
- * Model size: ~640MB (int8 quantized)
+ * Model size: ~464MB (int8 quantized)
  * Languages: 25 European languages
  */
 object ParakeetDownloader {
@@ -28,7 +28,7 @@ object ParakeetDownloader {
     // Official sherpa-onnx pre-converted model (no authentication required)
     private const val MODEL_URL = "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8.tar.bz2"
     private const val MODEL_NAME = "parakeet-tdt-0.6b-v3-int8"
-    private const val ESTIMATED_SIZE_MB = 640L
+    private const val ESTIMATED_SIZE_MB = 464L
 
     // Required files after extraction
     val REQUIRED_FILES = listOf(
