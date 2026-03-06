@@ -862,50 +862,6 @@ fun SettingsTab(
             }
         }
 
-        // Default Prompt Setting Navigation Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showPromptSettings = true },
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column {
-                        Text(
-                            text = stringResource(R.string.default_prompt_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.default_prompt_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Open prompt settings",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
         // Language Setting
         Card(
             modifier = Modifier.fillMaxWidth()
@@ -1070,6 +1026,50 @@ fun SettingsTab(
             }
         }
 
+        // Default Prompt Setting Navigation Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showPromptSettings = true },
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column {
+                        Text(
+                            text = stringResource(R.string.default_prompt_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(R.string.default_prompt_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Open prompt settings",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
         // Per-App Settings Navigation Card
         Card(
             modifier = Modifier
@@ -1086,7 +1086,7 @@ fun SettingsTab(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Settings,

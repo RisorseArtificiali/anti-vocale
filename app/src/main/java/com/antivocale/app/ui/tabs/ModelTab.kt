@@ -23,8 +23,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import com.antivocale.app.R
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -289,115 +287,34 @@ fun ModelTab(
         )
     }
 
-    Scaffold(
-        snackbarHost = {
-            SnackbarHost(
-                hostState = snackbarHostState,
-                modifier = Modifier.padding(16.dp)
-            )
-        }
-    ) { paddingValues ->
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
+                .verticalScroll(scrollState)
                 .padding(16.dp)
-                .navigationBarsPadding()
-                .verticalScroll(scrollState),
+                .navigationBarsPadding(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-        // Status Card - compact and centered
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(
-                containerColor = when (uiState.status) {
-                    ModelViewModel.ModelStatus.READY -> MaterialTheme.colorScheme.primaryContainer
-                    ModelViewModel.ModelStatus.LOADING -> MaterialTheme.colorScheme.secondaryContainer
-                    ModelViewModel.ModelStatus.ERROR -> MaterialTheme.colorScheme.errorContainer
-                    ModelViewModel.ModelStatus.UNLOADED -> MaterialTheme.colorScheme.surfaceVariant
-                }
-            )
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Icon(
-                    imageVector = when (uiState.status) {
-                        ModelViewModel.ModelStatus.READY -> Icons.Default.CheckCircle
-                        ModelViewModel.ModelStatus.LOADING -> Icons.Default.HourglassEmpty
-                        ModelViewModel.ModelStatus.ERROR -> Icons.Default.Error
-                        ModelViewModel.ModelStatus.UNLOADED -> Icons.Default.Storage
-                    },
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp),
-                    tint = when (uiState.status) {
-                        ModelViewModel.ModelStatus.READY -> MaterialTheme.colorScheme.primary
-                        ModelViewModel.ModelStatus.LOADING -> MaterialTheme.colorScheme.secondary
-                        ModelViewModel.ModelStatus.ERROR -> MaterialTheme.colorScheme.error
-                        ModelViewModel.ModelStatus.UNLOADED -> MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Show model name if available - centered
-                if (uiState.modelName.isNotEmpty()) {
-                    Text(
-                        text = uiState.modelName,
-                        style = MaterialTheme.typography.titleMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                // Status text - centered
-                Text(
-                    text = when (uiState.status) {
-                        ModelViewModel.ModelStatus.READY -> stringResource(R.string.status_ready)
-                        ModelViewModel.ModelStatus.LOADING -> stringResource(R.string.status_loading)
-                        ModelViewModel.ModelStatus.ERROR -> stringResource(R.string.status_error)
-                        ModelViewModel.ModelStatus.UNLOADED -> if (uiState.modelPath.isNotEmpty()) stringResource(R.string.status_model_selected) else stringResource(R.string.status_no_model)
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth(),
-                    color = if (uiState.status == ModelViewModel.ModelStatus.ERROR) {
-                        MaterialTheme.colorScheme.error
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    }
-                )
-
-                // Show error message only when status is ERROR
-                if (uiState.status == ModelViewModel.ModelStatus.ERROR && uiState.statusMessage.isNotEmpty()) {
-                    Text(
-                        text = uiState.statusMessage,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-        }
-
         // Download models section - primary UX
         ModelDownloadSection(
             viewModel = viewModel,
             context = context,
-            onNavigateToSettings = onNavigateToSettings
+            onNavigateToSettings = onNavigateToSettings,
+            activeModelName = uiState.modelName
         )
 
         // Parakeet TDT section - alternative ASR backend
         ParakeetDownloadSection(
-            viewModel = viewModel
+            viewModel = viewModel,
+            activeModelName = uiState.modelName
         )
 
         // Whisper section - multilingual ASR backend
         WhisperDownloadSection(
-            viewModel = viewModel
+            viewModel = viewModel,
+            activeModelName = uiState.modelName
         )
 
         // Select Model Button - secondary option for local files
@@ -420,6 +337,13 @@ fun ModelTab(
         // Extra spacer to ensure downloading card can be fully scrolled into view
         Spacer(modifier = Modifier.height(200.dp))
         }
+
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        )
     }
 }
 
@@ -432,7 +356,8 @@ fun ModelTab(
 private fun ModelDownloadSection(
     viewModel: ModelViewModel,
     context: android.content.Context,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    activeModelName: String
 ) {
     val downloadState by viewModel.downloadUiState.collectAsState()
 
@@ -482,6 +407,7 @@ private fun ModelDownloadSection(
                 variant = variant,
                 downloadState = downloadState,
                 isDownloaded = downloadState.downloadedModels.contains(variant),
+                isActive = activeModelName == variant.displayName,
                 isDownloading = downloadState.isDownloading &&
                     downloadState.selectedVariant == variant,
                 downloadProgress = downloadState.downloadProgress,
@@ -509,6 +435,7 @@ private fun ModelVariantCard(
     variant: ModelDownloader.ModelVariant,
     downloadState: ModelViewModel.DownloadUiState,
     isDownloaded: Boolean,
+    isActive: Boolean,
     isDownloading: Boolean,
     downloadProgress: Float,
     currentDownloadState: ModelDownloader.DownloadState,
@@ -529,7 +456,6 @@ private fun ModelVariantCard(
             .animateContentSize(),
         colors = CardDefaults.cardColors(
             containerColor = when {
-                isDownloaded -> MaterialTheme.colorScheme.primaryContainer
                 isDownloading -> MaterialTheme.colorScheme.secondaryContainer
                 downloadError != null && downloadState.selectedVariant == variant ->
                     MaterialTheme.colorScheme.errorContainer
@@ -598,12 +524,21 @@ private fun ModelVariantCard(
                                     )
                                 }
                             }
+                            // Active badge
+                            if (isActive) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.active_badge),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
                         }
-                        Text(
-                            text = "${variant.estimatedSizeMB}MB",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                         variant.descriptionResId?.let {
                             Text(
                                 text = stringResource(it),
@@ -720,17 +655,21 @@ private fun ModelVariantCard(
                         }
                     }
                     isDownloaded -> {
-                        // Use button
-                        Button(
-                            onClick = onUseClick,
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.Default.Check, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.use_model))
+                        if (!isActive) {
+                            // Use button (only when not active)
+                            Button(
+                                onClick = onUseClick,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.use_model))
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                         // Delete button
                         OutlinedButton(
@@ -822,16 +761,17 @@ private fun formatBytes(bytes: Long): String {
  */
 @Composable
 private fun ParakeetDownloadSection(
-    viewModel: ModelViewModel
+    viewModel: ModelViewModel,
+    activeModelName: String
 ) {
     val parakeetState by viewModel.parakeetState.collectAsState()
+    val isActive = activeModelName == "Parakeet TDT"
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = when {
                 parakeetState.isDownloading -> MaterialTheme.colorScheme.secondaryContainer
-                parakeetState.modelPath != null -> MaterialTheme.colorScheme.primaryContainer
                 else -> MaterialTheme.colorScheme.surfaceVariant
             }
         )
@@ -860,10 +800,28 @@ private fun ParakeetDownloadSection(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Text(
-                            text = stringResource(R.string.parakeet_title),
-                            style = MaterialTheme.typography.titleMedium
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.parakeet_title),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            if (isActive) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.active_badge),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
                         Text(
                             text = stringResource(R.string.parakeet_description),
                             style = MaterialTheme.typography.bodySmall,
@@ -873,9 +831,6 @@ private fun ParakeetDownloadSection(
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Action buttons
             Spacer(modifier = Modifier.height(8.dp))
 
             // Download progress
@@ -970,18 +925,22 @@ private fun ParakeetDownloadSection(
                         }
                     }
                     parakeetState.modelPath != null -> {
-                        Button(
-                            onClick = { viewModel.useParakeetModel() },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.Default.Check, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.use_model))
+                        if (!isActive) {
+                            Button(
+                                onClick = { viewModel.useParakeetModel() },
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.use_model))
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
-                        // Delete button - icon only to match Gemma card
+                        // Delete button
                         OutlinedButton(
                             onClick = { viewModel.showParakeetDeleteDialog() },
                             colors = ButtonDefaults.outlinedButtonColors(
@@ -1016,7 +975,8 @@ private fun ParakeetDownloadSection(
  */
 @Composable
 private fun WhisperDownloadSection(
-    viewModel: ModelViewModel
+    viewModel: ModelViewModel,
+    activeModelName: String
 ) {
     val whisperState by viewModel.whisperState.collectAsState()
 
@@ -1025,7 +985,6 @@ private fun WhisperDownloadSection(
         colors = CardDefaults.cardColors(
             containerColor = when {
                 whisperState.isDownloading -> MaterialTheme.colorScheme.secondaryContainer
-                whisperState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primaryContainer
                 else -> MaterialTheme.colorScheme.surfaceVariant
             }
         )
@@ -1074,6 +1033,7 @@ private fun WhisperDownloadSection(
                 WhisperVariantCard(
                     variant = variant,
                     isDownloaded = whisperState.downloadedVariants.contains(variant),
+                    isActive = activeModelName == stringResource(variant.titleResId),
                     isDownloading = whisperState.isDownloading && whisperState.selectedVariant == variant,
                     downloadProgress = whisperState.downloadProgress,
                     downloadState = whisperState.downloadState,
@@ -1096,6 +1056,7 @@ private fun WhisperDownloadSection(
 private fun WhisperVariantCard(
     variant: WhisperModelManager.Variant,
     isDownloaded: Boolean,
+    isActive: Boolean,
     isDownloading: Boolean,
     downloadProgress: Float,
     downloadState: WhisperDownloader.DownloadState,
@@ -1109,7 +1070,6 @@ private fun WhisperVariantCard(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = when {
-                isDownloaded -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
                 isDownloading -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                 else -> MaterialTheme.colorScheme.surface
             }
@@ -1142,10 +1102,28 @@ private fun WhisperVariantCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
-                        Text(
-                            text = stringResource(variant.titleResId),
-                            style = MaterialTheme.typography.titleSmall
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = stringResource(variant.titleResId),
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            if (isActive) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.active_badge),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
                         Text(
                             text = stringResource(variant.descriptionResId),
                             style = MaterialTheme.typography.bodySmall,
@@ -1239,16 +1217,20 @@ private fun WhisperVariantCard(
                         }
                     }
                     isDownloaded -> {
-                        Button(
-                            onClick = onUseClick,
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = MaterialTheme.colorScheme.primary
-                            )
-                        ) {
-                            Icon(Icons.Default.Check, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.use_model))
+                        if (!isActive) {
+                            Button(
+                                onClick = onUseClick,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.use_model))
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                         OutlinedButton(
                             onClick = onDeleteClick,
