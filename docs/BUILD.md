@@ -173,14 +173,14 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 # Test text inference via adb
 adb shell am broadcast \
-  -a com.localai.bridge.PROCESS_REQUEST \
+  -a com.antivocale.app.PROCESS_REQUEST \
   --es request_type "text" \
   --es prompt "Hello, how are you?" \
   --es task_id "test-001"
 
 # Test audio inference (requires .litertlm model loaded)
 adb shell am broadcast \
-  -a com.localai.bridge.PROCESS_AUDIO \
+  -a com.antivocale.app.PROCESS_AUDIO \
   --es file_path "/sdcard/Download/test_audio.m4a" \
   --es prompt "Transcribe this speech:" \
   --es task_id "test-002"
@@ -232,7 +232,7 @@ adb push ~/Downloads/voice_message.ogg /sdcard/Download/
 The app must be in the foreground for the transcription service to start (Android 12+ restriction):
 
 ```bash
-adb shell am start -n com.localai.bridge/.MainActivity
+adb shell am start -n com.antivocale.app/.MainActivity
 ```
 
 ### Step 4: Trigger Transcription
@@ -241,8 +241,8 @@ Send a broadcast intent to start transcription:
 
 ```bash
 adb shell am broadcast \
-  -n com.localai.bridge/.receiver.TaskerRequestReceiver \
-  -a com.localai.bridge.PROCESS_REQUEST \
+  -n com.antivocale.app/.receiver.TaskerRequestReceiver \
+  -a com.antivocale.app.PROCESS_REQUEST \
   --es request_type "audio" \
   --es file_path "/sdcard/Download/voice_message.ogg" \
   --es prompt "Transcribe this voice message:" \
@@ -261,7 +261,7 @@ Watch the transcription progress in logcat:
 
 ```bash
 # Filter by app process
-adb logcat -v time --pid=$(adb shell pidof com.localai.bridge) | grep -E "InferenceService|LlmManager|AudioPrepro|chunk"
+adb logcat -v time --pid=$(adb shell pidof com.antivocale.app) | grep -E "InferenceService|LlmManager|AudioPrepro|chunk"
 
 # Example output:
 # AudioPreprocessor: Extracted 2517552 bytes of PCM audio
@@ -290,11 +290,11 @@ For convenience, here's a complete command sequence:
 # Push file, launch app, and trigger transcription
 FILE="/sdcard/Download/voice_message.ogg" && \
 adb push ~/Downloads/voice_message.ogg /sdcard/Download/ && \
-adb shell am start -n com.localai.bridge/.MainActivity && \
+adb shell am start -n com.antivocale.app/.MainActivity && \
 sleep 1 && \
 adb shell am broadcast \
-  -n com.localai.bridge/.receiver.TaskerRequestReceiver \
-  -a com.localai.bridge.PROCESS_REQUEST \
+  -n com.antivocale.app/.receiver.TaskerRequestReceiver \
+  -a com.antivocale.app.PROCESS_REQUEST \
   --es request_type "audio" \
   --es file_path "$FILE" \
   --es task_id "transcribe_$(date +%s)"
@@ -304,7 +304,7 @@ adb shell am broadcast \
 
 **Error: `ForegroundServiceStartNotAllowedException`**
 - The app must be in the foreground when the broadcast is sent
-- Solution: Launch the app first with `adb shell am start -n com.localai.bridge/.MainActivity`
+- Solution: Launch the app first with `adb shell am start -n com.antivocale.app/.MainActivity`
 
 **Error: `NO_MODEL_CONFIGURED`**
 - No model has been selected in the app
@@ -337,16 +337,16 @@ To avoid first-request latency, you can preload the model before sending content
 
 ```bash
 # Via ADB
-adb shell am broadcast -a com.localai.bridge.PRELOAD_MODEL
+adb shell am broadcast -a com.antivocale.app.PRELOAD_MODEL
 
 # With multiple devices
-adb -s <device-id> shell am broadcast -a com.localai.bridge.PRELOAD_MODEL
+adb -s <device-id> shell am broadcast -a com.antivocale.app.PRELOAD_MODEL
 ```
 
 **Via Tasker:**
 ```
 Action: Send Intent
-  Action: com.localai.bridge.PRELOAD_MODEL
+  Action: com.antivocale.app.PRELOAD_MODEL
 ```
 
 **Use case:** Trigger preload when connecting to WiFi, opening a specific app, or via NFC tag to have the model ready before you need it.

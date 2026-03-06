@@ -5,11 +5,11 @@ plugins {
 }
 
 android {
-    namespace = "com.localai.bridge"
+    namespace = "com.antivocale.app"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.localai.bridge"
+        applicationId = "com.antivocale.app"
         minSdk = 26
         targetSdk = 34
         versionCode = 1
@@ -21,7 +21,7 @@ android {
         }
 
         // AppAuth redirect scheme for HuggingFace OAuth
-        manifestPlaceholders["appAuthRedirectScheme"] = "com.localai.bridge"
+        manifestPlaceholders["appAuthRedirectScheme"] = "com.antivocale.app"
     }
 
     buildTypes {

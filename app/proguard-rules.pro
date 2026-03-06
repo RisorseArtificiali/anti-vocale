@@ -14,4 +14,4 @@
 }
 
 # Keep data classes used in intents
--keep class com.localai.bridge.data.** { *; }
+-keep class com.antivocale.app.data.** { *; }

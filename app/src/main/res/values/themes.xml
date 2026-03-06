@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <style name="Theme.LocalAITaskerBridge" parent="Theme.Material3.DayNight.NoActionBar">
+    <style name="Theme.AntiVocale" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:colorPrimary">@color/primary</item>
         <item name="android:colorPrimaryDark">@color/primary_dark</item>
         <item name="android:colorAccent">@color/secondary</item>

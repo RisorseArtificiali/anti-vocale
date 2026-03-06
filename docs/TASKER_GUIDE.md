@@ -17,7 +17,7 @@ This guide explains how to configure Tasker to use Anti-Vocale for on-device tex
 
 | Field | Value |
 |-------|-------|
-| **Action** | `com.localai.bridge.PROCESS_REQUEST` |
+| **Action** | `com.antivocale.app.PROCESS_REQUEST` |
 
 | Extra | Type | Required | Description |
 |-------|------|----------|-------------|
@@ -59,12 +59,12 @@ Send a text prompt and receive an AI-generated response.
    - Value: `Write a haiku about technology`
 
 3. **Send Intent**
-   - Action: `com.localai.bridge.PROCESS_REQUEST`
+   - Action: `com.antivocale.app.PROCESS_REQUEST`
    - Extra: `request_type:text`
    - Extra: `task_id:%task_id`
    - Extra: `prompt:%prompt`
-   - Package: `com.localai.bridge`
-   - Class: `com.localai.bridge.receiver.TaskerRequestReceiver`
+   - Package: `com.antivocale.app`
+   - Class: `com.antivocale.app.receiver.TaskerRequestReceiver`
    - Target: `Broadcast Receiver`
 
 4. **Wait**
@@ -105,13 +105,13 @@ Transcribe a voice recording to text.
    - (Or use a variable from a previous step)
 
 3. **Send Intent**
-   - Action: `com.localai.bridge.PROCESS_REQUEST`
+   - Action: `com.antivocale.app.PROCESS_REQUEST`
    - Extra: `request_type:audio`
    - Extra: `task_id:%task_id`
    - Extra: `file_path:%audio_path`
    - Extra: `prompt:Transcribe this speech:` (optional)
-   - Package: `com.localai.bridge`
-   - Class: `com.localai.bridge.receiver.TaskerRequestReceiver`
+   - Package: `com.antivocale.app`
+   - Class: `com.antivocale.app.receiver.TaskerRequestReceiver`
    - Target: `Broadcast Receiver`
 
 4. **Wait**
@@ -155,11 +155,11 @@ Automatically transcribe incoming WhatsApp voice messages.
    - Value: `wa_%TIMEMS`
 
 4. **Send Intent**
-   - Action: `com.localai.bridge.PROCESS_REQUEST`
+   - Action: `com.antivocale.app.PROCESS_REQUEST`
    - Extra: `request_type:audio`
    - Extra: `task_id:%task_id`
    - Extra: `file_path:%voice_file`
-   - Package: `com.localai.bridge`
+   - Package: `com.antivocale.app`
    - Target: `Broadcast Receiver`
 
 5. **Wait**
@@ -242,14 +242,14 @@ Test the integration directly via ADB:
 ```bash
 # Text request
 adb shell am broadcast \
-  -a com.localai.bridge.PROCESS_REQUEST \
+  -a com.antivocale.app.PROCESS_REQUEST \
   --es request_type "text" \
   --es task_id "test_001" \
   --es prompt "Hello, how are you?"
 
 # Audio request
 adb shell am broadcast \
-  -a com.localai.bridge.PROCESS_REQUEST \
+  -a com.antivocale.app.PROCESS_REQUEST \
   --es request_type "audio" \
   --es task_id "test_002" \
   --es file_path "/sdcard/Download/test.m4a"

@@ -26,7 +26,7 @@
         android:localeConfig="@xml/locales_config"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.LocalAITaskerBridge"
+        android:theme="@style/Theme.AntiVocale"
         tools:targetApi="34">
 
         <!-- Native libraries for LiteRT-LM GPU acceleration -->
@@ -37,7 +37,7 @@
             android:name=".MainActivity"
             android:exported="true"
             android:launchMode="singleTop"
-            android:theme="@style/Theme.LocalAITaskerBridge">
+            android:theme="@style/Theme.AntiVocale">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -50,7 +50,7 @@
             android:enabled="true"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.localai.bridge.PROCESS_REQUEST" />
+                <action android:name="com.antivocale.app.PROCESS_REQUEST" />
             </intent-filter>
         </receiver>
 
@@ -60,7 +60,7 @@
             android:enabled="true"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.localai.bridge.PRELOAD_MODEL" />
+                <action android:name="com.antivocale.app.PRELOAD_MODEL" />
             </intent-filter>
         </receiver>
 
@@ -129,9 +129,9 @@
             android:enabled="true"
             android:exported="false">
             <intent-filter>
-                <action android:name="com.localai.bridge.COPY_TRANSCRIPTION" />
-                <action android:name="com.localai.bridge.SHARE_TRANSCRIPTION" />
-                <action android:name="com.localai.bridge.SHARE_BACK" />
+                <action android:name="com.antivocale.app.COPY_TRANSCRIPTION" />
+                <action android:name="com.antivocale.app.SHARE_TRANSCRIPTION" />
+                <action android:name="com.antivocale.app.SHARE_BACK" />
             </intent-filter>
         </receiver>
 
