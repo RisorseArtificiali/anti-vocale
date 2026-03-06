@@ -598,35 +598,33 @@ class InferenceService : Service() {
      * Auto-copies transcription to clipboard if the setting is enabled.
      * Shows a toast notification to the user.
      */
-    private fun autoCopyIfEnabled(transcriptionText: String, sourcePackage: String?) {
-        serviceScope.launch {
-            // Get per-app preferences, fallback to global preference
-            val autoCopyEnabled = if (sourcePackage != null) {
-                try {
-                    val prefs = AppContainer.perAppPreferencesManager.getCurrentPreferences(sourcePackage)
-                    prefs.autoCopy
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to get per-app preferences for $sourcePackage, using global", e)
-                    AppContainer.preferencesManager.autoCopyEnabled.first()
-                }
-            } else {
+    private suspend fun autoCopyIfEnabled(transcriptionText: String, sourcePackage: String?) {
+        // Get per-app preferences, fallback to global preference
+        val autoCopyEnabled = if (sourcePackage != null) {
+            try {
+                val prefs = AppContainer.perAppPreferencesManager.getCurrentPreferences(sourcePackage)
+                prefs.autoCopy
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to get per-app preferences for $sourcePackage, using global", e)
                 AppContainer.preferencesManager.autoCopyEnabled.first()
             }
+        } else {
+            AppContainer.preferencesManager.autoCopyEnabled.first()
+        }
 
-            if (autoCopyEnabled) {
-                val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                val clip = ClipData.newPlainText("Transcription", transcriptionText)
-                clipboardManager.setPrimaryClip(clip)
-                Log.i(TAG, "Auto-copied transcription to clipboard (${transcriptionText.length} chars), source=$sourcePackage")
+        if (autoCopyEnabled) {
+            val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Transcription", transcriptionText)
+            clipboardManager.setPrimaryClip(clip)
+            Log.i(TAG, "Auto-copied transcription to clipboard (${transcriptionText.length} chars), source=$sourcePackage")
 
-                // Show toast on main thread
-                Handler(Looper.getMainLooper()).post {
-                    Toast.makeText(
-                        this@InferenceService,
-                        R.string.copied_to_clipboard,
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+            // Show toast on main thread
+            Handler(Looper.getMainLooper()).post {
+                Toast.makeText(
+                    this@InferenceService,
+                    R.string.copied_to_clipboard,
+                    Toast.LENGTH_SHORT
+                ).show()
             }
         }
     }
@@ -645,136 +643,131 @@ class InferenceService : Service() {
         notificationManager.createNotificationChannel(channel)
     }
 
-    private fun showResultNotification(transcriptionText: String, sourcePackage: String?) {
-        serviceScope.launch {
-            // Get per-app preferences
-            val prefs = if (sourcePackage != null) {
-                try {
-                    AppContainer.perAppPreferencesManager.getCurrentPreferences(sourcePackage)
-                } catch (e: Exception) {
-                    Log.w(TAG, "Failed to get per-app preferences for $sourcePackage, using defaults", e)
-                    com.antivocale.app.data.AppNotificationPreferences.default()
-                }
-            } else {
+    private suspend fun showResultNotification(transcriptionText: String, sourcePackage: String?) {
+        // Get per-app preferences
+        val prefs = if (sourcePackage != null) {
+            try {
+                AppContainer.perAppPreferencesManager.getCurrentPreferences(sourcePackage)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to get per-app preferences for $sourcePackage, using defaults", e)
                 com.antivocale.app.data.AppNotificationPreferences.default()
             }
-
-            // Copy action
-            val copyIntent = Intent(this@InferenceService, NotificationActionReceiver::class.java).apply {
-                action = NotificationActionReceiver.ACTION_COPY_TRANSCRIPTION
-                putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, transcriptionText)
-            }
-            val copyPendingIntent = android.app.PendingIntent.getBroadcast(
-                this@InferenceService,
-                System.currentTimeMillis().toInt(),
-                copyIntent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-            )
-
-            val openIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
-            val openPendingIntent = android.app.PendingIntent.getActivity(
-                this@InferenceService,
-                0,
-                openIntent,
-                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-            )
-
-            val isTruncated = transcriptionText.length > 100
-            val previewText = if (isTruncated) {
-                transcriptionText.take(100) + "…"
-            } else {
-                transcriptionText
-            }
-
-            val builder = NotificationCompat.Builder(this@InferenceService, RESULT_CHANNEL_ID)
-                .setContentTitle(getString(R.string.transcription_complete))
-                .setContentText(previewText)
-                .setStyle(NotificationCompat.BigTextStyle().bigText(transcriptionText))
-                .setSmallIcon(android.R.drawable.ic_dialog_info)
-                .setPriority(NotificationCompat.PRIORITY_HIGH)
-                .setContentIntent(openPendingIntent)
-                .addAction(
-                    android.R.drawable.ic_menu_save,
-                    getString(R.string.copy),
-                    copyPendingIntent
-                )
-                .setAutoCancel(true)
-
-            // Conditionally add share action based on per-app preferences
-            if (prefs.showShareAction) {
-                // Check if we should use Quick Share Back (direct app open) or regular share sheet
-                val useQuickShareBack = prefs.quickShareBack && sourcePackage != null
-
-                if (useQuickShareBack) {
-                    // Quick Share Back: Show only "Send to [App]" button (bypasses chooser)
-                    val shareBackIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, transcriptionText)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        // Get the correct package name from AppInfoUtils
-                        val targetPackage = when {
-                            sourcePackage == "com.whatsapp" || sourcePackage.startsWith("com.whatsapp") -> "com.whatsapp"
-                            sourcePackage == "org.telegram.messenger" || sourcePackage.startsWith("org.telegram") -> "org.telegram.messenger"
-                            sourcePackage == "org.thoughtcrime.securesms" -> "org.thoughtcrime.securesms"
-                            else -> sourcePackage
-                        }
-                        setPackage(targetPackage)
-                    }
-                    val shareBackPendingIntent = android.app.PendingIntent.getActivity(
-                        this@InferenceService,
-                        System.currentTimeMillis().toInt() + 1,
-                        shareBackIntent,
-                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-                    )
-                    builder.addAction(
-                        android.R.drawable.ic_menu_revert,
-                        AppInfoUtils.getSendToText(this@InferenceService, sourcePackage),
-                        shareBackPendingIntent
-                    )
-                } else {
-                    // Regular Share: Show chooser to pick destination app
-                    val shareChooserIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, transcriptionText)
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    val sharePickerIntent = Intent.createChooser(shareChooserIntent, getString(R.string.share_transcription)).apply {
-                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                    }
-                    val sharePendingIntent = android.app.PendingIntent.getActivity(
-                        this@InferenceService,
-                        System.currentTimeMillis().toInt() + 1,
-                        sharePickerIntent,
-                        android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-                    )
-                    builder.addAction(
-                        android.R.drawable.ic_menu_share,
-                        getString(R.string.share),
-                        sharePendingIntent
-                    )
-                }
-            }
-
-            // Set notification sound (can be extended with custom sound URIs)
-            if (prefs.notificationSound != "default" && prefs.notificationSound != "silent") {
-                // For now, we only support default and silent
-                // Custom sounds can be added later by mapping sound names to URIs
-                Log.d(TAG, "Custom notification sound: ${prefs.notificationSound} (not yet implemented)")
-            }
-
-            // Show character counter in subtext when content is truncated
-            if (isTruncated) {
-                builder.setSubText(getString(R.string.char_counter, 100, transcriptionText.length))
-            }
-
-            val notification = builder.build()
-
-            val notificationManager = getSystemService(NotificationManager::class.java)
-            notificationManager.notify(RESULT_NOTIFICATION_ID, notification)
-            Log.i(TAG, "Showed result notification (${transcriptionText.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction}")
+        } else {
+            com.antivocale.app.data.AppNotificationPreferences.default()
         }
+
+        // Copy action
+        val copyIntent = Intent(this, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_COPY_TRANSCRIPTION
+            putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, transcriptionText)
+        }
+        val copyPendingIntent = android.app.PendingIntent.getBroadcast(
+            this,
+            System.currentTimeMillis().toInt(),
+            copyIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val openIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+        }
+        val openPendingIntent = android.app.PendingIntent.getActivity(
+            this,
+            0,
+            openIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val isTruncated = transcriptionText.length > 100
+        val previewText = if (isTruncated) {
+            transcriptionText.take(100) + "…"
+        } else {
+            transcriptionText
+        }
+
+        val builder = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
+            .setContentTitle(getString(R.string.transcription_complete))
+            .setContentText(previewText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(transcriptionText))
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(openPendingIntent)
+            .addAction(
+                android.R.drawable.ic_menu_save,
+                getString(R.string.copy),
+                copyPendingIntent
+            )
+            .setAutoCancel(true)
+
+        // Conditionally add share action based on per-app preferences
+        if (prefs.showShareAction) {
+            // Check if we should use Quick Share Back (direct app open) or regular share sheet
+            val useQuickShareBack = prefs.quickShareBack && sourcePackage != null
+
+            if (useQuickShareBack) {
+                // Quick Share Back: Show only "Send to [App]" button (bypasses chooser)
+                val shareBackIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, transcriptionText)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                    val targetPackage = when {
+                        sourcePackage == "com.whatsapp" || sourcePackage.startsWith("com.whatsapp") -> "com.whatsapp"
+                        sourcePackage == "org.telegram.messenger" || sourcePackage.startsWith("org.telegram") -> "org.telegram.messenger"
+                        sourcePackage == "org.thoughtcrime.securesms" -> "org.thoughtcrime.securesms"
+                        else -> sourcePackage
+                    }
+                    setPackage(targetPackage)
+                }
+                val shareBackPendingIntent = android.app.PendingIntent.getActivity(
+                    this,
+                    System.currentTimeMillis().toInt() + 1,
+                    shareBackIntent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+                builder.addAction(
+                    android.R.drawable.ic_menu_revert,
+                    AppInfoUtils.getSendToText(this, sourcePackage),
+                    shareBackPendingIntent
+                )
+            } else {
+                // Regular Share: Show chooser to pick destination app
+                val shareChooserIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = "text/plain"
+                    putExtra(Intent.EXTRA_TEXT, transcriptionText)
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                val sharePickerIntent = Intent.createChooser(shareChooserIntent, getString(R.string.share_transcription)).apply {
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+                val sharePendingIntent = android.app.PendingIntent.getActivity(
+                    this,
+                    System.currentTimeMillis().toInt() + 1,
+                    sharePickerIntent,
+                    android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+                )
+                builder.addAction(
+                    android.R.drawable.ic_menu_share,
+                    getString(R.string.share),
+                    sharePendingIntent
+                )
+            }
+        }
+
+        // Set notification sound (can be extended with custom sound URIs)
+        if (prefs.notificationSound != "default" && prefs.notificationSound != "silent") {
+            Log.d(TAG, "Custom notification sound: ${prefs.notificationSound} (not yet implemented)")
+        }
+
+        // Show character counter in subtext when content is truncated
+        if (isTruncated) {
+            builder.setSubText(getString(R.string.char_counter, 100, transcriptionText.length))
+        }
+
+        val notification = builder.build()
+
+        val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.notify(RESULT_NOTIFICATION_ID, notification)
+        Log.i(TAG, "Showed result notification (${transcriptionText.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction}")
     }
 
     private fun showErrorNotification(errorMessage: String) {
