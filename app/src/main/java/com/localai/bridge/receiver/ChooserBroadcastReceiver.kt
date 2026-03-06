@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.localai.bridge.util.ComponentInfoParser
 
 /**
  * BroadcastReceiver for capturing the selected app from Android's share chooser.
@@ -45,7 +46,7 @@ class ChooserBroadcastReceiver : BroadcastReceiver() {
             return
         }
 
-        val componentInfo = intent.extras?.get(EXTRA_CHOSEN_COMPONENT)?.toString()
+        val componentInfo = intent.extras?.getSerializable(EXTRA_CHOSEN_COMPONENT, String::class.java)?.toString()
         if (componentInfo.isNullOrBlank()) {
             Log.w(TAG, "No component info in chooser intent")
             return
@@ -74,35 +75,13 @@ class ChooserBroadcastReceiver : BroadcastReceiver() {
     /**
      * Extract package name from ComponentInfo string.
      *
-     * Input format: "ComponentInfo{com.whatsapp/com.whatsapp.ShareActivity}"
-     * Output: "com.whatsapp"
-     *
-     * Handles malformed input gracefully by returning null.
+     * Delegates to ComponentInfoParser to allow unit testing without
+     * Android framework dependencies.
      *
      * @param componentInfo The ComponentInfo string from EXTRA_CHOSEN_COMPONENT
      * @return The package name, or null if extraction fails
      */
     private fun extractPackageName(componentInfo: String): String? {
-        return try {
-            // Remove "ComponentInfo{" prefix
-            val withoutPrefix = componentInfo.substringAfter("ComponentInfo{", "")
-
-            // Extract package name (everything before the first "/")
-            // Also handle closing brace "}" at the end
-            val packageName = withoutPrefix
-                .substringBefore("/")
-                .substringBefore("}")
-
-            // Validate package name format (should contain at least one dot)
-            if (packageName.contains(".") && packageName.isNotBlank()) {
-                packageName
-            } else {
-                Log.w(TAG, "Invalid package name format: $packageName")
-                null
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error extracting package name from: $componentInfo", e)
-            null
-        }
+        return ComponentInfoParser.extractPackageName(componentInfo)
     }
 }
