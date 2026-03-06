@@ -3,9 +3,10 @@ id: TASK-67
 title: >-
   Fix race condition: Result notification not shown due to premature service
   shutdown
-status: To Do
+status: Done
 assignee: []
 created_date: '2026-03-06 17:58'
+updated_date: '2026-03-06 22:09'
 labels:
   - bug
   - notification
@@ -40,10 +41,16 @@ In `InferenceService.processQueue()`:
 
 ## Definition of Done
 <!-- DOD:BEGIN -->
-- [ ] #1 Code compiles without errors or warnings
-- [ ] #2 Feature tested on physical device or emulator
-- [ ] #3 No regressions in existing functionality
-- [ ] #4 Edge cases handled appropriately
+- [x] #1 Code compiles without errors or warnings
+- [x] #2 Feature tested on physical device or emulator
+- [x] #3 No regressions in existing functionality
+- [x] #4 Edge cases handled appropriately
 - [ ] #5 UI follows Material Design guidelines
 - [ ] #6 Every text should support internationalisation and should be tracked
 <!-- DOD:END -->
+
+## Final Summary
+
+<!-- SECTION:FINAL_SUMMARY:BEGIN -->
+Converted showResultNotification() and autoCopyIfEnabled() from fire-and-forget coroutines (serviceScope.launch) to suspend functions. They now complete inline within processRequest() before processQueue() calls stopSelf(), eliminating the JobCancellationException. Verified on device: auto-copy, result notification, and service destruction now happen in correct order. Commit: b2b17a8
+<!-- SECTION:FINAL_SUMMARY:END -->
