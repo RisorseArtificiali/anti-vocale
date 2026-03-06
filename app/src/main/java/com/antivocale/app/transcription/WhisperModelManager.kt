@@ -13,8 +13,9 @@ import java.io.File
  * - tokens.txt
  *
  * Supported variants:
- * - Tiny: ~75MB, fastest, least accurate
- * - Base: ~197MB, good balance
+ * - Small: ~610MB, good accuracy, recommended starting point
+ * - Turbo: ~538MB, near large-v3 quality, best value
+ * - Medium: ~1.8GB, very accurate, best for Italian
  */
 object WhisperModelManager {
 
@@ -32,22 +33,28 @@ object WhisperModelManager {
     // Note: Whisper models have SEPARATE encoder and decoder files
     val ENCODER_PATTERNS = listOf(
         "encoder.int8.onnx",
-        "tiny.en-encoder.int8.onnx",
-        "base.en-encoder.int8.onnx",
-        "small.en-encoder.int8.onnx",
-        "tiny-encoder.int8.onnx",
+        "small-encoder.int8.onnx",
+        "turbo-encoder.int8.onnx",
+        "medium-encoder.int8.onnx",
         "base-encoder.int8.onnx",
-        "encoder.onnx"
+        "tiny-encoder.int8.onnx",
+        "encoder.onnx",
+        "small-encoder.onnx",
+        "turbo-encoder.onnx",
+        "medium-encoder.onnx"
     )
 
     val DECODER_PATTERNS = listOf(
         "decoder.int8.onnx",
-        "tiny.en-decoder.int8.onnx",
-        "base.en-decoder.int8.onnx",
-        "small.en-decoder.int8.onnx",
-        "tiny-decoder.int8.onnx",
+        "small-decoder.int8.onnx",
+        "turbo-decoder.int8.onnx",
+        "medium-decoder.int8.onnx",
         "base-decoder.int8.onnx",
-        "decoder.onnx"
+        "tiny-decoder.int8.onnx",
+        "decoder.onnx",
+        "small-decoder.onnx",
+        "turbo-decoder.onnx",
+        "medium-decoder.onnx"
     )
 
     // Legacy patterns for backwards compatibility (combined encoder-decoder)
@@ -62,11 +69,11 @@ object WhisperModelManager {
     // Tokens file patterns
     val TOKENS_PATTERNS = listOf(
         "tokens.txt",
-        "tiny.en-tokens.txt",
-        "base.en-tokens.txt",
-        "small.en-tokens.txt",
-        "tiny-tokens.txt",
-        "base-tokens.txt"
+        "small-tokens.txt",
+        "turbo-tokens.txt",
+        "medium-tokens.txt",
+        "base-tokens.txt",
+        "tiny-tokens.txt"
     )
 
     /**
@@ -78,17 +85,23 @@ object WhisperModelManager {
         val dirName: String,
         val estimatedSizeMB: Long
     ) {
-        TINY(
-            titleResId = R.string.whisper_tiny_title,
-            descriptionResId = R.string.whisper_tiny_description,
-            dirName = "sherpa-onnx-whisper-tiny",
-            estimatedSizeMB = 110
+        SMALL(
+            titleResId = R.string.whisper_small_title,
+            descriptionResId = R.string.whisper_small_description,
+            dirName = "sherpa-onnx-whisper-small",
+            estimatedSizeMB = 610
         ),
-        BASE(
-            titleResId = R.string.whisper_base_title,
-            descriptionResId = R.string.whisper_base_description,
-            dirName = "sherpa-onnx-whisper-base",
-            estimatedSizeMB = 197
+        TURBO(
+            titleResId = R.string.whisper_turbo_title,
+            descriptionResId = R.string.whisper_turbo_description,
+            dirName = "sherpa-onnx-whisper-turbo",
+            estimatedSizeMB = 538
+        ),
+        MEDIUM(
+            titleResId = R.string.whisper_medium_title,
+            descriptionResId = R.string.whisper_medium_description,
+            dirName = "sherpa-onnx-whisper-medium",
+            estimatedSizeMB = 1842
         )
     }
 
@@ -199,8 +212,9 @@ object WhisperModelManager {
     private fun detectVariant(dirName: String, fileName: String): Variant? {
         val name = (dirName + fileName).lowercase()
         return when {
-            name.contains("tiny") -> Variant.TINY
-            name.contains("base") -> Variant.BASE
+            name.contains("turbo") -> Variant.TURBO
+            name.contains("medium") -> Variant.MEDIUM
+            name.contains("small") -> Variant.SMALL
             else -> null  // Unknown variant
         }
     }

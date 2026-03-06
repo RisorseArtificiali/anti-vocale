@@ -19,8 +19,9 @@ import java.util.concurrent.TimeUnit
  *
  * Model source: https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/
  * Model sizes:
- * - Tiny: ~110MB (int8 quantized)
- * - Base: ~197MB (int8 quantized)
+ * - Small: ~610MB (int8 quantized)
+ * - Turbo: ~538MB (large-v3-turbo distillation)
+ * - Medium: ~1.8GB (int8 quantized)
  *
  * Languages: Multilingual (99+ languages including excellent Italian support)
  */
@@ -30,20 +31,24 @@ object WhisperDownloader {
 
     // Official sherpa-onnx pre-converted models (no authentication required)
     private val MODEL_URLS = mapOf(
-        WhisperModelManager.Variant.TINY to
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-tiny.tar.bz2",
-        WhisperModelManager.Variant.BASE to
-            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-base.tar.bz2"
+        WhisperModelManager.Variant.SMALL to
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-small.tar.bz2",
+        WhisperModelManager.Variant.TURBO to
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-turbo.tar.bz2",
+        WhisperModelManager.Variant.MEDIUM to
+            "https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-whisper-medium.tar.bz2"
     )
 
     private val MODEL_NAMES = mapOf(
-        WhisperModelManager.Variant.TINY to "sherpa-onnx-whisper-tiny",
-        WhisperModelManager.Variant.BASE to "sherpa-onnx-whisper-base"
+        WhisperModelManager.Variant.SMALL to "sherpa-onnx-whisper-small",
+        WhisperModelManager.Variant.TURBO to "sherpa-onnx-whisper-turbo",
+        WhisperModelManager.Variant.MEDIUM to "sherpa-onnx-whisper-medium"
     )
 
     private val ESTIMATED_SIZES = mapOf(
-        WhisperModelManager.Variant.TINY to 110L,
-        WhisperModelManager.Variant.BASE to 150L
+        WhisperModelManager.Variant.SMALL to 610L,
+        WhisperModelManager.Variant.TURBO to 538L,
+        WhisperModelManager.Variant.MEDIUM to 1842L
     )
 
     // Required files after extraction (Whisper uses separate encoder/decoder)

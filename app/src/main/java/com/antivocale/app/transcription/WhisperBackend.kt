@@ -197,17 +197,8 @@ class WhisperBackend : TranscriptionBackend {
     )
 
     private fun discoverModelFiles(dir: File): ModelFiles? {
-        // Find tokens.txt (required) - try various naming conventions
-        val tokensPatterns = listOf(
-            "tokens.txt",
-            "tiny.en-tokens.txt",
-            "base.en-tokens.txt",
-            "small.en-tokens.txt",
-            "tiny-tokens.txt",
-            "base-tokens.txt"
-        )
-
-        val tokensFile = tokensPatterns
+        // Find tokens file using patterns from WhisperModelManager
+        val tokensFile = WhisperModelManager.TOKENS_PATTERNS
             .map { File(dir, it) }
             .firstOrNull { it.exists() }
 
@@ -216,17 +207,8 @@ class WhisperBackend : TranscriptionBackend {
             return null
         }
 
-        // Find encoder file (try various naming conventions)
-        val encoderPatterns = listOf(
-            "encoder.int8.onnx",
-            "tiny.en-encoder.int8.onnx",
-            "base.en-encoder.int8.onnx",
-            "small.en-encoder.int8.onnx",
-            "tiny-encoder.int8.onnx",
-            "base-encoder.int8.onnx"
-        )
-
-        val encoderFile = encoderPatterns
+        // Find encoder file using patterns from WhisperModelManager
+        val encoderFile = WhisperModelManager.ENCODER_PATTERNS
             .map { File(dir, it) }
             .firstOrNull { it.exists() }
 
@@ -235,17 +217,8 @@ class WhisperBackend : TranscriptionBackend {
             return null
         }
 
-        // Find decoder file (try various naming conventions)
-        val decoderPatterns = listOf(
-            "decoder.int8.onnx",
-            "tiny.en-decoder.int8.onnx",
-            "base.en-decoder.int8.onnx",
-            "small.en-decoder.int8.onnx",
-            "tiny-decoder.int8.onnx",
-            "base-decoder.int8.onnx"
-        )
-
-        val decoderFile = decoderPatterns
+        // Find decoder file using patterns from WhisperModelManager
+        val decoderFile = WhisperModelManager.DECODER_PATTERNS
             .map { File(dir, it) }
             .firstOrNull { it.exists() }
 
