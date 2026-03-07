@@ -93,9 +93,12 @@ sealed class BackendConfig {
 
     /**
      * Configuration for sherpa-onnx backend.
+     *
+     * @param modelDir Directory containing encoder/decoder/joiner/tokens
+     * @param modelType Model architecture type (default: nemo_transducer for Parakeet)
      */
     data class SherpaOnnxConfig(
-        val modelDir: String,  // Directory containing encoder/decoder/joiner/tokens
+        val modelDir: String,
         val modelType: String = "nemo_transducer"
     ) : BackendConfig()
 }

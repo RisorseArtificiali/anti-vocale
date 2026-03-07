@@ -95,7 +95,8 @@ class SherpaOnnxBackend : TranscriptionBackend {
                         sampleRate = 16000,
                         featureDim = 80
                     ),
-                    decodingMethod = "greedy_search"
+                    decodingMethod = "modified_beam_search",
+                    maxActivePaths = 25
                 )
 
                 Log.i(TAG, "Creating OfflineRecognizer...")
