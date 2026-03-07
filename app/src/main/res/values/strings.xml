@@ -95,6 +95,7 @@
 
     <!-- Model Tab - Download section -->
     <string name="download_models">Download Models</string>
+    <string name="gemma_advanced_features_description">Full multimodal LLMs with advanced features: transcription, text transformation, and enrichment.</string>
     <string name="requires_huggingface_token">Requires HuggingFace token.</string>
     <string name="add_in_settings">Add in Settings</string>
     <string name="recommended">Recommended</string>

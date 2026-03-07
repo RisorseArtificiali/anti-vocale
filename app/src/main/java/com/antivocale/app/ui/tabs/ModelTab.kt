@@ -297,23 +297,23 @@ fun ModelTab(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-        // Download models section - primary UX
-        ModelDownloadSection(
+        // Whisper section - multilingual ASR backend (recommended)
+        WhisperDownloadSection(
             viewModel = viewModel,
-            context = context,
-            onNavigateToSettings = onNavigateToSettings,
             activeModelName = uiState.modelName
         )
 
-        // Parakeet TDT section - alternative ASR backend
+        // Parakeet TDT section - fast multilingual ASR backend
         ParakeetDownloadSection(
             viewModel = viewModel,
             activeModelName = uiState.modelName
         )
 
-        // Whisper section - multilingual ASR backend
-        WhisperDownloadSection(
+        // Download models section - Gemma LLM models (advanced features)
+        ModelDownloadSection(
             viewModel = viewModel,
+            context = context,
+            onNavigateToSettings = onNavigateToSettings,
             activeModelName = uiState.modelName
         )
 
@@ -380,6 +380,13 @@ private fun ModelDownloadSection(
                 style = MaterialTheme.typography.titleSmall
             )
         }
+
+        // Description: Gemma are full LLMs with advanced features
+        Text(
+            text = stringResource(R.string.gemma_advanced_features_description),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
 
         // Show token requirement only if no token is configured
         if (!downloadState.hasToken) {
@@ -510,20 +517,6 @@ private fun ModelVariantCard(
                                 text = variant.displayName.substringBefore("(").trim().removeSuffix(" "),
                                 style = MaterialTheme.typography.titleMedium
                             )
-                            // Recommended badge for E2B
-                            if (variant == ModelDownloader.ModelVariant.GEMMA_3N_E2B) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.recommended),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onTertiary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
                             // Active badge
                             if (isActive) {
                                 Surface(
@@ -1110,6 +1103,20 @@ private fun WhisperVariantCard(
                                 text = stringResource(variant.titleResId),
                                 style = MaterialTheme.typography.titleSmall
                             )
+                            // Recommended badge for Turbo
+                            if (variant == WhisperModelManager.Variant.TURBO) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.tertiary,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.recommended),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onTertiary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
                             if (isActive) {
                                 Surface(
                                     color = MaterialTheme.colorScheme.primary,

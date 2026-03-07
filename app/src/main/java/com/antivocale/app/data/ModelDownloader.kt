@@ -52,7 +52,7 @@ object ModelDownloader {
         val galleryModelName: String? = null  // Name in Google AI Edge Gallery
     ) {
         GEMMA_3N_E2B(
-            displayName = "Gemma 3n E2B (Recommended)",
+            displayName = "Gemma 3n E2B",
             huggingFaceRepo = "google/gemma-3n-E2B-it-litert-lm",
             fileName = "gemma-3n-E2B-it-int4.litertlm",
             descriptionResId = R.string.model_desc_gemma_3n_e2b,

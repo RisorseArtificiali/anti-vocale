@@ -95,6 +95,7 @@
 
     <!-- Model Tab - Download section -->
     <string name="download_models">Scarica Modelli</string>
+    <string name="gemma_advanced_features_description">LLM multimodali completi con funzionalità avanzate: trascrizione, trasformazione del testo e arricchimento.</string>
     <string name="requires_huggingface_token">Richiede token HuggingFace.</string>
     <string name="add_in_settings">Aggiungi in Impostazioni</string>
     <string name="recommended">Consigliato</string>
