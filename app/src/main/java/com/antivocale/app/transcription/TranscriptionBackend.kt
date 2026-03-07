@@ -5,8 +5,9 @@ import android.content.Context
 /**
  * Interface for transcription backends.
  *
- * Each backend handles audio transcription and/or text generation
- * using different underlying technologies (LiteRT-LM, sherpa-onnx, etc.)
+ * Each backend handles audio transcription
+ * and text generation
+ * using different underlying technologies (LiteRT-LM, sherpa-onnx, etc).
  */
 interface TranscriptionBackend {
     /**
@@ -25,59 +26,55 @@ interface TranscriptionBackend {
     val supportsAudio: Boolean
 
     /**
-     * Whether this backend supports text generation.
+     * Whether this backend supports text generation
      */
     val supportsText: Boolean
 
     /**
+     * Maximum audio chunk duration this backend can process efficiently.
+     * Audio longer than this will be split into chunks.
+     * null means no chunking limit (process entire audio as single chunk)
+     */
+    val maxChunkDurationSeconds: Int?
+        get() = 30  // Default: 30 seconds (safe for most backends)
+
+    /**
      * Initializes the backend with the given configuration.
-     *
-     * @param context Application context
-     * @param config Backend-specific configuration
-     * @return Result success or failure
      */
     suspend fun initialize(context: Context, config: BackendConfig): Result<Unit>
 
     /**
      * Transcribes audio data to text.
-     *
-     * @param audioData WAV ByteArray (16kHz mono, 16-bit PCM)
-     * @param prompt Optional prompt to guide transcription
-     * @return Result containing the transcription text
      */
     suspend fun transcribeAudio(audioData: ByteArray, prompt: String): Result<String>
 
     /**
      * Generates text from a prompt.
-     *
-     * @param prompt The input prompt
-     * @return Result containing the generated text
      */
     suspend fun generateText(prompt: String): Result<String>
 
     /**
-     * Checks if the backend is ready for inference.
+     * Returns whether the backend is ready for inference.
      */
     fun isReady(): Boolean
 
     /**
-     * Checks if audio processing is available.
+     * Returns whether this backend supports audio transcription.
      */
     fun isAudioSupported(): Boolean
 
     /**
-     * Unloads the model from memory.
+     * Unloads the backend and releases resources.
      */
     fun unload()
 
     /**
-     * Sets the keep-alive timeout in minutes.
-     * After this period of inactivity, the model may be automatically unloaded.
+     * Sets the keep-alive timeout for the backend.
      */
     fun setKeepAliveTimeout(minutes: Int)
 
     /**
-     * Gets the current model path, if any.
+     * Returns the path to the model file.
      */
     fun getModelPath(): String?
 }

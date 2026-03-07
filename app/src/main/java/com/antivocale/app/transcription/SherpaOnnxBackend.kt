@@ -41,6 +41,9 @@ class SherpaOnnxBackend : TranscriptionBackend {
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = false  // ASR-only, no text generation
 
+    // Parakeet can handle up to 24 minutes in single pass - no chunking needed
+    override val maxChunkDurationSeconds: Int? = null
+
     private var recognizer: OfflineRecognizer? = null
     private var modelDir: String? = null
     private var isInitialized = false

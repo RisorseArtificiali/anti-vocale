@@ -26,7 +26,6 @@ object AudioPreprocessor {
     private const val TAG = "AudioPreprocessor"
     private const val TARGET_SAMPLE_RATE = 16000
     private const val TARGET_CHANNELS = 1
-    private const val MAX_CHUNK_DURATION_SECONDS = 30
     private const val MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024 // 100MB limit
     private const val MAX_DURATION_SECONDS = 600 // 10 minutes max
     private const val TIMEOUT_US = 10000L
@@ -59,9 +58,14 @@ object AudioPreprocessor {
      *
      * @param inputPath Path to the source audio file
      * @param cacheDir Cache directory for intermediate files
+     * @param maxChunkDurationSeconds Maximum chunk duration in seconds, *        null means no chunking (process entire audio as single chunk)
      * @return PreprocessingResult containing WAV chunks
      */
-    fun prepareAudioForMediaPipe(inputPath: String, cacheDir: File): PreprocessingResult {
+    fun prepareAudioForMediaPipe(
+        inputPath: String,
+        cacheDir: File,
+        maxChunkDurationSeconds: Int? = 30
+    ): PreprocessingResult {
         Log.d(TAG, "Preparing audio: $inputPath")
 
         // Validate input file exists
@@ -97,15 +101,17 @@ object AudioPreprocessor {
         Log.d(TAG, "Audio duration: ${duration}s")
 
         // Chunk if necessary
-        return if (duration <= MAX_CHUNK_DURATION_SECONDS) {
+        if (maxChunkDurationSeconds == null || duration <= maxChunkDurationSeconds) {
+            // No chunking needed - return single chunk
             val wavBytes = createWavByteArray(pcmData)
-            PreprocessingResult(
+            return PreprocessingResult(
                 chunks = listOf(wavBytes),
                 totalDurationSeconds = duration,
                 chunkCount = 1
             )
         } else {
-            chunkAudio(pcmData, duration)
+            // Chunk into segments
+            return chunkAudio(pcmData, duration, maxChunkDurationSeconds)
         }
     }
 
@@ -334,10 +340,10 @@ object AudioPreprocessor {
     }
 
     /**
-     * Chunks audio data into 30-second segments.
+     * Chunks audio data into segments of specified duration.
      */
-    private fun chunkAudio(pcmData: ByteArray, duration: Double): PreprocessingResult {
-        val samplesPerChunk = TARGET_SAMPLE_RATE * MAX_CHUNK_DURATION_SECONDS * 2 // 16-bit = 2 bytes
+    private fun chunkAudio(pcmData: ByteArray, duration: Double, maxChunkDurationSeconds: Int): PreprocessingResult {
+        val samplesPerChunk = TARGET_SAMPLE_RATE * maxChunkDurationSeconds * 2 // 16-bit = 2 bytes
         val chunks = mutableListOf<ByteArray>()
         var offset = 0
         var chunkIndex = 0

@@ -91,13 +91,6 @@ class AudioPreprocessorTest {
         assertEquals(600, expectedMaxDuration)
     }
 
-    @Test
-    fun `MAX_CHUNK_DURATION_SECONDS is 30 seconds`() {
-        val expectedChunkDuration = 30
-        // This test documents the expected constant value
-        assertEquals(30, expectedChunkDuration)
-    }
-
     // ========== Chunking Logic Tests ==========
 
     @Test
