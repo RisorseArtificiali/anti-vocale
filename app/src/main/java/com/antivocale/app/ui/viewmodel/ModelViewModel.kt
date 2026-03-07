@@ -17,6 +17,7 @@ import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.ParakeetModelManager
 import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.transcription.WhisperModelManager
+import com.antivocale.app.transcription.TranscriptionBackendManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
