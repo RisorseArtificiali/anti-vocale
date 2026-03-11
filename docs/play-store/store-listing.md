@@ -65,3 +65,4 @@ Perfect for privacy-conscious users who need to transcribe voice messages withou
 **App Category:** Tools
 **Content Rating:** Everyone
 **Tags:** offline, transcription, voice-to-text, privacy
+**Privacy Policy URL:** https://gist.github.com/paoloantinori/b3278479cacfc16e9e461f7320ebedfc
