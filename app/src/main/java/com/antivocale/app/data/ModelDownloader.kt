@@ -1,8 +1,6 @@
 package com.antivocale.app.data
 
 import android.content.Context
-import android.os.Build
-import android.os.Environment
 import android.util.Log
 import com.antivocale.app.R
 import kotlinx.coroutines.Dispatchers
@@ -18,8 +16,7 @@ import java.util.concurrent.TimeUnit
  * Manages Gemma 3n LiteRT-LM models for on-device inference.
  *
  * Model sources:
- * 1. **Google AI Edge Gallery**: Reuse models already downloaded by the Gallery app
- * 2. **HuggingFace**: Download new models (requires HuggingFace account + license)
+ * 1. **HuggingFace**: Download models (requires HuggingFace account + license)
  *
  * Available models:
  * - **Gemma 3n E2B**: 3.3GB, recommended for most devices (multimodal: text + audio)
@@ -33,13 +30,6 @@ object ModelDownloader {
     private const val TAG = "ModelDownloader"
 
     /**
-     * Google AI Edge Gallery model storage path.
-     * Models are stored in: /storage/emulated/0/Android/data/com.google.ai.edge.gallery/files/
-     */
-    private const val GALLERY_PACKAGE = "com.google.ai.edge.gallery"
-    private const val GALLERY_MODELS_PATH = "/storage/emulated/0/Android/data/$GALLERY_PACKAGE/files"
-
-    /**
      * Available model variants.
      */
     enum class ModelVariant(
@@ -48,8 +38,7 @@ object ModelDownloader {
         val fileName: String,
         val descriptionResId: Int?,
         val estimatedSizeMB: Long,
-        val supportsAudio: Boolean,
-        val galleryModelName: String? = null  // Name in Google AI Edge Gallery
+        val supportsAudio: Boolean
     ) {
         GEMMA_3N_E2B(
             displayName = "Gemma 3n E2B",
@@ -57,8 +46,7 @@ object ModelDownloader {
             fileName = "gemma-3n-E2B-it-int4.litertlm",
             descriptionResId = R.string.model_desc_gemma_3n_e2b,
             estimatedSizeMB = 3300L,
-            supportsAudio = true,
-            galleryModelName = "Gemma_3n_E2B_it"
+            supportsAudio = true
         ),
         GEMMA_3N_E4B(
             displayName = "Gemma 3n E4B",
@@ -66,8 +54,7 @@ object ModelDownloader {
             fileName = "gemma-3n-E4B-it-int4.litertlm",
             descriptionResId = R.string.model_desc_gemma_3n_e4b,
             estimatedSizeMB = 4235L,
-            supportsAudio = true,
-            galleryModelName = "Gemma_3n_E4B_it"
+            supportsAudio = true
         )
     }
 
@@ -341,184 +328,4 @@ object ModelDownloader {
             }
         }
     }
-
-    // ==================== Google AI Edge Gallery Integration ====================
-
-    /**
-     * Finds a model in Google AI Edge Gallery's storage.
-     * Returns the model file if found, null otherwise.
-     *
-     * Gallery stores models at:
-     * /storage/emulated/0/Android/data/com.google.ai.edge.gallery/files/{ModelName}/{hash}/{model}.litertlm
-     *
-     * The hash folder name changes between downloads/versions, so we search recursively.
-     */
-    fun findGalleryModel(variant: ModelVariant): File? {
-        // Check for storage permission first (Android 11+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && !Environment.isExternalStorageManager()) {
-            Log.w(TAG, "findGalleryModel: ❌ No MANAGE_EXTERNAL_STORAGE permission - cannot access Gallery models")
-            Log.w(TAG, "  Grant 'All files access' permission to use Gallery models")
-            return null
-        }
-
-        val galleryName = variant.galleryModelName ?: return null
-        val galleryDir = File(GALLERY_MODELS_PATH, galleryName)
-
-        Log.d(TAG, "Searching for Gallery model: ${variant.displayName}")
-        Log.d(TAG, "  Expected path: ${galleryDir.path}")
-        Log.d(TAG, "  Permission granted: ${if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) Environment.isExternalStorageManager() else "N/A (pre-Android 11)"}")
-
-        if (!galleryDir.exists()) {
-            Log.w(TAG, "  Gallery model directory NOT FOUND: ${galleryDir.path}")
-            // Try to list parent directory to debug
-            val parentDir = File(GALLERY_MODELS_PATH)
-            if (parentDir.exists()) {
-                Log.d(TAG, "  Parent directory exists, contents: ${parentDir.listFiles()?.map { it.name }}")
-            } else {
-                Log.w(TAG, "  Parent directory also not found: ${parentDir.path}")
-            }
-            return null
-        }
-
-        Log.d(TAG, "  Gallery directory exists, searching for .litertlm files...")
-
-        // Find the model file in subdirectories (hash-named folders)
-        // The hash changes between versions, so we search all subdirectories
-        var foundFiles = 0
-        galleryDir.walkTopDown()
-            .onEnter { dir ->
-                Log.v(TAG, "    Scanning: ${dir.name}")
-                true
-            }
-            .filter { 
-                val matches = it.isFile && it.extension == "litertlm" && it.length() > 100_000_000
-                if (it.isFile && it.extension == "litertlm") {
-                    Log.d(TAG, "    Found .litertlm file: ${it.name}, size: ${it.length()}, matches: $matches")
-                }
-                matches
-            }
-            .onEach { foundFiles++ }
-            .firstOrNull()
-            ?.let { file ->
-                Log.i(TAG, "  ✅ Found Gallery model: ${file.path} (${file.length()} bytes)")
-                return file
-            }
-
-        Log.w(TAG, "  ❌ No matching .litertlm files found (scanned $foundFiles files)")
-        return null
-    }
-
-    /**
-     * Checks if a model is available from Google AI Edge Gallery.
-     */
-    fun isGalleryModelAvailable(variant: ModelVariant): Boolean {
-        return findGalleryModel(variant) != null
-    }
-
-    /**
-     * Gets the path to a Gallery model if available.
-     */
-    fun getGalleryModelPath(variant: ModelVariant): String? {
-        return findGalleryModel(variant)?.absolutePath
-    }
-
-    /**
-     * Lists all available models from Google AI Edge Gallery.
-     */
-    fun listGalleryModels(): List<Pair<ModelVariant, File>> {
-        return ModelVariant.entries.mapNotNull { variant ->
-            findGalleryModel(variant)?.let { file -> variant to file }
-        }
-    }
-
-    /**
-     * Copies a model from Google AI Edge Gallery to the app's local storage.
-     * This allows the app to use Gallery models without needing storage permissions.
-     *
-     * @param context Application context
-     * @param variant Model variant to copy
-     * @param onProgress Callback for copy progress (0.0 to 1.0)
-     * @return Result containing the copied file or an error
-     */
-    suspend fun copyFromGallery(
-        context: Context,
-        variant: ModelVariant,
-        onProgress: (Float) -> Unit = {}
-    ): Result<File> = withContext(Dispatchers.IO) {
-        val sourceFile = findGalleryModel(variant)
-            ?: return@withContext Result.failure(
-                FileNotFoundException("Gallery model not found for ${variant.displayName}")
-            )
-
-        val targetDir = File(context.filesDir, "models")
-        if (!targetDir.exists()) {
-            targetDir.mkdirs()
-        }
-
-        val targetFile = File(targetDir, variant.fileName)
-
-        // Check if already copied
-        if (targetFile.exists() && targetFile.length() > 0) {
-            Log.i(TAG, "Model already copied: ${targetFile.path}")
-            return@withContext Result.success(targetFile)
-        }
-
-        Log.i(TAG, "Copying model from Gallery: ${sourceFile.path}")
-
-        return@withContext try {
-            val totalBytes = sourceFile.length()
-            var copiedBytes = 0L
-
-            FileInputStream(sourceFile).use { input ->
-                FileOutputStream(targetFile).use { output ->
-                    val buffer = ByteArray(8192)
-                    var bytesRead: Int
-
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        output.write(buffer, 0, bytesRead)
-                        copiedBytes += bytesRead
-
-                        val progress = copiedBytes.toFloat() / totalBytes
-                        onProgress(progress.coerceIn(0f, 1f))
-                    }
-                }
-            }
-
-            Log.i(TAG, "Copy complete: ${targetFile.path} (${targetFile.length()} bytes)")
-            Result.success(targetFile)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Copy failed", e)
-            // Clean up partial copy
-            if (targetFile.exists()) {
-                targetFile.delete()
-            }
-            Result.failure(e)
-        }
-    }
-
-    /**
-     * Gets the best available model path, prioritizing:
-     * 1. Already downloaded/copied model in app storage
-     * 2. Google AI Edge Gallery model (if accessible)
-     * 3. Returns null if no model available
-     */
-    fun getBestAvailableModelPath(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): String? {
-        // Check app's local storage first
-        getLocalModelPath(context, variant)?.let { return it }
-
-        // Check Google AI Edge Gallery
-        getGalleryModelPath(variant)?.let { return it }
-
-        return null
-    }
-
-    /**
-     * Checks if any model is available (either local or from Gallery).
-     */
-    fun isAnyModelAvailable(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): Boolean {
-        return getBestAvailableModelPath(context, variant) != null
-    }
 }
-
-private class FileNotFoundException(message: String) : Exception(message)

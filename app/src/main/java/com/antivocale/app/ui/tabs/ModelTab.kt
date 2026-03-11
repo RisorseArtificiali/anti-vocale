@@ -5,8 +5,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
-import android.os.Environment
-import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
@@ -34,8 +32,7 @@ import com.antivocale.app.transcription.WhisperModelManager
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 
 private enum class PendingAction {
-    PICK_FILE,
-    USE_GALLERY_MODEL
+    PICK_FILE
 }
 
 /**
@@ -50,19 +47,6 @@ private fun needsStoragePermission(context: android.content.Context): Boolean {
                 PackageManager.PERMISSION_GRANTED
     }
 }
-
-/**
- * Check if MANAGE_EXTERNAL_STORAGE permission is needed for Gallery access (Android 11+)
- */
-private fun needsManageStoragePermission(): Boolean {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        !Environment.isExternalStorageManager()
-    } else {
-        false
-    }
-}
-
-
 
 /**
  * Get storage permissions to request
@@ -114,30 +98,7 @@ fun ModelTab(
                     viewModel.openFilePicker()
                 }
             }
-            PendingAction.USE_GALLERY_MODEL -> {
-                viewModel.useGalleryModel()
-            }
             null -> {}
-        }
-        pendingAction = null
-    }
-
-    // Launcher for MANAGE_EXTERNAL_STORAGE permission (Android 11+)
-    val manageStorageLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) {
-        android.util.Log.d("ModelTab", "manageStorageLauncher callback triggered")
-        val hasPermission = Build.VERSION.SDK_INT >= Build.VERSION_CODES.R && Environment.isExternalStorageManager()
-        android.util.Log.d("ModelTab", "hasPermission = $hasPermission")
-
-        // Always refresh gallery models when returning from settings
-        viewModel.refreshGalleryModels()
-
-        if (hasPermission) {
-            when (pendingAction) {
-                PendingAction.USE_GALLERY_MODEL -> viewModel.useGalleryModel()
-                else -> {}
-            }
         }
         pendingAction = null
     }
@@ -564,10 +525,6 @@ private fun ModelVariantCard(
                         if (variant.supportsAudio) stringResource(R.string.label_yes_multimodal) else stringResource(R.string.label_no_text_only)
                     )
                     InfoRow(getLocalizedLabel("HuggingFace"), variant.huggingFaceRepo)
-
-                    if (variant.galleryModelName != null) {
-                        InfoRow(getLocalizedLabel("AI Gallery name"), variant.galleryModelName)
-                    }
                 }
             }
 
@@ -732,7 +689,6 @@ private fun getLocalizedLabel(labelKey: String): String {
         "File name" -> stringResource(R.string.label_filename)
         "Supports audio" -> stringResource(R.string.label_supports_audio)
         "HuggingFace" -> stringResource(R.string.label_huggingface)
-        "AI Gallery name" -> stringResource(R.string.label_ai_gallery_name)
         else -> labelKey
     }
 }

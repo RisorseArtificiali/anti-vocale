@@ -2,7 +2,6 @@ package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
 import android.net.Uri
-import android.os.Environment
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -104,11 +103,6 @@ class ModelViewModel(
         val modelName: String = "",
         val memoryUsage: Long = 0,
         val isModelPathValid: Boolean = false,
-        // Gallery model detection
-        val galleryModelPath: String? = null,
-        val galleryModelName: String? = null,
-        val isGalleryModelAvailable: Boolean = false,
-        val needsStoragePermission: Boolean = false,
         // Download state
         val downloadState: DownloadUiState = DownloadUiState()
     )
@@ -146,8 +140,6 @@ class ModelViewModel(
         }
         // Load saved model path on initialization
         loadSavedModelPath()
-        // Check for Google AI Edge Gallery models
-        checkForGalleryModels()
         // Check for downloaded models
         refreshDownloadedModels()
         // Check for HuggingFace token
@@ -163,80 +155,6 @@ class ModelViewModel(
      */
     fun refreshTokenState() {
         _downloadUiState.update { it.copy(hasToken = tokenManager.hasToken()) }
-    }
-
-    /**
-     * Checks if a Gemma 3n model is available from Google AI Edge Gallery.
-     */
-    private fun checkForGalleryModels() {
-        viewModelScope.launch {
-            android.util.Log.d("ModelViewModel", "checkForGalleryModels: Starting check...")
-            
-            val variant = ModelDownloader.ModelVariant.GEMMA_3N_E2B
-            val galleryPath = ModelDownloader.getGalleryModelPath(variant)
-
-            android.util.Log.d("ModelViewModel", "checkForGalleryModels: Result path = $galleryPath")
-
-            if (galleryPath != null) {
-                android.util.Log.i("ModelViewModel", "checkForGalleryModels: ✅ Gallery model FOUND at $galleryPath")
-                _uiState.update { it.copy(
-                    galleryModelPath = galleryPath,
-                    galleryModelName = "Gemma 3n E2B (from AI Gallery)",
-                    isGalleryModelAvailable = true
-                )}
-            } else {
-                android.util.Log.w("ModelViewModel", "checkForGalleryModels: ❌ Gallery model NOT found")
-                // Ensure state is updated even when not found
-                _uiState.update { it.copy(
-                    isGalleryModelAvailable = false,
-                    galleryModelPath = null,
-                    galleryModelName = null
-                )}
-            }
-        }
-    }
-
-    /**
-     * Refreshes the Gallery model detection (call after permission is granted).
-     */
-    fun refreshGalleryModels() {
-        checkForGalleryModels()
-    }
-
-    /**
-     * Uses the Google AI Edge Gallery model directly.
-     */
-    fun useGalleryModel() {
-        val galleryPath = _uiState.value.galleryModelPath
-        if (galleryPath == null) {
-            // Try to refresh first
-            checkForGalleryModels()
-            return
-        }
-
-        viewModelScope.launch {
-            // Verify the file exists
-            val file = java.io.File(galleryPath)
-            if (!file.exists()) {
-                _uiState.update { it.copy(
-                    status = ModelStatus.ERROR,
-                    statusMessage = "Gallery model not accessible. Grant storage permission."
-                )}
-                return@launch
-            }
-
-            preferencesManager.saveModelPath(galleryPath)
-            // Switch to LLM backend when selecting an LLM model
-            preferencesManager.saveTranscriptionBackend("llm")
-
-            _uiState.update { it.copy(
-                modelPath = galleryPath,
-                modelName = "Gemma 3n E2B (Gallery)",
-                isModelPathValid = true,
-                status = ModelStatus.UNLOADED,
-                statusMessage = "Gallery model selected"
-            )}
-        }
     }
 
     private fun loadSavedModelPath() {

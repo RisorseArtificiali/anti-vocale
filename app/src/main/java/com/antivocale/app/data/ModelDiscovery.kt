@@ -18,8 +18,7 @@ data class DiscoveredModel(
  * Source of a discovered model.
  */
 enum class ModelSource {
-    DOWNLOADED,    // Downloaded via HuggingFace
-    GALLERY        // Google AI Edge Gallery
+    DOWNLOADED    // Downloaded via HuggingFace
 }
 
 /**
@@ -27,7 +26,6 @@ enum class ModelSource {
  *
  * Reuses existing ModelDownloader methods to find:
  * - Downloaded models in app storage
- * - Google AI Edge Gallery models
  * - Previously used models from preferences
  */
 object ModelDiscovery {
@@ -44,18 +42,6 @@ object ModelDiscovery {
                 name = variant.displayName,
                 path = file.absolutePath,
                 source = ModelSource.DOWNLOADED,
-                sizeMB = file.length() / (1024 * 1024),
-                variant = variant
-            ))
-            discoveredPaths.add(file.absolutePath)
-        }
-
-        // Add Gallery models
-        ModelDownloader.listGalleryModels().forEach { (variant, file) ->
-            models.add(DiscoveredModel(
-                name = "${variant.displayName} (Gallery)",
-                path = file.absolutePath,
-                source = ModelSource.GALLERY,
                 sizeMB = file.length() / (1024 * 1024),
                 variant = variant
             ))
