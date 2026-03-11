@@ -15,3 +15,8 @@
 
 # Keep data classes used in intents
 -keep class com.antivocale.app.data.** { *; }
+
+# Annotation processing classes (not needed at runtime)
+-dontwarn javax.lang.model.**
+-dontwarn autovalue.shaded.**
+-dontwarn com.google.auto.value.**
