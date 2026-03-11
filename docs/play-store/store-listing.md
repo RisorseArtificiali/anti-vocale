@@ -13,8 +13,8 @@ Anti-Vocale transcribes voice messages from WhatsApp, Telegram, and other messag
 🔒 **100% Offline** - All transcription happens on your phone. Your audio never leaves your device.
 
 🎯 **Multiple AI Models** - Choose between:
-• Gemma 3n (recommended): Best quality, supports 25+ languages
-• Whisper Turbo: Fast and accurate, supports 99 languages
+• Whisper Turbo (recommended): Fast and accurate transcription for 99 languages
+• Gemma 3n: Advanced AI for summarization and content elaboration, 25+ languages
 • Parakeet TDT: Lightweight option for European languages
 
 📲 **Easy Integration** - Share any voice message to Anti-Vocale from any app
@@ -27,7 +27,7 @@ Anti-Vocale transcribes voice messages from WhatsApp, Telegram, and other messag
 
 **HOW IT WORKS**
 
-1. Download an AI model (Whisper Turbo recommended for first setup)
+1. Download an AI model (Whisper Turbo recommended for transcription)
 2. Share a voice message from WhatsApp, Telegram, etc.
 3. Get the transcription in a notification instantly
 4. Copy text or share it back to the conversation
@@ -53,8 +53,8 @@ Trigger transcriptions via Tasker or other automation tools.
 
 | Model | Size | Languages | Use Case |
 |-------|------|-----------|----------|
-| Gemma 3n E2B | 3.3GB | 25+ | Best quality (recommended) |
-| Whisper Turbo | 538MB | 99 | Fast, accurate |
+| Whisper Turbo | 538MB | 99 | Transcription (recommended) |
+| Gemma 3n E2B | 3.3GB | 25+ | Summarization & elaboration |
 | Whisper Small | 610MB | 99 | Good balance |
 | Parakeet TDT | 464MB | 25 European | Lightweight |
 
@@ -84,8 +84,8 @@ Anti-Vocale trascrive i messaggi vocali da WhatsApp, Telegram e altre app di mes
 🔒 **100% Offline** - Tutta la trascrizione avviene sul tuo telefono. I tuoi audio non lasciano mai il tuo dispositivo.
 
 🎯 **Più Modelli AI** - Scegli tra:
-• Gemma 3n (consigliato): Migliore qualità, supporta oltre 25 lingue
-• Whisper Turbo: Veloce e accurato, supporta 99 lingue
+• Whisper Turbo (consigliato): Trascrizione veloce e accurata per 99 lingue
+• Gemma 3n: AI avanzata per sintesi ed elaborazione dei contenuti, 25+ lingue
 • Parakeet TDT: Opzione leggera per le lingue europee
 
 📲 **Integrazione Facile** - Condividi qualsiasi messaggio vocale con Anti-Vocale da qualsiasi app
@@ -98,7 +98,7 @@ Anti-Vocale trascrive i messaggi vocali da WhatsApp, Telegram e altre app di mes
 
 **COME FUNZIONA**
 
-1. Scarica un modello AI (Whisper Turbo consigliato per la prima configurazione)
+1. Scarica un modello AI (Whisper Turbo consigliato per la trascrizione)
 2. Condividi un messaggio vocale da WhatsApp, Telegram, ecc.
 3. Ricevi la trascrizione in una notifica istantaneamente
 4. Copia il testo o condividilo nuovamente nella conversazione
@@ -124,8 +124,8 @@ Attiva le trascrizioni tramite Tasker o altri strumenti di automazione.
 
 | Modello | Dimensione | Lingue | Caso d'Uso |
 |-------|------|-----------|----------|
-| Gemma 3n E2B | 3.3GB | 25+ | Migliore qualità (consigliato) |
-| Whisper Turbo | 538MB | 99 | Veloce, accurato |
+| Whisper Turbo | 538MB | 99 | Trascrizione (consigliato) |
+| Gemma 3n E2B | 3.3GB | 25+ | Sintesi ed elaborazione |
 | Whisper Small | 610MB | 99 | Buon bilanciamento |
 | Parakeet TDT | 464MB | 25 europee | Leggero |
 
