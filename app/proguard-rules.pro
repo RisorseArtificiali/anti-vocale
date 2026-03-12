@@ -26,7 +26,17 @@
 -keepclassmembers class com.k2fsa.sherpa.onnx.** { *; }
 -dontwarn com.k2fsa.sherpa.onnx.**
 
-# LiteRT-LM: Keep classes that native code accesses via reflection
+# LiteRT-LM: Keep classes that native code accesses via reflection/JNI
 -keep class com.google.ai.edge.litertlm.** { *; }
 -keepclassmembers class com.google.ai.edge.litertlm.** { *; }
+# Explicitly keep SamplerConfig getters/setters (JNI access)
+-keepclassmembers class com.google.ai.edge.litertlm.SamplerConfig {
+    public int getTopK();
+    public float getTemperature();
+    public int getTopP();
+}
+# Also keep all public methods in LiteRtLmJni
+-keepclassmembers class com.google.ai.edge.litertlm.LiteRtLmJni {
+    public native <methods>;
+}
 -dontwarn com.google.ai.edge.litertlm.**
