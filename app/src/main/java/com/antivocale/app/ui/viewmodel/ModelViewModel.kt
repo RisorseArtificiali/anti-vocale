@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDownloader
-import com.antivocale.app.data.ModelDownloader.DownloadError
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.R
 import com.antivocale.app.di.AppContainer
@@ -416,27 +415,18 @@ class ModelViewModel(
     }
 
     /**
-     * Starts an authenticated download for the selected model variant.
+     * Starts a download for the selected model variant.
+     *
+     * Auth is optional: tries public access first, falls back to stored token if needed.
+     * Supports resume for interrupted downloads and retry on transient errors.
      */
     fun startDownload(variant: ModelDownloader.ModelVariant) {
         viewModelScope.launch(Dispatchers.IO) {
-            // Check if token is available (OAuth or manual PAT)
-            val token = tokenManager.getEffectiveToken()
-            if (token.isNullOrEmpty()) {
-                _downloadUiState.update { it.copy(
-                    downloadError = ModelDownloader.DownloadError.AuthError(
-                        "No HuggingFace token. Please add your token in Settings."
-                    )
-                )}
-                _snackbarEvent.send("Invalid token. Check Settings.")
-                return@launch
-            }
-
             _downloadUiState.update { it.copy(
                 selectedVariant = variant,
                 isDownloading = true,
                 downloadProgress = 0f,
-                downloadState = ModelDownloader.DownloadState.Connecting(""),
+                downloadState = ModelDownloader.DownloadState.Idle,
                 downloadError = null
             )}
 
@@ -446,13 +436,6 @@ class ModelViewModel(
                 tokenManager = tokenManager,
                 onProgress = { progress ->
                     _downloadUiState.update { it.copy(downloadProgress = progress) }
-                    // Also update main UI state for progress display
-                    _uiState.update { it.copy(
-                        downloadState = _downloadUiState.value.copy(
-                            isDownloading = true,
-                            downloadProgress = progress
-                        )
-                    )}
                 },
                 onStateChange = { state ->
                     _downloadUiState.update { it.copy(downloadState = state) }
@@ -469,12 +452,12 @@ class ModelViewModel(
                                 isDownloading = false,
                                 downloadError = error
                             )}
-                            // Emit user-friendly message to Snackbar
                             val message = when (error) {
-                                is DownloadError.AuthError -> "Invalid token. Check Settings."
-                                is DownloadError.LicenseError -> "Accept license on HuggingFace"
-                                is DownloadError.StorageError -> "Not enough storage"
-                                is DownloadError.NetworkError -> "Network error: ${error.message}"
+                                is ModelDownloader.DownloadError.AuthRequired -> "auth_required"
+                                is ModelDownloader.DownloadError.AuthError -> "Invalid token. Check Settings."
+                                is ModelDownloader.DownloadError.LicenseError -> "Accept license on HuggingFace"
+                                is ModelDownloader.DownloadError.StorageError -> "Not enough storage"
+                                is ModelDownloader.DownloadError.NetworkError -> "Network error: ${error.message}"
                             }
                             viewModelScope.launch { _snackbarEvent.send(message) }
                         }
@@ -483,9 +466,7 @@ class ModelViewModel(
                                 isDownloading = false,
                                 downloadProgress = 1f
                             )}
-                            // Refresh downloaded models list
                             refreshDownloadedModels()
-                            // Auto-select only if no model is currently active
                             if (_uiState.value.modelName.isBlank()) {
                                 setDownloadedModel(state.file)
                             }
@@ -499,20 +480,16 @@ class ModelViewModel(
             )
 
             result.onFailure { error ->
-                // Only update state here - Snackbar is already emitted via onStateChange
-                _downloadUiState.update { it.copy(
-                    isDownloading = false,
-                    downloadError = if (error is ModelDownloader.DownloadError) {
-                        error
-                    } else {
-                        ModelDownloader.DownloadError.NetworkError(
+                // Snackbar is already emitted via onStateChange, skip double emission
+                if (error !is ModelDownloader.DownloadError) {
+                    _downloadUiState.update { it.copy(
+                        isDownloading = false,
+                        downloadError = ModelDownloader.DownloadError.NetworkError(
                             error.message ?: "Download failed",
                             error
                         )
-                    }
-                )}
-                // Note: Snackbar event is emitted in onStateChange callback, not here
-                // to avoid double emission
+                    )}
+                }
             }
         }
     }

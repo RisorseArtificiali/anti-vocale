@@ -59,7 +59,7 @@
     <string name="whisper_title">Whisper (Multilingue)</string>
     <string name="whisper_description">Ideale per italiano e altre lingue</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~610MB • Buona precisione • Punto di partenza consigliato</string>
+    <string name="whisper_small_description">~610MB • Precisione inferiore, specialmente con audio rumoroso • Solo per dispositivi con poca memoria</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~538MB • Qualità vicina a large-v3 • Miglior rapporto</string>
     <string name="whisper_medium_title">Whisper Medium</string>

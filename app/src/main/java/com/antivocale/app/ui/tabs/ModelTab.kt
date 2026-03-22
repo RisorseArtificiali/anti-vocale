@@ -139,10 +139,22 @@ fun ModelTab(
     // Collect one-time Snackbar events from ViewModel (Channel-based for guaranteed delivery)
     LaunchedEffect(Unit) {
         viewModel.snackbarEvent.collect { message ->
-            snackbarHostState.showSnackbar(
-                message = message,
-                duration = SnackbarDuration.Long
-            )
+            if (message == "auth_required") {
+                snackbarHostState.showSnackbar(
+                    message = AppContainer.applicationContext.getString(R.string.model_requires_auth),
+                    actionLabel = "Settings",
+                    duration = SnackbarDuration.Long
+                ).let { result ->
+                    if (result == SnackbarResult.ActionPerformed) {
+                        onNavigateToSettings()
+                    }
+                }
+            } else {
+                snackbarHostState.showSnackbar(
+                    message = message,
+                    duration = SnackbarDuration.Long
+                )
+            }
             viewModel.clearDownloadError()
         }
     }
@@ -377,26 +389,6 @@ private fun ModelDownloadSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
-        // Show token requirement only if no token is configured
-        if (!downloadState.hasToken) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.requires_huggingface_token),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                TextButton(onClick = onNavigateToSettings) {
-                    Text(
-                        stringResource(R.string.add_in_settings),
-                        style = MaterialTheme.typography.labelSmall
-                    )
-                }
-            }
-        }
-
         // Model variant cards
         ModelDownloader.ModelVariant.entries.forEach { variant ->
             ModelVariantCard(
@@ -594,6 +586,7 @@ private fun ModelVariantCard(
                             )
                         }
                     }
+                    is ModelDownloader.DownloadState.CheckingAccess,
                     is ModelDownloader.DownloadState.Connecting -> {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -605,6 +598,26 @@ private fun ModelVariantCard(
                             )
                             Text(
                                 text = stringResource(R.string.connecting_to_huggingface),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+                    is ModelDownloader.DownloadState.Retrying -> {
+                        val state = currentDownloadState as ModelDownloader.DownloadState.Retrying
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Text(
+                                text = stringResource(
+                                    R.string.download_status_retrying,
+                                    state.attempt,
+                                    state.maxRetries
+                                ),
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
