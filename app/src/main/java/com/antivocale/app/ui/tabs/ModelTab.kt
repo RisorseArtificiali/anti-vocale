@@ -9,8 +9,15 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -134,7 +141,6 @@ fun ModelTab(
         viewModel.snackbarEvent.collect { message ->
             snackbarHostState.showSnackbar(
                 message = message,
-                actionLabel = "Dismiss",
                 duration = SnackbarDuration.Long
             )
             viewModel.clearDownloadError()
@@ -303,8 +309,30 @@ fun ModelTab(
             hostState = snackbarHostState,
             modifier = Modifier
                 .align(Alignment.BottomCenter)
-                .padding(16.dp)
-        )
+                .padding(horizontal = 16.dp, vertical = 24.dp)
+        ) { snackbarData ->
+            AnimatedVisibility(
+                visible = true,
+                enter = slideInVertically(
+                    initialOffsetY = { it },
+                    animationSpec = spring(dampingRatio = 0.75f, stiffness = 300f)
+                ) + fadeIn(animationSpec = spring(dampingRatio = 0.75f, stiffness = 300f)),
+                exit = slideOutVertically(targetOffsetY = { it }) + fadeOut()
+            ) {
+                Surface(
+                    shape = RoundedCornerShape(50),
+                    color = MaterialTheme.colorScheme.inverseSurface,
+                    contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    Text(
+                        text = snackbarData.visuals.message,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
     }
 }
 
