@@ -188,27 +188,31 @@ class InferenceService : Service() {
         val isShareRequest = request.source == SOURCE_SHARE
 
         try {
-            // Check if backend is ready, auto-load if not
-            // We need to check BOTH hasActiveBackend() AND isReady() because
-            // after auto-unload, hasActiveBackend() returns true but the model is unloaded
+            // Check if the correct backend is ready, auto-load if not
+            // We need to check THREE conditions:
+            // 1. A backend is active
+            // 2. That backend is ready (loaded)
+            // 3. The active backend matches the user's current preference
+            //    (prevents stale backend after user switches models)
             val hasBackend = TranscriptionBackendManager.hasActiveBackend()
             val backendReady = TranscriptionBackendManager.getActiveBackend()?.isReady() ?: false
+            val preferredBackendId = AppContainer.preferencesManager.transcriptionBackend.first()
+            val activeBackendId = TranscriptionBackendManager.getActiveBackend()?.id
+            val backendMismatch = hasBackend && activeBackendId != preferredBackendId
 
-            if (!hasBackend || !backendReady) {
-                Log.i(TAG, "No active backend or backend not ready, attempting auto-load (hasBackend=$hasBackend, ready=$backendReady)")
+            if (!hasBackend || !backendReady || backendMismatch) {
+                Log.i(TAG, "Backend needs (re)load (hasBackend=$hasBackend, ready=$backendReady, active=$activeBackendId, preferred=$preferredBackendId)")
 
-                // If backend exists but isn't ready, unload it first
-                if (hasBackend && !backendReady) {
-                    Log.i(TAG, "Unloading stale backend")
+                // If backend exists but isn't the right one or isn't ready, unload it first
+                if (hasBackend) {
+                    Log.i(TAG, "Unloading previous backend: $activeBackendId")
                     TranscriptionBackendManager.unloadActiveBackend()
                 }
 
-                // Get the selected backend from preferences
-                val backendId = AppContainer.preferencesManager.transcriptionBackend.first()
-                Log.i(TAG, "Selected backend from preferences: $backendId")
+                Log.i(TAG, "Loading backend from preferences: $preferredBackendId")
 
                 // Load the appropriate backend based on backend ID
-                val loadResult = when (backendId) {
+                val loadResult = when (preferredBackendId) {
                     "sherpa-onnx" -> loadSherpaOnnxBackend()
                     "whisper" -> loadWhisperBackend()
                     else -> loadLlmBackend()
@@ -216,7 +220,7 @@ class InferenceService : Service() {
 
                 loadResult.fold(
                     onSuccess = {
-                        Log.i(TAG, "Backend auto-loaded successfully: $backendId")
+                        Log.i(TAG, "Backend auto-loaded successfully: $preferredBackendId")
                         // Apply saved keep-alive timeout
                         val timeout = AppContainer.preferencesManager.keepAliveTimeout.first()
                         TranscriptionBackendManager.setKeepAliveTimeout(timeout)
