@@ -485,8 +485,10 @@ class ModelViewModel(
                             )}
                             // Refresh downloaded models list
                             refreshDownloadedModels()
-                            // Auto-select the newly downloaded model by path
-                            setDownloadedModel(state.file)
+                            // Auto-select only if no model is currently active
+                            if (_uiState.value.modelName.isBlank()) {
+                                setDownloadedModel(state.file)
+                            }
                         }
                         is ModelDownloader.DownloadState.Cancelled -> {
                             _downloadUiState.update { it.copy(isDownloading = false) }
@@ -496,28 +498,22 @@ class ModelViewModel(
                 }
             )
 
-            result.fold(
-                onSuccess = { file ->
-                    // Auto-select newly downloaded model
-                    setDownloadedModel(file)
-                },
-                onFailure = { error ->
-                    // Only update state here - Snackbar is already emitted via onStateChange
-                    _downloadUiState.update { it.copy(
-                        isDownloading = false,
-                        downloadError = if (error is ModelDownloader.DownloadError) {
+            result.onFailure { error ->
+                // Only update state here - Snackbar is already emitted via onStateChange
+                _downloadUiState.update { it.copy(
+                    isDownloading = false,
+                    downloadError = if (error is ModelDownloader.DownloadError) {
+                        error
+                    } else {
+                        ModelDownloader.DownloadError.NetworkError(
+                            error.message ?: "Download failed",
                             error
-                        } else {
-                            ModelDownloader.DownloadError.NetworkError(
-                                error.message ?: "Download failed",
-                                error
-                            )
-                        }
-                    )}
-                    // Note: Snackbar event is emitted in onStateChange callback, not here
-                    // to avoid double emission
-                }
-            )
+                        )
+                    }
+                )}
+                // Note: Snackbar event is emitted in onStateChange callback, not here
+                // to avoid double emission
+            }
         }
     }
 
@@ -722,6 +718,10 @@ class ModelViewModel(
                             // Save to preferences
                             viewModelScope.launch {
                                 preferencesManager.saveParakeetModelPath(state.modelDir.absolutePath)
+                                // Auto-select only if no model is currently active
+                                if (_uiState.value.modelName.isBlank()) {
+                                    useParakeetModel()
+                                }
                             }
                             viewModelScope.launch { _snackbarEvent.send("Parakeet model downloaded successfully!") }
                         }
@@ -914,6 +914,10 @@ class ModelViewModel(
                                 modelPath = state.modelDir.absolutePath,
                                 downloadedVariants = _whisperState.value.downloadedVariants + variant
                             )}
+                            // Auto-select only if no model is currently active
+                            if (_uiState.value.modelName.isBlank()) {
+                                useWhisperModel(variant)
+                            }
                             val displayName = AppContainer.applicationContext.getString(variant.titleResId)
                             viewModelScope.launch { _snackbarEvent.send("Whisper $displayName downloaded successfully!") }
                         }
