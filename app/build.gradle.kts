@@ -78,17 +78,13 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
-        jniLibs {
-            // Required for LiteRT-LM native libraries
-            useLegacyPackaging = true
-        }
     }
 }
 
 dependencies {
     // LiteRT-LM for multimodal inference (text + audio)
     // https://maven.google.com/web/index.html#com.google.ai.edge.litertlm:litertlm-android
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.9.0-alpha02")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.9.0-beta")
 
     // MediaPipe GenAI - kept as fallback for text-only inference
     implementation("com.google.mediapipe:tasks-genai:0.10.14")

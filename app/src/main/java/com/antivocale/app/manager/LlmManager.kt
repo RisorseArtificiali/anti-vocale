@@ -171,8 +171,8 @@ object LlmManager {
             // See: https://github.com/google-ai-edge/LiteRT-LM/issues/1131
             val engineConfig = EngineConfig(
                 modelPath = path,
-                backend = com.google.ai.edge.litertlm.Backend.CPU,
-                audioBackend = com.google.ai.edge.litertlm.Backend.CPU,  // Required for audio!
+                backend = com.google.ai.edge.litertlm.Backend.CPU(),
+                audioBackend = com.google.ai.edge.litertlm.Backend.CPU(),  // Required for audio!
                 cacheDir = context.cacheDir.absolutePath
             )
 
