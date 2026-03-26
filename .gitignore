@@ -99,3 +99,7 @@ Thumbs.db
 
 # Local overrides
 *.local
+*.zip
+
+# Claude Code
+.claude/
