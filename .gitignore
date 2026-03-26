@@ -103,3 +103,8 @@ Thumbs.db
 
 # Claude Code
 .claude/
+
+# Development tooling
+.serena/
+backlog/
+claudedocs/
