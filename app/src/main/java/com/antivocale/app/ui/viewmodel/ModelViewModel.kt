@@ -9,6 +9,8 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.R
+import com.antivocale.app.data.download.DownloadException
+import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.transcription.ParakeetDownloader
@@ -28,7 +30,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
@@ -56,11 +57,14 @@ class ModelViewModel(
         val selectedVariant: ModelDownloader.ModelVariant? = null,
         val isDownloading: Boolean = false,
         val downloadProgress: Float = 0f,
-        val downloadState: ModelDownloader.DownloadState = ModelDownloader.DownloadState.Idle,
+        val downloadState: DownloadState = DownloadState.Idle,
         val downloadError: ModelDownloader.DownloadError? = null,
         val downloadedModels: Set<ModelDownloader.ModelVariant> = emptySet(),
         val hasToken: Boolean = false,
-        val modelToDelete: ModelDownloader.ModelVariant? = null
+        val modelToDelete: ModelDownloader.ModelVariant? = null,
+        val partialDownload: DownloadState.PartiallyDownloaded? = null,
+        val partialDownloadVariant: ModelDownloader.ModelVariant? = null,
+        val showDownloadDialog: Boolean = false
     )
 
     /**
@@ -70,12 +74,13 @@ class ModelViewModel(
         val isDownloaded: Boolean = false,
         val isDownloading: Boolean = false,
         val downloadProgress: Float = 0f,
-        val downloadState: ParakeetDownloader.DownloadState = ParakeetDownloader.DownloadState.Idle,
+        val downloadState: DownloadState = DownloadState.Idle,
         val modelPath: String? = null,
         val errorMessage: String? = null,
         // Confirmation dialogs
         val showDownloadDialog: Boolean = false,
-        val showDeleteDialog: Boolean = false
+        val showDeleteDialog: Boolean = false,
+        val partialDownload: DownloadState.PartiallyDownloaded? = null
     )
 
     /**
@@ -86,13 +91,15 @@ class ModelViewModel(
         val downloadedVariants: Set<WhisperModelManager.Variant> = emptySet(),
         val isDownloading: Boolean = false,
         val downloadProgress: Float = 0f,
-        val downloadState: WhisperDownloader.DownloadState = WhisperDownloader.DownloadState.Idle,
+        val downloadState: DownloadState = DownloadState.Idle,
         val modelPath: String? = null,
         val errorMessage: String? = null,
         // Confirmation dialogs
         val showDownloadDialog: Boolean = false,
         val showDeleteDialog: Boolean = false,
-        val variantToDelete: WhisperModelManager.Variant? = null
+        val variantToDelete: WhisperModelManager.Variant? = null,
+        val partialDownload: DownloadState.PartiallyDownloaded? = null,
+        val partialDownloadVariant: WhisperModelManager.Variant? = null
     )
 
     data class UiState(
@@ -101,9 +108,7 @@ class ModelViewModel(
         val modelPath: String = "",
         val modelName: String = "",
         val memoryUsage: Long = 0,
-        val isModelPathValid: Boolean = false,
-        // Download state
-        val downloadState: DownloadUiState = DownloadUiState()
+        val isModelPathValid: Boolean = false
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -147,6 +152,47 @@ class ModelViewModel(
         refreshParakeetState()
         // Check for Whisper model
         refreshWhisperState()
+        // Detect partial downloads
+        detectPartialDownloads()
+    }
+
+    /**
+     * Detects partial downloads across all downloaders and updates state.
+     */
+    private fun detectPartialDownloads() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = AppContainer.applicationContext
+
+            // Check Gemma variants
+            for (variant in ModelDownloader.ModelVariant.entries) {
+                if (!ModelDownloader.isModelDownloaded(context, variant)) {
+                    val partial = ModelDownloader.detectPartialDownload(context, variant)
+                    if (partial != null) {
+                        _downloadUiState.update { it.copy(partialDownload = partial, partialDownloadVariant = variant) }
+                        break // Only show one partial at a time
+                    }
+                }
+            }
+
+            // Check Parakeet
+            if (!ParakeetDownloader.isModelDownloaded(context)) {
+                val partial = ParakeetDownloader.detectPartialDownload(context)
+                if (partial != null) {
+                    _parakeetState.update { it.copy(partialDownload = partial) }
+                }
+            }
+
+            // Check Whisper variants
+            for (variant in WhisperModelManager.Variant.entries) {
+                if (!WhisperDownloader.isModelDownloaded(context, variant)) {
+                    val partial = WhisperDownloader.detectPartialDownload(context, variant)
+                    if (partial != null) {
+                        _whisperState.update { it.copy(partialDownload = partial, partialDownloadVariant = variant) }
+                        break
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -210,9 +256,9 @@ class ModelViewModel(
     }
 
 
-    
 
-    
+
+
 
     fun openFilePicker() {
         viewModelScope.launch {
@@ -426,8 +472,9 @@ class ModelViewModel(
                 selectedVariant = variant,
                 isDownloading = true,
                 downloadProgress = 0f,
-                downloadState = ModelDownloader.DownloadState.Idle,
-                downloadError = null
+                downloadState = DownloadState.Idle,
+                downloadError = null,
+                partialDownload = null
             )}
 
             val result = ModelDownloader.downloadModel(
@@ -438,9 +485,18 @@ class ModelViewModel(
                     _downloadUiState.update { it.copy(downloadProgress = progress) }
                 },
                 onStateChange = { state ->
-                    _downloadUiState.update { it.copy(downloadState = state) }
+                    _downloadUiState.update { current ->
+                        current.copy(
+                            downloadState = state,
+                            downloadProgress = when (state) {
+                                is DownloadState.Downloading -> state.progressPercent / 100f
+                                is DownloadState.Complete -> 1f
+                                else -> current.downloadProgress
+                            }
+                        )
+                    }
                     when (state) {
-                        is ModelDownloader.DownloadState.Error -> {
+                        is DownloadState.Error -> {
                             val error = when (state.throwable) {
                                 is ModelDownloader.DownloadError -> state.throwable
                                 else -> ModelDownloader.DownloadError.NetworkError(
@@ -461,17 +517,18 @@ class ModelViewModel(
                             }
                             viewModelScope.launch { _snackbarEvent.send(message) }
                         }
-                        is ModelDownloader.DownloadState.Complete -> {
+                        is DownloadState.Complete -> {
                             _downloadUiState.update { it.copy(
                                 isDownloading = false,
-                                downloadProgress = 1f
+                                downloadProgress = 1f,
+                                partialDownload = null
                             )}
                             refreshDownloadedModels()
                             if (_uiState.value.modelName.isBlank()) {
                                 setDownloadedModel(state.file)
                             }
                         }
-                        is ModelDownloader.DownloadState.Cancelled -> {
+                        is DownloadState.Cancelled -> {
                             _downloadUiState.update { it.copy(isDownloading = false) }
                         }
                         else -> {}
@@ -480,17 +537,48 @@ class ModelViewModel(
             )
 
             result.onFailure { error ->
-                // Snackbar is already emitted via onStateChange, skip double emission
-                if (error !is ModelDownloader.DownloadError) {
-                    _downloadUiState.update { it.copy(
-                        isDownloading = false,
-                        downloadError = ModelDownloader.DownloadError.NetworkError(
-                            error.message ?: "Download failed",
-                            error
-                        )
-                    )}
+                // Skip cancellation — cancelDownload() already cleared state
+                if (error is DownloadException.Cancelled) return@onFailure
+                if (error.message?.contains("cancelled", ignoreCase = true) == true) return@onFailure
+
+                if (error is ModelDownloader.DownloadError) {
+                    // Already handled via onStateChange (snackbar emitted there).
+                    // Just ensure isDownloading is cleared.
+                    _downloadUiState.update { it.copy(isDownloading = false) }
+                    return@onFailure
                 }
+
+                _downloadUiState.update { it.copy(
+                    isDownloading = false,
+                    downloadError = ModelDownloader.DownloadError.NetworkError(
+                        error.message ?: "Download failed",
+                        error
+                    )
+                )}
             }
+        }
+    }
+
+    /**
+     * Resumes a partial Gemma download.
+     */
+    fun resumeDownload(variant: ModelDownloader.ModelVariant) {
+        _downloadUiState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
+        startDownload(variant)
+    }
+
+    /**
+     * Clears a partial Gemma download.
+     */
+    fun clearPartialDownload(variant: ModelDownloader.ModelVariant) {
+        viewModelScope.launch {
+            ModelDownloader.clearPartialDownload(AppContainer.applicationContext, variant)
+            _downloadUiState.update { it.copy(
+                partialDownload = null,
+                partialDownloadVariant = null,
+                downloadError = null,
+                downloadState = DownloadState.Idle
+            )}
         }
     }
 
@@ -501,8 +589,10 @@ class ModelViewModel(
         ModelDownloader.cancel()
         _downloadUiState.update { it.copy(
             isDownloading = false,
-            downloadState = ModelDownloader.DownloadState.Cancelled("User cancelled")
+            downloadState = DownloadState.Cancelled("User cancelled"),
+            downloadError = null
         )}
+        detectPartialDownloads()
     }
 
     /**
@@ -594,6 +684,31 @@ class ModelViewModel(
         _downloadUiState.update { it.copy(downloadError = null) }
     }
 
+    // ==================== Gemma Confirmation Dialogs ====================
+
+    /**
+     * Shows the Gemma download confirmation dialog.
+     */
+    fun showDownloadDialog(variant: ModelDownloader.ModelVariant) {
+        _downloadUiState.update { it.copy(selectedVariant = variant, showDownloadDialog = true) }
+    }
+
+    /**
+     * Dismisses the Gemma download confirmation dialog.
+     */
+    fun dismissDownloadDialog() {
+        _downloadUiState.update { it.copy(showDownloadDialog = false) }
+    }
+
+    /**
+     * Confirms and starts the Gemma download.
+     */
+    fun confirmDownload() {
+        val variant = _downloadUiState.value.selectedVariant ?: return
+        _downloadUiState.update { it.copy(showDownloadDialog = false) }
+        startDownload(variant)
+    }
+
     // ==================== Parakeet Model Download ====================
 
     /**
@@ -668,8 +783,9 @@ class ModelViewModel(
             _parakeetState.update { it.copy(
                 isDownloading = true,
                 downloadProgress = 0f,
-                downloadState = ParakeetDownloader.DownloadState.Connecting(""),
-                errorMessage = null
+                downloadState = DownloadState.Connecting(""),
+                errorMessage = null,
+                partialDownload = null
             )}
 
             val result = ParakeetDownloader.downloadModel(
@@ -678,23 +794,33 @@ class ModelViewModel(
                     _parakeetState.update { it.copy(downloadProgress = progress) }
                 },
                 onStateChange = { state ->
-                    _parakeetState.update { it.copy(downloadState = state) }
+                    _parakeetState.update { current ->
+                        current.copy(
+                            downloadState = state,
+                            downloadProgress = when (state) {
+                                is DownloadState.Downloading -> state.progressPercent / 100f
+                                is DownloadState.Complete -> 1f
+                                else -> current.downloadProgress
+                            }
+                        )
+                    }
                     when (state) {
-                        is ParakeetDownloader.DownloadState.Error -> {
+                        is DownloadState.Error -> {
                             _parakeetState.update { it.copy(
                                 isDownloading = false,
                                 errorMessage = state.message
                             )}
                             viewModelScope.launch { _snackbarEvent.send(state.message) }
                         }
-                        is ParakeetDownloader.DownloadState.Complete -> {
+                        is DownloadState.Complete -> {
                             _parakeetState.update { it.copy(
                                 isDownloading = false,
-                                modelPath = state.modelDir.absolutePath
+                                modelPath = state.file.absolutePath,
+                                partialDownload = null
                             )}
                             // Save to preferences
                             viewModelScope.launch {
-                                preferencesManager.saveParakeetModelPath(state.modelDir.absolutePath)
+                                preferencesManager.saveParakeetModelPath(state.file.absolutePath)
                                 // Auto-select only if no model is currently active
                                 if (_uiState.value.modelName.isBlank()) {
                                     useParakeetModel()
@@ -702,7 +828,7 @@ class ModelViewModel(
                             }
                             viewModelScope.launch { _snackbarEvent.send("Parakeet model downloaded successfully!") }
                         }
-                        is ParakeetDownloader.DownloadState.Cancelled -> {
+                        is DownloadState.Cancelled -> {
                             _parakeetState.update { it.copy(isDownloading = false) }
                         }
                         else -> {}
@@ -718,6 +844,8 @@ class ModelViewModel(
                     )}
                 },
                 onFailure = { error ->
+                    if (error is DownloadException.Cancelled) return@fold
+                    if (error.message?.contains("cancelled", ignoreCase = true) == true) return@fold
                     _parakeetState.update { it.copy(
                         isDownloading = false,
                         errorMessage = error.message
@@ -728,15 +856,34 @@ class ModelViewModel(
     }
 
     /**
+     * Resumes a partial Parakeet download.
+     */
+    fun resumeParakeetDownload() {
+        _parakeetState.update { it.copy(partialDownload = null) }
+        startParakeetDownload()
+    }
+
+    /**
+     * Clears a partial Parakeet download.
+     */
+    fun clearParakeetPartialDownload() {
+        viewModelScope.launch {
+            ParakeetDownloader.clearPartialDownload(AppContainer.applicationContext)
+            _parakeetState.update { it.copy(partialDownload = null) }
+        }
+    }
+
+    /**
      * Cancels the Parakeet download.
      */
     fun cancelParakeetDownload() {
         ParakeetDownloader.cancel()
         _parakeetState.update { it.copy(
             isDownloading = false,
-            downloadState = ParakeetDownloader.DownloadState.Cancelled("User cancelled"),
+            downloadState = DownloadState.Cancelled("User cancelled"),
             errorMessage = null
         )}
+        detectPartialDownloads()
     }
 
     /**
@@ -865,8 +1012,9 @@ class ModelViewModel(
                 selectedVariant = variant,
                 isDownloading = true,
                 downloadProgress = 0f,
-                downloadState = WhisperDownloader.DownloadState.Connecting(""),
-                errorMessage = null
+                downloadState = DownloadState.Connecting(""),
+                errorMessage = null,
+                partialDownload = null
             )}
 
             val result = WhisperDownloader.downloadModel(
@@ -876,20 +1024,30 @@ class ModelViewModel(
                     _whisperState.update { it.copy(downloadProgress = progress) }
                 },
                 onStateChange = { state ->
-                    _whisperState.update { it.copy(downloadState = state) }
+                    _whisperState.update { current ->
+                        current.copy(
+                            downloadState = state,
+                            downloadProgress = when (state) {
+                                is DownloadState.Downloading -> state.progressPercent / 100f
+                                is DownloadState.Complete -> 1f
+                                else -> current.downloadProgress
+                            }
+                        )
+                    }
                     when (state) {
-                        is WhisperDownloader.DownloadState.Error -> {
+                        is DownloadState.Error -> {
                             _whisperState.update { it.copy(
                                 isDownloading = false,
                                 errorMessage = state.message
                             )}
                             viewModelScope.launch { _snackbarEvent.send(state.message) }
                         }
-                        is WhisperDownloader.DownloadState.Complete -> {
+                        is DownloadState.Complete -> {
                             _whisperState.update { it.copy(
                                 isDownloading = false,
-                                modelPath = state.modelDir.absolutePath,
-                                downloadedVariants = _whisperState.value.downloadedVariants + variant
+                                modelPath = state.file.absolutePath,
+                                downloadedVariants = _whisperState.value.downloadedVariants + variant,
+                                partialDownload = null
                             )}
                             // Auto-select only if no model is currently active
                             if (_uiState.value.modelName.isBlank()) {
@@ -898,7 +1056,7 @@ class ModelViewModel(
                             val displayName = AppContainer.applicationContext.getString(variant.titleResId)
                             viewModelScope.launch { _snackbarEvent.send("Whisper $displayName downloaded successfully!") }
                         }
-                        is WhisperDownloader.DownloadState.Cancelled -> {
+                        is DownloadState.Cancelled -> {
                             _whisperState.update { it.copy(isDownloading = false) }
                         }
                         else -> {}
@@ -914,6 +1072,8 @@ class ModelViewModel(
                     )}
                 },
                 onFailure = { error ->
+                    if (error is DownloadException.Cancelled) return@fold
+                    if (error.message?.contains("cancelled", ignoreCase = true) == true) return@fold
                     _whisperState.update { it.copy(
                         isDownloading = false,
                         errorMessage = error.message
@@ -924,15 +1084,34 @@ class ModelViewModel(
     }
 
     /**
+     * Resumes a partial Whisper download.
+     */
+    fun resumeWhisperDownload(variant: WhisperModelManager.Variant) {
+        _whisperState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
+        startWhisperDownload(variant)
+    }
+
+    /**
+     * Clears a partial Whisper download.
+     */
+    fun clearWhisperPartialDownload(variant: WhisperModelManager.Variant) {
+        viewModelScope.launch {
+            WhisperDownloader.clearPartialDownload(AppContainer.applicationContext, variant)
+            _whisperState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
+        }
+    }
+
+    /**
      * Cancels the Whisper download.
      */
     fun cancelWhisperDownload() {
         WhisperDownloader.cancel()
         _whisperState.update { it.copy(
             isDownloading = false,
-            downloadState = WhisperDownloader.DownloadState.Cancelled("User cancelled"),
+            downloadState = DownloadState.Cancelled("User cancelled"),
             errorMessage = null
         )}
+        detectPartialDownloads()
     }
 
     /**
@@ -1003,7 +1182,8 @@ class ModelViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        // Don't unload on config changes, only on actual destruction
+        LlmManager.setOnAutoUnloadCallback(null)
+        LlmManager.setOnExternalLoadCallback(null)
     }
 
     /**
