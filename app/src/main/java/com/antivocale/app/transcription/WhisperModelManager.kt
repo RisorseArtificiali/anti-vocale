@@ -36,6 +36,8 @@ object WhisperModelManager {
         "small-encoder.int8.onnx",
         "turbo-encoder.int8.onnx",
         "medium-encoder.int8.onnx",
+        "distil-large-v3-encoder.int8.onnx",
+        "distil-large-v3-it-encoder.int8.onnx",
         "base-encoder.int8.onnx",
         "tiny-encoder.int8.onnx",
         "encoder.onnx",
@@ -49,6 +51,8 @@ object WhisperModelManager {
         "small-decoder.int8.onnx",
         "turbo-decoder.int8.onnx",
         "medium-decoder.int8.onnx",
+        "distil-large-v3-decoder.int8.onnx",
+        "distil-large-v3-it-decoder.int8.onnx",
         "base-decoder.int8.onnx",
         "tiny-decoder.int8.onnx",
         "decoder.onnx",
@@ -72,6 +76,8 @@ object WhisperModelManager {
         "small-tokens.txt",
         "turbo-tokens.txt",
         "medium-tokens.txt",
+        "distil-large-v3-tokens.txt",
+        "distil-large-v3-it-tokens.txt",
         "base-tokens.txt",
         "tiny-tokens.txt"
     )
@@ -102,6 +108,12 @@ object WhisperModelManager {
             descriptionResId = R.string.whisper_medium_description,
             dirName = "sherpa-onnx-whisper-medium",
             estimatedSizeMB = 1842
+        ),
+        DISTIL_LARGE_V3(
+            titleResId = R.string.whisper_distil_large_v3_title,
+            descriptionResId = R.string.whisper_distil_large_v3_description,
+            dirName = "sherpa-onnx-whisper-distil-large-v3-it",
+            estimatedSizeMB = 939
         )
     }
 
@@ -212,6 +224,7 @@ object WhisperModelManager {
     private fun detectVariant(dirName: String, fileName: String): Variant? {
         val name = (dirName + fileName).lowercase()
         return when {
+            name.contains("distil") -> Variant.DISTIL_LARGE_V3
             name.contains("turbo") -> Variant.TURBO
             name.contains("medium") -> Variant.MEDIUM
             name.contains("small") -> Variant.SMALL

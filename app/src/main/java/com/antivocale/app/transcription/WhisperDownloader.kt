@@ -44,7 +44,8 @@ object WhisperDownloader {
     private val MODEL_NAMES = mapOf(
         WhisperModelManager.Variant.SMALL to "sherpa-onnx-whisper-small",
         WhisperModelManager.Variant.TURBO to "sherpa-onnx-whisper-turbo",
-        WhisperModelManager.Variant.MEDIUM to "sherpa-onnx-whisper-medium"
+        WhisperModelManager.Variant.MEDIUM to "sherpa-onnx-whisper-medium",
+        WhisperModelManager.Variant.DISTIL_LARGE_V3 to "sherpa-onnx-whisper-distil-large-v3-it"
     )
 
     /** Returns the model directory name for a variant (e.g., "sherpa-onnx-whisper-turbo"). */
@@ -53,8 +54,28 @@ object WhisperDownloader {
     private val ESTIMATED_SIZES = mapOf(
         WhisperModelManager.Variant.SMALL to 610L,
         WhisperModelManager.Variant.TURBO to 538L,
-        WhisperModelManager.Variant.MEDIUM to 1842L
+        WhisperModelManager.Variant.MEDIUM to 1842L,
+        WhisperModelManager.Variant.DISTIL_LARGE_V3 to 939L
     )
+
+    // HuggingFace individual file downloads (for models not available as tar.bz2)
+    private const val HF_BASE_URL = "https://huggingface.co"
+
+    private val HF_FILE_URLS = mapOf(
+        WhisperModelManager.Variant.DISTIL_LARGE_V3 to listOf(
+            "distil-large-v3-it-encoder.int8.onnx" to
+                "$HF_BASE_URL/pantinor/sherpa-onnx-whisper-distil-large-v3-it/resolve/main/distil-large-v3-it-encoder.int8.onnx",
+            "distil-large-v3-it-decoder.int8.onnx" to
+                "$HF_BASE_URL/pantinor/sherpa-onnx-whisper-distil-large-v3-it/resolve/main/distil-large-v3-it-decoder.int8.onnx",
+            "distil-large-v3-it-tokens.txt" to
+                "$HF_BASE_URL/pantinor/sherpa-onnx-whisper-distil-large-v3-it/resolve/main/distil-large-v3-it-tokens.txt"
+        )
+    )
+
+    /** Returns true if this variant downloads individual files from HuggingFace. */
+    fun isHuggingFaceVariant(variant: WhisperModelManager.Variant): Boolean {
+        return HF_FILE_URLS.containsKey(variant)
+    }
 
     private var isCancelled = false
 
@@ -64,6 +85,43 @@ object WhisperDownloader {
      * @return [DownloadState.PartiallyDownloaded] if a .tar.bz2 temp file exists, null otherwise
      */
     fun detectPartialDownload(context: Context, variant: WhisperModelManager.Variant): DownloadState.PartiallyDownloaded? {
+        // HF variants: check for partial individual files in model directory
+        if (isHuggingFaceVariant(variant)) {
+            val modelDirName = MODEL_NAMES[variant] ?: return null
+            val modelDir = File(WhisperModelManager.getModelStorageDir(context), modelDirName)
+            if (!modelDir.exists() || !modelDir.isDirectory) return null
+            if (WhisperModelManager.validateModelDirectory(modelDir) != null) return null
+
+            val files = HF_FILE_URLS[variant] ?: return null
+            var totalDownloaded = 0L
+            var totalExpected = 0L
+            var hasPartialFiles = false
+
+            for ((fileName, _) in files) {
+                val file = File(modelDir, fileName)
+                val fileSidecar = ResumeDownloadHelper.sizeSidecar(file)
+                val storedSize = fileSidecar.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull()
+
+                if (file.exists() && file.length() > 0) {
+                    hasPartialFiles = true
+                    totalDownloaded += file.length()
+                    if (storedSize != null) totalExpected += storedSize
+                }
+            }
+
+            if (!hasPartialFiles) return null
+
+            val estimatedBytes = (ESTIMATED_SIZES[variant] ?: 984L) * 1024 * 1024
+            val totalBytes = if (totalExpected > 0) totalExpected else estimatedBytes
+            val progressPercent = ((totalDownloaded.toFloat() / totalBytes) * 100).toInt().coerceIn(0, 99)
+
+            return DownloadState.PartiallyDownloaded(
+                bytesDownloaded = totalDownloaded,
+                totalBytes = totalBytes,
+                progressPercent = progressPercent
+            )
+        }
+
         val modelDirName = MODEL_NAMES[variant] ?: return null
         val targetDir = WhisperModelManager.getModelStorageDir(context)
         val tarFile = File(targetDir, "$modelDirName.tar.bz2")
@@ -94,6 +152,8 @@ object WhisperDownloader {
      * [detectPartialDownload] and [downloadModel]'s skipDownload check.
      */
     fun needsExtraction(context: Context, variant: WhisperModelManager.Variant): Boolean {
+        // HF variants don't use tar.bz2 — no extraction step
+        if (isHuggingFaceVariant(variant)) return false
         if (isModelDownloaded(context, variant)) return false
         val modelDirName = MODEL_NAMES[variant] ?: return false
         val tarFile = File(WhisperModelManager.getModelStorageDir(context), "$modelDirName.tar.bz2")
@@ -106,6 +166,14 @@ object WhisperDownloader {
      * Clears a partial download (.tar.bz2) for a variant.
      */
     fun clearPartialDownload(context: Context, variant: WhisperModelManager.Variant): Boolean {
+        // HF variants: clean up partial model directory (sidecars are inside, deleted by deleteRecursively)
+        if (isHuggingFaceVariant(variant)) {
+            val modelDirName = MODEL_NAMES[variant] ?: return false
+            val modelDir = File(WhisperModelManager.getModelStorageDir(context), modelDirName)
+            if (!modelDir.exists()) return true
+            modelDir.deleteRecursively()
+            return true
+        }
         val modelDirName = MODEL_NAMES[variant] ?: return false
         val targetDir = WhisperModelManager.getModelStorageDir(context)
         val tarFile = File(targetDir, "$modelDirName.tar.bz2")
@@ -141,6 +209,13 @@ object WhisperDownloader {
             Log.i(TAG, "Model already downloaded: ${modelDir.absolutePath}")
             onStateChange(DownloadState.Complete(modelDir))
             return@withContext Result.success(modelDir)
+        }
+
+        // HuggingFace individual file download (no tar.bz2)
+        if (isHuggingFaceVariant(variant)) {
+            return@withContext downloadModelFromHuggingFace(
+                context, variant, modelDir, onProgress, onStateChange
+            )
         }
 
         // Pre-download storage check
@@ -259,8 +334,96 @@ object WhisperDownloader {
     }
 
     /**
-     * Cancels any ongoing download.
+     * Downloads a Whisper model as individual files from HuggingFace.
+     * No tar.bz2 extraction needed — files go directly to the model directory.
      */
+    private suspend fun downloadModelFromHuggingFace(
+        context: Context,
+        variant: WhisperModelManager.Variant,
+        modelDir: File,
+        onProgress: (Float) -> Unit,
+        onStateChange: (DownloadState) -> Unit
+    ): Result<File> = withContext(Dispatchers.IO) {
+        val files = HF_FILE_URLS[variant]
+            ?: return@withContext Result.failure(IllegalArgumentException("No HF URLs for variant: $variant"))
+
+        // Pre-download storage check (1.1x — no intermediate archive)
+        val estimatedSizeMB = ESTIMATED_SIZES[variant] ?: 984L
+        val requiredBytes = (estimatedSizeMB * 1024 * 1024 * 1.1).toLong()
+        val availableBytes = context.filesDir.usableSpace
+        if (availableBytes < requiredBytes) {
+            val errorMsg = "Insufficient storage. Need ~${estimatedSizeMB}MB, have ${availableBytes / (1024*1024)}MB available."
+            val error = Exception(errorMsg)
+            Log.e(TAG, errorMsg)
+            onStateChange(DownloadState.Error(errorMsg, error))
+            return@withContext Result.failure(error)
+        }
+
+        if (!modelDir.exists()) modelDir.mkdirs()
+
+        val totalFiles = files.size
+        var completedFiles = 0
+
+        for ((fileName, fileUrl) in files) {
+            if (isCancelled) {
+                onStateChange(DownloadState.Cancelled("User cancelled"))
+                return@withContext Result.failure(Exception("Download cancelled"))
+            }
+
+            val targetFile = File(modelDir, fileName)
+
+            // Skip if file is complete (verified against .size sidecar)
+            val sidecar = ResumeDownloadHelper.sizeSidecar(targetFile)
+            val storedTotal = sidecar.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull()
+            if (targetFile.exists() && storedTotal != null && targetFile.length() >= storedTotal) {
+                Log.i(TAG, "File already complete, skipping: $fileName")
+                completedFiles++
+                onProgress(completedFiles.toFloat() / totalFiles)
+                onStateChange(DownloadState.Extracting(completedFiles, totalFiles, fileName))
+                continue
+            }
+
+            Log.i(TAG, "Downloading HF file: $fileName")
+
+            val config = DownloadConfig(
+                url = fileUrl,
+                tempFile = targetFile,
+                targetFile = targetFile,
+                estimatedSizeBytes = 0L,
+                connectTimeoutMs = 60_000,
+                readTimeoutMs = 120_000,
+                isCancelled = { isCancelled }
+            )
+
+            val downloadResult = downloadWithRetry(
+                config = config,
+                tag = TAG,
+                onProgress = { fileProg ->
+                    onProgress((completedFiles + fileProg) / totalFiles)
+                },
+                onStateChange = onStateChange
+            )
+
+            if (downloadResult.isFailure) {
+                return@withContext downloadResult
+            }
+
+            completedFiles++
+            onStateChange(DownloadState.Extracting(completedFiles, totalFiles, fileName))
+        }
+
+        // Verify all required files exist
+        if (WhisperModelManager.validateModelDirectory(modelDir) == null) {
+            val errorMsg = "Missing files after download in ${modelDir.absolutePath}"
+            onStateChange(DownloadState.Error(errorMsg))
+            return@withContext Result.failure(Exception(errorMsg))
+        }
+
+        Log.i(TAG, "HF model ready: ${modelDir.absolutePath}")
+        onStateChange(DownloadState.Complete(modelDir))
+        Result.success(modelDir)
+    }
+
     fun cancel() {
         isCancelled = true
         Log.i(TAG, "Download cancellation requested")

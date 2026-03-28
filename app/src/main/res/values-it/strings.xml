@@ -66,6 +66,8 @@
     <string name="whisper_turbo_description">~538MB • Qualità vicina a large-v3 • Miglior rapporto</string>
     <string name="whisper_medium_title">Whisper Medium</string>
     <string name="whisper_medium_description">~1.8GB • Molto preciso • Ideale per l\'italiano</string>
+    <string name="whisper_distil_large_v3_title">Distil Italian</string>
+    <string name="whisper_distil_large_v3_description">~939MB • 2 livelli decoder • Il più veloce • Ottimizzato per l\'italiano</string>
     <string name="whisper_download">Scarica Whisper</string>
     <string name="whisper_download_confirm_title">Scaricare %1$s?</string>
     <string name="whisper_download_confirm_message">Verranno scaricati ~%1$dMB. Whisper offre eccellente supporto multilingue con punteggiatura corretta.</string>
@@ -308,4 +310,31 @@
     <string name="whisper_downloaded">%1$s scaricato</string>
     <string name="parakeet_deleted">Modello Parakeet eliminato</string>
     <string name="whisper_deleted">%1$s eliminato</string>
+
+    <!-- Speed comparison -->
+    <string name="speed_comparison_title">Confronto Velocità</string>
+    <string name="speed_comparison_subtitle">Prestazioni relative su messaggi vocali tipici (CPU)</string>
+    <string name="speed_comparison_header_model">Modello</string>
+    <string name="speed_comparison_header_size">Dimensione</string>
+    <string name="speed_comparison_header_speed">Velocità</string>
+    <string name="speed_comparison_header_quality">Qualità Italiano</string>
+    <string name="speed_comparison_small_name">Whisper Small</string>
+    <string name="speed_comparison_small_size">~610MB</string>
+    <string name="speed_comparison_small_speed">1.0x</string>
+    <string name="speed_comparison_small_quality">Buona</string>
+    <string name="speed_comparison_turbo_name">Whisper Turbo</string>
+    <string name="speed_comparison_turbo_size">~538MB</string>
+    <string name="speed_comparison_turbo_speed">1.3x</string>
+    <string name="speed_comparison_turbo_quality">Molto Buona</string>
+    <string name="speed_comparison_medium_name">Whisper Medium</string>
+    <string name="speed_comparison_medium_size">~1.8GB</string>
+    <string name="speed_comparison_medium_speed">0.5x</string>
+    <string name="speed_comparison_medium_quality">Migliore</string>
+    <string name="speed_comparison_distil_it_name">Distil Italian</string>
+    <string name="speed_comparison_distil_it_size">~1.0GB</string>
+    <string name="speed_comparison_distil_it_speed">~1.8x</string>
+    <string name="speed_comparison_distil_it_quality">Migliore (Italiano)</string>
+    <string name="speed_comparison_distil_it_note">Consigliato</string>
+    <string name="fastest_badge">Più veloce</string>
+    <string name="coming_soon_badge">Prossimamente</string>
 </resources>

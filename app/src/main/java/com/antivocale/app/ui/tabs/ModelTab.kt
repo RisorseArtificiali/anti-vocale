@@ -1101,6 +1101,7 @@ private fun WhisperDownloadSection(
     activeModelName: String
 ) {
     val whisperState by viewModel.whisperState.collectAsState()
+    var showSpeedComparison by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1146,6 +1147,14 @@ private fun WhisperDownloadSection(
                         )
                     }
                 }
+                IconButton(onClick = { showSpeedComparison = true }) {
+                    Icon(
+                        imageVector = Icons.Default.Info,
+                        contentDescription = stringResource(R.string.speed_comparison_title),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -1174,6 +1183,133 @@ private fun WhisperDownloadSection(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
+        }
+    }
+
+    // Speed comparison dialog
+    if (showSpeedComparison) {
+        AlertDialog(
+            onDismissRequest = { showSpeedComparison = false },
+            title = {
+                Text(
+                    stringResource(R.string.speed_comparison_title),
+                    style = MaterialTheme.typography.titleMedium
+                )
+            },
+            text = {
+                Column(modifier = Modifier.verticalScroll(rememberScrollState())) {
+                    Text(
+                        stringResource(R.string.speed_comparison_subtitle),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Comparison table
+                    Surface(
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Column(modifier = Modifier.padding(8.dp)) {
+                            // Header row
+                            Row(modifier = Modifier.fillMaxWidth()) {
+                                Text(
+                                    stringResource(R.string.speed_comparison_header_model),
+                                    modifier = Modifier.weight(2f),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    stringResource(R.string.speed_comparison_header_size),
+                                    modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    stringResource(R.string.speed_comparison_header_speed),
+                                    modifier = Modifier.weight(1f),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    stringResource(R.string.speed_comparison_header_quality),
+                                    modifier = Modifier.weight(1.5f),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                            // Whisper Small
+                            ComparisonRow(
+                                name = stringResource(R.string.speed_comparison_small_name),
+                                size = stringResource(R.string.speed_comparison_small_size),
+                                speed = stringResource(R.string.speed_comparison_small_speed),
+                                quality = stringResource(R.string.speed_comparison_small_quality)
+                            )
+                            // Whisper Turbo
+                            ComparisonRow(
+                                name = stringResource(R.string.speed_comparison_turbo_name),
+                                size = stringResource(R.string.speed_comparison_turbo_size),
+                                speed = stringResource(R.string.speed_comparison_turbo_speed),
+                                quality = stringResource(R.string.speed_comparison_turbo_quality)
+                            )
+                            // Whisper Medium
+                            ComparisonRow(
+                                name = stringResource(R.string.speed_comparison_medium_name),
+                                size = stringResource(R.string.speed_comparison_medium_size),
+                                speed = stringResource(R.string.speed_comparison_medium_speed),
+                                quality = stringResource(R.string.speed_comparison_medium_quality)
+                            )
+                            // Distil Italian
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                            ComparisonRow(
+                                name = stringResource(R.string.speed_comparison_distil_it_name),
+                                size = stringResource(R.string.speed_comparison_distil_it_size),
+                                speed = stringResource(R.string.speed_comparison_distil_it_speed),
+                                quality = stringResource(R.string.speed_comparison_distil_it_quality),
+                                badge = stringResource(R.string.speed_comparison_distil_it_note),
+                                muted = false
+                            )
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { showSpeedComparison = false }) {
+                    Text(stringResource(R.string.dismiss))
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun ComparisonRow(
+    name: String,
+    size: String,
+    speed: String,
+    quality: String,
+    badge: String? = null,
+    muted: Boolean = false
+) {
+    val textColor = if (muted) MaterialTheme.colorScheme.onSurfaceVariant
+                     else MaterialTheme.colorScheme.onSurface
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 3.dp)
+    ) {
+        Text(name, modifier = Modifier.weight(2f), style = MaterialTheme.typography.bodySmall, color = textColor)
+        Text(size, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(speed, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (badge != null) {
+            Column(modifier = Modifier.weight(1.5f)) {
+                Text(quality, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(badge, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+            }
+        } else {
+            Text(quality, modifier = Modifier.weight(1.5f), style = MaterialTheme.typography.bodySmall)
         }
     }
 }
@@ -1256,6 +1392,20 @@ private fun WhisperVariantCard(
                                         text = stringResource(R.string.recommended),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onTertiary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                            // Fastest badge for Distil
+                            if (variant == WhisperModelManager.Variant.DISTIL_LARGE_V3) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.secondary,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.fastest_badge),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSecondary,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
                                 }

@@ -326,6 +326,7 @@ class ExtractionService : Service() {
                 "small" -> com.antivocale.app.transcription.WhisperModelManager.Variant.SMALL
                 "turbo" -> com.antivocale.app.transcription.WhisperModelManager.Variant.TURBO
                 "medium" -> com.antivocale.app.transcription.WhisperModelManager.Variant.MEDIUM
+                "distil_large_v3" -> com.antivocale.app.transcription.WhisperModelManager.Variant.DISTIL_LARGE_V3
                 else -> null
             }
         }
