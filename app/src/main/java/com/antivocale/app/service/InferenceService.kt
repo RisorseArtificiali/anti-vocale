@@ -28,7 +28,9 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Semaphore
 import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Foreground service for handling inference requests.
@@ -59,6 +61,9 @@ class InferenceService : Service() {
 
         // Action for canceling transcription
         const val ACTION_CANCEL = "com.antivocale.app.CANCEL_TRANSCRIPTION"
+
+        // Parallel transcription settings
+        private const val MAX_CONCURRENT_CHUNKS = 2
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -66,6 +71,9 @@ class InferenceService : Service() {
     private val isProcessing = MutableStateFlow(false)
     private var currentProcessingJob: Job? = null
     private var transcriptionStartTime: Long = 0
+
+    // Bounds parallel chunk processing to avoid memory/thermal issues on mobile
+    private val chunkSemaphore = Semaphore(MAX_CONCURRENT_CHUNKS)
 
     data class PendingRequest(
         val taskId: String,
@@ -416,8 +424,7 @@ class InferenceService : Service() {
         // Track transcription start time for chronometer
         transcriptionStartTime = System.currentTimeMillis()
 
-        // Process chunks sequentially and concatenate results
-        val results = mutableListOf<String>()
+        // Process chunks in parallel (bounded by semaphore) and concatenate results
         // Use request prompt -> default prompt from settings -> hardcoded fallback
         val savedDefaultPrompt = AppContainer.preferencesManager.defaultPrompt.first()
         val prompt = request.prompt.ifEmpty {
@@ -430,50 +437,83 @@ class InferenceService : Service() {
         Log.i(TAG, "Active backend: ${TranscriptionBackendManager.getActiveBackend()?.displayName}")
         Log.i(TAG, "===========================")
 
-        for ((index, chunk) in preprocessingResult.chunks.withIndex()) {
-            val chunkNumber = index + 1
+        val completedChunks = AtomicInteger(0)
+        val results = arrayOfNulls<String>(chunkCount)
 
-            // Show determinate progress during chunk processing
-            // Only show progress bar if there's more than one chunk
-            if (chunkCount > 1) {
-                updateNotificationWithProgress(
-                    contentText = getString(R.string.processing_chunk, chunkNumber, chunkCount),
-                    progress = chunkNumber,
-                    maxProgress = chunkCount,
-                    indeterminate = false,
-                    durationSeconds = audioDurationSeconds,
-                    startTimeMillis = transcriptionStartTime
-                )
-            } else {
-                updateNotification(getString(R.string.processing_audio), durationSeconds = audioDurationSeconds, startTimeMillis = transcriptionStartTime)
-            }
-
-            Log.d(TAG, "Processing chunk $chunkNumber/$chunkCount")
-
-            val chunkResult = backend.transcribeAudio(
-                prompt = prompt,
-                audioData = chunk
-            )
-
-            chunkResult.fold(
-                onSuccess = { text ->
-                    Log.d(TAG, "Chunk $chunkNumber result: '${text.take(50)}...' (${text.length} chars)")
-                    if (text.isNotBlank()) {
-                        results.add(text.trim())
-                    } else {
-                        Log.w(TAG, "Chunk $chunkNumber returned blank result, skipping")
-                    }
-                },
-                onFailure = { error ->
-                    Log.e(TAG, "Chunk $chunkNumber failed", error)
-                    return Result.failure(Exception("Chunk $chunkNumber failed: ${error.message}"))
-                }
-            )
+        if (chunkCount > 1) {
+            Log.i(TAG, "Processing $chunkCount chunks with up to $MAX_CONCURRENT_CHUNKS concurrent transcriptions")
         }
 
-        // Join results with spaces
-        val combinedResult = results.joinToString(" ")
-        Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.size}/$chunkCount chunks")
+        coroutineScope {
+            val deferredResults = preprocessingResult.chunks.mapIndexed { index, chunk ->
+                async {
+                    chunkSemaphore.acquire()
+                    try {
+                        val chunkNumber = index + 1
+
+                        // Show progress notification
+                        if (chunkCount > 1) {
+                            val completed = completedChunks.get()
+                            updateNotificationWithProgress(
+                                contentText = getString(R.string.processing_chunk, chunkNumber, chunkCount),
+                                progress = completed,
+                                maxProgress = chunkCount,
+                                indeterminate = false,
+                                durationSeconds = audioDurationSeconds,
+                                startTimeMillis = transcriptionStartTime
+                            )
+                        } else {
+                            updateNotification(getString(R.string.processing_audio), durationSeconds = audioDurationSeconds, startTimeMillis = transcriptionStartTime)
+                        }
+
+                        Log.d(TAG, "Processing chunk $chunkNumber/$chunkCount")
+
+                        val chunkResult = backend.transcribeAudio(prompt = prompt, audioData = chunk)
+
+                        completedChunks.incrementAndGet()
+                        if (chunkCount > 1) {
+                            val nowCompleted = completedChunks.get()
+                            updateNotificationWithProgress(
+                                contentText = getString(R.string.processing_chunk, chunkNumber, chunkCount),
+                                progress = nowCompleted,
+                                maxProgress = chunkCount,
+                                indeterminate = false,
+                                durationSeconds = audioDurationSeconds,
+                                startTimeMillis = transcriptionStartTime
+                            )
+                        }
+
+                        chunkResult
+                    } finally {
+                        chunkSemaphore.release()
+                    }
+                }
+            }
+
+            // Await all results and collect
+            deferredResults.forEachIndexed { index, deferred ->
+                val chunkResult = deferred.await()
+                val chunkNumber = index + 1
+                chunkResult.fold(
+                    onSuccess = { text ->
+                        if (text.isNotBlank()) {
+                            results[index] = text.trim()
+                            Log.d(TAG, "Chunk $chunkNumber result: '${text.take(50)}...' (${text.length} chars)")
+                        } else {
+                            Log.w(TAG, "Chunk $chunkNumber returned blank result, skipping")
+                        }
+                    },
+                    onFailure = { error ->
+                        Log.e(TAG, "Chunk $chunkNumber failed", error)
+                        throw Exception("Chunk $chunkNumber failed: ${error.message}", error)
+                    }
+                )
+            }
+        }
+
+        // Join results with spaces, filtering nulls
+        val combinedResult = results.filterNotNull().joinToString(" ")
+        Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.filterNotNull().size}/$chunkCount chunks")
 
         if (combinedResult.isBlank()) {
             return Result.failure(IllegalStateException("No transcription produced"))
