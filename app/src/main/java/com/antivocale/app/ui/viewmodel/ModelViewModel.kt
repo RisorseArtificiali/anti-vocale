@@ -1,7 +1,9 @@
 package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -9,10 +11,10 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.R
-import com.antivocale.app.data.download.DownloadException
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
+import com.antivocale.app.service.ExtractionService
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.ParakeetModelManager
 import com.antivocale.app.transcription.WhisperDownloader
@@ -31,7 +33,6 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
-import java.io.FileInputStream
 import java.io.FileOutputStream
 
 class ModelViewModel(
@@ -80,7 +81,9 @@ class ModelViewModel(
         // Confirmation dialogs
         val showDownloadDialog: Boolean = false,
         val showDeleteDialog: Boolean = false,
-        val partialDownload: DownloadState.PartiallyDownloaded? = null
+        val partialDownload: DownloadState.PartiallyDownloaded? = null,
+        val needsExtraction: Boolean = false,
+        val hasOrphanedFiles: Boolean = false
     )
 
     /**
@@ -99,7 +102,9 @@ class ModelViewModel(
         val showDeleteDialog: Boolean = false,
         val variantToDelete: WhisperModelManager.Variant? = null,
         val partialDownload: DownloadState.PartiallyDownloaded? = null,
-        val partialDownloadVariant: WhisperModelManager.Variant? = null
+        val partialDownloadVariant: WhisperModelManager.Variant? = null,
+        val variantsNeedingExtraction: Set<WhisperModelManager.Variant> = emptySet(),
+        val orphanedVariants: Set<WhisperModelManager.Variant> = emptySet()
     )
 
     data class UiState(
@@ -142,6 +147,17 @@ class ModelViewModel(
         LlmManager.setOnExternalLoadCallback { modelPath ->
             onModelExternallyLoaded(modelPath)
         }
+        // Observe ExtractionService progress state
+        viewModelScope.launch {
+            ExtractionService.progressState.collect { progress ->
+                if (progress == null) return@collect
+                when (progress.modelType) {
+                    ExtractionService.ModelType.PARAKEET -> handleServiceProgressParakeet(progress)
+                    ExtractionService.ModelType.WHISPER -> handleServiceProgressWhisper(progress)
+                    ExtractionService.ModelType.GEMMA -> handleServiceProgressGemma(progress)
+                }
+            }
+        }
         // Load saved model path on initialization
         loadSavedModelPath()
         // Check for downloaded models
@@ -156,6 +172,175 @@ class ModelViewModel(
         detectPartialDownloads()
     }
 
+    // ==================== Service progress handlers ====================
+
+    /**
+     * Shared skeleton for all three model-type progress handlers.
+     * Updates the given [stateFlow] with progress, then dispatches terminal states.
+     */
+    private fun handleServiceProgress(
+        state: DownloadState,
+        updateFlow: (DownloadState, Float?) -> Unit,
+        onError: (String, Throwable?) -> Unit,
+        onComplete: (File) -> Unit,
+        onCancelled: () -> Unit = { detectPartialDownloads() }
+    ) {
+        val progress: Float? = when (state) {
+            is DownloadState.Downloading -> state.progressPercent / 100f
+            is DownloadState.Complete -> 1f
+            else -> null
+        }
+        // Always update the flow so the UI reflects every state transition
+        // (e.g., Downloading → Extracting → Complete). When progress is null,
+        // the caller preserves the existing progress value.
+        updateFlow(state, progress)
+
+        when (state) {
+            is DownloadState.Error -> {
+                onError(state.message, state.throwable)
+                viewModelScope.launch { _snackbarEvent.send(state.message) }
+                ExtractionService.clearProgress()
+            }
+            is DownloadState.Complete -> {
+                onComplete(state.file)
+                ExtractionService.clearProgress()
+            }
+            is DownloadState.Cancelled -> {
+                onCancelled()
+                ExtractionService.clearProgress()
+            }
+            else -> {}
+        }
+    }
+
+    private fun handleServiceProgressParakeet(progress: ExtractionService.ExtractionProgress) {
+        handleServiceProgress(
+            state = progress.downloadState,
+            updateFlow = { state, prog -> _parakeetState.update { it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress) } },
+            onError = { msg, _ ->
+                _parakeetState.update { it.copy(isDownloading = false, errorMessage = msg) }
+            },
+            onComplete = { file ->
+                _parakeetState.update { it.copy(isDownloading = false, modelPath = file.absolutePath, partialDownload = null) }
+                viewModelScope.launch {
+                    preferencesManager.saveParakeetModelPath(file.absolutePath)
+                    if (_uiState.value.modelName.isBlank()) useParakeetModel()
+                }
+                viewModelScope.launch { _snackbarEvent.send(AppContainer.applicationContext.getString(R.string.parakeet_downloaded)) }
+            },
+            onCancelled = {
+                _parakeetState.update { it.copy(
+                    isDownloading = false,
+                    needsExtraction = ParakeetDownloader.needsExtraction(AppContainer.applicationContext)
+                )}
+                detectPartialDownloads()
+            }
+        )
+    }
+
+    private fun handleServiceProgressWhisper(progress: ExtractionService.ExtractionProgress) {
+        // Resolve variant from progress (not ViewModel state) so auto-selection
+        // works even after ViewModel recreation during download
+        val variant = WhisperModelManager.Variant.entries
+            .find { it.name.lowercase() == progress.variant }
+
+        handleServiceProgress(
+            state = progress.downloadState,
+            updateFlow = { state, prog -> _whisperState.update { it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress) } },
+            onError = { msg, _ ->
+                _whisperState.update { it.copy(isDownloading = false, errorMessage = msg) }
+                detectPartialDownloads()
+            },
+            onComplete = { file ->
+                _whisperState.update {
+                    it.copy(
+                        isDownloading = false,
+                        modelPath = file.absolutePath,
+                        downloadedVariants = if (variant != null) it.downloadedVariants + variant else it.downloadedVariants,
+                        partialDownload = null
+                    )
+                }
+                if (variant != null) {
+                    if (_uiState.value.modelName.isBlank()) useWhisperModel(variant)
+                    val displayName = AppContainer.applicationContext.getString(variant.titleResId)
+                    viewModelScope.launch { _snackbarEvent.send(AppContainer.applicationContext.getString(R.string.whisper_downloaded, displayName)) }
+                }
+            },
+            onCancelled = {
+                val context = AppContainer.applicationContext
+                val eagerNeedsExtraction = WhisperModelManager.Variant.entries
+                    .filter { WhisperDownloader.needsExtraction(context, it) }
+                    .toSet()
+                val eagerOrphaned = WhisperModelManager.Variant.entries
+                    .filter { v ->
+                        val modelDir = File(WhisperModelManager.getModelStorageDir(context), WhisperDownloader.getModelDirName(v))
+                        modelDir.exists() && !WhisperDownloader.isModelDownloaded(context, v)
+                    }
+                    .toSet()
+                _whisperState.update { it.copy(
+                    isDownloading = false,
+                    variantsNeedingExtraction = eagerNeedsExtraction,
+                    orphanedVariants = eagerOrphaned
+                )}
+                detectPartialDownloads()
+            }
+        )
+    }
+
+    private fun handleServiceProgressGemma(progress: ExtractionService.ExtractionProgress) {
+        handleServiceProgress(
+            state = progress.downloadState,
+            updateFlow = { state, prog -> _downloadUiState.update { it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress) } },
+            onError = { msg, throwable ->
+                val error = when (throwable) {
+                    is ModelDownloader.DownloadError -> throwable
+                    else -> ModelDownloader.DownloadError.NetworkError(msg, throwable)
+                }
+                _downloadUiState.update { it.copy(isDownloading = false, downloadError = error) }
+                val message = when (error) {
+                    is ModelDownloader.DownloadError.AuthRequired -> "auth_required"
+                    is ModelDownloader.DownloadError.AuthError -> "Invalid token. Check Settings."
+                    is ModelDownloader.DownloadError.LicenseError -> "Accept license on HuggingFace"
+                    is ModelDownloader.DownloadError.StorageError -> "Not enough storage"
+                    is ModelDownloader.DownloadError.NetworkError -> "Network error: ${error.message}"
+                }
+                viewModelScope.launch { _snackbarEvent.send(message) }
+            },
+            onComplete = { file ->
+                _downloadUiState.update { it.copy(isDownloading = false, downloadProgress = 1f, partialDownload = null) }
+                refreshDownloadedModels()
+                if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
+            }
+        )
+    }
+
+    // ==================== Service helpers ====================
+
+    /**
+     * Sends a cancel intent to [ExtractionService].
+     */
+    private fun stopExtractionService() {
+        val context = AppContainer.applicationContext
+        val intent = Intent(context, ExtractionService::class.java).apply {
+            action = ExtractionService.ACTION_CANCEL
+        }
+        ContextCompat.startForegroundService(context, intent)
+    }
+
+    /**
+     * Maps a [WhisperModelManager.Variant] to the string key used by [ExtractionService].
+     */
+    private fun whisperVariantKey(variant: WhisperModelManager.Variant): String {
+        return variant.name.lowercase()
+    }
+
+    /**
+     * Maps a [ModelDownloader.ModelVariant] to the string key used by [ExtractionService].
+     */
+    private fun gemmaVariantKey(variant: ModelDownloader.ModelVariant): String {
+        return variant.name.lowercase()
+    }
+
     /**
      * Detects partial downloads across all downloaders and updates state.
      */
@@ -164,32 +349,84 @@ class ModelViewModel(
             val context = AppContainer.applicationContext
 
             // Check Gemma variants
+            var gemmaPartial: DownloadState.PartiallyDownloaded? = null
+            var gemmaPartialVariant: ModelDownloader.ModelVariant? = null
             for (variant in ModelDownloader.ModelVariant.entries) {
                 if (!ModelDownloader.isModelDownloaded(context, variant)) {
-                    val partial = ModelDownloader.detectPartialDownload(context, variant)
-                    if (partial != null) {
-                        _downloadUiState.update { it.copy(partialDownload = partial, partialDownloadVariant = variant) }
-                        break // Only show one partial at a time
+                    if (gemmaPartial == null) {
+                        val partial = ModelDownloader.detectPartialDownload(context, variant)
+                        if (partial != null) {
+                            gemmaPartial = partial
+                            gemmaPartialVariant = variant
+                        }
                     }
                 }
+            }
+            if (gemmaPartial != null && gemmaPartialVariant != null) {
+                _downloadUiState.update { it.copy(partialDownload = gemmaPartial, partialDownloadVariant = gemmaPartialVariant) }
             }
 
             // Check Parakeet
             if (!ParakeetDownloader.isModelDownloaded(context)) {
                 val partial = ParakeetDownloader.detectPartialDownload(context)
-                if (partial != null) {
-                    _parakeetState.update { it.copy(partialDownload = partial) }
+                val needsExtraction = ParakeetDownloader.needsExtraction(context)
+                val parakeetModelDir = java.io.File(ParakeetModelManager.getModelStorageDir(context), "parakeet-tdt-0.6b-v3-int8")
+                _parakeetState.update {
+                    it.copy(
+                        partialDownload = partial,
+                        needsExtraction = needsExtraction,
+                        hasOrphanedFiles = parakeetModelDir.exists()
+                    )
                 }
+            } else {
+                _parakeetState.update { it.copy(needsExtraction = false, hasOrphanedFiles = false) }
             }
 
             // Check Whisper variants
+            val whisperNeedsExtraction = mutableSetOf<WhisperModelManager.Variant>()
+            val whisperOrphaned = mutableSetOf<WhisperModelManager.Variant>()
+            var firstPartial: DownloadState.PartiallyDownloaded? = null
+            var firstPartialVariant: WhisperModelManager.Variant? = null
             for (variant in WhisperModelManager.Variant.entries) {
                 if (!WhisperDownloader.isModelDownloaded(context, variant)) {
-                    val partial = WhisperDownloader.detectPartialDownload(context, variant)
-                    if (partial != null) {
-                        _whisperState.update { it.copy(partialDownload = partial, partialDownloadVariant = variant) }
-                        break
+                    // Track first partial download only (for UI display)
+                    if (firstPartial == null) {
+                        val partial = WhisperDownloader.detectPartialDownload(context, variant)
+                        if (partial != null) {
+                            firstPartial = partial
+                            firstPartialVariant = variant
+                        }
                     }
+                    if (WhisperDownloader.needsExtraction(context, variant)) {
+                        whisperNeedsExtraction.add(variant)
+                    }
+                    // Check for orphaned model directory
+                    val modelDir = java.io.File(
+                        WhisperModelManager.getModelStorageDir(context),
+                        WhisperDownloader.getModelDirName(variant)
+                    )
+                    if (modelDir.exists()) {
+                        whisperOrphaned.add(variant)
+                    }
+                }
+            }
+            if (firstPartial != null && firstPartialVariant != null) {
+                _whisperState.update {
+                    it.copy(
+                        partialDownload = firstPartial,
+                        partialDownloadVariant = firstPartialVariant,
+                        variantsNeedingExtraction = whisperNeedsExtraction,
+                        orphanedVariants = whisperOrphaned
+                    )
+                }
+            } else {
+                _whisperState.update {
+                    it.copy(
+                        partialDownload = null,
+                        partialDownloadVariant = null,
+                        variantsNeedingExtraction = whisperNeedsExtraction,
+                        orphanedVariants = whisperOrphaned
+                    )
                 }
             }
         }
@@ -254,8 +491,6 @@ class ModelViewModel(
             }
         }
     }
-
-
 
 
 
@@ -461,102 +696,24 @@ class ModelViewModel(
     }
 
     /**
-     * Starts a download for the selected model variant.
-     *
-     * Auth is optional: tries public access first, falls back to stored token if needed.
-     * Supports resume for interrupted downloads and retry on transient errors.
+     * Starts a download for the selected Gemma model variant via [ExtractionService].
      */
     fun startDownload(variant: ModelDownloader.ModelVariant) {
-        viewModelScope.launch(Dispatchers.IO) {
-            _downloadUiState.update { it.copy(
-                selectedVariant = variant,
-                isDownloading = true,
-                downloadProgress = 0f,
-                downloadState = DownloadState.Idle,
-                downloadError = null,
-                partialDownload = null
-            )}
+        _downloadUiState.update { it.copy(
+            selectedVariant = variant,
+            isDownloading = true,
+            downloadProgress = 0f,
+            downloadState = DownloadState.Idle,
+            downloadError = null,
+            partialDownload = null
+        )}
 
-            val result = ModelDownloader.downloadModel(
-                context = AppContainer.applicationContext,
-                variant = variant,
-                tokenManager = tokenManager,
-                onProgress = { progress ->
-                    _downloadUiState.update { it.copy(downloadProgress = progress) }
-                },
-                onStateChange = { state ->
-                    _downloadUiState.update { current ->
-                        current.copy(
-                            downloadState = state,
-                            downloadProgress = when (state) {
-                                is DownloadState.Downloading -> state.progressPercent / 100f
-                                is DownloadState.Complete -> 1f
-                                else -> current.downloadProgress
-                            }
-                        )
-                    }
-                    when (state) {
-                        is DownloadState.Error -> {
-                            val error = when (state.throwable) {
-                                is ModelDownloader.DownloadError -> state.throwable
-                                else -> ModelDownloader.DownloadError.NetworkError(
-                                    state.message,
-                                    state.throwable
-                                )
-                            }
-                            _downloadUiState.update { it.copy(
-                                isDownloading = false,
-                                downloadError = error
-                            )}
-                            val message = when (error) {
-                                is ModelDownloader.DownloadError.AuthRequired -> "auth_required"
-                                is ModelDownloader.DownloadError.AuthError -> "Invalid token. Check Settings."
-                                is ModelDownloader.DownloadError.LicenseError -> "Accept license on HuggingFace"
-                                is ModelDownloader.DownloadError.StorageError -> "Not enough storage"
-                                is ModelDownloader.DownloadError.NetworkError -> "Network error: ${error.message}"
-                            }
-                            viewModelScope.launch { _snackbarEvent.send(message) }
-                        }
-                        is DownloadState.Complete -> {
-                            _downloadUiState.update { it.copy(
-                                isDownloading = false,
-                                downloadProgress = 1f,
-                                partialDownload = null
-                            )}
-                            refreshDownloadedModels()
-                            if (_uiState.value.modelName.isBlank()) {
-                                setDownloadedModel(state.file)
-                            }
-                        }
-                        is DownloadState.Cancelled -> {
-                            _downloadUiState.update { it.copy(isDownloading = false) }
-                        }
-                        else -> {}
-                    }
-                }
-            )
-
-            result.onFailure { error ->
-                // Skip cancellation — cancelDownload() already cleared state
-                if (error is DownloadException.Cancelled) return@onFailure
-                if (error.message?.contains("cancelled", ignoreCase = true) == true) return@onFailure
-
-                if (error is ModelDownloader.DownloadError) {
-                    // Already handled via onStateChange (snackbar emitted there).
-                    // Just ensure isDownloading is cleared.
-                    _downloadUiState.update { it.copy(isDownloading = false) }
-                    return@onFailure
-                }
-
-                _downloadUiState.update { it.copy(
-                    isDownloading = false,
-                    downloadError = ModelDownloader.DownloadError.NetworkError(
-                        error.message ?: "Download failed",
-                        error
-                    )
-                )}
-            }
+        val context = AppContainer.applicationContext
+        val intent = Intent(context, ExtractionService::class.java).apply {
+            putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.GEMMA.key)
+            putExtra(ExtractionService.EXTRA_VARIANT, gemmaVariantKey(variant))
         }
+        ContextCompat.startForegroundService(context, intent)
     }
 
     /**
@@ -574,6 +731,8 @@ class ModelViewModel(
         viewModelScope.launch {
             ModelDownloader.clearPartialDownload(AppContainer.applicationContext, variant)
             _downloadUiState.update { it.copy(
+                isDownloading = false,
+                downloadProgress = 0f,
                 partialDownload = null,
                 partialDownloadVariant = null,
                 downloadError = null,
@@ -583,7 +742,7 @@ class ModelViewModel(
     }
 
     /**
-     * Cancels the ongoing download.
+     * Cancels the ongoing Gemma download.
      */
     fun cancelDownload() {
         ModelDownloader.cancel()
@@ -592,6 +751,7 @@ class ModelViewModel(
             downloadState = DownloadState.Cancelled("User cancelled"),
             downloadError = null
         )}
+        stopExtractionService()
         detectPartialDownloads()
     }
 
@@ -721,7 +881,6 @@ class ModelViewModel(
             val modelPath = if (isDownloaded) ParakeetDownloader.getModelPath(context) else null
 
             _parakeetState.update { it.copy(
-                isDownloading = false,
                 modelPath = modelPath
             )}
         }
@@ -747,8 +906,11 @@ class ModelViewModel(
      * Confirms and starts the Parakeet download.
      */
     fun confirmParakeetDownload() {
-        _parakeetState.update { it.copy(showDownloadDialog = false) }
-        startParakeetDownload()
+        val needsExtraction = _parakeetState.value.needsExtraction
+        startParakeetDownload(
+            dismissDialog = true,
+            initialState = if (needsExtraction) DownloadState.Extracting(0, 0) else DownloadState.Connecting("")
+        )
     }
 
     /**
@@ -774,85 +936,26 @@ class ModelViewModel(
     }
 
     /**
-     * Starts downloading the Parakeet model.
+     * Starts downloading the Parakeet model via [ExtractionService].
      */
-    fun startParakeetDownload() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val context = AppContainer.applicationContext
+    fun startParakeetDownload(
+        dismissDialog: Boolean = false,
+        initialState: DownloadState = DownloadState.Connecting("")
+    ) {
+        _parakeetState.update { it.copy(
+            showDownloadDialog = if (dismissDialog) false else it.showDownloadDialog,
+            isDownloading = true,
+            downloadProgress = 0f,
+            downloadState = initialState,
+            errorMessage = null,
+            partialDownload = null
+        )}
 
-            _parakeetState.update { it.copy(
-                isDownloading = true,
-                downloadProgress = 0f,
-                downloadState = DownloadState.Connecting(""),
-                errorMessage = null,
-                partialDownload = null
-            )}
-
-            val result = ParakeetDownloader.downloadModel(
-                context = context,
-                onProgress = { progress ->
-                    _parakeetState.update { it.copy(downloadProgress = progress) }
-                },
-                onStateChange = { state ->
-                    _parakeetState.update { current ->
-                        current.copy(
-                            downloadState = state,
-                            downloadProgress = when (state) {
-                                is DownloadState.Downloading -> state.progressPercent / 100f
-                                is DownloadState.Complete -> 1f
-                                else -> current.downloadProgress
-                            }
-                        )
-                    }
-                    when (state) {
-                        is DownloadState.Error -> {
-                            _parakeetState.update { it.copy(
-                                isDownloading = false,
-                                errorMessage = state.message
-                            )}
-                            viewModelScope.launch { _snackbarEvent.send(state.message) }
-                        }
-                        is DownloadState.Complete -> {
-                            _parakeetState.update { it.copy(
-                                isDownloading = false,
-                                modelPath = state.file.absolutePath,
-                                partialDownload = null
-                            )}
-                            // Save to preferences
-                            viewModelScope.launch {
-                                preferencesManager.saveParakeetModelPath(state.file.absolutePath)
-                                // Auto-select only if no model is currently active
-                                if (_uiState.value.modelName.isBlank()) {
-                                    useParakeetModel()
-                                }
-                            }
-                            viewModelScope.launch { _snackbarEvent.send("Parakeet model downloaded successfully!") }
-                        }
-                        is DownloadState.Cancelled -> {
-                            _parakeetState.update { it.copy(isDownloading = false) }
-                        }
-                        else -> {}
-                    }
-                }
-            )
-
-            result.fold(
-                onSuccess = { modelDir ->
-                    _parakeetState.update { it.copy(
-                        isDownloading = false,
-                        modelPath = modelDir.absolutePath
-                    )}
-                },
-                onFailure = { error ->
-                    if (error is DownloadException.Cancelled) return@fold
-                    if (error.message?.contains("cancelled", ignoreCase = true) == true) return@fold
-                    _parakeetState.update { it.copy(
-                        isDownloading = false,
-                        errorMessage = error.message
-                    )}
-                }
-            )
+        val context = AppContainer.applicationContext
+        val intent = Intent(context, ExtractionService::class.java).apply {
+            putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.PARAKEET.key)
         }
+        ContextCompat.startForegroundService(context, intent)
     }
 
     /**
@@ -864,12 +967,34 @@ class ModelViewModel(
     }
 
     /**
-     * Clears a partial Parakeet download.
+     * Clears a partial Parakeet download (tar file only).
+     * The model directory is preserved — use [clearOrphanedParakeetFiles] to remove it.
      */
     fun clearParakeetPartialDownload() {
         viewModelScope.launch {
-            ParakeetDownloader.clearPartialDownload(AppContainer.applicationContext)
-            _parakeetState.update { it.copy(partialDownload = null) }
+            val context = AppContainer.applicationContext
+            ParakeetDownloader.clearPartialDownload(context)
+            _parakeetState.update { it.copy(
+                isDownloading = false,
+                downloadState = DownloadState.Idle,
+                downloadProgress = 0f,
+                partialDownload = null,
+                needsExtraction = false
+            )}
+            detectPartialDownloads()
+        }
+    }
+
+    /**
+     * Clears an orphaned Parakeet model directory (partial extraction leftovers).
+     * The tar file is preserved so extraction can be retried.
+     */
+    fun clearOrphanedParakeetFiles() {
+        viewModelScope.launch {
+            val context = AppContainer.applicationContext
+            ParakeetDownloader.deleteModel(context)
+            _parakeetState.update { it.copy(hasOrphanedFiles = false) }
+            detectPartialDownloads()
         }
     }
 
@@ -881,8 +1006,12 @@ class ModelViewModel(
         _parakeetState.update { it.copy(
             isDownloading = false,
             downloadState = DownloadState.Cancelled("User cancelled"),
-            errorMessage = null
+            errorMessage = null,
+            // Eagerly set extraction state so the button shows "Extract" immediately
+            // instead of flickering to "Download" while detectPartialDownloads() runs on IO
+            needsExtraction = ParakeetDownloader.needsExtraction(AppContainer.applicationContext)
         )}
+        stopExtractionService()
         detectPartialDownloads()
     }
 
@@ -920,7 +1049,7 @@ class ModelViewModel(
             if (success) {
                 preferencesManager.saveParakeetModelPath("")
                 _parakeetState.update { it.copy(modelPath = null) }
-                _snackbarEvent.send("Parakeet model deleted")
+                _snackbarEvent.send(context.getString(R.string.parakeet_deleted))
             }
         }
     }
@@ -938,7 +1067,6 @@ class ModelViewModel(
                 .toSet()
 
             _whisperState.update { it.copy(
-                isDownloading = false,
                 downloadedVariants = downloadedVariants
             )}
         }
@@ -968,8 +1096,12 @@ class ModelViewModel(
      */
     fun confirmWhisperDownload() {
         val variant = _whisperState.value.selectedVariant ?: return
-        _whisperState.update { it.copy(showDownloadDialog = false) }
-        startWhisperDownload(variant)
+        val needsExtraction = _whisperState.value.variantsNeedingExtraction.contains(variant)
+        startWhisperDownload(
+            variant,
+            dismissDialog = true,
+            initialState = if (needsExtraction) DownloadState.Extracting(0, 0) else DownloadState.Connecting("")
+        )
     }
 
     /**
@@ -1002,85 +1134,29 @@ class ModelViewModel(
     }
 
     /**
-     * Starts downloading a Whisper model variant.
+     * Starts downloading a Whisper model variant via [ExtractionService].
      */
-    fun startWhisperDownload(variant: WhisperModelManager.Variant) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val context = AppContainer.applicationContext
+    fun startWhisperDownload(
+        variant: WhisperModelManager.Variant,
+        dismissDialog: Boolean = false,
+        initialState: DownloadState = DownloadState.Connecting("")
+    ) {
+        _whisperState.update { it.copy(
+            showDownloadDialog = if (dismissDialog) false else it.showDownloadDialog,
+            selectedVariant = variant,
+            isDownloading = true,
+            downloadProgress = 0f,
+            downloadState = initialState,
+            errorMessage = null,
+            partialDownload = null
+        )}
 
-            _whisperState.update { it.copy(
-                selectedVariant = variant,
-                isDownloading = true,
-                downloadProgress = 0f,
-                downloadState = DownloadState.Connecting(""),
-                errorMessage = null,
-                partialDownload = null
-            )}
-
-            val result = WhisperDownloader.downloadModel(
-                context = context,
-                variant = variant,
-                onProgress = { progress ->
-                    _whisperState.update { it.copy(downloadProgress = progress) }
-                },
-                onStateChange = { state ->
-                    _whisperState.update { current ->
-                        current.copy(
-                            downloadState = state,
-                            downloadProgress = when (state) {
-                                is DownloadState.Downloading -> state.progressPercent / 100f
-                                is DownloadState.Complete -> 1f
-                                else -> current.downloadProgress
-                            }
-                        )
-                    }
-                    when (state) {
-                        is DownloadState.Error -> {
-                            _whisperState.update { it.copy(
-                                isDownloading = false,
-                                errorMessage = state.message
-                            )}
-                            viewModelScope.launch { _snackbarEvent.send(state.message) }
-                        }
-                        is DownloadState.Complete -> {
-                            _whisperState.update { it.copy(
-                                isDownloading = false,
-                                modelPath = state.file.absolutePath,
-                                downloadedVariants = _whisperState.value.downloadedVariants + variant,
-                                partialDownload = null
-                            )}
-                            // Auto-select only if no model is currently active
-                            if (_uiState.value.modelName.isBlank()) {
-                                useWhisperModel(variant)
-                            }
-                            val displayName = AppContainer.applicationContext.getString(variant.titleResId)
-                            viewModelScope.launch { _snackbarEvent.send("Whisper $displayName downloaded successfully!") }
-                        }
-                        is DownloadState.Cancelled -> {
-                            _whisperState.update { it.copy(isDownloading = false) }
-                        }
-                        else -> {}
-                    }
-                }
-            )
-
-            result.fold(
-                onSuccess = { modelDir ->
-                    _whisperState.update { it.copy(
-                        isDownloading = false,
-                        modelPath = modelDir.absolutePath
-                    )}
-                },
-                onFailure = { error ->
-                    if (error is DownloadException.Cancelled) return@fold
-                    if (error.message?.contains("cancelled", ignoreCase = true) == true) return@fold
-                    _whisperState.update { it.copy(
-                        isDownloading = false,
-                        errorMessage = error.message
-                    )}
-                }
-            )
+        val context = AppContainer.applicationContext
+        val intent = Intent(context, ExtractionService::class.java).apply {
+            putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.WHISPER.key)
+            putExtra(ExtractionService.EXTRA_VARIANT, whisperVariantKey(variant))
         }
+        ContextCompat.startForegroundService(context, intent)
     }
 
     /**
@@ -1092,12 +1168,41 @@ class ModelViewModel(
     }
 
     /**
-     * Clears a partial Whisper download.
+     * Clears a partial Whisper download (tar file only).
+     * The model directory is preserved — use [clearOrphanedWhisperFiles] to remove it.
      */
     fun clearWhisperPartialDownload(variant: WhisperModelManager.Variant) {
         viewModelScope.launch {
-            WhisperDownloader.clearPartialDownload(AppContainer.applicationContext, variant)
-            _whisperState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
+            val context = AppContainer.applicationContext
+            WhisperDownloader.clearPartialDownload(context, variant)
+            _whisperState.update {
+                it.copy(
+                    isDownloading = false,
+                    downloadState = DownloadState.Idle,
+                    downloadProgress = 0f,
+                    partialDownload = null,
+                    partialDownloadVariant = null,
+                    variantsNeedingExtraction = emptySet()
+                )
+            }
+            detectPartialDownloads()
+        }
+    }
+
+    /**
+     * Clears an orphaned Whisper model directory (partial extraction leftovers).
+     * The tar file is preserved so extraction can be retried.
+     */
+    fun clearOrphanedWhisperFiles(variant: WhisperModelManager.Variant) {
+        viewModelScope.launch {
+            val context = AppContainer.applicationContext
+            WhisperDownloader.deleteModel(context, variant)
+            _whisperState.update {
+                it.copy(
+                    orphanedVariants = it.orphanedVariants - variant
+                )
+            }
+            detectPartialDownloads()
         }
     }
 
@@ -1106,11 +1211,26 @@ class ModelViewModel(
      */
     fun cancelWhisperDownload() {
         WhisperDownloader.cancel()
+        // Eagerly compute extraction state so the button shows "Extract" immediately
+        // instead of flickering to "Download" while detectPartialDownloads() runs on IO
+        val context = AppContainer.applicationContext
+        val eagerNeedsExtraction = WhisperModelManager.Variant.entries
+            .filter { WhisperDownloader.needsExtraction(context, it) }
+            .toSet()
+        val eagerOrphaned = WhisperModelManager.Variant.entries
+            .filter { variant ->
+                val modelDir = File(WhisperModelManager.getModelStorageDir(context), WhisperDownloader.getModelDirName(variant))
+                modelDir.exists() && !WhisperDownloader.isModelDownloaded(context, variant)
+            }
+            .toSet()
         _whisperState.update { it.copy(
             isDownloading = false,
             downloadState = DownloadState.Cancelled("User cancelled"),
-            errorMessage = null
+            errorMessage = null,
+            variantsNeedingExtraction = eagerNeedsExtraction,
+            orphanedVariants = eagerOrphaned
         )}
+        stopExtractionService()
         detectPartialDownloads()
     }
 
@@ -1157,7 +1277,7 @@ class ModelViewModel(
                 if (savedPath?.contains(variant.dirName) == true) {
                     preferencesManager.clearWhisperModelPath()
                 }
-                _snackbarEvent.send("Whisper $displayName deleted")
+                _snackbarEvent.send(context.getString(R.string.whisper_deleted, displayName))
             }
         }
     }

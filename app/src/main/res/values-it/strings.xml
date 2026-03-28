@@ -54,6 +54,8 @@
     <string name="parakeet_download">Scarica Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Scaricare Parakeet TDT?</string>
     <string name="parakeet_download_confirm_message">Verranno scaricati ~464MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
+    <string name="parakeet_extract_confirm_title">Estrarre Parakeet TDT?</string>
+    <string name="parakeet_extract_confirm_message">Il file del modello è già stato scaricato. Verrà estratto per l\'uso.</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper (Multilingue)</string>
@@ -67,6 +69,8 @@
     <string name="whisper_download">Scarica Whisper</string>
     <string name="whisper_download_confirm_title">Scaricare %1$s?</string>
     <string name="whisper_download_confirm_message">Verranno scaricati ~%1$dMB. Whisper offre eccellente supporto multilingue con punteggiatura corretta.</string>
+    <string name="whisper_extract_confirm_title">Estrarre %1$s?</string>
+    <string name="whisper_extract_confirm_message">Il file del modello è già stato scaricato. Verrà estratto per l\'uso.</string>
 
     <!-- Download status -->
     <string name="download_status_downloading">Download in corso…</string>
@@ -74,6 +78,21 @@
     <string name="download_status_extracting_files">Estrazione file…</string>
     <string name="download_status_connecting">Connessione…</string>
     <string name="download_status_file_progress">%1$d/%2$d</string>
+    <string name="download_status_checking_access">Verifica accesso…</string>
+    <string name="download_status_retrying">Tentativo (%1$d/%2$d)…</string>
+    <string name="download_status_resuming">Ripresa download…</string>
+    <string name="model_requires_auth">Questo modello richiede un account HuggingFace</string>
+
+    <!-- Download rate/ETA/partial -->
+    <string name="download_rate">%1$s/s</string>
+    <string name="download_eta">%1$s rimanenti</string>
+    <string name="download_eta_less_than_minute">Meno di 1 min rimanente</string>
+    <string name="download_partial">Download interrotto al %1$d%% (%2$s / %3$s)</string>
+    <string name="download_resume">Riprendi Download</string>
+    <string name="download_clear_partial">Cancella</string>
+    <string name="download_partial_detected">Download parziale rilevato</string>
+    <string name="gemma_download_confirm_title">Scaricare %1$s?</string>
+    <string name="gemma_download_confirm_message">Verranno scaricati circa %1$dMB. I modelli Gemma sono LLM completi con funzionalità avanzate ma richiedono più spazio.</string>
 
     <!-- Transcription -->
     <string name="share_transcription">Condividi Trascrizione</string>
@@ -102,6 +121,8 @@
     <string name="downloading">Download in corso…</string>
     <string name="connecting_to_huggingface">Connessione a HuggingFace…</string>
     <string name="cancel_download">Annulla Download</string>
+    <string name="cancel_extract">Annulla Estrazione</string>
+    <string name="extract_model">Estrai</string>
     <string name="use_model">Usa Modello</string>
     <string name="active_badge">Attivo</string>
     <string name="model_selected_message">%1$s selezionato</string>
@@ -268,6 +289,12 @@
     <string name="send_to_app">Invia a %1$s</string>
 
     <!-- Notification Channels -->
+    <string name="notification_channel_extraction">Download Modello</string>
+    <string name="notification_channel_extraction_description">Scarica ed estrae modelli ML in background</string>
+    <string name="notification_downloading_progress">Download in corso… %1$d%%</string>
+    <string name="notification_extracting_progress">Estrazione file… %1$d/%2$d</string>
+    <string name="notification_extracting_hint">Potrebbe richiedere più di 5 minuti</string>
+    <string name="notification_download_complete">Download completato</string>
     <string name="notification_channel_inference">Servizio di Trascrizione</string>
     <string name="notification_channel_inference_description">Elaborazione trascrizione audio in background</string>
     <string name="notification_channel_result">Risultato Trascrizione</string>
@@ -275,4 +302,10 @@
 
     <!-- Dismiss -->
     <string name="dismiss">Chiudi</string>
+
+    <!-- Download completion messages -->
+    <string name="parakeet_downloaded">Modello Parakeet scaricato</string>
+    <string name="whisper_downloaded">%1$s scaricato</string>
+    <string name="parakeet_deleted">Modello Parakeet eliminato</string>
+    <string name="whisper_deleted">%1$s eliminato</string>
 </resources>

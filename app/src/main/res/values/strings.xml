@@ -54,6 +54,8 @@
     <string name="parakeet_download">Download Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Download Parakeet TDT?</string>
     <string name="parakeet_download_confirm_message">This will download ~464MB. Parakeet is faster but less accurate than Gemma for transcription.</string>
+    <string name="parakeet_extract_confirm_title">Extract Parakeet TDT?</string>
+    <string name="parakeet_extract_confirm_message">The model file is already downloaded. This will extract it for use.</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper (Multilingual)</string>
@@ -67,6 +69,8 @@
     <string name="whisper_download">Download Whisper</string>
     <string name="whisper_download_confirm_title">Download %1$s?</string>
     <string name="whisper_download_confirm_message">This will download ~%1$dMB. Whisper provides excellent multilingual support with proper punctuation.</string>
+    <string name="whisper_extract_confirm_title">Extract %1$s?</string>
+    <string name="whisper_extract_confirm_message">The model file is already downloaded. This will extract it for use.</string>
 
     <!-- Download status -->
     <string name="download_status_downloading">Downloading…</string>
@@ -78,6 +82,17 @@
     <string name="download_status_retrying">Retrying (%1$d/%2$d)…</string>
     <string name="download_status_resuming">Resuming download…</string>
     <string name="model_requires_auth">This model requires a HuggingFace account</string>
+
+    <!-- Download rate/ETA/partial -->
+    <string name="download_rate">%1$s/s</string>
+    <string name="download_eta">%1$s remaining</string>
+    <string name="download_eta_less_than_minute">Less than 1 min remaining</string>
+    <string name="download_partial">Download interrupted at %1$d%% (%2$s / %3$s)</string>
+    <string name="download_resume">Resume Download</string>
+    <string name="download_clear_partial">Clear</string>
+    <string name="download_partial_detected">Partial download detected</string>
+    <string name="gemma_download_confirm_title">Download %1$s?</string>
+    <string name="gemma_download_confirm_message">This will download ~%1$dMB. Gemma models are full LLMs with advanced features but use more storage.</string>
 
     <!-- Transcription -->
     <string name="share_transcription">Share Transcription</string>
@@ -106,6 +121,8 @@
     <string name="downloading">Downloading…</string>
     <string name="connecting_to_huggingface">Connecting to HuggingFace…</string>
     <string name="cancel_download">Cancel Download</string>
+    <string name="cancel_extract">Cancel Extract</string>
+    <string name="extract_model">Extract</string>
     <string name="use_model">Use Model</string>
     <string name="active_badge">Active</string>
     <string name="model_selected_message">%1$s selected</string>
@@ -272,6 +289,12 @@
     <string name="send_to_app">Send to %1$s</string>
 
     <!-- Notification Channels -->
+    <string name="notification_channel_extraction">Model Download</string>
+    <string name="notification_channel_extraction_description">Downloads and extracts ML models in the background</string>
+    <string name="notification_downloading_progress">Downloading… %1$d%%</string>
+    <string name="notification_extracting_progress">Extracting files… %1$d/%2$d</string>
+    <string name="notification_extracting_hint">This may take more than 5 minutes</string>
+    <string name="notification_download_complete">Download complete</string>
     <string name="notification_channel_inference">Transcription Service</string>
     <string name="notification_channel_inference_description">Background audio transcription processing</string>
     <string name="notification_channel_result">Transcription Result</string>
@@ -279,4 +302,10 @@
 
     <!-- Dismiss -->
     <string name="dismiss">Dismiss</string>
+
+    <!-- Download completion messages -->
+    <string name="parakeet_downloaded">Parakeet model downloaded successfully</string>
+    <string name="whisper_downloaded">%1$s downloaded successfully</string>
+    <string name="parakeet_deleted">Parakeet model deleted</string>
+    <string name="whisper_deleted">%1$s deleted</string>
 </resources>

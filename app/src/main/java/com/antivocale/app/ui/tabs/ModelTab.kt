@@ -21,6 +21,7 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import android.content.Context
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.delay
@@ -32,9 +33,9 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.antivocale.app.data.ModelDownloader
+import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.di.AppContainer
-import com.antivocale.app.transcription.ParakeetDownloader
-import com.antivocale.app.transcription.WhisperDownloader
+import com.antivocale.app.util.formatFileSize
 import com.antivocale.app.transcription.WhisperModelManager
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 
@@ -192,11 +193,11 @@ fun ModelTab(
     if (parakeetState.showDownloadDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissParakeetDownloadDialog() },
-            title = { Text(stringResource(R.string.parakeet_download_confirm_title)) },
-            text = { Text(stringResource(R.string.parakeet_download_confirm_message)) },
+            title = { Text(stringResource(if (parakeetState.needsExtraction) R.string.parakeet_extract_confirm_title else R.string.parakeet_download_confirm_title)) },
+            text = { Text(stringResource(if (parakeetState.needsExtraction) R.string.parakeet_extract_confirm_message else R.string.parakeet_download_confirm_message)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.confirmParakeetDownload() }) {
-                    Text(stringResource(R.string.download))
+                    Text(stringResource(if (parakeetState.needsExtraction) R.string.extract_model else R.string.download))
                 }
             },
             dismissButton = {
@@ -226,16 +227,37 @@ fun ModelTab(
         )
     }
 
+    // Gemma download confirmation dialog
+    if (downloadUiState.showDownloadDialog) {
+        val variant = downloadUiState.selectedVariant
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissDownloadDialog() },
+            title = { Text(stringResource(R.string.gemma_download_confirm_title, variant?.displayName ?: "Gemma")) },
+            text = { Text(stringResource(R.string.gemma_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 0)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmDownload() }) {
+                    Text(stringResource(R.string.download))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissDownloadDialog() }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
     // Whisper download confirmation dialog
     if (whisperState.showDownloadDialog) {
         val variant = whisperState.selectedVariant
+        val isExtract = variant != null && whisperState.variantsNeedingExtraction.contains(variant)
         AlertDialog(
             onDismissRequest = { viewModel.dismissWhisperDownloadDialog() },
-            title = { Text(stringResource(R.string.whisper_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "Whisper")) },
-            text = { Text(stringResource(R.string.whisper_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 75)) },
+            title = { Text(stringResource(if (isExtract) R.string.whisper_extract_confirm_title else R.string.whisper_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "Whisper")) },
+            text = { Text(stringResource(if (isExtract) R.string.whisper_extract_confirm_message else R.string.whisper_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 75)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.confirmWhisperDownload() }) {
-                    Text(stringResource(R.string.download))
+                    Text(stringResource(if (isExtract) R.string.extract_model else R.string.download))
                 }
             },
             dismissButton = {
@@ -285,7 +307,8 @@ fun ModelTab(
         // Parakeet TDT section - fast multilingual ASR backend
         ParakeetDownloadSection(
             viewModel = viewModel,
-            activeModelName = uiState.modelName
+            activeModelName = uiState.modelName,
+            context = context
         )
 
         // Download models section - Gemma LLM models (advanced features)
@@ -402,8 +425,10 @@ private fun ModelDownloadSection(
                 currentDownloadState = downloadState.downloadState,
                 downloadError = downloadState.downloadError,
                 onSelect = { viewModel.selectModel(variant) },
-                onDownloadClick = { viewModel.startDownload(variant) },
+                onDownloadClick = { viewModel.showDownloadDialog(variant) },
                 onCancelClick = { viewModel.cancelDownload() },
+                onResumeClick = { viewModel.resumeDownload(variant) },
+                onClearPartialClick = { viewModel.clearPartialDownload(variant) },
                 onUseClick = { viewModel.useDownloadedModel(variant) },
                 onClearError = { viewModel.clearDownloadError() },
                 onDeleteClick = {
@@ -426,11 +451,13 @@ private fun ModelVariantCard(
     isActive: Boolean,
     isDownloading: Boolean,
     downloadProgress: Float,
-    currentDownloadState: ModelDownloader.DownloadState,
+    currentDownloadState: DownloadState,
     downloadError: ModelDownloader.DownloadError?,
     onSelect: () -> Unit,
     onDownloadClick: () -> Unit,
     onCancelClick: () -> Unit,
+    onResumeClick: () -> Unit,
+    onClearPartialClick: () -> Unit,
     onUseClick: () -> Unit,
     onClearError: () -> Unit,
     onDeleteClick: () -> Unit,
@@ -447,7 +474,7 @@ private fun ModelVariantCard(
                 isDownloading -> MaterialTheme.colorScheme.secondaryContainer
                 downloadError != null && downloadState.selectedVariant == variant ->
                     MaterialTheme.colorScheme.errorContainer
-                else -> MaterialTheme.colorScheme.surface
+                else -> MaterialTheme.colorScheme.surfaceVariant
             }
         )
     ) {
@@ -551,78 +578,18 @@ private fun ModelVariantCard(
             // Download progress
             if (isDownloading) {
                 Spacer(modifier = Modifier.height(16.dp))
+                DownloadProgressView(currentDownloadState, downloadProgress)
+            }
 
-                when (currentDownloadState) {
-                    is ModelDownloader.DownloadState.Downloading -> {
-                        val state = currentDownloadState as ModelDownloader.DownloadState.Downloading
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.downloading),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                Text(
-                                    text = "${(downloadProgress * 100).toInt()}%",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            LinearProgressIndicator(
-                                progress = { downloadProgress },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Text(
-                                text = formatBytes(state.bytesDownloaded) +
-                                    if (state.totalBytes > 0) {
-                                        " / ${formatBytes(state.totalBytes)}"
-                                    } else {
-                                        ""
-                                    },
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    is ModelDownloader.DownloadState.CheckingAccess,
-                    is ModelDownloader.DownloadState.Connecting -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Text(
-                                text = stringResource(R.string.connecting_to_huggingface),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    is ModelDownloader.DownloadState.Retrying -> {
-                        val state = currentDownloadState as ModelDownloader.DownloadState.Retrying
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(16.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Text(
-                                text = stringResource(
-                                    R.string.download_status_retrying,
-                                    state.attempt,
-                                    state.maxRetries
-                                ),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    else -> {}
+            // Partial download (only for this variant)
+            if (downloadState.partialDownloadVariant == variant) {
+                downloadState.partialDownload?.let { partial ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PartialDownloadSection(
+                        partial = partial,
+                        onResumeClick = onResumeClick,
+                        onClearClick = onClearPartialClick
+                    )
                 }
             }
 
@@ -671,6 +638,9 @@ private fun ModelVariantCard(
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                         }
+                    }
+                    downloadState.partialDownloadVariant == variant -> {
+                        // PartialDownloadSection above already shows Resume/Clear buttons
                     }
                     else -> {
                         // Download button
@@ -734,12 +704,192 @@ private fun getLocalizedLabel(labelKey: String): String {
     }
 }
 
-private fun formatBytes(bytes: Long): String {
-    return when {
-        bytes < 1024 -> "$bytes B"
-        bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-        bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
-        else -> String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024))
+/**
+ * Shared download progress composable used by Gemma, Parakeet, and Whisper sections.
+ */
+@Composable
+private fun DownloadProgressView(
+    downloadState: DownloadState,
+    downloadProgress: Float,
+    showExtractingFileSize: Boolean = false
+) {
+    when (val state = downloadState) {
+        is DownloadState.Downloading -> {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(stringResource(R.string.download_status_downloading), style = MaterialTheme.typography.bodySmall)
+                    Text("${(downloadProgress * 100).toInt()}%", style = MaterialTheme.typography.bodySmall)
+                }
+                LinearProgressIndicator(
+                    progress = { downloadProgress },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    text = formatFileSize(state.bytesDownloaded) +
+                        if (state.totalBytes > 0) " / ${formatFileSize(state.totalBytes)}" else "",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                DownloadRateEta(state)
+            }
+        }
+        is DownloadState.Extracting -> {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                LinearProgressIndicator(
+                    progress = { downloadProgress },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                if (showExtractingFileSize && state.currentFileSize > 0) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            stringResource(R.string.download_status_extracting, state.fileName.takeIf { it.isNotEmpty() } ?: stringResource(R.string.download_status_file_progress, state.fileIndex, state.totalFiles)),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            "${formatFileSize(state.bytesExtracted)} / ${formatFileSize(state.currentFileSize)}",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                } else {
+                    Text(
+                        if (state.fileName.isNotEmpty()) {
+                            stringResource(R.string.download_status_extracting, state.fileName)
+                        } else {
+                            stringResource(R.string.download_status_extracting_files)
+                        },
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+        }
+        is DownloadState.CheckingAccess,
+        is DownloadState.Connecting -> {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Text(stringResource(R.string.download_status_connecting), style = MaterialTheme.typography.bodySmall)
+            }
+        }
+        is DownloadState.Retrying -> {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                Text(
+                    text = stringResource(R.string.download_status_retrying, state.attempt, state.maxRetries),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        else -> {}
+    }
+}
+
+/**
+ * Formats ETA seconds into a human-readable string.
+ * Uses string resources for localization.
+ */
+@Composable
+private fun formatEta(etaSeconds: Long): String {
+    if (etaSeconds < 0) return ""
+    if (etaSeconds < 60) return stringResource(R.string.download_eta_less_than_minute)
+    val minutes = etaSeconds / 60
+    val seconds = etaSeconds % 60
+    return if (seconds == 0L) {
+        stringResource(R.string.download_eta, "${minutes}m")
+    } else {
+        stringResource(R.string.download_eta, "${minutes}m ${seconds}s")
+    }
+}
+
+/**
+ * Composable for download rate and ETA display below bytes line.
+ */
+@Composable
+private fun DownloadRateEta(state: DownloadState.Downloading) {
+    if (state.downloadRateBytesPerSec > 0f) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.download_rate, formatFileSize(state.downloadRateBytesPerSec.toLong())),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (state.etaSeconds >= 0) {
+                Text(
+                    text = "· ${formatEta(state.etaSeconds)}",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Composable for partial download state with Resume/Clear buttons.
+ */
+@Composable
+private fun PartialDownloadSection(
+    partial: DownloadState.PartiallyDownloaded,
+    onResumeClick: () -> Unit,
+    onClearClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = stringResource(R.string.download_partial_detected),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(
+                    R.string.download_partial,
+                    partial.progressPercent,
+                    formatFileSize(partial.bytesDownloaded),
+                    formatFileSize(partial.totalBytes)
+                ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onTertiaryContainer
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = onResumeClick,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(stringResource(R.string.download_resume))
+                }
+                OutlinedButton(
+                    onClick = onClearClick
+                ) {
+                    Text(stringResource(R.string.download_clear_partial))
+                }
+            }
+        }
     }
 }
 
@@ -752,7 +902,8 @@ private fun formatBytes(bytes: Long): String {
 @Composable
 private fun ParakeetDownloadSection(
     viewModel: ModelViewModel,
-    activeModelName: String
+    activeModelName: String,
+    context: Context
 ) {
     val parakeetState by viewModel.parakeetState.collectAsState()
     val isActive = activeModelName == "Parakeet TDT"
@@ -826,64 +977,7 @@ private fun ParakeetDownloadSection(
             // Download progress
             if (parakeetState.isDownloading) {
                 Spacer(modifier = Modifier.height(16.dp))
-
-                when (val state = parakeetState.downloadState) {
-                    is ParakeetDownloader.DownloadState.Downloading -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(stringResource(R.string.download_status_downloading), style = MaterialTheme.typography.bodySmall)
-                                Text("${(parakeetState.downloadProgress * 100).toInt()}%", style = MaterialTheme.typography.bodySmall)
-                            }
-                            LinearProgressIndicator(
-                                progress = { parakeetState.downloadProgress },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Text(
-                                text = formatBytes(state.bytesDownloaded) +
-                                    if (state.totalBytes > 0) " / ${formatBytes(state.totalBytes)}" else "",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    is ParakeetDownloader.DownloadState.Extracting -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            LinearProgressIndicator(
-                                progress = { parakeetState.downloadProgress },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(
-                                    stringResource(R.string.download_status_extracting, state.fileName.takeIf { it.isNotEmpty() } ?: stringResource(R.string.download_status_file_progress, state.fileIndex, state.totalFiles)),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                                if (state.currentFileSize > 0) {
-                                    Text(
-                                        "${formatBytes(state.bytesExtracted)} / ${formatBytes(state.currentFileSize)}",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    is ParakeetDownloader.DownloadState.Connecting -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                            Text(stringResource(R.string.download_status_connecting), style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    else -> {}
-                }
+                DownloadProgressView(parakeetState.downloadState, parakeetState.downloadProgress, showExtractingFileSize = true)
             }
 
             // Error message
@@ -893,6 +987,16 @@ private fun ParakeetDownloadSection(
                     text = error,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            // Partial download
+            parakeetState.partialDownload?.let { partial ->
+                Spacer(modifier = Modifier.height(8.dp))
+                PartialDownloadSection(
+                    partial = partial,
+                    onResumeClick = { viewModel.resumeParakeetDownload() },
+                    onClearClick = { viewModel.clearParakeetPartialDownload() }
                 )
             }
 
@@ -911,7 +1015,12 @@ private fun ParakeetDownloadSection(
                         ) {
                             Icon(Icons.Default.Close, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.cancel_download))
+                            Text(
+                                if (parakeetState.downloadState is DownloadState.Extracting)
+                                    stringResource(R.string.cancel_extract)
+                                else
+                                    stringResource(R.string.cancel_download)
+                            )
                         }
                     }
                     parakeetState.modelPath != null -> {
@@ -940,14 +1049,37 @@ private fun ParakeetDownloadSection(
                             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                         }
                     }
+                    parakeetState.partialDownload != null -> {
+                        // PartialDownloadSection above already shows Resume/Clear buttons
+                    }
                     else -> {
-                        Button(
-                            onClick = { viewModel.showParakeetDownloadDialog() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.parakeet_download))
+                        val needsExtraction = parakeetState.needsExtraction
+                        if (parakeetState.hasOrphanedFiles && parakeetState.needsExtraction) {
+                            OutlinedButton(
+                                onClick = { viewModel.clearOrphanedParakeetFiles() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.download_clear_partial))
+                            }
+                        } else {
+                            Button(
+                                onClick = { viewModel.showParakeetDownloadDialog() },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = if (needsExtraction) Icons.Default.FileDownload else Icons.Default.Download,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    if (needsExtraction)
+                                        stringResource(R.string.extract_model)
+                                    else
+                                        stringResource(R.string.parakeet_download)
+                                )
+                            }
                         }
                     }
                 }
@@ -1025,11 +1157,18 @@ private fun WhisperDownloadSection(
                     isDownloaded = whisperState.downloadedVariants.contains(variant),
                     isActive = activeModelName == stringResource(variant.titleResId),
                     isDownloading = whisperState.isDownloading && whisperState.selectedVariant == variant,
+                    needsExtraction = whisperState.variantsNeedingExtraction.contains(variant),
+                    isOrphaned = whisperState.orphanedVariants.contains(variant),
                     downloadProgress = whisperState.downloadProgress,
                     downloadState = whisperState.downloadState,
                     errorMessage = if (whisperState.selectedVariant == variant) whisperState.errorMessage else null,
+                    partialDownload = whisperState.partialDownload,
+                    partialDownloadVariant = whisperState.partialDownloadVariant,
                     onDownloadClick = { viewModel.showWhisperDownloadDialog(variant) },
                     onCancelClick = { viewModel.cancelWhisperDownload() },
+                    onResumeClick = { viewModel.resumeWhisperDownload(variant) },
+                    onClearPartialClick = { viewModel.clearWhisperPartialDownload(variant) },
+                    onClearOrphanedClick = { viewModel.clearOrphanedWhisperFiles(variant) },
                     onUseClick = { viewModel.useWhisperModel(variant) },
                     onDeleteClick = { viewModel.showWhisperDeleteDialog(variant) }
                 )
@@ -1048,11 +1187,18 @@ private fun WhisperVariantCard(
     isDownloaded: Boolean,
     isActive: Boolean,
     isDownloading: Boolean,
+    needsExtraction: Boolean,
+    isOrphaned: Boolean,
     downloadProgress: Float,
-    downloadState: WhisperDownloader.DownloadState,
+    downloadState: DownloadState,
     errorMessage: String?,
+    partialDownload: DownloadState.PartiallyDownloaded?,
+    partialDownloadVariant: WhisperModelManager.Variant?,
     onDownloadClick: () -> Unit,
     onCancelClick: () -> Unit,
+    onResumeClick: () -> Unit,
+    onClearPartialClick: () -> Unit,
+    onClearOrphanedClick: () -> Unit,
     onUseClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
@@ -1140,56 +1286,7 @@ private fun WhisperVariantCard(
             // Download progress
             if (isDownloading) {
                 Spacer(modifier = Modifier.height(12.dp))
-
-                when (val state = downloadState) {
-                    is WhisperDownloader.DownloadState.Downloading -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Text(stringResource(R.string.download_status_downloading), style = MaterialTheme.typography.bodySmall)
-                                Text("${(downloadProgress * 100).toInt()}%", style = MaterialTheme.typography.bodySmall)
-                            }
-                            LinearProgressIndicator(
-                                progress = { downloadProgress },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Text(
-                                text = formatBytes(state.bytesDownloaded) +
-                                    if (state.totalBytes > 0) " / ${formatBytes(state.totalBytes)}" else "",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                    is WhisperDownloader.DownloadState.Extracting -> {
-                        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            LinearProgressIndicator(
-                                progress = { downloadProgress },
-                                modifier = Modifier.fillMaxWidth()
-                            )
-                            Text(
-                                if (state.fileName.isNotEmpty()) {
-                                    stringResource(R.string.download_status_extracting, state.fileName)
-                                } else {
-                                    stringResource(R.string.download_status_extracting_files)
-                                },
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-                    is WhisperDownloader.DownloadState.Connecting -> {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                            Text(stringResource(R.string.download_status_connecting), style = MaterialTheme.typography.bodySmall)
-                        }
-                    }
-                    else -> {}
-                }
+                DownloadProgressView(downloadState, downloadProgress)
             }
 
             // Error message
@@ -1200,6 +1297,18 @@ private fun WhisperVariantCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.error
                 )
+            }
+
+            // Partial download (only for this variant)
+            if (partialDownloadVariant == variant) {
+                partialDownload?.let { partial ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PartialDownloadSection(
+                        partial = partial,
+                        onResumeClick = onResumeClick,
+                        onClearClick = onClearPartialClick
+                    )
+                }
             }
 
             // Action buttons
@@ -1217,7 +1326,12 @@ private fun WhisperVariantCard(
                         ) {
                             Icon(Icons.Default.Close, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.cancel_download))
+                            Text(
+                                if (downloadState is DownloadState.Extracting)
+                                    stringResource(R.string.cancel_extract)
+                                else
+                                    stringResource(R.string.cancel_download)
+                            )
                         }
                     }
                     isDownloaded -> {
@@ -1244,6 +1358,29 @@ private fun WhisperVariantCard(
                         ) {
                             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                         }
+                    }
+                    needsExtraction -> {
+                        Button(
+                            onClick = onDownloadClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.FileDownload, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.extract_model))
+                        }
+                    }
+                    isOrphaned && needsExtraction -> {
+                        OutlinedButton(
+                            onClick = onClearOrphanedClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.download_clear_partial))
+                        }
+                    }
+                    partialDownloadVariant == variant -> {
+                        // PartialDownloadSection above already shows Resume/Clear buttons
                     }
                     else -> {
                         Button(

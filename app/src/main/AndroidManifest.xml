@@ -149,6 +149,17 @@
                 android:value="ai_inference" />
         </service>
 
+        <!-- Foreground service for model download + extraction -->
+        <service
+            android:name=".service.ExtractionService"
+            android:enabled="true"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="model_download" />
+        </service>
+
         <!-- Per-app language service for backward compatibility (API 21-32) -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
