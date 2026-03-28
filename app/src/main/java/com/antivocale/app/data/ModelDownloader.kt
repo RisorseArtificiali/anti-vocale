@@ -3,10 +3,13 @@ package com.antivocale.app.data
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.R
+import com.antivocale.app.data.download.DownloadConfig
+import com.antivocale.app.data.download.DownloadException
+import com.antivocale.app.data.download.DownloadState
+import com.antivocale.app.data.download.downloadWithRetry as sharedDownloadWithRetry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -31,7 +34,6 @@ object ModelDownloader {
     private const val MAX_RETRIES = 3
     private const val CONNECT_TIMEOUT_MS = 30_000
     private const val READ_TIMEOUT_MS = 60_000
-    private const val BUFFER_SIZE = 8192
     private const val TMP_FILE_EXT = ".tmp"
 
     /**
@@ -64,25 +66,7 @@ object ModelDownloader {
     }
 
     /**
-     * Download state for progress tracking.
-     */
-    sealed class DownloadState {
-        data object Idle : DownloadState()
-        data class CheckingAccess(val url: String) : DownloadState()
-        data class Connecting(val url: String) : DownloadState()
-        data class Downloading(
-            val bytesDownloaded: Long,
-            val totalBytes: Long,
-            val progressPercent: Float
-        ) : DownloadState()
-        data class Retrying(val attempt: Int, val maxRetries: Int, val reason: String) : DownloadState()
-        data class Complete(val file: File) : DownloadState()
-        data class Error(val message: String, val throwable: Throwable? = null) : DownloadState()
-        data class Cancelled(val reason: String) : DownloadState()
-    }
-
-    /**
-     * Download error types.
+     * Download error types (Gemma-specific auth/license/storage errors).
      */
     sealed class DownloadError(message: String, cause: Throwable? = null) : Exception(message, cause) {
         class AuthRequired(message: String) : DownloadError(message)
@@ -113,7 +97,6 @@ object ModelDownloader {
             connection.requestMethod = "HEAD"
             connection.connectTimeout = CONNECT_TIMEOUT_MS
             connection.readTimeout = 15_000
-            // Force identity encoding so we get a reliable Content-Length
             connection.setRequestProperty("Accept-Encoding", "identity")
             connection.connect()
             val code = connection.responseCode
@@ -123,6 +106,26 @@ object ModelDownloader {
             Log.w(TAG, "Public access check failed: ${e.message}")
             false
         }
+    }
+
+    /**
+     * Detects a partial download for a given variant.
+     *
+     * @return [DownloadState.PartiallyDownloaded] if a .tmp file exists, null otherwise
+     */
+    fun detectPartialDownload(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): DownloadState.PartiallyDownloaded? {
+        val tempFile = File(context.filesDir, "models/${variant.fileName}$TMP_FILE_EXT")
+        if (tempFile.length() == 0L) return null
+
+        val downloadedBytes = tempFile.length()
+        val totalBytes = variant.estimatedSizeMB * 1024 * 1024
+        val progressPercent = ((downloadedBytes.toFloat() / totalBytes) * 100).toInt().coerceIn(0, 99)
+
+        return DownloadState.PartiallyDownloaded(
+            bytesDownloaded = downloadedBytes,
+            totalBytes = totalBytes,
+            progressPercent = progressPercent
+        )
     }
 
     /**
@@ -165,7 +168,7 @@ object ModelDownloader {
         val targetFile = File(targetDir, variant.fileName)
 
         // Check if already downloaded
-        if (targetFile.exists() && targetFile.length() > 0) {
+        if (targetFile.length() > 0) {
             Log.i(TAG, "Model already exists: ${targetFile.path}")
             onStateChange(DownloadState.Complete(targetFile))
             return@withContext Result.success(targetFile)
@@ -206,6 +209,7 @@ object ModelDownloader {
 
     /**
      * Downloads a model with retry support and resume capability.
+     * Delegates to the shared [downloadWithRetry] helper.
      */
     private suspend fun downloadWithRetry(
         variant: ModelVariant,
@@ -214,178 +218,37 @@ object ModelDownloader {
         targetFile: File,
         onProgress: (Float) -> Unit,
         onStateChange: (DownloadState) -> Unit
-    ): Result<File> = withContext(Dispatchers.IO) {
-        val tempFile = File(targetFile.parentFile!!, "${variant.fileName}$TMP_FILE_EXT")
-        var lastError: Throwable? = null
-
-        for (attempt in 1..MAX_RETRIES) {
-            if (isCancelled) {
-                onStateChange(DownloadState.Cancelled("User cancelled"))
-                return@withContext Result.failure(Exception("Download cancelled"))
-            }
-
-            try {
-                val result = downloadSingleAttempt(
-                    variant = variant,
-                    downloadUrl = downloadUrl,
-                    accessToken = accessToken,
-                    targetFile = targetFile,
-                    tempFile = tempFile,
-                    onProgress = onProgress,
-                    onStateChange = onStateChange
-                )
-
-                if (result.isSuccess) return@withContext result
-
-                val error = result.exceptionOrNull()!!
-                lastError = error
-
-                // Don't retry auth/license errors
-                if (error is DownloadError.AuthError || error is DownloadError.LicenseError || error is DownloadError.AuthRequired) {
-                    return@withContext result
-                }
-
-                // Don't retry on last attempt
-                if (attempt < MAX_RETRIES) {
-                    val delayMs = (1000L * Math.pow(3.0, (attempt - 1).toDouble())).toLong()
-                    Log.i(TAG, "Download failed (attempt $attempt/$MAX_RETRIES), retrying in ${delayMs}ms: ${error.message}")
-                    onStateChange(DownloadState.Retrying(attempt, MAX_RETRIES, error.message ?: "Unknown error"))
-                    kotlinx.coroutines.delay(delayMs)
-                }
-
-            } catch (e: Exception) {
-                lastError = e
-                if (attempt < MAX_RETRIES) {
-                    val delayMs = (1000L * Math.pow(3.0, (attempt - 1).toDouble())).toLong()
-                    Log.i(TAG, "Download crashed (attempt $attempt/$MAX_RETRIES), retrying in ${delayMs}ms: ${e.message}")
-                    onStateChange(DownloadState.Retrying(attempt, MAX_RETRIES, e.message ?: "Unknown error"))
-                    kotlinx.coroutines.delay(delayMs)
-                }
-            }
-        }
-
-        val errorMsg = "Download failed after $MAX_RETRIES attempts: ${lastError?.message}"
-        val error = DownloadError.NetworkError(errorMsg, lastError)
-        onStateChange(DownloadState.Error(errorMsg, error))
-        Result.failure(error)
-    }
-
-    /**
-     * Single download attempt with resume support.
-     */
-    private fun downloadSingleAttempt(
-        variant: ModelVariant,
-        downloadUrl: String,
-        accessToken: String?,
-        targetFile: File,
-        tempFile: File,
-        onProgress: (Float) -> Unit,
-        onStateChange: (DownloadState) -> Unit
     ): Result<File> {
-        val url = URL(downloadUrl)
-        val connection = url.openConnection() as HttpURLConnection
-        connection.connectTimeout = CONNECT_TIMEOUT_MS
-        connection.readTimeout = READ_TIMEOUT_MS
-        // Force identity encoding so resume works reliably
-        connection.setRequestProperty("Accept-Encoding", "identity")
+        val tempFile = File(targetFile.parentFile!!, "${variant.fileName}$TMP_FILE_EXT")
 
-        // Set auth header if we have a token
-        if (accessToken != null) {
-            connection.setRequestProperty("Authorization", "Bearer $accessToken")
-        }
+        val result = sharedDownloadWithRetry(
+            config = DownloadConfig(
+                url = downloadUrl,
+                tempFile = tempFile,
+                targetFile = targetFile,
+                estimatedSizeBytes = variant.estimatedSizeMB * 1024 * 1024,
+                authHeader = accessToken?.let { "Bearer $it" },
+                connectTimeoutMs = CONNECT_TIMEOUT_MS,
+                readTimeoutMs = READ_TIMEOUT_MS,
+                isCancelled = { isCancelled }
+            ),
+            maxRetries = MAX_RETRIES,
+            backoffBase = 3.0,
+            tag = TAG,
+            onProgress = onProgress,
+            onStateChange = onStateChange
+        )
 
-        // Resume: check for partial download
-        var downloadedBytes = 0L
-        val partialSize = tempFile.length()
-        if (partialSize > 0) {
-            Log.i(TAG, "Resuming download from ${partialSize} bytes")
-            connection.setRequestProperty("Range", "bytes=$partialSize-")
-        }
+        // Map shared DownloadException types to domain DownloadError types
+        if (result.isSuccess) return result
 
-        connection.connect()
-
-        when (connection.responseCode) {
-            HttpURLConnection.HTTP_OK -> {
-                // Full download (no resume supported or fresh start)
-                if (partialSize > 0) {
-                    Log.i(TAG, "Server doesn't support range, starting fresh")
-                    tempFile.delete()
-                }
-                downloadedBytes = 0L
-            }
-            HttpURLConnection.HTTP_PARTIAL -> {
-                // Resume supported
-                val contentRange = connection.getHeaderField("Content-Range")
-                if (contentRange != null) {
-                    // Parse "bytes 12345-67890/67891"
-                    val rangeParts = contentRange.substringAfter("bytes ").split("/")
-                    val byteRange = rangeParts[0].split("-")
-                    downloadedBytes = byteRange[0].toLong()
-                    Log.i(TAG, "Resuming from byte $downloadedBytes")
-                } else {
-                    downloadedBytes = partialSize
-                    Log.i(TAG, "No Content-Range header, assuming resume from $downloadedBytes")
-                }
-            }
-            HttpURLConnection.HTTP_UNAUTHORIZED -> {
-                val error = DownloadError.AuthError("Invalid or expired HuggingFace token")
-                onStateChange(DownloadState.Error(error.message ?: "Auth error", error))
-                return Result.failure(error)
-            }
-            HttpURLConnection.HTTP_FORBIDDEN -> {
-                val error = DownloadError.LicenseError("License not accepted. Visit huggingface.co/${variant.huggingFaceRepo}")
-                onStateChange(DownloadState.Error(error.message ?: "License error", error))
-                return Result.failure(error)
-            }
-            else -> {
-                val errorMsg = "Download failed: HTTP ${connection.responseCode}"
-                val error = DownloadError.NetworkError(errorMsg)
-                onStateChange(DownloadState.Error(errorMsg, error))
-                return Result.failure(error)
-            }
-        }
-
-        val inputStream = connection.inputStream
-        val outputStream = FileOutputStream(tempFile, true) // append mode for resume
-        val buffer = ByteArray(BUFFER_SIZE)
-        var bytesRead: Int
-        val totalBytes = variant.estimatedSizeMB * 1024 * 1024
-
-        try {
-            while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                if (isCancelled) {
-                    onStateChange(DownloadState.Cancelled("User cancelled"))
-                    return Result.failure(Exception("Download cancelled"))
-                }
-
-                outputStream.write(buffer, 0, bytesRead)
-                downloadedBytes += bytesRead
-
-                val progress = (downloadedBytes.toFloat() / totalBytes).coerceIn(0f, 1f)
-                onProgress(progress)
-                onStateChange(DownloadState.Downloading(
-                    bytesDownloaded = downloadedBytes,
-                    totalBytes = totalBytes,
-                    progressPercent = progress * 100
-                ))
-            }
-        } finally {
-            outputStream.close()
-            inputStream.close()
-            connection.disconnect()
-        }
-
-        // Rename temp file to final name
-        if (!tempFile.renameTo(targetFile)) {
-            tempFile.delete()
-            val error = "Failed to rename temp file"
-            onStateChange(DownloadState.Error(error))
-            return Result.failure(Exception(error))
-        }
-
-        Log.i(TAG, "Download complete: ${targetFile.path} (${targetFile.length()} bytes)")
-        onStateChange(DownloadState.Complete(targetFile))
-        return Result.success(targetFile)
+        val error = result.exceptionOrNull()!!
+        return Result.failure(when (error) {
+            is DownloadException.Unauthorized -> DownloadError.AuthError(error.message ?: "Auth error")
+            is DownloadException.Forbidden -> DownloadError.LicenseError(error.message ?: "License error")
+            is DownloadException.Cancelled -> error
+            else -> DownloadError.NetworkError(error.message ?: "Download failed", error)
+        })
     }
 
     /**
@@ -402,7 +265,7 @@ object ModelDownloader {
      */
     fun getLocalModelPath(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): String? {
         val file = File(context.filesDir, "models/${variant.fileName}")
-        return if (file.exists() && file.length() > 0) {
+        return if (file.length() > 0) {
             file.absolutePath
         } else {
             null
@@ -414,27 +277,7 @@ object ModelDownloader {
      */
     fun isModelDownloaded(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): Boolean {
         val file = File(context.filesDir, "models/${variant.fileName}")
-        return file.exists() && file.length() > 0
-    }
-
-    /**
-     * Checks if a model has a partial download that can be resumed.
-     */
-    fun hasPartialDownload(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): Boolean {
-        val tempFile = File(context.filesDir, "models/${variant.fileName}.tmp")
-        return tempFile.exists() && tempFile.length() > 0
-    }
-
-    /**
-     * Gets the partial download progress (0.0 to 1.0).
-     * Returns null if no partial download exists.
-     */
-    fun getPartialDownloadProgress(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): Float? {
-        val tempFile = File(context.filesDir, "models/${variant.fileName}.tmp")
-        if (!tempFile.exists()) return null
-
-        val downloadedBytes = tempFile.length()
-        return downloadedBytes.toFloat() / (variant.estimatedSizeMB * 1024 * 1024)
+        return file.length() > 0
     }
 
     /**
@@ -478,7 +321,7 @@ object ModelDownloader {
 
         return ModelVariant.entries.mapNotNull { variant ->
             val file = File(modelsDir, variant.fileName)
-            if (file.exists() && file.length() > 0) {
+            if (file.length() > 0) {
                 variant to file
             } else {
                 null

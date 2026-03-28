@@ -146,14 +146,5 @@ data class ParakeetModel(
     val isValid: Boolean
 ) {
     val sizeFormatted: String
-        get() = formatSize(sizeBytes)
-
-    private fun formatSize(bytes: Long): String {
-        return when {
-            bytes < 1024 -> "$bytes B"
-            bytes < 1024 * 1024 -> String.format("%.1f KB", bytes / 1024.0)
-            bytes < 1024 * 1024 * 1024 -> String.format("%.1f MB", bytes / (1024.0 * 1024))
-            else -> String.format("%.1f GB", bytes / (1024.0 * 1024 * 1024))
-        }
-    }
+        get() = com.antivocale.app.util.formatFileSize(sizeBytes)
 }

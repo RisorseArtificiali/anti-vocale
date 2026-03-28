@@ -2,17 +2,14 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
+import com.antivocale.app.data.download.DownloadConfig
+import com.antivocale.app.data.download.DownloadState
+import com.antivocale.app.data.download.ResumeDownloadHelper
+import com.antivocale.app.data.download.TarBz2Extractor
+import com.antivocale.app.data.download.downloadWithRetry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream
-import java.io.BufferedInputStream
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
-import java.util.concurrent.TimeUnit
 
 /**
  * Downloads and extracts the Parakeet TDT model for sherpa-onnx.
@@ -20,6 +17,11 @@ import java.util.concurrent.TimeUnit
  * Model source: https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/
  * Model size: ~464MB (int8 quantized)
  * Languages: 25 European languages
+ *
+ * Features:
+ * - Resume: picks up interrupted downloads via HTTP Range + partial .tar.bz2 file
+ * - Retry: up to 3 attempts with exponential backoff
+ * - On cancel: keeps .tar.bz2 for resume (deleted only after successful extraction)
  */
 object ParakeetDownloader {
 
@@ -38,36 +40,59 @@ object ParakeetDownloader {
         "tokens.txt"
     )
 
+    private var isCancelled = false
+
     /**
-     * Download state for progress tracking.
+     * Detects a partial download.
+     *
+     * @return [DownloadState.PartiallyDownloaded] if a .tar.bz2 temp file exists, null otherwise
      */
-    sealed class DownloadState {
-        data object Idle : DownloadState()
-        data class Connecting(val url: String) : DownloadState()
-        data class Downloading(
-            val bytesDownloaded: Long,
-            val totalBytes: Long,
-            val progressPercent: Float
-        ) : DownloadState()
-        data class Extracting(
-            val fileIndex: Int,
-            val totalFiles: Int,
-            val fileName: String = "",
-            val bytesExtracted: Long = 0,
-            val currentFileSize: Long = 0
-        ) : DownloadState()
-        data class Complete(val modelDir: File) : DownloadState()
-        data class Error(val message: String, val throwable: Throwable? = null) : DownloadState()
-        data class Cancelled(val reason: String) : DownloadState()
+    fun detectPartialDownload(context: Context): DownloadState.PartiallyDownloaded? {
+        val targetDir = ParakeetModelManager.getModelStorageDir(context)
+        val tarFile = File(targetDir, "$MODEL_NAME.tar.bz2")
+
+        if (tarFile.length() == 0L) return null
+
+        val downloadedBytes = tarFile.length()
+        val estimatedBytes = ESTIMATED_SIZE_MB * 1024 * 1024
+        val totalBytes = ResumeDownloadHelper.readStoredTotalBytes(tarFile, estimatedBytes)
+
+        // If the tar file is already complete (>= 90% of actual size),
+        // don't report it as a partial download — extraction just needs to run.
+        if (downloadedBytes >= totalBytes * 9 / 10) return null
+
+        val progressPercent = ((downloadedBytes.toFloat() / totalBytes) * 100).toInt().coerceIn(0, 99)
+
+        return DownloadState.PartiallyDownloaded(
+            bytesDownloaded = downloadedBytes,
+            totalBytes = totalBytes,
+            progressPercent = progressPercent
+        )
     }
 
-    private val client = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(120, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .build()
+    /**
+     * Checks if a tar file exists that needs extraction (model not yet downloaded/validated).
+     * Returns true only when the tar file is large enough to be considered complete
+     * (>= 90% of actual size from HTTP Content-Length), matching the threshold in
+     * [detectPartialDownload] and [downloadModel]'s skipDownload check.
+     */
+    fun needsExtraction(context: Context): Boolean {
+        if (isModelDownloaded(context)) return false
+        val tarFile = File(ParakeetModelManager.getModelStorageDir(context), "$MODEL_NAME.tar.bz2")
+        val estimatedBytes = ESTIMATED_SIZE_MB * 1024 * 1024
+        val totalBytes = ResumeDownloadHelper.readStoredTotalBytes(tarFile, estimatedBytes)
+        return tarFile.length() >= totalBytes * 9 / 10
+    }
 
-    private var isCancelled = false
+    /**
+     * Clears a partial download (.tar.bz2).
+     */
+    fun clearPartialDownload(context: Context): Boolean {
+        val targetDir = ParakeetModelManager.getModelStorageDir(context)
+        val tarFile = File(targetDir, "$MODEL_NAME.tar.bz2")
+        ResumeDownloadHelper.clearTarDownload(tarFile)
+        return true
+    }
 
     /**
      * Downloads and extracts the Parakeet model.
@@ -112,194 +137,81 @@ object ParakeetDownloader {
 
         val tarFile = File(targetDir, "$MODEL_NAME.tar.bz2")
 
-        Log.i(TAG, "Starting download: $MODEL_URL")
-        onStateChange(DownloadState.Connecting(MODEL_URL))
+        // If the tar file is already complete (>= 90% of actual size),
+        // skip the download and go straight to extraction.
+        // This matches the threshold in detectPartialDownload() so that a
+        // partial download at < 90% will resume the download rather than
+        // skipping straight to extraction.
+        val estimatedSizeBytes = ESTIMATED_SIZE_MB * 1024 * 1024
+        val totalBytes = ResumeDownloadHelper.readStoredTotalBytes(tarFile, estimatedSizeBytes)
+        val skipDownload = tarFile.exists() && tarFile.length() >= totalBytes * 9 / 10
 
-        // Download phase (60% of progress)
-        return@withContext try {
-            val request = Request.Builder()
-                .url(MODEL_URL)
-                .build()
+        if (!skipDownload) {
+            Log.i(TAG, "Starting download: $MODEL_URL")
+            onStateChange(DownloadState.Connecting(MODEL_URL))
 
-            val response = client.newCall(request).execute()
+            // Download with retry (shared helper)
+            val config = DownloadConfig(
+                url = MODEL_URL,
+                tempFile = tarFile,
+                targetFile = tarFile,
+                estimatedSizeBytes = ESTIMATED_SIZE_MB * 1024 * 1024,
+                connectTimeoutMs = 60_000,
+                readTimeoutMs = 120_000,
+                isCancelled = { isCancelled }
+            )
 
-            if (!response.isSuccessful) {
-                val errorMsg = "Download failed: HTTP ${response.code}"
-                onStateChange(DownloadState.Error(errorMsg))
-                return@withContext Result.failure(Exception(errorMsg))
-            }
+            val downloadResult = downloadWithRetry(
+                config = config,
+                tag = TAG,
+                onProgress = { progress -> onProgress(progress * 0.6f) },
+                onStateChange = onStateChange
+            )
 
-            val body = response.body ?: run {
-                val error = "Empty response body"
-                onStateChange(DownloadState.Error(error))
-                return@withContext Result.failure(Exception(error))
-            }
-
-            val contentLength = body.contentLength()
-            Log.i(TAG, "Content length: $contentLength bytes (~${contentLength / (1024*1024)}MB)")
-
-            var totalBytesDownloaded = 0L
-
-            body.byteStream().use { input ->
-                FileOutputStream(tarFile).use { output ->
-                    val buffer = ByteArray(8192)
-                    var bytesRead: Int
-
-                    while (input.read(buffer).also { bytesRead = it } != -1) {
-                        if (isCancelled) {
-                            tarFile.delete()
-                            onStateChange(DownloadState.Cancelled("User cancelled"))
-                            return@withContext Result.failure(Exception("Download cancelled"))
-                        }
-
-                        output.write(buffer, 0, bytesRead)
-                        totalBytesDownloaded += bytesRead
-
-                        // Report download progress (0-60%)
-                        val downloadProgress = if (contentLength > 0) {
-                            (totalBytesDownloaded.toFloat() / contentLength) * 0.6f
-                        } else {
-                            0.3f // Unknown size, show 30%
-                        }
-
-                        onProgress(downloadProgress.coerceIn(0f, 0.6f))
-                        onStateChange(DownloadState.Downloading(
-                            bytesDownloaded = totalBytesDownloaded,
-                            totalBytes = contentLength,
-                            progressPercent = downloadProgress * 100
-                        ))
-                    }
-                }
+            if (downloadResult.isFailure) {
+                // On failure, keep tarFile for potential resume — don't delete
+                return@withContext downloadResult
             }
 
             Log.i(TAG, "Download complete: ${tarFile.length()} bytes")
-
-            // Extract phase (40% of progress)
-            onStateChange(DownloadState.Extracting(0, REQUIRED_FILES.size))
-
-            val extractResult = extractTarBz2(tarFile, targetDir) { fileIndex, totalFiles, fileName, bytesExtracted, fileSize ->
-                // Report extraction progress (60-100%)
-                // Progress within current file + completed files
-                val fileProgress = if (fileSize > 0) bytesExtracted.toFloat() / fileSize else 0f
-                val extractProgress = 0.6f + ((fileIndex - 1 + fileProgress) / totalFiles) * 0.4f
-                onProgress(extractProgress.coerceIn(0.6f, 1f))
-                onStateChange(DownloadState.Extracting(fileIndex, totalFiles, fileName, bytesExtracted, fileSize))
-            }
-
-            // Clean up tar file
-            tarFile.delete()
-
-            if (extractResult.isFailure) {
-                onStateChange(DownloadState.Error(extractResult.exceptionOrNull()?.message ?: "Extraction failed"))
-                return@withContext extractResult
-            }
-
-            // Verify extraction
-            val missingFiles = REQUIRED_FILES.filter { !File(modelDir, it).exists() }
-            if (missingFiles.isNotEmpty()) {
-                val errorMsg = "Missing files after extraction: ${missingFiles.joinToString()}"
-                onStateChange(DownloadState.Error(errorMsg))
-                return@withContext Result.failure(Exception(errorMsg))
-            }
-
-            Log.i(TAG, "Model ready: ${modelDir.absolutePath}")
-            onStateChange(DownloadState.Complete(modelDir))
-            Result.success(modelDir)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Download/extract failed", e)
-            onStateChange(DownloadState.Error(e.message ?: "Unknown error", e))
-            // Clean up partial files
-            tarFile.delete()
-            modelDir.deleteRecursively()
-            Result.failure(e)
         }
-    }
 
-    /**
-     * Extracts a tar.bz2 file, skipping non-required files.
-     * Reports progress during extraction of each file.
-     */
-    private fun extractTarBz2(
-        tarFile: File,
-        targetDir: File,
-        onProgress: (fileIndex: Int, totalFiles: Int, fileName: String, bytesExtracted: Long, fileSize: Long) -> Unit
-    ): Result<File> {
-        return try {
-            var fileIndex = 0
-            val totalRequired = REQUIRED_FILES.size
+        // Extract phase (40% of progress)
+        onStateChange(DownloadState.Extracting(0, REQUIRED_FILES.size))
 
-            // Create model directory upfront
-            val modelDir = File(targetDir, MODEL_NAME)
-            if (!modelDir.exists()) {
-                modelDir.mkdirs()
-            }
-
-            FileInputStream(tarFile).use { fis ->
-                BufferedInputStream(fis).use { bis ->
-                    BZip2CompressorInputStream(bis).use { bzIn ->
-                        TarArchiveInputStream(bzIn).use { tarIn ->
-                            var entry = tarIn.nextTarEntry
-
-                            while (entry != null) {
-                                if (isCancelled) {
-                                    return Result.failure(Exception("Extraction cancelled"))
-                                }
-
-                                if (!entry.isDirectory) {
-                                    // Extract filename from path (handle subdirectories like test_wavs/)
-                                    val fileName = File(entry.name).name
-
-                                    // Only extract required files
-                                    if (fileName in REQUIRED_FILES) {
-                                        fileIndex++
-                                        val currentFileSize = entry.realSize
-                                        var bytesExtracted = 0L
-
-                                        val outputFile = File(modelDir, fileName)
-
-                                        FileOutputStream(outputFile).use { output ->
-                                            val buffer = ByteArray(8192)
-                                            var bytesRead: Int
-                                            var lastReportedPercent = 0
-
-                                            while (tarIn.read(buffer).also { bytesRead = it } != -1) {
-                                                output.write(buffer, 0, bytesRead)
-                                                bytesExtracted += bytesRead
-
-                                                // Report progress every 5% to avoid UI spam
-                                                val currentPercent = if (currentFileSize > 0) {
-                                                    ((bytesExtracted * 100) / currentFileSize).toInt()
-                                                } else 0
-
-                                                if (currentPercent - lastReportedPercent >= 5 || bytesRead == -1) {
-                                                    onProgress(fileIndex, totalRequired, fileName, bytesExtracted, currentFileSize)
-                                                    lastReportedPercent = currentPercent
-                                                }
-                                            }
-                                        }
-
-                                        Log.d(TAG, "Extracted: $fileName ($fileIndex/$totalRequired, ${bytesExtracted / (1024*1024)}MB)")
-                                        // Final progress report for this file
-                                        onProgress(fileIndex, totalRequired, fileName, currentFileSize, currentFileSize)
-                                    } else {
-                                        Log.d(TAG, "Skipping: ${entry.name}")
-                                    }
-                                }
-
-                                entry = tarIn.nextTarEntry
-                            }
-                        }
-                    }
-                }
-            }
-
-            Result.success(modelDir)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Extraction failed", e)
-            Result.failure(e)
+        val extractResult = TarBz2Extractor.extract(
+            tarFile = tarFile,
+            modelDir = modelDir,
+            isRequiredFile = { fileName -> fileName in REQUIRED_FILES },
+            isCancelled = { isCancelled },
+            tag = TAG,
+            totalFiles = REQUIRED_FILES.size
+        ) { fileIndex, _, fileName, bytesExtracted, fileSize ->
+            val fileProgress = if (fileSize > 0) bytesExtracted.toFloat() / fileSize else 0f
+            val extractProgress = 0.6f + ((fileIndex - 1 + fileProgress) / REQUIRED_FILES.size) * 0.4f
+            onProgress(extractProgress.coerceIn(0.6f, 1f))
+            onStateChange(DownloadState.Extracting(fileIndex, REQUIRED_FILES.size, fileName, bytesExtracted, fileSize))
         }
+
+        // Clean up tar file only after successful extraction
+        ResumeDownloadHelper.clearTarDownload(tarFile)
+
+        if (extractResult.isFailure) {
+            onStateChange(DownloadState.Error(extractResult.exceptionOrNull()?.message ?: "Extraction failed"))
+            return@withContext extractResult
+        }
+
+        // Verify extraction
+        val missingFiles = REQUIRED_FILES.filter { !File(modelDir, it).exists() }
+        if (missingFiles.isNotEmpty()) {
+            val errorMsg = "Missing files after extraction: ${missingFiles.joinToString()}"
+            onStateChange(DownloadState.Error(errorMsg))
+            return@withContext Result.failure(Exception(errorMsg))
+        }
+
+        Log.i(TAG, "Model ready: ${modelDir.absolutePath}")
+        onStateChange(DownloadState.Complete(modelDir))
+        Result.success(modelDir)
     }
 
     /**
@@ -339,8 +251,13 @@ object ParakeetDownloader {
      * Deletes the downloaded model.
      */
     fun deleteModel(context: Context): Boolean {
-        val modelDir = File(ParakeetModelManager.getModelStorageDir(context), MODEL_NAME)
+        val targetDir = ParakeetModelManager.getModelStorageDir(context)
+        val modelDir = File(targetDir, MODEL_NAME)
         if (!modelDir.exists()) return true
+
+        // Also clean up partial tar.bz2 and .size sidecar
+        val tarFile = File(targetDir, "$MODEL_NAME.tar.bz2")
+        ResumeDownloadHelper.clearTarDownload(tarFile)
 
         return try {
             modelDir.deleteRecursively()
