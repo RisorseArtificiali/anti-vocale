@@ -388,12 +388,15 @@ class InferenceService : Service() {
         updateNotificationWithProgress("Preprocessing audio...", indeterminate = true)
 
         // Preprocess audio with proper error handling
-        // Pass backend's max chunk duration to AudioPreprocessor
+        // Pass backend's max chunk duration and VAD toggle to AudioPreprocessor
+        val vadEnabled = AppContainer.preferencesManager.vadEnabled.first()
         val preprocessingResult = try {
             AudioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = filePath,
                 cacheDir = cacheDir,
-                maxChunkDurationSeconds = backend.maxChunkDurationSeconds
+                maxChunkDurationSeconds = backend.maxChunkDurationSeconds,
+                context = applicationContext,
+                enableVad = vadEnabled
             )
         } catch (e: PreprocessingError) {
             Log.e(TAG, "Audio preprocessing error", e)

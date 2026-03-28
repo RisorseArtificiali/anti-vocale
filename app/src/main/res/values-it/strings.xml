@@ -215,6 +215,10 @@
     <string name="auto_copy_title">Copia Automatica Trascrizione</string>
     <string name="auto_copy_description">Copia automaticamente i risultati della trascrizione negli appunti. Puoi ancora copiare manualmente dalla notifica.</string>
 
+    <!-- Settings Tab - VAD -->
+    <string name="vad_title">Rimuovi Silenzio (VAD)</string>
+    <string name="vad_description">Rimuovi le parti silenti dai messaggi vocali prima della trascrizione. Riduce il tempo di elaborazione e migliora la precisione.</string>
+
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Prompt Predefinito Trascrizione</string>
     <string name="default_prompt_description">Questo prompt verrà utilizzato per trascrivere l\'audio. Lascia vuoto per usare il prompt di sistema predefinito.</string>

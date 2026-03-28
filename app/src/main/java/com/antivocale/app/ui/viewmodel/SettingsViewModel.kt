@@ -77,6 +77,14 @@ class SettingsViewModel(
             initialValue = false
         )
 
+    // VAD silence stripping preference
+    val vadEnabled: StateFlow<Boolean> = preferencesManager.vadEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true
+        )
+
     // Default prompt for transcription
     val defaultPrompt: StateFlow<String> = preferencesManager.defaultPrompt
         .stateIn(
@@ -184,6 +192,15 @@ class SettingsViewModel(
     fun saveAutoCopyEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveAutoCopyEnabled(enabled)
+        }
+    }
+
+    /**
+     * Saves the VAD enabled preference.
+     */
+    fun saveVadEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveVadEnabled(enabled)
         }
     }
 

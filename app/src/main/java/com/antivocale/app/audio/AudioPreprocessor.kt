@@ -1,5 +1,6 @@
 package com.antivocale.app.audio
 
+import android.content.Context
 import android.media.AudioFormat
 import android.media.MediaCodec
 import android.media.MediaCodecInfo
@@ -64,7 +65,9 @@ object AudioPreprocessor {
     fun prepareAudioForMediaPipe(
         inputPath: String,
         cacheDir: File,
-        maxChunkDurationSeconds: Int? = 30
+        maxChunkDurationSeconds: Int? = 30,
+        context: Context? = null,
+        enableVad: Boolean = false
     ): PreprocessingResult {
         Log.d(TAG, "Preparing audio: $inputPath")
 
@@ -100,18 +103,43 @@ object AudioPreprocessor {
 
         Log.d(TAG, "Audio duration: ${duration}s")
 
+        // Apply VAD silence stripping if enabled
+        val pcmToProcess = if (enableVad && context != null) {
+            val floatSamples = VadProcessor.pcmBytesToFloats(pcmData)
+            val vadResult = VadProcessor.detectSpeech(context, floatSamples)
+
+            // Merge speech segments without boxing (avoid flatMap on FloatArray)
+            val segments = vadResult.speechSegments
+            val totalSize = segments.sumOf { it.size }
+            val merged = FloatArray(totalSize)
+            var offset = 0
+            for (seg in segments) {
+                System.arraycopy(seg, 0, merged, offset, seg.size)
+                offset += seg.size
+            }
+
+            val strippedPcm = VadProcessor.floatsToPcmBytes(merged)
+            val strippedDuration = strippedPcm.size.toDouble() / TARGET_SAMPLE_RATE / 2
+            Log.i(TAG, "VAD stripped ${"%.1f".format(vadResult.originalDurationSeconds)}s → " +
+                    "${"%.1f".format(strippedDuration)}s (${vadResult.segmentCount} segments)")
+
+            strippedPcm
+        } else {
+            pcmData
+        }
+
+        val processedDuration = pcmToProcess.size.toDouble() / TARGET_SAMPLE_RATE / 2
+
         // Chunk if necessary
-        if (maxChunkDurationSeconds == null || duration <= maxChunkDurationSeconds) {
-            // No chunking needed - return single chunk
-            val wavBytes = createWavByteArray(pcmData)
+        if (maxChunkDurationSeconds == null || processedDuration <= maxChunkDurationSeconds) {
+            val wavBytes = createWavByteArray(pcmToProcess)
             return PreprocessingResult(
                 chunks = listOf(wavBytes),
-                totalDurationSeconds = duration,
+                totalDurationSeconds = processedDuration,
                 chunkCount = 1
             )
         } else {
-            // Chunk into segments
-            return chunkAudio(pcmData, duration, maxChunkDurationSeconds)
+            return chunkAudio(pcmToProcess, processedDuration, maxChunkDurationSeconds)
         }
     }
 

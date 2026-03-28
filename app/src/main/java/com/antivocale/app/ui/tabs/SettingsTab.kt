@@ -58,6 +58,7 @@ fun SettingsTab(
     val uiState by viewModel.uiState.collectAsState()
     val currentTimeout by viewModel.keepAliveTimeout.collectAsState()
     val autoCopyEnabled by viewModel.autoCopyEnabled.collectAsState()
+    val vadEnabled by viewModel.vadEnabled.collectAsState()
     val currentLanguage by viewModel.currentLanguage.collectAsState()
     val currentTheme by viewModel.currentTheme.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
@@ -857,6 +858,50 @@ fun SettingsTab(
                     checked = autoCopyEnabled,
                     onCheckedChange = { enabled ->
                         viewModel.saveAutoCopyEnabled(enabled)
+                    }
+                )
+            }
+        }
+
+        // VAD Silence Stripping Setting
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.GraphicEq,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.vad_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.vad_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Switch(
+                    checked = vadEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveVadEnabled(enabled)
                     }
                 )
             }

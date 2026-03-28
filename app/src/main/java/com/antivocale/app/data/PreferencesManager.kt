@@ -33,6 +33,8 @@ class PreferencesManager(private val context: Context) {
         private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
         // Auto-copy transcription results to clipboard
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
+        // VAD silence stripping
+        private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
         // Default prompt for transcription
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
     }
@@ -186,6 +188,23 @@ class PreferencesManager(private val context: Context) {
     suspend fun saveAutoCopyEnabled(enabled: Boolean) {
         context.dataStore.edit { preferences ->
             preferences[AUTO_COPY_ENABLED] = enabled
+        }
+    }
+
+    /**
+     * Flow of VAD silence stripping enabled preference.
+     * Returns true by default (VAD enabled for better performance).
+     */
+    val vadEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[VAD_ENABLED] ?: true
+    }
+
+    /**
+     * Saves the VAD enabled preference.
+     */
+    suspend fun saveVadEnabled(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[VAD_ENABLED] = enabled
         }
     }
 
