@@ -77,11 +77,13 @@ class WhisperBackend : TranscriptionBackend {
                 Log.i(TAG, "Creating OfflineRecognizer config for Whisper...")
 
                 // Configure Whisper model
+                val isDistil = modelDirectory.contains("distil")
+                val language = if (isDistil) "it" else ""
                 val whisperConfig = OfflineWhisperModelConfig(
                     encoder = modelFiles.encoderPath,
                     decoder = modelFiles.decoderPath,
-                    language = "",  // Auto-detect language for multilingual models
-                    task = "transcribe",  // Transcribe (not translate)
+                    language = language,
+                    task = "transcribe",
                     tailPaddings = 1000
                 )
 
@@ -132,7 +134,7 @@ class WhisperBackend : TranscriptionBackend {
 
                 // Convert WAV ByteArray to float samples
                 val samples = parseWavToFloats(audioData)
-                Log.d(TAG, "Parsed ${samples.size} audio samples")
+                Log.d(TAG, "Parsed ${samples.size} audio samples, duration: ${samples.size / 16000.0f}s")
 
                 // Create stream and process audio
                 val stream = rec.createStream()
