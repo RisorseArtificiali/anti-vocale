@@ -497,7 +497,7 @@ class InferenceService : Service() {
         // Total estimated wall-clock time accounts for parallel batches:
         // e.g. 4 chunks with 2 parallel = 2 batches × chunkDuration
         val estimatedTotalMs = estimatedChunkDurationMs?.let { est ->
-            val batches = ((chunkCount + MAX_CONCURRENT_CHUNKS - 1) / MAX_CONCURRENT_CHUNKS).toLong()
+            val batches = ceilDiv(chunkCount, MAX_CONCURRENT_CHUNKS).toLong()
             batches * est
         }
 
@@ -511,7 +511,11 @@ class InferenceService : Service() {
                 audioDurationSeconds = audioDurationSeconds,
                 calibrationProfile = calibrationProfile,
                 queuePosition = queuePosition,
-                queueTotal = queueTotal
+                queueTotal = queueTotal,
+                backendId = backendId,
+                modelPath = modelPath,
+                modelDisplayName = modelDisplayName,
+                chunkDurationSeconds = chunkDurationSeconds
             )
         }
 
@@ -743,6 +747,9 @@ class InferenceService : Service() {
         }
     }
 
+    /** Integer ceiling division: ceil(a / b) without floating point. */
+    private fun ceilDiv(a: Int, b: Int): Int = (a + b - 1) / b
+
     /** Cached NotificationManager — avoids repeated getSystemService() every 200ms. */
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
 
@@ -773,13 +780,24 @@ class InferenceService : Service() {
         audioDurationSeconds: Int,
         calibrationProfile: TranscriptionCalibrator.CalibrationProfile?,
         queuePosition: Int = 1,
-        queueTotal: Int = 1
+        queueTotal: Int = 1,
+        backendId: String = "",
+        modelPath: String = "",
+        modelDisplayName: String = "",
+        chunkDurationSeconds: Long = 0
     ): Job {
         val startTime = System.currentTimeMillis()
         var lastProgressPercent = -1
+        val totalBatches = ceilDiv(totalChunks, MAX_CONCURRENT_CHUNKS)
         val singleChunkLabel = if (totalChunks == 1) {
             queueAwareAudioLabel(queuePosition, queueTotal)
         } else null
+
+        // Feedback loop state: track actual batch completions to adapt ETA
+        var lastBatchCompletedCount = 0
+        var lastBatchElapsedMs: Long? = null  // elapsed time when last batch completed
+        var measuredAvgBatchMs: Long? = null   // per-batch wall-clock time (latest delta)
+        var firstBatchRecorded = false
 
         return launch {
             while (isActive) {
@@ -790,12 +808,57 @@ class InferenceService : Service() {
 
                 val completed = completedChunks.get()
 
+                // Feedback loop: detect batch completions and measure actual throughput
+                val completedBatches = completed / MAX_CONCURRENT_CHUNKS
+                if (completedBatches > lastBatchCompletedCount) {
+                    // Per-batch delta: time since last batch (or total elapsed for first batch)
+                    val prevBatchElapsed = lastBatchElapsedMs
+                    measuredAvgBatchMs = if (prevBatchElapsed != null) {
+                        elapsedMs - prevBatchElapsed
+                    } else {
+                        elapsedMs
+                    }
+                    lastBatchElapsedMs = elapsedMs
+                    lastBatchCompletedCount = completedBatches
+
+                    Log.d(TAG, "ETA feedback: batch $completedBatches/$totalBatches in ${measuredAvgBatchMs}ms")
+
+                    // Nudge calibrator after first batch so interrupted transcriptions still help
+                    if (!firstBatchRecorded && backendId.isNotEmpty()) {
+                        firstBatchRecorded = true
+                        val batchAudioSeconds = chunkDurationSeconds * MAX_CONCURRENT_CHUNKS
+                        val batchMs = measuredAvgBatchMs!!  // non-null after assignment above
+                        launch {
+                            try {
+                                AppContainer.transcriptionCalibrator.record(
+                                    backendId = backendId,
+                                    modelPath = modelPath,
+                                    displayName = modelDisplayName,
+                                    audioDurationSeconds = batchAudioSeconds,
+                                    processingTimeMs = batchMs
+                                )
+                                Log.d(TAG, "Mid-transcription calibration: ${batchAudioSeconds}s audio in ${batchMs}ms")
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed mid-transcription calibration", e)
+                            }
+                        }
+                    }
+                }
+
                 // Hard progress floor: completed chunks / total
                 val hardPercent = completed * 100 / totalChunks
 
-                // Time-based estimated progress (accounts for parallel batches)
-                val timePercent = if (estimatedTotalMs != null && estimatedTotalMs > 0) {
-                    (elapsedMs.toFloat() / estimatedTotalMs * 100f).toInt().coerceIn(0, 95)
+                // Adaptive ETA: use measured batch times when available, historical estimate otherwise
+                val adaptiveEtaMs: Long? = if (measuredAvgBatchMs != null) {
+                    val remainingBatches = ceilDiv(totalChunks - completed, MAX_CONCURRENT_CHUNKS).toLong()
+                    remainingBatches * measuredAvgBatchMs
+                } else if (estimatedTotalMs != null) {
+                    maxOf(0L, estimatedTotalMs - elapsedMs)
+                } else null
+
+                // Time-based estimated progress using adaptive ETA
+                val timePercent = if (adaptiveEtaMs != null && adaptiveEtaMs > 0) {
+                    (elapsedMs.toFloat() / (elapsedMs + adaptiveEtaMs) * 100f).toInt().coerceIn(0, 95)
                 } else {
                     // No calibration: slow crawl to 80% over ~2× audio duration
                     val crawlTarget = audioDurationSeconds * 1000f * 2f
@@ -809,12 +872,16 @@ class InferenceService : Service() {
                 if (displayProgress == lastProgressPercent) continue
                 lastProgressPercent = displayProgress
 
-                // ETA: remaining wall-clock time
-                val etaText = if (calibrationProfile != null && calibrationProfile.hasEstimate && estimatedTotalMs != null) {
-                    val remainingMs = maxOf(0L, estimatedTotalMs - elapsedMs)
-                    val remainingSeconds = remainingMs / 1000
-                    formatEta(remainingSeconds, calibrationProfile.confidence)
-                } else if (calibrationProfile != null && !calibrationProfile.hasEstimate) {
+                // ETA text: show adaptive estimate or calibration status
+                val etaText = adaptiveEtaMs?.let { eta ->
+                    if (measuredAvgBatchMs != null) {
+                        val confidence = calibrationProfile?.confidence
+                            ?: TranscriptionCalibrator.CalibrationProfile.Confidence.LOW
+                        formatEta(eta / 1000, confidence)
+                    } else if (calibrationProfile != null && calibrationProfile.hasEstimate) {
+                        formatEta(eta / 1000, calibrationProfile.confidence)
+                    } else null
+                } ?: if (calibrationProfile != null && !calibrationProfile.hasEstimate) {
                     // Not enough samples yet — show calibrating message
                     getString(R.string.transcription_eta_calibrating)
                 } else {
