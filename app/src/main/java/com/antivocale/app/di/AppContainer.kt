@@ -62,7 +62,9 @@ object AppContainer {
      */
     fun initialize(context: Context) {
         _applicationContext = context.applicationContext
-        _preferencesManager = PreferencesManager(context.applicationContext)
+        _preferencesManager = PreferencesManager(context.applicationContext).apply {
+            initialize()
+        }
         _perAppPreferencesManager = PerAppPreferencesManager(context.applicationContext)
         _transcriptionCalibrator = TranscriptionCalibrator(context.applicationContext)
         _database = AppDatabase.getDatabase(context.applicationContext)

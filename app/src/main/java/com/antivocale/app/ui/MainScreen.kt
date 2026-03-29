@@ -1,5 +1,7 @@
 package com.antivocale.app.ui
 
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
@@ -54,7 +56,12 @@ fun MainScreen() {
             }
         }
 
-        tabs[selectedTabIndex].content()
+        Crossfade(
+            targetState = selectedTabIndex,
+            animationSpec = tween(durationMillis = 150)
+        ) { index ->
+            tabs[index].content()
+        }
     }
 }
 
