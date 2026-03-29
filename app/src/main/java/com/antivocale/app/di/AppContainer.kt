@@ -6,6 +6,7 @@ import com.antivocale.app.data.HuggingFaceAuthManager
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -25,6 +26,7 @@ object AppContainer {
     private var _huggingFaceApiClient: HuggingFaceApiClient? = null
     private var _huggingFaceAuthManager: HuggingFaceAuthManager? = null
     private var _perAppPreferencesManager: PerAppPreferencesManager? = null
+    private var _transcriptionCalibrator: TranscriptionCalibrator? = null
 
     val preferencesManager: PreferencesManager
         get() = _preferencesManager!!
@@ -47,6 +49,9 @@ object AppContainer {
     val perAppPreferencesManager: PerAppPreferencesManager
         get() = _perAppPreferencesManager!!
 
+    val transcriptionCalibrator: TranscriptionCalibrator
+        get() = _transcriptionCalibrator!!
+
     /**
      * Initialize the container. Must be called in Application.onCreate()
      */
@@ -54,6 +59,7 @@ object AppContainer {
         _applicationContext = context.applicationContext
         _preferencesManager = PreferencesManager(context.applicationContext)
         _perAppPreferencesManager = PerAppPreferencesManager(context.applicationContext)
+        _transcriptionCalibrator = TranscriptionCalibrator(context.applicationContext)
         _logsViewModel = LogsViewModel()
         _huggingFaceTokenManager = HuggingFaceTokenManager(context.applicationContext).apply {
             initialize()

@@ -18,6 +18,7 @@ import com.antivocale.app.R
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.di.AppContainer
+import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.ui.viewmodel.LogEntry
@@ -64,11 +65,14 @@ class InferenceService : Service() {
 
         // Parallel transcription settings
         private const val MAX_CONCURRENT_CHUNKS = 2
+
+        /** Transcription state observable by UI without needing a service instance. */
+        private val _isTranscribing = MutableStateFlow(false)
+        val isTranscribing: kotlinx.coroutines.flow.StateFlow<Boolean> = _isTranscribing.asStateFlow()
     }
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val requestQueue = ConcurrentLinkedQueue<PendingRequest>()
-    private val isProcessing = MutableStateFlow(false)
     private var currentProcessingJob: Job? = null
     private var transcriptionStartTime: Long = 0
 
@@ -139,12 +143,12 @@ class InferenceService : Service() {
     private fun processQueue() {
         currentProcessingJob = serviceScope.launch {
             // Only process one at a time
-            if (isProcessing.value) {
+            if (_isTranscribing.value) {
                 Log.d(TAG, "Already processing, request will wait in queue")
                 return@launch
             }
 
-            isProcessing.value = true
+            _isTranscribing.value = true
 
             try {
                 while (requestQueue.isNotEmpty()) {
@@ -156,7 +160,7 @@ class InferenceService : Service() {
                 // Clear any remaining queue on cancel
                 requestQueue.clear()
             } finally {
-                isProcessing.value = false
+                _isTranscribing.value = false
             }
 
             // Stop service when queue is empty
@@ -424,6 +428,9 @@ class InferenceService : Service() {
         // Track transcription start time for chronometer
         transcriptionStartTime = System.currentTimeMillis()
 
+        // Mark when actual chunk processing begins (after preprocessing) for calibration
+        val chunkProcessingStartTime = System.currentTimeMillis()
+
         // Process chunks in parallel (bounded by semaphore) and concatenate results
         // Use request prompt -> default prompt from settings -> hardcoded fallback
         val savedDefaultPrompt = AppContainer.preferencesManager.defaultPrompt.first()
@@ -444,44 +451,52 @@ class InferenceService : Service() {
             Log.i(TAG, "Processing $chunkCount chunks with up to $MAX_CONCURRENT_CHUNKS concurrent transcriptions")
         }
 
+        // Get calibration data for the active backend + model variant
+        val backendId = backend.id
+        val modelPath = when (backendId) {
+            "whisper" -> AppContainer.preferencesManager.whisperModelPath.first()
+            "sherpa-onnx" -> AppContainer.preferencesManager.parakeetModelPath.first()
+            else -> AppContainer.preferencesManager.modelPath.first()
+        } ?: ""
+        val modelDisplayName = deriveDisplayName(backendId, modelPath, backend.displayName)
+
+        val calibrationProfile = AppContainer.transcriptionCalibrator.getEstimate(backendId, modelPath)
+        val chunkDurationSeconds = (preprocessingResult.totalDurationSeconds / chunkCount).toLong()
+        val estimatedChunkDurationMs = calibrationProfile?.let {
+            if (it.hasEstimate) (it.msPerSecondOfAudio * chunkDurationSeconds).toLong() else null
+        }
+
+        // Total estimated wall-clock time accounts for parallel batches:
+        // e.g. 4 chunks with 2 parallel = 2 batches × chunkDuration
+        val estimatedTotalMs = estimatedChunkDurationMs?.let { est ->
+            val batches = ((chunkCount + MAX_CONCURRENT_CHUNKS - 1) / MAX_CONCURRENT_CHUNKS).toLong()
+            batches * est
+        }
+
+        // Start a SINGLE global progress timer (not per-chunk) to avoid
+        // competing timers fighting over the same notification when chunks run in parallel.
+        val progressTimerJob = serviceScope.launch {
+            startGlobalProgressTimer(
+                totalChunks = chunkCount,
+                completedChunks = completedChunks,
+                estimatedTotalMs = estimatedTotalMs,
+                audioDurationSeconds = audioDurationSeconds,
+                calibrationProfile = calibrationProfile
+            )
+        }
+
         coroutineScope {
             val deferredResults = preprocessingResult.chunks.mapIndexed { index, chunk ->
                 async {
                     chunkSemaphore.acquire()
                     try {
                         val chunkNumber = index + 1
-
-                        // Show progress notification
-                        if (chunkCount > 1) {
-                            val completed = completedChunks.get()
-                            updateNotificationWithProgress(
-                                contentText = getString(R.string.processing_chunk, chunkNumber, chunkCount),
-                                progress = completed,
-                                maxProgress = chunkCount,
-                                indeterminate = false,
-                                durationSeconds = audioDurationSeconds,
-                                startTimeMillis = transcriptionStartTime
-                            )
-                        } else {
-                            updateNotification(getString(R.string.processing_audio), durationSeconds = audioDurationSeconds, startTimeMillis = transcriptionStartTime)
-                        }
-
                         Log.d(TAG, "Processing chunk $chunkNumber/$chunkCount")
 
                         val chunkResult = backend.transcribeAudio(prompt = prompt, audioData = chunk)
 
                         completedChunks.incrementAndGet()
-                        if (chunkCount > 1) {
-                            val nowCompleted = completedChunks.get()
-                            updateNotificationWithProgress(
-                                contentText = getString(R.string.processing_chunk, chunkNumber, chunkCount),
-                                progress = nowCompleted,
-                                maxProgress = chunkCount,
-                                indeterminate = false,
-                                durationSeconds = audioDurationSeconds,
-                                startTimeMillis = transcriptionStartTime
-                            )
-                        }
+                        Log.d(TAG, "Chunk $chunkNumber complete, total progress: ${completedChunks.get()}/$chunkCount")
 
                         chunkResult
                     } finally {
@@ -511,9 +526,27 @@ class InferenceService : Service() {
             }
         }
 
+        // Stop the global progress timer
+        progressTimerJob.cancel()
+
         // Join results with spaces, filtering nulls
         val combinedResult = results.filterNotNull().joinToString(" ")
         Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.filterNotNull().size}/$chunkCount chunks")
+
+        // Record calibration data (only transcription time, excluding preprocessing)
+        val totalProcessingTimeMs = System.currentTimeMillis() - chunkProcessingStartTime
+        try {
+            AppContainer.transcriptionCalibrator.record(
+                backendId = backendId,
+                modelPath = modelPath,
+                displayName = modelDisplayName,
+                audioDurationSeconds = audioDurationSeconds.toLong(),
+                processingTimeMs = totalProcessingTimeMs
+            )
+            Log.d(TAG, "Recorded calibration: backend=$backendId, model=$modelPath, ${audioDurationSeconds}s audio in ${totalProcessingTimeMs}ms")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to record calibration", e)
+        }
 
         if (combinedResult.isBlank()) {
             return Result.failure(IllegalStateException("No transcription produced"))
@@ -557,7 +590,6 @@ class InferenceService : Service() {
             setShowBadge(false)
         }
 
-        val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
     }
 
@@ -569,17 +601,6 @@ class InferenceService : Service() {
         durationSeconds: Int = 0,
         startTimeMillis: Long = 0
     ): Notification {
-        // Create cancel intent
-        val cancelIntent = Intent(this, InferenceService::class.java).apply {
-            action = ACTION_CANCEL
-        }
-        val cancelPendingIntent = android.app.PendingIntent.getService(
-            this,
-            System.currentTimeMillis().toInt(),
-            cancelIntent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
-
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
             .setContentText(contentText)
@@ -609,7 +630,6 @@ class InferenceService : Service() {
     }
 
     private fun updateNotification(contentText: String, durationSeconds: Int = 0, startTimeMillis: Long = 0) {
-        val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(NOTIFICATION_ID, createNotification(contentText, durationSeconds = durationSeconds, startTimeMillis = startTimeMillis))
     }
 
@@ -621,7 +641,6 @@ class InferenceService : Service() {
         durationSeconds: Int = 0,
         startTimeMillis: Long = 0
     ) {
-        val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(
             NOTIFICATION_ID,
             createNotification(contentText, progress, maxProgress, indeterminate, durationSeconds, startTimeMillis)
@@ -641,6 +660,183 @@ class InferenceService : Service() {
         } else {
             String.format("%d:%02d", minutes, secs)
         }
+    }
+
+    /**
+     * Derives a human-readable display name for the model.
+     * For Whisper models, extracts the variant from the directory name (e.g., "sherpa-onnx-whisper-turbo" → "Whisper Turbo").
+     * Falls back to backend displayName for other types.
+     */
+    private fun deriveDisplayName(backendId: String, modelPath: String, fallbackName: String?): String {
+        val dirName = java.io.File(modelPath).name
+        return when (backendId) {
+            "whisper" -> {
+                // Pattern: sherpa-onnx-whisper-{variant}
+                val variant = dirName.removePrefix("sherpa-onnx-whisper-")
+                    .replace("-", " ")
+                    .replaceFirstChar { it.uppercase() }
+                if (variant.isNotEmpty()) "Whisper $variant" else fallbackName ?: "Whisper"
+            }
+            else -> fallbackName ?: backendId
+        }
+    }
+
+    /**
+     * Formats remaining seconds into a human-readable ETA string.
+     * Shows different formats based on confidence level.
+     */
+    private fun formatEta(remainingSeconds: Long, confidence: TranscriptionCalibrator.CalibrationProfile.Confidence): String {
+        if (remainingSeconds <= 0) return ""
+
+        return when (confidence) {
+            TranscriptionCalibrator.CalibrationProfile.Confidence.HIGH -> {
+                when {
+                    remainingSeconds < 60 -> getString(R.string.transcription_eta_seconds, remainingSeconds)
+                    remainingSeconds < 3600 -> {
+                        val min = remainingSeconds / 60
+                        val sec = remainingSeconds % 60
+                        getString(R.string.transcription_eta_minutes, min, sec)
+                    }
+                    else -> {
+                        val hr = remainingSeconds / 3600
+                        val min = (remainingSeconds % 3600) / 60
+                        getString(R.string.transcription_eta_hours, hr, min)
+                    }
+                }
+            }
+            TranscriptionCalibrator.CalibrationProfile.Confidence.LOW -> {
+                val min = remainingSeconds / 60
+                val sec = remainingSeconds % 60
+                getString(R.string.transcription_eta_estimating, min, sec)
+            }
+            else -> ""
+        }
+    }
+
+    /** Cached NotificationManager — avoids repeated getSystemService() every 200ms. */
+    private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
+
+    /** Cached cancel PendingIntent — avoids recreating every 200ms. */
+    private val cancelPendingIntent by lazy {
+        val cancelIntent = Intent(this, InferenceService::class.java).apply {
+            action = ACTION_CANCEL
+        }
+        android.app.PendingIntent.getService(
+            this, 0, cancelIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+    }
+
+    /**
+     * Single global progress timer that runs for the entire transcription.
+     *
+     * Unlike per-chunk timers, this correctly handles parallel chunk processing:
+     * - One timer, one notification updater — no competing updates
+     * - Progress accounts for parallel batches (e.g. 4 chunks / 2 parallel = 2 batches)
+     * - Hard progress (completed chunks) provides a floor; time-based estimation fills gaps
+     * - ETA uses total estimated time accounting for parallelism
+     */
+    private fun CoroutineScope.startGlobalProgressTimer(
+        totalChunks: Int,
+        completedChunks: AtomicInteger,
+        estimatedTotalMs: Long?,
+        audioDurationSeconds: Int,
+        calibrationProfile: TranscriptionCalibrator.CalibrationProfile?
+    ): Job {
+        val startTime = System.currentTimeMillis()
+        var lastProgressPercent = -1
+        val singleChunkLabel = if (totalChunks == 1) getString(R.string.processing_audio) else null
+
+        return launch {
+            while (isActive) {
+                delay(200)
+
+                val now = System.currentTimeMillis()
+                val elapsedMs = now - startTime
+
+                val completed = completedChunks.get()
+
+                // Hard progress floor: completed chunks / total
+                val hardPercent = completed * 100 / totalChunks
+
+                // Time-based estimated progress (accounts for parallel batches)
+                val timePercent = if (estimatedTotalMs != null && estimatedTotalMs > 0) {
+                    (elapsedMs.toFloat() / estimatedTotalMs * 100f).toInt().coerceIn(0, 95)
+                } else {
+                    // No calibration: slow crawl to 80% over ~2× audio duration
+                    val crawlTarget = audioDurationSeconds * 1000f * 2f
+                    (elapsedMs / crawlTarget * 80f).toInt().coerceIn(0, 80)
+                }
+
+                // Display the higher of hard vs estimated, minimum 1% for visible feedback
+                val displayProgress = maxOf(1, hardPercent, timePercent).coerceIn(0, 99)
+
+                // Skip if unchanged
+                if (displayProgress == lastProgressPercent) continue
+                lastProgressPercent = displayProgress
+
+                // ETA: remaining wall-clock time
+                val etaText = if (calibrationProfile != null && calibrationProfile.hasEstimate && estimatedTotalMs != null) {
+                    val remainingMs = maxOf(0L, estimatedTotalMs - elapsedMs)
+                    val remainingSeconds = remainingMs / 1000
+                    formatEta(remainingSeconds, calibrationProfile.confidence)
+                } else if (calibrationProfile != null && !calibrationProfile.hasEstimate) {
+                    // Not enough samples yet — show calibrating message
+                    getString(R.string.transcription_eta_calibrating)
+                } else {
+                    ""
+                }
+
+                val contentText = if (completed == 0 && totalChunks > 1) {
+                    getString(R.string.processing_audio)
+                } else {
+                    singleChunkLabel ?: getString(R.string.processing_chunk, completed, totalChunks)
+                }
+
+                updateNotificationWithSmoothProgress(
+                    contentText = contentText,
+                    progressPercent = displayProgress,
+                    etaText = etaText,
+                    durationSeconds = audioDurationSeconds,
+                    startTimeMillis = transcriptionStartTime
+                )
+            }
+        }
+    }
+
+    private fun updateNotificationWithSmoothProgress(
+        contentText: String,
+        progressPercent: Int,
+        etaText: String,
+        durationSeconds: Int,
+        startTimeMillis: Long
+    ) {
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(contentText)
+            .setSmallIcon(android.R.drawable.ic_menu_manage)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setSilent(true)
+            .setProgress(100, progressPercent, false)
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                getString(R.string.action_cancel), cancelPendingIntent
+            )
+
+        if (startTimeMillis > 0) {
+            builder.setWhen(startTimeMillis)
+            builder.setUsesChronometer(true)
+        }
+
+        // Show ETA in subtext if available, otherwise duration
+        if (etaText.isNotEmpty()) {
+            builder.setSubText(etaText)
+        } else if (durationSeconds > 0) {
+            builder.setSubText(formatDuration(durationSeconds))
+        }
+
+        notificationManager.notify(NOTIFICATION_ID, builder.build())
     }
 
     /**
@@ -688,7 +884,6 @@ class InferenceService : Service() {
             setShowBadge(true)
         }
 
-        val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.createNotificationChannel(channel)
     }
 
@@ -814,7 +1009,6 @@ class InferenceService : Service() {
 
         val notification = builder.build()
 
-        val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(RESULT_NOTIFICATION_ID, notification)
         Log.i(TAG, "Showed result notification (${transcriptionText.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction}")
     }
@@ -839,7 +1033,6 @@ class InferenceService : Service() {
             .setAutoCancel(true)
             .build()
 
-        val notificationManager = getSystemService(NotificationManager::class.java)
         notificationManager.notify(RESULT_NOTIFICATION_ID, notification)
         Log.i(TAG, "Showed error notification: $errorMessage")
     }

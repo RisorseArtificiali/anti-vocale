@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -29,6 +30,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
@@ -68,6 +70,9 @@ fun SettingsTab(
     var tokenPasswordVisible by remember { mutableStateOf(false) }
     var showOAuthConfigDialog by remember { mutableStateOf(false) }
     var showPerAppSettings by remember { mutableStateOf(false) }
+    var showPerfStatsDialog by remember { mutableStateOf(false) }
+    var perfStatsProfiles by remember { mutableStateOf<List<CalibrationProfile>>(emptyList()) }
+    val perfStatsScope = rememberCoroutineScope()
     var showPromptSettings by remember { mutableStateOf(false) }
 
     // OAuth launcher
@@ -1159,6 +1164,69 @@ fun SettingsTab(
             }
         }
 
+        // Performance Stats Card
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    perfStatsScope.launch {
+                        perfStatsProfiles = AppContainer.transcriptionCalibrator.getAllProfiles()
+                        showPerfStatsDialog = true
+                    }
+                },
+            shape = MaterialTheme.shapes.medium
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Speed,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column {
+                        Text(
+                            text = stringResource(R.string.performance_stats_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = stringResource(R.string.performance_stats_subtitle),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = Icons.Default.ChevronRight,
+                    contentDescription = "Open performance stats",
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Performance Stats Dialog
+        if (showPerfStatsDialog) {
+            PerformanceStatsDialog(
+                profiles = perfStatsProfiles,
+                onDismiss = { showPerfStatsDialog = false },
+                onReset = {
+                    perfStatsScope.launch {
+                        AppContainer.transcriptionCalibrator.resetAll()
+                        perfStatsProfiles = emptyList()
+                    }
+                }
+            )
+        }
+
         // Spacer for scroll
         Spacer(modifier = Modifier.height(32.dp))
     }
@@ -1579,5 +1647,241 @@ private fun formatExpiration(expiresAt: Long): String {
         remaining < 3_600_000 -> "${remaining / 60_000} minutes"
         remaining < 86_400_000 -> "${remaining / 3_600_000} hours"
         else -> "${remaining / 86_400_000} days"
+    }
+}
+
+
+// ==================== Performance Stats Dialog ====================
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun PerformanceStatsDialog(
+    profiles: List<CalibrationProfile>,
+    onDismiss: () -> Unit,
+    onReset: () -> Unit
+) {
+    var showResetConfirm by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Speed,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(stringResource(R.string.performance_stats_title))
+            }
+        },
+        text = {
+            if (profiles.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.performance_stats_empty),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text(
+                        text = stringResource(R.string.performance_stats_subtitle),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Find slowest speed for relative calculation
+                    val slowestMsPerSec = profiles.maxOf { it.msPerSecondOfAudio }
+                    val fastestProfile = profiles.first()
+
+                    profiles.forEach { profile ->
+                        val isFastest = profile == fastestProfile && profiles.size > 1
+
+                        // Real-time factor: lower ms/s = faster. RTF < 1.0 means faster than real-time.
+                        val rtf = profile.msPerSecondOfAudio / 1000f
+                        val speedLabel = if (rtf <= 1f) {
+                            String.format("%.1fx real-time", 1f / rtf)
+                        } else {
+                            String.format("%.2fx real-time", 1f / rtf)
+                        }
+                        val relativeSpeed = if (slowestMsPerSec > 0 && profiles.size > 1) {
+                            slowestMsPerSec / profile.msPerSecondOfAudio
+                        } else null
+
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.small,
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (isFastest)
+                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
+                                else
+                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(10.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                // Row 1: Model name + Fastest badge
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                ) {
+                                    Text(
+                                        text = profile.displayName,
+                                        style = MaterialTheme.typography.titleSmall,
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.weight(1f),
+                                        maxLines = 1
+                                    )
+                                    if (isFastest) {
+                                        Surface(
+                                            shape = MaterialTheme.shapes.extraSmall,
+                                            color = MaterialTheme.colorScheme.primary
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.performance_stats_fastest_badge),
+                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = MaterialTheme.colorScheme.onPrimary,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Row 2: Speed + relative
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = speedLabel,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium,
+                                        color = if (isFastest) MaterialTheme.colorScheme.primary
+                                        else MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (relativeSpeed != null) {
+                                        Text(
+                                            text = String.format("(%.1fx)", relativeSpeed),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+
+                                // Row 3: Metadata
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(
+                                            R.string.performance_stats_samples_count,
+                                            profile.sampleCount
+                                        ),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                    if (profile.lastTimestamp > 0) {
+                                        Text(
+                                            text = formatLastUsed(profile.lastTimestamp),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Total audio processed
+                    val totalAudio = profiles.sumOf { it.totalAudioSeconds }
+                    if (totalAudio > 0) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+                        Text(
+                            text = stringResource(
+                                R.string.performance_stats_total_audio,
+                                formatAudioDuration(totalAudio)
+                            ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                if (profiles.isNotEmpty()) {
+                    TextButton(onClick = { showResetConfirm = true }) {
+                        Text(
+                            text = stringResource(R.string.performance_stats_clear),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.dismiss))
+                }
+            }
+        }
+    )
+
+    // Reset confirmation dialog
+    if (showResetConfirm) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirm = false },
+            title = { Text(stringResource(R.string.performance_stats_clear)) },
+            text = { Text(stringResource(R.string.performance_stats_clear_confirm)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onReset()
+                        showResetConfirm = false
+                    }
+                ) {
+                    Text(
+                        text = stringResource(R.string.performance_stats_clear),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirm = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun formatLastUsed(timestamp: Long): String {
+    if (timestamp <= 0) return ""
+    val elapsed = System.currentTimeMillis() - timestamp
+    val minutes = elapsed / 60_000
+    val hours = elapsed / 3_600_000
+    val days = elapsed / 86_400_000
+
+    return when {
+        minutes < 1 -> stringResource(R.string.performance_stats_just_now)
+        minutes < 60 -> stringResource(R.string.performance_stats_minutes_ago, minutes)
+        hours < 24 -> stringResource(R.string.performance_stats_hours_ago, hours)
+        else -> stringResource(R.string.performance_stats_days_ago, days)
+    }
+}
+
+private fun formatAudioDuration(totalSeconds: Long): String {
+    val hours = totalSeconds / 3600
+    val minutes = (totalSeconds % 3600) / 60
+    val seconds = totalSeconds % 60
+
+    return when {
+        hours > 0 -> String.format("%dh %dm", hours, minutes)
+        minutes > 0 -> String.format("%dm %ds", minutes, seconds)
+        else -> String.format("%ds", seconds)
     }
 }

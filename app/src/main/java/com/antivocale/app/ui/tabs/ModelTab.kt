@@ -35,6 +35,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.di.AppContainer
+import com.antivocale.app.service.InferenceService
 import com.antivocale.app.util.formatFileSize
 import com.antivocale.app.transcription.WhisperModelManager
 import com.antivocale.app.ui.viewmodel.ModelViewModel
@@ -82,6 +83,10 @@ fun ModelTab(
     val downloadUiState by viewModel.downloadUiState.collectAsState()
     val parakeetState by viewModel.parakeetState.collectAsState()
     val whisperState by viewModel.whisperState.collectAsState()
+
+    // Transcription active state — used to warn about destructive operations
+    val isTranscribing by InferenceService.isTranscribing.collectAsState()
+    var pendingModelSwitch by remember { mutableStateOf<(() -> Unit)?>(null) }
 
     // Snackbar host state for displaying errors
     val snackbarHostState = remember { SnackbarHostState() }
@@ -162,31 +167,54 @@ fun ModelTab(
 
     // Delete confirmation dialog
     if (downloadUiState.modelToDelete != null) {
-        AlertDialog(
-            onDismissRequest = {
-                viewModel.dismissDeleteDialog()
-            },
-            title = { Text(stringResource(R.string.dialog_delete_title)) },
-            text = {
-                Text(stringResource(R.string.dialog_delete_message, downloadUiState.modelToDelete?.displayName ?: ""))
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        viewModel.confirmDeleteModel()
+        val deletingModelName = downloadUiState.modelToDelete?.displayName ?: ""
+        val isActiveModel = uiState.modelName == deletingModelName
+
+        if (isTranscribing && isActiveModel) {
+            // Hard block: cannot delete the model currently being used for transcription
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissDeleteDialog() },
+                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
+                text = {
+                    Text(stringResource(R.string.dialog_delete_active_model_message, deletingModelName))
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
+                        Text(stringResource(R.string.action_understood))
                     }
-                ) {
-                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = {
+            )
+        } else {
+            AlertDialog(
+                onDismissRequest = {
                     viewModel.dismissDeleteDialog()
-                }) {
-                    Text(stringResource(R.string.action_cancel))
+                },
+                title = { Text(stringResource(R.string.dialog_delete_title)) },
+                text = {
+                    if (isTranscribing) {
+                        Text(stringResource(R.string.dialog_delete_inactive_model_message, deletingModelName))
+                    } else {
+                        Text(stringResource(R.string.dialog_delete_message, deletingModelName))
+                    }
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            viewModel.confirmDeleteModel()
+                        }
+                    ) {
+                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        viewModel.dismissDeleteDialog()
+                    }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 
     // Parakeet download confirmation dialog
@@ -210,21 +238,43 @@ fun ModelTab(
 
     // Parakeet delete confirmation dialog
     if (parakeetState.showDeleteDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissParakeetDeleteDialog() },
-            title = { Text(stringResource(R.string.dialog_delete_title)) },
-            text = { Text(stringResource(R.string.dialog_delete_message, "Parakeet TDT")) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmParakeetDelete() }) {
-                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+        val isParakeetActive = uiState.modelName == "Parakeet TDT"
+
+        if (isTranscribing && isParakeetActive) {
+            // Hard block: Parakeet is the active transcription model
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissParakeetDeleteDialog() },
+                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
+                text = { Text(stringResource(R.string.dialog_delete_active_model_message, "Parakeet TDT")) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.dismissParakeetDeleteDialog() }) {
+                        Text(stringResource(R.string.action_understood))
+                    }
                 }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissParakeetDeleteDialog() }) {
-                    Text(stringResource(R.string.action_cancel))
+            )
+        } else {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissParakeetDeleteDialog() },
+                title = { Text(stringResource(R.string.dialog_delete_title)) },
+                text = {
+                    if (isTranscribing) {
+                        Text(stringResource(R.string.dialog_delete_inactive_model_message, "Parakeet TDT"))
+                    } else {
+                        Text(stringResource(R.string.dialog_delete_message, "Parakeet TDT"))
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.confirmParakeetDelete() }) {
+                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissParakeetDeleteDialog() }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
                 }
-            }
-        )
+            )
+        }
     }
 
     // Gemma download confirmation dialog
@@ -271,17 +321,71 @@ fun ModelTab(
     // Whisper delete confirmation dialog
     if (whisperState.showDeleteDialog) {
         val variant = whisperState.variantToDelete
+        val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: "Whisper"
+        val isWhisperModelActive = uiState.modelName == variantDisplayName
+
+        if (isTranscribing && isWhisperModelActive) {
+            // Hard block: this Whisper variant is the active transcription model
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissWhisperDeleteDialog() },
+                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
+                text = { Text(stringResource(R.string.dialog_delete_active_model_message, variantDisplayName)) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.dismissWhisperDeleteDialog() }) {
+                        Text(stringResource(R.string.action_understood))
+                    }
+                }
+            )
+        } else {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissWhisperDeleteDialog() },
+                title = { Text(stringResource(R.string.dialog_delete_title)) },
+                text = {
+                    if (isTranscribing) {
+                        Text(stringResource(R.string.dialog_delete_inactive_model_message, variantDisplayName))
+                    } else {
+                        Text(stringResource(R.string.dialog_delete_message, variantDisplayName))
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.confirmWhisperDelete() }) {
+                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissWhisperDeleteDialog() }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                }
+            )
+        }
+    }
+
+    // Model switch warning during active transcription
+    if (pendingModelSwitch != null) {
         AlertDialog(
-            onDismissRequest = { viewModel.dismissWhisperDeleteDialog() },
-            title = { Text(stringResource(R.string.dialog_delete_title)) },
-            text = { Text(stringResource(R.string.dialog_delete_message, variant?.let { stringResource(it.titleResId) } ?: "Whisper")) },
+            onDismissRequest = {
+                pendingModelSwitch = null
+            },
+            title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
+            text = { Text(stringResource(R.string.dialog_switch_model_message)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.confirmWhisperDelete() }) {
-                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                TextButton(
+                    onClick = {
+                        pendingModelSwitch?.invoke()
+                        pendingModelSwitch = null
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(stringResource(R.string.action_switch_anyway))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.dismissWhisperDeleteDialog() }) {
+                TextButton(onClick = {
+                    pendingModelSwitch = null
+                }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }
@@ -298,17 +402,28 @@ fun ModelTab(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+        // Guarded model switch: warns if transcription is active
+        val guardedSwitch: (() -> Unit) -> Unit = { action ->
+            if (isTranscribing) {
+                pendingModelSwitch = action
+            } else {
+                action()
+            }
+        }
+
         // Whisper section - multilingual ASR backend (recommended)
         WhisperDownloadSection(
             viewModel = viewModel,
-            activeModelName = uiState.modelName
+            activeModelName = uiState.modelName,
+            guardedModelSwitch = guardedSwitch
         )
 
         // Parakeet TDT section - fast multilingual ASR backend
         ParakeetDownloadSection(
             viewModel = viewModel,
             activeModelName = uiState.modelName,
-            context = context
+            context = context,
+            guardedModelSwitch = guardedSwitch
         )
 
         // Download models section - Gemma LLM models (advanced features)
@@ -903,7 +1018,8 @@ private fun PartialDownloadSection(
 private fun ParakeetDownloadSection(
     viewModel: ModelViewModel,
     activeModelName: String,
-    context: Context
+    context: Context,
+    guardedModelSwitch: (() -> Unit) -> Unit
 ) {
     val parakeetState by viewModel.parakeetState.collectAsState()
     val isActive = activeModelName == "Parakeet TDT"
@@ -1026,7 +1142,7 @@ private fun ParakeetDownloadSection(
                     parakeetState.modelPath != null -> {
                         if (!isActive) {
                             Button(
-                                onClick = { viewModel.useParakeetModel() },
+                                onClick = { guardedModelSwitch { viewModel.useParakeetModel() } },
                                 modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary
@@ -1098,7 +1214,8 @@ private fun ParakeetDownloadSection(
 @Composable
 private fun WhisperDownloadSection(
     viewModel: ModelViewModel,
-    activeModelName: String
+    activeModelName: String,
+    guardedModelSwitch: (() -> Unit) -> Unit = {}
 ) {
     val whisperState by viewModel.whisperState.collectAsState()
     var showSpeedComparison by remember { mutableStateOf(false) }
@@ -1178,7 +1295,7 @@ private fun WhisperDownloadSection(
                     onResumeClick = { viewModel.resumeWhisperDownload(variant) },
                     onClearPartialClick = { viewModel.clearWhisperPartialDownload(variant) },
                     onClearOrphanedClick = { viewModel.clearOrphanedWhisperFiles(variant) },
-                    onUseClick = { viewModel.useWhisperModel(variant) },
+                    onUseClick = { guardedModelSwitch { viewModel.useWhisperModel(variant) } },
                     onDeleteClick = { viewModel.showWhisperDeleteDialog(variant) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))

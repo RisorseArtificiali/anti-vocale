@@ -341,4 +341,34 @@
     <string name="speed_comparison_distil_it_note">Recommended</string>
     <string name="fastest_badge">Fastest</string>
     <string name="coming_soon_badge">Coming soon</string>
+
+    <!-- Transcription ETA -->
+    <string name="transcription_eta_calibrating">Calibrating speed…</string>
+    <string name="transcription_eta_seconds">~%1$ds remaining</string>
+    <string name="transcription_eta_minutes">~%1$dm %2$ds remaining</string>
+    <string name="transcription_eta_hours">~%1$dh %2$dm remaining</string>
+    <string name="transcription_eta_estimating">Estimating… ~%1$dm %2$ds remaining</string>
+
+    <!-- Performance Stats -->
+    <string name="performance_stats_title">Performance Stats</string>
+    <string name="performance_stats_subtitle">Real-world transcription speed from your device</string>
+    <string name="performance_stats_empty">No data yet. Transcribe some audio to see stats.</string>
+    <string name="performance_stats_speed">%1$.0fms/s</string>
+    <string name="performance_stats_samples_count">%1$d samples</string>
+    <string name="performance_stats_fastest_badge">Fastest</string>
+    <string name="performance_stats_clear">Reset stats</string>
+    <string name="performance_stats_clear_confirm">Reset all performance data?</string>
+    <string name="performance_stats_just_now">Just now</string>
+    <string name="performance_stats_minutes_ago">%1$dm ago</string>
+    <string name="performance_stats_hours_ago">%1$dh ago</string>
+    <string name="performance_stats_days_ago">%1$dd ago</string>
+    <string name="performance_stats_total_audio">Total: %1$s audio processed</string>
+
+    <!-- Transcription active protection -->
+    <string name="dialog_transcription_active_title">Transcription in Progress</string>
+    <string name="dialog_delete_active_model_message">Cannot delete \'%1$s\' while it is being used for transcription. Please wait for the transcription to finish.</string>
+    <string name="dialog_delete_inactive_model_message">A transcription is in progress. Deleting \'%1$s\' will not affect it, but proceed with caution.</string>
+    <string name="dialog_switch_model_message">A transcription is currently in progress. Switching models may disrupt it. Are you sure?</string>
+    <string name="action_understood">Understood</string>
+    <string name="action_switch_anyway">Switch anyway</string>
 </resources>
