@@ -30,7 +30,7 @@
     <string name="request_audio">Audio Request</string>
     <string name="logs_recent_requests">Recent Requests (%1$d/10)</string>
     <string name="logs_clear">Clear</string>
-    <string name="logs_empty_hint">Send a request from Tasker to see logs here</string>
+    <string name="logs_empty_hint">Share a voice message from WhatsApp, Telegram, or another app to see transcriptions here</string>
     <string name="logs_prompt_label">Prompt:</string>
     <string name="logs_result_label">Result:</string>
     <string name="logs_error_label">Error:</string>
