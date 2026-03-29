@@ -226,6 +226,13 @@
     <string name="timeout_1_minute">1 minute</string>
     <string name="timeout_1_hour">1 hour</string>
     <string name="timeout_minutes">%1$d minutes</string>
+
+    <!-- Settings Tab - Thread Count -->
+    <string name="thread_count_title">Inference Threads</string>
+    <string name="thread_count_description">Number of CPU threads used for transcription and voice activity detection. Higher values use more CPU but may speed up processing.</string>
+    <string name="thread_count_auto">%1$d (auto-detected)</string>
+    <string name="thread_count_value">%1$d</string>
+
     <string name="saving">Saving…</string>
     <string name="settings_saved">Settings saved</string>
     <string name="save">Save</string>

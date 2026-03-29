@@ -356,7 +356,10 @@ class InferenceService : Service() {
         return TranscriptionBackendManager.setActiveBackend(
             backendId = "sherpa-onnx",
             context = applicationContext,
-            config = BackendConfig.SherpaOnnxConfig(modelDir = modelPath)
+            config = BackendConfig.SherpaOnnxConfig(
+                modelDir = modelPath,
+                numThreads = AppContainer.preferencesManager.threadCount.first()
+            )
         )
     }
 
@@ -382,7 +385,10 @@ class InferenceService : Service() {
         return TranscriptionBackendManager.setActiveBackend(
             backendId = "whisper",
             context = applicationContext,
-            config = BackendConfig.SherpaOnnxConfig(modelDir = modelPath)
+            config = BackendConfig.SherpaOnnxConfig(
+                modelDir = modelPath,
+                numThreads = AppContainer.preferencesManager.threadCount.first()
+            )
         )
     }
 
@@ -430,13 +436,15 @@ class InferenceService : Service() {
         // Preprocess audio with proper error handling
         // Pass backend's max chunk duration and VAD toggle to AudioPreprocessor
         val vadEnabled = AppContainer.preferencesManager.vadEnabled.first()
+        val threadCount = AppContainer.preferencesManager.threadCount.first()
         val preprocessingResult = try {
             AudioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = filePath,
                 cacheDir = cacheDir,
                 maxChunkDurationSeconds = backend.maxChunkDurationSeconds,
                 context = applicationContext,
-                enableVad = vadEnabled
+                enableVad = vadEnabled,
+                vadNumThreads = threadCount
             )
         } catch (e: PreprocessingError) {
             Log.e(TAG, "Audio preprocessing error", e)

@@ -37,7 +37,7 @@ object VadProcessor {
      * @param pcmSamples Float array of PCM samples normalized to [-1.0, 1.0]
      * @return VadResult containing speech segments and timing info
      */
-    fun detectSpeech(context: Context, pcmSamples: FloatArray): VadResult {
+    fun detectSpeech(context: Context, pcmSamples: FloatArray, threadCount: Int): VadResult {
         val startTime = System.currentTimeMillis()
         val originalDurationSeconds = pcmSamples.size.toDouble() / SAMPLE_RATE
 
@@ -54,7 +54,7 @@ object VadProcessor {
             sileroVadModelConfig = sileroConfig
             tenVadModelConfig = TenVadModelConfig()  // empty, not used
             sampleRate = SAMPLE_RATE
-            numThreads = 1
+            numThreads = threadCount
             provider = "cpu"
             debug = false
         }

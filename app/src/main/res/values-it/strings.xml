@@ -226,6 +226,13 @@
     <string name="timeout_1_minute">1 minuto</string>
     <string name="timeout_1_hour">1 ora</string>
     <string name="timeout_minutes">%1$d minuti</string>
+
+    <!-- Impostazioni - Thread di Inferenza -->
+    <string name="thread_count_title">Thread di Inferenza</string>
+    <string name="thread_count_description">Numero di thread CPU utilizzati per la trascrizione e il rilevamento dell\'attività vocale. Valori più alti usano più CPU ma possono velocizzare l\'elaborazione.</string>
+    <string name="thread_count_auto">%1$d (rilevato automaticamente)</string>
+    <string name="thread_count_value">%1$d</string>
+
     <string name="saving">Salvataggio…</string>
     <string name="settings_saved">Impostazioni salvate</string>
     <string name="save">Salva</string>

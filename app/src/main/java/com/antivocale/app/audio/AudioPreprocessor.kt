@@ -67,7 +67,8 @@ object AudioPreprocessor {
         cacheDir: File,
         maxChunkDurationSeconds: Int? = 30,
         context: Context? = null,
-        enableVad: Boolean = false
+        enableVad: Boolean = false,
+        vadNumThreads: Int = 1
     ): PreprocessingResult {
         Log.d(TAG, "Preparing audio: $inputPath")
 
@@ -106,7 +107,7 @@ object AudioPreprocessor {
         // Apply VAD silence stripping if enabled
         val pcmToProcess = if (enableVad && context != null) {
             val floatSamples = VadProcessor.pcmBytesToFloats(pcmData)
-            val vadResult = VadProcessor.detectSpeech(context, floatSamples)
+            val vadResult = VadProcessor.detectSpeech(context, floatSamples, vadNumThreads)
 
             // Merge speech segments without boxing (avoid flatMap on FloatArray)
             val segments = vadResult.speechSegments

@@ -85,6 +85,17 @@ class SettingsViewModel(
             initialValue = PreferencesManager.DEFAULT_VAD_ENABLED
         )
 
+    // Inference thread count
+    val threadCount: StateFlow<Int> = preferencesManager.threadCount
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_THREAD_COUNT
+        )
+
+    // Auto-detected thread count (fixed at init time)
+    val autoDetectedThreadCount: Int = PreferencesManager.DEFAULT_THREAD_COUNT
+
     // Default prompt for transcription
     val defaultPrompt: StateFlow<String> = preferencesManager.defaultPrompt
         .stateIn(
@@ -182,6 +193,19 @@ class SettingsViewModel(
                     saveSuccess = false,
                     errorMessage = e.message ?: "Failed to save settings"
                 )}
+            }
+        }
+    }
+
+    /**
+     * Saves the inference thread count.
+     */
+    fun saveThreadCount(threads: Int) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.saveThreadCount(threads)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to save thread count", e)
             }
         }
     }

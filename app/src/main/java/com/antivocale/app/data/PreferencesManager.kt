@@ -39,9 +39,12 @@ class PreferencesManager(private val context: Context) {
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
         // Default prompt for transcription
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
+        // Inference thread count
+        private val THREAD_COUNT = intPreferencesKey("thread_count")
 
         // Default values (single source of truth)
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
+        val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2)
         const val DEFAULT_AUTO_COPY_ENABLED = false
         const val DEFAULT_VAD_ENABLED = false
         const val DEFAULT_PROMPT_VALUE = ""
@@ -237,6 +240,23 @@ class PreferencesManager(private val context: Context) {
     suspend fun saveDefaultPrompt(prompt: String) {
         context.dataStore.edit { preferences ->
             preferences[DEFAULT_PROMPT] = prompt.take(500)
+        }
+    }
+
+    /**
+     * Flow of the inference thread count.
+     * Returns auto-detected value on first launch.
+     */
+    val threadCount: Flow<Int> = context.dataStore.data.map { preferences ->
+        preferences[THREAD_COUNT] ?: DEFAULT_THREAD_COUNT
+    }
+
+    /**
+     * Saves the inference thread count.
+     */
+    suspend fun saveThreadCount(threads: Int) {
+        context.dataStore.edit { preferences ->
+            preferences[THREAD_COUNT] = threads
         }
     }
 }

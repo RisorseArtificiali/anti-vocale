@@ -90,7 +90,7 @@ class WhisperBackend : TranscriptionBackend {
                     whisper = whisperConfig,
                     tokens = modelFiles.tokensPath,
                     modelType = "whisper",
-                    numThreads = 4,
+                    numThreads = sherpaConfig.numThreads,
                     debug = false
                 )
 

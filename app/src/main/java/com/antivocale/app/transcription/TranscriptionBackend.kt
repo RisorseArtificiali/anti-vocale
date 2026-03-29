@@ -96,6 +96,7 @@ sealed class BackendConfig {
      */
     data class SherpaOnnxConfig(
         val modelDir: String,
-        val modelType: String = "nemo_transducer"
+        val modelType: String = "nemo_transducer",
+        val numThreads: Int
     ) : BackendConfig()
 }

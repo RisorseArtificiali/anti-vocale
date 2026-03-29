@@ -87,7 +87,7 @@ class SherpaOnnxBackend : TranscriptionBackend {
                     ),
                     tokens = "${modelDirectory}/tokens.txt",
                     modelType = sherpaConfig.modelType,
-                    numThreads = 4,  // Use multiple threads for faster processing
+                    numThreads = sherpaConfig.numThreads,
                     debug = false
                 )
 

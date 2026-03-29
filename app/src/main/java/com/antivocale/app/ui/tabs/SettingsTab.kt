@@ -63,6 +63,8 @@ fun SettingsTab(
     val currentTimeout by viewModel.keepAliveTimeout.collectAsState()
     val autoCopyEnabled by viewModel.autoCopyEnabled.collectAsState()
     val vadEnabled by viewModel.vadEnabled.collectAsState()
+    val threadCount by viewModel.threadCount.collectAsState()
+    val autoDetectedThreads = viewModel.autoDetectedThreadCount
     val currentLanguage by viewModel.currentLanguage.collectAsState()
     val currentTheme by viewModel.currentTheme.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
@@ -832,6 +834,91 @@ fun SettingsTab(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error
                     )
+                }
+            }
+        }
+
+        // Thread Count Setting
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Memory,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.thread_count_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.thread_count_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                // Thread count dropdown
+                var threadExpanded by remember { mutableStateOf(false) }
+                val threadOptions = (1..8).toList()
+                ExposedDropdownMenuBox(
+                    expanded = threadExpanded,
+                    onExpandedChange = { threadExpanded = it }
+                ) {
+                    TextField(
+                        value = if (threadCount == autoDetectedThreads)
+                            stringResource(R.string.thread_count_auto, autoDetectedThreads)
+                        else
+                            stringResource(R.string.thread_count_value, threadCount),
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.thread_count_title)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = threadExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = threadExpanded,
+                        onDismissRequest = { threadExpanded = false },
+                        modifier = Modifier.exposedDropdownSize()
+                    ) {
+                        threadOptions.forEach { threads ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (threads == autoDetectedThreads)
+                                            stringResource(R.string.thread_count_auto, threads)
+                                        else
+                                            stringResource(R.string.thread_count_value, threads)
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.saveThreadCount(threads)
+                                    threadExpanded = false
+                                },
+                                trailingIcon = if (threadCount == threads) {
+                                    { Icon(Icons.Default.Check, contentDescription = null) }
+                                } else null
+                            )
+                        }
+                    }
                 }
             }
         }
