@@ -123,6 +123,7 @@
     <string name="no_audio_file">No audio file received</string>
     <string name="failed_to_process_audio">Failed to process audio file</string>
     <string name="transcription_started">Transcription started…</string>
+    <string name="added_to_queue">Added to queue…</string>
     <string name="processing_chunk">Processing chunk %1$d/%2$d…</string>
     <string name="processing_audio">Processing audio…</string>
     <string name="processing_request">Processing %1$s request…</string>

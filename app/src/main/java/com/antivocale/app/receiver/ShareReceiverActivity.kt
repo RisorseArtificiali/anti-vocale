@@ -175,7 +175,11 @@ class ShareReceiverActivity : Activity() {
         startForegroundService(serviceIntent)
         Log.i(TAG, "Started InferenceService for taskId: $taskId, source: $sourcePackage")
 
-        Toast.makeText(this, R.string.transcription_started, Toast.LENGTH_SHORT).show()
+        val toastRes = if (InferenceService.isTranscribing.value)
+            R.string.added_to_queue
+        else
+            R.string.transcription_started
+        Toast.makeText(this, toastRes, Toast.LENGTH_SHORT).show()
 
         cleanup()
         finish()

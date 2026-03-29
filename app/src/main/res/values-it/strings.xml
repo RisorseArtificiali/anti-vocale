@@ -123,6 +123,7 @@
     <string name="no_audio_file">Nessun file audio ricevuto</string>
     <string name="failed_to_process_audio">Impossibile elaborare il file audio</string>
     <string name="transcription_started">Trascrizione avviata…</string>
+    <string name="added_to_queue">Aggiunto alla coda…</string>
     <string name="processing_chunk">Elaborazione segmento %1$d/%2$d…</string>
     <string name="processing_audio">Elaborazione audio…</string>
     <string name="processing_request">Elaborazione richiesta %1$s…</string>
