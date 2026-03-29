@@ -315,6 +315,11 @@
     <string name="per_app_settings_quick_share_back_title">Condividi Indietro Rapido</string>
     <string name="per_app_settings_quick_share_back_description">Tocco unico per inviare la trascrizione all\'app</string>
 
+    <!-- Per-App Onboarding Tooltip -->
+    <string name="per_app_onboarding_title">Personalizza per app</string>
+    <string name="per_app_onboarding_message">Tocca un\'app per configurare copia automatica, azioni di condivisione e suoni di notifica per quella specifica app.</string>
+    <string name="per_app_onboarding_got_it">Ho capito</string>
+
     <!-- Share Back -->
     <string name="share_back">Condividi Indietro</string>
     <string name="share_back_description">Condividi la trascrizione nell\'app di origine</string>

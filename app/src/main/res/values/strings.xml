@@ -315,6 +315,11 @@
     <string name="per_app_settings_quick_share_back_title">Quick Share Back</string>
     <string name="per_app_settings_quick_share_back_description">One-tap to send transcriptions back to this app</string>
 
+    <!-- Per-App Onboarding Tooltip -->
+    <string name="per_app_onboarding_title">Customize per-app behavior</string>
+    <string name="per_app_onboarding_message">Tap any app to configure auto-copy, share actions, and notification sounds for that specific app.</string>
+    <string name="per_app_onboarding_got_it">Got it</string>
+
     <!-- Share Back -->
     <string name="share_back">Share Back</string>
     <string name="share_back_description">Share transcription back to source app</string>

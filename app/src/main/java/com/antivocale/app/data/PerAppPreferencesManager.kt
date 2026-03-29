@@ -32,6 +32,11 @@ class PerAppPreferencesManager(private val context: Context) {
         private const val DATASTORE_NAME = "per_app_notification_preferences"
 
         /**
+         * Key for tracking whether the user has seen the per-app onboarding tooltip
+         */
+        private val SEEN_PER_APP_ONBOARDING = booleanPreferencesKey("seen_per_app_onboarding")
+
+        /**
          * Preference key suffixes
          */
         private const val AUTO_COPY_SUFFIX = "_auto_copy"
@@ -169,6 +174,22 @@ class PerAppPreferencesManager(private val context: Context) {
     suspend fun clearAllPreferences() {
         context.dataStore.edit { preferences ->
             preferences.clear()
+        }
+    }
+
+    /**
+     * Flow emitting whether the user has seen the per-app onboarding tooltip.
+     */
+    val hasSeenOnboarding: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[SEEN_PER_APP_ONBOARDING] ?: false
+    }
+
+    /**
+     * Mark the per-app onboarding tooltip as seen.
+     */
+    suspend fun markOnboardingSeen() {
+        context.dataStore.edit { preferences ->
+            preferences[SEEN_PER_APP_ONBOARDING] = true
         }
     }
 }

@@ -19,9 +19,11 @@ import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.ui.components.AppPreferenceListItem
 import com.antivocale.app.ui.components.AppPreferencePanel
+import com.antivocale.app.ui.components.OnboardingTooltip
 import com.antivocale.app.ui.dialogs.AddAppPreferenceDialog
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -63,6 +65,9 @@ fun PerAppSettingsScreen(
     // Track if initial load is complete
     var isLoading by remember { mutableStateOf(true) }
 
+    // Track onboarding visibility
+    var showOnboarding by remember { mutableStateOf(false) }
+
     // Load preferences on first composition
     LaunchedEffect(Unit) {
         // Load initial preferences for all known apps
@@ -76,6 +81,10 @@ fun PerAppSettingsScreen(
         // Wait for all to load
         jobs.awaitAll()
         isLoading = false
+
+        // Check if onboarding has been seen
+        val seen = preferencesManager.hasSeenOnboarding.first()
+        if (!seen) showOnboarding = true
 
         // Now set up continuous observation for updates
         knownApps.forEach { (packageName, _) ->
@@ -162,6 +171,16 @@ fun PerAppSettingsScreen(
                             )
                         }
                     }
+                }
+
+                item {
+                    OnboardingTooltip(
+                        visible = showOnboarding,
+                        onDismiss = {
+                            showOnboarding = false
+                            scope.launch { preferencesManager.markOnboardingSeen() }
+                        }
+                    )
                 }
 
                 items(knownApps) { (packageName, appName) ->
