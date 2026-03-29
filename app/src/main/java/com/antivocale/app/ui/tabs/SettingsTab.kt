@@ -30,6 +30,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
@@ -93,7 +94,7 @@ fun SettingsTab(
 
     // Check if model is currently loaded (only relevant for LLM backend)
     // Use StateFlow for reactive updates when model state changes
-    val isLlmBackend = settingsState.transcriptionBackend == "llm"
+    val isLlmBackend = settingsState.transcriptionBackend == PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
     val isModelLoaded by LlmManager.isReadyFlow.collectAsState()
     val remainingTime = LlmManager.getRemainingTimeSeconds() ?: 0L
 

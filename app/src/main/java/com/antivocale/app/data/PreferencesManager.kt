@@ -45,6 +45,9 @@ class PreferencesManager(private val context: Context) {
         const val DEFAULT_AUTO_COPY_ENABLED = false
         const val DEFAULT_VAD_ENABLED = false
         const val DEFAULT_PROMPT_VALUE = ""
+        const val DEFAULT_THEME = "DEFAULT"
+        const val DEFAULT_TRANSCRIPTION_BACKEND = "llm"
+        const val DEFAULT_LANGUAGE = "system"
     }
 
     /**
@@ -97,7 +100,7 @@ class PreferencesManager(private val context: Context) {
      */
     suspend fun getLegacyLanguagePreference(): String {
         return context.dataStore.data.map { preferences ->
-            preferences[LANGUAGE_PREFERENCE] ?: "system"
+            preferences[LANGUAGE_PREFERENCE] ?: DEFAULT_LANGUAGE
         }.first()
     }
 
@@ -106,7 +109,7 @@ class PreferencesManager(private val context: Context) {
      * Returns "DEFAULT" by default.
      */
     val themePreference: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[THEME_PREFERENCE] ?: "DEFAULT"
+        preferences[THEME_PREFERENCE] ?: DEFAULT_THEME
     }
 
     /**
@@ -123,7 +126,7 @@ class PreferencesManager(private val context: Context) {
      * Returns "llm" by default (LiteRT-LM backend).
      */
     val transcriptionBackend: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[TRANSCRIPTION_BACKEND] ?: "llm"
+        preferences[TRANSCRIPTION_BACKEND] ?: DEFAULT_TRANSCRIPTION_BACKEND
     }
 
     /**

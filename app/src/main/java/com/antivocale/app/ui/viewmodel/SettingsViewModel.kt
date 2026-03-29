@@ -151,7 +151,7 @@ class SettingsViewModel(
         val currentModelName: String? = null,
         val availableModels: List<DiscoveredModel> = emptyList(),
         // Backend preference
-        val transcriptionBackend: String = "llm"
+        val transcriptionBackend: String = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
     )
 
     /**
@@ -515,7 +515,7 @@ class SettingsViewModel(
         viewModelScope.launch {
             preferencesManager.saveModelPath(model.path)
             // Switch to LLM backend when selecting an LLM model
-            preferencesManager.saveTranscriptionBackend("llm")
+            preferencesManager.saveTranscriptionBackend(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
             // Refresh the list to update current selection
             scanAvailableModels()
             // Update current model display

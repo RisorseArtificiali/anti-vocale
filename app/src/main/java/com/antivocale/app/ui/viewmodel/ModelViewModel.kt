@@ -774,7 +774,7 @@ class ModelViewModel(
             if (modelPath != null) {
                 preferencesManager.saveModelPath(modelPath)
                 // Switch to LLM backend when selecting an LLM model
-                preferencesManager.saveTranscriptionBackend("llm")
+                preferencesManager.saveTranscriptionBackend(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
                 val message = AppContainer.applicationContext.getString(R.string.model_selected_message, variant.displayName)
                 _uiState.update { it.copy(
                     modelPath = modelPath,

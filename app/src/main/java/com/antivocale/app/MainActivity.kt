@@ -15,6 +15,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.ui.MainScreen
 import com.antivocale.app.ui.theme.AntiVocaleTheme
@@ -31,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         requestNotificationPermissionIfNeeded()
         setContent {
             // Collect theme preference and convert to ThemeType
-            val themeName by AppContainer.preferencesManager.themePreference.collectAsState(initial = "DEFAULT")
+            val themeName by AppContainer.preferencesManager.themePreference.collectAsState(initial = PreferencesManager.DEFAULT_THEME)
             val theme = try {
                 ThemeType.valueOf(themeName)
             } catch (e: IllegalArgumentException) {

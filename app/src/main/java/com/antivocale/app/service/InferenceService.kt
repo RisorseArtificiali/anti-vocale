@@ -18,6 +18,7 @@ import com.antivocale.app.R
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.di.AppContainer
+import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -300,7 +301,7 @@ class InferenceService : Service() {
         Log.i(TAG, "Auto-loading LLM model from: $modelPath")
 
         return TranscriptionBackendManager.setActiveBackend(
-            backendId = "llm",
+            backendId = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND,
             context = applicationContext,
             config = BackendConfig.LiteRTConfig(modelPath = modelPath)
         )
