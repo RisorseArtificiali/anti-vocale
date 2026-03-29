@@ -21,7 +21,9 @@ class PreferencesManager(private val context: Context) {
 
     companion object {
         private val MODEL_PATH = stringPreferencesKey("model_path")
-        private val KEEP_ALIVE_TIMEOUT = stringPreferencesKey("keep_alive_timeout")
+        private val KEEP_ALIVE_TIMEOUT = intPreferencesKey("keep_alive_timeout_v2")
+        // Legacy key for migration from string-based storage
+        private val KEEP_ALIVE_TIMEOUT_LEGACY = stringPreferencesKey("keep_alive_timeout")
         // Kept for migration purposes only
         private val LANGUAGE_PREFERENCE = stringPreferencesKey("language_preference")
         private val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
@@ -37,6 +39,12 @@ class PreferencesManager(private val context: Context) {
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
         // Default prompt for transcription
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
+
+        // Default values (single source of truth)
+        const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
+        const val DEFAULT_AUTO_COPY_ENABLED = false
+        const val DEFAULT_VAD_ENABLED = false
+        const val DEFAULT_PROMPT_VALUE = ""
     }
 
     /**
@@ -68,7 +76,9 @@ class PreferencesManager(private val context: Context) {
      * Flow of the keep-alive timeout in minutes.
      */
     val keepAliveTimeout: Flow<Int> = context.dataStore.data.map { preferences ->
-        preferences[KEEP_ALIVE_TIMEOUT]?.toIntOrNull() ?: 5 // Default 5 minutes
+        preferences[KEEP_ALIVE_TIMEOUT]
+            ?: preferences[KEEP_ALIVE_TIMEOUT_LEGACY]?.toIntOrNull()
+            ?: DEFAULT_KEEP_ALIVE_TIMEOUT
     }
 
     /**
@@ -76,7 +86,8 @@ class PreferencesManager(private val context: Context) {
      */
     suspend fun saveKeepAliveTimeout(minutes: Int) {
         context.dataStore.edit { preferences ->
-            preferences[KEEP_ALIVE_TIMEOUT] = minutes.toString()
+            preferences[KEEP_ALIVE_TIMEOUT] = minutes
+            preferences.remove(KEEP_ALIVE_TIMEOUT_LEGACY)
         }
     }
 
@@ -179,7 +190,7 @@ class PreferencesManager(private val context: Context) {
      * Returns false by default (user must manually copy).
      */
     val autoCopyEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[AUTO_COPY_ENABLED] ?: false
+        preferences[AUTO_COPY_ENABLED] ?: DEFAULT_AUTO_COPY_ENABLED
     }
 
     /**
@@ -196,7 +207,7 @@ class PreferencesManager(private val context: Context) {
      * Returns false by default (VAD disabled, user must opt in).
      */
     val vadEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[VAD_ENABLED] ?: false
+        preferences[VAD_ENABLED] ?: DEFAULT_VAD_ENABLED
     }
 
     /**
@@ -213,7 +224,7 @@ class PreferencesManager(private val context: Context) {
      * Returns empty string by default (use system default).
      */
     val defaultPrompt: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[DEFAULT_PROMPT] ?: ""
+        preferences[DEFAULT_PROMPT] ?: DEFAULT_PROMPT_VALUE
     }
 
     /**

@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
+import com.antivocale.app.util.WavUtils
 import com.k2fsa.sherpa.onnx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -26,7 +27,6 @@ class WhisperBackend : TranscriptionBackend {
 
     companion object {
         private const val TAG = "WhisperBackend"
-        private const val DEFAULT_KEEP_ALIVE_MINUTES = 5
 
         // Required model files for Whisper (separate encoder and decoder)
         val REQUIRED_MODEL_FILES = listOf(
@@ -44,7 +44,6 @@ class WhisperBackend : TranscriptionBackend {
     private var recognizer: OfflineRecognizer? = null
     private var modelDir: String? = null
     private var isInitialized = false
-    private var keepAliveTimeoutMinutes: Int = DEFAULT_KEEP_ALIVE_MINUTES
 
     override suspend fun initialize(context: Context, config: BackendConfig): Result<Unit> {
         val sherpaConfig = config as? BackendConfig.SherpaOnnxConfig
@@ -133,7 +132,7 @@ class WhisperBackend : TranscriptionBackend {
                 Log.d(TAG, "Transcribing audio: ${audioData.size} bytes")
 
                 // Convert WAV ByteArray to float samples
-                val samples = parseWavToFloats(audioData)
+                val samples = WavUtils.parseWavToFloats(audioData)
                 Log.d(TAG, "Parsed ${samples.size} audio samples, duration: ${samples.size / 16000.0f}s")
 
                 // Create stream and process audio
@@ -183,8 +182,7 @@ class WhisperBackend : TranscriptionBackend {
     }
 
     override fun setKeepAliveTimeout(minutes: Int) {
-        keepAliveTimeoutMinutes = if (minutes > 0) minutes else DEFAULT_KEEP_ALIVE_MINUTES
-        Log.d(TAG, "Keep-alive timeout set to $keepAliveTimeoutMinutes minutes")
+        // No-op: Whisper backend doesn't manage its own lifecycle
     }
 
     override fun getModelPath(): String? = modelDir
@@ -236,35 +234,5 @@ class WhisperBackend : TranscriptionBackend {
             decoderPath = decoderFile.absolutePath,
             tokensPath = tokensFile.absolutePath
         )
-    }
-
-    /**
-     * Parses WAV ByteArray to FloatArray samples.
-     *
-     * Assumes WAV format with 44-byte header and 16-bit signed PCM samples.
-     * Converts to normalized float values in range [-1.0, 1.0].
-     */
-    private fun parseWavToFloats(wavData: ByteArray): FloatArray {
-        // Skip 44-byte WAV header
-        val headerSize = 44
-        if (wavData.size <= headerSize) {
-            throw IllegalArgumentException("WAV data too short: ${wavData.size} bytes")
-        }
-
-        // Calculate number of samples (16-bit = 2 bytes per sample)
-        val numSamples = (wavData.size - headerSize) / 2
-        val samples = FloatArray(numSamples)
-
-        // Wrap byte array with ByteBuffer for efficient reading
-        val buffer = ByteBuffer.wrap(wavData, headerSize, wavData.size - headerSize)
-        buffer.order(ByteOrder.LITTLE_ENDIAN)
-
-        // Convert 16-bit signed PCM to float in range [-1.0, 1.0]
-        for (i in 0 until numSamples) {
-            val shortValue = buffer.short
-            samples[i] = shortValue / 32768.0f
-        }
-
-        return samples
     }
 }

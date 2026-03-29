@@ -2,6 +2,7 @@ package com.antivocale.app.manager
 
 import android.content.Context
 import android.util.Log
+import com.antivocale.app.data.PreferencesManager
 import com.google.ai.edge.litertlm.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -32,7 +33,6 @@ object LlmManager {
 
     private const val TAG = "LlmManager"
     private const val MAX_TOKENS = 2048
-    private const val DEFAULT_KEEP_ALIVE_MINUTES = 5
 
     // Reactive state for UI observation
     private val _isReady = MutableStateFlow(false)
@@ -62,7 +62,7 @@ object LlmManager {
     // Keep-alive timeout management
     private val managerScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var keepAliveJob: Job? = null
-    private var keepAliveTimeoutMinutes: Int = DEFAULT_KEEP_ALIVE_MINUTES
+    private var keepAliveTimeoutMinutes: Int = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
 
     // Callback for when model is auto-unloaded
     private val onAutoUnloadCallback = AtomicReference<(() -> Unit)?>(null)
@@ -75,7 +75,7 @@ object LlmManager {
      * After this period of inactivity, the model will be automatically unloaded.
      */
     fun setKeepAliveTimeout(minutes: Int) {
-        keepAliveTimeoutMinutes = if (minutes > 0) minutes else DEFAULT_KEEP_ALIVE_MINUTES
+        keepAliveTimeoutMinutes = if (minutes > 0) minutes else PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
         Log.d(TAG, "Keep-alive timeout set to $keepAliveTimeoutMinutes minutes")
     }
 

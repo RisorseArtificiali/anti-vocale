@@ -66,7 +66,7 @@ class SettingsViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = 5
+            initialValue = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
         )
 
     // Auto-copy transcription results preference
@@ -74,7 +74,7 @@ class SettingsViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
+            initialValue = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED
         )
 
     // VAD silence stripping preference
@@ -82,7 +82,7 @@ class SettingsViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = false
+            initialValue = PreferencesManager.DEFAULT_VAD_ENABLED
         )
 
     // Default prompt for transcription
@@ -90,7 +90,7 @@ class SettingsViewModel(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ""
+            initialValue = PreferencesManager.DEFAULT_PROMPT_VALUE
         )
 
     // Current language from Per-App Language API (not DataStore)
