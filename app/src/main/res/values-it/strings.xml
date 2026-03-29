@@ -112,6 +112,10 @@
     <string name="processing_chunk">Elaborazione segmento %1$d/%2$d…</string>
     <string name="processing_audio">Elaborazione audio…</string>
     <string name="processing_request">Elaborazione richiesta %1$s…</string>
+    <string name="processing_queue_item">Elaborazione %1$d di %2$d…</string>
+    <string name="processing_queue_item_audio">Elaborazione audio (%1$d di %2$d)…</string>
+    <string name="processing_queue_chunk">Elaborazione parte %1$d/%2$d (%3$d di %4$d)…</string>
+    <string name="queued_count">%1$d in coda</string>
     <string name="generating_text">Generazione risposta testuale…</string>
 
     <!-- Model Tab - Download section -->

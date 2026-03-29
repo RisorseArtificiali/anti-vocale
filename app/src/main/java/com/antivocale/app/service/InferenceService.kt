@@ -77,8 +77,14 @@ class InferenceService : Service() {
     private var currentProcessingJob: Job? = null
     private var transcriptionStartTime: Long = 0
 
+    // O(1) queue size tracker — avoids ConcurrentLinkedQueue.size traversal on every 200ms timer tick
+    private val pendingCount = AtomicInteger(0)
+
     // Bounds parallel chunk processing to avoid memory/thermal issues on mobile
     private val chunkSemaphore = Semaphore(MAX_CONCURRENT_CHUNKS)
+
+    /** Monotonically increasing counter for unique result notification IDs. */
+    private val resultNotificationCounter = AtomicInteger(RESULT_NOTIFICATION_ID)
 
     data class PendingRequest(
         val taskId: String,
@@ -125,7 +131,13 @@ class InferenceService : Service() {
 
         // Enqueue request
         requestQueue.add(request)
+        val queueSize = pendingCount.incrementAndGet()
         Log.i(TAG, "Request enqueued: ${request.taskId}, source=${request.source}, sourcePackage=${request.sourcePackage}, filePath=$filePath")
+
+        // Update foreground notification with queue info when items pile up
+        if (_isTranscribing.value && queueSize > 1) {
+            updateNotificationQueueHint(queueSize)
+        }
 
         // Process queue
         processQueue()
@@ -151,15 +163,22 @@ class InferenceService : Service() {
 
             _isTranscribing.value = true
 
+            // Snapshot batch size for queue-aware notifications
+            val totalInBatch = pendingCount.get()
+            var currentIndex = 0
+
             try {
                 while (requestQueue.isNotEmpty()) {
                     val request = requestQueue.poll() ?: continue
-                    processRequest(request)
+                    pendingCount.decrementAndGet()
+                    currentIndex++
+                    processRequest(request, currentIndex, totalInBatch)
                 }
             } catch (e: CancellationException) {
                 Log.i(TAG, "Processing cancelled by user")
                 // Clear any remaining queue on cancel
                 requestQueue.clear()
+                pendingCount.set(0)
             } finally {
                 _isTranscribing.value = false
             }
@@ -178,15 +197,23 @@ class InferenceService : Service() {
 
         // Clear the queue
         requestQueue.clear()
+        pendingCount.set(0)
 
         // Dismiss notification and stop service
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
     }
 
-    private suspend fun processRequest(request: PendingRequest) {
-        Log.i(TAG, "Processing request: ${request.taskId}")
-        updateNotification(getString(R.string.processing_request, request.requestType))
+    private suspend fun processRequest(request: PendingRequest, queuePosition: Int = 1, queueTotal: Int = 1) {
+        Log.i(TAG, "Processing request: ${request.taskId} (queue position $queuePosition/$queueTotal)")
+
+        // Show queue-aware initial notification
+        val initialText = if (queueTotal > 1) {
+            getString(R.string.processing_queue_item, queuePosition, queueTotal)
+        } else {
+            getString(R.string.processing_request, request.requestType)
+        }
+        updateNotification(initialText)
 
         // Log request start
         val logsViewModel = AppContainer.logsViewModel
@@ -249,7 +276,7 @@ class InferenceService : Service() {
             }
 
             val result = when (request.requestType) {
-                "audio" -> processAudioRequest(request)
+                "audio" -> processAudioRequest(request, queuePosition, queueTotal)
                 else -> processTextRequest(request)
             }
 
@@ -380,7 +407,7 @@ class InferenceService : Service() {
         return backend.generateText(prompt)
     }
 
-    private suspend fun processAudioRequest(request: PendingRequest): Result<String> {
+    private suspend fun processAudioRequest(request: PendingRequest, queuePosition: Int = 1, queueTotal: Int = 1): Result<String> {
         Log.d(TAG, "Processing audio request: ${request.taskId}")
 
         val filePath = request.filePath
@@ -482,7 +509,9 @@ class InferenceService : Service() {
                 completedChunks = completedChunks,
                 estimatedTotalMs = estimatedTotalMs,
                 audioDurationSeconds = audioDurationSeconds,
-                calibrationProfile = calibrationProfile
+                calibrationProfile = calibrationProfile,
+                queuePosition = queuePosition,
+                queueTotal = queueTotal
             )
         }
 
@@ -742,11 +771,15 @@ class InferenceService : Service() {
         completedChunks: AtomicInteger,
         estimatedTotalMs: Long?,
         audioDurationSeconds: Int,
-        calibrationProfile: TranscriptionCalibrator.CalibrationProfile?
+        calibrationProfile: TranscriptionCalibrator.CalibrationProfile?,
+        queuePosition: Int = 1,
+        queueTotal: Int = 1
     ): Job {
         val startTime = System.currentTimeMillis()
         var lastProgressPercent = -1
-        val singleChunkLabel = if (totalChunks == 1) getString(R.string.processing_audio) else null
+        val singleChunkLabel = if (totalChunks == 1) {
+            queueAwareAudioLabel(queuePosition, queueTotal)
+        } else null
 
         return launch {
             while (isActive) {
@@ -789,9 +822,9 @@ class InferenceService : Service() {
                 }
 
                 val contentText = if (completed == 0 && totalChunks > 1) {
-                    getString(R.string.processing_audio)
+                    queueAwareAudioLabel(queuePosition, queueTotal)
                 } else {
-                    singleChunkLabel ?: getString(R.string.processing_chunk, completed, totalChunks)
+                    singleChunkLabel ?: queueAwareChunkLabel(completed, totalChunks, queuePosition, queueTotal)
                 }
 
                 updateNotificationWithSmoothProgress(
@@ -799,10 +832,60 @@ class InferenceService : Service() {
                     progressPercent = displayProgress,
                     etaText = etaText,
                     durationSeconds = audioDurationSeconds,
-                    startTimeMillis = transcriptionStartTime
+                    startTimeMillis = transcriptionStartTime,
+                    queuedCount = pendingCount.get()
                 )
             }
         }
+    }
+
+    /**
+     * Returns a queue-aware label for "Processing audio…".
+     * When multiple items are queued, includes position: "Processing audio (2 of 5)…"
+     */
+    private fun queueAwareAudioLabel(queuePosition: Int, queueTotal: Int): String =
+        if (queueTotal > 1) getString(R.string.processing_queue_item_audio, queuePosition, queueTotal)
+        else getString(R.string.processing_audio)
+
+    /**
+     * Returns a queue-aware label for chunk progress.
+     * When multiple items are queued, includes position: "Processing chunk 1/3 (2 of 5)…"
+     */
+    private fun queueAwareChunkLabel(completed: Int, totalChunks: Int, queuePosition: Int, queueTotal: Int): String =
+        if (queueTotal > 1) getString(R.string.processing_queue_chunk, completed, totalChunks, queuePosition, queueTotal)
+        else getString(R.string.processing_chunk, completed, totalChunks)
+
+    /**
+     * Posts a notification with a unique ID from the result counter and logs it.
+     */
+    private fun postUniqueNotification(notification: Notification, description: String) {
+        val id = resultNotificationCounter.getAndIncrement()
+        notificationManager.notify(id, notification)
+        Log.i(TAG, "$description (id=$id)")
+    }
+
+    /**
+     * Updates the foreground notification subtext to show how many items are queued.
+     * Called when a new share arrives while transcription is already active.
+     */
+    private fun updateNotificationQueueHint(queuedCount: Int) {
+        // Build a notification that keeps the current progress state but adds queue info to subtext
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.queued_count, queuedCount))
+            .setSmallIcon(android.R.drawable.ic_menu_manage)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setSilent(true)
+            .setProgress(100, 0, true)
+            .addAction(
+                android.R.drawable.ic_menu_close_clear_cancel,
+                getString(R.string.action_cancel),
+                cancelPendingIntent
+            )
+
+        notificationManager.notify(NOTIFICATION_ID, builder.build())
+        Log.i(TAG, "Updated notification with queue hint: $queuedCount queued")
     }
 
     private fun updateNotificationWithSmoothProgress(
@@ -810,7 +893,8 @@ class InferenceService : Service() {
         progressPercent: Int,
         etaText: String,
         durationSeconds: Int,
-        startTimeMillis: Long
+        startTimeMillis: Long,
+        queuedCount: Int = 0
     ) {
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
@@ -830,11 +914,21 @@ class InferenceService : Service() {
             builder.setUsesChronometer(true)
         }
 
-        // Show ETA in subtext if available, otherwise duration
-        if (etaText.isNotEmpty()) {
-            builder.setSubText(etaText)
-        } else if (durationSeconds > 0) {
-            builder.setSubText(formatDuration(durationSeconds))
+        // Build subtext: queue info + ETA/duration
+        val queueText = if (queuedCount > 0) getString(R.string.queued_count, queuedCount) else ""
+        val timingText = when {
+            etaText.isNotEmpty() -> etaText
+            durationSeconds > 0 -> formatDuration(durationSeconds)
+            else -> ""
+        }
+        val subText = when {
+            queueText.isNotEmpty() && timingText.isNotEmpty() -> "$queueText · $timingText"
+            queueText.isNotEmpty() -> queueText
+            timingText.isNotEmpty() -> timingText
+            else -> null
+        }
+        if (subText != null) {
+            builder.setSubText(subText)
         }
 
         notificationManager.notify(NOTIFICATION_ID, builder.build())
@@ -1010,8 +1104,7 @@ class InferenceService : Service() {
 
         val notification = builder.build()
 
-        notificationManager.notify(RESULT_NOTIFICATION_ID, notification)
-        Log.i(TAG, "Showed result notification (${transcriptionText.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction}")
+        postUniqueNotification(notification, "Showed result notification (${transcriptionText.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction}")
     }
 
     private fun showErrorNotification(errorMessage: String) {
@@ -1034,7 +1127,6 @@ class InferenceService : Service() {
             .setAutoCancel(true)
             .build()
 
-        notificationManager.notify(RESULT_NOTIFICATION_ID, notification)
-        Log.i(TAG, "Showed error notification: $errorMessage")
+        postUniqueNotification(notification, "Showed error notification: $errorMessage")
     }
 }
