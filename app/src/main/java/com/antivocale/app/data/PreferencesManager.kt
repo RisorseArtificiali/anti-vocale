@@ -193,10 +193,10 @@ class PreferencesManager(private val context: Context) {
 
     /**
      * Flow of VAD silence stripping enabled preference.
-     * Returns true by default (VAD enabled for better performance).
+     * Returns false by default (VAD disabled, user must opt in).
      */
     val vadEnabled: Flow<Boolean> = context.dataStore.data.map { preferences ->
-        preferences[VAD_ENABLED] ?: true
+        preferences[VAD_ENABLED] ?: false
     }
 
     /**
