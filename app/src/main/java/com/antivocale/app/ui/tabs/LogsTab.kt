@@ -97,7 +97,7 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
 
         if (logs.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
