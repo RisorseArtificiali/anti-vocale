@@ -11,6 +11,7 @@ import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.WhisperBackend
+import com.antivocale.app.data.local.AppDatabase
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 
 /**
@@ -21,6 +22,7 @@ object AppContainer {
 
     private var _preferencesManager: PreferencesManager? = null
     private var _logsViewModel: LogsViewModel? = null
+    private var _database: AppDatabase? = null
     private var _applicationContext: Context? = null
     private var _huggingFaceTokenManager: HuggingFaceTokenManager? = null
     private var _huggingFaceApiClient: HuggingFaceApiClient? = null
@@ -33,6 +35,9 @@ object AppContainer {
 
     val logsViewModel: LogsViewModel
         get() = _logsViewModel!!
+
+    val database: AppDatabase
+        get() = _database!!
 
     val applicationContext: Context
         get() = _applicationContext!!
@@ -60,7 +65,8 @@ object AppContainer {
         _preferencesManager = PreferencesManager(context.applicationContext)
         _perAppPreferencesManager = PerAppPreferencesManager(context.applicationContext)
         _transcriptionCalibrator = TranscriptionCalibrator(context.applicationContext)
-        _logsViewModel = LogsViewModel()
+        _database = AppDatabase.getDatabase(context.applicationContext)
+        _logsViewModel = LogsViewModel(database.logDao())
         _huggingFaceTokenManager = HuggingFaceTokenManager(context.applicationContext).apply {
             initialize()
         }

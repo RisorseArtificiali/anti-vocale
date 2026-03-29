@@ -2,13 +2,18 @@ package com.antivocale.app.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.antivocale.app.data.local.LogDao
+import com.antivocale.app.data.local.LogEntity
+import com.antivocale.app.data.local.toEntity
+import com.antivocale.app.data.local.toLogEntry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import java.util.UUID
 
 data class LogEntry(
@@ -22,46 +27,51 @@ data class LogEntry(
     val errorMessage: String? = null,
     val durationMs: Long = 0,
     val filePath: String? = null,
-    val audioDurationSeconds: Double = 0.0  // Original voice message duration
+    val audioDurationSeconds: Double = 0.0
 ) {
     enum class Type { TEXT, AUDIO }
     enum class Status { PENDING, SUCCESS, ERROR }
 }
 
-class LogsViewModel : ViewModel() {
+class LogsViewModel(private val logDao: LogDao) : ViewModel() {
 
-    private val _logs = MutableStateFlow<List<LogEntry>>(emptyList())
-    val logs: StateFlow<List<LogEntry>> = _logs.asStateFlow()
+    val logs: StateFlow<List<LogEntry>> = logDao.getAll()
+        .map { entities -> entities.map { it.toLogEntry() } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
-    val filteredLogs: StateFlow<List<LogEntry>> = combine(_logs, _searchQuery) { logs, query ->
+    val filteredLogs: StateFlow<List<LogEntry>> = combine(logs, _searchQuery) { logs, query ->
         if (query.isBlank()) logs
         else logs.filter { it.result.contains(query, ignoreCase = true) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    private val maxLogs = 10
-
     fun addLog(entry: LogEntry) {
-        _logs.update { currentLogs ->
-            (listOf(entry) + currentLogs).take(maxLogs)
+        viewModelScope.launch {
+            logDao.insert(entry.toEntity())
         }
     }
 
     fun updateLog(taskId: String, update: (LogEntry) -> LogEntry) {
-        _logs.update { currentLogs ->
-            currentLogs.map { log ->
-                if (log.taskId == taskId) update(log) else log
-            }
+        viewModelScope.launch {
+            val entity = logDao.getByTaskId(taskId) ?: return@launch
+            logDao.update(update(entity.toLogEntry()).toEntity())
+        }
+    }
+
+    fun deleteLog(id: String) {
+        viewModelScope.launch {
+            logDao.deleteById(id)
         }
     }
 
     fun clearLogs() {
-        _logs.value = emptyList()
+        viewModelScope.launch {
+            logDao.deleteAll()
+        }
     }
 
-    // Convenience methods for common operations
     fun logRequest(
         taskId: String,
         type: LogEntry.Type,

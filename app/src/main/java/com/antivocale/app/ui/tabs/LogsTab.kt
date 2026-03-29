@@ -7,6 +7,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.*
 import android.content.ClipData
 import android.content.Context
@@ -31,18 +32,63 @@ import com.antivocale.app.ui.viewmodel.LogsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
     val logs by viewModel.logs.collectAsState()
     val filteredLogs by viewModel.filteredLogs.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val context = LocalContext.current
+
+    var showClearDialog by remember { mutableStateOf(false) }
+    var recentlyDeletedEntry by remember { mutableStateOf<LogEntry?>(null) }
+
+    // Undo deletion via Snackbar
+    val snackbarHostState = remember { SnackbarHostState() }
+    LaunchedEffect(recentlyDeletedEntry) {
+        val entry = recentlyDeletedEntry ?: return@LaunchedEffect
+        val result = snackbarHostState.showSnackbar(
+            message = context.getString(R.string.logs_entry_deleted),
+            actionLabel = context.getString(R.string.logs_undo),
+            duration = SnackbarDuration.Short
+        )
+        if (result == SnackbarResult.ActionPerformed) {
+            viewModel.addLog(entry)
+        }
+        recentlyDeletedEntry = null
+    }
 
     // Group filtered logs by date
     val groupedLogs = remember(filteredLogs) {
         groupLogsByDate(filteredLogs)
     }
 
-    Column(modifier = Modifier.fillMaxSize()) {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { paddingValues ->
+    Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        // Clear-all confirmation dialog
+        if (showClearDialog) {
+            AlertDialog(
+                onDismissRequest = { showClearDialog = false },
+                title = { Text(stringResource(R.string.logs_clear)) },
+                text = { Text(stringResource(R.string.logs_clear_confirmation)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        viewModel.clearLogs()
+                        showClearDialog = false
+                    }) {
+                        Text(stringResource(R.string.logs_confirm))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showClearDialog = false }) {
+                        Text(stringResource(R.string.logs_cancel))
+                    }
+                }
+            )
+        }
+
         // Header
         Surface(
             modifier = Modifier.fillMaxWidth(),
@@ -60,7 +106,10 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
                         text = stringResource(R.string.logs_recent_requests, logs.size),
                         style = MaterialTheme.typography.titleSmall
                     )
-                    TextButton(onClick = { viewModel.clearLogs() }) {
+                    TextButton(
+                        onClick = { showClearDialog = true },
+                        enabled = logs.isNotEmpty()
+                    ) {
                         Icon(
                             Icons.Default.DeleteSweep,
                             contentDescription = null,
@@ -162,7 +211,43 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
 
                     // Logs for this date
                     items(dateLogs, key = { it.id }) { log ->
-                        LogEntryItem(log = log, searchQuery = searchQuery)
+                        val dismissState = rememberSwipeToDismissBoxState(
+                            confirmValueChange = {
+                                if (it == SwipeToDismissBoxValue.EndToStart) {
+                                    recentlyDeletedEntry = log
+                                    viewModel.deleteLog(log.id)
+                                    true
+                                } else false
+                            }
+                        )
+                        SwipeToDismissBox(
+                            state = dismissState,
+                            backgroundContent = {
+                                val color by animateColorAsState(
+                                    if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
+                                        dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+                                    ) MaterialTheme.colorScheme.errorContainer
+                                    else MaterialTheme.colorScheme.surface,
+                                    label = "swipe_bg"
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(color)
+                                        .padding(horizontal = 20.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = stringResource(R.string.logs_delete_entry),
+                                        tint = MaterialTheme.colorScheme.onErrorContainer
+                                    )
+                                }
+                            },
+                            enableDismissFromStartToEnd = false
+                        ) {
+                            LogEntryItem(log = log, searchQuery = searchQuery)
+                        }
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp),
                             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
@@ -172,6 +257,7 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
             }
         }
     }
+    } // Scaffold
 }
 
 @Composable
