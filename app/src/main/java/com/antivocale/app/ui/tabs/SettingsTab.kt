@@ -40,6 +40,7 @@ import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.theme.ThemeType
+import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -67,6 +68,7 @@ fun SettingsTab(
     val tokenState by viewModel.tokenState.collectAsState()
     val tokenInput by viewModel.tokenInput.collectAsState()
     val oauthState by viewModel.oauthState.collectAsState()
+    val isTranscribing by InferenceService.isTranscribing.collectAsState()
     val scrollState = rememberScrollState()
     var tokenPasswordVisible by remember { mutableStateOf(false) }
     var showOAuthConfigDialog by remember { mutableStateOf(false) }
@@ -167,8 +169,10 @@ fun SettingsTab(
                     OutlinedButton(
                         onClick = { viewModel.unloadModel() },
                         modifier = Modifier.fillMaxWidth(),
+                        enabled = !isTranscribing,
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error
+                            contentColor = MaterialTheme.colorScheme.error,
+                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
                     ) {
                         Icon(
@@ -178,6 +182,13 @@ fun SettingsTab(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(stringResource(R.string.unload_model))
+                    }
+                    if (isTranscribing) {
+                        Text(
+                            text = stringResource(R.string.cannot_unload_during_transcription),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
                     }
                 }
 
@@ -1218,6 +1229,7 @@ fun SettingsTab(
         if (showPerfStatsDialog) {
             PerformanceStatsDialog(
                 profiles = perfStatsProfiles,
+                isTranscribing = isTranscribing,
                 onDismiss = { showPerfStatsDialog = false },
                 onReset = {
                     perfStatsScope.launch {
@@ -1658,6 +1670,7 @@ private fun formatExpiration(expiresAt: Long): String {
 @Composable
 private fun PerformanceStatsDialog(
     profiles: List<CalibrationProfile>,
+    isTranscribing: Boolean,
     onDismiss: () -> Unit,
     onReset: () -> Unit
 ) {
@@ -1836,7 +1849,32 @@ private fun PerformanceStatsDialog(
         AlertDialog(
             onDismissRequest = { showResetConfirm = false },
             title = { Text(stringResource(R.string.performance_stats_clear)) },
-            text = { Text(stringResource(R.string.performance_stats_clear_confirm)) },
+            text = {
+                if (isTranscribing) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(stringResource(R.string.performance_stats_clear_confirm))
+                        HorizontalDivider()
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.warn_reset_stats_during_transcription),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                } else {
+                    Text(stringResource(R.string.performance_stats_clear_confirm))
+                }
+            },
             confirmButton = {
                 TextButton(
                     onClick = {

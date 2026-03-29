@@ -371,4 +371,6 @@
     <string name="dialog_switch_model_message">A transcription is currently in progress. Switching models may disrupt it. Are you sure?</string>
     <string name="action_understood">Understood</string>
     <string name="action_switch_anyway">Switch anyway</string>
+    <string name="warn_reset_stats_during_transcription">A transcription is in progress. Resetting stats now won\'t affect it, but timing data may be incomplete.</string>
+    <string name="cannot_unload_during_transcription">Cannot unload: model is being used for an active transcription</string>
 </resources>

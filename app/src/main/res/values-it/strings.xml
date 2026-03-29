@@ -341,4 +341,12 @@
     <string name="speed_comparison_distil_it_note">Consigliato</string>
     <string name="fastest_badge">Più veloce</string>
     <string name="coming_soon_badge">Prossimamente</string>
+    <string name="dialog_transcription_active_title">Trascrizione in corso</string>
+    <string name="dialog_delete_active_model_message">Impossibile eliminare \'%1$s\' mentre è in uso per la trascrizione. Attendi il completamento.</string>
+    <string name="dialog_delete_inactive_model_message">Una trascrizione è in corso. Eliminare \'%1$s\' non la interromperà, ma procedi con cautela.</string>
+    <string name="dialog_switch_model_message">Una trascrizione è in corso. Cambiare modello potrebbe interromperla. Continuare?</string>
+    <string name="action_understood">Ho capito</string>
+    <string name="action_switch_anyway">Cambia comunque</string>
+    <string name="warn_reset_stats_during_transcription">Una trascrizione è in corso. Resettare le statistiche non la interromperà, ma i tempi potrebbero essere incompleti.</string>
+    <string name="cannot_unload_during_transcription">Impossibile scaricare: il modello è in uso per una trascrizione attiva</string>
 </resources>
