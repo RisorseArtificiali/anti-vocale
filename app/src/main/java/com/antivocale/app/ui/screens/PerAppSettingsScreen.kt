@@ -7,7 +7,24 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Android
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -68,6 +85,12 @@ fun PerAppSettingsScreen(
     // Track onboarding visibility
     var showOnboarding by remember { mutableStateOf(false) }
 
+    // Snackbar host state
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Reset all dialog state
+    var showResetAllDialog by remember { mutableStateOf(false) }
+
     // Load preferences on first composition
     LaunchedEffect(Unit) {
         // Load initial preferences for all known apps
@@ -121,14 +144,15 @@ fun PerAppSettingsScreen(
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Add app")
             }
-        }
+        },
+        snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->
+        Box(modifier = Modifier.padding(paddingValues)) {
         if (isLoading) {
             // Loading state
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
@@ -143,8 +167,7 @@ fun PerAppSettingsScreen(
             // Preferences loaded
             LazyColumn(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
+                    .fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -255,8 +278,24 @@ fun PerAppSettingsScreen(
                         }
                     }
                 }
+
+                // Reset All to Defaults button
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    OutlinedButton(
+                        onClick = { showResetAllDialog = true },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text(
+                            stringResource(R.string.per_app_settings_reset_all),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
             }
         }
+        } // Box
 
         // Settings panel for selected app
         if (selectedApp != null && selectedPrefs != null) {
@@ -297,7 +336,52 @@ fun PerAppSettingsScreen(
                         }
                     }
                 },
-                onDismiss = { selectedApp = null }
+                onDismiss = { selectedApp = null },
+                onResetToDefaults = {
+                    scope.launch {
+                        preferencesManager.clearPreferencesForPackage(packageName)
+                        selectedApp = null
+                        snackbarHostState.showSnackbar(
+                            message = context.getString(R.string.per_app_settings_reset_done)
+                        )
+                    }
+                }
+            )
+        }
+
+        // Reset All confirmation dialog
+        if (showResetAllDialog) {
+            AlertDialog(
+                onDismissRequest = { showResetAllDialog = false },
+                title = {
+                    Text(stringResource(R.string.per_app_settings_reset_all_confirm_title))
+                },
+                text = {
+                    Text(stringResource(R.string.per_app_settings_reset_all_confirm_message))
+                },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showResetAllDialog = false
+                        scope.launch {
+                            preferencesManager.clearAllPreferences()
+                            // Flow collectors in LaunchedEffect will automatically
+                            // update preferencesState with the new default values
+                            snackbarHostState.showSnackbar(
+                                message = context.getString(R.string.per_app_settings_reset_done)
+                            )
+                        }
+                    }) {
+                        Text(
+                            stringResource(R.string.per_app_settings_reset_app),
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showResetAllDialog = false }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                }
             )
         }
 

@@ -315,6 +315,15 @@
     <string name="per_app_settings_quick_share_back_title">Quick Share Back</string>
     <string name="per_app_settings_quick_share_back_description">One-tap to send transcriptions back to this app</string>
 
+    <!-- Per-App Reset -->
+    <string name="per_app_settings_reset_all">Reset All to Defaults</string>
+    <string name="per_app_settings_reset_all_confirm_title">Reset all settings?</string>
+    <string name="per_app_settings_reset_all_confirm_message">Notification preferences for all apps will be restored to their defaults.</string>
+    <string name="per_app_settings_reset_app">Reset to Defaults</string>
+    <string name="per_app_settings_reset_app_confirm_title">Reset settings for %1$s?</string>
+    <string name="per_app_settings_reset_app_confirm_message">Notification preferences for this app will be restored to defaults.</string>
+    <string name="per_app_settings_reset_done">Settings restored to defaults</string>
+
     <!-- Per-App Onboarding Tooltip -->
     <string name="per_app_onboarding_title">Customize per-app behavior</string>
     <string name="per_app_onboarding_message">Tap any app to configure auto-copy, share actions, and notification sounds for that specific app.</string>

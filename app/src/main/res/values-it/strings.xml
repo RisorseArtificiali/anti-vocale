@@ -315,6 +315,15 @@
     <string name="per_app_settings_quick_share_back_title">Condividi Indietro Rapido</string>
     <string name="per_app_settings_quick_share_back_description">Tocco unico per inviare la trascrizione all\'app</string>
 
+    <!-- Per-App Reset -->
+    <string name="per_app_settings_reset_all">Ripristina Tutto</string>
+    <string name="per_app_settings_reset_all_confirm_title">Ripristinare tutte le impostazioni?</string>
+    <string name="per_app_settings_reset_all_confirm_message">Le preferenze di notifica per tutte le app verranno ripristinate ai valori predefiniti.</string>
+    <string name="per_app_settings_reset_app">Ripristina Predefiniti</string>
+    <string name="per_app_settings_reset_app_confirm_title">Ripristinare le impostazioni per %1$s?</string>
+    <string name="per_app_settings_reset_app_confirm_message">Le preferenze di notifica per questa app verranno ripristinate ai valori predefiniti.</string>
+    <string name="per_app_settings_reset_done">Impostazioni ripristinate</string>
+
     <!-- Per-App Onboarding Tooltip -->
     <string name="per_app_onboarding_title">Personalizza per app</string>
     <string name="per_app_onboarding_message">Tocca un\'app per configurare copia automatica, azioni di condivisione e suoni di notifica per quella specifica app.</string>

@@ -43,9 +43,11 @@ fun AppPreferencePanel(
     onShowShareActionChanged: (Boolean) -> Unit,
     onQuickShareBackChanged: (Boolean) -> Unit,
     onNotificationSoundChanged: (String) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onResetToDefaults: () -> Unit
 ) {
     var showSoundDropdown by remember { mutableStateOf(false) }
+    var showResetDialog by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -184,9 +186,46 @@ fun AppPreferencePanel(
             }
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(R.string.per_app_settings_close))
+            Row(horizontalArrangement = Arrangement.End) {
+                TextButton(onClick = { showResetDialog = true }) {
+                    Text(
+                        stringResource(R.string.per_app_settings_reset_app),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.per_app_settings_close))
+                }
             }
         }
     )
+
+    // Reset confirmation dialog
+    if (showResetDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetDialog = false },
+            title = {
+                Text(stringResource(R.string.per_app_settings_reset_app_confirm_title, appName))
+            },
+            text = {
+                Text(stringResource(R.string.per_app_settings_reset_app_confirm_message))
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    showResetDialog = false
+                    onResetToDefaults()
+                }) {
+                    Text(
+                        stringResource(R.string.per_app_settings_reset_app),
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
 }
