@@ -26,6 +26,7 @@ import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.receiver.NotificationActionReceiver
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.util.AppInfoUtils
+import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -72,7 +73,7 @@ class InferenceService : Service() {
         val isTranscribing: kotlinx.coroutines.flow.StateFlow<Boolean> = _isTranscribing.asStateFlow()
     }
 
-    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
     private val requestQueue = ConcurrentLinkedQueue<PendingRequest>()
     private var currentProcessingJob: Job? = null
     private var transcriptionStartTime: Long = 0

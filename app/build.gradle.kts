@@ -3,6 +3,8 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
+    id("com.google.firebase.crashlytics")
 }
 
 import java.util.Properties
@@ -83,6 +85,11 @@ android {
 }
 
 dependencies {
+    // Firebase (BoM manages all Firebase library versions)
+    implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
+    implementation("com.google.firebase:firebase-crashlytics")
+    implementation("com.google.firebase:firebase-analytics")
+
     // LiteRT-LM for multimodal inference (text + audio)
     // https://maven.google.com/web/index.html#com.google.ai.edge.litertlm:litertlm-android
     implementation("com.google.ai.edge.litertlm:litertlm-android:0.9.0-beta")

@@ -6,8 +6,10 @@ import android.content.Intent
 import android.util.Log
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
+import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
@@ -46,7 +48,7 @@ class ModelPreloadReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
         val isSilent = intent.getBooleanExtra(EXTRA_SILENT, false)
 
-        CoroutineScope(Dispatchers.IO).launch {
+        CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler).launch {
             try {
                 // Check if model is already loaded
                 if (LlmManager.isReady()) {

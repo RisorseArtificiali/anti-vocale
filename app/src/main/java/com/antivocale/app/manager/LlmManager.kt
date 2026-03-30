@@ -4,6 +4,7 @@ import android.content.Context
 import android.util.Log
 import com.antivocale.app.data.PreferencesManager
 import com.google.ai.edge.litertlm.*
+import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -60,7 +61,7 @@ object LlmManager {
     private var appContext: Context? = null
 
     // Keep-alive timeout management
-    private val managerScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val managerScope = CoroutineScope(Dispatchers.Default + SupervisorJob() + CrashReporter.handler)
     private var keepAliveJob: Job? = null
     private var keepAliveTimeoutMinutes: Int = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
 

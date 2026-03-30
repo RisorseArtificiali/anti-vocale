@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
+import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -341,7 +342,7 @@ class HuggingFaceAuthManager(
         val apiClient = HuggingFaceApiClient()
 
         // Launch a coroutine to validate the token
-        GlobalScope.launch(Dispatchers.IO) {
+        GlobalScope.launch(Dispatchers.IO + CrashReporter.handler) {
             when (val result = apiClient.validateToken(accessToken)) {
                 is HuggingFaceApiClient.ValidationResult.Success -> {
                     onResult(UserInfoResult.Success(result.username))

@@ -15,6 +15,7 @@ import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.WhisperDownloader
+import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -73,7 +74,7 @@ class ExtractionService : Service() {
         val downloadState: DownloadState
     )
 
-    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
     private var currentJob: Job? = null
     @Volatile private var isCancelling = false
     private var modelDisplayName: String = ""

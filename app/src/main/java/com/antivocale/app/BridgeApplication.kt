@@ -2,6 +2,7 @@ package com.antivocale.app
 
 import android.app.Application
 import com.antivocale.app.di.AppContainer
+import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.LocaleManager
 import kotlinx.coroutines.runBlocking
 
@@ -15,10 +16,21 @@ class BridgeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         AppContainer.initialize(this)
-        // Clean up old shared audio files
         com.antivocale.app.util.SharedAudioHandler.cleanupOldFiles(this)
-        // Migrate language preference from DataStore to Per-App Language API
         migrateLanguagePreference()
+        installGlobalExceptionHandler()
+    }
+
+    /**
+     * Wraps the default uncaught exception handler so that every crash
+     * is reported to Crashlytics before the process terminates.
+     */
+    private fun installGlobalExceptionHandler() {
+        val defaultHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            CrashReporter.report(throwable, "Uncaught exception on ${thread.name}")
+            defaultHandler?.uncaughtException(thread, throwable)
+        }
     }
 
     /**
@@ -31,16 +43,13 @@ class BridgeApplication : Application() {
             return // Already migrated
         }
 
-        // Read the old preference from DataStore and apply it
         runBlocking {
             val savedLanguage = AppContainer.preferencesManager.getLegacyLanguagePreference()
-            // Only apply if not system default (system is the default for new API too)
             if (savedLanguage != "system") {
                 LocaleManager.setLocale(savedLanguage)
             }
         }
 
-        // Mark as migrated
         prefs.edit().putBoolean(KEY_LANGUAGE_MIGRATED, true).apply()
     }
 }
