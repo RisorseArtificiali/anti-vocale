@@ -95,25 +95,25 @@ object WhisperModelManager {
             titleResId = R.string.whisper_small_title,
             descriptionResId = R.string.whisper_small_description,
             dirName = "sherpa-onnx-whisper-small",
-            estimatedSizeMB = 610
+            estimatedSizeMB = 358
         ),
         TURBO(
             titleResId = R.string.whisper_turbo_title,
             descriptionResId = R.string.whisper_turbo_description,
             dirName = "sherpa-onnx-whisper-turbo",
-            estimatedSizeMB = 538
+            estimatedSizeMB = 988
         ),
         MEDIUM(
             titleResId = R.string.whisper_medium_title,
             descriptionResId = R.string.whisper_medium_description,
             dirName = "sherpa-onnx-whisper-medium",
-            estimatedSizeMB = 1842
+            estimatedSizeMB = 903
         ),
         DISTIL_LARGE_V3(
             titleResId = R.string.whisper_distil_large_v3_title,
             descriptionResId = R.string.whisper_distil_large_v3_description,
             dirName = "sherpa-onnx-whisper-distil-large-v3-it",
-            estimatedSizeMB = 939
+            estimatedSizeMB = 938
         )
     }
 

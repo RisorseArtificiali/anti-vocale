@@ -75,11 +75,11 @@
     <string name="whisper_title">Whisper (Multilingue)</string>
     <string name="whisper_description">Ideale per italiano e altre lingue</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~610MB • Precisione inferiore, specialmente con audio rumoroso • Solo per dispositivi con poca memoria</string>
+    <string name="whisper_small_description">~358MB • Precisione inferiore, specialmente con audio rumoroso • Solo per dispositivi con poca memoria</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
-    <string name="whisper_turbo_description">~538MB • Qualità vicina a large-v3 • Miglior rapporto</string>
+    <string name="whisper_turbo_description">~988MB • Qualità vicina a large-v3 • Miglior rapporto</string>
     <string name="whisper_medium_title">Whisper Medium</string>
-    <string name="whisper_medium_description">~1.8GB • Molto preciso • Ideale per l\'italiano</string>
+    <string name="whisper_medium_description">~903MB • Molto preciso • Ideale per l\'italiano</string>
     <string name="whisper_distil_large_v3_title">Distil Italian</string>
     <string name="whisper_distil_large_v3_description">~939MB • 2 livelli decoder • Il più veloce • Ottimizzato per l\'italiano</string>
     <string name="whisper_download">Scarica Whisper</string>

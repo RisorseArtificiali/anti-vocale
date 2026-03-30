@@ -40,3 +40,14 @@
     public native <methods>;
 }
 -dontwarn com.google.ai.edge.litertlm.**
+
+# Preserve Kotlin metadata for JNI reflection (sherpa-onnx native bridge)
+-keepattributes *Annotation*, InnerClasses, Signature
+-keepattributes Exceptions
+
+# Keep transcription backend classes (registered dynamically via map)
+-keep class com.antivocale.app.transcription.** { *; }
+
+# Preserve @Keep annotations that native libraries rely on
+-keep @androidx.annotation.Keep class * { *; }
+-keepclassmembers class * { @androidx.annotation.Keep *; }
