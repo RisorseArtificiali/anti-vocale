@@ -1,0 +1,17 @@
+<en-US>
+What's new in 1.1.1:
+
+• Reset per-app notification settings to defaults (individual or all at once)
+• Onboarding tooltip for per-app settings
+• Fixed wasted vertical space in Logs tab header
+• Fixed UI flicker on cold start
+</en-US>
+
+<it-IT>
+Novità della versione 1.1.1:
+
+• Ripristino delle impostazioni di notifica per-app ai valori predefiniti (singola o tutte)
+• Suggerimento iniziale per le impostazioni per-app
+• Risolto spazio verticale inutile nell'intestazione della scheda Registro
+• Risolto sfarfallio dell'interfaccia all'avvio
+</it-IT>

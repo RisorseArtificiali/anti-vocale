@@ -16,6 +16,11 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 - **Multiple ASR engines** - Choose between Gemma 3n (LLM), Whisper, or Parakeet TDT models
 - **Share integration** - Share audio from any messaging app to transcribe
 - **Smart notifications** - Copy result or send it back to the source app with one tap
+- **Persistent transcription log** - All transcriptions saved to local database with search
+- **Queue-aware processing** - Handles multiple concurrent transcription requests with progress tracking
+- **Calibration-based ETA** - Progress estimates improve as the model adapts to your device
+- **VAD silence stripping** - Optionally strip silent segments before transcription for faster results
+- **Configurable inference threads** - Auto-detects or manually sets thread count for performance tuning
 - **Per-app settings** - Configure notification behavior per messaging app
 - **Multilingual** - App UI in English and Italian; models support 25+ languages
 - **Auto-copy** - Optionally copy transcription to clipboard automatically
