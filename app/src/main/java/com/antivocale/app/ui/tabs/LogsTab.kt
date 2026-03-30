@@ -63,10 +63,8 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
         groupLogsByDate(filteredLogs)
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) }
-    ) { paddingValues ->
-    Column(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+    Box(modifier = Modifier.fillMaxSize()) {
+    Column(modifier = Modifier.fillMaxSize()) {
         // Clear-all confirmation dialog
         if (showClearDialog) {
             AlertDialog(
@@ -97,7 +95,7 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
             Column {
                 Row(
                     modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp)
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
@@ -126,8 +124,7 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
                     onValueChange = { viewModel.onSearchQueryChanged(it) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp)
-                        .padding(bottom = 8.dp),
+                        .padding(horizontal = 16.dp),
                     placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
@@ -199,7 +196,7 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    top = 8.dp,
+                    top = 4.dp,
                     bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 )
             ) {
@@ -257,7 +254,12 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
             }
         }
     }
-    } // Scaffold
+
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter)
+    )
+    }
 }
 
 @Composable
