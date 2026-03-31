@@ -2,12 +2,14 @@
 What's new in 1.2.1:
 
 • Fixed crash when sharing audio from older Android versions (Android 11 and below)
-• Updated app to support devices with 16 KB memory page sizes
+• Updated native libraries for 16 KB memory page size support
+• Upgraded build toolchain (Kotlin 2.2, AGP 8.10, Gradle 8.11.1)
 </en-US>
 
 <it-IT>
 Novità della versione 1.2.1:
 
 • Risolto il crash alla condivisione di audio da versioni Android precedenti (Android 11 e inferiori)
-• Aggiornata l'app per supportare dispositivi con dimensioni pagina memoria di 16 KB
+• Aggiornate le librerie native per il supporto delle dimensioni pagina memoria di 16 KB
+• Aggiornata la toolchain di build (Kotlin 2.2, AGP 8.10, Gradle 8.11.1)
 </it-IT>
