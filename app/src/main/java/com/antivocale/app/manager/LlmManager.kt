@@ -11,6 +11,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
 
@@ -64,6 +66,10 @@ object LlmManager {
     private val managerScope = CoroutineScope(Dispatchers.Default + SupervisorJob() + CrashReporter.handler)
     private var keepAliveJob: Job? = null
     private var keepAliveTimeoutMinutes: Int = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
+
+    // Mutex to serialize audio transcription — LiteRT-LM only supports ONE conversation at a time,
+    // so parallel chunk processing must be serialized to avoid "Conversation is closed" errors.
+    private val audioMutex = Mutex()
 
     // Callback for when model is auto-unloaded
     private val onAutoUnloadCallback = AtomicReference<(() -> Unit)?>(null)
@@ -328,26 +334,28 @@ object LlmManager {
      * @param audioData WAV ByteArray (16kHz mono, 16-bit PCM)
      * @return Result containing the transcription/understanding
      */
-    suspend fun generateFromAudio(prompt: String, audioData: ByteArray): Result<String> = withContext(Dispatchers.IO) {
-        if (!isInitialized) {
-            return@withContext Result.failure(IllegalStateException("Model not initialized"))
-        }
-
-        // Reset keep-alive timer on activity
-        resetKeepAliveTimer()
-
-        Log.d(TAG, "Processing audio: ${audioData.size} bytes with backend: $currentBackend")
-
-        return@withContext when (currentBackend) {
-            Backend.LITERT_LM -> generateFromAudioLiteRT(prompt, audioData)
-            Backend.MEDIAPIPE_GENAI -> {
-                Log.w(TAG, "Audio processing not supported with MediaPipe backend")
-                Result.failure(IllegalStateException(
-                    "Audio transcription requires LiteRT-LM backend with a .litertlm model. " +
-                    "Current backend (MediaPipe) only supports text inference."
-                ))
+    suspend fun generateFromAudio(prompt: String, audioData: ByteArray): Result<String> = audioMutex.withLock {
+        withContext(Dispatchers.IO) {
+            if (!isInitialized) {
+                return@withContext Result.failure(IllegalStateException("Model not initialized"))
             }
-            null -> Result.failure(IllegalStateException("No backend initialized"))
+
+            // Reset keep-alive timer on activity
+            resetKeepAliveTimer()
+
+            Log.d(TAG, "Processing audio: ${audioData.size} bytes with backend: $currentBackend")
+
+            return@withContext when (currentBackend) {
+                Backend.LITERT_LM -> generateFromAudioLiteRT(prompt, audioData)
+                Backend.MEDIAPIPE_GENAI -> {
+                    Log.w(TAG, "Audio processing not supported with MediaPipe backend")
+                    Result.failure(IllegalStateException(
+                        "Audio transcription requires LiteRT-LM backend with a .litertlm model. " +
+                        "Current backend (MediaPipe) only supports text inference."
+                    ))
+                }
+                null -> Result.failure(IllegalStateException("No backend initialized"))
+            }
         }
     }
 

@@ -197,7 +197,7 @@ object ModelDownloader {
 
         // Step 2: Download with retry
         onStateChange(DownloadState.Connecting(downloadUrl))
-        downloadWithRetry(
+        val result = downloadWithRetry(
             variant = variant,
             downloadUrl = downloadUrl,
             accessToken = accessToken,
@@ -205,6 +205,13 @@ object ModelDownloader {
             onProgress = onProgress,
             onStateChange = onStateChange
         )
+
+        // Emit Complete on success so the ViewModel transitions from "Downloading 100%" to "Use Model"
+        if (result.isSuccess) {
+            onStateChange(DownloadState.Complete(targetFile))
+        }
+
+        result
     }
 
     /**
