@@ -4,6 +4,37 @@ What's new in 1.2.1:
 • Fixed crash when sharing audio from older Android versions (Android 11 and below)
 • Updated native libraries for 16 KB memory page size support
 • Upgraded build toolchain (Kotlin 2.2, AGP 8.10, Gradle 8.11.1)
+
+What's new in 1.2.0:
+
+• Whisper model downloads now use individual files from HuggingFace instead of tar.bz2 archives, for faster and more reliable downloads
+• Added Firebase Crashlytics for centralized crash reporting
+
+What's new in 1.1.1:
+
+• Reset per-app notification settings to defaults (individual or all at once)
+• Onboarding tooltip for per-app settings
+• Fixed wasted vertical space in Logs tab header
+• Fixed UI flicker on cold start
+
+What's new in 1.1.0:
+
+• Configurable inference thread count with automatic CPU core detection
+• Queue-aware sharing: toast notification when sharing while transcription is active
+• Adaptive transcription ETA with real-time per-batch feedback
+• Transcription logs now persist in a local database
+• Queue-aware notifications for multiple concurrent transcriptions
+• Settings changes are blocked during active transcription to prevent errors
+
+What's new since 1.0.3:
+
+• VAD-based silence stripping before transcription
+• Parallel transcription of audio chunks for faster processing
+• Distil-Whisper Large v3 Italian model support with speed comparison UI
+• ExtractionService for resilient model downloads with progress tracking
+• HuggingFace authentication with download resume and retry
+• Calibration-based progress ETA and performance stats
+• LiteRT-LM backend for multimodal on-device inference (Gemma models with audio)
 </en-US>
 
 <it-IT>
@@ -12,4 +43,35 @@ Novità della versione 1.2.1:
 • Risolto il crash alla condivisione di audio da versioni Android precedenti (Android 11 e inferiori)
 • Aggiornate le librerie native per il supporto delle dimensioni pagina memoria di 16 KB
 • Aggiornata la toolchain di build (Kotlin 2.2, AGP 8.10, Gradle 8.11.1)
+
+Novità della versione 1.2.0:
+
+• Il download dei modelli Whisper ora utilizza file singoli da HuggingFace anziché archivi tar.bz2, per download più veloci e affidabili
+• Aggiunto Firebase Crashlytics per la segnalazione centralizzata dei crash
+
+Novità della versione 1.1.1:
+
+• Ripristino delle impostazioni di notifica per-app ai valori predefiniti (singola o tutte)
+• Suggerimento iniziale per le impostazioni per-app
+• Risolto spazio verticale inutile nell'intestazione della scheda Registro
+• Risolto sfarfallio dell'interfaccia all'avvio
+
+Novità della versione 1.1.0:
+
+• Numero di thread di inferenza configurabile con rilevamento automatico dei core CPU
+• Condivisione consapevole della coda: notifica toast quando si condivide durante una trascrizione attiva
+• ETA di trascrizione adattivo con feedback in tempo reale per batch
+• I log di trascrizione ora persistono in un database locale
+• Notifiche consapevoli della coda per molteplici trascrizioni simultanee
+• Le modifiche alle impostazioni sono bloccate durante la trascrizione attiva per prevenire errori
+
+Novità dalla versione 1.0.3:
+
+• Rimozione del silenzio basata su VAD prima della trascrizione
+• Trascrizione parallela dei chunk audio per elaborazione più veloce
+• Supporto del modello Distil-Whisper Large v3 Italiano con interfaccia di confronto della velocità
+• ExtractionService per download resilienti dei modelli con tracciamento del progresso
+• Autenticazione HuggingFace con resume e retry dei download
+• ETA di progresso basato su calibrazione e statistiche di prestazione
+• Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)
 </it-IT>
