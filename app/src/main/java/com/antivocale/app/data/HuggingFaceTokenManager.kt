@@ -8,6 +8,8 @@ import androidx.security.crypto.MasterKey
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.File
+import java.security.GeneralSecurityException
 
 /**
  * Manages secure storage and validation of HuggingFace tokens.
@@ -18,23 +20,81 @@ import kotlinx.coroutines.flow.asStateFlow
  *
  * Uses EncryptedSharedPreferences to store tokens securely on device.
  * Provides token state flow for UI observation and masking for display.
+ *
+ * Handles KeyStore corruption gracefully: if the MasterKey becomes invalid
+ * (due to OS updates, security patches, or device secure element resets),
+ * the encrypted prefs are wiped and a new key is generated. The user will
+ * need to re-authenticate, but the app remains functional.
  */
 class HuggingFaceTokenManager(context: Context) {
 
-    private val masterKey = MasterKey.Builder(context)
-        .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-        .build()
+    private val sharedPreferences: SharedPreferences
 
-    private val sharedPreferences: SharedPreferences = EncryptedSharedPreferences.create(
-        context,
-        "huggingface_encrypted_prefs",
-        masterKey,
-        EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-        EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
-    )
+    init {
+        sharedPreferences = createEncryptedPrefs(context, PREFS_FILE_NAME)
+    }
+
+    /**
+     * Creates EncryptedSharedPreferences with recovery from KeyStore corruption.
+     *
+     * If the MasterKey or encrypted prefs are in an unrecoverable state
+     * (e.g., KeyStoreException: Signature/MAC verification failed), this
+     * method deletes the corrupted prefs file and key, then recreates them
+     * from scratch. Tokens are lost but the app remains functional.
+     */
+    private fun createEncryptedPrefs(
+        context: Context,
+        prefsFileName: String
+    ): SharedPreferences {
+        return try {
+            buildEncryptedPrefs(context, prefsFileName)
+        } catch (e: Exception) {
+            Log.e(TAG, "KeyStore error during init, recovering: ${e.message}", e)
+            deleteEncryptedPrefs(context, prefsFileName)
+            Log.w(TAG, "Encrypted prefs recreated after KeyStore recovery — tokens lost")
+            buildEncryptedPrefs(context, prefsFileName)
+        }
+    }
+
+    private fun buildEncryptedPrefs(
+        context: Context,
+        prefsFileName: String
+    ): SharedPreferences {
+        val key = MasterKey.Builder(context)
+            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
+            .build()
+        return EncryptedSharedPreferences.create(
+            context,
+            prefsFileName,
+            key,
+            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+        )
+    }
+
+    /**
+     * Deletes the encrypted prefs XML file and attempts to remove the MasterKey
+     * from the Android KeyStore so it can be regenerated cleanly.
+     */
+    private fun deleteEncryptedPrefs(context: Context, prefsFileName: String) {
+        val prefsFile = File(context.applicationInfo.dataDir, "shared_prefs/$prefsFileName.xml")
+        if (prefsFile.delete()) {
+            Log.i(TAG, "Deleted corrupted encrypted prefs file")
+        }
+
+        try {
+            val keyStore = java.security.KeyStore.getInstance("AndroidKeyStore")
+            keyStore.load(null)
+            keyStore.deleteEntry(MasterKey.DEFAULT_MASTER_KEY_ALIAS)
+            Log.i(TAG, "Deleted corrupted MasterKey from KeyStore")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to delete MasterKey from KeyStore: ${e.message}")
+        }
+    }
 
     companion object {
         private const val TAG = "HuggingFaceTokenManager"
+        private const val PREFS_FILE_NAME = "huggingface_encrypted_prefs"
         private const val KEY_TOKEN = "huggingface_token"
         private const val KEY_USERNAME = "huggingface_username"
 
@@ -103,9 +163,12 @@ class HuggingFaceTokenManager(context: Context) {
      * Saves the HuggingFace token to encrypted storage.
      */
     fun saveToken(token: String) {
-        sharedPreferences.edit().putString(KEY_TOKEN, token).apply()
-        // Clear username when saving new token (will be validated separately)
-        sharedPreferences.edit().remove(KEY_USERNAME).apply()
+        try {
+            sharedPreferences.edit().putString(KEY_TOKEN, token).apply()
+            sharedPreferences.edit().remove(KEY_USERNAME).apply()
+        } catch (e: GeneralSecurityException) {
+            Log.e(TAG, "KeyStore error in saveToken: ${e.message}")
+        }
     }
 
     /**
@@ -120,36 +183,44 @@ class HuggingFaceTokenManager(context: Context) {
      * Checks if a token is stored (either manual PAT or OAuth).
      */
     fun hasToken(): Boolean {
-        val authType = getAuthType()
-        val hasToken = when (authType) {
-            AuthType.OAUTH -> {
-                val token = getOAuthAccessToken()
-                val result = !token.isNullOrEmpty()
-                Log.d(TAG, "hasToken check: authType=OAUTH, hasAccessToken=${token != null}, result=$result")
-                result
+        return try {
+            val authType = getAuthType()
+            when (authType) {
+                AuthType.OAUTH -> {
+                    val token = getOAuthAccessToken()
+                    val result = !token.isNullOrEmpty()
+                    Log.d(TAG, "hasToken check: authType=OAUTH, hasAccessToken=${token != null}, result=$result")
+                    result
+                }
+                AuthType.MANUAL -> {
+                    val token = getToken()
+                    val result = !token.isNullOrEmpty()
+                    Log.d(TAG, "hasToken check: authType=MANUAL, hasToken=${token != null}, result=$result")
+                    result
+                }
             }
-            AuthType.MANUAL -> {
-                val token = getToken()
-                val result = !token.isNullOrEmpty()
-                Log.d(TAG, "hasToken check: authType=MANUAL, hasToken=${token != null}, result=$result")
-                result
-            }
+        } catch (e: GeneralSecurityException) {
+            Log.e(TAG, "KeyStore error in hasToken: ${e.message}")
+            false
         }
-        return hasToken
     }
 
     /**
      * Clears the stored token and username.
      */
     fun clearToken() {
-        sharedPreferences.edit()
-            .remove(KEY_TOKEN)
-            .remove(KEY_USERNAME)
-            .remove(KEY_ACCESS_TOKEN)
-            .remove(KEY_REFRESH_TOKEN)
-            .remove(KEY_TOKEN_EXPIRES_AT)
-            .remove(KEY_AUTH_TYPE)
-            .apply()
+        try {
+            sharedPreferences.edit()
+                .remove(KEY_TOKEN)
+                .remove(KEY_USERNAME)
+                .remove(KEY_ACCESS_TOKEN)
+                .remove(KEY_REFRESH_TOKEN)
+                .remove(KEY_TOKEN_EXPIRES_AT)
+                .remove(KEY_AUTH_TYPE)
+                .apply()
+        } catch (e: GeneralSecurityException) {
+            Log.e(TAG, "KeyStore error in clearToken: ${e.message}")
+        }
         _tokenState.value = TokenState.Idle
     }
 
@@ -208,39 +279,47 @@ class HuggingFaceTokenManager(context: Context) {
     /**
      * Initializes the token state on app startup.
      * Checks for existing token and username to restore Valid state.
+     *
+     * Wrapped in try-catch so that a Keystore corruption at runtime
+     * doesn't crash the app — the user simply sees no token and
+     * is prompted to re-authenticate.
      */
     fun initialize() {
-        val authType = getAuthType()
-        when (authType) {
-            AuthType.OAUTH -> {
-                val accessToken = getOAuthAccessToken()
-                val username = getUsername()
-                val expiresAt = getTokenExpiration()
+        try {
+            val authType = getAuthType()
+            when (authType) {
+                AuthType.OAUTH -> {
+                    val accessToken = getOAuthAccessToken()
+                    val username = getUsername()
+                    val expiresAt = getTokenExpiration()
 
-                if (accessToken != null && username != null) {
-                    // Check if OAuth token has expired
-                    if (expiresAt != null && System.currentTimeMillis() >= expiresAt) {
-                        Log.i(TAG, "OAuth token has expired, clearing")
-                        clearToken()
-                    } else {
-                        _tokenState.value = TokenState.Valid(
-                            username = username,
-                            maskedToken = maskToken(accessToken),
-                            authType = AuthType.OAUTH,
-                            expiresAt = expiresAt
-                        )
-                        Log.i(TAG, "OAuth token restored for user: $username")
+                    if (accessToken != null && username != null) {
+                        if (expiresAt != null && System.currentTimeMillis() >= expiresAt) {
+                            Log.i(TAG, "OAuth token has expired, clearing")
+                            clearToken()
+                        } else {
+                            _tokenState.value = TokenState.Valid(
+                                username = username,
+                                maskedToken = maskToken(accessToken),
+                                authType = AuthType.OAUTH,
+                                expiresAt = expiresAt
+                            )
+                            Log.i(TAG, "OAuth token restored for user: $username")
+                        }
+                    }
+                }
+                AuthType.MANUAL -> {
+                    val token = getToken()
+                    val username = getUsername()
+                    if (token != null && username != null) {
+                        _tokenState.value = TokenState.Valid(username, maskToken(token))
+                        Log.i(TAG, "Manual token restored for user: $username")
                     }
                 }
             }
-            AuthType.MANUAL -> {
-                val token = getToken()
-                val username = getUsername()
-                if (token != null && username != null) {
-                    _tokenState.value = TokenState.Valid(username, maskToken(token))
-                    Log.i(TAG, "Manual token restored for user: $username")
-                }
-            }
+        } catch (e: GeneralSecurityException) {
+            Log.e(TAG, "KeyStore error during initialize, resetting state: ${e.message}")
+            _tokenState.value = TokenState.Idle
         }
     }
 
@@ -260,13 +339,17 @@ class HuggingFaceTokenManager(context: Context) {
         expiresAt: Long,
         username: String
     ) {
-        sharedPreferences.edit()
-            .putString(KEY_ACCESS_TOKEN, accessToken)
-            .putString(KEY_REFRESH_TOKEN, refreshToken)
-            .putLong(KEY_TOKEN_EXPIRES_AT, expiresAt)
-            .putString(KEY_USERNAME, username)
-            .putString(KEY_AUTH_TYPE, AuthType.OAUTH.name)
-            .apply()
+        try {
+            sharedPreferences.edit()
+                .putString(KEY_ACCESS_TOKEN, accessToken)
+                .putString(KEY_REFRESH_TOKEN, refreshToken)
+                .putLong(KEY_TOKEN_EXPIRES_AT, expiresAt)
+                .putString(KEY_USERNAME, username)
+                .putString(KEY_AUTH_TYPE, AuthType.OAUTH.name)
+                .apply()
+        } catch (e: GeneralSecurityException) {
+            Log.e(TAG, "KeyStore error in saveOAuthTokens: ${e.message}")
+        }
 
         _tokenState.value = TokenState.Valid(
             username = username,
@@ -345,12 +428,21 @@ class HuggingFaceTokenManager(context: Context) {
      * Keeps the refresh token and other OAuth data.
      */
     fun updateAccessToken(accessToken: String, expiresAt: Long) {
-        val username = getUsername() ?: return
+        val username = try {
+            getUsername() ?: return
+        } catch (e: GeneralSecurityException) {
+            Log.e(TAG, "KeyStore error reading username in updateAccessToken: ${e.message}")
+            return
+        }
 
-        sharedPreferences.edit()
-            .putString(KEY_ACCESS_TOKEN, accessToken)
-            .putLong(KEY_TOKEN_EXPIRES_AT, expiresAt)
-            .apply()
+        try {
+            sharedPreferences.edit()
+                .putString(KEY_ACCESS_TOKEN, accessToken)
+                .putLong(KEY_TOKEN_EXPIRES_AT, expiresAt)
+                .apply()
+        } catch (e: GeneralSecurityException) {
+            Log.e(TAG, "KeyStore error in updateAccessToken: ${e.message}")
+        }
 
         _tokenState.value = TokenState.Valid(
             username = username,
@@ -367,9 +459,14 @@ class HuggingFaceTokenManager(context: Context) {
      * Returns the OAuth access token if available, otherwise the manual token.
      */
     fun getEffectiveToken(): String? {
-        return when (getAuthType()) {
-            AuthType.OAUTH -> getOAuthAccessToken()
-            AuthType.MANUAL -> getToken()
+        return try {
+            when (getAuthType()) {
+                AuthType.OAUTH -> getOAuthAccessToken()
+                AuthType.MANUAL -> getToken()
+            }
+        } catch (e: GeneralSecurityException) {
+            Log.e(TAG, "KeyStore error in getEffectiveToken: ${e.message}")
+            null
         }
     }
 }
