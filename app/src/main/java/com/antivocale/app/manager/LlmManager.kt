@@ -229,8 +229,7 @@ object LlmManager {
             val options = com.google.mediapipe.tasks.genai.llminference.LlmInference.LlmInferenceOptions.builder()
                 .setModelPath(path)
                 .setMaxTokens(MAX_TOKENS)
-                .setTemperature(0.8f)
-                .setTopK(40)
+                .setMaxTopK(40)
                 .build()
 
             mediapipeInference = com.google.mediapipe.tasks.genai.llminference.LlmInference.createFromOptions(context, options)

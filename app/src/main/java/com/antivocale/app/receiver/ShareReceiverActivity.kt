@@ -99,7 +99,8 @@ class ShareReceiverActivity : Activity() {
             }
         }
 
-        val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM, Uri::class.java)
+        @Suppress("DEPRECATION")
+        val uri = intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
 
         // If still null, try extracting from content URI authority
         if (sourcePackage == null && uri != null && uri.scheme == "content") {

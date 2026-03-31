@@ -1,17 +1,13 @@
 <en-US>
-What's new in 1.1.1:
+What's new in 1.2.1:
 
-• Reset per-app notification settings to defaults (individual or all at once)
-• Onboarding tooltip for per-app settings
-• Fixed wasted vertical space in Logs tab header
-• Fixed UI flicker on cold start
+• Fixed crash when sharing audio from older Android versions (Android 11 and below)
+• Updated app to support devices with 16 KB memory page sizes
 </en-US>
 
 <it-IT>
-Novità della versione 1.1.1:
+Novità della versione 1.2.1:
 
-• Ripristino delle impostazioni di notifica per-app ai valori predefiniti (singola o tutte)
-• Suggerimento iniziale per le impostazioni per-app
-• Risolto spazio verticale inutile nell'intestazione della scheda Registro
-• Risolto sfarfallio dell'interfaccia all'avvio
+• Risolto il crash alla condivisione di audio da versioni Android precedenti (Android 11 e inferiori)
+• Aggiornata l'app per supportare dispositivi con dimensioni pagina memoria di 16 KB
 </it-IT>
