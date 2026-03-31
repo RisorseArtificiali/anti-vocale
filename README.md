@@ -57,21 +57,35 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 
 ## Supported Models
 
-| Model | Type | Size | Languages | Notes |
-|-------|------|------|-----------|-------|
-| **Gemma 3n E2B** | LLM (multimodal) | 3.3GB | Multi | Recommended, best quality |
-| **Gemma 3n E4B** | LLM (multimodal) | 4.2GB | Multi | Higher quality, more RAM |
-| **Parakeet TDT 0.6B v3** | ASR (transducer) | 464MB | 25 European | Fast, lightweight |
-| **Whisper Small** | ASR (encoder-decoder) | 610MB | 99 | Good balance of speed/accuracy |
-| **Whisper Turbo** | ASR (encoder-decoder) | 538MB | 99 | Near large-v3 quality |
-| **Whisper Medium** | ASR (encoder-decoder) | 1.8GB | 99 | Best for Italian and other languages |
+### LLM (Multimodal)
+
+| Model | Size | Notes |
+|-------|------|-------|
+| **Gemma 3n E2B** | 3.3GB | Recommended, best for most devices |
+| **Gemma 3n E4B** | 4.2GB | Higher quality, requires more RAM |
+
+### ASR (Encoder-Decoder)
+
+| Model | Size | Languages | Notes |
+|-------|------|-----------|-------|
+| **Whisper Small** | ~358MB | 99 | Only for low-spec devices |
+| **Whisper Turbo** | ~988MB | 99 | Near large-v3 quality, best value |
+| **Whisper Medium** | ~903MB | 99 | Best for Italian and other languages |
+| **Distil Italian** | ~939MB | Italian | Fastest Whisper variant, optimized for Italian |
+
+### ASR (Transducer)
+
+| Model | Size | Languages | Notes |
+|-------|------|-----------|-------|
+| **Parakeet TDT 0.6B v3** | ~464MB | 25 European | Faster but less accurate |
 
 ## Getting Started
 
 ### Prerequisites
 
-- Android device with 8GB+ RAM
+- Android device with 4GB+ RAM
 - Android 8.0 (API 26) or higher
+- 500MB+ free storage (model size varies, up to 4.2GB for Gemma 3n E4B)
 
 ### Install
 

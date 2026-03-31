@@ -1,4 +1,8 @@
 <en-US>
+What's new in 1.2.2:
+
+• Fixed crash on startup caused by Android KeyStore corruption (app now recovers automatically — user may need to re-enter their HuggingFace token)
+
 What's new in 1.2.1:
 
 • Fixed crash when sharing audio from older Android versions (Android 11 and below)
@@ -38,6 +42,10 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.2.2:
+
+• Risolto il crash all'avvio causato dal danneggiamento del KeyStore di Android (l'app si ripristina automaticamente — potrebbe essere necessario reinserire il token HuggingFace)
+
 Novità della versione 1.2.1:
 
 • Risolto il crash alla condivisione di audio da versioni Android precedenti (Android 11 e inferiori)
