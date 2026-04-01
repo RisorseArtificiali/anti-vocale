@@ -36,6 +36,7 @@ import com.antivocale.app.di.AppContainer
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.util.formatFileSize
 import com.antivocale.app.transcription.WhisperModelManager
+import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 
 private enum class PendingAction {
@@ -81,6 +82,7 @@ fun ModelTab(
     val downloadUiState by viewModel.downloadUiState.collectAsState()
     val parakeetState by viewModel.parakeetState.collectAsState()
     val whisperState by viewModel.whisperState.collectAsState()
+    val qwen3AsrState by viewModel.qwen3AsrState.collectAsState()
 
     // Transcription active state — used to warn about destructive operations
     val isTranscribing by InferenceService.isTranscribing.collectAsState()
@@ -359,6 +361,68 @@ fun ModelTab(
         }
     }
 
+    // Qwen3-ASR download confirmation dialog
+    if (qwen3AsrState.showDownloadDialog) {
+        val variant = qwen3AsrState.selectedVariant
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissQwen3AsrDownloadDialog() },
+            title = { Text(stringResource(R.string.qwen3_asr_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "Qwen3-ASR")) },
+            text = { Text(stringResource(R.string.qwen3_asr_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 827)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmQwen3AsrDownload() }) {
+                    Text(stringResource(R.string.download))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissQwen3AsrDownloadDialog() }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    // Qwen3-ASR delete confirmation dialog
+    if (qwen3AsrState.showDeleteDialog) {
+        val variant = qwen3AsrState.variantToDelete
+        val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: "Qwen3-ASR"
+        val isQwen3ModelActive = uiState.modelName == variantDisplayName
+
+        if (isTranscribing && isQwen3ModelActive) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissQwen3AsrDeleteDialog() },
+                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
+                text = { Text(stringResource(R.string.dialog_delete_active_model_message, variantDisplayName)) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.dismissQwen3AsrDeleteDialog() }) {
+                        Text(stringResource(R.string.action_understood))
+                    }
+                }
+            )
+        } else {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissQwen3AsrDeleteDialog() },
+                title = { Text(stringResource(R.string.dialog_delete_title)) },
+                text = {
+                    if (isTranscribing) {
+                        Text(stringResource(R.string.dialog_delete_inactive_model_message, variantDisplayName))
+                    } else {
+                        Text(stringResource(R.string.dialog_delete_message, variantDisplayName))
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.confirmQwen3AsrDelete() }) {
+                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissQwen3AsrDeleteDialog() }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                }
+            )
+        }
+    }
+
     // Model switch warning during active transcription
     if (pendingModelSwitch != null) {
         AlertDialog(
@@ -411,6 +475,13 @@ fun ModelTab(
 
         // Whisper section - multilingual ASR backend (recommended)
         WhisperDownloadSection(
+            viewModel = viewModel,
+            activeModelName = uiState.modelName,
+            guardedModelSwitch = guardedSwitch
+        )
+
+        // Qwen3-ASR section - state-of-the-art multilingual ASR backend
+        Qwen3AsrDownloadSection(
             viewModel = viewModel,
             activeModelName = uiState.modelName,
             guardedModelSwitch = guardedSwitch
@@ -993,6 +1064,264 @@ private fun PartialDownloadSection(
 }
 
 // ==================== Parakeet Download Section ====================
+
+/**
+ * Section for downloading Qwen3-ASR model (sherpa-onnx backend).
+ * Supports multiple variants with download/delete/use functionality.
+ */
+@Composable
+private fun Qwen3AsrDownloadSection(
+    viewModel: ModelViewModel,
+    activeModelName: String,
+    guardedModelSwitch: (() -> Unit) -> Unit = {}
+) {
+    val qwen3AsrState by viewModel.qwen3AsrState.collectAsState()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                qwen3AsrState.isDownloading -> MaterialTheme.colorScheme.secondaryContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = when {
+                            qwen3AsrState.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
+                            qwen3AsrState.isDownloading -> Icons.Default.CloudDownload
+                            else -> Icons.Default.Translate
+                        },
+                        contentDescription = null,
+                        tint = when {
+                            qwen3AsrState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
+                            qwen3AsrState.isDownloading -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.qwen3_asr_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = stringResource(R.string.qwen3_asr_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Model variant cards
+            Qwen3AsrModelManager.Variant.entries.forEach { variant ->
+                Qwen3AsrVariantCard(
+                    variant = variant,
+                    isDownloaded = qwen3AsrState.downloadedVariants.contains(variant),
+                    isActive = activeModelName == stringResource(variant.titleResId),
+                    isDownloading = qwen3AsrState.isDownloading && qwen3AsrState.selectedVariant == variant,
+                    downloadProgress = qwen3AsrState.downloadProgress,
+                    downloadState = qwen3AsrState.downloadState,
+                    errorMessage = if (qwen3AsrState.selectedVariant == variant) qwen3AsrState.errorMessage else null,
+                    partialDownload = qwen3AsrState.partialDownload,
+                    partialDownloadVariant = qwen3AsrState.partialDownloadVariant,
+                    onDownloadClick = { viewModel.showQwen3AsrDownloadDialog(variant) },
+                    onCancelClick = { viewModel.cancelQwen3AsrDownload() },
+                    onResumeClick = { viewModel.resumeQwen3AsrDownload(variant) },
+                    onClearPartialClick = { viewModel.clearQwen3AsrPartialDownload(variant) },
+                    onUseClick = { guardedModelSwitch { viewModel.useQwen3AsrModel(variant) } },
+                    onDeleteClick = { viewModel.showQwen3AsrDeleteDialog(variant) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+/**
+ * Card for a single Qwen3-ASR variant showing its info and download status.
+ */
+@Composable
+private fun Qwen3AsrVariantCard(
+    variant: Qwen3AsrModelManager.Variant,
+    isDownloaded: Boolean,
+    isActive: Boolean,
+    isDownloading: Boolean,
+    downloadProgress: Float,
+    downloadState: DownloadState,
+    errorMessage: String?,
+    partialDownload: DownloadState.PartiallyDownloaded?,
+    partialDownloadVariant: Qwen3AsrModelManager.Variant?,
+    onDownloadClick: () -> Unit,
+    onCancelClick: () -> Unit,
+    onResumeClick: () -> Unit,
+    onClearPartialClick: () -> Unit,
+    onUseClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                isDownloading -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                else -> MaterialTheme.colorScheme.surface
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = when {
+                            isDownloaded -> Icons.Default.CheckCircle
+                            isDownloading -> Icons.Default.CloudDownload
+                            else -> Icons.Default.Storage
+                        },
+                        contentDescription = null,
+                        tint = when {
+                            isDownloaded -> MaterialTheme.colorScheme.primary
+                            isDownloading -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = stringResource(variant.titleResId),
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            if (isActive) {
+                                Surface(
+                                    color = MaterialTheme.colorScheme.primary,
+                                    shape = MaterialTheme.shapes.small
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.active_badge),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onPrimary,
+                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                    )
+                                }
+                            }
+                        }
+                        Text(
+                            text = stringResource(variant.descriptionResId),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            if (isDownloading) {
+                Spacer(modifier = Modifier.height(12.dp))
+                DownloadProgressView(downloadState, downloadProgress)
+            }
+
+            errorMessage?.let { error ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+
+            if (partialDownloadVariant == variant) {
+                partialDownload?.let { partial ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    PartialDownloadSection(
+                        partial = partial,
+                        onResumeClick = onResumeClick,
+                        onClearClick = onClearPartialClick
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                when {
+                    isDownloading -> {
+                        OutlinedButton(
+                            onClick = onCancelClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Close, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.cancel_download))
+                        }
+                    }
+                    isDownloaded -> {
+                        if (!isActive) {
+                            Button(
+                                onClick = onUseClick,
+                                modifier = Modifier.weight(1f),
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = null)
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(stringResource(R.string.use_model))
+                            }
+                        } else {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                        OutlinedButton(
+                            onClick = onDeleteClick,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
+                        }
+                    }
+                    partialDownloadVariant == variant -> {
+                        // PartialDownloadSection above already shows Resume/Clear buttons
+                    }
+                    else -> {
+                        Button(
+                            onClick = onDownloadClick,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.qwen3_asr_download))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
 
 /**
  * Section for downloading Parakeet TDT model (sherpa-onnx backend).

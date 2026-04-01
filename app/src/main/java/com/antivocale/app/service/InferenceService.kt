@@ -256,6 +256,7 @@ class InferenceService : Service() {
                 val loadResult = when (preferredBackendId) {
                     "sherpa-onnx" -> loadSherpaOnnxBackend()
                     "whisper" -> loadWhisperBackend()
+                    "qwen3-asr" -> loadQwen3AsrBackend()
                     else -> loadLlmBackend()
                 }
 
@@ -393,6 +394,35 @@ class InferenceService : Service() {
         )
     }
 
+    /**
+     * Loads the sherpa-onnx backend with the saved Qwen3-ASR model path.
+     */
+    private suspend fun loadQwen3AsrBackend(): Result<Unit> {
+        val modelPath = AppContainer.preferencesManager.qwen3AsrModelPath.first()
+
+        if (modelPath.isNullOrBlank()) {
+            return Result.failure(IllegalStateException("No Qwen3-ASR model configured. Open the app to download a model."))
+        }
+
+        // Validate model directory exists
+        val modelDir = java.io.File(modelPath)
+        if (!modelDir.exists() || !modelDir.isDirectory) {
+            return Result.failure(IllegalStateException("Qwen3-ASR model directory not found: $modelPath"))
+        }
+
+        updateNotificationWithProgress("Loading Qwen3-ASR model...", indeterminate = true)
+        Log.i(TAG, "Auto-loading Qwen3-ASR model from: $modelPath")
+
+        return TranscriptionBackendManager.setActiveBackend(
+            backendId = "qwen3-asr",
+            context = applicationContext,
+            config = BackendConfig.SherpaOnnxConfig(
+                modelDir = modelPath,
+                numThreads = AppContainer.preferencesManager.threadCount.first()
+            )
+        )
+    }
+
     private suspend fun processTextRequest(request: PendingRequest): Result<String> {
         Log.d(TAG, "Processing text request: ${request.taskId}")
         updateNotification(getString(R.string.generating_text))
@@ -492,6 +522,7 @@ class InferenceService : Service() {
         val backendId = backend.id
         val modelPath = when (backendId) {
             "whisper" -> AppContainer.preferencesManager.whisperModelPath.first()
+            "qwen3-asr" -> AppContainer.preferencesManager.qwen3AsrModelPath.first()
             "sherpa-onnx" -> AppContainer.preferencesManager.parakeetModelPath.first()
             else -> AppContainer.preferencesManager.modelPath.first()
         } ?: ""
@@ -719,6 +750,13 @@ class InferenceService : Service() {
                     .replace("-", " ")
                     .replaceFirstChar { it.uppercase() }
                 if (variant.isNotEmpty()) "Whisper $variant" else fallbackName ?: "Whisper"
+            }
+            "qwen3-asr" -> {
+                // Pattern: sherpa-onnx-qwen3-asr-{variant}
+                dirName.removePrefix("sherpa-onnx-qwen3-asr-")
+                    .replace("-int8", "")
+                    .replace("-", " ")
+                    .replaceFirstChar { it.uppercase() }
             }
             else -> fallbackName ?: backendId
         }

@@ -88,6 +88,18 @@
     <string name="whisper_extract_confirm_title">Estrarre %1$s?</string>
     <string name="whisper_extract_confirm_message">Il file del modello è già stato scaricato. Verrà estratto per l\'uso.</string>
 
+    <!-- Qwen3-ASR -->
+    <string name="qwen3_asr_title">Qwen3-ASR (52 lingue)</string>
+    <string name="qwen3_asr_description">52 lingue • Scarsa accuratezza per l\'italiano</string>
+    <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 52 lingue • Scarsa accuratezza per l\'italiano</string>
+    <string name="qwen3_asr_download_confirm_title">Scaricare %1$s?</string>
+    <string name="qwen3_asr_download_confirm_message">Verranno scaricati ~%1$dMB. Qwen3-ASR supporta 52 lingue con scarsa accuratezza per l\'italiano.</string>
+    <string name="qwen3_asr_download">Scarica Qwen3-ASR</string>
+    <string name="qwen3_asr_delete_message">Eliminare il modello Qwen3-ASR?</string>
+    <string name="qwen3_asr_downloaded">%1$s scaricato</string>
+    <string name="qwen3_asr_deleted">%1$s eliminato</string>
+
     <!-- Download status -->
     <string name="download_status_downloading">Download in corso…</string>
     <string name="download_status_extracting">Estrazione di %1$s…</string>

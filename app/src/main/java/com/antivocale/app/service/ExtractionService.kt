@@ -14,6 +14,8 @@ import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.transcription.ParakeetDownloader
+import com.antivocale.app.transcription.Qwen3AsrDownloader
+import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.CancellationException
@@ -61,6 +63,7 @@ class ExtractionService : Service() {
     enum class ModelType(val key: String) {
         PARAKEET("parakeet"),
         WHISPER("whisper"),
+        QWEN3_ASR("qwen3_asr"),
         GEMMA("gemma");
 
         companion object {
@@ -86,6 +89,10 @@ class ExtractionService : Service() {
             ModelType.WHISPER -> {
                 val wv = WhisperVariant.fromString(variant)
                 wv?.let { getString(it.titleResId) } ?: "Whisper"
+            }
+            ModelType.QWEN3_ASR -> {
+                val qv = Qwen3Variant.fromString(variant)
+                qv?.let { getString(it.titleResId) } ?: "Qwen3-ASR"
             }
             ModelType.GEMMA -> GemmaVariant.fromString(variant).displayName
         }
@@ -166,6 +173,25 @@ class ExtractionService : Service() {
                         onProgress = {},
                         onStateChange = { state ->
                             _progressState.value = ExtractionProgress(ModelType.WHISPER, variant, downloadState = state)
+                            updateNotificationFromState(state)
+                        }
+                    )
+                }
+                ModelType.QWEN3_ASR -> {
+                    val qwen3Variant = Qwen3Variant.fromString(variant)
+                        ?: run {
+                            _progressState.value = ExtractionProgress(
+                                ModelType.QWEN3_ASR, variant,
+                                DownloadState.Error("Unknown variant: $variant")
+                            )
+                            return
+                        }
+                    Qwen3AsrDownloader.downloadModel(
+                        context = applicationContext,
+                        variant = qwen3Variant,
+                        onProgress = {},
+                        onStateChange = { state ->
+                            _progressState.value = ExtractionProgress(ModelType.QWEN3_ASR, variant, downloadState = state)
                             updateNotificationFromState(state)
                         }
                     )
@@ -328,6 +354,16 @@ class ExtractionService : Service() {
                 "turbo" -> com.antivocale.app.transcription.WhisperModelManager.Variant.TURBO
                 "medium" -> com.antivocale.app.transcription.WhisperModelManager.Variant.MEDIUM
                 "distil_large_v3" -> com.antivocale.app.transcription.WhisperModelManager.Variant.DISTIL_LARGE_V3
+                else -> null
+            }
+        }
+    }
+
+    /** Resolves a string variant name to a Qwen3-ASR [Qwen3AsrModelManager.Variant]. */
+    private object Qwen3Variant {
+        fun fromString(name: String?): com.antivocale.app.transcription.Qwen3AsrModelManager.Variant? {
+            return when (name) {
+                "qwen3_asr_0_6b" -> com.antivocale.app.transcription.Qwen3AsrModelManager.Variant.QWEN3_ASR_0_6B
                 else -> null
             }
         }

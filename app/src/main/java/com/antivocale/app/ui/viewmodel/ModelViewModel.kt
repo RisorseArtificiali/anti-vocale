@@ -19,6 +19,8 @@ import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.ParakeetModelManager
 import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.transcription.WhisperModelManager
+import com.antivocale.app.transcription.Qwen3AsrDownloader
+import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -107,6 +109,24 @@ class ModelViewModel(
         val orphanedVariants: Set<WhisperModelManager.Variant> = emptySet()
     )
 
+    /**
+     * Qwen3-ASR download UI state
+     */
+    data class Qwen3AsrUiState(
+        val selectedVariant: Qwen3AsrModelManager.Variant? = null,
+        val downloadedVariants: Set<Qwen3AsrModelManager.Variant> = emptySet(),
+        val isDownloading: Boolean = false,
+        val downloadProgress: Float = 0f,
+        val downloadState: DownloadState = DownloadState.Idle,
+        val modelPath: String? = null,
+        val errorMessage: String? = null,
+        val showDownloadDialog: Boolean = false,
+        val showDeleteDialog: Boolean = false,
+        val variantToDelete: Qwen3AsrModelManager.Variant? = null,
+        val partialDownload: DownloadState.PartiallyDownloaded? = null,
+        val partialDownloadVariant: Qwen3AsrModelManager.Variant? = null
+    )
+
     data class UiState(
         val status: ModelStatus = ModelStatus.UNLOADED,
         val statusMessage: String = "",
@@ -134,6 +154,10 @@ class ModelViewModel(
     private val _whisperState = MutableStateFlow(WhisperUiState())
     val whisperState: StateFlow<WhisperUiState> = _whisperState.asStateFlow()
 
+    // Qwen3-ASR state - must be declared before init block
+    private val _qwen3AsrState = MutableStateFlow(Qwen3AsrUiState())
+    val qwen3AsrState: StateFlow<Qwen3AsrUiState> = _qwen3AsrState.asStateFlow()
+
     // Channel for one-time Snackbar events (guarantees delivery)
     private val _snackbarEvent = Channel<String>()
     val snackbarEvent: kotlinx.coroutines.flow.Flow<String> = _snackbarEvent.receiveAsFlow()
@@ -154,6 +178,7 @@ class ModelViewModel(
                 when (progress.modelType) {
                     ExtractionService.ModelType.PARAKEET -> handleServiceProgressParakeet(progress)
                     ExtractionService.ModelType.WHISPER -> handleServiceProgressWhisper(progress)
+                    ExtractionService.ModelType.QWEN3_ASR -> handleServiceProgressQwen3Asr(progress)
                     ExtractionService.ModelType.GEMMA -> handleServiceProgressGemma(progress)
                 }
             }
@@ -168,6 +193,8 @@ class ModelViewModel(
         refreshParakeetState()
         // Check for Whisper model
         refreshWhisperState()
+        // Check for Qwen3-ASR model
+        refreshQwen3AsrState()
         // Detect partial downloads
         detectPartialDownloads()
     }
@@ -282,6 +309,39 @@ class ModelViewModel(
                     variantsNeedingExtraction = eagerNeedsExtraction,
                     orphanedVariants = eagerOrphaned
                 )}
+                detectPartialDownloads()
+            }
+        )
+    }
+
+    private fun handleServiceProgressQwen3Asr(progress: ExtractionService.ExtractionProgress) {
+        val variant = Qwen3AsrModelManager.Variant.entries
+            .find { it.name.lowercase() == progress.variant }
+
+        handleServiceProgress(
+            state = progress.downloadState,
+            updateFlow = { state, prog -> _qwen3AsrState.update { it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress) } },
+            onError = { msg, _ ->
+                _qwen3AsrState.update { it.copy(isDownloading = false, errorMessage = msg) }
+                detectPartialDownloads()
+            },
+            onComplete = { file ->
+                _qwen3AsrState.update {
+                    it.copy(
+                        isDownloading = false,
+                        modelPath = file.absolutePath,
+                        downloadedVariants = if (variant != null) it.downloadedVariants + variant else it.downloadedVariants,
+                        partialDownload = null
+                    )
+                }
+                if (variant != null) {
+                    if (_uiState.value.modelName.isBlank()) useQwen3AsrModel(variant)
+                    val displayName = AppContainer.applicationContext.getString(variant.titleResId)
+                    viewModelScope.launch { _snackbarEvent.send(AppContainer.applicationContext.getString(R.string.qwen3_asr_downloaded, displayName)) }
+                }
+            },
+            onCancelled = {
+                _qwen3AsrState.update { it.copy(isDownloading = false) }
                 detectPartialDownloads()
             }
         )
@@ -429,6 +489,28 @@ class ModelViewModel(
                     )
                 }
             }
+
+            // Check Qwen3-ASR variants
+            var qwen3Partial: DownloadState.PartiallyDownloaded? = null
+            var qwen3PartialVariant: Qwen3AsrModelManager.Variant? = null
+            for (variant in Qwen3AsrModelManager.Variant.entries) {
+                if (!Qwen3AsrDownloader.isModelDownloaded(context, variant)) {
+                    if (qwen3Partial == null) {
+                        val partial = Qwen3AsrDownloader.detectPartialDownload(context, variant)
+                        if (partial != null) {
+                            qwen3Partial = partial
+                            qwen3PartialVariant = variant
+                        }
+                    }
+                }
+            }
+            if (qwen3Partial != null && qwen3PartialVariant != null) {
+                _qwen3AsrState.update {
+                    it.copy(partialDownload = qwen3Partial, partialDownloadVariant = qwen3PartialVariant)
+                }
+            } else {
+                _qwen3AsrState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
+            }
         }
     }
 
@@ -472,6 +554,23 @@ class ModelViewModel(
                             } ?: whisperPath.substringAfterLast("/"),
                             isModelPathValid = isValid,
                             statusMessage = if (isValid) "Whisper model ready" else "Whisper model not found"
+                        )}
+                    }
+                }
+                "qwen3-asr" -> {
+                    // Load Qwen3-ASR model path
+                    val qwen3Path = preferencesManager.qwen3AsrModelPath.first()
+                    if (!qwen3Path.isNullOrBlank()) {
+                        val modelDir = File(qwen3Path)
+                        val isValid = modelDir.exists() && modelDir.isDirectory
+                        val model = Qwen3AsrModelManager.validateModelDirectory(modelDir)
+                        _uiState.update { it.copy(
+                            modelPath = qwen3Path,
+                            modelName = model?.variant?.let { v ->
+                                AppContainer.applicationContext.getString(v.titleResId)
+                            } ?: qwen3Path.substringAfterLast("/"),
+                            isModelPathValid = isValid,
+                            statusMessage = if (isValid) "Qwen3-ASR model ready" else "Qwen3-ASR model not found"
                         )}
                     }
                 }
@@ -1280,6 +1379,133 @@ class ModelViewModel(
                 _snackbarEvent.send(context.getString(R.string.whisper_deleted, displayName))
             }
         }
+    }
+
+    // ==================== Qwen3-ASR Model Download ====================
+
+    /**
+     * Refreshes the Qwen3-ASR model state.
+     */
+    fun refreshQwen3AsrState() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = AppContainer.applicationContext
+            val downloadedVariants = Qwen3AsrModelManager.Variant.entries
+                .filter { Qwen3AsrDownloader.isModelDownloaded(context, it) }
+                .toSet()
+            _qwen3AsrState.update { it.copy(downloadedVariants = downloadedVariants) }
+        }
+    }
+
+    // ==================== Qwen3-ASR Confirmation Dialogs ====================
+
+    fun showQwen3AsrDownloadDialog(variant: Qwen3AsrModelManager.Variant) {
+        _qwen3AsrState.update { it.copy(showDownloadDialog = true, selectedVariant = variant, errorMessage = null) }
+    }
+
+    fun dismissQwen3AsrDownloadDialog() {
+        _qwen3AsrState.update { it.copy(showDownloadDialog = false) }
+    }
+
+    fun confirmQwen3AsrDownload() {
+        val variant = _qwen3AsrState.value.selectedVariant ?: return
+        startQwen3AsrDownload(variant)
+    }
+
+    fun showQwen3AsrDeleteDialog(variant: Qwen3AsrModelManager.Variant) {
+        _qwen3AsrState.update { it.copy(showDeleteDialog = true, variantToDelete = variant) }
+    }
+
+    fun dismissQwen3AsrDeleteDialog() {
+        _qwen3AsrState.update { it.copy(showDeleteDialog = false, variantToDelete = null) }
+    }
+
+    fun confirmQwen3AsrDelete() {
+        val variant = _qwen3AsrState.value.variantToDelete ?: return
+        _qwen3AsrState.update { it.copy(showDeleteDialog = false) }
+        deleteQwen3AsrModel(variant)
+    }
+
+    // ==================== Qwen3-ASR Download Methods ====================
+
+    fun startQwen3AsrDownload(variant: Qwen3AsrModelManager.Variant) {
+        _qwen3AsrState.update { it.copy(isDownloading = true, errorMessage = null, showDownloadDialog = false, selectedVariant = variant) }
+        val context = AppContainer.applicationContext
+        val intent = Intent(context, ExtractionService::class.java).apply {
+            putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.QWEN3_ASR.key)
+            putExtra(ExtractionService.EXTRA_VARIANT, qwen3AsrVariantKey(variant))
+        }
+        ContextCompat.startForegroundService(context, intent)
+    }
+
+    fun cancelQwen3AsrDownload() {
+        Qwen3AsrDownloader.cancel()
+        _qwen3AsrState.update { it.copy(isDownloading = false) }
+        stopExtractionService()
+        detectPartialDownloads()
+    }
+
+    fun resumeQwen3AsrDownload(variant: Qwen3AsrModelManager.Variant) {
+        _qwen3AsrState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
+        startQwen3AsrDownload(variant)
+    }
+
+    fun clearQwen3AsrPartialDownload(variant: Qwen3AsrModelManager.Variant) {
+        viewModelScope.launch(Dispatchers.IO) {
+            Qwen3AsrDownloader.clearPartialDownload(AppContainer.applicationContext, variant)
+            _qwen3AsrState.update {
+                it.copy(partialDownload = null, partialDownloadVariant = null)
+            }
+        }
+    }
+
+    fun useQwen3AsrModel(variant: Qwen3AsrModelManager.Variant) {
+        viewModelScope.launch {
+            val context = AppContainer.applicationContext
+            val modelPath = Qwen3AsrDownloader.getModelPath(context, variant)
+            if (modelPath != null) {
+                preferencesManager.saveQwen3AsrModelPath(modelPath)
+                preferencesManager.saveTranscriptionBackend("qwen3-asr")
+
+                val displayName = context.getString(variant.titleResId)
+                val message = context.getString(R.string.model_selected_message, displayName)
+                _uiState.update {
+                    it.copy(
+                        modelName = displayName,
+                        status = ModelStatus.UNLOADED,
+                        statusMessage = message
+                    )
+                }
+
+                _snackbarEvent.send(message)
+                LlmManager.resetKeepAliveTimer()
+            }
+        }
+    }
+
+    fun deleteQwen3AsrModel(variant: Qwen3AsrModelManager.Variant) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = AppContainer.applicationContext
+            val success = Qwen3AsrDownloader.deleteModel(context, variant)
+            if (success) {
+                _qwen3AsrState.update {
+                    it.copy(downloadedVariants = _qwen3AsrState.value.downloadedVariants - variant)
+                }
+                val savedPath = preferencesManager.qwen3AsrModelPath.first()
+                if (savedPath != null && savedPath.contains(Qwen3AsrDownloader.getModelDirName(variant))) {
+                    preferencesManager.clearQwen3AsrModelPath()
+                    _uiState.update { it.copy(modelPath = "", modelName = "", isModelPathValid = false) }
+                }
+                val displayName = context.getString(variant.titleResId)
+                _snackbarEvent.send(context.getString(R.string.qwen3_asr_deleted, displayName))
+            }
+        }
+    }
+
+    /**
+     * Maps a [Qwen3AsrModelManager.Variant] to the string key used by [ExtractionService].
+     */
+    private fun qwen3AsrVariantKey(variant: Qwen3AsrModelManager.Variant): String {
+        return variant.name.lowercase()
     }
 
     /**

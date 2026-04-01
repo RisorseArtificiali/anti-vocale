@@ -1,4 +1,8 @@
 <en-US>
+What's new in 1.2.3:
+
+• Fixed Gemma transcription crash ("Conversation is closed") that could occur when the LiteRT-LM session was accessed concurrently
+
 What's new in 1.2.2:
 
 • Fixed crash on startup caused by Android KeyStore corruption (app now recovers automatically — user may need to re-enter their HuggingFace token)
@@ -42,6 +46,10 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.2.3:
+
+• Risolto il crash della trascrizione con Gemma ("Conversation is closed") che poteva verificarsi quando la sessione LiteRT-LM veniva utilizzata in modo concorrente
+
 Novità della versione 1.2.2:
 
 • Risolto il crash all'avvio causato dal danneggiamento del KeyStore di Android (l'app si ripristina automaticamente — potrebbe essere necessario reinserire il token HuggingFace)

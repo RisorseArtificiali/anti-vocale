@@ -36,6 +36,8 @@ class PreferencesManager(private val context: Context) {
         private val PARAKEET_MODEL_PATH = stringPreferencesKey("parakeet_model_path")
         // Whisper model path (for sherpa-onnx Whisper backend)
         private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
+        // Qwen3-ASR model path (for sherpa-onnx Qwen3-ASR backend)
+        private val QWEN3_ASR_MODEL_PATH = stringPreferencesKey("qwen3_asr_model_path")
         // Auto-copy transcription results to clipboard
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
         // VAD silence stripping
@@ -69,6 +71,7 @@ class PreferencesManager(private val context: Context) {
         val transcriptionBackend: String = DEFAULT_TRANSCRIPTION_BACKEND,
         val parakeetModelPath: String? = null,
         val whisperModelPath: String? = null,
+        val qwen3AsrModelPath: String? = null,
         val autoCopyEnabled: Boolean = DEFAULT_AUTO_COPY_ENABLED,
         val vadEnabled: Boolean = DEFAULT_VAD_ENABLED,
         val defaultPrompt: String = DEFAULT_PROMPT_VALUE,
@@ -88,6 +91,7 @@ class PreferencesManager(private val context: Context) {
         transcriptionBackend = this[TRANSCRIPTION_BACKEND] ?: DEFAULT_TRANSCRIPTION_BACKEND,
         parakeetModelPath = this[PARAKEET_MODEL_PATH],
         whisperModelPath = this[WHISPER_MODEL_PATH],
+        qwen3AsrModelPath = this[QWEN3_ASR_MODEL_PATH],
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: DEFAULT_AUTO_COPY_ENABLED,
         vadEnabled = this[VAD_ENABLED] ?: DEFAULT_VAD_ENABLED,
         defaultPrompt = this[DEFAULT_PROMPT] ?: DEFAULT_PROMPT_VALUE,
@@ -241,6 +245,32 @@ class PreferencesManager(private val context: Context) {
             preferences.remove(WHISPER_MODEL_PATH)
         }
         cache.updateAndGet { it.copy(whisperModelPath = null) }
+    }
+
+    /**
+     * Flow of the Qwen3-ASR model path (for sherpa-onnx Qwen3-ASR backend).
+     */
+    val qwen3AsrModelPath: Flow<String?> = context.dataStore.data.map { it.toCached().qwen3AsrModelPath }
+        .onStart { emit(cache.get().qwen3AsrModelPath) }
+
+    /**
+     * Saves the Qwen3-ASR model path.
+     */
+    suspend fun saveQwen3AsrModelPath(path: String) {
+        context.dataStore.edit { preferences ->
+            preferences[QWEN3_ASR_MODEL_PATH] = path
+        }
+        cache.updateAndGet { it.copy(qwen3AsrModelPath = path) }
+    }
+
+    /**
+     * Clears the Qwen3-ASR model path.
+     */
+    suspend fun clearQwen3AsrModelPath() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(QWEN3_ASR_MODEL_PATH)
+        }
+        cache.updateAndGet { it.copy(qwen3AsrModelPath = null) }
     }
 
     /**

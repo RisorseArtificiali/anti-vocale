@@ -15,6 +15,7 @@ import com.antivocale.app.data.ModelDiscovery
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
+import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.LocaleManager
@@ -500,6 +501,20 @@ class SettingsViewModel(
                             val modelDir = java.io.File(path)
                             val model = com.antivocale.app.transcription.WhisperModelManager.validateModelDirectory(modelDir)
                             model?.variant?.let { v ->
+                                getApplication<Application>().getString(v.titleResId)
+                            } ?: path.substringAfterLast("/")
+                        } else null
+                        _uiState.update { it.copy(
+                            currentModelPath = path,
+                            currentModelName = modelName
+                        )}
+                    }
+                }
+                "qwen3-asr" -> {
+                    preferencesManager.qwen3AsrModelPath.collect { path ->
+                        val modelName = if (!path.isNullOrBlank()) {
+                            val modelDir = java.io.File(path)
+                            Qwen3AsrModelManager.detectVariant(modelDir.name)?.let { v ->
                                 getApplication<Application>().getString(v.titleResId)
                             } ?: path.substringAfterLast("/")
                         } else null
