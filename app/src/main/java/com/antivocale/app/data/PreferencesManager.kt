@@ -46,6 +46,8 @@ class PreferencesManager(private val context: Context) {
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
         // Inference thread count
         private val THREAD_COUNT = intPreferencesKey("thread_count")
+        // Transcription language ("auto" for auto-detect, or ISO 639-1 code)
+        private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
 
         // Default values (single source of truth)
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
@@ -56,6 +58,7 @@ class PreferencesManager(private val context: Context) {
         const val DEFAULT_THEME = "DEFAULT"
         const val DEFAULT_TRANSCRIPTION_BACKEND = "llm"
         const val DEFAULT_LANGUAGE = "system"
+        const val DEFAULT_TRANSCRIPTION_LANGUAGE = "auto"
     }
 
     /**
@@ -75,7 +78,8 @@ class PreferencesManager(private val context: Context) {
         val autoCopyEnabled: Boolean = DEFAULT_AUTO_COPY_ENABLED,
         val vadEnabled: Boolean = DEFAULT_VAD_ENABLED,
         val defaultPrompt: String = DEFAULT_PROMPT_VALUE,
-        val threadCount: Int = DEFAULT_THREAD_COUNT
+        val threadCount: Int = DEFAULT_THREAD_COUNT,
+        val transcriptionLanguage: String = DEFAULT_TRANSCRIPTION_LANGUAGE
     )
 
     /**
@@ -95,7 +99,8 @@ class PreferencesManager(private val context: Context) {
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: DEFAULT_AUTO_COPY_ENABLED,
         vadEnabled = this[VAD_ENABLED] ?: DEFAULT_VAD_ENABLED,
         defaultPrompt = this[DEFAULT_PROMPT] ?: DEFAULT_PROMPT_VALUE,
-        threadCount = this[THREAD_COUNT] ?: DEFAULT_THREAD_COUNT
+        threadCount = this[THREAD_COUNT] ?: DEFAULT_THREAD_COUNT,
+        transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: DEFAULT_TRANSCRIPTION_LANGUAGE
     )
 
     /**
@@ -341,5 +346,22 @@ class PreferencesManager(private val context: Context) {
             preferences[THREAD_COUNT] = threads
         }
         cache.updateAndGet { it.copy(threadCount = threads) }
+    }
+
+    /**
+     * Flow of the transcription language preference.
+     * Returns "auto" by default (auto-detect language).
+     */
+    val transcriptionLanguage: Flow<String> = context.dataStore.data.map { it.toCached().transcriptionLanguage }
+        .onStart { emit(cache.get().transcriptionLanguage) }
+
+    /**
+     * Saves the transcription language preference.
+     */
+    suspend fun saveTranscriptionLanguage(language: String) {
+        context.dataStore.edit { preferences ->
+            preferences[TRANSCRIPTION_LANGUAGE] = language
+        }
+        cache.updateAndGet { it.copy(transcriptionLanguage = language) }
     }
 }

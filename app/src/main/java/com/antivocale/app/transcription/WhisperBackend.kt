@@ -76,8 +76,9 @@ class WhisperBackend : TranscriptionBackend {
                 Log.i(TAG, "Creating OfflineRecognizer config for Whisper...")
 
                 // Configure Whisper model
+                // Distil Italian model only supports Italian, so ignore user language preference
                 val isDistil = modelDirectory.contains("distil")
-                val language = if (isDistil) "it" else ""
+                val language = if (isDistil) "it" else sherpaConfig.language
                 val whisperConfig = OfflineWhisperModelConfig(
                     encoder = modelFiles.encoderPath,
                     decoder = modelFiles.decoderPath,

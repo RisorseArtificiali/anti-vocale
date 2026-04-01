@@ -289,6 +289,12 @@
     <string name="language_english">English</string>
     <string name="language_italian">Italiano</string>
 
+    <!-- Settings Tab - Transcription Language -->
+    <string name="transcription_language_title">Transcription Language</string>
+    <string name="transcription_language_auto">Auto-detect</string>
+    <string name="transcription_language_description">Choose the language for audio transcription. Selecting a specific language skips detection and is faster.</string>
+    <string name="transcription_language_note">Only applies to Whisper models. The Distil Italian model always uses Italian. Other backends (Gemma, Parakeet, Qwen3-ASR) auto-detect.</string>
+
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Theme</string>
     <string name="theme_description">Choose the app color theme.</string>

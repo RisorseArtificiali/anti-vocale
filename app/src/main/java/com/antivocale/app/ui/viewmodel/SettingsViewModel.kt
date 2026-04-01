@@ -59,6 +59,20 @@ class SettingsViewModel(
         LanguageOption("it", "Italiano")
     )
 
+    // Transcription language options (reuses LanguageOption)
+    val transcriptionLanguageOptions = listOf(
+        LanguageOption("auto", "Auto-detect"),
+        LanguageOption("it", "Italiano"),
+        LanguageOption("en", "English"),
+        LanguageOption("es", "Español"),
+        LanguageOption("fr", "Français"),
+        LanguageOption("de", "Deutsch"),
+        LanguageOption("pt", "Português"),
+        LanguageOption("ja", "日本語"),
+        LanguageOption("zh", "中文"),
+        LanguageOption("ar", "العربية")
+    )
+
     // Theme options
     val themeOptions = ThemeType.entries
 
@@ -103,6 +117,14 @@ class SettingsViewModel(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = PreferencesManager.DEFAULT_PROMPT_VALUE
+        )
+
+    // Transcription language preference
+    val currentTranscriptionLanguage: StateFlow<String> = preferencesManager.transcriptionLanguage
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE
         )
 
     // Current language from Per-App Language API (not DataStore)
@@ -226,6 +248,15 @@ class SettingsViewModel(
     fun saveVadEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveVadEnabled(enabled)
+        }
+    }
+
+    /**
+     * Saves the transcription language preference.
+     */
+    fun saveTranscriptionLanguage(language: String) {
+        viewModelScope.launch {
+            preferencesManager.saveTranscriptionLanguage(language)
         }
     }
 

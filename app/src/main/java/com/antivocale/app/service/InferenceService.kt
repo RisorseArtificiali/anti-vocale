@@ -389,7 +389,10 @@ class InferenceService : Service() {
             context = applicationContext,
             config = BackendConfig.SherpaOnnxConfig(
                 modelDir = modelPath,
-                numThreads = AppContainer.preferencesManager.threadCount.first()
+                numThreads = AppContainer.preferencesManager.threadCount.first(),
+                language = AppContainer.preferencesManager.transcriptionLanguage.first().let { lang ->
+                    if (lang == "auto") "" else lang
+                }
             )
         )
     }

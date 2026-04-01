@@ -66,6 +66,7 @@ fun SettingsTab(
     val threadCount by viewModel.threadCount.collectAsState()
     val autoDetectedThreads = viewModel.autoDetectedThreadCount
     val currentLanguage by viewModel.currentLanguage.collectAsState()
+    val currentTranscriptionLanguage by viewModel.currentTranscriptionLanguage.collectAsState()
     val currentTheme by viewModel.currentTheme.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
     val tokenInput by viewModel.tokenInput.collectAsState()
@@ -1097,6 +1098,94 @@ fun SettingsTab(
                         }
                     }
                 }
+            }
+        }
+
+        // Transcription Language Setting
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Translate,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.transcription_language_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.transcription_language_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                // Transcription language dropdown
+                var transcriptionLanguageExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = transcriptionLanguageExpanded,
+                    onExpandedChange = { transcriptionLanguageExpanded = it }
+                ) {
+                    TextField(
+                        value = viewModel.transcriptionLanguageOptions.find { it.code == currentTranscriptionLanguage }?.let {
+                            if (it.code == "auto") stringResource(R.string.transcription_language_auto) else it.displayName
+                        } ?: currentTranscriptionLanguage,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.transcription_language_title)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = transcriptionLanguageExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        enabled = !uiState.isSaving,
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = transcriptionLanguageExpanded,
+                        onDismissRequest = { transcriptionLanguageExpanded = false },
+                        modifier = Modifier.exposedDropdownSize()
+                    ) {
+                        viewModel.transcriptionLanguageOptions.forEach { option ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        if (option.code == "auto") stringResource(R.string.transcription_language_auto)
+                                        else option.displayName
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.saveTranscriptionLanguage(option.code)
+                                    transcriptionLanguageExpanded = false
+                                },
+                                trailingIcon = if (currentTranscriptionLanguage == option.code) {
+                                    { Icon(Icons.Default.Check, contentDescription = null) }
+                                } else null
+                            )
+                        }
+                    }
+                }
+
+                Text(
+                    text = stringResource(R.string.transcription_language_note),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
         }
 
