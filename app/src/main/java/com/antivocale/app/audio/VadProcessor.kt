@@ -22,6 +22,10 @@ object VadProcessor {
     private const val VAD_MODEL_PATH = "models/silero_vad.int8.onnx"
     private const val SAMPLE_RATE = 16000
     private const val WINDOW_SIZE = 512  // ~32ms at 16kHz
+    private const val SPEECH_PAD_MS = 400  // padding around each speech segment
+    private const val SPEECH_PAD_SAMPLES = SAMPLE_RATE * SPEECH_PAD_MS / 1000  // 6400 samples
+
+    private class RawSegment(val start: Int, val end: Int)
 
     data class VadResult(
         val speechSegments: List<FloatArray>,
@@ -75,39 +79,60 @@ object VadProcessor {
             // Flush to emit final pending segment
             vad.flush()
 
-            // Drain all speech segments
-            val segments = mutableListOf<FloatArray>()
-            var totalSpeechSamples = 0
+            // Drain all speech segments with their offsets
+            val rawSegments = mutableListOf<RawSegment>()
+            val totalSamples = pcmSamples.size
 
             while (!vad.empty()) {
                 val segment: SpeechSegment = vad.front()
                 vad.pop()
 
-                // Filter segments shorter than minSpeechDuration (already done by VAD,
-                // but double-check for very short artifacts)
                 if (segment.samples.size >= SAMPLE_RATE / 4) {  // >= 250ms
-                    segments.add(segment.samples)
-                    totalSpeechSamples += segment.samples.size
+                    val start = segment.start.coerceIn(0, totalSamples)
+                    val end = (segment.start + segment.samples.size).coerceIn(0, totalSamples)
+                    rawSegments.add(RawSegment(start, end))
                 }
             }
 
-            // Fallback: if no speech detected, return original samples as single segment
-            val finalSegments = if (segments.isEmpty()) {
+            // Apply padding and merge overlapping segments
+            val finalSegments = if (rawSegments.isEmpty()) {
                 Log.w(TAG, "VAD detected no speech, falling back to full audio")
                 listOf(pcmSamples)
             } else {
-                segments
+                fun padStart(raw: RawSegment) = maxOf(0, raw.start - SPEECH_PAD_SAMPLES)
+                fun padEnd(raw: RawSegment) = minOf(totalSamples, raw.end + SPEECH_PAD_SAMPLES)
+
+                val merged = mutableListOf<Pair<Int, Int>>()
+                var curStart = padStart(rawSegments[0])
+                var curEnd = padEnd(rawSegments[0])
+
+                for (i in 1 until rawSegments.size) {
+                    val nextStart = padStart(rawSegments[i])
+                    val nextEnd = padEnd(rawSegments[i])
+
+                    if (nextStart <= curEnd) {
+                        curEnd = maxOf(curEnd, nextEnd)
+                    } else {
+                        merged.add(curStart to curEnd)
+                        curStart = nextStart
+                        curEnd = nextEnd
+                    }
+                }
+                merged.add(curStart to curEnd)
+
+                merged.map { (start, end) -> pcmSamples.copyOfRange(start, end) }
             }
 
-            val totalSpeechDuration = totalSpeechSamples.toDouble() / SAMPLE_RATE
+            val totalSpeechDuration = finalSegments.sumOf { it.size }.toDouble() / SAMPLE_RATE
             val vadDurationMs = System.currentTimeMillis() - startTime
 
             Log.i(TAG, "VAD completed in ${vadDurationMs}ms: ${finalSegments.size} segments, " +
-                    "${"%.1f".format(totalSpeechDuration)}s speech from ${"%.1f".format(originalDurationSeconds)}s")
+                    "${"%.1f".format(totalSpeechDuration)}s speech from ${"%.1f".format(originalDurationSeconds)}s " +
+                    "(+${SPEECH_PAD_MS}ms padding)")
 
             return VadResult(
                 speechSegments = finalSegments,
-                totalSpeechDurationSeconds = if (finalSegments.isEmpty()) originalDurationSeconds else totalSpeechDuration,
+                totalSpeechDurationSeconds = totalSpeechDuration,
                 segmentCount = finalSegments.size,
                 originalDurationSeconds = originalDurationSeconds
             )

@@ -27,6 +27,15 @@ print("Step 1: Loading model...")
 model = whisper.load_model("./original_model.pt")
 model.eval()
 
+# Disable SDPA to force Whisper to use its legacy qkv_attention implementation.
+# SDPA's is_causal=True is not compatible with ONNX tracing for dynamic seq lengths.
+from whisper.model import disable_sdpa, MultiHeadAttention
+
+# Force disable SDPA at the class level for the entire script.
+# The disable_sdpa() context manager is too fragile (exits restore use_sdpa=True).
+_MHA_SDPA_ORIG = MultiHeadAttention.use_sdpa
+MultiHeadAttention.use_sdpa = False
+
 dims = model.dims
 print(f"  n_mels={dims.n_mels}, n_audio_ctx={dims.n_audio_ctx}, n_text_layer={dims.n_text_layer}")
 print(f"  n_audio_state={dims.n_audio_state}, n_text_state={dims.n_text_state}")
@@ -64,16 +73,9 @@ class MultiHeadAttentionSelf(nn.Module):
         v = self.multiHeadAttention.value(x)
         k_cache[:, -k.shape[1]:, :] = k
         v_cache[:, -v.shape[1]:, :] = v
-        # Self-attention always needs causal masking.
-        # Bypass the mask parameter and call qkv_attention with True for is_causal.
-        n_batch, n_ctx, n_state = q.shape
-        scale = (n_state // self.multiHeadAttention.n_head) ** -0.25
-        q = q.view(*q.shape[:2], self.multiHeadAttention.n_head, -1).permute(0, 2, 1, 3)
-        k = k.view(*k.shape[:2], self.multiHeadAttention.n_head, -1).permute(0, 2, 1, 3)
-        v = v.view(*v.shape[:2], self.multiHeadAttention.n_head, -1).permute(0, 2, 1, 3)
-        from torch.nn.functional import scaled_dot_product_attention
-        a = scaled_dot_product_attention(q, k, v, is_causal=True)
-        wv = a.permute(0, 2, 1, 3).flatten(start_dim=2)
+        # Use Whisper's built-in qkv_attention with explicit mask (not SDPA).
+        # SDPA's is_causal=True produces incorrect ONNX traces for dynamic seq lengths.
+        wv, qk = self.multiHeadAttention.qkv_attention(q, k_cache, v_cache, mask)
         return self.multiHeadAttention.out(wv), k_cache, v_cache
 
 
@@ -159,60 +161,56 @@ class TextDecoderTensorCache(nn.Module):
 print("Step 2: Creating TextDecoderTensorCache wrapper...")
 decoder_cache = TextDecoderTensorCache(model.decoder, dims.n_text_ctx)
 
-# ── Step 4: Trace decoder ──
-print("Step 3: Tracing decoder...")
+# ── Step 4: Export decoder to ONNX ──
+print("Step 3: Exporting decoder to ONNX...")
 
-# Dummy inputs matching what sherpa-onnx uses
-tokens = torch.tensor([[50258, 50274, 50360, 50364]], dtype=torch.int64)  # sot_sequence
 n_text_layer = dims.n_text_layer  # 2
 n_text_ctx = dims.n_text_ctx  # 448
 n_text_state = dims.n_text_state  # 1280
 T = 10  # small cross-attention sequence length for tracing
 
-self_k_cache = torch.zeros(n_text_layer, 1, n_text_ctx, n_text_state, dtype=torch.float32)
-self_v_cache = torch.zeros(n_text_layer, 1, n_text_ctx, n_text_state, dtype=torch.float32)
-cross_k = torch.randn(n_text_layer, 1, T, n_text_state, dtype=torch.float32)
-cross_v = torch.randn(n_text_layer, 1, T, n_text_state, dtype=torch.float32)
-offset = torch.tensor([tokens.shape[1]], dtype=torch.int64)
-
-with torch.no_grad():
-    # First verify
-    logits, out_k, out_v = decoder_cache(
-        tokens, self_k_cache, self_v_cache, cross_k, cross_v, offset
-    )
-    print(f"  Verify: logits shape = {logits.shape}, expected (1, 4, {dims.n_vocab})")
-    assert logits.shape == (1, 4, dims.n_vocab), f"Shape mismatch: {logits.shape}"
-    print(f"  Verify: out_k shape = {out_k.shape}")
-    print(f"  Verify: out_v shape = {out_v.shape}")
-
-    # Trace
-    traced_decoder = torch.jit.trace(
-        decoder_cache,
-        (tokens, self_k_cache, self_v_cache, cross_k, cross_v, offset)
-    )
-
-del tokens, self_k_cache, self_v_cache, cross_k, cross_v, offset, logits, out_k, out_v
-gc.collect()
-print("  Trace complete")
-
-# ── Step 5: Export to ONNX ──
 unquantized_path = os.path.join(OUT_DIR, "distil-large-v3-it-decoder.unquantized.onnx")
 decoder_path = os.path.join(OUT_DIR, "distil-large-v3-it-decoder.int8.onnx")
 
-print("Step 4: Exporting to ONNX (opset 17)...")
-T_trace = 10  # same as trace input
-
 with torch.no_grad():
-    tokens_t = torch.tensor([[50258, 50274, 50360, 50364]], dtype=torch.int64)
-    self_k_t = torch.zeros(n_text_layer, 1, n_text_ctx, n_text_state, dtype=torch.float32)
-    self_v_t = torch.zeros(n_text_layer, 1, n_text_ctx, n_text_state, dtype=torch.float32)
-    cross_k_t = torch.randn(n_text_layer, 1, T_trace, n_text_state, dtype=torch.float32)
-    cross_v_t = torch.randn(n_text_layer, 1, T_trace, n_text_state, dtype=torch.float32)
-    offset_t = torch.tensor([4], dtype=torch.int64)
+    # Generate cross-attention KV caches from a dummy mel
+    audio = torch.rand(16000 * 10)
+    audio = whisper.pad_or_trim(audio)
+    mel = whisper.log_mel_spectrogram(audio, n_mels=dims.n_mels).unsqueeze(0)
+    audio_features = model.encoder(mel)
+    cross_k = torch.stack([block.cross_attn.key(audio_features) for block in model.decoder.blocks])
+    cross_v = torch.stack([block.cross_attn.value(audio_features) for block in model.decoder.blocks])
+    del audio, mel, audio_features
+    gc.collect()
 
+    n_audio = 1
+
+    # First pass: initial prompt (3 tokens, offset=0)
+    # This warms up the self-attention KV cache.
+    tokens_init = torch.tensor([[50258, 50274, 50360]], dtype=torch.int64)
+    self_k_cache = torch.zeros(n_text_layer, n_audio, n_text_ctx, n_text_state)
+    self_v_cache = torch.zeros(n_text_layer, n_audio, n_text_ctx, n_text_state)
+    offset = torch.zeros(1, dtype=torch.int64)
+
+    logits, self_k_cache, self_v_cache = decoder_cache(
+        tokens_init, self_k_cache, self_v_cache, cross_k, cross_v, offset
+    )
+    print(f"  Pass 1: logits shape = {logits.shape} (expected (1, 3, {dims.n_vocab}))")
+
+    # Second pass: incremental decode (1 token, offset=3)
+    # This is the path ONNX export will trace.
+    tokens_inc = torch.tensor([[50258]], dtype=torch.int64)
+    offset = torch.tensor([tokens_init.shape[1]], dtype=torch.int64)
+
+    logits, _, _ = decoder_cache(
+        tokens_inc, self_k_cache, self_v_cache, cross_k, cross_v, offset
+    )
+    print(f"  Pass 2: logits shape = {logits.shape} (expected (1, 1, {dims.n_vocab}))")
+
+    # Export using the incremental decode inputs (same as sherpa-onnx export script)
     torch.onnx.export(
-        traced_decoder,
-        (tokens_t, self_k_t, self_v_t, cross_k_t, cross_v_t, offset_t),
+        decoder_cache,
+        (tokens_inc, self_k_cache, self_v_cache, cross_k, cross_v, offset),
         unquantized_path,
         opset_version=17,
         dynamo=False,
@@ -241,7 +239,7 @@ with torch.no_grad():
         },
     )
 
-del traced_decoder, tokens_t, self_k_t, self_v_t, cross_k_t, cross_v_t, offset_t
+del tokens_init, tokens_inc, self_k_cache, self_v_cache, cross_k, cross_v, offset, logits
 gc.collect()
 print(f"  Unquantized: {os.path.getsize(unquantized_path) / 1e6:.1f}MB")
 

@@ -106,25 +106,30 @@ object AudioPreprocessor {
 
         // Apply VAD silence stripping if enabled
         val pcmToProcess = if (enableVad && context != null) {
-            val floatSamples = VadProcessor.pcmBytesToFloats(pcmData)
-            val vadResult = VadProcessor.detectSpeech(context, floatSamples, vadNumThreads)
+            try {
+                val floatSamples = VadProcessor.pcmBytesToFloats(pcmData)
+                val vadResult = VadProcessor.detectSpeech(context, floatSamples, vadNumThreads)
 
-            // Merge speech segments without boxing (avoid flatMap on FloatArray)
-            val segments = vadResult.speechSegments
-            val totalSize = segments.sumOf { it.size }
-            val merged = FloatArray(totalSize)
-            var offset = 0
-            for (seg in segments) {
-                System.arraycopy(seg, 0, merged, offset, seg.size)
-                offset += seg.size
+                // Merge speech segments without boxing (avoid flatMap on FloatArray)
+                val segments = vadResult.speechSegments
+                val totalSize = segments.sumOf { it.size }
+                val merged = FloatArray(totalSize)
+                var offset = 0
+                for (seg in segments) {
+                    System.arraycopy(seg, 0, merged, offset, seg.size)
+                    offset += seg.size
+                }
+
+                val strippedPcm = VadProcessor.floatsToPcmBytes(merged)
+                val strippedDuration = strippedPcm.size.toDouble() / TARGET_SAMPLE_RATE / 2
+                Log.i(TAG, "VAD stripped ${"%.1f".format(vadResult.originalDurationSeconds)}s → " +
+                        "${"%.1f".format(strippedDuration)}s (${vadResult.segmentCount} segments)")
+
+                strippedPcm
+            } catch (e: Exception) {
+                Log.e(TAG, "VAD processing failed, using full audio", e)
+                pcmData
             }
-
-            val strippedPcm = VadProcessor.floatsToPcmBytes(merged)
-            val strippedDuration = strippedPcm.size.toDouble() / TARGET_SAMPLE_RATE / 2
-            Log.i(TAG, "VAD stripped ${"%.1f".format(vadResult.originalDurationSeconds)}s → " +
-                    "${"%.1f".format(strippedDuration)}s (${vadResult.segmentCount} segments)")
-
-            strippedPcm
         } else {
             pcmData
         }

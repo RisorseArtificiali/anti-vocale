@@ -1375,6 +1375,7 @@ class ModelViewModel(
                 val savedPath = preferencesManager.whisperModelPath.first()
                 if (savedPath?.contains(variant.dirName) == true) {
                     preferencesManager.clearWhisperModelPath()
+                    _uiState.update { it.copy(modelPath = "", modelName = "", isModelPathValid = false) }
                 }
                 _snackbarEvent.send(context.getString(R.string.whisper_deleted, displayName))
             }
