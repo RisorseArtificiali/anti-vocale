@@ -234,6 +234,7 @@ class ExtractionService : Service() {
         currentJob?.cancel()
         ParakeetDownloader.cancel()
         WhisperDownloader.cancel()
+        Qwen3AsrDownloader.cancel()
         ModelDownloader.cancel()
         stopForeground(STOP_FOREGROUND_REMOVE)
         stopSelf()
