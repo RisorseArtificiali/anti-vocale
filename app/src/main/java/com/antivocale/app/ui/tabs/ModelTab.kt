@@ -686,7 +686,7 @@ private fun ModelVariantCard(
                             isDownloading -> Icons.Default.CloudDownload
                             downloadError != null && downloadState.selectedVariant == variant ->
                                 Icons.Default.Error
-                            variant == ModelDownloader.ModelVariant.GEMMA_3N_E2B ->
+                            variant == ModelDownloader.ModelVariant.GEMMA_4_E2B ->
                                 Icons.Default.Star
                             else -> Icons.Default.Storage
                         },
@@ -696,7 +696,7 @@ private fun ModelVariantCard(
                             isDownloading -> MaterialTheme.colorScheme.secondary
                             downloadError != null && downloadState.selectedVariant == variant ->
                                 MaterialTheme.colorScheme.error
-                            variant == ModelDownloader.ModelVariant.GEMMA_3N_E2B ->
+                            variant == ModelDownloader.ModelVariant.GEMMA_4_E2B ->
                                 MaterialTheme.colorScheme.tertiary
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         },

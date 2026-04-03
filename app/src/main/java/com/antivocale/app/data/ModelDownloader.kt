@@ -14,14 +14,16 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Manages Gemma 3n LiteRT-LM models for on-device inference.
+ * Manages Gemma LiteRT-LM models for on-device inference.
  *
  * Model sources:
  * 1. **HuggingFace**: Download models — auth is optional (tries public first, falls back to token)
  *
  * Available models:
- * - **Gemma 3n E2B**: 3.3GB, recommended for most devices (multimodal: text + audio)
- * - **Gemma 3n E4B**: 4.2GB, for devices with more RAM (multimodal: text + audio)
+ * - **Gemma 4 E2B**: 2.6GB, recommended for most devices (multimodal: text + audio)
+ * - **Gemma 4 E4B**: 3.7GB, higher quality at more RAM cost (multimodal: text + audio)
+ * - **Gemma 3n E2B**: 3.3GB, previous generation (multimodal: text + audio)
+ * - **Gemma 3n E4B**: 4.2GB, previous generation (multimodal: text + audio)
  *
  * Features:
  * - Pre-flight check: tries downloading without auth first (like Google AI Edge Gallery)
@@ -47,6 +49,22 @@ object ModelDownloader {
         val estimatedSizeMB: Long,
         val supportsAudio: Boolean
     ) {
+        GEMMA_4_E2B(
+            displayName = "Gemma 4 E2B",
+            huggingFaceRepo = "litert-community/gemma-4-E2B-it-litert-lm",
+            fileName = "gemma-4-E2B-it.litertlm",
+            descriptionResId = R.string.model_desc_gemma_4_e2b,
+            estimatedSizeMB = 2600L,
+            supportsAudio = true
+        ),
+        GEMMA_4_E4B(
+            displayName = "Gemma 4 E4B",
+            huggingFaceRepo = "litert-community/gemma-4-E4B-it-litert-lm",
+            fileName = "gemma-4-E4B-it.litertlm",
+            descriptionResId = R.string.model_desc_gemma_4_e4b,
+            estimatedSizeMB = 3700L,
+            supportsAudio = true
+        ),
         GEMMA_3N_E2B(
             displayName = "Gemma 3n E2B",
             huggingFaceRepo = "google/gemma-3n-E2B-it-litert-lm",
@@ -113,7 +131,7 @@ object ModelDownloader {
      *
      * @return [DownloadState.PartiallyDownloaded] if a .tmp file exists, null otherwise
      */
-    fun detectPartialDownload(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): DownloadState.PartiallyDownloaded? {
+    fun detectPartialDownload(context: Context, variant: ModelVariant = ModelVariant.GEMMA_4_E2B): DownloadState.PartiallyDownloaded? {
         val tempFile = File(context.filesDir, "models/${variant.fileName}$TMP_FILE_EXT")
         if (tempFile.length() == 0L) return null
 
@@ -142,7 +160,7 @@ object ModelDownloader {
      */
     suspend fun downloadModel(
         context: Context,
-        variant: ModelVariant = ModelVariant.GEMMA_3N_E2B,
+        variant: ModelVariant = ModelVariant.GEMMA_4_E2B,
         tokenManager: HuggingFaceTokenManager? = null,
         onProgress: (Float) -> Unit = {},
         onStateChange: (DownloadState) -> Unit = {}
@@ -270,7 +288,7 @@ object ModelDownloader {
      * Gets the local path for a model variant.
      * Returns null if the model hasn't been downloaded yet.
      */
-    fun getLocalModelPath(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): String? {
+    fun getLocalModelPath(context: Context, variant: ModelVariant = ModelVariant.GEMMA_4_E2B): String? {
         val file = File(context.filesDir, "models/${variant.fileName}")
         return if (file.length() > 0) {
             file.absolutePath
@@ -282,7 +300,7 @@ object ModelDownloader {
     /**
      * Checks if a model is already downloaded.
      */
-    fun isModelDownloaded(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): Boolean {
+    fun isModelDownloaded(context: Context, variant: ModelVariant = ModelVariant.GEMMA_4_E2B): Boolean {
         val file = File(context.filesDir, "models/${variant.fileName}")
         return file.length() > 0
     }
@@ -290,7 +308,7 @@ object ModelDownloader {
     /**
      * Deletes a downloaded model to free up storage.
      */
-    fun deleteModel(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): Boolean {
+    fun deleteModel(context: Context, variant: ModelVariant = ModelVariant.GEMMA_4_E2B): Boolean {
         val file = File(context.filesDir, "models/${variant.fileName}")
         val tempFile = File(context.filesDir, "models/${variant.fileName}.tmp")
 
@@ -339,7 +357,7 @@ object ModelDownloader {
     /**
      * Deletes partial download temp files.
      */
-    fun clearPartialDownload(context: Context, variant: ModelVariant = ModelVariant.GEMMA_3N_E2B): Boolean {
+    fun clearPartialDownload(context: Context, variant: ModelVariant = ModelVariant.GEMMA_4_E2B): Boolean {
         val tempFile = File(context.filesDir, "models/${variant.fileName}.tmp")
         return if (tempFile.exists()) tempFile.delete() else true
     }

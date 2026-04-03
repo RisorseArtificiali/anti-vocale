@@ -84,6 +84,8 @@
     <string name="yesterday">Ieri</string>
 
     <!-- Model descriptions -->
+    <string name="model_desc_gemma_4_e2b">2.6GB - Multimodale (testo + audio), ultima generazione, migliore per la maggior parte dei dispositivi</string>
+    <string name="model_desc_gemma_4_e4b">3.7GB - Multimodale (testo + audio), ultima generazione, qualità superiore</string>
     <string name="model_desc_gemma_3n_e2b">3.3GB - Multimodale (testo + audio), migliore per la maggior parte dei dispositivi</string>
     <string name="model_desc_gemma_3n_e4b">4.2GB - Multimodale (testo + audio), qualità superiore</string>
 

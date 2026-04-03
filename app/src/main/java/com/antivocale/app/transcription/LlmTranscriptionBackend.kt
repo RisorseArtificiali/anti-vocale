@@ -18,7 +18,7 @@ class LlmTranscriptionBackend : TranscriptionBackend {
     }
 
     override val id: String = BACKEND_ID
-    override val displayName: String = "Gemma 3n (LiteRT-LM)"
+    override val displayName: String = "Gemma (LiteRT-LM)"
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = true
 

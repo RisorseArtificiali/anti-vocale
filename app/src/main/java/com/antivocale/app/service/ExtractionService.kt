@@ -374,8 +374,10 @@ class ExtractionService : Service() {
     private object GemmaVariant {
         fun fromString(name: String?): ModelDownloader.ModelVariant {
             return when (name) {
+                "gemma_4_e4b" -> ModelDownloader.ModelVariant.GEMMA_4_E4B
+                "gemma_4_e2b" -> ModelDownloader.ModelVariant.GEMMA_4_E2B
                 "gemma_3n_e4b" -> ModelDownloader.ModelVariant.GEMMA_3N_E4B
-                else -> ModelDownloader.ModelVariant.GEMMA_3N_E2B
+                else -> ModelDownloader.ModelVariant.GEMMA_4_E2B
             }
         }
     }
