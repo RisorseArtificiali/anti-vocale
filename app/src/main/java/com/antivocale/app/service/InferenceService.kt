@@ -484,12 +484,34 @@ class InferenceService : Service() {
         Log.i(TAG, "Active backend: ${TranscriptionBackendManager.getActiveBackend()?.displayName}")
         Log.i(TAG, "===========================")
 
+        // Fast path: single chunk — skip parallel chunking machinery
+        if (chunkCount == 1) {
+            Log.i(TAG, "Single chunk detected, using fast path")
+            updateNotificationWithProgress(getString(R.string.processing_audio), indeterminate = true)
+
+            val result = backend.transcribeAudio(
+                prompt = prompt,
+                audioData = preprocessingResult.chunks.first()
+            )
+
+            return when {
+                result.isSuccess && result.getOrNull()?.isNotBlank() == true -> {
+                    recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
+                    Result.success(result.getOrNull()!!.trim())
+                }
+                result.isFailure -> {
+                    Log.e(TAG, "Fast path transcription failed", result.exceptionOrNull())
+                    Result.failure(result.exceptionOrNull()!!)
+                }
+                else -> Result.failure(IllegalStateException("No transcription produced"))
+            }
+        }
+
+        // Multi-chunk path: parallel processing with progress tracking
         val completedChunks = AtomicInteger(0)
         val results = arrayOfNulls<String>(chunkCount)
 
-        if (chunkCount > 1) {
-            Log.i(TAG, "Processing $chunkCount chunks with up to $MAX_CONCURRENT_CHUNKS concurrent transcriptions")
-        }
+        Log.i(TAG, "Processing $chunkCount chunks with up to $MAX_CONCURRENT_CHUNKS concurrent transcriptions")
 
         // Get calibration data for the active backend + model variant
         val backendId = backend.id
@@ -581,19 +603,7 @@ class InferenceService : Service() {
         Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.filterNotNull().size}/$chunkCount chunks")
 
         // Record calibration data (only transcription time, excluding preprocessing)
-        val totalProcessingTimeMs = System.currentTimeMillis() - chunkProcessingStartTime
-        try {
-            AppContainer.transcriptionCalibrator.record(
-                backendId = backendId,
-                modelPath = modelPath,
-                displayName = modelDisplayName,
-                audioDurationSeconds = audioDurationSeconds.toLong(),
-                processingTimeMs = totalProcessingTimeMs
-            )
-            Log.d(TAG, "Recorded calibration: backend=$backendId, model=$modelPath, ${audioDurationSeconds}s audio in ${totalProcessingTimeMs}ms")
-        } catch (e: Exception) {
-            Log.w(TAG, "Failed to record calibration", e)
-        }
+        recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
 
         if (combinedResult.isBlank()) {
             return Result.failure(IllegalStateException("No transcription produced"))
@@ -625,6 +635,35 @@ class InferenceService : Service() {
         }
 
         sendBroadcast(replyIntent)
+    }
+
+    private suspend fun recordCalibration(
+        backend: com.antivocale.app.transcription.TranscriptionBackend,
+        audioDurationSeconds: Int,
+        startTimeMs: Long
+    ) {
+        val totalProcessingTimeMs = System.currentTimeMillis() - startTimeMs
+        try {
+            val backendId = backend.id
+            val modelPath = when (backendId) {
+                WhisperBackend.BACKEND_ID -> AppContainer.preferencesManager.whisperModelPath.first()
+                Qwen3AsrBackend.BACKEND_ID -> AppContainer.preferencesManager.qwen3AsrModelPath.first()
+                SherpaOnnxBackend.BACKEND_ID -> AppContainer.preferencesManager.parakeetModelPath.first()
+                else -> AppContainer.preferencesManager.modelPath.first()
+            } ?: ""
+            val modelDisplayName = deriveDisplayName(backendId, modelPath, backend.displayName)
+
+            AppContainer.transcriptionCalibrator.record(
+                backendId = backendId,
+                modelPath = modelPath,
+                displayName = modelDisplayName,
+                audioDurationSeconds = audioDurationSeconds.toLong(),
+                processingTimeMs = totalProcessingTimeMs
+            )
+            Log.d(TAG, "Recorded calibration: backend=$backendId, model=$modelPath, ${audioDurationSeconds}s audio in ${totalProcessingTimeMs}ms")
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed to record calibration", e)
+        }
     }
 
     private fun createNotificationChannel() {
