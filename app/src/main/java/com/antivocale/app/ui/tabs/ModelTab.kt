@@ -41,6 +41,7 @@ import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
 import com.antivocale.app.ui.components.ModelVariantCard
 import com.antivocale.app.ui.components.ModelVariantCardState
+import com.antivocale.app.ui.components.UnloadModelButton
 import com.antivocale.app.ui.components.PartialDownloadSection
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 
@@ -92,6 +93,7 @@ fun ModelTab(
     // Transcription active state — used to warn about destructive operations
     val isTranscribing by InferenceService.isTranscribing.collectAsState()
     var pendingModelSwitch by remember { mutableStateOf<(() -> Unit)?>(null) }
+    var showUnloadDialog by remember { mutableStateOf(false) }
 
     // Snackbar host state for displaying errors
     val snackbarHostState = remember { SnackbarHostState() }
@@ -429,6 +431,33 @@ fun ModelTab(
         }
     }
 
+    // Unload model confirmation dialog
+    if (showUnloadDialog) {
+        AlertDialog(
+            onDismissRequest = { showUnloadDialog = false },
+            title = { Text(stringResource(R.string.dialog_unload_title)) },
+            text = { Text(stringResource(R.string.dialog_unload_message, uiState.modelName)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.unloadModel()
+                        showUnloadDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text(stringResource(R.string.action_unload))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showUnloadDialog = false }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
     // Model switch warning during active transcription
     if (pendingModelSwitch != null) {
         AlertDialog(
@@ -477,6 +506,14 @@ fun ModelTab(
             } else {
                 action()
             }
+        }
+
+        // Unload Model button — shown when any model is active
+        if (uiState.modelName.isNotBlank()) {
+            UnloadModelButton(
+                onClick = { showUnloadDialog = true },
+                isTranscribing = isTranscribing
+            )
         }
 
         // Whisper section - multilingual ASR backend (recommended)

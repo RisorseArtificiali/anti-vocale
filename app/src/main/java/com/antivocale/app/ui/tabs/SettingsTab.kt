@@ -38,6 +38,7 @@ import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
+import com.antivocale.app.ui.components.UnloadModelButton
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.service.InferenceService
@@ -169,30 +170,10 @@ fun SettingsTab(
                 // Unload button - show when model is loaded
                 if (isModelLoaded) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedButton(
+                    UnloadModelButton(
                         onClick = { viewModel.unloadModel() },
-                        modifier = Modifier.fillMaxWidth(),
-                        enabled = !isTranscribing,
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.error,
-                            disabledContentColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
-                        )
-                    ) {
-                        Icon(
-                            Icons.Default.Delete,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.unload_model))
-                    }
-                    if (isTranscribing) {
-                        Text(
-                            text = stringResource(R.string.cannot_unload_during_transcription),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
+                        isTranscribing = isTranscribing
+                    )
                 }
 
                 if (!isModelLoaded) {

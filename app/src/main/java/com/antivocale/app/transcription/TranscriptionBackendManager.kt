@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
+import com.antivocale.app.manager.LlmManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -101,6 +102,17 @@ object TranscriptionBackendManager {
      * @return true if a backend is active
      */
     fun hasActiveBackend(): Boolean = _activeBackend != null
+
+    /**
+     * Unloads all loaded models (both LLM and transcription backends).
+     * Synchronous — safe to call from any thread.
+     */
+    fun unloadAll() {
+        if (LlmManager.isReady()) {
+            LlmManager.unload()
+        }
+        unloadActiveBackend()
+    }
 
     /**
      * Unloads the active backend.

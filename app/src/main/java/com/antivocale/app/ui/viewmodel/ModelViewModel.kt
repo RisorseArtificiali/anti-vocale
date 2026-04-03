@@ -1,6 +1,7 @@
 package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
+import android.util.Log
 import android.content.Intent
 import android.net.Uri
 import androidx.core.content.ContextCompat
@@ -44,6 +45,10 @@ class ModelViewModel(
     private val preferencesManager: PreferencesManager,
     private val tokenManager: HuggingFaceTokenManager
 ) : ViewModel() {
+
+    companion object {
+        private const val TAG = "ModelViewModel"
+    }
 
     private val ctx: Context get() = com.antivocale.app.di.AppContainer.applicationContext
 
@@ -704,12 +709,16 @@ class ModelViewModel(
     }
 
     fun unloadModel() {
-        LlmManager.unload()
+        TranscriptionBackendManager.unloadAll()
+
         _uiState.update { it.copy(
+            modelName = "",
+            modelPath = "",
             status = ModelStatus.UNLOADED,
             statusMessage = ctx.getString(R.string.model_unloaded),
             memoryUsage = 0
         )}
+        Log.i(TAG, "Model unloaded manually")
     }
 
     fun clearError() {
@@ -743,6 +752,8 @@ class ModelViewModel(
      */
     private fun onModelAutoUnloaded() {
         _uiState.update { it.copy(
+            modelName = "",
+            modelPath = "",
             status = ModelStatus.UNLOADED,
             statusMessage = ctx.getString(R.string.model_auto_unloaded),
             memoryUsage = 0

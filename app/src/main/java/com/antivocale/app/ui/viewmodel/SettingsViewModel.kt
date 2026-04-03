@@ -285,16 +285,8 @@ class SettingsViewModel(
      * Works for both LLM backend and other backends via TranscriptionBackendManager.
      */
     fun unloadModel() {
-        viewModelScope.launch {
-            // Unload via LlmManager (for LLM backend)
-            if (LlmManager.isReady()) {
-                LlmManager.unload()
-            }
-            // Also unload via backend manager (covers all backends)
-            TranscriptionBackendManager.unloadActiveBackend()
-
-            Log.i(TAG, "Model unloaded manually")
-        }
+        TranscriptionBackendManager.unloadAll()
+        Log.i(TAG, "Model unloaded manually")
     }
 
     /**
