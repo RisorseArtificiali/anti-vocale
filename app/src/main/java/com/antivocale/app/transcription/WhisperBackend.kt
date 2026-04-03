@@ -199,42 +199,22 @@ class WhisperBackend : TranscriptionBackend {
     )
 
     private fun discoverModelFiles(dir: File): ModelFiles? {
-        // Find tokens file using patterns from WhisperModelManager
-        val tokensFile = WhisperModelManager.TOKENS_PATTERNS
-            .map { File(dir, it) }
-            .firstOrNull { it.exists() }
-
-        if (tokensFile == null) {
-            Log.d(TAG, "tokens.txt not found in ${dir.absolutePath}")
-            return null
-        }
-
-        // Find encoder file using patterns from WhisperModelManager
-        val encoderFile = WhisperModelManager.ENCODER_PATTERNS
-            .map { File(dir, it) }
-            .firstOrNull { it.exists() }
-
-        if (encoderFile == null) {
-            Log.d(TAG, "Encoder file not found in ${dir.absolutePath}")
-            return null
-        }
-
-        // Find decoder file using patterns from WhisperModelManager
-        val decoderFile = WhisperModelManager.DECODER_PATTERNS
-            .map { File(dir, it) }
-            .firstOrNull { it.exists() }
-
-        if (decoderFile == null) {
-            Log.d(TAG, "Decoder file not found in ${dir.absolutePath}")
-            return null
-        }
-
-        Log.i(TAG, "Found Whisper model files: encoder=${encoderFile.name}, decoder=${decoderFile.name}, tokens=${tokensFile.name}")
-
+        val model = WhisperModelManager.validateModelDirectory(dir) ?: return null
+        val encoderPath = model.encoderPath
+            ?: run {
+                Log.d(TAG, "No separate encoder file found in ${dir.absolutePath} (combined encoder-decoder not supported by this backend)")
+                return null
+            }
+        val decoderPath = model.decoderPath
+            ?: run {
+                Log.d(TAG, "No separate decoder file found in ${dir.absolutePath}")
+                return null
+            }
+        Log.i(TAG, "Found Whisper model files: encoder=${File(encoderPath).name}, decoder=${File(decoderPath).name}, tokens=${File(model.tokensPath!!).name}")
         return ModelFiles(
-            encoderPath = encoderFile.absolutePath,
-            decoderPath = decoderFile.absolutePath,
-            tokensPath = tokensFile.absolutePath
+            encoderPath = encoderPath,
+            decoderPath = decoderPath,
+            tokensPath = model.tokensPath!!
         )
     }
 }

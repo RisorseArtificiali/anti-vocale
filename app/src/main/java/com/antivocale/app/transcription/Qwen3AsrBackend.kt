@@ -180,49 +180,13 @@ class Qwen3AsrBackend : TranscriptionBackend {
     )
 
     private fun discoverModelFiles(dir: File): ModelFiles? {
-        val convFrontendFile = Qwen3AsrModelManager.CONV_FRONTEND_PATTERNS
-            .map { File(dir, it) }
-            .firstOrNull { it.exists() }
-
-        if (convFrontendFile == null) {
-            Log.d(TAG, "conv_frontend.onnx not found in ${dir.absolutePath}")
-            return null
-        }
-
-        val encoderFile = Qwen3AsrModelManager.ENCODER_PATTERNS
-            .map { File(dir, it) }
-            .firstOrNull { it.exists() }
-
-        if (encoderFile == null) {
-            Log.d(TAG, "Encoder file not found in ${dir.absolutePath}")
-            return null
-        }
-
-        val decoderFile = Qwen3AsrModelManager.DECODER_PATTERNS
-            .map { File(dir, it) }
-            .firstOrNull { it.exists() }
-
-        if (decoderFile == null) {
-            Log.d(TAG, "Decoder file not found in ${dir.absolutePath}")
-            return null
-        }
-
-        val tokenizerDir = Qwen3AsrModelManager.TOKENIZER_PATTERNS
-            .map { File(dir, it) }
-            .firstOrNull { it.exists() && it.isDirectory }
-
-        if (tokenizerDir == null) {
-            Log.d(TAG, "tokenizer/ directory not found in ${dir.absolutePath}")
-            return null
-        }
-
-        Log.i(TAG, "Found Qwen3-ASR model files: conv_frontend=${convFrontendFile.name}, encoder=${encoderFile.name}, decoder=${decoderFile.name}, tokenizer=${tokenizerDir.name}")
-
+        val model = Qwen3AsrModelManager.validateModelDirectory(dir) ?: return null
+        Log.i(TAG, "Found Qwen3-ASR model files in ${dir.absolutePath}")
         return ModelFiles(
-            convFrontendPath = convFrontendFile.absolutePath,
-            encoderPath = encoderFile.absolutePath,
-            decoderPath = decoderFile.absolutePath,
-            tokenizerDirPath = tokenizerDir.absolutePath
+            convFrontendPath = model.convFrontendPath,
+            encoderPath = model.encoderPath,
+            decoderPath = model.decoderPath,
+            tokenizerDirPath = model.tokenizerDirPath
         )
     }
 }

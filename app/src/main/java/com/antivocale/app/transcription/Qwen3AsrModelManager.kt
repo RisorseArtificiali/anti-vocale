@@ -27,11 +27,11 @@ object Qwen3AsrModelManager {
     private const val TOKENIZER_DIR_NAME = "tokenizer"
 
     enum class Variant(
-        val titleResId: Int,
-        val descriptionResId: Int,
-        val dirName: String,
-        val estimatedSizeMB: Long
-    ) {
+        override val titleResId: Int,
+        override val descriptionResId: Int,
+        override val dirName: String,
+        override val estimatedSizeMB: Long
+    ) : ModelVariant {
         QWEN3_ASR_0_6B(
             titleResId = R.string.qwen3_asr_0_6b_title,
             descriptionResId = R.string.qwen3_asr_0_6b_description,
@@ -80,7 +80,11 @@ object Qwen3AsrModelManager {
             path = modelDir.absolutePath,
             sizeBytes = totalSize,
             variant = variant,
-            isValid = true
+            isValid = true,
+            convFrontendPath = convFrontendFile.absolutePath,
+            encoderPath = encoderFile.absolutePath,
+            decoderPath = decoderFile.absolutePath,
+            tokenizerDirPath = tokenizerDir.absolutePath
         )
     }
 
@@ -117,7 +121,12 @@ data class Qwen3AsrModel(
     val path: String,
     val sizeBytes: Long,
     val variant: Qwen3AsrModelManager.Variant?,
-    val isValid: Boolean
+    val isValid: Boolean,
+    /** Resolved file paths — always non-null when created via validateModelDirectory(). */
+    val convFrontendPath: String = "",
+    val encoderPath: String = "",
+    val decoderPath: String = "",
+    val tokenizerDirPath: String = ""
 ) {
     val sizeFormatted: String get() = com.antivocale.app.util.formatFileSize(sizeBytes)
 }

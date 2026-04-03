@@ -86,11 +86,11 @@ object WhisperModelManager {
      * Available Whisper model variants.
      */
     enum class Variant(
-        val titleResId: Int,
-        val descriptionResId: Int,
-        val dirName: String,
-        val estimatedSizeMB: Long
-    ) {
+        override val titleResId: Int,
+        override val descriptionResId: Int,
+        override val dirName: String,
+        override val estimatedSizeMB: Long
+    ) : ModelVariant {
         SMALL(
             titleResId = R.string.whisper_small_title,
             descriptionResId = R.string.whisper_small_description,
@@ -214,7 +214,10 @@ object WhisperModelManager {
             path = modelDir.absolutePath,
             sizeBytes = totalSize,
             variant = variant,
-            isValid = true
+            isValid = true,
+            encoderPath = encoderFile?.absolutePath,
+            decoderPath = decoderFile?.absolutePath,
+            tokensPath = tokensFile.absolutePath
         )
     }
 
@@ -295,7 +298,11 @@ data class WhisperModel(
     val path: String,
     val sizeBytes: Long,
     val variant: WhisperModelManager.Variant?,
-    val isValid: Boolean
+    val isValid: Boolean,
+    // Resolved file paths (populated when validated from directory)
+    val encoderPath: String? = null,
+    val decoderPath: String? = null,
+    val tokensPath: String? = null
 ) {
     val sizeFormatted: String
         get() = com.antivocale.app.util.formatFileSize(sizeBytes)
