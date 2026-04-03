@@ -14,7 +14,7 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
 /**
- * Handles audio preprocessing for MediaPipe's Gemma 3n multimodal model.
+ * Handles audio preprocessing for Gemma multimodal models (via LiteRT-LM).
  *
  * Converts audio files into 16kHz mono WAV ByteArrays using Android's
  * built-in MediaCodec and MediaExtractor APIs.

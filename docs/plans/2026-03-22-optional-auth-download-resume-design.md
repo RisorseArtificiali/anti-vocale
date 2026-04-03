@@ -5,7 +5,7 @@
 
 ## Problem
 
-Anti-Vocale requires a HuggingFace token for every model download, even though the Gemma 3n LiteRT models on `google/gemma-3n-*-litert-lm` are publicly accessible. Additionally, downloads don't support resume on failure, so a 3GB download interrupted at 90% must restart from scratch.
+Anti-Vocale requires a HuggingFace token for every model download, even though the Gemma LiteRT models on `google/gemma-3n-*-litert-lm` and `litert-community/gemma-4-*-litert-lm` are publicly accessible. Additionally, downloads don't support resume on failure, so a 3GB download interrupted at 90% must restart from scratch.
 
 ## Solution
 

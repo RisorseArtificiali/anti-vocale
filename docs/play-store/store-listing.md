@@ -11,11 +11,13 @@ Anti-Vocale transcribes voice messages from WhatsApp, Telegram, and other messag
 
 **AI MODELS**
 
-Choose from 7 models:
+Choose from 9 models:
 - Whisper Turbo (recommended): Fast, accurate, 99 languages
 - Whisper Medium: Best accuracy, ideal for Italian
 - Whisper Small: Compact, 99 languages
 - Distil Italian: Optimized for Italian, fastest
+- Gemma 4 E2B: Newest multimodal AI, 25+ languages
+- Gemma 4 E4B: Newest higher quality multimodal, 25+ languages
 - Gemma 3n E2B: Multimodal AI, summarization & elaboration, 25+ languages
 - Gemma 3n E4B: Higher quality multimodal, 25+ languages
 - Parakeet TDT: Lightweight, 25 European languages
@@ -48,7 +50,7 @@ Android 8.0+ | 4GB+ RAM recommended | 350MB-4.5GB storage
 
 **MODEL SIZES**
 
-Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~464MB
+Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 4 E2B 2.6GB | Gemma 4 E4B 3.7GB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~464MB
 
 ---
 
@@ -63,11 +65,13 @@ Anti-Vocale trascrive i messaggi vocali da WhatsApp, Telegram e altre app di mes
 
 **MODELLI AI**
 
-Scegli tra 7 modelli:
+Scegli tra 9 modelli:
 - Whisper Turbo (consigliato): Veloce, accurato, 99 lingue
 - Whisper Medium: Massima accuratezza, ideale per l'italiano
 - Whisper Small: Compatto, 99 lingue
 - Distil Italian: Ottimizzato per l'italiano, il più veloce
+- Gemma 4 E2B: AI multimodale ultima generazione, 25+ lingue
+- Gemma 4 E4B: AI multimodale di qualità superiore, 25+ lingue
 - Gemma 3n E2B: AI multimodale, sintesi ed elaborazione, 25+ lingue
 - Gemma 3n E4B: AI multimodale di qualità superiore, 25+ lingue
 - Parakeet TDT: Leggero, 25 lingue europee
@@ -100,7 +104,7 @@ Android 8.0+ | 4GB+ RAM consigliati | 350MB-4.5GB spazio
 
 **DIMENSIONI MODELLI**
 
-Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~464MB
+Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 4 E2B 2.6GB | Gemma 4 E4B 3.7GB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~464MB
 
 ---
 

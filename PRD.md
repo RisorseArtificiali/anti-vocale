@@ -6,14 +6,14 @@
 |-------|-------|
 | **Name** | LocalAI Tasker Bridge |
 | **Package** | `com.localai.bridge` |
-| **Description** | A headless (minimal UI) Android application acting as a local inference bridge using Google AI Edge SDK (MediaPipe Generative AI Tasks) to run local, offline LLMs and multimodal models (specifically Gemma 3n) on-device. |
+| **Description** | A headless (minimal UI) Android application acting as a local inference bridge using Google AI Edge SDK (MediaPipe Generative AI Tasks) to run local, offline LLMs and multimodal models (specifically Gemma) on-device. |
 | **Primary Goal** | Expose on-device Speech-to-Text (ASR) and text-generation capabilities to automation tools like Tasker without requiring internet access or cloud APIs. |
 
 ## 2. Core Objectives & Priorities
 
 | Priority | Feature | Description |
 |----------|---------|-------------|
-| **P1** | Speech-to-Text (Audio Scribe) | Ingest audio files from Tasker, process locally using Gemma 3n multimodal model, return transcribed text |
+| **P1** | Speech-to-Text (Audio Scribe) | Ingest audio files from Tasker, process locally using Gemma multimodal model, return transcribed text |
 | **P2** | Text-to-Text (LLM Prompts) | Accept text prompts from Tasker, process through local LLM, return generated response |
 | **P3** | Tasker Integration | Seamless, low-latency communication via Android Broadcast Intents |
 
@@ -25,7 +25,7 @@
 | **UI** | Jetpack Compose (minimal - model selection + debug logs) |
 | **Architecture** | Background Service + BroadcastReceiver |
 | **AI Framework** | MediaPipe Tasks GenAI (`com.google.mediapipe:tasks-genai`) |
-| **Target Model** | Gemma 3n E2B/E4B (multimodal, `.litertlm` format) |
+| **Target Model** | Gemma 4/3n E2B/E4B (multimodal, `.litertlm` format) |
 | **Audio Processing** | FFmpegKit Audio (`com.arthenica:ffmpeg-kit-audio:6.0-2`) |
 | **Minimum SDK** | Android 8.0 (API 26) |
 | **Target Device** | Flagship devices (8GB+ RAM) |
@@ -61,7 +61,7 @@ val sessionOptions = LlmInferenceSessionOptions.builder()
 **Requirements:**
 - Input: Any audio format Tasker can provide (.m4a, .aac, .mp3, .wav, .ogg, .opus, .amr)
 - Output: 16kHz mono WAV ByteArray
-- Limit: 30 seconds per inference (Gemma 3n constraint)
+- Limit: 30 seconds per inference (Gemma constraint)
 
 **Auto-Chunking Strategy:**
 ```
@@ -253,7 +253,7 @@ dependencies {
 
 ### Setup
 1. Install app, grant storage permissions
-2. Download Gemma 3n E2B `.litertlm` from HuggingFace
+2. Download Gemma 4 E2B `.litertlm` from HuggingFace
 3. Place model in Downloads folder
 4. Open app, select model file, tap "Load"
 

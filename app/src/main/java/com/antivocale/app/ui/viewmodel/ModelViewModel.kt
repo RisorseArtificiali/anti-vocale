@@ -732,7 +732,7 @@ class ModelViewModel(
 
     private fun estimateMemoryUsage(modelPath: String): Long {
         // Estimate memory usage based on model file size
-        // Gemma 3n models are typically 2-4GB
+        // Gemma models are typically 2-4GB
         val fileSize = File(modelPath).length()
         // Model in memory is roughly 1.2x the file size due to KV cache
         return (fileSize * 1.2 / (1024 * 1024)).toLong()

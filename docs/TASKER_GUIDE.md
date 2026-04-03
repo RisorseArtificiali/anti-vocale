@@ -5,9 +5,10 @@ This guide explains how to configure Tasker to use Anti-Vocale for on-device tex
 ## Prerequisites
 
 1. **Install Anti-Vocale** from the APK
-2. **Download a Gemma 3n model** from [HuggingFace LiteRT Community](https://huggingface.co/litert-community)
-   - Recommended: `gemma-3n-e2b.litertlm` (smaller, faster)
-   - Alternative: `gemma-3n-e4b.litertlm` (larger, more capable)
+2. **Download a Gemma model** from [HuggingFace LiteRT Community](https://huggingface.co/litert-community)
+   - Recommended: `gemma-4-E2B-it.litertlm` (newest, smaller, faster)
+   - Alternative: `gemma-4-E4B-it.litertlm` (newest, larger, more capable)
+   - Previous gen: `gemma-3n-E2B-it-int4.litertlm` / `gemma-3n-E4B-it-int4.litertlm`
 3. **Open the app** and select your model file
 4. **Tap "Load Model"** and wait for "Ready" status
 

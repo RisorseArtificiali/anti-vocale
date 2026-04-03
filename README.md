@@ -13,7 +13,7 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 ## Features
 
 - **Fully offline** - All processing happens on-device, no data leaves your phone
-- **Multiple ASR engines** - Choose between Gemma 3n (LLM), Whisper, or Parakeet TDT models
+- **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, or Parakeet TDT models
 - **Share integration** - Share audio from any messaging app to transcribe
 - **Smart notifications** - Copy result or send it back to the source app with one tap
 - **Persistent transcription log** - All transcriptions saved to local database with search
@@ -61,8 +61,10 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 
 | Model | Size | Notes |
 |-------|------|-------|
-| **Gemma 3n E2B** | 3.3GB | Recommended, best for most devices |
-| **Gemma 3n E4B** | 4.2GB | Higher quality, requires more RAM |
+| **Gemma 4 E2B** | 2.6GB | Recommended, newest generation, best for most devices |
+| **Gemma 4 E4B** | 3.7GB | Newest generation, higher quality |
+| **Gemma 3n E2B** | 3.3GB | Previous generation |
+| **Gemma 3n E4B** | 4.2GB | Previous generation |
 
 ### ASR (Encoder-Decoder)
 
@@ -85,7 +87,7 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 
 - Android device with 4GB+ RAM
 - Android 8.0 (API 26) or higher
-- 500MB+ free storage (model size varies, up to 4.2GB for Gemma 3n E4B)
+- 500MB+ free storage (model size varies, up to 4.2GB for Gemma 3n E4B / 3.7GB for Gemma 4 E4B)
 
 ### Install
 
@@ -122,7 +124,7 @@ AudioPreprocessor (16kHz mono WAV, 30s chunks)
 TranscriptionBackendManager
     |--- SherpaOnnxBackend (Parakeet TDT)
     |--- WhisperBackend (Whisper models)
-    |--- LlmTranscriptionBackend (Gemma 3n via LiteRT-LM)
+    |--- LlmTranscriptionBackend (Gemma via LiteRT-LM)
     |
     v
 Notification (Copy / Send to [App])

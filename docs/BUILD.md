@@ -316,7 +316,7 @@ adb shell am broadcast \
 
 **No transcription output**
 - Check the audio file format is supported
-- Check the model supports audio (Gemma 3n E2B/E4B, not text-only models)
+- Check the model supports audio (Gemma 4/3n E2B/E4B, not text-only models)
 - Check logcat for preprocessing errors
 
 ## Auto-Load and Preload
@@ -370,8 +370,8 @@ The app requires a `.litertlm` model file for inference. Options:
 1. **Install Google AI Edge Gallery** from the Play Store:
    - [Google AI Edge Gallery](https://play.google.com/store/apps/details?id=com.google.ai.edge.gallery)
 
-2. **Download Gemma 3n E2B** inside the Gallery app:
-   - Open Gallery → Models → Gemma 3n E2B → Download
+2. **Download Gemma 4 E2B** inside the Gallery app:
+   - Open Gallery → Models → Gemma 4 E2B → Download
    - This downloads the model to the Gallery's private storage
 
 3. **Copy model to accessible location** (Gallery's storage is protected on Android 11+):
@@ -380,13 +380,13 @@ The app requires a `.litertlm` model file for inference. Options:
    adb shell "find /sdcard/Android/data/com.google.ai.edge.gallery -name '*.litertlm' 2>/dev/null"
 
    # Example output:
-   # /sdcard/Android/data/com.google.ai.edge.gallery/files/Gemma_3n_E2B_it/<hash>/gemma-3n-E2B-it-int4.litertlm
+   # /sdcard/Android/data/com.google.ai.edge.gallery/files/Gemma_4_E2B_it/<hash>/gemma-4-E2B-it.litertlm
 
    # Copy to Downloads folder
-   adb shell "cp /sdcard/Android/data/com.google.ai.edge.gallery/files/Gemma_3n_E2B_it/*/gemma-3n-E2B-it-int4.litertlm /sdcard/Download/"
+   adb shell "cp /sdcard/Android/data/com.google.ai.edge.gallery/files/Gemma_4_E2B_it/*/gemma-4-E2B-it.litertlm /sdcard/Download/"
    ```
 
-4. **In the app**, tap "Select Model" and navigate to `/sdcard/Download/gemma-3n-E2B-it-int4.litertlm`
+4. **In the app**, tap "Select Model" and navigate to `/sdcard/Download/gemma-4-E2B-it.litertlm`
 
 **Why this works:** Google AI Edge Gallery downloads a pre-optimized, quantized model that works with LiteRT-LM. The model is ~3.6GB and supports multimodal inference (text + audio).
 
@@ -395,11 +395,11 @@ The app requires a `.litertlm` model file for inference. Options:
 Download directly from HuggingFace (requires account and license agreement):
 
 ```bash
-# Download Gemma 3n E2B LiteRT-LM model
-# https://huggingface.co/google/gemma-3n-E2B-it-litert-lm
+# Download Gemma 4 E2B LiteRT-LM model
+# https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm
 
 # Push to device
-adb push gemma-3n-E2B-it-int4.litertlm /sdcard/Download/
+adb push gemma-4-E2B-it.litertlm /sdcard/Download/
 ```
 
 ### Option 3: In-App Download (Coming Soon)
@@ -409,8 +409,10 @@ Future versions will support direct download from HuggingFace within the app.
 ### Model Requirements
 
 For **audio transcription**, you need a **multimodal model** that supports audio:
-- ✅ **Gemma 3n E2B** (3.6GB) - Recommended
-- ✅ **Gemma 3n E4B** (4.2GB) - Higher quality, more RAM needed
+- ✅ **Gemma 4 E2B** (2.6GB) - Recommended, newest generation
+- ✅ **Gemma 4 E4B** (3.7GB) - Higher quality, newest generation
+- ✅ **Gemma 3n E2B** (3.3GB) - Previous generation
+- ✅ **Gemma 3n E4B** (4.2GB) - Previous generation
 - ❌ **Gemma3 1B** - Text only, no audio support
 
 The model file must have `.litertlm` extension for LiteRT-LM multimodal inference.
@@ -479,4 +481,5 @@ gradle wrapper
 - [LiteRT-LM GitHub](https://github.com/google-ai-edge/LiteRT-LM)
 - [LiteRT-LM Kotlin API Docs](https://github.com/google-ai-edge/LiteRT-LM/blob/main/docs/api/kotlin/getting_started.md)
 - [Google Maven - litertlm-android](https://maven.google.com/web/index.html#com.google.ai.edge.litertlm:litertlm-android)
+- [Gemma 4 Models](https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm)
 - [Gemma 3n Models](https://huggingface.co/google/gemma-3n-E2B-it-litert-lm-preview)

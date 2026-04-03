@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference
  * 2. **MediaPipe Tasks GenAI** (fallback): Text-only inference
  *
  * The manager automatically selects the best available backend.
- * For audio transcription, LiteRT-LM uses Gemma 3n's native audio encoder.
+ * For audio transcription, LiteRT-LM uses Gemma's native audio encoder.
  *
  * Handles:
  * - Model initialization and lifecycle
@@ -325,7 +325,7 @@ object LlmManager {
      * Generates text from audio input (transcription/understanding).
      *
      * Uses LiteRT-LM's multimodal capabilities to process audio directly
-     * with Gemma 3n's native audio encoder.
+     * with Gemma's native audio encoder.
      *
      * For MediaPipe backend (text-only), returns an error indicating
      * audio is not supported.
