@@ -24,6 +24,31 @@
     <string name="status_model_selected">Modello Selezionato</string>
     <string name="status_no_model">Nessun Modello</string>
 
+    <!-- ViewModel status messages -->
+    <string name="parakeet_name">Parakeet TDT</string>
+    <string name="backend_model_ready">%1$s pronto</string>
+    <string name="backend_model_not_found">Modello %1$s non trovato</string>
+    <string name="saved_model_found">Modello salvato trovato</string>
+    <string name="saved_model_not_found">Modello salvato non trovato</string>
+    <string name="model_selected">Modello selezionato: %1$s</string>
+    <string name="model_copy_failed">Impossibile copiare il file del modello</string>
+    <string name="model_file_not_found">File del modello non trovato in: %1$s</string>
+    <string name="model_loading">Caricamento modello in memoria…</string>
+    <string name="model_ready_inference">Modello pronto per l\'inferenza</string>
+    <string name="model_load_failed">Caricamento fallito: %1$s</string>
+    <string name="model_unloaded">Modello scaricato</string>
+    <string name="model_auto_unloaded">Modello scaricato per inattività</string>
+    <string name="model_externally_loaded">Modello pronto (caricato esternamente)</string>
+    <string name="model_deleted_status">Modello eliminato</string>
+    <string name="downloaded_model_selected">Modello scaricato selezionato</string>
+
+    <!-- Settings error messages -->
+    <string name="error_save_settings">Impossibile salvare le impostazioni</string>
+    <string name="error_save_language">Impossibile salvare la preferenza lingua</string>
+    <string name="error_save_theme">Impossibile salvare la preferenza tema</string>
+    <string name="error_token_empty">Il token non può essere vuoto</string>
+    <string name="error_auth_cancelled">Autenticazione annullata</string>
+
     <!-- Logs -->
     <string name="logs_empty">Nessuna richiesta</string>
     <string name="request_text">Richiesta Testo</string>

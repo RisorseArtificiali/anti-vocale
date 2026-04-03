@@ -37,6 +37,11 @@ import com.antivocale.app.service.InferenceService
 import com.antivocale.app.util.formatFileSize
 import com.antivocale.app.transcription.WhisperModelManager
 import com.antivocale.app.transcription.Qwen3AsrModelManager
+import com.antivocale.app.ui.components.DownloadButtonState
+import com.antivocale.app.ui.components.DownloadProgressView
+import com.antivocale.app.ui.components.ModelVariantCard
+import com.antivocale.app.ui.components.ModelVariantCardState
+import com.antivocale.app.ui.components.PartialDownloadSection
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 
 private enum class PendingAction {
@@ -238,14 +243,15 @@ fun ModelTab(
 
     // Parakeet delete confirmation dialog
     if (parakeetState.showDeleteDialog) {
-        val isParakeetActive = uiState.modelName == "Parakeet TDT"
+        val parakeetName = stringResource(R.string.parakeet_name)
+        val isParakeetActive = uiState.modelName == parakeetName
 
         if (isTranscribing && isParakeetActive) {
             // Hard block: Parakeet is the active transcription model
             AlertDialog(
                 onDismissRequest = { viewModel.dismissParakeetDeleteDialog() },
                 title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
-                text = { Text(stringResource(R.string.dialog_delete_active_model_message, "Parakeet TDT")) },
+                text = { Text(stringResource(R.string.dialog_delete_active_model_message, parakeetName)) },
                 confirmButton = {
                     TextButton(onClick = { viewModel.dismissParakeetDeleteDialog() }) {
                         Text(stringResource(R.string.action_understood))
@@ -258,9 +264,9 @@ fun ModelTab(
                 title = { Text(stringResource(R.string.dialog_delete_title)) },
                 text = {
                     if (isTranscribing) {
-                        Text(stringResource(R.string.dialog_delete_inactive_model_message, "Parakeet TDT"))
+                        Text(stringResource(R.string.dialog_delete_inactive_model_message, parakeetName))
                     } else {
-                        Text(stringResource(R.string.dialog_delete_message, "Parakeet TDT"))
+                        Text(stringResource(R.string.dialog_delete_message, parakeetName))
                     }
                 },
                 confirmButton = {
@@ -874,196 +880,7 @@ private fun getLocalizedLabel(labelKey: String): String {
     }
 }
 
-/**
- * Shared download progress composable used by Gemma, Parakeet, and Whisper sections.
- */
-@Composable
-private fun DownloadProgressView(
-    downloadState: DownloadState,
-    downloadProgress: Float,
-    showExtractingFileSize: Boolean = false
-) {
-    when (val state = downloadState) {
-        is DownloadState.Downloading -> {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(stringResource(R.string.download_status_downloading), style = MaterialTheme.typography.bodySmall)
-                    Text("${(downloadProgress * 100).toInt()}%", style = MaterialTheme.typography.bodySmall)
-                }
-                LinearProgressIndicator(
-                    progress = { downloadProgress },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text(
-                    text = formatFileSize(state.bytesDownloaded) +
-                        if (state.totalBytes > 0) " / ${formatFileSize(state.totalBytes)}" else "",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                DownloadRateEta(state)
-            }
-        }
-        is DownloadState.Extracting -> {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                LinearProgressIndicator(
-                    progress = { downloadProgress },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                if (showExtractingFileSize && state.currentFileSize > 0) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            stringResource(R.string.download_status_extracting, state.fileName.takeIf { it.isNotEmpty() } ?: stringResource(R.string.download_status_file_progress, state.fileIndex, state.totalFiles)),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                        Text(
-                            "${formatFileSize(state.bytesExtracted)} / ${formatFileSize(state.currentFileSize)}",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                } else {
-                    Text(
-                        if (state.fileName.isNotEmpty()) {
-                            stringResource(R.string.download_status_extracting, state.fileName)
-                        } else {
-                            stringResource(R.string.download_status_extracting_files)
-                        },
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-        }
-        is DownloadState.CheckingAccess,
-        is DownloadState.Connecting -> {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                Text(stringResource(R.string.download_status_connecting), style = MaterialTheme.typography.bodySmall)
-            }
-        }
-        is DownloadState.Retrying -> {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
-                Text(
-                    text = stringResource(R.string.download_status_retrying, state.attempt, state.maxRetries),
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
-        else -> {}
-    }
-}
-
-/**
- * Formats ETA seconds into a human-readable string.
- * Uses string resources for localization.
- */
-@Composable
-private fun formatEta(etaSeconds: Long): String {
-    if (etaSeconds < 0) return ""
-    if (etaSeconds < 60) return stringResource(R.string.download_eta_less_than_minute)
-    val minutes = etaSeconds / 60
-    val seconds = etaSeconds % 60
-    return if (seconds == 0L) {
-        stringResource(R.string.download_eta, "${minutes}m")
-    } else {
-        stringResource(R.string.download_eta, "${minutes}m ${seconds}s")
-    }
-}
-
-/**
- * Composable for download rate and ETA display below bytes line.
- */
-@Composable
-private fun DownloadRateEta(state: DownloadState.Downloading) {
-    if (state.downloadRateBytesPerSec > 0f) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.download_rate, formatFileSize(state.downloadRateBytesPerSec.toLong())),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (state.etaSeconds >= 0) {
-                Text(
-                    text = "· ${formatEta(state.etaSeconds)}",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-    }
-}
-
-/**
- * Composable for partial download state with Resume/Clear buttons.
- */
-@Composable
-private fun PartialDownloadSection(
-    partial: DownloadState.PartiallyDownloaded,
-    onResumeClick: () -> Unit,
-    onClearClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-        )
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Text(
-                text = stringResource(R.string.download_partial_detected),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = stringResource(
-                    R.string.download_partial,
-                    partial.progressPercent,
-                    formatFileSize(partial.bytesDownloaded),
-                    formatFileSize(partial.totalBytes)
-                ),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onTertiaryContainer
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Button(
-                    onClick = onResumeClick,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.download_resume))
-                }
-                OutlinedButton(
-                    onClick = onClearClick
-                ) {
-                    Text(stringResource(R.string.download_clear_partial))
-                }
-            }
-        }
-    }
-}
-
-// ==================== Parakeet Download Section ====================
+// ==================== Qwen3-ASR Download Section ====================
 
 /**
  * Section for downloading Qwen3-ASR model (sherpa-onnx backend).
@@ -1127,16 +944,23 @@ private fun Qwen3AsrDownloadSection(
 
             // Model variant cards
             Qwen3AsrModelManager.Variant.entries.forEach { variant ->
-                Qwen3AsrVariantCard(
-                    variant = variant,
-                    isDownloaded = qwen3AsrState.downloadedVariants.contains(variant),
-                    isActive = activeModelName == stringResource(variant.titleResId),
-                    isDownloading = qwen3AsrState.isDownloading && qwen3AsrState.selectedVariant == variant,
-                    downloadProgress = qwen3AsrState.downloadProgress,
-                    downloadState = qwen3AsrState.downloadState,
-                    errorMessage = if (qwen3AsrState.selectedVariant == variant) qwen3AsrState.errorMessage else null,
-                    partialDownload = qwen3AsrState.partialDownload,
-                    partialDownloadVariant = qwen3AsrState.partialDownloadVariant,
+                val isVariantSelected = qwen3AsrState.selectedVariant == variant
+                ModelVariantCard(
+                    state = ModelVariantCardState(
+                        variant = variant,
+                        isActive = activeModelName == stringResource(variant.titleResId),
+                        downloadProgress = qwen3AsrState.downloadProgress,
+                        downloadState = qwen3AsrState.downloadState,
+                        errorMessage = if (isVariantSelected) qwen3AsrState.errorMessage else null,
+                        partialDownload = if (qwen3AsrState.partialDownloadVariant == variant) qwen3AsrState.partialDownload else null,
+                        buttonState = when {
+                            qwen3AsrState.isDownloading && isVariantSelected -> DownloadButtonState.Downloading
+                            qwen3AsrState.downloadedVariants.contains(variant) -> DownloadButtonState.Downloaded
+                            qwen3AsrState.partialDownloadVariant == variant -> DownloadButtonState.PartiallyDownloaded
+                            else -> DownloadButtonState.Idle
+                        }
+                    ),
+                    downloadButtonTextResId = R.string.qwen3_asr_download,
                     onDownloadClick = { viewModel.showQwen3AsrDownloadDialog(variant) },
                     onCancelClick = { viewModel.cancelQwen3AsrDownload() },
                     onResumeClick = { viewModel.resumeQwen3AsrDownload(variant) },
@@ -1150,183 +974,8 @@ private fun Qwen3AsrDownloadSection(
     }
 }
 
-/**
- * Card for a single Qwen3-ASR variant showing its info and download status.
- */
-@Composable
-private fun Qwen3AsrVariantCard(
-    variant: Qwen3AsrModelManager.Variant,
-    isDownloaded: Boolean,
-    isActive: Boolean,
-    isDownloading: Boolean,
-    downloadProgress: Float,
-    downloadState: DownloadState,
-    errorMessage: String?,
-    partialDownload: DownloadState.PartiallyDownloaded?,
-    partialDownloadVariant: Qwen3AsrModelManager.Variant?,
-    onDownloadClick: () -> Unit,
-    onCancelClick: () -> Unit,
-    onResumeClick: () -> Unit,
-    onClearPartialClick: () -> Unit,
-    onUseClick: () -> Unit,
-    onDeleteClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                isDownloading -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                else -> MaterialTheme.colorScheme.surface
-            }
-        )
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = when {
-                            isDownloaded -> Icons.Default.CheckCircle
-                            isDownloading -> Icons.Default.CloudDownload
-                            else -> Icons.Default.Storage
-                        },
-                        contentDescription = null,
-                        tint = when {
-                            isDownloaded -> MaterialTheme.colorScheme.primary
-                            isDownloading -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = stringResource(variant.titleResId),
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            if (isActive) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.active_badge),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                        }
-                        Text(
-                            text = stringResource(variant.descriptionResId),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
 
-            if (isDownloading) {
-                Spacer(modifier = Modifier.height(12.dp))
-                DownloadProgressView(downloadState, downloadProgress)
-            }
-
-            errorMessage?.let { error ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = error,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
-            if (partialDownloadVariant == variant) {
-                partialDownload?.let { partial ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    PartialDownloadSection(
-                        partial = partial,
-                        onResumeClick = onResumeClick,
-                        onClearClick = onClearPartialClick
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                when {
-                    isDownloading -> {
-                        OutlinedButton(
-                            onClick = onCancelClick,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Close, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.cancel_download))
-                        }
-                    }
-                    isDownloaded -> {
-                        if (!isActive) {
-                            Button(
-                                onClick = onUseClick,
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.use_model))
-                            }
-                        } else {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                        OutlinedButton(
-                            onClick = onDeleteClick,
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
-                        }
-                    }
-                    partialDownloadVariant == variant -> {
-                        // PartialDownloadSection above already shows Resume/Clear buttons
-                    }
-                    else -> {
-                        Button(
-                            onClick = onDownloadClick,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.qwen3_asr_download))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Section for downloading Parakeet TDT model (sherpa-onnx backend).
- * No authentication required - downloads from GitHub releases.
- */
+// ==================== Parakeet Download Section ====================
 @Composable
 private fun ParakeetDownloadSection(
     viewModel: ModelViewModel,
@@ -1335,7 +984,8 @@ private fun ParakeetDownloadSection(
     guardedModelSwitch: (() -> Unit) -> Unit
 ) {
     val parakeetState by viewModel.parakeetState.collectAsState()
-    val isActive = activeModelName == "Parakeet TDT"
+    val parakeetName = stringResource(R.string.parakeet_name)
+    val isActive = activeModelName == parakeetName
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1591,23 +1241,66 @@ private fun WhisperDownloadSection(
 
             // Model variant selection
             WhisperModelManager.Variant.entries.forEach { variant ->
-                WhisperVariantCard(
-                    variant = variant,
-                    isDownloaded = whisperState.downloadedVariants.contains(variant),
-                    isActive = activeModelName == stringResource(variant.titleResId),
-                    isDownloading = whisperState.isDownloading && whisperState.selectedVariant == variant,
-                    needsExtraction = whisperState.variantsNeedingExtraction.contains(variant),
-                    isOrphaned = whisperState.orphanedVariants.contains(variant),
-                    downloadProgress = whisperState.downloadProgress,
-                    downloadState = whisperState.downloadState,
-                    errorMessage = if (whisperState.selectedVariant == variant) whisperState.errorMessage else null,
-                    partialDownload = whisperState.partialDownload,
-                    partialDownloadVariant = whisperState.partialDownloadVariant,
+                val isVariantSelected = whisperState.selectedVariant == variant
+                val needsExtraction = whisperState.variantsNeedingExtraction.contains(variant)
+                val isOrphaned = whisperState.orphanedVariants.contains(variant)
+                ModelVariantCard(
+                    state = ModelVariantCardState(
+                        variant = variant,
+                        isActive = activeModelName == stringResource(variant.titleResId),
+                        downloadProgress = whisperState.downloadProgress,
+                        downloadState = whisperState.downloadState,
+                        errorMessage = if (isVariantSelected) whisperState.errorMessage else null,
+                        partialDownload = if (whisperState.partialDownloadVariant == variant) whisperState.partialDownload else null,
+                        buttonState = when {
+                            whisperState.isDownloading && isVariantSelected -> DownloadButtonState.Downloading
+                            whisperState.downloadedVariants.contains(variant) -> DownloadButtonState.Downloaded
+                            isOrphaned && needsExtraction -> DownloadButtonState.Orphaned
+                            needsExtraction -> DownloadButtonState.NeedsExtraction
+                            whisperState.partialDownloadVariant == variant -> DownloadButtonState.PartiallyDownloaded
+                            else -> DownloadButtonState.Idle
+                        }
+                    ),
+                    downloadButtonTextResId = R.string.whisper_download,
+                    extraBadges = {
+                        if (variant == WhisperModelManager.Variant.TURBO) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.tertiary,
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.recommended),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onTertiary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                        if (variant == WhisperModelManager.Variant.DISTIL_LARGE_V3) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.secondary,
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.fastest_badge),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSecondary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
+                        }
+                    },
+                    cancelTextExtractor = { downloadState ->
+                        if (downloadState is DownloadState.Extracting)
+                            stringResource(R.string.cancel_extract)
+                        else
+                            stringResource(R.string.cancel_download)
+                    },
                     onDownloadClick = { viewModel.showWhisperDownloadDialog(variant) },
                     onCancelClick = { viewModel.cancelWhisperDownload() },
                     onResumeClick = { viewModel.resumeWhisperDownload(variant) },
                     onClearPartialClick = { viewModel.clearWhisperPartialDownload(variant) },
-                    onClearOrphanedClick = { viewModel.clearOrphanedWhisperFiles(variant) },
+                    onExtraActionClick = { viewModel.clearOrphanedWhisperFiles(variant) },
                     onUseClick = { guardedModelSwitch { viewModel.useWhisperModel(variant) } },
                     onDeleteClick = { viewModel.showWhisperDeleteDialog(variant) }
                 )
@@ -1743,238 +1436,3 @@ private fun ComparisonRow(
         }
     }
 }
-
-/**
- * Card for a single Whisper variant showing its info and download status.
- */
-@Composable
-private fun WhisperVariantCard(
-    variant: WhisperModelManager.Variant,
-    isDownloaded: Boolean,
-    isActive: Boolean,
-    isDownloading: Boolean,
-    needsExtraction: Boolean,
-    isOrphaned: Boolean,
-    downloadProgress: Float,
-    downloadState: DownloadState,
-    errorMessage: String?,
-    partialDownload: DownloadState.PartiallyDownloaded?,
-    partialDownloadVariant: WhisperModelManager.Variant?,
-    onDownloadClick: () -> Unit,
-    onCancelClick: () -> Unit,
-    onResumeClick: () -> Unit,
-    onClearPartialClick: () -> Unit,
-    onClearOrphanedClick: () -> Unit,
-    onUseClick: () -> Unit,
-    onDeleteClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                isDownloading -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                else -> MaterialTheme.colorScheme.surface
-            }
-        )
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            // Header row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = when {
-                            isDownloaded -> Icons.Default.CheckCircle
-                            isDownloading -> Icons.Default.CloudDownload
-                            else -> Icons.Default.Storage
-                        },
-                        contentDescription = null,
-                        tint = when {
-                            isDownloaded -> MaterialTheme.colorScheme.primary
-                            isDownloading -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = stringResource(variant.titleResId),
-                                style = MaterialTheme.typography.titleSmall
-                            )
-                            // Recommended badge for Turbo
-                            if (variant == WhisperModelManager.Variant.TURBO) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.tertiary,
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.recommended),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onTertiary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                            // Fastest badge for Distil
-                            if (variant == WhisperModelManager.Variant.DISTIL_LARGE_V3) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.secondary,
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.fastest_badge),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSecondary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                            if (isActive) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.active_badge),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                        }
-                        Text(
-                            text = stringResource(variant.descriptionResId),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // Download progress
-            if (isDownloading) {
-                Spacer(modifier = Modifier.height(12.dp))
-                DownloadProgressView(downloadState, downloadProgress)
-            }
-
-            // Error message
-            errorMessage?.let { error ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = error,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
-            // Partial download (only for this variant)
-            if (partialDownloadVariant == variant) {
-                partialDownload?.let { partial ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    PartialDownloadSection(
-                        partial = partial,
-                        onResumeClick = onResumeClick,
-                        onClearClick = onClearPartialClick
-                    )
-                }
-            }
-
-            // Action buttons
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                when {
-                    isDownloading -> {
-                        OutlinedButton(
-                            onClick = onCancelClick,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Close, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                if (downloadState is DownloadState.Extracting)
-                                    stringResource(R.string.cancel_extract)
-                                else
-                                    stringResource(R.string.cancel_download)
-                            )
-                        }
-                    }
-                    isDownloaded -> {
-                        if (!isActive) {
-                            Button(
-                                onClick = onUseClick,
-                                modifier = Modifier.weight(1f),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.use_model))
-                            }
-                        } else {
-                            Spacer(modifier = Modifier.weight(1f))
-                        }
-                        OutlinedButton(
-                            onClick = onDeleteClick,
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
-                        }
-                    }
-                    needsExtraction -> {
-                        Button(
-                            onClick = onDownloadClick,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.FileDownload, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.extract_model))
-                        }
-                    }
-                    isOrphaned && needsExtraction -> {
-                        OutlinedButton(
-                            onClick = onClearOrphanedClick,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.DeleteSweep, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.download_clear_partial))
-                        }
-                    }
-                    partialDownloadVariant == variant -> {
-                        // PartialDownloadSection above already shows Resume/Clear buttons
-                    }
-                    else -> {
-                        Button(
-                            onClick = onDownloadClick,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.whisper_download))
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-

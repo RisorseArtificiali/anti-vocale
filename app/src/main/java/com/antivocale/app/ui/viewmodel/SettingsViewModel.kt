@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.antivocale.app.R
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceApiClient
 import com.antivocale.app.data.HuggingFaceAuthManager
@@ -217,7 +218,7 @@ class SettingsViewModel(
                 _uiState.update { it.copy(
                     isSaving = false,
                     saveSuccess = false,
-                    errorMessage = e.message ?: "Failed to save settings"
+                    errorMessage = e.message ?: getApplication<Application>().getString(R.string.error_save_settings)
                 )}
             }
         }
@@ -317,7 +318,7 @@ class SettingsViewModel(
             _uiState.update { it.copy(
                 isSaving = false,
                 saveSuccess = false,
-                errorMessage = e.message ?: "Failed to save language preference"
+                errorMessage = e.message ?: getApplication<Application>().getString(R.string.error_save_language)
             )}
         }
     }
@@ -342,7 +343,7 @@ class SettingsViewModel(
                 _uiState.update { it.copy(
                     isSaving = false,
                     saveSuccess = false,
-                    errorMessage = e.message ?: "Failed to save theme preference"
+                    errorMessage = e.message ?: getApplication<Application>().getString(R.string.error_save_theme)
                 )}
             }
         }
@@ -363,7 +364,7 @@ class SettingsViewModel(
     fun validateAndSaveToken() {
         val token = _tokenInput.value.trim()
         if (token.isEmpty()) {
-            _uiState.update { it.copy(errorMessage = "Token cannot be empty") }
+            _uiState.update { it.copy(errorMessage = getApplication<Application>().getString(R.string.error_token_empty)) }
             return
         }
 
@@ -435,7 +436,7 @@ class SettingsViewModel(
                 is HuggingFaceAuthManager.AuthResult.Cancelled -> {
                     Log.w(TAG, "OAuth cancelled: ${result.reason}")
                     _oauthState.value = OAuthState.Idle
-                    _uiState.update { it.copy(errorMessage = "Authentication cancelled") }
+                    _uiState.update { it.copy(errorMessage = getApplication<Application>().getString(R.string.error_auth_cancelled)) }
                 }
                 is HuggingFaceAuthManager.AuthResult.Error -> {
                     Log.e(TAG, "OAuth error: ${result.message}")
@@ -524,7 +525,7 @@ class SettingsViewModel(
                     preferencesManager.parakeetModelPath.collect { path ->
                         _uiState.update { it.copy(
                             currentModelPath = path,
-                            currentModelName = if (!path.isNullOrBlank()) "Parakeet TDT" else null
+                            currentModelName = if (!path.isNullOrBlank()) getApplication<Application>().getString(R.string.parakeet_name) else null
                         )}
                     }
                 }

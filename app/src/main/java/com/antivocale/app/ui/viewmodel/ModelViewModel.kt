@@ -45,6 +45,8 @@ class ModelViewModel(
     private val tokenManager: HuggingFaceTokenManager
 ) : ViewModel() {
 
+    private val ctx: Context get() = com.antivocale.app.di.AppContainer.applicationContext
+
     // Set up auto-unload callback
     init {
         LlmManager.setOnAutoUnloadCallback {
@@ -256,12 +258,12 @@ class ModelViewModel(
                     preferencesManager.saveParakeetModelPath(file.absolutePath)
                     if (_uiState.value.modelName.isBlank()) useParakeetModel()
                 }
-                viewModelScope.launch { _snackbarEvent.send(AppContainer.applicationContext.getString(R.string.parakeet_downloaded)) }
+                viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.parakeet_downloaded)) }
             },
             onCancelled = {
                 _parakeetState.update { it.copy(
                     isDownloading = false,
-                    needsExtraction = ParakeetDownloader.needsExtraction(AppContainer.applicationContext)
+                    needsExtraction = ParakeetDownloader.needsExtraction(ctx)
                 )}
                 detectPartialDownloads()
             }
@@ -292,12 +294,12 @@ class ModelViewModel(
                 }
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useWhisperModel(variant)
-                    val displayName = AppContainer.applicationContext.getString(variant.titleResId)
-                    viewModelScope.launch { _snackbarEvent.send(AppContainer.applicationContext.getString(R.string.whisper_downloaded, displayName)) }
+                    val displayName = ctx.getString(variant.titleResId)
+                    viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.whisper_downloaded, displayName)) }
                 }
             },
             onCancelled = {
-                val context = AppContainer.applicationContext
+                val context = ctx
                 val eagerNeedsExtraction = WhisperModelManager.Variant.entries
                     .filter { WhisperDownloader.needsExtraction(context, it) }
                     .toSet()
@@ -339,8 +341,8 @@ class ModelViewModel(
                 }
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useQwen3AsrModel(variant)
-                    val displayName = AppContainer.applicationContext.getString(variant.titleResId)
-                    viewModelScope.launch { _snackbarEvent.send(AppContainer.applicationContext.getString(R.string.qwen3_asr_downloaded, displayName)) }
+                    val displayName = ctx.getString(variant.titleResId)
+                    viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.qwen3_asr_downloaded, displayName)) }
                 }
             },
             onCancelled = {
@@ -383,7 +385,7 @@ class ModelViewModel(
      * Sends a cancel intent to [ExtractionService].
      */
     private fun stopExtractionService() {
-        val context = AppContainer.applicationContext
+        val context = ctx
         val intent = Intent(context, ExtractionService::class.java).apply {
             action = ExtractionService.ACTION_CANCEL
         }
@@ -400,7 +402,7 @@ class ModelViewModel(
      */
     private fun detectPartialDownloads() {
         viewModelScope.launch(Dispatchers.IO) {
-            val context = AppContainer.applicationContext
+            val context = ctx
 
             // Check Gemma variants
             var gemmaPartial: DownloadState.PartiallyDownloaded? = null
@@ -526,11 +528,12 @@ class ModelViewModel(
                     val parakeetPath = preferencesManager.parakeetModelPath.first()
                     if (!parakeetPath.isNullOrBlank()) {
                         val isValid = File(parakeetPath).exists()
+                        val parakeetName = ctx.getString(R.string.parakeet_name)
                         _uiState.update { it.copy(
                             modelPath = parakeetPath,
-                            modelName = "Parakeet TDT",
+                            modelName = parakeetName,
                             isModelPathValid = isValid,
-                            statusMessage = if (isValid) "Parakeet TDT ready" else "Parakeet model not found"
+                            statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, parakeetName) else ctx.getString(R.string.backend_model_not_found, parakeetName)
                         )}
                     }
                 }
@@ -541,13 +544,14 @@ class ModelViewModel(
                         val modelDir = File(whisperPath)
                         val isValid = modelDir.exists() && modelDir.isDirectory
                         val model = WhisperModelManager.validateModelDirectory(modelDir)
+                        val modelName = model?.variant?.let { v ->
+                            ctx.getString(v.titleResId)
+                        } ?: whisperPath.substringAfterLast("/")
                         _uiState.update { it.copy(
                             modelPath = whisperPath,
-                            modelName = model?.variant?.let { v ->
-                                AppContainer.applicationContext.getString(v.titleResId)
-                            } ?: whisperPath.substringAfterLast("/"),
+                            modelName = modelName,
                             isModelPathValid = isValid,
-                            statusMessage = if (isValid) "Whisper model ready" else "Whisper model not found"
+                            statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
                         )}
                     }
                 }
@@ -558,13 +562,14 @@ class ModelViewModel(
                         val modelDir = File(qwen3Path)
                         val isValid = modelDir.exists() && modelDir.isDirectory
                         val model = Qwen3AsrModelManager.validateModelDirectory(modelDir)
+                        val modelName = model?.variant?.let { v ->
+                            ctx.getString(v.titleResId)
+                        } ?: qwen3Path.substringAfterLast("/")
                         _uiState.update { it.copy(
                             modelPath = qwen3Path,
-                            modelName = model?.variant?.let { v ->
-                                AppContainer.applicationContext.getString(v.titleResId)
-                            } ?: qwen3Path.substringAfterLast("/"),
+                            modelName = modelName,
                             isModelPathValid = isValid,
-                            statusMessage = if (isValid) "Qwen3-ASR model ready" else "Qwen3-ASR model not found"
+                            statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
                         )}
                     }
                 }
@@ -577,7 +582,7 @@ class ModelViewModel(
                             modelPath = savedPath,
                             modelName = extractFileName(savedPath),
                             isModelPathValid = isValid,
-                            statusMessage = if (isValid) "Saved model found" else "Saved model not found"
+                            statusMessage = if (isValid) ctx.getString(R.string.saved_model_found) else ctx.getString(R.string.saved_model_not_found)
                         )}
                     }
                 }
@@ -609,12 +614,12 @@ class ModelViewModel(
                     modelName = fileName,
                     isModelPathValid = true,
                     status = ModelStatus.UNLOADED,
-                    statusMessage = "Model selected: $fileName"
+                    statusMessage = ctx.getString(R.string.model_selected, fileName)
                 )}
             } else {
                 _uiState.update { it.copy(
                     status = ModelStatus.ERROR,
-                    statusMessage = "Failed to copy model file"
+                    statusMessage = ctx.getString(R.string.model_copy_failed)
                 )}
             }
         }
@@ -657,7 +662,7 @@ class ModelViewModel(
         if (modelPath.isBlank()) {
             _uiState.update { it.copy(
                 status = ModelStatus.ERROR,
-                statusMessage = "No model selected"
+                statusMessage = ctx.getString(R.string.no_model_selected)
             )}
             return
         }
@@ -665,7 +670,7 @@ class ModelViewModel(
         if (!validateModelPath(modelPath)) {
             _uiState.update { it.copy(
                 status = ModelStatus.ERROR,
-                statusMessage = "Model file not found at: $modelPath"
+                statusMessage = ctx.getString(R.string.model_file_not_found, modelPath)
             )}
             return
         }
@@ -673,7 +678,7 @@ class ModelViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             _uiState.update { it.copy(
                 status = ModelStatus.LOADING,
-                statusMessage = "Loading model into memory..."
+                statusMessage = ctx.getString(R.string.model_loading)
             )}
 
             val result = LlmManager.initialize(context, modelPath)
@@ -684,14 +689,14 @@ class ModelViewModel(
 
                     _uiState.update { it.copy(
                         status = ModelStatus.READY,
-                        statusMessage = "Model ready for inference",
+                        statusMessage = ctx.getString(R.string.model_ready_inference),
                         memoryUsage = memoryUsage
                     )}
                 },
                 onFailure = { error ->
                     _uiState.update { it.copy(
                         status = ModelStatus.ERROR,
-                        statusMessage = "Load failed: ${error.message}"
+                        statusMessage = ctx.getString(R.string.model_load_failed, error.message ?: "")
                     )}
                 }
             )
@@ -702,7 +707,7 @@ class ModelViewModel(
         LlmManager.unload()
         _uiState.update { it.copy(
             status = ModelStatus.UNLOADED,
-            statusMessage = "Model unloaded",
+            statusMessage = ctx.getString(R.string.model_unloaded),
             memoryUsage = 0
         )}
     }
@@ -739,7 +744,7 @@ class ModelViewModel(
     private fun onModelAutoUnloaded() {
         _uiState.update { it.copy(
             status = ModelStatus.UNLOADED,
-            statusMessage = "Model unloaded due to inactivity",
+            statusMessage = ctx.getString(R.string.model_auto_unloaded),
             memoryUsage = 0
         )}
     }
@@ -756,7 +761,7 @@ class ModelViewModel(
             modelName = modelName,
             isModelPathValid = true,
             status = ModelStatus.READY,
-            statusMessage = "Model ready (externally loaded)",
+            statusMessage = ctx.getString(R.string.model_externally_loaded),
             memoryUsage = memoryUsage
         )}
     }
@@ -771,7 +776,7 @@ class ModelViewModel(
             val downloaded = ModelDownloader.ModelVariant.entries
                 .filter { variant ->
                     ModelDownloader.isModelDownloaded(
-                        AppContainer.applicationContext,
+                        ctx,
                         variant
                     )
                 }
@@ -801,7 +806,7 @@ class ModelViewModel(
             partialDownload = null
         )}
 
-        val context = AppContainer.applicationContext
+        val context = ctx
         val intent = Intent(context, ExtractionService::class.java).apply {
             putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.GEMMA.key)
             putExtra(ExtractionService.EXTRA_VARIANT, variantKey(variant))
@@ -822,7 +827,7 @@ class ModelViewModel(
      */
     fun clearPartialDownload(variant: ModelDownloader.ModelVariant) {
         viewModelScope.launch {
-            ModelDownloader.clearPartialDownload(AppContainer.applicationContext, variant)
+            ModelDownloader.clearPartialDownload(ctx, variant)
             _downloadUiState.update { it.copy(
                 isDownloading = false,
                 downloadProgress = 0f,
@@ -861,14 +866,14 @@ class ModelViewModel(
     fun useDownloadedModel(variant: ModelDownloader.ModelVariant) {
         viewModelScope.launch {
             val modelPath = ModelDownloader.getLocalModelPath(
-                AppContainer.applicationContext,
+                ctx,
                 variant
             )
             if (modelPath != null) {
                 preferencesManager.saveModelPath(modelPath)
                 // Switch to LLM backend when selecting an LLM model
                 preferencesManager.saveTranscriptionBackend(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
-                val message = AppContainer.applicationContext.getString(R.string.model_selected_message, variant.displayName)
+                val message = ctx.getString(R.string.model_selected_message, variant.displayName)
                 _uiState.update { it.copy(
                     modelPath = modelPath,
                     modelName = variant.displayName,
@@ -887,7 +892,7 @@ class ModelViewModel(
      */
     fun deleteModel(variant: ModelDownloader.ModelVariant) {
         viewModelScope.launch {
-            val success = ModelDownloader.deleteModel(AppContainer.applicationContext, variant)
+            val success = ModelDownloader.deleteModel(ctx, variant)
             if (success) {
                 refreshDownloadedModels()
                 // Clear model path if this was the selected model
@@ -898,7 +903,7 @@ class ModelViewModel(
                         modelName = "",
                         isModelPathValid = false,
                         status = ModelStatus.UNLOADED,
-                        statusMessage = "Model deleted"
+                        statusMessage = ctx.getString(R.string.model_deleted_status)
                     )}
                 }
             }
@@ -969,7 +974,7 @@ class ModelViewModel(
      */
     fun refreshParakeetState() {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             val isDownloaded = ParakeetDownloader.isModelDownloaded(context)
             val modelPath = if (isDownloaded) ParakeetDownloader.getModelPath(context) else null
 
@@ -1044,7 +1049,7 @@ class ModelViewModel(
             partialDownload = null
         )}
 
-        val context = AppContainer.applicationContext
+        val context = ctx
         val intent = Intent(context, ExtractionService::class.java).apply {
             putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.PARAKEET.key)
         }
@@ -1065,7 +1070,7 @@ class ModelViewModel(
      */
     fun clearParakeetPartialDownload() {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             ParakeetDownloader.clearPartialDownload(context)
             _parakeetState.update { it.copy(
                 isDownloading = false,
@@ -1084,7 +1089,7 @@ class ModelViewModel(
      */
     fun clearOrphanedParakeetFiles() {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             ParakeetDownloader.deleteModel(context)
             _parakeetState.update { it.copy(hasOrphanedFiles = false) }
             detectPartialDownloads()
@@ -1102,7 +1107,7 @@ class ModelViewModel(
             errorMessage = null,
             // Eagerly set extraction state so the button shows "Extract" immediately
             // instead of flickering to "Download" while detectPartialDownloads() runs on IO
-            needsExtraction = ParakeetDownloader.needsExtraction(AppContainer.applicationContext)
+            needsExtraction = ParakeetDownloader.needsExtraction(ctx)
         )}
         stopExtractionService()
         detectPartialDownloads()
@@ -1119,10 +1124,9 @@ class ModelViewModel(
                 preferencesManager.saveParakeetModelPath(modelPath)
                 preferencesManager.saveTranscriptionBackend(SherpaOnnxBackend.BACKEND_ID)
 
-                val context = AppContainer.applicationContext
-                val message = context.getString(R.string.model_selected_message, "Parakeet TDT")
+                val message = ctx.getString(R.string.model_selected_message, ctx.getString(R.string.parakeet_name))
                 _uiState.update { it.copy(
-                    modelName = "Parakeet TDT",
+                    modelName = ctx.getString(R.string.parakeet_name),
                     status = ModelStatus.UNLOADED,
                     statusMessage = message
                 )}
@@ -1137,7 +1141,7 @@ class ModelViewModel(
      */
     fun deleteParakeetModel() {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             val success = ParakeetDownloader.deleteModel(context)
             if (success) {
                 preferencesManager.saveParakeetModelPath("")
@@ -1154,7 +1158,7 @@ class ModelViewModel(
      */
     fun refreshWhisperState() {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             val downloadedVariants = WhisperModelManager.Variant.entries
                 .filter { WhisperDownloader.isModelDownloaded(context, it) }
                 .toSet()
@@ -1244,7 +1248,7 @@ class ModelViewModel(
             partialDownload = null
         )}
 
-        val context = AppContainer.applicationContext
+        val context = ctx
         val intent = Intent(context, ExtractionService::class.java).apply {
             putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.WHISPER.key)
             putExtra(ExtractionService.EXTRA_VARIANT, variantKey(variant))
@@ -1266,7 +1270,7 @@ class ModelViewModel(
      */
     fun clearWhisperPartialDownload(variant: WhisperModelManager.Variant) {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             WhisperDownloader.clearPartialDownload(context, variant)
             _whisperState.update {
                 it.copy(
@@ -1288,7 +1292,7 @@ class ModelViewModel(
      */
     fun clearOrphanedWhisperFiles(variant: WhisperModelManager.Variant) {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             WhisperDownloader.deleteModel(context, variant)
             _whisperState.update {
                 it.copy(
@@ -1306,7 +1310,7 @@ class ModelViewModel(
         WhisperDownloader.cancel()
         // Eagerly compute extraction state so the button shows "Extract" immediately
         // instead of flickering to "Download" while detectPartialDownloads() runs on IO
-        val context = AppContainer.applicationContext
+        val context = ctx
         val eagerNeedsExtraction = WhisperModelManager.Variant.entries
             .filter { WhisperDownloader.needsExtraction(context, it) }
             .toSet()
@@ -1332,7 +1336,7 @@ class ModelViewModel(
      */
     fun useWhisperModel(variant: WhisperModelManager.Variant) {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             val modelPath = WhisperDownloader.getModelPath(context, variant)
             if (modelPath != null) {
                 val displayName = context.getString(variant.titleResId)
@@ -1357,7 +1361,7 @@ class ModelViewModel(
      */
     fun deleteWhisperModel(variant: WhisperModelManager.Variant) {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             val success = WhisperDownloader.deleteModel(context, variant)
             if (success) {
                 val displayName = context.getString(variant.titleResId)
@@ -1383,7 +1387,7 @@ class ModelViewModel(
      */
     fun refreshQwen3AsrState() {
         viewModelScope.launch(Dispatchers.IO) {
-            val context = AppContainer.applicationContext
+            val context = ctx
             val downloadedVariants = Qwen3AsrModelManager.Variant.entries
                 .filter { Qwen3AsrDownloader.isModelDownloaded(context, it) }
                 .toSet()
@@ -1424,7 +1428,7 @@ class ModelViewModel(
 
     fun startQwen3AsrDownload(variant: Qwen3AsrModelManager.Variant) {
         _qwen3AsrState.update { it.copy(isDownloading = true, errorMessage = null, showDownloadDialog = false, selectedVariant = variant) }
-        val context = AppContainer.applicationContext
+        val context = ctx
         val intent = Intent(context, ExtractionService::class.java).apply {
             putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.QWEN3_ASR.key)
             putExtra(ExtractionService.EXTRA_VARIANT, variantKey(variant))
@@ -1446,7 +1450,7 @@ class ModelViewModel(
 
     fun clearQwen3AsrPartialDownload(variant: Qwen3AsrModelManager.Variant) {
         viewModelScope.launch(Dispatchers.IO) {
-            Qwen3AsrDownloader.clearPartialDownload(AppContainer.applicationContext, variant)
+            Qwen3AsrDownloader.clearPartialDownload(ctx, variant)
             _qwen3AsrState.update {
                 it.copy(partialDownload = null, partialDownloadVariant = null)
             }
@@ -1455,7 +1459,7 @@ class ModelViewModel(
 
     fun useQwen3AsrModel(variant: Qwen3AsrModelManager.Variant) {
         viewModelScope.launch {
-            val context = AppContainer.applicationContext
+            val context = ctx
             val modelPath = Qwen3AsrDownloader.getModelPath(context, variant)
             if (modelPath != null) {
                 preferencesManager.saveQwen3AsrModelPath(modelPath)
@@ -1479,7 +1483,7 @@ class ModelViewModel(
 
     fun deleteQwen3AsrModel(variant: Qwen3AsrModelManager.Variant) {
         viewModelScope.launch(Dispatchers.IO) {
-            val context = AppContainer.applicationContext
+            val context = ctx
             val success = Qwen3AsrDownloader.deleteModel(context, variant)
             if (success) {
                 _qwen3AsrState.update {
@@ -1509,7 +1513,7 @@ class ModelViewModel(
                 modelName = file.name,
                 isModelPathValid = true,
                 status = ModelStatus.UNLOADED,
-                statusMessage = "Downloaded model selected"
+                statusMessage = ctx.getString(R.string.downloaded_model_selected)
             )}
         }
     }

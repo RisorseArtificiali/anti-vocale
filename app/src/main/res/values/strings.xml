@@ -24,6 +24,31 @@
     <string name="status_model_selected">Model Selected</string>
     <string name="status_no_model">No Model</string>
 
+    <!-- ViewModel status messages -->
+    <string name="parakeet_name">Parakeet TDT</string>
+    <string name="backend_model_ready">%1$s ready</string>
+    <string name="backend_model_not_found">%1$s model not found</string>
+    <string name="saved_model_found">Saved model found</string>
+    <string name="saved_model_not_found">Saved model not found</string>
+    <string name="model_selected">Model selected: %1$s</string>
+    <string name="model_copy_failed">Failed to copy model file</string>
+    <string name="model_file_not_found">Model file not found at: %1$s</string>
+    <string name="model_loading">Loading model into memory…</string>
+    <string name="model_ready_inference">Model ready for inference</string>
+    <string name="model_load_failed">Load failed: %1$s</string>
+    <string name="model_unloaded">Model unloaded</string>
+    <string name="model_auto_unloaded">Model unloaded due to inactivity</string>
+    <string name="model_externally_loaded">Model ready (externally loaded)</string>
+    <string name="model_deleted_status">Model deleted</string>
+    <string name="downloaded_model_selected">Downloaded model selected</string>
+
+    <!-- Settings error messages -->
+    <string name="error_save_settings">Failed to save settings</string>
+    <string name="error_save_language">Failed to save language preference</string>
+    <string name="error_save_theme">Failed to save theme preference</string>
+    <string name="error_token_empty">Token cannot be empty</string>
+    <string name="error_auth_cancelled">Authentication cancelled</string>
+
     <!-- Logs -->
     <string name="logs_empty">No requests yet</string>
     <string name="request_text">Text Request</string>
