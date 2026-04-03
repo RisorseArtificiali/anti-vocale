@@ -63,7 +63,7 @@ class ExtractionService : Service() {
     enum class ModelType(val key: String) {
         PARAKEET("parakeet"),
         WHISPER("whisper"),
-        QWEN3_ASR("qwen3_asr"),
+        QWEN3_ASR("qwen3-asr"),
         GEMMA("gemma");
 
         companion object {

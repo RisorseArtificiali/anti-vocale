@@ -13,10 +13,11 @@ import com.antivocale.app.manager.LlmManager
 class LlmTranscriptionBackend : TranscriptionBackend {
 
     companion object {
+        const val BACKEND_ID = "llm"
         private const val TAG = "LlmTranscriptionBackend"
     }
 
-    override val id: String = "llm"
+    override val id: String = BACKEND_ID
     override val displayName: String = "Gemma 3n (LiteRT-LM)"
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = true

@@ -15,7 +15,10 @@ import com.antivocale.app.data.ModelDiscovery
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
+import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.Qwen3AsrModelManager
+import com.antivocale.app.transcription.SherpaOnnxBackend
+import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.LocaleManager
@@ -516,7 +519,7 @@ class SettingsViewModel(
             _uiState.update { it.copy(transcriptionBackend = backend) }
 
             when (backend) {
-                "sherpa-onnx" -> {
+                SherpaOnnxBackend.BACKEND_ID -> {
                     // Show Parakeet model
                     preferencesManager.parakeetModelPath.collect { path ->
                         _uiState.update { it.copy(
@@ -525,7 +528,7 @@ class SettingsViewModel(
                         )}
                     }
                 }
-                "whisper" -> {
+                WhisperBackend.BACKEND_ID -> {
                     // Show Whisper model
                     preferencesManager.whisperModelPath.collect { path ->
                         val modelName = if (!path.isNullOrBlank()) {
@@ -541,7 +544,7 @@ class SettingsViewModel(
                         )}
                     }
                 }
-                "qwen3-asr" -> {
+                Qwen3AsrBackend.BACKEND_ID -> {
                     preferencesManager.qwen3AsrModelPath.collect { path ->
                         val modelName = if (!path.isNullOrBlank()) {
                             val modelDir = java.io.File(path)

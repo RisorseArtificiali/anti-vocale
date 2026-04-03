@@ -15,6 +15,9 @@ import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.service.ExtractionService
+import com.antivocale.app.transcription.Qwen3AsrBackend
+import com.antivocale.app.transcription.SherpaOnnxBackend
+import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.ParakeetModelManager
 import com.antivocale.app.transcription.WhisperDownloader
@@ -388,18 +391,9 @@ class ModelViewModel(
     }
 
     /**
-     * Maps a [WhisperModelManager.Variant] to the string key used by [ExtractionService].
+     * Maps an enum variant to the lowercase string key used by [ExtractionService].
      */
-    private fun whisperVariantKey(variant: WhisperModelManager.Variant): String {
-        return variant.name.lowercase()
-    }
-
-    /**
-     * Maps a [ModelDownloader.ModelVariant] to the string key used by [ExtractionService].
-     */
-    private fun gemmaVariantKey(variant: ModelDownloader.ModelVariant): String {
-        return variant.name.lowercase()
-    }
+    private fun <T : Enum<*>> variantKey(variant: T): String = variant.name.lowercase()
 
     /**
      * Detects partial downloads across all downloaders and updates state.
@@ -527,7 +521,7 @@ class ModelViewModel(
             val backend = preferencesManager.transcriptionBackend.first()
 
             when (backend) {
-                "sherpa-onnx" -> {
+                SherpaOnnxBackend.BACKEND_ID -> {
                     // Load Parakeet model path
                     val parakeetPath = preferencesManager.parakeetModelPath.first()
                     if (!parakeetPath.isNullOrBlank()) {
@@ -540,7 +534,7 @@ class ModelViewModel(
                         )}
                     }
                 }
-                "whisper" -> {
+                WhisperBackend.BACKEND_ID -> {
                     // Load Whisper model path
                     val whisperPath = preferencesManager.whisperModelPath.first()
                     if (!whisperPath.isNullOrBlank()) {
@@ -557,7 +551,7 @@ class ModelViewModel(
                         )}
                     }
                 }
-                "qwen3-asr" -> {
+                Qwen3AsrBackend.BACKEND_ID -> {
                     // Load Qwen3-ASR model path
                     val qwen3Path = preferencesManager.qwen3AsrModelPath.first()
                     if (!qwen3Path.isNullOrBlank()) {
@@ -810,7 +804,7 @@ class ModelViewModel(
         val context = AppContainer.applicationContext
         val intent = Intent(context, ExtractionService::class.java).apply {
             putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.GEMMA.key)
-            putExtra(ExtractionService.EXTRA_VARIANT, gemmaVariantKey(variant))
+            putExtra(ExtractionService.EXTRA_VARIANT, variantKey(variant))
         }
         ContextCompat.startForegroundService(context, intent)
     }
@@ -1123,7 +1117,7 @@ class ModelViewModel(
             if (modelPath != null) {
                 // Save Parakeet model path and switch backend preference
                 preferencesManager.saveParakeetModelPath(modelPath)
-                preferencesManager.saveTranscriptionBackend("sherpa-onnx")
+                preferencesManager.saveTranscriptionBackend(SherpaOnnxBackend.BACKEND_ID)
 
                 val context = AppContainer.applicationContext
                 val message = context.getString(R.string.model_selected_message, "Parakeet TDT")
@@ -1253,7 +1247,7 @@ class ModelViewModel(
         val context = AppContainer.applicationContext
         val intent = Intent(context, ExtractionService::class.java).apply {
             putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.WHISPER.key)
-            putExtra(ExtractionService.EXTRA_VARIANT, whisperVariantKey(variant))
+            putExtra(ExtractionService.EXTRA_VARIANT, variantKey(variant))
         }
         ContextCompat.startForegroundService(context, intent)
     }
@@ -1344,7 +1338,7 @@ class ModelViewModel(
                 val displayName = context.getString(variant.titleResId)
                 // Save Whisper model path and switch backend preference
                 preferencesManager.saveWhisperModelPath(modelPath)
-                preferencesManager.saveTranscriptionBackend("whisper")
+                preferencesManager.saveTranscriptionBackend(WhisperBackend.BACKEND_ID)
 
                 val message = context.getString(R.string.model_selected_message, displayName)
                 _uiState.update { it.copy(
@@ -1433,7 +1427,7 @@ class ModelViewModel(
         val context = AppContainer.applicationContext
         val intent = Intent(context, ExtractionService::class.java).apply {
             putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.QWEN3_ASR.key)
-            putExtra(ExtractionService.EXTRA_VARIANT, qwen3AsrVariantKey(variant))
+            putExtra(ExtractionService.EXTRA_VARIANT, variantKey(variant))
         }
         ContextCompat.startForegroundService(context, intent)
     }
@@ -1465,7 +1459,7 @@ class ModelViewModel(
             val modelPath = Qwen3AsrDownloader.getModelPath(context, variant)
             if (modelPath != null) {
                 preferencesManager.saveQwen3AsrModelPath(modelPath)
-                preferencesManager.saveTranscriptionBackend("qwen3-asr")
+                preferencesManager.saveTranscriptionBackend(Qwen3AsrBackend.BACKEND_ID)
 
                 val displayName = context.getString(variant.titleResId)
                 val message = context.getString(R.string.model_selected_message, displayName)
@@ -1500,13 +1494,6 @@ class ModelViewModel(
                 _snackbarEvent.send(context.getString(R.string.qwen3_asr_deleted, displayName))
             }
         }
-    }
-
-    /**
-     * Maps a [Qwen3AsrModelManager.Variant] to the string key used by [ExtractionService].
-     */
-    private fun qwen3AsrVariantKey(variant: Qwen3AsrModelManager.Variant): String {
-        return variant.name.lowercase()
     }
 
     /**

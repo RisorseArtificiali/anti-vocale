@@ -25,6 +25,7 @@ import java.nio.ByteOrder
 class SherpaOnnxBackend : TranscriptionBackend {
 
     companion object {
+        const val BACKEND_ID = "sherpa-onnx"
         private const val TAG = "SherpaOnnxBackend"
 
         // Required model files for Parakeet TDT (transducer model)
@@ -36,7 +37,7 @@ class SherpaOnnxBackend : TranscriptionBackend {
         )
     }
 
-    override val id: String = "sherpa-onnx"
+    override val id: String = BACKEND_ID
     override val displayName: String = "Parakeet TDT (sherpa-onnx)"
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = false  // ASR-only, no text generation

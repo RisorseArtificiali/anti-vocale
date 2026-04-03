@@ -23,6 +23,7 @@ import java.io.File
 class Qwen3AsrBackend : TranscriptionBackend {
 
     companion object {
+        const val BACKEND_ID = "qwen3-asr"
         private const val TAG = "Qwen3AsrBackend"
 
         val REQUIRED_MODEL_FILES = listOf(
@@ -33,7 +34,7 @@ class Qwen3AsrBackend : TranscriptionBackend {
         )
     }
 
-    override val id: String = "qwen3-asr"
+    override val id: String = BACKEND_ID
     override val displayName: String = "Qwen3-ASR (52 languages)"
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = false

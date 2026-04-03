@@ -26,6 +26,7 @@ import java.nio.ByteOrder
 class WhisperBackend : TranscriptionBackend {
 
     companion object {
+        const val BACKEND_ID = "whisper"
         private const val TAG = "WhisperBackend"
 
         // Required model files for Whisper (separate encoder and decoder)
@@ -36,7 +37,7 @@ class WhisperBackend : TranscriptionBackend {
         )
     }
 
-    override val id: String = "whisper"
+    override val id: String = BACKEND_ID
     override val displayName: String = "Whisper (sherpa-onnx)"
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = false  // ASR-only, no text generation

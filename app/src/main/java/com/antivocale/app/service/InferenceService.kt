@@ -21,7 +21,10 @@ import com.antivocale.app.di.AppContainer
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.transcription.BackendConfig
+import com.antivocale.app.transcription.Qwen3AsrBackend
+import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.receiver.NotificationActionReceiver
 import com.antivocale.app.receiver.TaskerRequestReceiver
@@ -254,9 +257,9 @@ class InferenceService : Service() {
 
                 // Load the appropriate backend based on backend ID
                 val loadResult = when (preferredBackendId) {
-                    "sherpa-onnx" -> loadSherpaOnnxBackend()
-                    "whisper" -> loadWhisperBackend()
-                    "qwen3-asr" -> loadQwen3AsrBackend()
+                    SherpaOnnxBackend.BACKEND_ID -> loadSherpaOnnxBackend()
+                    WhisperBackend.BACKEND_ID -> loadWhisperBackend()
+                    Qwen3AsrBackend.BACKEND_ID -> loadQwen3AsrBackend()
                     else -> loadLlmBackend()
                 }
 
@@ -337,94 +340,61 @@ class InferenceService : Service() {
     }
 
     /**
-     * Loads the sherpa-onnx backend with the saved Parakeet model path.
+     * Common helper for loading any sherpa-onnx based backend.
+     * Reads the model path from preferences, validates the directory,
+     * and initializes the backend via [TranscriptionBackendManager].
      */
-    private suspend fun loadSherpaOnnxBackend(): Result<Unit> {
-        val modelPath = AppContainer.preferencesManager.parakeetModelPath.first()
+    private suspend fun loadSherpaOnnxModel(
+        backendId: String,
+        modelPathFlow: kotlinx.coroutines.flow.Flow<String?>,
+        label: String,
+        language: String = ""
+    ): Result<Unit> {
+        val modelPath = modelPathFlow.first()
 
         if (modelPath.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("No Parakeet model configured. Open the app to download a model."))
+            return Result.failure(IllegalStateException("No $label model configured. Open the app to download a model."))
         }
 
-        // Validate model directory exists
         val modelDir = java.io.File(modelPath)
         if (!modelDir.exists() || !modelDir.isDirectory) {
-            return Result.failure(IllegalStateException("Parakeet model directory not found: $modelPath"))
+            return Result.failure(IllegalStateException("$label model directory not found: $modelPath"))
         }
 
-        updateNotificationWithProgress("Loading Parakeet model...", indeterminate = true)
-        Log.i(TAG, "Auto-loading Parakeet model from: $modelPath")
+        updateNotificationWithProgress("Loading $label model...", indeterminate = true)
+        Log.i(TAG, "Auto-loading $label model from: $modelPath")
 
         return TranscriptionBackendManager.setActiveBackend(
-            backendId = "sherpa-onnx",
-            context = applicationContext,
-            config = BackendConfig.SherpaOnnxConfig(
-                modelDir = modelPath,
-                numThreads = AppContainer.preferencesManager.threadCount.first()
-            )
-        )
-    }
-
-    /**
-     * Loads the sherpa-onnx backend with the saved Whisper model path.
-     */
-    private suspend fun loadWhisperBackend(): Result<Unit> {
-        val modelPath = AppContainer.preferencesManager.whisperModelPath.first()
-
-        if (modelPath.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("No Whisper model configured. Open the app to download a model."))
-        }
-
-        // Validate model directory exists
-        val modelDir = java.io.File(modelPath)
-        if (!modelDir.exists() || !modelDir.isDirectory) {
-            return Result.failure(IllegalStateException("Whisper model directory not found: $modelPath"))
-        }
-
-        updateNotificationWithProgress("Loading Whisper model...", indeterminate = true)
-        Log.i(TAG, "Auto-loading Whisper model from: $modelPath")
-
-        return TranscriptionBackendManager.setActiveBackend(
-            backendId = "whisper",
+            backendId = backendId,
             context = applicationContext,
             config = BackendConfig.SherpaOnnxConfig(
                 modelDir = modelPath,
                 numThreads = AppContainer.preferencesManager.threadCount.first(),
-                language = AppContainer.preferencesManager.transcriptionLanguage.first().let { lang ->
-                    if (lang == "auto") "" else lang
-                }
+                language = language
             )
         )
     }
 
-    /**
-     * Loads the sherpa-onnx backend with the saved Qwen3-ASR model path.
-     */
-    private suspend fun loadQwen3AsrBackend(): Result<Unit> {
-        val modelPath = AppContainer.preferencesManager.qwen3AsrModelPath.first()
+    private suspend fun loadSherpaOnnxBackend() = loadSherpaOnnxModel(
+        backendId = SherpaOnnxBackend.BACKEND_ID,
+        modelPathFlow = AppContainer.preferencesManager.parakeetModelPath,
+        label = "Parakeet"
+    )
 
-        if (modelPath.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("No Qwen3-ASR model configured. Open the app to download a model."))
+    private suspend fun loadWhisperBackend() = loadSherpaOnnxModel(
+        backendId = WhisperBackend.BACKEND_ID,
+        modelPathFlow = AppContainer.preferencesManager.whisperModelPath,
+        label = "Whisper",
+        language = AppContainer.preferencesManager.transcriptionLanguage.first().let { lang ->
+            if (lang == "auto") "" else lang
         }
+    )
 
-        // Validate model directory exists
-        val modelDir = java.io.File(modelPath)
-        if (!modelDir.exists() || !modelDir.isDirectory) {
-            return Result.failure(IllegalStateException("Qwen3-ASR model directory not found: $modelPath"))
-        }
-
-        updateNotificationWithProgress("Loading Qwen3-ASR model...", indeterminate = true)
-        Log.i(TAG, "Auto-loading Qwen3-ASR model from: $modelPath")
-
-        return TranscriptionBackendManager.setActiveBackend(
-            backendId = "qwen3-asr",
-            context = applicationContext,
-            config = BackendConfig.SherpaOnnxConfig(
-                modelDir = modelPath,
-                numThreads = AppContainer.preferencesManager.threadCount.first()
-            )
-        )
-    }
+    private suspend fun loadQwen3AsrBackend() = loadSherpaOnnxModel(
+        backendId = Qwen3AsrBackend.BACKEND_ID,
+        modelPathFlow = AppContainer.preferencesManager.qwen3AsrModelPath,
+        label = "Qwen3-ASR"
+    )
 
     private suspend fun processTextRequest(request: PendingRequest): Result<String> {
         Log.d(TAG, "Processing text request: ${request.taskId}")
@@ -524,9 +494,9 @@ class InferenceService : Service() {
         // Get calibration data for the active backend + model variant
         val backendId = backend.id
         val modelPath = when (backendId) {
-            "whisper" -> AppContainer.preferencesManager.whisperModelPath.first()
-            "qwen3-asr" -> AppContainer.preferencesManager.qwen3AsrModelPath.first()
-            "sherpa-onnx" -> AppContainer.preferencesManager.parakeetModelPath.first()
+            WhisperBackend.BACKEND_ID -> AppContainer.preferencesManager.whisperModelPath.first()
+            Qwen3AsrBackend.BACKEND_ID -> AppContainer.preferencesManager.qwen3AsrModelPath.first()
+            SherpaOnnxBackend.BACKEND_ID -> AppContainer.preferencesManager.parakeetModelPath.first()
             else -> AppContainer.preferencesManager.modelPath.first()
         } ?: ""
         val modelDisplayName = deriveDisplayName(backendId, modelPath, backend.displayName)
@@ -747,14 +717,14 @@ class InferenceService : Service() {
     private fun deriveDisplayName(backendId: String, modelPath: String, fallbackName: String?): String {
         val dirName = java.io.File(modelPath).name
         return when (backendId) {
-            "whisper" -> {
+            WhisperBackend.BACKEND_ID -> {
                 // Pattern: sherpa-onnx-whisper-{variant}
                 val variant = dirName.removePrefix("sherpa-onnx-whisper-")
                     .replace("-", " ")
                     .replaceFirstChar { it.uppercase() }
                 if (variant.isNotEmpty()) "Whisper $variant" else fallbackName ?: "Whisper"
             }
-            "qwen3-asr" -> {
+            Qwen3AsrBackend.BACKEND_ID -> {
                 // Pattern: sherpa-onnx-qwen3-asr-{variant}
                 dirName.removePrefix("sherpa-onnx-qwen3-asr-")
                     .replace("-int8", "")
