@@ -104,6 +104,14 @@ class SettingsViewModel(
             initialValue = PreferencesManager.DEFAULT_VAD_ENABLED
         )
 
+    // Progressive transcription display preference
+    val progressiveTranscription: StateFlow<Boolean> = preferencesManager.progressiveTranscription
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION
+        )
+
     // Inference thread count
     val threadCount: StateFlow<Int> = preferencesManager.threadCount
         .stateIn(
@@ -252,6 +260,15 @@ class SettingsViewModel(
     fun saveVadEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveVadEnabled(enabled)
+        }
+    }
+
+    /**
+     * Saves the progressive transcription preference.
+     */
+    fun saveProgressiveTranscription(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveProgressiveTranscription(enabled)
         }
     }
 

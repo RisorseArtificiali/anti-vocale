@@ -165,6 +165,8 @@
     <string name="no_audio_file">No audio file received</string>
     <string name="failed_to_process_audio">Failed to process audio file</string>
     <string name="transcription_started">Transcription started…</string>
+    <string name="processing_segment_progress">Segment %1$d of %2$d…</string>
+    <string name="progressive_initial">Preparing partial previews — full text available when done</string>
     <string name="added_to_queue">Added to queue…</string>
     <string name="processing_chunk">Processing chunk %1$d/%2$d…</string>
     <string name="processing_audio">Processing audio…</string>
@@ -286,6 +288,8 @@
     <!-- Settings Tab - VAD -->
     <string name="vad_title">Strip Silence (VAD)</string>
     <string name="vad_description">Remove silent portions from voice messages before transcription. Reduces processing time and improves accuracy.</string>
+    <string name="progressive_title">Progressive Display</string>
+    <string name="progressive_description">Show transcription text as each speech segment is completed, instead of waiting for the full result.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Default Transcription Prompt</string>

@@ -101,6 +101,12 @@ class LogsViewModel(private val logDao: LogDao) : ViewModel() {
         }
     }
 
+    fun updateInterimResult(taskId: String, accumulatedText: String) {
+        updateLog(taskId) { log ->
+            log.copy(result = accumulatedText)
+        }
+    }
+
     fun updateAudioDuration(taskId: String, audioDurationSeconds: Double) {
         updateLog(taskId) { log ->
             log.copy(audioDurationSeconds = audioDurationSeconds)

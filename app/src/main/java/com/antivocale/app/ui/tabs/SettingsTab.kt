@@ -64,6 +64,7 @@ fun SettingsTab(
     val currentTimeout by viewModel.keepAliveTimeout.collectAsState()
     val autoCopyEnabled by viewModel.autoCopyEnabled.collectAsState()
     val vadEnabled by viewModel.vadEnabled.collectAsState()
+    val progressiveEnabled by viewModel.progressiveTranscription.collectAsState()
     val threadCount by viewModel.threadCount.collectAsState()
     val autoDetectedThreads = viewModel.autoDetectedThreadCount
     val currentLanguage by viewModel.currentLanguage.collectAsState()
@@ -988,6 +989,50 @@ fun SettingsTab(
                     checked = vadEnabled,
                     onCheckedChange = { enabled ->
                         viewModel.saveVadEnabled(enabled)
+                    }
+                )
+            }
+        }
+
+        // Progressive Transcription Display Setting
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Visibility,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.progressive_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.progressive_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Switch(
+                    checked = progressiveEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveProgressiveTranscription(enabled)
                     }
                 )
             }

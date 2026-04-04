@@ -42,6 +42,7 @@ class PreferencesManager(private val context: Context) {
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
         // VAD silence stripping
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
+        private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
         // Default prompt for transcription
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
         // Inference thread count
@@ -54,6 +55,7 @@ class PreferencesManager(private val context: Context) {
         val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2)
         const val DEFAULT_AUTO_COPY_ENABLED = false
         const val DEFAULT_VAD_ENABLED = false
+        const val DEFAULT_PROGRESSIVE_TRANSCRIPTION = true
         const val DEFAULT_PROMPT_VALUE = ""
         const val DEFAULT_THEME = "DEFAULT"
         const val DEFAULT_TRANSCRIPTION_BACKEND = "llm"
@@ -77,6 +79,7 @@ class PreferencesManager(private val context: Context) {
         val qwen3AsrModelPath: String? = null,
         val autoCopyEnabled: Boolean = DEFAULT_AUTO_COPY_ENABLED,
         val vadEnabled: Boolean = DEFAULT_VAD_ENABLED,
+        val progressiveTranscription: Boolean = DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         val defaultPrompt: String = DEFAULT_PROMPT_VALUE,
         val threadCount: Int = DEFAULT_THREAD_COUNT,
         val transcriptionLanguage: String = DEFAULT_TRANSCRIPTION_LANGUAGE
@@ -98,6 +101,7 @@ class PreferencesManager(private val context: Context) {
         qwen3AsrModelPath = this[QWEN3_ASR_MODEL_PATH],
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: DEFAULT_AUTO_COPY_ENABLED,
         vadEnabled = this[VAD_ENABLED] ?: DEFAULT_VAD_ENABLED,
+        progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         defaultPrompt = this[DEFAULT_PROMPT] ?: DEFAULT_PROMPT_VALUE,
         threadCount = this[THREAD_COUNT] ?: DEFAULT_THREAD_COUNT,
         transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: DEFAULT_TRANSCRIPTION_LANGUAGE
@@ -310,6 +314,23 @@ class PreferencesManager(private val context: Context) {
             preferences[VAD_ENABLED] = enabled
         }
         cache.updateAndGet { it.copy(vadEnabled = enabled) }
+    }
+
+    /**
+     * Flow of progressive transcription enabled preference.
+     * Returns true by default (progressive display enabled).
+     */
+    val progressiveTranscription: Flow<Boolean> = context.dataStore.data.map { it.toCached().progressiveTranscription }
+        .onStart { emit(cache.get().progressiveTranscription) }
+
+    /**
+     * Saves the progressive transcription preference.
+     */
+    suspend fun saveProgressiveTranscription(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[PROGRESSIVE_TRANSCRIPTION] = enabled
+        }
+        cache.updateAndGet { it.copy(progressiveTranscription = enabled) }
     }
 
     /**

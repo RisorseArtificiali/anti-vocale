@@ -445,11 +445,26 @@ fun LogEntryItem(log: LogEntry, searchQuery: String = "") {
                 )
             } else if (log.status == LogEntry.Status.PENDING) {
                 Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = stringResource(R.string.transcription_started),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (log.result.isNotEmpty()) {
+                    // Interim transcription text during progressive VAD transcription
+                    Text(
+                        text = highlightText(
+                            getPreviewText(log.result),
+                            searchQuery,
+                            MaterialTheme.colorScheme.tertiary
+                        ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = stringResource(R.string.transcription_started),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             // === EXPANDED VIEW ===
@@ -602,7 +617,32 @@ fun LogEntryItem(log: LogEntry, searchQuery: String = "") {
                                 .padding(8.dp)
                         )
                     }
-                    else -> {}
+                    LogEntry.Status.PENDING -> {
+                        if (log.result.isNotEmpty()) {
+                            // Interim transcription text during progressive VAD transcription
+                            Text(
+                                text = stringResource(R.string.transcription_started),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = highlightText(
+                                    log.result,
+                                    searchQuery,
+                                    MaterialTheme.colorScheme.tertiary
+                                ),
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                                        shape = MaterialTheme.shapes.small
+                                    )
+                                    .padding(8.dp)
+                            )
+                        }
+                    }
                 }
             }
         }

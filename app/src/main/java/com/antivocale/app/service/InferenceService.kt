@@ -507,6 +507,68 @@ class InferenceService : Service() {
             }
         }
 
+        // Progressive path: VAD-segmented audio + progressive toggle enabled
+        val progressiveEnabled = AppContainer.preferencesManager.progressiveTranscription.first()
+        if (preprocessingResult.isVadSegmented && progressiveEnabled) {
+            Log.i(TAG, "VAD-segmented progressive path: $chunkCount segments")
+            val accumulatedText = StringBuilder()
+            var failedSegments = 0
+
+            for (i in preprocessingResult.chunks.indices) {
+                val segNumber = i + 1
+                // Only show segment progress as contentText before first result;
+                // once we have preview text, keep latest segment in contentText for OEM compatibility
+                if (accumulatedText.isEmpty()) {
+                    updateNotification(getString(R.string.progressive_initial))
+                }
+
+                val segResult = backend.transcribeAudio(
+                    prompt = prompt,
+                    audioData = preprocessingResult.chunks[i]
+                )
+
+                segResult.fold(
+                    onSuccess = { text ->
+                        if (text.isNotBlank()) {
+                            if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
+                            accumulatedText.append(text.trim())
+                            AppContainer.logsViewModel.updateInterimResult(request.taskId, accumulatedText.toString())
+                            // Show only the latest segment in the notification (contentText is capped ~100 chars on some OEMs).
+                            // The full accumulated text is visible in the app's LogsTab.
+                            val latestSegment = text.trim()
+                            Log.i(TAG, "Progressive preview update: segment ${latestSegment.length} chars, total ${accumulatedText.length} chars")
+                            updateNotification(
+                                contentText = latestSegment,
+                                durationSeconds = audioDurationSeconds,
+                                startTimeMillis = transcriptionStartTime,
+                                bigText = latestSegment,
+                                subText = getString(R.string.processing_segment_progress, segNumber, chunkCount)
+                            )
+                            Log.d(TAG, "Segment $segNumber/$chunkCount transcribed (${text.length} chars)")
+                        } else {
+                            Log.w(TAG, "Segment $segNumber/$chunkCount returned blank, skipping")
+                        }
+                    },
+                    onFailure = { error ->
+                        failedSegments++
+                        Log.e(TAG, "Segment $segNumber/$chunkCount failed", error)
+                    }
+                )
+            }
+
+            recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
+
+            return if (accumulatedText.isEmpty()) {
+                Result.failure(IllegalStateException("All $chunkCount segments failed to transcribe"))
+            } else {
+                val combined = accumulatedText.toString()
+                if (failedSegments > 0) {
+                    Log.w(TAG, "Completed with $failedSegments/$chunkCount failed segments")
+                }
+                Result.success(combined)
+            }
+        }
+
         // Multi-chunk path: parallel processing with progress tracking
         val completedChunks = AtomicInteger(0)
         val results = arrayOfNulls<String>(chunkCount)
@@ -685,7 +747,9 @@ class InferenceService : Service() {
         maxProgress: Int = 0,
         indeterminate: Boolean = false,
         durationSeconds: Int = 0,
-        startTimeMillis: Long = 0
+        startTimeMillis: Long = 0,
+        bigText: String? = null,
+        subText: String? = null
     ): Notification {
         val builder = NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(getString(R.string.app_name))
@@ -694,12 +758,19 @@ class InferenceService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .setOngoing(true)
             .setSilent(true)
-            .setProgress(maxProgress, progress, indeterminate)
             .addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
                 getString(R.string.action_cancel),
                 cancelPendingIntent
             )
+
+        // Show expandable transcription preview when provided
+        if (bigText != null) {
+            builder.setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
+            // Suppress progress bar when showing text preview
+        } else {
+            builder.setProgress(maxProgress, progress, indeterminate)
+        }
 
         // Show elapsed time chronometer if start time provided
         if (startTimeMillis > 0) {
@@ -707,16 +778,18 @@ class InferenceService : Service() {
             builder.setUsesChronometer(true)
         }
 
-        // Show duration in subtext if available
-        if (durationSeconds > 0) {
+        // Show subtext if provided (e.g., segment progress), otherwise show duration
+        if (subText != null) {
+            builder.setSubText(subText)
+        } else if (durationSeconds > 0) {
             builder.setSubText(formatDuration(durationSeconds))
         }
 
         return builder.build()
     }
 
-    private fun updateNotification(contentText: String, durationSeconds: Int = 0, startTimeMillis: Long = 0) {
-        notificationManager.notify(NOTIFICATION_ID, createNotification(contentText, durationSeconds = durationSeconds, startTimeMillis = startTimeMillis))
+    private fun updateNotification(contentText: String, durationSeconds: Int = 0, startTimeMillis: Long = 0, bigText: String? = null, subText: String? = null) {
+        notificationManager.notify(NOTIFICATION_ID, createNotification(contentText, durationSeconds = durationSeconds, startTimeMillis = startTimeMillis, bigText = bigText, subText = subText))
     }
 
     private fun updateNotificationWithProgress(

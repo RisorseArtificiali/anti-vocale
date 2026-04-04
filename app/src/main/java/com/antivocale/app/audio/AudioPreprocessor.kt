@@ -37,7 +37,8 @@ object AudioPreprocessor {
     data class PreprocessingResult(
         val chunks: List<ByteArray>,
         val totalDurationSeconds: Double,
-        val chunkCount: Int
+        val chunkCount: Int,
+        val isVadSegmented: Boolean = false
     )
 
     /**
@@ -105,13 +106,31 @@ object AudioPreprocessor {
         Log.d(TAG, "Audio duration: ${duration}s")
 
         // Apply VAD silence stripping if enabled
-        val pcmToProcess = if (enableVad && context != null) {
+        var pcmToProcess: ByteArray
+        if (enableVad && context != null) {
             try {
                 val floatSamples = VadProcessor.pcmBytesToFloats(pcmData)
                 val vadResult = VadProcessor.detectSpeech(context, floatSamples, vadNumThreads)
-
-                // Merge speech segments without boxing (avoid flatMap on FloatArray)
                 val segments = vadResult.speechSegments
+
+                // Multiple segments: return per-segment WAVs directly for progressive transcription
+                if (segments.size > 1) {
+                    val segmentWavs = segments.map { seg ->
+                        val segPcm = VadProcessor.floatsToPcmBytes(seg)
+                        createWavByteArray(segPcm)
+                    }
+                    Log.i(TAG, "VAD progressive: ${segments.size} segments, " +
+                            "${"%.1f".format(vadResult.originalDurationSeconds)}s → " +
+                            "${"%.1f".format(vadResult.totalSpeechDurationSeconds)}s speech")
+                    return PreprocessingResult(
+                        chunks = segmentWavs,
+                        totalDurationSeconds = vadResult.totalSpeechDurationSeconds,
+                        chunkCount = segmentWavs.size,
+                        isVadSegmented = true
+                    )
+                }
+
+                // Single segment: merge and use existing chunk logic
                 val totalSize = segments.sumOf { it.size }
                 val merged = FloatArray(totalSize)
                 var offset = 0
@@ -125,13 +144,13 @@ object AudioPreprocessor {
                 Log.i(TAG, "VAD stripped ${"%.1f".format(vadResult.originalDurationSeconds)}s → " +
                         "${"%.1f".format(strippedDuration)}s (${vadResult.segmentCount} segments)")
 
-                strippedPcm
+                pcmToProcess = strippedPcm
             } catch (e: Exception) {
                 Log.e(TAG, "VAD processing failed, using full audio", e)
-                pcmData
+                pcmToProcess = pcmData
             }
         } else {
-            pcmData
+            pcmToProcess = pcmData
         }
 
         val processedDuration = pcmToProcess.size.toDouble() / TARGET_SAMPLE_RATE / 2
