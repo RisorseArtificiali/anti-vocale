@@ -1,4 +1,16 @@
 <en-US>
+What's new in 1.3.0:
+
+• Added Qwen3-ASR as a 4th transcription backend (0.6B int8) for multilingual speech recognition
+• Added Gemma 4 E2B and E4B model support for multimodal on-device transcription
+• Added configurable transcription language setting
+• Added short audio fast-path that skips chunking for better responsiveness
+• Graceful dialog on unsupported devices instead of native crash
+• Centralized model management — deduplicated downloaders, backend IDs, and validation logic
+• Improved model unload button visibility (only shown when a model is loaded)
+• Restored distil-whisper model with correct multilingual metadata
+• Added many new unit and instrumented tests for better reliability
+
 What's new in 1.2.3:
 
 • Fixed Gemma transcription crash ("Conversation is closed") that could occur when the LiteRT-LM session was accessed concurrently
@@ -46,6 +58,18 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.3.0:
+
+• Aggiunto Qwen3-ASR come 4° backend di trascrizione (0.6B int8) per il riconoscimento vocale multilingue
+• Aggiunto supporto per i modelli Gemma 4 E2B ed E4B per la trascrizione multimodale on-device
+• Aggiunta impostazione configurabile per la lingua di trascrizione
+• Aggiunta via rapida per audio brevi che salta il chunking per maggiore reattività
+• Dialogo informativo su dispositivi non supportati invece del crash nativo
+• Gestione centralizzata dei modelli — eliminata duplicazione di downloader, ID backend e logica di validazione
+• Migliorata la visibilità del pulsante di scaricamento del modello (visibile solo quando un modello è caricato)
+• Ripristinato il modello distil-whisper con metadati multilingue corretti
+• Aggiunti molti nuovi test unitari e strumentati per maggiore affidabilità
+
 Novità della versione 1.2.3:
 
 • Risolto il crash della trascrizione con Gemma ("Conversation is closed") che poteva verificarsi quando la sessione LiteRT-LM veniva utilizzata in modo concorrente
