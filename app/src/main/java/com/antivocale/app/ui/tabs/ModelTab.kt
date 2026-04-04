@@ -508,8 +508,8 @@ fun ModelTab(
             }
         }
 
-        // Unload Model button — shown when any model is active
-        if (uiState.modelName.isNotBlank()) {
+        // Unload Model button — only shown when model is actually loaded in memory
+        if (uiState.status == ModelViewModel.ModelStatus.READY) {
             UnloadModelButton(
                 onClick = { showUnloadDialog = true },
                 isTranscribing = isTranscribing
