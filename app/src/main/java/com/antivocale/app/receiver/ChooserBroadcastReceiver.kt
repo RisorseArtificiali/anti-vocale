@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.antivocale.app.util.ComponentInfoParser
 
 /**
@@ -37,7 +38,8 @@ class ChooserBroadcastReceiver : BroadcastReceiver() {
         /**
          * Intent extra from Android chooser containing selected component info
          */
-        private const val EXTRA_CHOSEN_COMPONENT = "android.intent.extra.CHOSEN_COMPONENT"
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        internal const val EXTRA_CHOSEN_COMPONENT = "android.intent.extra.CHOSEN_COMPONENT"
     }
 
     override fun onReceive(context: Context?, intent: Intent?) {

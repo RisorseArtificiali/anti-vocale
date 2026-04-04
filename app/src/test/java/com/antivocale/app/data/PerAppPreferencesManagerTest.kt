@@ -1,5 +1,6 @@
 package com.antivocale.app.data
 
+import android.app.Application
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import junit.framework.TestCase
@@ -8,12 +9,18 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /**
  * Unit tests for PerAppPreferencesManager.
  *
  * Tests preference storage, retrieval, and updates using a test DataStore.
+ * Uses Robolectric to provide Android Context for DataStore file access.
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = Application::class)
 class PerAppPreferencesManagerTest {
 
     private lateinit var context: Context
@@ -221,5 +228,49 @@ class PerAppPreferencesManagerTest {
 
         val afterClear = manager.getCurrentPreferences("com.clear.test")
         assertFalse("Quick share back should be default after clear", afterClear.quickShareBack)
+    }
+
+    // --- Onboarding tests ---
+
+    @Test
+    fun testOnboardingDefaultsToUnseen() = runTest {
+        assertFalse(
+            "Onboarding should default to unseen for a fresh DataStore",
+            manager.hasSeenOnboarding.first()
+        )
+    }
+
+    @Test
+    fun testMarkOnboardingSeen() = runTest {
+        manager.markOnboardingSeen()
+
+        assertTrue(
+            "Onboarding should be seen after marking it",
+            manager.hasSeenOnboarding.first()
+        )
+    }
+
+    @Test
+    fun testOnboardingPersistsAcrossReads() = runTest {
+        manager.markOnboardingSeen()
+
+        val firstRead = manager.hasSeenOnboarding.first()
+        val secondRead = manager.hasSeenOnboarding.first()
+
+        assertTrue("First read should return true", firstRead)
+        assertTrue("Second read should also return true", secondRead)
+    }
+
+    @Test
+    fun testOnboardingSurvivesClearAllPreferences() = runTest {
+        manager.markOnboardingSeen()
+        assertTrue("Onboarding should be seen before clear", manager.hasSeenOnboarding.first())
+
+        manager.clearAllPreferences()
+
+        assertFalse(
+            "Onboarding flag should be cleared after clearAllPreferences",
+            manager.hasSeenOnboarding.first()
+        )
     }
 }
