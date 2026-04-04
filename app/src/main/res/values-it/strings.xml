@@ -36,6 +36,9 @@
     <string name="model_loading">Caricamento modello in memoria…</string>
     <string name="model_ready_inference">Modello pronto per l\'inferenza</string>
     <string name="model_load_failed">Caricamento fallito: %1$s</string>
+    <string name="device_incompatible_title">Dispositivo non supportato</string>
+    <string name="device_incompatible_arch">Questa app richiede un dispositivo ARM64. Non funziona su emulatori o dispositivi x86.</string>
+    <string name="device_incompatible_ram">Questo dispositivo non ha memoria sufficiente per eseguire modelli AI locali (minimo 4 GB di RAM richiesti).</string>
     <string name="model_unloaded">Modello scaricato</string>
     <string name="model_auto_unloaded">Modello scaricato per inattività</string>
     <string name="model_externally_loaded">Modello pronto (caricato esternamente)</string>

@@ -7,6 +7,7 @@ import android.os.Bundle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
@@ -20,6 +21,7 @@ import com.antivocale.app.di.AppContainer
 import com.antivocale.app.ui.MainScreen
 import com.antivocale.app.ui.theme.AntiVocaleTheme
 import com.antivocale.app.ui.theme.ThemeType
+import com.antivocale.app.util.DeviceCompatibility
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +31,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        if (!checkDeviceCompatibility()) return
+
         requestNotificationPermissionIfNeeded()
         setContent {
             // Collect theme preference and convert to ThemeType
@@ -58,5 +63,33 @@ class MainActivity : AppCompatActivity() {
                 requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
             }
         }
+    }
+
+    /**
+     * Checks device hardware compatibility before allowing the app to proceed.
+     * Shows a non-dismissible dialog if the device is unsupported.
+     *
+     * @return true if the device is compatible, false otherwise (activity should not proceed)
+     */
+    private fun checkDeviceCompatibility(): Boolean {
+        val result = DeviceCompatibility.check(this)
+        if (result is DeviceCompatibility.CheckResult.Compatible) return true
+
+        val reason = (result as DeviceCompatibility.CheckResult.Incompatible).reason
+        val message = when (reason) {
+            is DeviceCompatibility.CheckResult.Reason.UnsupportedArchitecture ->
+                getString(R.string.device_incompatible_arch)
+            is DeviceCompatibility.CheckResult.Reason.InsufficientRam ->
+                getString(R.string.device_incompatible_ram)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(R.string.device_incompatible_title)
+            .setMessage(message)
+            .setCancelable(false)
+            .setPositiveButton(android.R.string.ok) { _, _ -> finish() }
+            .show()
+
+        return false
     }
 }
