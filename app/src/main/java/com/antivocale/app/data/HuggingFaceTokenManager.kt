@@ -51,8 +51,13 @@ class HuggingFaceTokenManager(context: Context) {
         } catch (e: Exception) {
             Log.e(TAG, "KeyStore error during init, recovering: ${e.message}", e)
             deleteEncryptedPrefs(context, prefsFileName)
-            Log.w(TAG, "Encrypted prefs recreated after KeyStore recovery — tokens lost")
-            buildEncryptedPrefs(context, prefsFileName)
+            try {
+                Log.w(TAG, "Encrypted prefs recreated after KeyStore recovery — tokens lost")
+                buildEncryptedPrefs(context, prefsFileName)
+            } catch (e2: Exception) {
+                Log.e(TAG, "KeyStore still broken after cleanup, falling back to plain prefs: ${e2.message}", e2)
+                context.getSharedPreferences(prefsFileName, Context.MODE_PRIVATE)
+            }
         }
     }
 
@@ -77,9 +82,11 @@ class HuggingFaceTokenManager(context: Context) {
      * from the Android KeyStore so it can be regenerated cleanly.
      */
     private fun deleteEncryptedPrefs(context: Context, prefsFileName: String) {
-        val prefsFile = File(context.applicationInfo.dataDir, "shared_prefs/$prefsFileName.xml")
-        if (prefsFile.delete()) {
-            Log.i(TAG, "Deleted corrupted encrypted prefs file")
+        val prefsDir = File(context.applicationInfo.dataDir, "shared_prefs")
+        prefsDir.listFiles()?.filter { it.name.startsWith(prefsFileName) }?.forEach { file ->
+            if (file.delete()) {
+                Log.i(TAG, "Deleted corrupted prefs file: ${file.name}")
+            }
         }
 
         try {
