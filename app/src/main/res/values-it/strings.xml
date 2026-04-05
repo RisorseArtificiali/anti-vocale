@@ -437,4 +437,14 @@
     <string name="action_switch_anyway">Cambia comunque</string>
     <string name="warn_reset_stats_during_transcription">Una trascrizione è in corso. Resettare le statistiche non la interromperà, ma i tempi potrebbero essere incompleti.</string>
     <string name="cannot_unload_during_transcription">Impossibile scaricare: il modello è in uso per una trascrizione attiva</string>
+
+    <!-- Swipe Action Mode -->
+    <string name="swipe_action_title">Azione scorrimento</string>
+    <string name="swipe_action_description">Scegli cosa succede scorrendo a sinistra su una voce</string>
+    <string name="swipe_action_reveal">Mostra azioni</string>
+    <string name="swipe_action_immediate_delete">Eliminazione immediata</string>
+    <string name="swipe_action_copy_description">Copia trascrizione</string>
+    <string name="swipe_action_share_description">Condividi trascrizione</string>
+    <string name="swipe_action_delete_description">Elimina log</string>
+    <string name="swipe_action_copied">Trascrizione copiata</string>
 </resources>

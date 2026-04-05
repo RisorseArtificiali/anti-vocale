@@ -473,4 +473,14 @@
     <string name="dialog_unload_title">Unload Model?</string>
     <string name="dialog_unload_message">The model \'%1$s\' will be unloaded from memory. It will be automatically reloaded on the next transcription.</string>
     <string name="action_unload">Unload</string>
+
+    <!-- Swipe Action Mode -->
+    <string name="swipe_action_title">Swipe Action</string>
+    <string name="swipe_action_description">Choose what happens when you swipe left on a log entry</string>
+    <string name="swipe_action_reveal">Reveal actions</string>
+    <string name="swipe_action_immediate_delete">Immediate delete</string>
+    <string name="swipe_action_copy_description">Copy transcription</string>
+    <string name="swipe_action_share_description">Share transcription</string>
+    <string name="swipe_action_delete_description">Delete log</string>
+    <string name="swipe_action_copied">Transcription copied</string>
 </resources>

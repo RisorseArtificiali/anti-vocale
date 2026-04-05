@@ -17,6 +17,8 @@ import android.content.Intent
 import android.widget.Toast
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.ColorScheme
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
@@ -28,11 +30,93 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
+import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.AppContainer
+import com.antivocale.app.ui.components.SwipeAction
+import com.antivocale.app.ui.components.SwipeToRevealBox
+import com.antivocale.app.ui.components.rememberSwipeToRevealState
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import java.text.SimpleDateFormat
 import java.util.*
+
+/**
+ * Copies transcription text to clipboard and shows a toast.
+ */
+private fun copyTranscriptionToClipboard(context: Context, text: String) {
+    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+            as android.content.ClipboardManager
+    val clip = ClipData.newPlainText("transcription", text)
+    clipboard.setPrimaryClip(clip)
+    Toast.makeText(context, context.getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
+}
+
+/**
+ * Shares transcription text via an intent chooser.
+ */
+private fun shareTranscription(context: Context, text: String) {
+    val sendIntent = Intent().apply {
+        action = Intent.ACTION_SEND
+        putExtra(Intent.EXTRA_TEXT, text)
+        type = "text/plain"
+    }
+    val shareIntent = Intent.createChooser(
+        sendIntent,
+        context.getString(R.string.share_transcription)
+    )
+    context.startActivity(shareIntent)
+}
+
+/**
+ * Builds the list of swipe actions for a log entry.
+ * Copy and Share only appear for successful transcriptions with non-empty results.
+ * Delete always appears.
+ */
+private fun buildSwipeActions(
+    log: LogEntry,
+    context: Context,
+    viewModel: LogsViewModel,
+    onDeleted: (LogEntry) -> Unit,
+    copyLabel: String,
+    shareLabel: String,
+    deleteLabel: String,
+    colors: ColorScheme
+): List<SwipeAction> {
+    val actions = mutableListOf<SwipeAction>()
+
+    if (log.status == LogEntry.Status.SUCCESS && log.result.isNotEmpty()) {
+        actions.add(
+            SwipeAction(
+                icon = Icons.Default.ContentCopy,
+                label = copyLabel,
+                tint = colors.onPrimaryContainer,
+                background = colors.primaryContainer,
+                onClick = { copyTranscriptionToClipboard(context, log.result) }
+            )
+        )
+        actions.add(
+            SwipeAction(
+                icon = Icons.Default.Share,
+                label = shareLabel,
+                tint = colors.onSecondaryContainer,
+                background = colors.secondaryContainer,
+                onClick = { shareTranscription(context, log.result) }
+            )
+        )
+    }
+
+    actions.add(
+        SwipeAction(
+            icon = Icons.Default.Delete,
+            label = deleteLabel,
+            tint = colors.onErrorContainer,
+            background = colors.errorContainer,
+            onClick = { onDeleted(log); viewModel.deleteLog(log.id) }
+        )
+    )
+
+    return actions
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,9 +128,12 @@ fun LogsTab(
     val filteredLogs by viewModel.filteredLogs.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val context = LocalContext.current
+    val swipeActionMode by AppContainer.preferencesManager.swipeActionMode
+        .collectAsState(initial = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
 
     // Lifted expanded state — tracks which taskIds are expanded
     var expandedTaskIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var revealedLogId by remember { mutableStateOf<String?>(null) }
 
     var showClearDialog by remember { mutableStateOf(false) }
     var recentlyDeletedEntry by remember { mutableStateOf<LogEntry?>(null) }
@@ -238,54 +325,108 @@ fun LogsTab(
 
                     // Logs for this date
                     items(dateLogs, key = { it.id }) { log ->
-                        val dismissState = rememberSwipeToDismissBoxState(
-                            confirmValueChange = {
-                                if (it == SwipeToDismissBoxValue.EndToStart) {
-                                    recentlyDeletedEntry = log
-                                    viewModel.deleteLog(log.id)
-                                    true
-                                } else false
-                            }
-                        )
-                        SwipeToDismissBox(
-                            state = dismissState,
-                            backgroundContent = {
-                                val color by animateColorAsState(
-                                    if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
-                                        dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
-                                    ) MaterialTheme.colorScheme.errorContainer
-                                    else MaterialTheme.colorScheme.surface,
-                                    label = "swipe_bg"
-                                )
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(color)
-                                        .padding(horizontal = 20.dp),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    Icon(
-                                        Icons.Default.Delete,
-                                        contentDescription = stringResource(R.string.logs_delete_entry),
-                                        tint = MaterialTheme.colorScheme.onErrorContainer
-                                    )
+                        val isExpanded = log.taskId in expandedTaskIds
+
+                        if (swipeActionMode == "REVEAL") {
+                            // Swipe-to-reveal mode: show action buttons behind the card
+                            val revealState = rememberSwipeToRevealState()
+
+                            // Only one message can be revealed at a time
+                            LaunchedEffect(log.id, revealState.isRevealed) {
+                                if (revealState.isRevealed && revealedLogId != log.id) {
+                                    revealedLogId = log.id
                                 }
-                            },
-                            enableDismissFromStartToEnd = false
-                        ) {
-                            val isExpanded = log.taskId in expandedTaskIds
-                            LogEntryItem(
-                                log = log,
-                                searchQuery = searchQuery,
-                                expanded = isExpanded,
-                                onExpandChange = { expanded ->
-                                    expandedTaskIds = if (expanded) {
-                                        expandedTaskIds + log.taskId
-                                    } else {
-                                        expandedTaskIds - log.taskId
+                            }
+                            LaunchedEffect(log.id, revealedLogId) {
+                                if (revealedLogId != null && revealedLogId != log.id && revealState.isRevealed) {
+                                    revealState.reset()
+                                }
+                            }
+
+                            val colorScheme = MaterialTheme.colorScheme
+                            val actions = remember(log.id, log.status, log.result, colorScheme) {
+                                buildSwipeActions(
+                                    log = log,
+                                    context = context,
+                                    viewModel = viewModel,
+                                    onDeleted = { entry -> recentlyDeletedEntry = entry },
+                                    copyLabel = context.getString(R.string.swipe_action_copy_description),
+                                    shareLabel = context.getString(R.string.swipe_action_share_description),
+                                    deleteLabel = context.getString(R.string.swipe_action_delete_description),
+                                    colors = colorScheme
+                                )
+                            }
+                            SwipeToRevealBox(
+                                state = revealState,
+                                actions = actions
+                            ) {
+                                LogEntryItem(
+                                    log = log,
+                                    searchQuery = searchQuery,
+                                    expanded = isExpanded,
+                                    onExpandChange = { expanded ->
+                                        if (revealState.isRevealed) {
+                                            revealState.reset()
+                                        } else {
+                                            expandedTaskIds = if (expanded) {
+                                                expandedTaskIds + log.taskId
+                                            } else {
+                                                expandedTaskIds - log.taskId
+                                            }
+                                        }
                                     }
+                                )
+                            }
+                        } else {
+                            // Immediate delete mode: original SwipeToDismissBox behavior
+                            val dismissState = rememberSwipeToDismissBoxState(
+                                confirmValueChange = {
+                                    if (it == SwipeToDismissBoxValue.EndToStart) {
+                                        recentlyDeletedEntry = log
+                                        viewModel.deleteLog(log.id)
+                                        true
+                                    } else false
                                 }
                             )
+                            SwipeToDismissBox(
+                                state = dismissState,
+                                backgroundContent = {
+                                    val color by animateColorAsState(
+                                        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
+                                            dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+                                        ) MaterialTheme.colorScheme.errorContainer
+                                        else MaterialTheme.colorScheme.surface,
+                                        label = "swipe_bg"
+                                    )
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(color)
+                                            .padding(horizontal = 20.dp),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = stringResource(R.string.logs_delete_entry),
+                                            tint = MaterialTheme.colorScheme.onErrorContainer
+                                        )
+                                    }
+                                },
+                                enableDismissFromStartToEnd = false
+                            ) {
+                                LogEntryItem(
+                                    log = log,
+                                    searchQuery = searchQuery,
+                                    expanded = isExpanded,
+                                    onExpandChange = { expanded ->
+                                        expandedTaskIds = if (expanded) {
+                                            expandedTaskIds + log.taskId
+                                        } else {
+                                            expandedTaskIds - log.taskId
+                                        }
+                                    }
+                                )
+                            }
                         }
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -619,15 +760,7 @@ fun LogEntryItem(
                             ) {
                                 // Copy button
                                 TextButton(onClick = {
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
-                                        as android.content.ClipboardManager
-                                    val clip = ClipData.newPlainText("transcription", log.result)
-                                    clipboard.setPrimaryClip(clip)
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.copied_to_clipboard),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    copyTranscriptionToClipboard(context, log.result)
                                 }) {
                                     Icon(
                                         Icons.Default.ContentCopy,
@@ -639,16 +772,7 @@ fun LogEntryItem(
                                 }
                                 // Share button
                                 TextButton(onClick = {
-                                    val sendIntent = Intent().apply {
-                                        action = Intent.ACTION_SEND
-                                        putExtra(Intent.EXTRA_TEXT, log.result)
-                                        type = "text/plain"
-                                    }
-                                    val shareIntent = Intent.createChooser(
-                                        sendIntent,
-                                        context.getString(R.string.share_transcription)
-                                    )
-                                    context.startActivity(shareIntent)
+                                    shareTranscription(context, log.result)
                                 }) {
                                     Icon(
                                         Icons.Default.Share,

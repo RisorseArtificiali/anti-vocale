@@ -139,6 +139,14 @@ class SettingsViewModel(
             initialValue = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE
         )
 
+    // Swipe action mode preference
+    val swipeActionMode: StateFlow<String> = preferencesManager.swipeActionMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE
+        )
+
     // Current language from Per-App Language API (not DataStore)
     private val _currentLanguage = MutableStateFlow(LocaleManager.getCurrentLocaleCode())
     val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()
@@ -278,6 +286,15 @@ class SettingsViewModel(
     fun saveTranscriptionLanguage(language: String) {
         viewModelScope.launch {
             preferencesManager.saveTranscriptionLanguage(language)
+        }
+    }
+
+    /**
+     * Saves the swipe action mode preference.
+     */
+    fun saveSwipeActionMode(mode: String) {
+        viewModelScope.launch {
+            preferencesManager.saveSwipeActionMode(mode)
         }
     }
 

@@ -49,6 +49,8 @@ class PreferencesManager(private val context: Context) {
         private val THREAD_COUNT = intPreferencesKey("thread_count")
         // Transcription language ("auto" for auto-detect, or ISO 639-1 code)
         private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
+        // Swipe action mode ("REVEAL" or "IMMEDIATE_DELETE")
+        private val SWIPE_ACTION_MODE = stringPreferencesKey("swipe_action_mode")
 
         // Default values (single source of truth)
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
@@ -61,6 +63,7 @@ class PreferencesManager(private val context: Context) {
         const val DEFAULT_TRANSCRIPTION_BACKEND = "llm"
         const val DEFAULT_LANGUAGE = "system"
         const val DEFAULT_TRANSCRIPTION_LANGUAGE = "auto"
+        const val DEFAULT_SWIPE_ACTION_MODE = "REVEAL"
     }
 
     /**
@@ -82,7 +85,8 @@ class PreferencesManager(private val context: Context) {
         val progressiveTranscription: Boolean = DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         val defaultPrompt: String = DEFAULT_PROMPT_VALUE,
         val threadCount: Int = DEFAULT_THREAD_COUNT,
-        val transcriptionLanguage: String = DEFAULT_TRANSCRIPTION_LANGUAGE
+        val transcriptionLanguage: String = DEFAULT_TRANSCRIPTION_LANGUAGE,
+        val swipeActionMode: String = DEFAULT_SWIPE_ACTION_MODE
     )
 
     /**
@@ -104,7 +108,8 @@ class PreferencesManager(private val context: Context) {
         progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         defaultPrompt = this[DEFAULT_PROMPT] ?: DEFAULT_PROMPT_VALUE,
         threadCount = this[THREAD_COUNT] ?: DEFAULT_THREAD_COUNT,
-        transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: DEFAULT_TRANSCRIPTION_LANGUAGE
+        transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: DEFAULT_TRANSCRIPTION_LANGUAGE,
+        swipeActionMode = this[SWIPE_ACTION_MODE] ?: DEFAULT_SWIPE_ACTION_MODE
     )
 
     /**
@@ -384,5 +389,22 @@ class PreferencesManager(private val context: Context) {
             preferences[TRANSCRIPTION_LANGUAGE] = language
         }
         cache.updateAndGet { it.copy(transcriptionLanguage = language) }
+    }
+
+    /**
+     * Flow of the swipe action mode preference.
+     * Returns "REVEAL" by default.
+     */
+    val swipeActionMode: Flow<String> = context.dataStore.data.map { it.toCached().swipeActionMode }
+        .onStart { emit(cache.get().swipeActionMode) }
+
+    /**
+     * Saves the swipe action mode preference.
+     */
+    suspend fun saveSwipeActionMode(mode: String) {
+        context.dataStore.edit { preferences ->
+            preferences[SWIPE_ACTION_MODE] = mode
+        }
+        cache.updateAndGet { it.copy(swipeActionMode = mode) }
     }
 }

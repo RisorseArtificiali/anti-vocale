@@ -70,6 +70,7 @@ fun SettingsTab(
     val currentLanguage by viewModel.currentLanguage.collectAsState()
     val currentTranscriptionLanguage by viewModel.currentTranscriptionLanguage.collectAsState()
     val currentTheme by viewModel.currentTheme.collectAsState()
+    val swipeActionMode by viewModel.swipeActionMode.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
     val tokenInput by viewModel.tokenInput.collectAsState()
     val oauthState by viewModel.oauthState.collectAsState()
@@ -1035,6 +1036,86 @@ fun SettingsTab(
                         viewModel.saveProgressiveTranscription(enabled)
                     }
                 )
+            }
+        }
+
+        // Swipe Action Setting
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Swipe,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.swipe_action_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.swipe_action_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                var swipeActionExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = swipeActionExpanded,
+                    onExpandedChange = { swipeActionExpanded = it }
+                ) {
+                    TextField(
+                        value = when (swipeActionMode) {
+                            "REVEAL" -> stringResource(R.string.swipe_action_reveal)
+                            "IMMEDIATE_DELETE" -> stringResource(R.string.swipe_action_immediate_delete)
+                            else -> swipeActionMode
+                        },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.swipe_action_title)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = swipeActionExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        enabled = !uiState.isSaving,
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = swipeActionExpanded,
+                        onDismissRequest = { swipeActionExpanded = false },
+                        modifier = Modifier.exposedDropdownSize()
+                    ) {
+                        listOf(
+                            "REVEAL" to stringResource(R.string.swipe_action_reveal),
+                            "IMMEDIATE_DELETE" to stringResource(R.string.swipe_action_immediate_delete)
+                        ).forEach { (mode, label) ->
+                            DropdownMenuItem(
+                                text = { Text(label) },
+                                onClick = {
+                                    viewModel.saveSwipeActionMode(mode)
+                                    swipeActionExpanded = false
+                                },
+                                trailingIcon = if (swipeActionMode == mode) {
+                                    { Icon(Icons.Default.Check, contentDescription = null) }
+                                } else null
+                            )
+                        }
+                    }
+                }
             }
         }
 
