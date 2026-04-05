@@ -308,7 +308,7 @@ class InferenceService : Service() {
                         // Auto-copy if enabled (based on per-app preferences)
                         autoCopyIfEnabled(response, request.sourcePackage)
                         // Show result notification with per-app preferences
-                        showResultNotification(response, request.sourcePackage)
+                        showResultNotification(response, request.sourcePackage, request.taskId)
                     }
                 },
                 onFailure = { error ->
@@ -1194,7 +1194,7 @@ class InferenceService : Service() {
         notificationManager.createNotificationChannel(channel)
     }
 
-    private suspend fun showResultNotification(transcriptionText: String, sourcePackage: String?) {
+    private suspend fun showResultNotification(transcriptionText: String, sourcePackage: String?, taskId: String) {
         // Get per-app preferences
         val prefs = if (sourcePackage != null) {
             try {
@@ -1219,7 +1219,7 @@ class InferenceService : Service() {
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
 
-        val openPendingIntent = buildLaunchPendingIntent()
+        val openPendingIntent = buildLaunchPendingIntent(highlightTaskId = taskId)
 
         val isTruncated = transcriptionText.length > 100
         val previewText = if (isTruncated) {
@@ -1317,10 +1317,23 @@ class InferenceService : Service() {
      * @param navigateToModelTab when true, passes an extra so the activity
      *   opens on the Model tab instead of the default Logs tab.
      */
-    private fun buildLaunchPendingIntent(navigateToModelTab: Boolean = false): android.app.PendingIntent {
-        val requestCode = if (navigateToModelTab) RC_LAUNCH_MODEL_TAB else RC_LAUNCH_DEFAULT
+    private fun buildLaunchPendingIntent(
+        navigateToModelTab: Boolean = false,
+        highlightTaskId: String? = null
+    ): android.app.PendingIntent {
+        val requestCode = when {
+            highlightTaskId != null -> highlightTaskId.hashCode()
+            navigateToModelTab -> RC_LAUNCH_MODEL_TAB
+            else -> RC_LAUNCH_DEFAULT
+        }
         val openIntent = Intent(this, MainActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            if (highlightTaskId != null) {
+                // SINGLE_TOP allows onNewIntent() when activity already exists
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, highlightTaskId)
+            } else {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
             if (navigateToModelTab) {
                 putExtra(MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, true)
             }

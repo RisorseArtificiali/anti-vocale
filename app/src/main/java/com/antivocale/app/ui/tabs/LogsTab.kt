@@ -4,11 +4,13 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.*
+import kotlinx.coroutines.flow.first
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -34,11 +36,17 @@ import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
+fun LogsTab(
+    viewModel: LogsViewModel = AppContainer.logsViewModel,
+    highlightTaskId: String? = null
+) {
     val logs by viewModel.logs.collectAsState()
     val filteredLogs by viewModel.filteredLogs.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val context = LocalContext.current
+
+    // Lifted expanded state — tracks which taskIds are expanded
+    var expandedTaskIds by remember { mutableStateOf<Set<String>>(emptySet()) }
 
     var showClearDialog by remember { mutableStateOf(false) }
     var recentlyDeletedEntry by remember { mutableStateOf<LogEntry?>(null) }
@@ -193,7 +201,29 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
                 }
             }
         } else {
+            val listState = rememberLazyListState()
+
+            // Scroll to and expand the highlighted entry
+            LaunchedEffect(highlightTaskId) {
+                val taskId = highlightTaskId ?: return@LaunchedEffect
+                // Clear active search so entry is visible
+                if (searchQuery.isNotEmpty()) {
+                    viewModel.clearSearch()
+                    // Wait for clearSearch to propagate to filteredLogs
+                    viewModel.filteredLogs.first()
+                }
+                // Find flat index in grouped list
+                val freshGrouped = groupLogsByDate(filteredLogs)
+                val flatIndex = indexOfTaskId(freshGrouped, taskId)
+                if (flatIndex >= 0) {
+                    expandedTaskIds = expandedTaskIds + taskId
+                    listState.animateScrollToItem(flatIndex)
+                }
+                viewModel.clearHighlight()
+            }
+
             LazyColumn(
+                state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
                     top = 4.dp,
@@ -243,7 +273,19 @@ fun LogsTab(viewModel: LogsViewModel = AppContainer.logsViewModel) {
                             },
                             enableDismissFromStartToEnd = false
                         ) {
-                            LogEntryItem(log = log, searchQuery = searchQuery)
+                            val isExpanded = log.taskId in expandedTaskIds
+                            LogEntryItem(
+                                log = log,
+                                searchQuery = searchQuery,
+                                expanded = isExpanded,
+                                onExpandChange = { expanded ->
+                                    expandedTaskIds = if (expanded) {
+                                        expandedTaskIds + log.taskId
+                                    } else {
+                                        expandedTaskIds - log.taskId
+                                    }
+                                }
+                            )
                         }
                         HorizontalDivider(
                             modifier = Modifier.padding(horizontal = 16.dp),
@@ -291,7 +333,7 @@ private fun DateGroupHeader(label: String, count: Int) {
     }
 }
 
-private data class DateGroup(val label: String, val logs: List<LogEntry>)
+internal data class DateGroup(val label: String, val logs: List<LogEntry>)
 
 private fun groupLogsByDate(logs: List<LogEntry>): List<DateGroup> {
     val now = System.currentTimeMillis()
@@ -351,17 +393,39 @@ private fun startOfDay(timestamp: Long): Long {
     return cal.timeInMillis
 }
 
+/**
+ * Computes the flat LazyColumn index for a given taskId within grouped logs.
+ * Each group contributes 1 header item + N entry items.
+ * Returns -1 if not found.
+ */
+internal fun indexOfTaskId(groupedLogs: List<DateGroup>, taskId: String): Int {
+    var flatIndex = 0
+    for (group in groupedLogs) {
+        // Date group header occupies one slot
+        flatIndex++
+        for (log in group.logs) {
+            if (log.taskId == taskId) return flatIndex
+            flatIndex++
+        }
+    }
+    return -1
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogEntryItem(log: LogEntry, searchQuery: String = "") {
-    var expanded by remember { mutableStateOf(false) }
+fun LogEntryItem(
+    log: LogEntry,
+    searchQuery: String = "",
+    expanded: Boolean = false,
+    onExpandChange: (Boolean) -> Unit = {}
+) {
     val context = LocalContext.current
 
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 6.dp),
-        onClick = { expanded = !expanded }
+        onClick = { onExpandChange(!expanded) }
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             // === COLLAPSED VIEW ===

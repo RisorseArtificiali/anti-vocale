@@ -130,4 +130,16 @@ class LogsViewModel(private val logDao: LogDao) : ViewModel() {
     fun clearSearch() {
         _searchQuery.value = ""
     }
+
+    // One-shot highlight signal: set a taskId to scroll-to + expand, then cleared by the UI
+    private val _highlightTaskId = MutableStateFlow<String?>(null)
+    val highlightTaskId: StateFlow<String?> = _highlightTaskId.asStateFlow()
+
+    fun highlightLogEntry(taskId: String) {
+        _highlightTaskId.value = taskId
+    }
+
+    fun clearHighlight() {
+        _highlightTaskId.value = null
+    }
 }

@@ -1,6 +1,7 @@
 package com.antivocale.app
 
 import android.Manifest
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
@@ -28,6 +29,9 @@ class MainActivity : AppCompatActivity() {
     companion object {
         /** Intent extra: when true, the app opens on the Model tab. */
         const val EXTRA_NAVIGATE_TO_MODEL_TAB = "navigate_to_model_tab"
+
+        /** Intent extra: taskId of a log entry to highlight (scroll-to + expand). */
+        const val EXTRA_HIGHLIGHT_TASK_ID = "highlight_task_id"
     }
 
     private val requestNotificationPermission =
@@ -41,6 +45,13 @@ class MainActivity : AppCompatActivity() {
 
         val startOnModelTab = intent.getBooleanExtra(EXTRA_NAVIGATE_TO_MODEL_TAB, false)
         if (startOnModelTab) intent.removeExtra(EXTRA_NAVIGATE_TO_MODEL_TAB)
+
+        // Handle notification highlight (cold start)
+        val highlightTaskId = intent.getStringExtra(EXTRA_HIGHLIGHT_TASK_ID)
+        if (highlightTaskId != null) {
+            AppContainer.logsViewModel.highlightLogEntry(highlightTaskId)
+            intent.removeExtra(EXTRA_HIGHLIGHT_TASK_ID)
+        }
 
         requestNotificationPermissionIfNeeded()
         setContent {
@@ -60,6 +71,14 @@ class MainActivity : AppCompatActivity() {
                     MainScreen(startOnModelTab = startOnModelTab)
                 }
             }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        intent.getStringExtra(EXTRA_HIGHLIGHT_TASK_ID)?.let {
+            AppContainer.logsViewModel.highlightLogEntry(it)
         }
     }
 
