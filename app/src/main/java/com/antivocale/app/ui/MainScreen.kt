@@ -18,8 +18,8 @@ import com.antivocale.app.ui.tabs.SettingsTab
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen() {
-    var selectedTabIndex by remember { mutableIntStateOf(0) }
+fun MainScreen(startOnModelTab: Boolean = false) {
+    var selectedTabIndex by remember { mutableIntStateOf(if (startOnModelTab) 1 else 0) }
 
     // Navigation callback to switch tabs
     fun navigateToTab(index: Int) {

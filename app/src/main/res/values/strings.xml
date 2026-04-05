@@ -398,6 +398,11 @@
     <string name="notification_channel_result">Transcription Result</string>
     <string name="notification_channel_result_description">Notification when transcription is complete</string>
 
+    <!-- No-model notification -->
+    <string name="notification_no_model_title">No transcription model</string>
+    <string name="notification_no_model_message">Open the app to download a transcription model</string>
+    <string name="notification_no_model_action">Open app</string>
+
     <!-- Dismiss -->
     <string name="dismiss">Dismiss</string>
 

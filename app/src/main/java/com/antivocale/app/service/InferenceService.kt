@@ -15,6 +15,7 @@ import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.antivocale.app.R
+import com.antivocale.app.MainActivity
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.di.AppContainer
@@ -55,6 +56,10 @@ class InferenceService : Service() {
         const val RESULT_CHANNEL_ID = "transcription_result_channel"
         const val NOTIFICATION_ID = 1001
         const val RESULT_NOTIFICATION_ID = 1002
+
+        // PendingIntent request codes
+        private const val RC_LAUNCH_DEFAULT = 0
+        private const val RC_LAUNCH_MODEL_TAB = 1
 
         // Extras for share source detection
         const val EXTRA_SOURCE = "source"
@@ -275,7 +280,13 @@ class InferenceService : Service() {
                         val errorMsg = "Failed to load backend: ${error.message}"
                         logsViewModel.logError(request.taskId, errorMsg, System.currentTimeMillis() - startTime)
                         sendErrorReply(request.taskId, "BACKEND_LOAD_FAILED", errorMsg)
-                        if (isShareRequest) showErrorNotification(errorMsg)
+                        if (isShareRequest) {
+                            if (isNoModelConfiguredError(error)) {
+                                showNoModelNotification()
+                            } else {
+                                showErrorNotification(errorMsg)
+                            }
+                        }
                         return
                     }
                 )
@@ -1208,15 +1219,7 @@ class InferenceService : Service() {
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
 
-        val openIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-        }
-        val openPendingIntent = android.app.PendingIntent.getActivity(
-            this,
-            0,
-            openIntent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
+        val openPendingIntent = buildLaunchPendingIntent()
 
         val isTruncated = transcriptionText.length > 100
         val previewText = if (isTruncated) {
@@ -1308,26 +1311,69 @@ class InferenceService : Service() {
         postUniqueNotification(notification, "Showed result notification (${transcriptionText.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction}")
     }
 
-    private fun showErrorNotification(errorMessage: String) {
-        val openIntent = packageManager.getLaunchIntentForPackage(packageName)?.apply {
+    /**
+     * Builds a [PendingIntent] that launches the app's main activity.
+     *
+     * @param navigateToModelTab when true, passes an extra so the activity
+     *   opens on the Model tab instead of the default Logs tab.
+     */
+    private fun buildLaunchPendingIntent(navigateToModelTab: Boolean = false): android.app.PendingIntent {
+        val requestCode = if (navigateToModelTab) RC_LAUNCH_MODEL_TAB else RC_LAUNCH_DEFAULT
+        val openIntent = Intent(this, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            if (navigateToModelTab) {
+                putExtra(MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, true)
+            }
         }
-        val openPendingIntent = android.app.PendingIntent.getActivity(
-            this,
-            0,
-            openIntent,
+        return android.app.PendingIntent.getActivity(
+            this, requestCode, openIntent,
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
+    }
 
+    private fun showErrorNotification(errorMessage: String) {
         val notification = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
             .setContentTitle(getString(R.string.transcription_failed))
             .setContentText(errorMessage)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(openPendingIntent)
+            .setContentIntent(buildLaunchPendingIntent())
             .setAutoCancel(true)
             .build()
 
         postUniqueNotification(notification, "Showed error notification: $errorMessage")
+    }
+
+    /**
+     * Returns true if the error indicates that no model is configured,
+     * which should trigger a guidance notification instead of a generic error.
+     */
+    private fun isNoModelConfiguredError(error: Throwable): Boolean {
+        val msg = error.message ?: return false
+        return msg.contains("No ") && msg.contains("model configured")
+    }
+
+    /**
+     * Shows a user-friendly notification when no transcription model is configured,
+     * with an action button to open the app to the Model tab.
+     */
+    private fun showNoModelNotification() {
+        val openPendingIntent = buildLaunchPendingIntent(navigateToModelTab = true)
+
+        val notification = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
+            .setContentTitle(getString(R.string.notification_no_model_title))
+            .setContentText(getString(R.string.notification_no_model_message))
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(openPendingIntent)
+            .setAutoCancel(true)
+            .addAction(
+                android.R.drawable.ic_menu_set_as,
+                getString(R.string.notification_no_model_action),
+                openPendingIntent
+            )
+            .build()
+
+        postUniqueNotification(notification, "Showed no-model notification")
     }
 }

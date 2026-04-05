@@ -25,6 +25,11 @@ import com.antivocale.app.util.DeviceCompatibility
 
 class MainActivity : AppCompatActivity() {
 
+    companion object {
+        /** Intent extra: when true, the app opens on the Model tab. */
+        const val EXTRA_NAVIGATE_TO_MODEL_TAB = "navigate_to_model_tab"
+    }
+
     private val requestNotificationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { _ -> }
 
@@ -33,6 +38,9 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
 
         if (!checkDeviceCompatibility()) return
+
+        val startOnModelTab = intent.getBooleanExtra(EXTRA_NAVIGATE_TO_MODEL_TAB, false)
+        if (startOnModelTab) intent.removeExtra(EXTRA_NAVIGATE_TO_MODEL_TAB)
 
         requestNotificationPermissionIfNeeded()
         setContent {
@@ -49,7 +57,7 @@ class MainActivity : AppCompatActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainScreen()
+                    MainScreen(startOnModelTab = startOnModelTab)
                 }
             }
         }
