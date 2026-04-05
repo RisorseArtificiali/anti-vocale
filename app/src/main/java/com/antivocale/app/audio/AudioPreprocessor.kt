@@ -113,13 +113,33 @@ object AudioPreprocessor {
                 val vadResult = VadProcessor.detectSpeech(context, floatSamples, vadNumThreads)
                 val segments = vadResult.speechSegments
 
-                // Multiple segments: return per-segment WAVs directly for progressive transcription
+                // Multiple segments: merge adjacent ones up to 28s (WhisperX-style).
+                // No overlap = no repetition. Boundaries are on VAD silence gaps.
                 if (segments.size > 1) {
-                    val segmentWavs = segments.map { seg ->
+                    val maxMergeSamples = TARGET_SAMPLE_RATE * 28 // 28s, under Whisper's 30s limit
+
+                    val mergedSegments = mutableListOf<FloatArray>()
+                    var current = segments[0].clone()
+
+                    for (i in 1 until segments.size) {
+                        if (current.size + segments[i].size <= maxMergeSamples) {
+                            // Merge: concatenate audio samples directly
+                            val combined = FloatArray(current.size + segments[i].size)
+                            System.arraycopy(current, 0, combined, 0, current.size)
+                            System.arraycopy(segments[i], 0, combined, current.size, segments[i].size)
+                            current = combined
+                        } else {
+                            mergedSegments.add(current)
+                            current = segments[i].clone()
+                        }
+                    }
+                    mergedSegments.add(current)
+
+                    val segmentWavs = mergedSegments.map { seg ->
                         val segPcm = VadProcessor.floatsToPcmBytes(seg)
                         createWavByteArray(segPcm)
                     }
-                    Log.i(TAG, "VAD progressive: ${segments.size} segments, " +
+                    Log.i(TAG, "VAD progressive: ${segments.size} raw → ${mergedSegments.size} merged segments, " +
                             "${"%.1f".format(vadResult.originalDurationSeconds)}s → " +
                             "${"%.1f".format(vadResult.totalSpeechDurationSeconds)}s speech")
                     return PreprocessingResult(

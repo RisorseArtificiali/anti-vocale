@@ -22,12 +22,12 @@ object VadProcessor {
     private const val VAD_MODEL_PATH = "models/silero_vad.int8.onnx"
     private const val SAMPLE_RATE = 16000
     private const val WINDOW_SIZE = 512  // ~32ms at 16kHz
-    private const val SPEECH_PAD_MS = 400  // padding around each speech segment
-    private const val SPEECH_PAD_SAMPLES = SAMPLE_RATE * SPEECH_PAD_MS / 1000  // 6400 samples
+    private const val SPEECH_PAD_MS = 200  // minimal padding to avoid merging close segments
+    private const val SPEECH_PAD_SAMPLES = SAMPLE_RATE * SPEECH_PAD_MS / 1000  // 3200 samples
 
     private class RawSegment(val start: Int, val end: Int)
 
-    data class VadResult(
+data class VadResult(
         val speechSegments: List<FloatArray>,
         val totalSpeechDurationSeconds: Double,
         val segmentCount: Int,
@@ -76,25 +76,38 @@ object VadProcessor {
                 offset += windowLen
             }
 
-            // Flush to emit final pending segment
-            vad.flush()
-
-            // Drain all speech segments with their offsets
+            // Drain segments emitted during acceptWaveform (BEFORE flush)
             val rawSegments = mutableListOf<RawSegment>()
             val totalSamples = pcmSamples.size
 
             while (!vad.empty()) {
                 val segment: SpeechSegment = vad.front()
+                val start = segment.start.coerceIn(0, totalSamples)
+                val end = (segment.start + segment.samples.size).coerceIn(0, totalSamples)
+                val sampleCount = end - start
                 vad.pop()
 
-                if (segment.samples.size >= SAMPLE_RATE / 4) {  // >= 250ms
-                    val start = segment.start.coerceIn(0, totalSamples)
-                    val end = (segment.start + segment.samples.size).coerceIn(0, totalSamples)
+                if (sampleCount >= SAMPLE_RATE / 4) {
                     rawSegments.add(RawSegment(start, end))
                 }
             }
 
-            // Apply padding and merge overlapping segments
+            // Flush to emit final pending segment
+            vad.flush()
+
+            while (!vad.empty()) {
+                val segment: SpeechSegment = vad.front()
+                val start = segment.start.coerceIn(0, totalSamples)
+                val end = (segment.start + segment.samples.size).coerceIn(0, totalSamples)
+                val sampleCount = end - start
+                vad.pop()
+
+                if (sampleCount >= SAMPLE_RATE / 4) {
+                    rawSegments.add(RawSegment(start, end))
+                }
+            }
+
+            // Apply minimal padding and merge overlapping segments (for progressive display)
             val finalSegments = if (rawSegments.isEmpty()) {
                 Log.w(TAG, "VAD detected no speech, falling back to full audio")
                 listOf(pcmSamples)
@@ -128,7 +141,7 @@ object VadProcessor {
 
             Log.i(TAG, "VAD completed in ${vadDurationMs}ms: ${finalSegments.size} segments, " +
                     "${"%.1f".format(totalSpeechDuration)}s speech from ${"%.1f".format(originalDurationSeconds)}s " +
-                    "(+${SPEECH_PAD_MS}ms padding)")
+                    "(+${SPEECH_PAD_MS}ms seg padding)")
 
             return VadResult(
                 speechSegments = finalSegments,

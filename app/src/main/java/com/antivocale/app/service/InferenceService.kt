@@ -79,6 +79,7 @@ class InferenceService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
     private val requestQueue = ConcurrentLinkedQueue<PendingRequest>()
     private var currentProcessingJob: Job? = null
+
     private var transcriptionStartTime: Long = 0
 
     // O(1) queue size tracker — avoids ConcurrentLinkedQueue.size traversal on every 200ms timer tick
@@ -530,8 +531,9 @@ class InferenceService : Service() {
                 segResult.fold(
                     onSuccess = { text ->
                         if (text.isNotBlank()) {
+                            val trimmed = text.trim()
                             if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
-                            accumulatedText.append(text.trim())
+                            accumulatedText.append(trimmed)
                             AppContainer.logsViewModel.updateInterimResult(request.taskId, accumulatedText.toString())
                             // Show only the latest segment in the notification (contentText is capped ~100 chars on some OEMs).
                             // The full accumulated text is visible in the app's LogsTab.
