@@ -126,6 +126,23 @@ class LogsViewModel(private val logDao: LogDao) : ViewModel() {
         }
     }
 
+    /**
+     * Marks a log entry as ERROR only if it is still PENDING.
+     * Used in finally/cancellation paths to avoid overwriting a completed result.
+     */
+    suspend fun cancelIfPending(taskId: String, errorMessage: String, durationMs: Long) {
+        val entity = logDao.getByTaskId(taskId) ?: return
+        if (entity.status == LogEntry.Status.PENDING.name) {
+            logDao.update(
+                entity.toLogEntry().copy(
+                    status = LogEntry.Status.ERROR,
+                    errorMessage = errorMessage,
+                    durationMs = durationMs
+                ).toEntity()
+            )
+        }
+    }
+
     fun onSearchQueryChanged(query: String) {
         _searchQuery.value = query
     }

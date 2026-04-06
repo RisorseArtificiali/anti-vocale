@@ -319,6 +319,17 @@ class InferenceService : Service() {
                 }
             )
 
+        } catch (e: CancellationException) {
+            Log.i(TAG, "Request ${request.taskId} cancelled")
+            // Mark the entry as cancelled if it's still PENDING,
+            // so it doesn't stay stuck forever in the logs.
+            val duration = System.currentTimeMillis() - startTime
+            logsViewModel.cancelIfPending(
+                request.taskId,
+                getString(R.string.logs_transcription_cancelled),
+                duration
+            )
+            throw e // re-throw so the coroutine is properly cancelled
         } catch (e: Exception) {
             Log.e(TAG, "Error processing request", e)
             val duration = System.currentTimeMillis() - startTime

@@ -78,6 +78,7 @@
     <string name="logs_error_label">Errore:</string>
     <string name="logs_task_id">ID Task: %1$s</string>
     <string name="logs_unknown_error">Errore sconosciuto</string>
+    <string name="logs_transcription_cancelled">Trascrizione annullata</string>
     <string name="logs_search_placeholder">Cerca trascrizioni…</string>
     <string name="logs_search_no_results">Nessuna trascrizione trovata</string>
     <string name="logs_search_no_results_hint">Prova un termine di ricerca diverso</string>
