@@ -1,4 +1,14 @@
 <en-US>
+What's new in 1.3.1:
+
+• Complete Italian translation — 28 previously missing strings now translated (Performance Stats, Transcription ETA, Progressive Display, model dialogs)
+• Fixed "Today"/"Yesterday" showing in English in the Logs tab on Italian locale
+• Fixed English strings appearing throughout the Settings tab when using Italian
+• Fixed notification service showing English error and progress messages on Italian locale
+• Fixed accessibility content descriptions not localized (screen reader support)
+• Fixed cancelled transcriptions getting stuck as PENDING instead of being marked as ERROR
+• Fixed notification tap not scrolling to the transcribed message in the Logs tab
+
 What's new in 1.3.0:
 
 • Added Qwen3-ASR as a 4th transcription backend (0.6B int8) for multilingual speech recognition
@@ -58,6 +68,16 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.3.1:
+
+• Traduzione italiana completa — tradotte 28 stringhe precedentemente mancanti (Statistiche Prestazioni, ETA Trascrizione, Visualizzazione Progressiva, finestre modello)
+• Risolto "Today"/"Yesterday" visualizzati in inglese nella scheda Registro con lingua italiana
+• Risolte stringhe inglesi nella scheda Impostazioni quando si usa l'italiano
+• Risolto servizio notifiche che mostrava messaggi di errore e progresso in inglese con lingua italiana
+• Risolte descrizioni dei contenuti per l'accessibilità non localizzate (supporto screen reader)
+• Risolte trascrizioni annullate bloccate come IN ATTESA invece di essere segnate come ERRORE
+• Risolto il tocco sulla notifica che non scorreva al messaggio trascritto nella scheda Registro
+
 Novità della versione 1.3.0:
 
 • Aggiunto Qwen3-ASR come 4° backend di trascrizione (0.6B int8) per il riconoscimento vocale multilingue

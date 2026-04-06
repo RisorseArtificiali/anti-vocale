@@ -202,7 +202,7 @@ private fun AppListItem(
                     icon.intrinsicWidth.coerceAtMost(48),
                     icon.intrinsicHeight.coerceAtMost(48)
                 ).asImageBitmap(),
-                contentDescription = "$appName icon",
+                contentDescription = stringResource(R.string.app_icon, appName),
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)

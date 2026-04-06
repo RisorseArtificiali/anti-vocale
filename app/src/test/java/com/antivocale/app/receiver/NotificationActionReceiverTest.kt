@@ -78,7 +78,7 @@ class NotificationActionReceiverTest {
         receiver.onReceive(context, intent)
 
         verify(exactly = 1) { clipboardManager.setPrimaryClip(any()) }
-        verify { ClipData.newPlainText("Transcription", transcriptionText) }
+        verify { ClipData.newPlainText(any<String>(), transcriptionText) }
     }
 
     @Test

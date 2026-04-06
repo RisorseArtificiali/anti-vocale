@@ -123,7 +123,7 @@ class InferenceService : Service() {
         }
 
         // Start foreground
-        startForeground(NOTIFICATION_ID, createNotification("Processing request..."))
+        startForeground(NOTIFICATION_ID, createNotification(getString(R.string.processing_audio)))
 
         // File path is already a local path (copied by ShareReceiverActivity before we got here)
         val filePath = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
@@ -278,7 +278,7 @@ class InferenceService : Service() {
                         TranscriptionBackendManager.setKeepAliveTimeout(timeout)
                     },
                     onFailure = { error ->
-                        val errorMsg = "Failed to load backend: ${error.message}"
+                        val errorMsg = getString(R.string.error_load_backend, error.message)
                         logsViewModel.logError(request.taskId, errorMsg, System.currentTimeMillis() - startTime)
                         sendErrorReply(request.taskId, "BACKEND_LOAD_FAILED", errorMsg)
                         if (isShareRequest) {
@@ -313,9 +313,9 @@ class InferenceService : Service() {
                     }
                 },
                 onFailure = { error ->
-                    logsViewModel.logError(request.taskId, error.message ?: "Unknown error", duration)
-                    sendErrorReply(request.taskId, "INFERENCE_ERROR", error.message ?: "Unknown error")
-                    if (isShareRequest) showErrorNotification(error.message ?: "Unknown error")
+                    logsViewModel.logError(request.taskId, error.message ?: getString(R.string.logs_unknown_error), duration)
+                    sendErrorReply(request.taskId, "INFERENCE_ERROR", error.message ?: getString(R.string.logs_unknown_error))
+                    if (isShareRequest) showErrorNotification(error.message ?: getString(R.string.logs_unknown_error))
                 }
             )
 
@@ -333,9 +333,9 @@ class InferenceService : Service() {
         } catch (e: Exception) {
             Log.e(TAG, "Error processing request", e)
             val duration = System.currentTimeMillis() - startTime
-            logsViewModel.logError(request.taskId, e.message ?: "Unknown error", duration)
-            sendErrorReply(request.taskId, "PROCESSING_ERROR", e.message ?: "Unknown error")
-            if (isShareRequest) showErrorNotification(e.message ?: "Unknown error")
+            logsViewModel.logError(request.taskId, e.message ?: getString(R.string.logs_unknown_error), duration)
+            sendErrorReply(request.taskId, "PROCESSING_ERROR", e.message ?: getString(R.string.logs_unknown_error))
+            if (isShareRequest) showErrorNotification(e.message ?: getString(R.string.logs_unknown_error))
         }
     }
 
@@ -350,10 +350,10 @@ class InferenceService : Service() {
         val modelPath = AppContainer.preferencesManager.modelPath.first()
 
         if (modelPath.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("No LLM model configured. Open the app to download a model."))
+            return Result.failure(IllegalStateException(getString(R.string.error_no_llm_model)))
         }
 
-        updateNotificationWithProgress("Loading LLM model...", indeterminate = true)
+        updateNotificationWithProgress(getString(R.string.loading_model, "LLM"), indeterminate = true)
         Log.i(TAG, "Auto-loading LLM model from: $modelPath")
 
         return TranscriptionBackendManager.setActiveBackend(
@@ -377,7 +377,7 @@ class InferenceService : Service() {
         val modelPath = modelPathFlow.first()
 
         if (modelPath.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("No $label model configured. Open the app to download a model."))
+            return Result.failure(IllegalStateException(getString(R.string.error_no_model_configured, label)))
         }
 
         val modelDir = java.io.File(modelPath)
@@ -385,7 +385,7 @@ class InferenceService : Service() {
             return Result.failure(IllegalStateException("$label model directory not found: $modelPath"))
         }
 
-        updateNotificationWithProgress("Loading $label model...", indeterminate = true)
+        updateNotificationWithProgress(getString(R.string.loading_model, label), indeterminate = true)
         Log.i(TAG, "Auto-loading $label model from: $modelPath")
 
         return TranscriptionBackendManager.setActiveBackend(
@@ -429,7 +429,7 @@ class InferenceService : Service() {
         }
 
         val backend = TranscriptionBackendManager.getActiveBackend()
-            ?: return Result.failure(IllegalStateException("No active backend"))
+            ?: return Result.failure(IllegalStateException(getString(R.string.error_no_active_backend)))
 
         if (!backend.supportsText) {
             return Result.failure(IllegalStateException(
@@ -446,7 +446,7 @@ class InferenceService : Service() {
 
         val filePath = request.filePath
         if (filePath.isNullOrEmpty()) {
-            return Result.failure(IllegalArgumentException("No file path provided for audio request"))
+            return Result.failure(IllegalArgumentException(getString(R.string.error_no_file_path)))
         }
 
         // Check file exists
@@ -456,10 +456,10 @@ class InferenceService : Service() {
         }
 
         val backend = TranscriptionBackendManager.getActiveBackend()
-            ?: return Result.failure(IllegalStateException("No active backend"))
+            ?: return Result.failure(IllegalStateException(getString(R.string.error_no_active_backend)))
 
         // Show indeterminate progress during preprocessing
-        updateNotificationWithProgress("Preprocessing audio...", indeterminate = true)
+        updateNotificationWithProgress(getString(R.string.preprocessing_audio), indeterminate = true)
 
         // Preprocess audio with proper error handling
         // Pass backend's max chunk duration and VAD toggle to AudioPreprocessor
@@ -527,7 +527,7 @@ class InferenceService : Service() {
                     Log.e(TAG, "Fast path transcription failed", result.exceptionOrNull())
                     Result.failure(result.exceptionOrNull()!!)
                 }
-                else -> Result.failure(IllegalStateException("No transcription produced"))
+                else -> Result.failure(IllegalStateException(getString(R.string.error_no_transcription_produced)))
             }
         }
 
@@ -1178,7 +1178,7 @@ class InferenceService : Service() {
 
         if (autoCopyEnabled) {
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Transcription", transcriptionText)
+            val clip = ClipData.newPlainText(getString(R.string.clipboard_label_transcription), transcriptionText)
             clipboardManager.setPrimaryClip(clip)
             Log.i(TAG, "Auto-copied transcription to clipboard (${transcriptionText.length} chars), source=$sourcePackage")
 

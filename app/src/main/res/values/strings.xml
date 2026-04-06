@@ -484,4 +484,29 @@
     <string name="swipe_action_share_description">Share transcription</string>
     <string name="swipe_action_delete_description">Delete log</string>
     <string name="swipe_action_copied">Transcription copied</string>
+
+    <!-- Content descriptions (accessibility) -->
+    <string name="back">Back</string>
+    <string name="add_app">Add app</string>
+    <string name="view_settings">View settings</string>
+    <string name="app_icon">%1$s icon</string>
+
+    <!-- InferenceService strings -->
+    <string name="error_load_backend">Failed to load backend: %1$s</string>
+    <string name="error_no_active_backend">No active backend</string>
+    <string name="error_no_file_path">No file path provided for audio request</string>
+    <string name="error_no_transcription_produced">No transcription produced</string>
+    <string name="error_no_llm_model">No LLM model configured. Open the app to download a model.</string>
+    <string name="error_no_model_configured">No %1$s model configured. Open the app to download a model.</string>
+    <string name="loading_model">Loading %1$s model…</string>
+    <string name="preprocessing_audio">Preprocessing audio…</string>
+    <string name="clipboard_label_transcription">Transcription</string>
+
+    <!-- Settings accessibility -->
+    <string name="open_prompt_settings">Open prompt settings</string>
+    <string name="open_per_app_settings">Open per-app settings</string>
+    <string name="open_performance_stats">Open performance stats</string>
+    <string name="hide_details">Hide details</string>
+    <string name="show_details">Show details</string>
+    <string name="model_unknown">Unknown</string>
 </resources>

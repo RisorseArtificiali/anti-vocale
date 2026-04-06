@@ -227,7 +227,7 @@ fun SettingsTab(
                         )
                         Column {
                             Text(
-                                text = settingsState.currentModelName ?: "Unknown",
+                                text = settingsState.currentModelName ?: stringResource(R.string.model_unknown),
                                 style = MaterialTheme.typography.bodyMedium,
                                 fontWeight = FontWeight.Medium
                             )
@@ -405,13 +405,13 @@ fun SettingsTab(
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Text(
-                                        text = "Token Valid",
+                                        text = stringResource(R.string.token_valid),
                                         style = MaterialTheme.typography.labelLarge,
                                         color = MaterialTheme.colorScheme.primary
                                     )
                                     Icon(
                                         imageVector = if (showManualDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                        contentDescription = if (showManualDetails) "Hide details" else "Show details",
+                                        contentDescription = if (showManualDetails) stringResource(R.string.hide_details) else stringResource(R.string.show_details),
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(18.dp)
                                     )
@@ -419,7 +419,7 @@ fun SettingsTab(
                                 IconButton(onClick = { viewModel.clearToken() }) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
-                                        contentDescription = "Clear token",
+                                        contentDescription = stringResource(R.string.clear_token),
                                         tint = MaterialTheme.colorScheme.error
                                     )
                                 }
@@ -430,11 +430,11 @@ fun SettingsTab(
                                     verticalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Text(
-                                        text = "Username: ${currentState.username}",
+                                        text = stringResource(R.string.username_label, currentState.username),
                                         style = MaterialTheme.typography.bodyMedium
                                     )
                                     Text(
-                                        text = "Token: ${currentState.maskedToken}",
+                                        text = stringResource(R.string.token_label, currentState.maskedToken),
                                         style = MaterialTheme.typography.bodySmall,
                                         fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -458,12 +458,12 @@ fun SettingsTab(
                                 contentDescription = null
                             )
                             Spacer(modifier = Modifier.width(4.dp))
-                            Text(if (showAdvanced) "Hide Advanced: Manual Token" else "Advanced: Manual Token Input")
+                            Text(if (showAdvanced) stringResource(R.string.hide_advanced) else stringResource(R.string.advanced_manual_token))
                         }
 
                         if (!showAdvanced) {
                             Text(
-                                text = "For manual tokens, the 'read' scope is required to download models.",
+                                text = stringResource(R.string.manual_token_scope_info),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -482,8 +482,8 @@ fun SettingsTab(
                                         OutlinedTextField(
                                             value = tokenInput,
                                             onValueChange = { viewModel.onTokenInputChanged(it) },
-                                            label = { Text("HuggingFace Token") },
-                                            placeholder = { Text("hf_...") },
+                                            label = { Text(stringResource(R.string.huggingface_token_label)) },
+                                            placeholder = { Text(stringResource(R.string.token_placeholder)) },
                                             singleLine = true,
                                             visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                             trailingIcon = {
@@ -495,13 +495,13 @@ fun SettingsTab(
                                                     }) {
                                                         Icon(
                                                             imageVector = Icons.Default.ContentPaste,
-                                                            contentDescription = "Paste from clipboard"
+                                                            contentDescription = stringResource(R.string.paste_from_clipboard)
                                                         )
                                                     }
                                                     IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
                                                         Icon(
                                                             imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                            contentDescription = if (tokenPasswordVisible) "Hide token" else "Show token"
+                                                            contentDescription = if (tokenPasswordVisible) stringResource(R.string.hide_token) else stringResource(R.string.show_token)
                                                         )
                                                     }
                                                 }
@@ -536,13 +536,13 @@ fun SettingsTab(
                                                 modifier = Modifier.size(16.dp)
                                             )
                                             Spacer(Modifier.width(4.dp))
-                                            Text("Create Token")
+                                            Text(stringResource(R.string.create_token))
                                         }
                                         OutlinedButton(
                                             onClick = { viewModel.validateAndSaveToken() },
                                             enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken
                                         ) {
-                                            Text("Retry")
+                                            Text(stringResource(R.string.retry))
                                         }
                                     }
                                 }
@@ -556,8 +556,8 @@ fun SettingsTab(
                                         OutlinedTextField(
                                             value = tokenInput,
                                             onValueChange = { viewModel.onTokenInputChanged(it) },
-                                            label = { Text("HuggingFace Token") },
-                                            placeholder = { Text("hf_...") },
+                                            label = { Text(stringResource(R.string.huggingface_token_label)) },
+                                            placeholder = { Text(stringResource(R.string.token_placeholder)) },
                                             singleLine = true,
                                             visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                             trailingIcon = {
@@ -569,13 +569,13 @@ fun SettingsTab(
                                                     }) {
                                                         Icon(
                                                             imageVector = Icons.Default.ContentPaste,
-                                                            contentDescription = "Paste from clipboard"
+                                                            contentDescription = stringResource(R.string.paste_from_clipboard)
                                                         )
                                                     }
                                                     IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
                                                         Icon(
                                                             imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                            contentDescription = if (tokenPasswordVisible) "Hide token" else "Show token"
+                                                            contentDescription = if (tokenPasswordVisible) stringResource(R.string.hide_token) else stringResource(R.string.show_token)
                                                         )
                                                     }
                                                 }
@@ -590,7 +590,7 @@ fun SettingsTab(
                                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
                                         CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                                        Text("Validating token...")
+                                        Text(stringResource(R.string.validating_token))
                                     }
                                 }
 
@@ -603,8 +603,8 @@ fun SettingsTab(
                                         OutlinedTextField(
                                             value = tokenInput,
                                             onValueChange = { viewModel.onTokenInputChanged(it) },
-                                            label = { Text("HuggingFace Token") },
-                                            placeholder = { Text("hf_...") },
+                                            label = { Text(stringResource(R.string.huggingface_token_label)) },
+                                            placeholder = { Text(stringResource(R.string.token_placeholder)) },
                                             singleLine = true,
                                             visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                                             trailingIcon = {
@@ -616,13 +616,13 @@ fun SettingsTab(
                                                     }) {
                                                         Icon(
                                                             imageVector = Icons.Default.ContentPaste,
-                                                            contentDescription = "Paste from clipboard"
+                                                            contentDescription = stringResource(R.string.paste_from_clipboard)
                                                         )
                                                     }
                                                     IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
                                                         Icon(
                                                             imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                            contentDescription = if (tokenPasswordVisible) "Hide token" else "Show token"
+                                                            contentDescription = if (tokenPasswordVisible) stringResource(R.string.hide_token) else stringResource(R.string.show_token)
                                                         )
                                                     }
                                                 }
@@ -652,7 +652,7 @@ fun SettingsTab(
                                                 )
                                             }
                                             Spacer(modifier = Modifier.width(8.dp))
-                                            Text(if (uiState.isValidatingToken) "Validating..." else "Validate & Save")
+                                            Text(if (uiState.isValidatingToken) stringResource(R.string.validating) else stringResource(R.string.validate_and_save))
                                         }
                                         // Link to token creation page
                                         TextButton(
@@ -670,7 +670,7 @@ fun SettingsTab(
                                                 modifier = Modifier.size(16.dp)
                                             )
                                             Spacer(modifier = Modifier.width(4.dp))
-                                            Text("Get Token")
+                                            Text(stringResource(R.string.get_token))
                                         }
                                     }
                                 }
@@ -1409,7 +1409,7 @@ fun SettingsTab(
                 }
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Open prompt settings",
+                    contentDescription = stringResource(R.string.open_prompt_settings),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1453,7 +1453,7 @@ fun SettingsTab(
                 }
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Open per-app settings",
+                    contentDescription = stringResource(R.string.open_per_app_settings),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1502,7 +1502,7 @@ fun SettingsTab(
                 }
                 Icon(
                     imageVector = Icons.Default.ChevronRight,
-                    contentDescription = "Open performance stats",
+                    contentDescription = stringResource(R.string.open_performance_stats),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -1559,7 +1559,7 @@ private fun PromptSettingsScreen(
             IconButton(onClick = onBack) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
-                    contentDescription = "Back"
+                    contentDescription = stringResource(R.string.back)
                 )
             }
             Text(
@@ -1740,6 +1740,7 @@ private fun OAuthLoginSection(
     onLogoutClick: () -> Unit,
     onDismissError: () -> Unit
 ) {
+    val context = LocalContext.current
     when (oauthState) {
         is SettingsViewModel.OAuthState.Idle -> {
             // Show current token status or login button
@@ -1770,7 +1771,7 @@ private fun OAuthLoginSection(
                             Text(
                                 text = when (state.authType) {
                                     HuggingFaceTokenManager.AuthType.OAUTH -> "OAuth Connected"
-                                    HuggingFaceTokenManager.AuthType.MANUAL -> "Token Valid"
+                                    HuggingFaceTokenManager.AuthType.MANUAL -> stringResource(R.string.token_valid)
                                 },
                                 style = MaterialTheme.typography.labelLarge,
                                 color = when (state.authType) {
@@ -1780,7 +1781,7 @@ private fun OAuthLoginSection(
                             )
                             Icon(
                                 imageVector = if (showDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = if (showDetails) "Hide details" else "Show details",
+                                contentDescription = if (showDetails) stringResource(R.string.hide_details) else stringResource(R.string.show_details),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(18.dp)
                             )
@@ -1788,7 +1789,7 @@ private fun OAuthLoginSection(
                         IconButton(onClick = onLogoutClick) {
                             Icon(
                                 imageVector = Icons.Default.Logout,
-                                contentDescription = "Logout",
+                                contentDescription = stringResource(R.string.logout),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -1799,20 +1800,20 @@ private fun OAuthLoginSection(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = "Username: ${state.username}",
+                                text = stringResource(R.string.username_label, state.username),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                             Text(
-                                text = "Token: ${state.maskedToken}",
+                                text = stringResource(R.string.token_label, state.maskedToken),
                                 style = MaterialTheme.typography.bodySmall,
                                 fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             if (state.authType == HuggingFaceTokenManager.AuthType.OAUTH && state.expiresAt != null) {
-                                val expiresText = formatExpiration(state.expiresAt)
+                                val expiresText = formatExpiration(state.expiresAt, context)
                                 val isExpiringSoon = state.needsRefresh()
                                 Text(
-                                    text = "Expires: $expiresText",
+                                    text = stringResource(R.string.expires_label, expiresText),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = if (isExpiringSoon)
                                         MaterialTheme.colorScheme.error
@@ -1834,10 +1835,10 @@ private fun OAuthLoginSection(
                     ) {
                         Icon(Icons.Default.Login, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Login with HuggingFace")
+                        Text(stringResource(R.string.login_with_huggingface))
                     }
                     Text(
-                        text = "Quick login using your browser. If you're already logged into HuggingFace in Chrome, you'll be redirected back instantly.",
+                        text = stringResource(R.string.oauth_login_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -1858,7 +1859,7 @@ private fun OAuthLoginSection(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Don't have an account? Create one at huggingface.co")
+                        Text(stringResource(R.string.create_account_link))
                     }
                 }
             }
@@ -1871,7 +1872,7 @@ private fun OAuthLoginSection(
             ) {
                 CircularProgressIndicator(modifier = Modifier.size(20.dp))
                 Spacer(modifier = Modifier.width(12.dp))
-                Text("Authenticating with HuggingFace...")
+                Text(stringResource(R.string.authenticating))
             }
         }
         is SettingsViewModel.OAuthState.Success -> {
@@ -1888,7 +1889,7 @@ private fun OAuthLoginSection(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Logged in as ${oauthState.username}",
+                    text = stringResource(R.string.logged_in_as, oauthState.username),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -1920,7 +1921,7 @@ private fun OAuthLoginSection(
                     IconButton(onClick = onDismissError) {
                         Icon(
                             Icons.Default.Close,
-                            contentDescription = "Dismiss",
+                            contentDescription = stringResource(R.string.dismiss),
                             tint = MaterialTheme.colorScheme.onErrorContainer
                         )
                     }
@@ -1933,16 +1934,16 @@ private fun OAuthLoginSection(
 /**
  * Formats expiration timestamp to a human-readable string.
  */
-private fun formatExpiration(expiresAt: Long): String {
+private fun formatExpiration(expiresAt: Long, context: Context): String {
     val now = System.currentTimeMillis()
     val remaining = expiresAt - now
 
     return when {
-        remaining <= 0 -> "Expired"
-        remaining < 60_000 -> "${remaining / 1000} seconds"
-        remaining < 3_600_000 -> "${remaining / 60_000} minutes"
-        remaining < 86_400_000 -> "${remaining / 3_600_000} hours"
-        else -> "${remaining / 86_400_000} days"
+        remaining <= 0 -> context.getString(R.string.expired)
+        remaining < 60_000 -> "${remaining / 1000}s"
+        remaining < 3_600_000 -> "${remaining / 60_000}m"
+        remaining < 86_400_000 -> "${remaining / 3_600_000}h"
+        else -> "${remaining / 86_400_000}d"
     }
 }
 

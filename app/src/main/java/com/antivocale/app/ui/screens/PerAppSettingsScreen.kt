@@ -142,7 +142,7 @@ fun PerAppSettingsScreen(
             FloatingActionButton(
                 onClick = { showAddAppDialog = true }
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Add app")
+                Icon(Icons.Default.Add, contentDescription = stringResource(R.string.add_app))
             }
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }

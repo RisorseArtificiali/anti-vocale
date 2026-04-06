@@ -1,6 +1,7 @@
 package com.antivocale.app.ui.components
 
 import android.content.pm.PackageManager
+import com.antivocale.app.R
 import android.graphics.drawable.Drawable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
 
@@ -62,7 +64,7 @@ fun AppPreferenceListItem(
                         appIcon!!.intrinsicWidth.coerceAtMost(48),
                         appIcon!!.intrinsicHeight.coerceAtMost(48)
                     ).asImageBitmap(),
-                    contentDescription = "$appName icon",
+                    contentDescription = stringResource(R.string.app_icon, appName),
                     modifier = Modifier
                         .size(40.dp)
                         .clip(MaterialTheme.shapes.small)
@@ -71,7 +73,7 @@ fun AppPreferenceListItem(
                 // Fallback to generic app icon
                 Icon(
                     imageVector = Icons.Default.CheckCircle,
-                    contentDescription = "$appName icon",
+                    contentDescription = stringResource(R.string.app_icon, appName),
                     modifier = Modifier.size(40.dp),
                     tint = MaterialTheme.colorScheme.primary
                 )
@@ -80,7 +82,7 @@ fun AppPreferenceListItem(
         trailingContent = {
             Icon(
                 imageVector = Icons.Default.ChevronRight,
-                contentDescription = "View settings",
+                contentDescription = stringResource(R.string.view_settings),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },

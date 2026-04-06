@@ -13,16 +13,19 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 ## Features
 
 - **Fully offline** - All processing happens on-device, no data leaves your phone
-- **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, or Parakeet TDT models
+- **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, or Qwen3-ASR models
 - **Share integration** - Share audio from any messaging app to transcribe
 - **Smart notifications** - Copy result or send it back to the source app with one tap
+- **Progressive display** - See transcription text appear segment-by-segment instead of waiting for the full result
+- **Swipe actions** - Swipe log entries to copy, share, or delete
 - **Persistent transcription log** - All transcriptions saved to local database with search
 - **Queue-aware processing** - Handles multiple concurrent transcription requests with progress tracking
 - **Calibration-based ETA** - Progress estimates improve as the model adapts to your device
+- **Performance stats** - Track real-world transcription speed per model on your device
 - **VAD silence stripping** - Optionally strip silent segments before transcription for faster results
 - **Configurable inference threads** - Auto-detects or manually sets thread count for performance tuning
 - **Per-app settings** - Configure notification behavior per messaging app
-- **Multilingual** - App UI in English and Italian; models support 25+ languages
+- **Multilingual UI** - App interface fully translated in English and Italian
 - **Auto-copy** - Optionally copy transcription to clipboard automatically
 - **Tasker/automation support** - Trigger transcription via broadcast intents
 
@@ -80,6 +83,13 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 | Model | Size | Languages | Notes |
 |-------|------|-----------|-------|
 | **Parakeet TDT 0.6B v3** | ~464MB | 25 European | Faster but less accurate |
+| **Qwen3-ASR 0.6B** | ~938MB | 52 | Poor Italian accuracy |
+
+### ASR (Streaming)
+
+| Model | Size | Languages | Notes |
+|-------|------|-----------|-------|
+| **Qwen3-ASR 0.6B** | ~938MB | 52 | Streaming-capable, poor Italian accuracy |
 
 ## Getting Started
 
@@ -124,6 +134,7 @@ AudioPreprocessor (16kHz mono WAV, 30s chunks)
 TranscriptionBackendManager
     |--- SherpaOnnxBackend (Parakeet TDT)
     |--- WhisperBackend (Whisper models)
+    |--- Qwen3AsrBackend (Qwen3-ASR)
     |--- LlmTranscriptionBackend (Gemma via LiteRT-LM)
     |
     v

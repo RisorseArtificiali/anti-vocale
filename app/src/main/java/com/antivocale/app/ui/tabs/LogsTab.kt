@@ -51,7 +51,7 @@ import java.util.*
 private fun copyTranscriptionToClipboard(context: Context, text: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
             as android.content.ClipboardManager
-    val clip = ClipData.newPlainText("transcription", text)
+    val clip = ClipData.newPlainText(context.getString(R.string.clipboard_label_transcription), text)
     clipboard.setPrimaryClip(clip)
     Toast.makeText(context, context.getString(R.string.copied_to_clipboard), Toast.LENGTH_SHORT).show()
 }
@@ -160,7 +160,7 @@ fun LogsTab(
 
     // Group filtered logs by date
     val groupedLogs = remember(filteredLogs) {
-        groupLogsByDate(filteredLogs)
+        groupLogsByDate(filteredLogs, context)
     }
 
     // Scroll behavior for auto-hiding the header
@@ -322,7 +322,7 @@ fun LogsTab(
                     viewModel.filteredLogs.first()
                 }
                 // Find flat index in grouped list
-                val freshGrouped = groupLogsByDate(filteredLogs)
+                val freshGrouped = groupLogsByDate(filteredLogs, context)
                 val flatIndex = indexOfTaskId(freshGrouped, taskId)
                 if (flatIndex >= 0) {
                     expandedTaskIds = expandedTaskIds + taskId
@@ -492,7 +492,7 @@ private fun DateGroupHeader(label: String, count: Int) {
 
 internal data class DateGroup(val label: String, val logs: List<LogEntry>)
 
-private fun groupLogsByDate(logs: List<LogEntry>): List<DateGroup> {
+private fun groupLogsByDate(logs: List<LogEntry>, context: Context): List<DateGroup> {
     val now = System.currentTimeMillis()
     val todayStart = startOfDay(now)
     val yesterdayStart = startOfDay(now - 86_400_000)
@@ -511,10 +511,10 @@ private fun groupLogsByDate(logs: List<LogEntry>): List<DateGroup> {
 
     val result = mutableListOf<DateGroup>()
     if (today.isNotEmpty()) {
-        result.add(DateGroup("Today", today))
+        result.add(DateGroup(context.getString(R.string.today), today))
     }
     if (yesterday.isNotEmpty()) {
-        result.add(DateGroup("Yesterday", yesterday))
+        result.add(DateGroup(context.getString(R.string.yesterday), yesterday))
     }
     if (older.isNotEmpty()) {
         // Group older entries by date

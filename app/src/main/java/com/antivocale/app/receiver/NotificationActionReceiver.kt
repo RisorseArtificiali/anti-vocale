@@ -46,7 +46,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
         }
 
         val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText("Transcription", text)
+        val clip = ClipData.newPlainText(context.getString(R.string.clipboard_label_transcription), text)
         clipboardManager.setPrimaryClip(clip)
 
         Log.i(TAG, "Copied transcription to clipboard (${text.length} chars)")

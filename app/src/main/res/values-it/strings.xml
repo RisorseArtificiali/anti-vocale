@@ -448,4 +448,67 @@
     <string name="swipe_action_share_description">Condividi trascrizione</string>
     <string name="swipe_action_delete_description">Elimina log</string>
     <string name="swipe_action_copied">Trascrizione copiata</string>
+
+    <!-- Progressive Display -->
+    <string name="progressive_title">Visualizzazione Progressiva</string>
+    <string name="progressive_description">Mostra il testo della trascrizione man mano che ogni segmento viene completato, invece di attendere il risultato completo.</string>
+    <string name="progressive_initial">Preparazione anteprime parziali — testo completo disponibile al termine</string>
+    <string name="processing_segment_progress">Segmento %1$d di %2$d…</string>
+
+    <!-- Transcription ETA -->
+    <string name="transcription_eta_calibrating">Calibrazione velocità…</string>
+    <string name="transcription_eta_estimating">Stima in corso… ~%1$dm %2$ds rimanenti</string>
+    <string name="transcription_eta_seconds">~%1$ds rimanenti</string>
+    <string name="transcription_eta_minutes">~%1$dm %2$ds rimanenti</string>
+    <string name="transcription_eta_hours">~%1$dh %2$dm rimanenti</string>
+
+    <!-- Performance Stats -->
+    <string name="performance_stats_title">Statistiche Prestazioni</string>
+    <string name="performance_stats_subtitle">Velocità di trascrizione reale dal tuo dispositivo</string>
+    <string name="performance_stats_empty">Nessun dato ancora. Trascrivi qualche audio per vedere le statistiche.</string>
+    <string name="performance_stats_speed">%1$.0fms/s</string>
+    <string name="performance_stats_samples_count">%1$d campioni</string>
+    <string name="performance_stats_fastest_badge">Più veloce</string>
+    <string name="performance_stats_clear">Resetta statistiche</string>
+    <string name="performance_stats_clear_confirm">Resettare tutti i dati delle prestazioni?</string>
+    <string name="performance_stats_just_now">Adesso</string>
+    <string name="performance_stats_minutes_ago">%1$dm fa</string>
+    <string name="performance_stats_hours_ago">%1$dh fa</string>
+    <string name="performance_stats_days_ago">%1$dg fa</string>
+    <string name="performance_stats_total_audio">Totale: %1$s audio elaborati</string>
+
+    <!-- Model unload -->
+    <string name="action_unload">Scarica</string>
+    <string name="dialog_unload_title">Scaricare il Modello?</string>
+    <string name="dialog_unload_message">Il modello \'%1$s\' verrà scaricato dalla memoria. Verrà ricaricato automaticamente alla prossima trascrizione.</string>
+
+    <!-- No-model notification -->
+    <string name="notification_no_model_title">Nessun modello di trascrizione</string>
+    <string name="notification_no_model_message">Apri l\'app per scaricare un modello di trascrizione</string>
+    <string name="notification_no_model_action">Apri app</string>
+
+    <!-- Content descriptions (accessibility) -->
+    <string name="back">Indietro</string>
+    <string name="add_app">Aggiungi app</string>
+    <string name="view_settings">Visualizza impostazioni</string>
+    <string name="app_icon">Icona %1$s</string>
+
+    <!-- InferenceService strings -->
+    <string name="error_load_backend">Impossibile caricare il backend: %1$s</string>
+    <string name="error_no_active_backend">Nessun backend attivo</string>
+    <string name="error_no_file_path">Nessun percorso file fornito per la richiesta audio</string>
+    <string name="error_no_transcription_produced">Nessuna trascrizione prodotta</string>
+    <string name="error_no_llm_model">Nessun modello LLM configurato. Apri l\'app per scaricare un modello.</string>
+    <string name="error_no_model_configured">Nessun modello %1$s configurato. Apri l\'app per scaricare un modello.</string>
+    <string name="loading_model">Caricamento modello %1$s…</string>
+    <string name="preprocessing_audio">Pre-elaborazione audio…</string>
+    <string name="clipboard_label_transcription">Trascrizione</string>
+
+    <!-- Settings accessibility -->
+    <string name="open_prompt_settings">Apri impostazioni prompt</string>
+    <string name="open_per_app_settings">Apri impostazioni per app</string>
+    <string name="open_performance_stats">Apri statistiche prestazioni</string>
+    <string name="hide_details">Nascondi dettagli</string>
+    <string name="show_details">Mostra dettagli</string>
+    <string name="model_unknown">Sconosciuto</string>
 </resources>
