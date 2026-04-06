@@ -27,7 +27,8 @@ data class LogEntry(
     val errorMessage: String? = null,
     val durationMs: Long = 0,
     val filePath: String? = null,
-    val audioDurationSeconds: Double = 0.0
+    val audioDurationSeconds: Double = 0.0,
+    val sourcePackageName: String? = null
 ) {
     enum class Type { TEXT, AUDIO }
     enum class Status { PENDING, SUCCESS, ERROR }
@@ -77,7 +78,8 @@ class LogsViewModel(private val logDao: LogDao) : ViewModel() {
         type: LogEntry.Type,
         prompt: String,
         filePath: String? = null,
-        audioDurationSeconds: Double = 0.0
+        audioDurationSeconds: Double = 0.0,
+        sourcePackageName: String? = null
     ) {
         addLog(
             LogEntry(
@@ -86,7 +88,8 @@ class LogsViewModel(private val logDao: LogDao) : ViewModel() {
                 status = LogEntry.Status.PENDING,
                 prompt = prompt,
                 filePath = filePath,
-                audioDurationSeconds = audioDurationSeconds
+                audioDurationSeconds = audioDurationSeconds,
+                sourcePackageName = sourcePackageName
             )
         )
     }

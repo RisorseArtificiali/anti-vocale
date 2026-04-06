@@ -33,6 +33,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
+import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.ui.components.SwipeAction
@@ -608,7 +609,8 @@ fun LogEntryItem(
                     if (log.type == LogEntry.Type.AUDIO) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = stringResource(R.string.voice_message_duration),
+                            text = log.sourcePackageName?.let { AppInfoUtils.getAppName(context, it) }
+                                ?: stringResource(R.string.voice_message_duration),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

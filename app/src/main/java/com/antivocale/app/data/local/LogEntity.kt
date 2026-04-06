@@ -20,7 +20,8 @@ data class LogEntity(
     val errorMessage: String? = null,
     val durationMs: Long = 0,
     val filePath: String? = null,
-    val audioDurationSeconds: Double = 0.0
+    val audioDurationSeconds: Double = 0.0,
+    val sourcePackageName: String? = null
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -34,7 +35,8 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     errorMessage = errorMessage,
     durationMs = durationMs,
     filePath = filePath,
-    audioDurationSeconds = audioDurationSeconds
+    audioDurationSeconds = audioDurationSeconds,
+    sourcePackageName = sourcePackageName
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -48,5 +50,6 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     errorMessage = errorMessage,
     durationMs = durationMs,
     filePath = filePath,
-    audioDurationSeconds = audioDurationSeconds
+    audioDurationSeconds = audioDurationSeconds,
+    sourcePackageName = sourcePackageName
 )

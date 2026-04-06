@@ -231,7 +231,8 @@ class InferenceService : Service() {
             taskId = request.taskId,
             type = if (request.requestType == "audio") LogEntry.Type.AUDIO else LogEntry.Type.TEXT,
             prompt = request.prompt,
-            filePath = request.filePath
+            filePath = request.filePath,
+            sourcePackageName = request.sourcePackage
         )
 
         val startTime = System.currentTimeMillis()
