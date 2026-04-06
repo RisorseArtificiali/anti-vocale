@@ -1,5 +1,6 @@
 package com.antivocale.app.ui.tabs
 
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,15 +9,17 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.flow.first
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -38,6 +41,7 @@ import com.antivocale.app.ui.components.rememberSwipeToRevealState
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import java.text.SimpleDateFormat
+import kotlin.math.roundToInt
 import java.util.*
 
 /**
@@ -158,87 +162,102 @@ fun LogsTab(
         groupLogsByDate(filteredLogs)
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-    Column(modifier = Modifier.fillMaxSize()) {
-        // Clear-all confirmation dialog
-        if (showClearDialog) {
-            AlertDialog(
-                onDismissRequest = { showClearDialog = false },
-                title = { Text(stringResource(R.string.logs_clear)) },
-                text = { Text(stringResource(R.string.logs_clear_confirmation)) },
-                confirmButton = {
-                    TextButton(onClick = {
-                        viewModel.clearLogs()
-                        showClearDialog = false
-                    }) {
-                        Text(stringResource(R.string.logs_confirm))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { showClearDialog = false }) {
-                        Text(stringResource(R.string.logs_cancel))
-                    }
-                }
-            )
-        }
+    // Scroll behavior for auto-hiding the header
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
-        // Header
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            tonalElevation = 2.dp
-        ) {
-            Column {
-                Row(
-                    modifier = Modifier
-                        .padding(horizontal = 16.dp, vertical = 4.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = stringResource(R.string.logs_recent_requests, logs.size),
-                        style = MaterialTheme.typography.titleSmall
-                    )
-                    TextButton(
-                        onClick = { showClearDialog = true },
-                        enabled = logs.isNotEmpty()
-                    ) {
-                        Icon(
-                            Icons.Default.DeleteSweep,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.logs_clear))
-                    }
+    // Clear-all confirmation dialog (outside Scaffold so it overlays everything)
+    if (showClearDialog) {
+        AlertDialog(
+            onDismissRequest = { showClearDialog = false },
+            title = { Text(stringResource(R.string.logs_clear)) },
+            text = { Text(stringResource(R.string.logs_clear_confirmation)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.clearLogs()
+                    showClearDialog = false
+                }) {
+                    Text(stringResource(R.string.logs_confirm))
                 }
-
-                // Search bar
-                OutlinedTextField(
-                    value = searchQuery,
-                    onValueChange = { viewModel.onSearchQueryChanged(it) },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
-                    leadingIcon = {
-                        Icon(Icons.Default.Search, contentDescription = null)
-                    },
-                    trailingIcon = {
-                        if (searchQuery.isNotEmpty()) {
-                            IconButton(onClick = { viewModel.clearSearch() }) {
-                                Icon(Icons.Default.Clear, contentDescription = null)
-                            }
-                        }
-                    },
-                    singleLine = true
-                )
+            },
+            dismissButton = {
+                TextButton(onClick = { showClearDialog = false }) {
+                    Text(stringResource(R.string.logs_cancel))
+                }
             }
-        }
+        )
+    }
 
+    Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .nestedScroll(scrollBehavior.nestedScrollConnection),
+        topBar = {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onSizeChanged { size ->
+                        scrollBehavior.state.heightOffsetLimit = -size.height.toFloat()
+                    }
+                    .offset { IntOffset(0, scrollBehavior.state.heightOffset.roundToInt()) },
+                tonalElevation = 2.dp
+            ) {
+                Column {
+                    Row(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.logs_recent_requests, logs.size),
+                            style = MaterialTheme.typography.titleSmall
+                        )
+                        TextButton(
+                            onClick = { showClearDialog = true },
+                            enabled = logs.isNotEmpty()
+                        ) {
+                            Icon(
+                                Icons.Default.DeleteSweep,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(stringResource(R.string.logs_clear))
+                        }
+                    }
+
+                    // Search bar
+                    OutlinedTextField(
+                        value = searchQuery,
+                        onValueChange = { viewModel.onSearchQueryChanged(it) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
+                        leadingIcon = {
+                            Icon(Icons.Default.Search, contentDescription = null)
+                        },
+                        trailingIcon = {
+                            if (searchQuery.isNotEmpty()) {
+                                IconButton(onClick = { viewModel.clearSearch() }) {
+                                    Icon(Icons.Default.Clear, contentDescription = null)
+                                }
+                            }
+                        },
+                        singleLine = true
+                    )
+                }
+            }
+        },
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+    ) { innerPadding ->
         if (logs.isEmpty()) {
             Box(
-                modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 32.dp),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -264,7 +283,9 @@ fun LogsTab(
         } else if (filteredLogs.isEmpty()) {
             // Search yielded no results
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -313,7 +334,7 @@ fun LogsTab(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    top = 4.dp,
+                    top = innerPadding.calculateTopPadding() + 4.dp,
                     bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 )
             ) {
@@ -436,12 +457,6 @@ fun LogsTab(
                 }
             }
         }
-    }
-
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier.align(Alignment.BottomCenter)
-    )
     }
 }
 
