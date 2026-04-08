@@ -25,6 +25,7 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 - **VAD silence stripping** - Optionally strip silent segments before transcription for faster results
 - **Configurable inference threads** - Auto-detects or manually sets thread count for performance tuning
 - **Per-app settings** - Configure notification behavior per messaging app
+- **Picture-in-Picture** - See live transcription in a floating window while using other apps
 - **Multilingual UI** - App interface fully translated in English and Italian
 - **Auto-copy** - Optionally copy transcription to clipboard automatically
 - **Tasker/automation support** - Trigger transcription via broadcast intents

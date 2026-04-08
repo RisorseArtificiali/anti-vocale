@@ -1,4 +1,17 @@
 <en-US>
+What's new in 1.4.0:
+
+• Picture-in-Picture mode — see live transcription text in a floating window while using other apps
+• Edge-to-edge display for Android 15+ (SDK 35) with proper system bar handling
+• Concurrent model downloads with per-download progress tracking
+• Swipe-to-reveal actions on log entries (copy, share, delete)
+• Auto-hide Logs tab header on scroll for more reading space
+• Model installation guidance notification when no model is configured
+• Fixed truncated transcriptions with WhisperX-style Cut & Merge chunking
+• Fixed KeyStore corruption recovery for EncryptedSharedPreferences
+• Fixed cancelled transcriptions stuck as PENDING
+• Fixed notification tap not scrolling to the transcribed message
+
 What's new in 1.3.1:
 
 • Complete Italian translation — 28 previously missing strings now translated (Performance Stats, Transcription ETA, Progressive Display, model dialogs)
@@ -68,6 +81,19 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.4.0:
+
+• Modalità Picture-in-Picture — visualizza il testo della trascrizione in tempo reale in una finestra fluttuante mentre usi altre app
+• Visualizzazione edge-to-edge per Android 15+ (SDK 35) con gestione corretta delle barre di sistema
+• Download concorrente dei modelli con tracciamento del progresso per singolo download
+• Azioni swipe-to-reveal sulle voci del registro (copia, condividi, elimina)
+• Nascondimento automatico dell'intestazione della scheda Registro allo scorrimento
+• Notifica di guida all'installazione del modello quando nessun modello è configurato
+• Risolte trascrizioni troncate con chunking Cut & Merge in stile WhisperX
+• Risolto ripristino da corruzione KeyStore per EncryptedSharedPreferences
+• Risolte trascrizioni annullate bloccate come IN ATTESA
+• Risolto il tocco sulla notifica che non scorreva al messaggio trascritto
+
 Novità della versione 1.3.1:
 
 • Traduzione italiana completa — tradotte 28 stringhe precedentemente mancanti (Statistiche Prestazioni, ETA Trascrizione, Visualizzazione Progressiva, finestre modello)
