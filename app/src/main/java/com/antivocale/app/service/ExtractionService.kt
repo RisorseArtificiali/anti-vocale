@@ -9,13 +9,11 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.antivocale.app.R
-import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.di.AppContainer
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
-import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.CancellationException
@@ -24,17 +22,18 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Foreground service that wraps model download + extraction so it survives
  * screen-off and background interruption.
  *
- * All three downloaders (Parakeet, Whisper, Gemma) are invoked inside
- * [serviceScope], which is not tied to the Activity lifecycle. The ViewModel
- * observes [progressState] to update the UI.
+ * Supports concurrent downloads — each variant runs in its own coroutine job.
+ * The ViewModel observes [progressState] to update per-variant UI state.
  *
  * Notification follows the same pattern as [InferenceService].
  */
@@ -43,20 +42,26 @@ class ExtractionService : Service() {
     companion object {
         const val TAG = "ExtractionService"
         const val CHANNEL_ID = "extraction_channel"
-        const val NOTIFICATION_ID = 2001
+        private const val NOTIFICATION_ID_BASE = 2001
+        private const val NOTIFICATION_ID_RANGE = 100
 
         const val ACTION_CANCEL = "com.antivocale.app.CANCEL_EXTRACTION"
 
         const val EXTRA_MODEL_TYPE = "model_type"
         const val EXTRA_VARIANT = "variant"
+        const val EXTRA_CANCEL_VARIANT = "cancel_variant"
 
-        /** Shared progress state — ViewModel collects this. */
-        private val _progressState = MutableStateFlow<ExtractionProgress?>(null)
-        val progressState = _progressState.asStateFlow()
-
-        fun clearProgress() {
-            _progressState.value = null
-        }
+        /**
+         * Shared progress state — ViewModel collects this.
+         *
+         * Uses [MutableSharedFlow] (not StateFlow) so that concurrent progress
+         * emissions from parallel downloads are not lost due to conflation.
+         */
+        private val _progressState = MutableSharedFlow<ExtractionProgress>(
+            extraBufferCapacity = 64,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST
+        )
+        val progressState = _progressState.asSharedFlow()
     }
 
     /** Typed model type identifier — replaces raw strings across Service/ViewModel boundary. */
@@ -78,9 +83,23 @@ class ExtractionService : Service() {
     )
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
-    private var currentJob: Job? = null
-    @Volatile private var isCancelling = false
-    private var modelDisplayName: String = ""
+
+    /** Active download jobs, keyed by "$modelType:$variant". */
+    private val activeJobs = ConcurrentHashMap<String, Job>()
+
+    /** Keys of downloads whose user-requested cancel is in progress. */
+    private val cancellingKeys = mutableSetOf<String>()
+
+    /** Per-download display names for notifications. */
+    private val displayNames = ConcurrentHashMap<String, String>()
+
+    /** Stable notification ID per download key. */
+    private fun notificationIdForKey(key: String): Int =
+        NOTIFICATION_ID_BASE + (key.hashCode() and 0x7FFFFFFF) % NOTIFICATION_ID_RANGE
+
+    /** Builds a unique key for tracking a download job. */
+    private fun jobKey(modelType: ModelType, variant: String?): String =
+        "${modelType.key}:${variant ?: ""}"
 
     /** Resolves a human-readable model name for the notification. */
     private fun resolveDisplayName(modelType: ModelType, variant: String?): String {
@@ -106,7 +125,7 @@ class ExtractionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_CANCEL) {
-            handleCancel()
+            handleCancel(intent)
             return START_NOT_STICKY
         }
 
@@ -122,15 +141,26 @@ class ExtractionService : Service() {
             return START_NOT_STICKY
         }
         val variant = intent.getStringExtra(EXTRA_VARIANT)
+        val key = jobKey(modelType, variant)
+        val displayName = resolveDisplayName(modelType, variant)
+        displayNames[key] = displayName
+        val nid = notificationIdForKey(key)
 
-        startForeground(NOTIFICATION_ID, createNotification(getString(R.string.download_status_connecting)))
+        startForeground(nid, createNotification(
+            getString(R.string.download_status_connecting),
+            title = displayName,
+            notificationId = nid,
+            indeterminate = true
+        ))
 
-        // Cancel any previous job
-        currentJob?.cancel()
+        // Only restart if the exact same download is already running
+        activeJobs[key]?.cancel()
 
-        currentJob = serviceScope.launch {
+        val job = serviceScope.launch {
             executeDownload(modelType, variant)
+            activeJobs.remove(key)
         }
+        activeJobs[key] = job
 
         return START_NOT_STICKY
     }
@@ -139,13 +169,20 @@ class ExtractionService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
+        activeJobs.keys.toList().forEach { key ->
+            activeJobs[key]?.cancel()
+            activeJobs.remove(key)
+        }
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.cancelAll()
+        displayNames.clear()
         serviceScope.cancel()
-        clearProgress()
         Log.i(TAG, "Service destroyed")
     }
 
     private suspend fun executeDownload(modelType: ModelType, variant: String?) {
-        modelDisplayName = resolveDisplayName(modelType, variant)
+        val key = jobKey(modelType, variant)
+        val nid = notificationIdForKey(key)
         try {
             when (modelType) {
                 ModelType.PARAKEET -> {
@@ -153,18 +190,18 @@ class ExtractionService : Service() {
                         context = applicationContext,
                         onProgress = {},
                         onStateChange = { state ->
-                            _progressState.value = ExtractionProgress(ModelType.PARAKEET, downloadState = state)
-                            updateNotificationFromState(state)
+                            _progressState.tryEmit(ExtractionProgress(ModelType.PARAKEET, downloadState = state))
+                            updateNotificationFromState(key, state)
                         }
                     )
                 }
                 ModelType.WHISPER -> {
                     val whisperVariant = WhisperVariant.fromString(variant)
                         ?: run {
-                            _progressState.value = ExtractionProgress(
+                            _progressState.tryEmit(ExtractionProgress(
                                 ModelType.WHISPER, variant,
                                 DownloadState.Error("Unknown variant: $variant")
-                            )
+                            ))
                             return
                         }
                     WhisperDownloader.downloadModel(
@@ -172,18 +209,18 @@ class ExtractionService : Service() {
                         variant = whisperVariant,
                         onProgress = {},
                         onStateChange = { state ->
-                            _progressState.value = ExtractionProgress(ModelType.WHISPER, variant, downloadState = state)
-                            updateNotificationFromState(state)
+                            _progressState.tryEmit(ExtractionProgress(ModelType.WHISPER, variant, downloadState = state))
+                            updateNotificationFromState(key, state)
                         }
                     )
                 }
                 ModelType.QWEN3_ASR -> {
                     val qwen3Variant = Qwen3Variant.fromString(variant)
                         ?: run {
-                            _progressState.value = ExtractionProgress(
+                            _progressState.tryEmit(ExtractionProgress(
                                 ModelType.QWEN3_ASR, variant,
                                 DownloadState.Error("Unknown variant: $variant")
-                            )
+                            ))
                             return
                         }
                     Qwen3AsrDownloader.downloadModel(
@@ -191,8 +228,8 @@ class ExtractionService : Service() {
                         variant = qwen3Variant,
                         onProgress = {},
                         onStateChange = { state ->
-                            _progressState.value = ExtractionProgress(ModelType.QWEN3_ASR, variant, downloadState = state)
-                            updateNotificationFromState(state)
+                            _progressState.tryEmit(ExtractionProgress(ModelType.QWEN3_ASR, variant, downloadState = state))
+                            updateNotificationFromState(key, state)
                         }
                     )
                 }
@@ -204,40 +241,107 @@ class ExtractionService : Service() {
                         tokenManager = AppContainer.huggingFaceTokenManager,
                         onProgress = {},
                         onStateChange = { state ->
-                            _progressState.value = ExtractionProgress(ModelType.GEMMA, variant, downloadState = state)
-                            updateNotificationFromState(state)
+                            _progressState.tryEmit(ExtractionProgress(ModelType.GEMMA, variant, downloadState = state))
+                            updateNotificationFromState(key, state)
                         }
                     )
                 }
             }
         } catch (e: CancellationException) {
-            Log.i(TAG, "Download cancelled")
-            _progressState.value = ExtractionProgress(
+            Log.i(TAG, "Download cancelled: $key")
+            _progressState.tryEmit(ExtractionProgress(
                 modelType, variant,
                 DownloadState.Cancelled("User cancelled")
-            )
+            ))
         } catch (e: Exception) {
-            Log.e(TAG, "Unexpected error during download", e)
-            _progressState.value = ExtractionProgress(
+            Log.e(TAG, "Unexpected error during download: $key", e)
+            _progressState.tryEmit(ExtractionProgress(
                 modelType, variant,
                 DownloadState.Error(e.message ?: "Unknown error", e)
-            )
+            ))
         } finally {
-            stopForeground(STOP_FOREGROUND_REMOVE)
-            stopSelf()
+            activeJobs.remove(key)
+            cancellingKeys.remove(key)
+            displayNames.remove(key)
+            if (activeJobs.isEmpty()) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                getSystemService(NotificationManager::class.java).cancelAll()
+                stopSelf()
+            }
         }
     }
 
-    private fun handleCancel() {
-        Log.i(TAG, "Cancel requested")
-        isCancelling = true
-        currentJob?.cancel()
-        ParakeetDownloader.cancel()
-        WhisperDownloader.cancel()
-        Qwen3AsrDownloader.cancel()
-        ModelDownloader.cancel()
-        stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
+    /** Cancels a single job by key, tracking it in [cancellingKeys] to suppress notifications. */
+    private fun cancelJobByKey(key: String) {
+        cancellingKeys.add(key)
+        activeJobs[key]?.cancel()
+        activeJobs.remove(key)
+        val nm = getSystemService(NotificationManager::class.java)
+        nm.cancel(notificationIdForKey(key))
+        displayNames.remove(key)
+        // Note: cancellingKeys is NOT removed here — it stays active until the
+        // coroutine's finally block runs, preventing stale state updates (e.g.
+        // "Retrying") from being posted after cancellation.
+    }
+
+    /** Cancels the underlying downloader for a given model type and optional variant. */
+    private fun cancelDownloaderFor(type: ModelType, variant: String? = null) {
+        when (type) {
+            ModelType.PARAKEET -> ParakeetDownloader.cancel()
+            ModelType.WHISPER -> {
+                if (variant != null) {
+                    WhisperVariant.fromString(variant)?.let { WhisperDownloader.cancel(it) }
+                } else {
+                    WhisperDownloader.cancel()
+                }
+            }
+            ModelType.QWEN3_ASR -> {
+                if (variant != null) {
+                    Qwen3Variant.fromString(variant)?.let { Qwen3AsrDownloader.cancel(it) }
+                } else {
+                    Qwen3AsrDownloader.cancel()
+                }
+            }
+            ModelType.GEMMA -> {
+                if (variant != null) {
+                    ModelDownloader.cancel(GemmaVariant.fromString(variant))
+                } else {
+                    ModelDownloader.cancel()
+                }
+            }
+        }
+    }
+
+    private fun handleCancel(intent: Intent) {
+        val cancelVariant = intent.getStringExtra(EXTRA_CANCEL_VARIANT)
+        val cancelModelType = intent.getStringExtra(EXTRA_MODEL_TYPE)
+
+        if (cancelVariant != null && cancelModelType != null) {
+            val type = ModelType.fromKey(cancelModelType) ?: return
+            val key = jobKey(type, cancelVariant)
+            Log.i(TAG, "Cancel requested for: $key")
+            cancelJobByKey(key)
+            cancelDownloaderFor(type, cancelVariant)
+        } else if (cancelModelType != null) {
+            val type = ModelType.fromKey(cancelModelType) ?: return
+            Log.i(TAG, "Cancel all for model type: $type")
+            val prefix = "${type.key}:"
+            activeJobs.keys.filter { it.startsWith(prefix) }.toList().forEach { cancelJobByKey(it) }
+            cancelDownloaderFor(type)
+        } else {
+            Log.i(TAG, "Cancel all requested")
+            cancellingKeys.addAll(activeJobs.keys)
+            activeJobs.keys.toList().forEach { cancelJobByKey(it) }
+            activeJobs.clear()
+            // Don't clear cancellingKeys — each coroutine's finally block removes its key,
+            // preventing stale notification updates during cancellation.
+            ModelType.entries.forEach { cancelDownloaderFor(it) }
+        }
+
+        if (activeJobs.isEmpty()) {
+            stopForeground(STOP_FOREGROUND_REMOVE)
+            stopSelf()
+        }
     }
 
     private fun createNotificationChannel() {
@@ -255,65 +359,74 @@ class ExtractionService : Service() {
 
     private fun createNotification(
         contentText: String,
+        title: String,
+        notificationId: Int,
         progress: Int = 0,
         maxProgress: Int = 0,
         indeterminate: Boolean = false,
+        ongoing: Boolean = true,
         subText: String? = null
     ): Notification {
-        val cancelIntent = Intent(this, ExtractionService::class.java).apply {
-            action = ACTION_CANCEL
-        }
-        val cancelPendingIntent = android.app.PendingIntent.getService(
-            this,
-            NOTIFICATION_ID,
-            cancelIntent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
-
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(modelDisplayName)
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(title)
             .setContentText(contentText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(contentText))
             .setSmallIcon(android.R.drawable.ic_menu_manage)
             .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setOngoing(true)
+            .setOngoing(ongoing)
             .setSilent(true)
             .setProgress(maxProgress, progress, indeterminate)
-            .addAction(
+            .apply { subText?.let { setSubText(it) } }
+
+        // Only show cancel action when there's a single active download
+        // and the notification is still ongoing.
+        if (ongoing && activeJobs.size <= 1) {
+            val cancelIntent = Intent(this, ExtractionService::class.java).apply {
+                action = ACTION_CANCEL
+            }
+            val cancelPendingIntent = android.app.PendingIntent.getService(
+                this,
+                notificationId,
+                cancelIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+            )
+            builder.addAction(
                 android.R.drawable.ic_menu_close_clear_cancel,
                 getString(R.string.action_cancel),
                 cancelPendingIntent
             )
-            .apply { subText?.let { setSubText(it) } }
-            .build()
+        }
+
+        return builder.build()
     }
 
-    private fun updateNotificationFromState(state: DownloadState) {
-        // Don't update notification after cancel has been requested — prevents
-        // stale state (e.g. Retrying) from re-posting after stopForeground().
-        if (isCancelling) return
+    private fun updateNotificationFromState(key: String, state: DownloadState) {
+        // Don't update notification for a download that is being cancelled
+        if (key in cancellingKeys) return
 
         val notificationManager = getSystemService(NotificationManager::class.java)
+        val nid = notificationIdForKey(key)
+        val title = displayNames[key] ?: ""
 
         when (state) {
             is DownloadState.Connecting -> {
-                notificationManager.notify(NOTIFICATION_ID,
-                    createNotification(getString(R.string.download_status_connecting), indeterminate = true))
+                notificationManager.notify(nid,
+                    createNotification(getString(R.string.download_status_connecting), title, nid, indeterminate = true))
             }
             is DownloadState.CheckingAccess -> {
-                notificationManager.notify(NOTIFICATION_ID,
-                    createNotification(getString(R.string.download_status_checking_access), indeterminate = true))
+                notificationManager.notify(nid,
+                    createNotification(getString(R.string.download_status_checking_access), title, nid, indeterminate = true))
             }
             is DownloadState.Downloading -> {
                 val percent = state.progressPercent.toInt()
                 val text = getString(R.string.notification_downloading_progress, percent)
-                notificationManager.notify(NOTIFICATION_ID,
-                    createNotification(text, progress = percent, maxProgress = 100))
+                notificationManager.notify(nid,
+                    createNotification(text, title, nid, progress = percent, maxProgress = 100))
             }
             is DownloadState.Retrying -> {
                 val text = getString(R.string.download_status_retrying, state.attempt, state.maxRetries)
-                notificationManager.notify(NOTIFICATION_ID,
-                    createNotification(text, indeterminate = true))
+                notificationManager.notify(nid,
+                    createNotification(text, title, nid, indeterminate = true))
             }
             is DownloadState.Extracting -> {
                 val text = if (state.totalFiles > 0) {
@@ -323,23 +436,22 @@ class ExtractionService : Service() {
                 }
                 val maxProgress = if (state.totalFiles > 0) state.totalFiles else 0
                 val progress = if (state.totalFiles > 0) state.fileIndex else 0
-                notificationManager.notify(NOTIFICATION_ID,
-                    createNotification(text, progress = progress, maxProgress = maxProgress,
+                notificationManager.notify(nid,
+                    createNotification(text, title, nid, progress = progress, maxProgress = maxProgress,
                         indeterminate = state.totalFiles <= 0,
                         subText = getString(R.string.notification_extracting_hint)))
             }
             is DownloadState.Complete -> {
-                val text = getString(R.string.notification_download_complete)
-                notificationManager.notify(NOTIFICATION_ID,
-                    createNotification(text, progress = 100, maxProgress = 100))
+                notificationManager.notify(nid,
+                    createNotification(getString(R.string.notification_download_complete), title, nid,
+                        progress = 100, maxProgress = 100, ongoing = false))
             }
             is DownloadState.Error -> {
-                notificationManager.notify(NOTIFICATION_ID,
-                    createNotification("Error: ${state.message}"))
+                notificationManager.notify(nid,
+                    createNotification("Error: ${state.message}", title, nid, ongoing = false))
             }
             is DownloadState.Cancelled -> {
-                notificationManager.notify(NOTIFICATION_ID,
-                    createNotification(getString(R.string.action_cancel)))
+                notificationManager.cancel(nid)
             }
             else -> {}
         }
@@ -374,8 +486,9 @@ class ExtractionService : Service() {
     private object GemmaVariant {
         fun fromString(name: String?): ModelDownloader.ModelVariant {
             return when (name) {
-                "gemma_4_e4b" -> ModelDownloader.ModelVariant.GEMMA_4_E4B
                 "gemma_4_e2b" -> ModelDownloader.ModelVariant.GEMMA_4_E2B
+                "gemma_4_e4b" -> ModelDownloader.ModelVariant.GEMMA_4_E4B
+                "gemma_3n_e2b" -> ModelDownloader.ModelVariant.GEMMA_3N_E2B
                 "gemma_3n_e4b" -> ModelDownloader.ModelVariant.GEMMA_3N_E4B
                 else -> ModelDownloader.ModelVariant.GEMMA_4_E2B
             }

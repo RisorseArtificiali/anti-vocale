@@ -71,6 +71,7 @@ object WhisperDownloader {
         onStateChange: (DownloadState) -> Unit = {}
     ): Result<File> = delegate.downloadModel(context, variant, onProgress, onStateChange)
 
+    fun cancel(variant: WhisperModelManager.Variant) = delegate.cancel(variant)
     fun cancel() = delegate.cancel()
 
     fun isModelDownloaded(context: Context, variant: WhisperModelManager.Variant): Boolean =

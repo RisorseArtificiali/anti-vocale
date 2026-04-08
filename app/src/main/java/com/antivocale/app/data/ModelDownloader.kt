@@ -11,6 +11,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.net.HttpURLConnection
+import java.util.concurrent.ConcurrentHashMap
 import java.net.URL
 
 /**
@@ -47,7 +48,8 @@ object ModelDownloader {
         val fileName: String,
         val descriptionResId: Int?,
         val estimatedSizeMB: Long,
-        val supportsAudio: Boolean
+        val supportsAudio: Boolean,
+        val requiresAuth: Boolean = false
     ) {
         GEMMA_4_E2B(
             displayName = "Gemma 4 E2B",
@@ -71,7 +73,8 @@ object ModelDownloader {
             fileName = "gemma-3n-E2B-it-int4.litertlm",
             descriptionResId = R.string.model_desc_gemma_3n_e2b,
             estimatedSizeMB = 3300L,
-            supportsAudio = true
+            supportsAudio = true,
+            requiresAuth = true
         ),
         GEMMA_3N_E4B(
             displayName = "Gemma 3n E4B",
@@ -79,7 +82,8 @@ object ModelDownloader {
             fileName = "gemma-3n-E4B-it-int4.litertlm",
             descriptionResId = R.string.model_desc_gemma_3n_e4b,
             estimatedSizeMB = 4235L,
-            supportsAudio = true
+            supportsAudio = true,
+            requiresAuth = true
         )
     }
 
@@ -94,7 +98,8 @@ object ModelDownloader {
         class StorageError(message: String, val requiredBytes: Long, val availableBytes: Long) : DownloadError(message)
     }
 
-    @Volatile private var isCancelled = false
+    /** Per-variant cancel flags — supports concurrent downloads of different variants. */
+    private val cancelFlags = ConcurrentHashMap<ModelVariant, Boolean>()
 
     /**
      * Resolves the HuggingFace download URL for a model variant.
@@ -165,8 +170,8 @@ object ModelDownloader {
         onProgress: (Float) -> Unit = {},
         onStateChange: (DownloadState) -> Unit = {}
     ): Result<File> = withContext(Dispatchers.IO) {
-        isCancelled = false
-
+        cancelFlags[variant] = false
+        try {
         // Pre-download storage check
         val requiredBytes = variant.estimatedSizeMB * 1024 * 1024
         val availableBytes = context.filesDir.usableSpace
@@ -230,6 +235,9 @@ object ModelDownloader {
         }
 
         result
+        } finally {
+            cancelFlags.remove(variant)
+        }
     }
 
     /**
@@ -255,7 +263,7 @@ object ModelDownloader {
                 authHeader = accessToken?.let { "Bearer $it" },
                 connectTimeoutMs = CONNECT_TIMEOUT_MS,
                 readTimeoutMs = READ_TIMEOUT_MS,
-                isCancelled = { isCancelled }
+                isCancelled = { cancelFlags[variant] == true }
             ),
             maxRetries = MAX_RETRIES,
             backoffBase = 3.0,
@@ -279,9 +287,14 @@ object ModelDownloader {
     /**
      * Cancels any ongoing download.
      */
+    fun cancel(variant: ModelVariant) {
+        cancelFlags[variant] = true
+        Log.i(TAG, "Download cancellation requested for ${variant.name}")
+    }
+
     fun cancel() {
-        isCancelled = true
-        Log.i(TAG, "Download cancellation requested")
+        cancelFlags.keys.forEach { cancelFlags[it] = true }
+        Log.i(TAG, "Download cancellation requested for all variants")
     }
 
     /**

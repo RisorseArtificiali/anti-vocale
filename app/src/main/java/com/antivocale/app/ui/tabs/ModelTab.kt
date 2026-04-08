@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.ClickableText
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
@@ -26,6 +27,10 @@ import kotlinx.coroutines.delay
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.text.style.TextDecoration
 import com.antivocale.app.R
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
@@ -641,19 +646,20 @@ private fun ModelDownloadSection(
 
         // Model variant cards
         ModelDownloader.ModelVariant.entries.forEach { variant ->
+            val variantState = downloadState.variantDownloadStates[variant]
             ModelVariantCard(
                 variant = variant,
                 downloadState = downloadState,
                 isDownloaded = downloadState.downloadedModels.contains(variant),
                 isActive = activeModelName == variant.displayName,
-                isDownloading = downloadState.isDownloading &&
-                    downloadState.selectedVariant == variant,
-                downloadProgress = downloadState.downloadProgress,
-                currentDownloadState = downloadState.downloadState,
-                downloadError = downloadState.downloadError,
+                isDownloading = variantState?.isDownloading == true,
+                downloadProgress = variantState?.downloadProgress ?: 0f,
+                currentDownloadState = variantState?.downloadState ?: DownloadState.Idle,
+                downloadError = if (downloadState.selectedVariant == variant) downloadState.downloadError else null,
+                partialDownload = variantState?.partialDownload,
                 onSelect = { viewModel.selectModel(variant) },
                 onDownloadClick = { viewModel.showDownloadDialog(variant) },
-                onCancelClick = { viewModel.cancelDownload() },
+                onCancelClick = { viewModel.cancelDownload(variant) },
                 onResumeClick = { viewModel.resumeDownload(variant) },
                 onClearPartialClick = { viewModel.clearPartialDownload(variant) },
                 onUseClick = { viewModel.useDownloadedModel(variant) },
@@ -661,6 +667,8 @@ private fun ModelDownloadSection(
                 onDeleteClick = {
                     viewModel.showDeleteDialog(variant)
                 },
+                hasToken = downloadState.hasToken,
+                onNavigateToSettings = onNavigateToSettings,
                 context = context
             )
         }
@@ -680,6 +688,7 @@ private fun ModelVariantCard(
     downloadProgress: Float,
     currentDownloadState: DownloadState,
     downloadError: ModelDownloader.DownloadError?,
+    partialDownload: DownloadState.PartiallyDownloaded? = null,
     onSelect: () -> Unit,
     onDownloadClick: () -> Unit,
     onCancelClick: () -> Unit,
@@ -688,6 +697,8 @@ private fun ModelVariantCard(
     onUseClick: () -> Unit,
     onClearError: () -> Unit,
     onDeleteClick: () -> Unit,
+    hasToken: Boolean = false,
+    onNavigateToSettings: () -> Unit = {},
     context: android.content.Context
 ) {
     var showInfo by remember { mutableStateOf(false) }
@@ -808,16 +819,14 @@ private fun ModelVariantCard(
                 DownloadProgressView(currentDownloadState, downloadProgress)
             }
 
-            // Partial download (only for this variant)
-            if (downloadState.partialDownloadVariant == variant) {
-                downloadState.partialDownload?.let { partial ->
-                    Spacer(modifier = Modifier.height(8.dp))
-                    PartialDownloadSection(
-                        partial = partial,
-                        onResumeClick = onResumeClick,
-                        onClearClick = onClearPartialClick
-                    )
-                }
+            // Partial download (from per-variant state)
+            partialDownload?.let { partial ->
+                Spacer(modifier = Modifier.height(8.dp))
+                PartialDownloadSection(
+                    partial = partial,
+                    onResumeClick = onResumeClick,
+                    onClearClick = onClearPartialClick
+                )
             }
 
             // Action buttons
@@ -866,7 +875,7 @@ private fun ModelVariantCard(
                             Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                         }
                     }
-                    downloadState.partialDownloadVariant == variant -> {
+                    partialDownload != null -> {
                         // PartialDownloadSection above already shows Resume/Clear buttons
                     }
                     else -> {
@@ -881,6 +890,33 @@ private fun ModelVariantCard(
                         }
                     }
                 }
+            }
+
+            // Auth warning for gated models when no token is configured
+            if (variant.requiresAuth && !hasToken) {
+                val tokenWarning = stringResource(R.string.requires_huggingface_token)
+                val addSettings = stringResource(R.string.add_in_settings)
+                val errorColor = MaterialTheme.colorScheme.error
+                val primaryColor = MaterialTheme.colorScheme.primary
+                val authWarningText = remember(tokenWarning, addSettings, errorColor, primaryColor) {
+                    buildAnnotatedString {
+                        withStyle(SpanStyle(color = errorColor)) {
+                            append(tokenWarning + " ")
+                        }
+                        withStyle(SpanStyle(
+                            color = primaryColor,
+                            textDecoration = TextDecoration.Underline
+                        )) {
+                            append(addSettings)
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                ClickableText(
+                    text = authWarningText,
+                    style = MaterialTheme.typography.labelSmall,
+                    onClick = { onNavigateToSettings() }
+                )
             }
         }
     }
@@ -935,7 +971,7 @@ private fun Qwen3AsrDownloadSection(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = when {
-                qwen3AsrState.isDownloading -> MaterialTheme.colorScheme.secondaryContainer
+                qwen3AsrState.isAnyDownloading -> MaterialTheme.colorScheme.secondaryContainer
                 else -> MaterialTheme.colorScheme.surfaceVariant
             }
         )
@@ -951,13 +987,13 @@ private fun Qwen3AsrDownloadSection(
                     Icon(
                         imageVector = when {
                             qwen3AsrState.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
-                            qwen3AsrState.isDownloading -> Icons.Default.CloudDownload
+                            qwen3AsrState.isAnyDownloading -> Icons.Default.CloudDownload
                             else -> Icons.Default.Translate
                         },
                         contentDescription = null,
                         tint = when {
                             qwen3AsrState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
-                            qwen3AsrState.isDownloading -> MaterialTheme.colorScheme.secondary
+                            qwen3AsrState.isAnyDownloading -> MaterialTheme.colorScheme.secondary
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         },
                         modifier = Modifier.size(24.dp)
@@ -981,25 +1017,25 @@ private fun Qwen3AsrDownloadSection(
 
             // Model variant cards
             Qwen3AsrModelManager.Variant.entries.forEach { variant ->
-                val isVariantSelected = qwen3AsrState.selectedVariant == variant
+                val variantState = qwen3AsrState.variantDownloadStates[variant]
                 ModelVariantCard(
                     state = ModelVariantCardState(
                         variant = variant,
                         isActive = activeModelName == stringResource(variant.titleResId),
-                        downloadProgress = qwen3AsrState.downloadProgress,
-                        downloadState = qwen3AsrState.downloadState,
-                        errorMessage = if (isVariantSelected) qwen3AsrState.errorMessage else null,
-                        partialDownload = if (qwen3AsrState.partialDownloadVariant == variant) qwen3AsrState.partialDownload else null,
+                        downloadProgress = variantState?.downloadProgress ?: 0f,
+                        downloadState = variantState?.downloadState ?: DownloadState.Idle,
+                        errorMessage = variantState?.errorMessage,
+                        partialDownload = variantState?.partialDownload,
                         buttonState = when {
-                            qwen3AsrState.isDownloading && isVariantSelected -> DownloadButtonState.Downloading
+                            variantState?.isDownloading == true -> DownloadButtonState.Downloading
                             qwen3AsrState.downloadedVariants.contains(variant) -> DownloadButtonState.Downloaded
-                            qwen3AsrState.partialDownloadVariant == variant -> DownloadButtonState.PartiallyDownloaded
+                            variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
                             else -> DownloadButtonState.Idle
                         }
                     ),
                     downloadButtonTextResId = R.string.qwen3_asr_download,
                     onDownloadClick = { viewModel.showQwen3AsrDownloadDialog(variant) },
-                    onCancelClick = { viewModel.cancelQwen3AsrDownload() },
+                    onCancelClick = { viewModel.cancelQwen3AsrDownload(variant) },
                     onResumeClick = { viewModel.resumeQwen3AsrDownload(variant) },
                     onClearPartialClick = { viewModel.clearQwen3AsrPartialDownload(variant) },
                     onUseClick = { guardedModelSwitch { viewModel.useQwen3AsrModel(variant) } },
@@ -1224,7 +1260,7 @@ private fun WhisperDownloadSection(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = when {
-                whisperState.isDownloading -> MaterialTheme.colorScheme.secondaryContainer
+                whisperState.isAnyDownloading -> MaterialTheme.colorScheme.secondaryContainer
                 else -> MaterialTheme.colorScheme.surfaceVariant
             }
         )
@@ -1240,13 +1276,13 @@ private fun WhisperDownloadSection(
                     Icon(
                         imageVector = when {
                             whisperState.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
-                            whisperState.isDownloading -> Icons.Default.CloudDownload
+                            whisperState.isAnyDownloading -> Icons.Default.CloudDownload
                             else -> Icons.Default.Translate
                         },
                         contentDescription = null,
                         tint = when {
                             whisperState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
-                            whisperState.isDownloading -> MaterialTheme.colorScheme.secondary
+                            whisperState.isAnyDownloading -> MaterialTheme.colorScheme.secondary
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         },
                         modifier = Modifier.size(24.dp)
@@ -1278,23 +1314,23 @@ private fun WhisperDownloadSection(
 
             // Model variant selection
             WhisperModelManager.Variant.entries.forEach { variant ->
-                val isVariantSelected = whisperState.selectedVariant == variant
                 val needsExtraction = whisperState.variantsNeedingExtraction.contains(variant)
                 val isOrphaned = whisperState.orphanedVariants.contains(variant)
+                val variantState = whisperState.variantDownloadStates[variant]
                 ModelVariantCard(
                     state = ModelVariantCardState(
                         variant = variant,
                         isActive = activeModelName == stringResource(variant.titleResId),
-                        downloadProgress = whisperState.downloadProgress,
-                        downloadState = whisperState.downloadState,
-                        errorMessage = if (isVariantSelected) whisperState.errorMessage else null,
-                        partialDownload = if (whisperState.partialDownloadVariant == variant) whisperState.partialDownload else null,
+                        downloadProgress = variantState?.downloadProgress ?: 0f,
+                        downloadState = variantState?.downloadState ?: DownloadState.Idle,
+                        errorMessage = variantState?.errorMessage,
+                        partialDownload = variantState?.partialDownload,
                         buttonState = when {
-                            whisperState.isDownloading && isVariantSelected -> DownloadButtonState.Downloading
+                            variantState?.isDownloading == true -> DownloadButtonState.Downloading
                             whisperState.downloadedVariants.contains(variant) -> DownloadButtonState.Downloaded
                             isOrphaned && needsExtraction -> DownloadButtonState.Orphaned
                             needsExtraction -> DownloadButtonState.NeedsExtraction
-                            whisperState.partialDownloadVariant == variant -> DownloadButtonState.PartiallyDownloaded
+                            variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
                             else -> DownloadButtonState.Idle
                         }
                     ),
@@ -1334,7 +1370,7 @@ private fun WhisperDownloadSection(
                             stringResource(R.string.cancel_download)
                     },
                     onDownloadClick = { viewModel.showWhisperDownloadDialog(variant) },
-                    onCancelClick = { viewModel.cancelWhisperDownload() },
+                    onCancelClick = { viewModel.cancelWhisperDownload(variant) },
                     onResumeClick = { viewModel.resumeWhisperDownload(variant) },
                     onClearPartialClick = { viewModel.clearWhisperPartialDownload(variant) },
                     onExtraActionClick = { viewModel.clearOrphanedWhisperFiles(variant) },

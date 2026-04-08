@@ -56,6 +56,7 @@ object Qwen3AsrDownloader {
         onStateChange: (DownloadState) -> Unit = {}
     ): Result<File> = delegate.downloadModel(context, variant, onProgress, onStateChange)
 
+    fun cancel(variant: Qwen3AsrModelManager.Variant) = delegate.cancel(variant)
     fun cancel() = delegate.cancel()
 
     fun isModelDownloaded(context: Context, variant: Qwen3AsrModelManager.Variant): Boolean =

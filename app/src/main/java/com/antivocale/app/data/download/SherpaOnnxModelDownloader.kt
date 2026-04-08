@@ -5,6 +5,7 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Generic downloader for sherpa-onnx models from HuggingFace.
@@ -21,7 +22,7 @@ class SherpaOnnxModelDownloader<V>(
     private val config: SherpaOnnxModelConfig<V>
 ) {
 
-    private var isCancelled = false
+    private val cancelFlags = ConcurrentHashMap<V, Boolean>()
 
     fun getModelDirName(variant: V): String = config.modelDirNames[variant] ?: ""
 
@@ -79,7 +80,8 @@ class SherpaOnnxModelDownloader<V>(
         onProgress: (Float) -> Unit = {},
         onStateChange: (DownloadState) -> Unit = {}
     ): Result<File> = withContext(Dispatchers.IO) {
-        isCancelled = false
+        cancelFlags[variant] = false
+        try {
 
         val targetDir = config.modelStorageDir(context)
         val modelDirName = config.modelDirNames[variant] ?: return@withContext Result.failure(
@@ -115,7 +117,7 @@ class SherpaOnnxModelDownloader<V>(
         for (fileName in files) {
             val fileUrl = hfFileUrl(modelDirName, fileName)
 
-            if (isCancelled) {
+            if (cancelFlags[variant] == true) {
                 onStateChange(DownloadState.Cancelled("User cancelled"))
                 return@withContext Result.failure(Exception("Download cancelled"))
             }
@@ -146,7 +148,7 @@ class SherpaOnnxModelDownloader<V>(
                 estimatedSizeBytes = 0L,
                 connectTimeoutMs = 60_000,
                 readTimeoutMs = 120_000,
-                isCancelled = { isCancelled }
+                isCancelled = { cancelFlags[variant] == true }
             )
 
             val downloadResult = downloadWithRetry(
@@ -175,11 +177,19 @@ class SherpaOnnxModelDownloader<V>(
         Log.i(config.tag, "Model ready: ${modelDir.absolutePath}")
         onStateChange(DownloadState.Complete(modelDir))
         Result.success(modelDir)
+        } finally {
+            cancelFlags.remove(variant)
+        }
+    }
+
+    fun cancel(variant: V) {
+        cancelFlags[variant] = true
+        Log.i(config.tag, "Download cancellation requested for variant: $variant")
     }
 
     fun cancel() {
-        isCancelled = true
-        Log.i(config.tag, "Download cancellation requested")
+        cancelFlags.keys.forEach { cancelFlags[it] = true }
+        Log.i(config.tag, "Download cancellation requested for all variants")
     }
 
     fun isModelDownloaded(context: Context, variant: V): Boolean {

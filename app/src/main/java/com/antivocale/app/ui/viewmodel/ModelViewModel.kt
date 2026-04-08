@@ -52,33 +52,24 @@ class ModelViewModel(
 
     private val ctx: Context get() = com.antivocale.app.di.AppContainer.applicationContext
 
-    // Set up auto-unload callback
-    init {
-        LlmManager.setOnAutoUnloadCallback {
-            onModelAutoUnloaded()
-        }
-    }
-
     enum class ModelStatus {
         UNLOADED, LOADING, READY, ERROR
     }
 
     /**
-     * Download UI state for model download management
+     * Download UI state for model download management — uses per-variant maps.
      */
     data class DownloadUiState(
         val selectedVariant: ModelDownloader.ModelVariant? = null,
-        val isDownloading: Boolean = false,
-        val downloadProgress: Float = 0f,
-        val downloadState: DownloadState = DownloadState.Idle,
+        val variantDownloadStates: Map<ModelDownloader.ModelVariant, VariantDownloadState> = emptyMap(),
         val downloadError: ModelDownloader.DownloadError? = null,
         val downloadedModels: Set<ModelDownloader.ModelVariant> = emptySet(),
         val hasToken: Boolean = false,
         val modelToDelete: ModelDownloader.ModelVariant? = null,
-        val partialDownload: DownloadState.PartiallyDownloaded? = null,
-        val partialDownloadVariant: ModelDownloader.ModelVariant? = null,
         val showDownloadDialog: Boolean = false
-    )
+    ) {
+        val isAnyDownloading: Boolean get() = variantDownloadStates.values.any { it.isDownloading }
+    }
 
     /**
      * Parakeet download UI state
@@ -99,43 +90,49 @@ class ModelViewModel(
     )
 
     /**
-     * Whisper download UI state
+     * Per-variant download state — isolates progress, errors, and downloading
+     * flag so that concurrent downloads on different variants don't cross-contaminate.
+     */
+    data class VariantDownloadState(
+        val downloadState: DownloadState = DownloadState.Idle,
+        val downloadProgress: Float = 0f,
+        val isDownloading: Boolean = false,
+        val errorMessage: String? = null,
+        val partialDownload: DownloadState.PartiallyDownloaded? = null
+    )
+
+    /**
+     * Whisper download UI state — uses per-variant maps for download tracking.
      */
     data class WhisperUiState(
         val selectedVariant: WhisperModelManager.Variant? = null,
         val downloadedVariants: Set<WhisperModelManager.Variant> = emptySet(),
-        val isDownloading: Boolean = false,
-        val downloadProgress: Float = 0f,
-        val downloadState: DownloadState = DownloadState.Idle,
+        val variantDownloadStates: Map<WhisperModelManager.Variant, VariantDownloadState> = emptyMap(),
         val modelPath: String? = null,
-        val errorMessage: String? = null,
         // Confirmation dialogs
         val showDownloadDialog: Boolean = false,
         val showDeleteDialog: Boolean = false,
         val variantToDelete: WhisperModelManager.Variant? = null,
-        val partialDownload: DownloadState.PartiallyDownloaded? = null,
-        val partialDownloadVariant: WhisperModelManager.Variant? = null,
         val variantsNeedingExtraction: Set<WhisperModelManager.Variant> = emptySet(),
         val orphanedVariants: Set<WhisperModelManager.Variant> = emptySet()
-    )
+    ) {
+        val isAnyDownloading: Boolean get() = variantDownloadStates.values.any { it.isDownloading }
+    }
 
     /**
-     * Qwen3-ASR download UI state
+     * Qwen3-ASR download UI state — uses per-variant maps for download tracking.
      */
     data class Qwen3AsrUiState(
         val selectedVariant: Qwen3AsrModelManager.Variant? = null,
         val downloadedVariants: Set<Qwen3AsrModelManager.Variant> = emptySet(),
-        val isDownloading: Boolean = false,
-        val downloadProgress: Float = 0f,
-        val downloadState: DownloadState = DownloadState.Idle,
+        val variantDownloadStates: Map<Qwen3AsrModelManager.Variant, VariantDownloadState> = emptyMap(),
         val modelPath: String? = null,
-        val errorMessage: String? = null,
         val showDownloadDialog: Boolean = false,
         val showDeleteDialog: Boolean = false,
-        val variantToDelete: Qwen3AsrModelManager.Variant? = null,
-        val partialDownload: DownloadState.PartiallyDownloaded? = null,
-        val partialDownloadVariant: Qwen3AsrModelManager.Variant? = null
-    )
+        val variantToDelete: Qwen3AsrModelManager.Variant? = null
+    ) {
+        val isAnyDownloading: Boolean get() = variantDownloadStates.values.any { it.isDownloading }
+    }
 
     data class UiState(
         val status: ModelStatus = ModelStatus.UNLOADED,
@@ -184,7 +181,6 @@ class ModelViewModel(
         // Observe ExtractionService progress state
         viewModelScope.launch {
             ExtractionService.progressState.collect { progress ->
-                if (progress == null) return@collect
                 when (progress.modelType) {
                     ExtractionService.ModelType.PARAKEET -> handleServiceProgressParakeet(progress)
                     ExtractionService.ModelType.WHISPER -> handleServiceProgressWhisper(progress)
@@ -211,6 +207,32 @@ class ModelViewModel(
 
     // ==================== Service progress handlers ====================
 
+    /** Updates a single variant's download state in the map, merging with existing state. */
+    private fun <V> Map<V, VariantDownloadState>.updateVariant(
+        variant: V,
+        block: VariantDownloadState.() -> VariantDownloadState
+    ): Map<V, VariantDownloadState> =
+        this + (variant to (this[variant] ?: VariantDownloadState()).block())
+
+    /** Removes a variant's download state from the map if the variant is non-null. */
+    private fun <V> Map<V, VariantDownloadState>.removeVariant(variant: V?): Map<V, VariantDownloadState> =
+        if (variant != null) this - variant else this
+
+    /** Merges detected partials into the variant map, preserving existing partials. */
+    private fun <V> Map<V, VariantDownloadState>.mergePartials(
+        partials: Map<V, DownloadState.PartiallyDownloaded>
+    ): Map<V, VariantDownloadState> {
+        val updated = mapValues { (v, vds) ->
+            vds.copy(partialDownload = partials[v] ?: vds.partialDownload)
+        }.toMutableMap()
+        for ((v, partial) in partials) {
+            if (v !in updated) {
+                updated[v] = VariantDownloadState(partialDownload = partial)
+            }
+        }
+        return updated
+    }
+
     /**
      * Shared skeleton for all three model-type progress handlers.
      * Updates the given [stateFlow] with progress, then dispatches terminal states.
@@ -220,33 +242,32 @@ class ModelViewModel(
         updateFlow: (DownloadState, Float?) -> Unit,
         onError: (String, Throwable?) -> Unit,
         onComplete: (File) -> Unit,
-        onCancelled: () -> Unit = { detectPartialDownloads() }
+        onCancelled: () -> Unit = { /* no-op: cancelVariantDownload handles partial detection */ }
     ) {
-        val progress: Float? = when (state) {
-            is DownloadState.Downloading -> state.progressPercent / 100f
-            is DownloadState.Complete -> 1f
-            else -> null
-        }
-        // Always update the flow so the UI reflects every state transition
-        // (e.g., Downloading → Extracting → Complete). When progress is null,
-        // the caller preserves the existing progress value.
-        updateFlow(state, progress)
-
         when (state) {
+            is DownloadState.Downloading -> {
+                val progress = state.progressPercent / 100f
+                updateFlow(state, progress)
+            }
             is DownloadState.Error -> {
+                updateFlow(state, null)
                 onError(state.message, state.throwable)
                 viewModelScope.launch { _snackbarEvent.send(state.message) }
-                ExtractionService.clearProgress()
             }
             is DownloadState.Complete -> {
+                updateFlow(state, 1f)
                 onComplete(state.file)
-                ExtractionService.clearProgress()
             }
             is DownloadState.Cancelled -> {
+                // Don't update the flow — skip straight to onCancelled.
+                // The cancel method's IO coroutine owns the atomic
+                // Downloading → PartiallyDownloaded transition.
+                // Any state change here would cause an Idle flicker.
                 onCancelled()
-                ExtractionService.clearProgress()
             }
-            else -> {}
+            else -> {
+                updateFlow(state, null)
+            }
         }
     }
 
@@ -283,18 +304,31 @@ class ModelViewModel(
 
         handleServiceProgress(
             state = progress.downloadState,
-            updateFlow = { state, prog -> _whisperState.update { it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress) } },
+            updateFlow = { state, prog ->
+                if (variant != null) {
+                    _whisperState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(downloadState = state, downloadProgress = prog ?: downloadProgress)
+                        })
+                    }
+                }
+            },
             onError = { msg, _ ->
-                _whisperState.update { it.copy(isDownloading = false, errorMessage = msg) }
+                if (variant != null) {
+                    _whisperState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = msg)
+                        })
+                    }
+                }
                 detectPartialDownloads()
             },
             onComplete = { file ->
                 _whisperState.update {
                     it.copy(
-                        isDownloading = false,
                         modelPath = file.absolutePath,
                         downloadedVariants = if (variant != null) it.downloadedVariants + variant else it.downloadedVariants,
-                        partialDownload = null
+                        variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
                     )
                 }
                 if (variant != null) {
@@ -302,24 +336,6 @@ class ModelViewModel(
                     val displayName = ctx.getString(variant.titleResId)
                     viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.whisper_downloaded, displayName)) }
                 }
-            },
-            onCancelled = {
-                val context = ctx
-                val eagerNeedsExtraction = WhisperModelManager.Variant.entries
-                    .filter { WhisperDownloader.needsExtraction(context, it) }
-                    .toSet()
-                val eagerOrphaned = WhisperModelManager.Variant.entries
-                    .filter { v ->
-                        val modelDir = File(WhisperModelManager.getModelStorageDir(context), WhisperDownloader.getModelDirName(v))
-                        modelDir.exists() && !WhisperDownloader.isModelDownloaded(context, v)
-                    }
-                    .toSet()
-                _whisperState.update { it.copy(
-                    isDownloading = false,
-                    variantsNeedingExtraction = eagerNeedsExtraction,
-                    orphanedVariants = eagerOrphaned
-                )}
-                detectPartialDownloads()
             }
         )
     }
@@ -330,18 +346,31 @@ class ModelViewModel(
 
         handleServiceProgress(
             state = progress.downloadState,
-            updateFlow = { state, prog -> _qwen3AsrState.update { it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress) } },
+            updateFlow = { state, prog ->
+                if (variant != null) {
+                    _qwen3AsrState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(downloadState = state, downloadProgress = prog ?: downloadProgress)
+                        })
+                    }
+                }
+            },
             onError = { msg, _ ->
-                _qwen3AsrState.update { it.copy(isDownloading = false, errorMessage = msg) }
+                if (variant != null) {
+                    _qwen3AsrState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = msg)
+                        })
+                    }
+                }
                 detectPartialDownloads()
             },
             onComplete = { file ->
                 _qwen3AsrState.update {
                     it.copy(
-                        isDownloading = false,
                         modelPath = file.absolutePath,
                         downloadedVariants = if (variant != null) it.downloadedVariants + variant else it.downloadedVariants,
-                        partialDownload = null
+                        variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
                     )
                 }
                 if (variant != null) {
@@ -349,24 +378,38 @@ class ModelViewModel(
                     val displayName = ctx.getString(variant.titleResId)
                     viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.qwen3_asr_downloaded, displayName)) }
                 }
-            },
-            onCancelled = {
-                _qwen3AsrState.update { it.copy(isDownloading = false) }
-                detectPartialDownloads()
             }
         )
     }
 
     private fun handleServiceProgressGemma(progress: ExtractionService.ExtractionProgress) {
+        val variant = ModelDownloader.ModelVariant.entries
+            .find { it.name.lowercase() == progress.variant }
+
         handleServiceProgress(
             state = progress.downloadState,
-            updateFlow = { state, prog -> _downloadUiState.update { it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress) } },
+            updateFlow = { state, prog ->
+                if (variant != null) {
+                    _downloadUiState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(downloadState = state, downloadProgress = prog ?: downloadProgress)
+                        })
+                    }
+                }
+            },
             onError = { msg, throwable ->
                 val error = when (throwable) {
                     is ModelDownloader.DownloadError -> throwable
                     else -> ModelDownloader.DownloadError.NetworkError(msg, throwable)
                 }
-                _downloadUiState.update { it.copy(isDownloading = false, downloadError = error) }
+                if (variant != null) {
+                    _downloadUiState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = msg)
+                        })
+                    }
+                }
+                _downloadUiState.update { it.copy(downloadError = error) }
                 val message = when (error) {
                     is ModelDownloader.DownloadError.AuthRequired -> "auth_required"
                     is ModelDownloader.DownloadError.AuthError -> "Invalid token. Check Settings."
@@ -377,22 +420,65 @@ class ModelViewModel(
                 viewModelScope.launch { _snackbarEvent.send(message) }
             },
             onComplete = { file ->
-                _downloadUiState.update { it.copy(isDownloading = false, downloadProgress = 1f, partialDownload = null) }
+                _downloadUiState.update {
+                    it.copy(
+                        variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
+                    )
+                }
                 refreshDownloadedModels()
                 if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
             }
         )
     }
 
+    // ==================== Variant state helpers ====================
+
+    /**
+     * Unified cancel for all model types. Stops the service, then on IO
+     * detects any partial download and atomically transitions from
+     * Downloading → PartiallyDownloaded (or removes the variant if clean).
+     * The variant stays in the map until the IO work finishes, so the UI
+     * never renders an intermediate Idle frame.
+     */
+    private fun <V> cancelVariantDownload(
+        variant: V,
+        cancelAction: () -> Unit,
+        detectPartial: (Context, V) -> DownloadState.PartiallyDownloaded?,
+        getCurrentStates: () -> Map<V, VariantDownloadState>,
+        applyUpdatedStates: (Map<V, VariantDownloadState>) -> Unit,
+        modelType: ExtractionService.ModelType,
+        variantKey: String
+    ) {
+        cancelAction()
+        stopExtractionService(modelType, variantKey)
+        viewModelScope.launch(Dispatchers.IO) {
+            val partial = detectPartial(ctx, variant)
+            val current = getCurrentStates()
+            val updated = if (partial != null) {
+                current + (variant to VariantDownloadState(partialDownload = partial))
+            } else {
+                current - variant
+            }
+            applyUpdatedStates(updated)
+        }
+    }
+
     // ==================== Service helpers ====================
 
     /**
      * Sends a cancel intent to [ExtractionService].
+     * When [modelType] and [variant] are provided, only that specific
+     * download is cancelled; otherwise all active downloads are cancelled.
      */
-    private fun stopExtractionService() {
+    private fun stopExtractionService(
+        modelType: ExtractionService.ModelType? = null,
+        variant: String? = null
+    ) {
         val context = ctx
         val intent = Intent(context, ExtractionService::class.java).apply {
             action = ExtractionService.ACTION_CANCEL
+            modelType?.let { putExtra(ExtractionService.EXTRA_MODEL_TYPE, it.key) }
+            variant?.let { putExtra(ExtractionService.EXTRA_CANCEL_VARIANT, it) }
         }
         ContextCompat.startForegroundService(context, intent)
     }
@@ -409,26 +495,28 @@ class ModelViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val context = ctx
 
-            // Check Gemma variants
-            var gemmaPartial: DownloadState.PartiallyDownloaded? = null
-            var gemmaPartialVariant: ModelDownloader.ModelVariant? = null
+            // Check Gemma variants (skip those currently downloading — their .tmp
+            // file is live, not a leftover from a cancelled/interrupted download)
+            val activeGemmaDownloads = _downloadUiState.value.variantDownloadStates
+                .filter { it.value.isDownloading }.keys
+            var gemmaPartialVariants = mapOf<ModelDownloader.ModelVariant, DownloadState.PartiallyDownloaded>()
             for (variant in ModelDownloader.ModelVariant.entries) {
-                if (!ModelDownloader.isModelDownloaded(context, variant)) {
-                    if (gemmaPartial == null) {
-                        val partial = ModelDownloader.detectPartialDownload(context, variant)
-                        if (partial != null) {
-                            gemmaPartial = partial
-                            gemmaPartialVariant = variant
-                        }
+                if (!ModelDownloader.isModelDownloaded(context, variant) && variant !in activeGemmaDownloads) {
+                    val partial = ModelDownloader.detectPartialDownload(context, variant)
+                    if (partial != null) {
+                        gemmaPartialVariants = gemmaPartialVariants + (variant to partial)
                     }
                 }
             }
-            if (gemmaPartial != null && gemmaPartialVariant != null) {
-                _downloadUiState.update { it.copy(partialDownload = gemmaPartial, partialDownloadVariant = gemmaPartialVariant) }
+            if (gemmaPartialVariants.isNotEmpty()) {
+                _downloadUiState.update { state ->
+                    state.copy(variantDownloadStates = state.variantDownloadStates.mergePartials(gemmaPartialVariants))
+                }
             }
 
-            // Check Parakeet
-            if (!ParakeetDownloader.isModelDownloaded(context)) {
+            // Check Parakeet (skip if actively downloading — in-flight files
+            // would look like a partial download to the detector)
+            if (!_parakeetState.value.isDownloading && !ParakeetDownloader.isModelDownloaded(context)) {
                 val partial = ParakeetDownloader.detectPartialDownload(context)
                 val needsExtraction = ParakeetDownloader.needsExtraction(context)
                 val parakeetModelDir = java.io.File(ParakeetModelManager.getModelStorageDir(context), "parakeet-tdt-0.6b-v3-int8")
@@ -444,18 +532,17 @@ class ModelViewModel(
             }
 
             // Check Whisper variants
+            val activeWhisperDownloads = _whisperState.value.variantDownloadStates
+                .filter { it.value.isDownloading }.keys
             val whisperNeedsExtraction = mutableSetOf<WhisperModelManager.Variant>()
             val whisperOrphaned = mutableSetOf<WhisperModelManager.Variant>()
-            var firstPartial: DownloadState.PartiallyDownloaded? = null
-            var firstPartialVariant: WhisperModelManager.Variant? = null
+            val whisperPartials = mutableMapOf<WhisperModelManager.Variant, DownloadState.PartiallyDownloaded>()
             for (variant in WhisperModelManager.Variant.entries) {
                 if (!WhisperDownloader.isModelDownloaded(context, variant)) {
-                    // Track first partial download only (for UI display)
-                    if (firstPartial == null) {
+                    if (variant !in activeWhisperDownloads) {
                         val partial = WhisperDownloader.detectPartialDownload(context, variant)
                         if (partial != null) {
-                            firstPartial = partial
-                            firstPartialVariant = variant
+                            whisperPartials[variant] = partial
                         }
                     }
                     if (WhisperDownloader.needsExtraction(context, variant)) {
@@ -471,46 +558,30 @@ class ModelViewModel(
                     }
                 }
             }
-            if (firstPartial != null && firstPartialVariant != null) {
-                _whisperState.update {
-                    it.copy(
-                        partialDownload = firstPartial,
-                        partialDownloadVariant = firstPartialVariant,
-                        variantsNeedingExtraction = whisperNeedsExtraction,
-                        orphanedVariants = whisperOrphaned
-                    )
-                }
-            } else {
-                _whisperState.update {
-                    it.copy(
-                        partialDownload = null,
-                        partialDownloadVariant = null,
-                        variantsNeedingExtraction = whisperNeedsExtraction,
-                        orphanedVariants = whisperOrphaned
-                    )
-                }
+            _whisperState.update {
+                it.copy(
+                    variantDownloadStates = it.variantDownloadStates.mergePartials(whisperPartials),
+                    variantsNeedingExtraction = whisperNeedsExtraction,
+                    orphanedVariants = whisperOrphaned
+                )
             }
 
             // Check Qwen3-ASR variants
-            var qwen3Partial: DownloadState.PartiallyDownloaded? = null
-            var qwen3PartialVariant: Qwen3AsrModelManager.Variant? = null
+            val activeQwen3Downloads = _qwen3AsrState.value.variantDownloadStates
+                .filter { it.value.isDownloading }.keys
+            val qwen3Partials = mutableMapOf<Qwen3AsrModelManager.Variant, DownloadState.PartiallyDownloaded>()
             for (variant in Qwen3AsrModelManager.Variant.entries) {
-                if (!Qwen3AsrDownloader.isModelDownloaded(context, variant)) {
-                    if (qwen3Partial == null) {
-                        val partial = Qwen3AsrDownloader.detectPartialDownload(context, variant)
-                        if (partial != null) {
-                            qwen3Partial = partial
-                            qwen3PartialVariant = variant
-                        }
+                if (!Qwen3AsrDownloader.isModelDownloaded(context, variant) && variant !in activeQwen3Downloads) {
+                    val partial = Qwen3AsrDownloader.detectPartialDownload(context, variant)
+                    if (partial != null) {
+                        qwen3Partials[variant] = partial
                     }
                 }
             }
-            if (qwen3Partial != null && qwen3PartialVariant != null) {
+            if (qwen3Partials.isNotEmpty()) {
                 _qwen3AsrState.update {
-                    it.copy(partialDownload = qwen3Partial, partialDownloadVariant = qwen3PartialVariant)
+                    it.copy(variantDownloadStates = it.variantDownloadStates.mergePartials(qwen3Partials))
                 }
-            } else {
-                _qwen3AsrState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
             }
         }
     }
@@ -810,11 +881,14 @@ class ModelViewModel(
     fun startDownload(variant: ModelDownloader.ModelVariant) {
         _downloadUiState.update { it.copy(
             selectedVariant = variant,
-            isDownloading = true,
-            downloadProgress = 0f,
-            downloadState = DownloadState.Idle,
-            downloadError = null,
-            partialDownload = null
+            variantDownloadStates = it.variantDownloadStates + (variant to VariantDownloadState(
+                downloadState = DownloadState.Idle,
+                downloadProgress = 0f,
+                isDownloading = true,
+                errorMessage = null,
+                partialDownload = null
+            )),
+            downloadError = null
         )}
 
         val context = ctx
@@ -829,7 +903,11 @@ class ModelViewModel(
      * Resumes a partial Gemma download.
      */
     fun resumeDownload(variant: ModelDownloader.ModelVariant) {
-        _downloadUiState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
+        _downloadUiState.update { it.copy(
+            variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                copy(partialDownload = null)
+            }
+        ) }
         startDownload(variant)
     }
 
@@ -840,12 +918,8 @@ class ModelViewModel(
         viewModelScope.launch {
             ModelDownloader.clearPartialDownload(ctx, variant)
             _downloadUiState.update { it.copy(
-                isDownloading = false,
-                downloadProgress = 0f,
-                partialDownload = null,
-                partialDownloadVariant = null,
-                downloadError = null,
-                downloadState = DownloadState.Idle
+                variantDownloadStates = it.variantDownloadStates - variant,
+                downloadError = null
             )}
         }
     }
@@ -853,16 +927,15 @@ class ModelViewModel(
     /**
      * Cancels the ongoing Gemma download.
      */
-    fun cancelDownload() {
-        ModelDownloader.cancel()
-        _downloadUiState.update { it.copy(
-            isDownloading = false,
-            downloadState = DownloadState.Cancelled("User cancelled"),
-            downloadError = null
-        )}
-        stopExtractionService()
-        detectPartialDownloads()
-    }
+    fun cancelDownload(variant: ModelDownloader.ModelVariant) = cancelVariantDownload(
+        variant,
+        cancelAction = { ModelDownloader.cancel(variant) },
+        detectPartial = { ctx, v -> ModelDownloader.detectPartialDownload(ctx, v) },
+        getCurrentStates = { _downloadUiState.value.variantDownloadStates },
+        applyUpdatedStates = { states -> _downloadUiState.update { it.copy(variantDownloadStates = states, downloadError = null) } },
+        modelType = ExtractionService.ModelType.GEMMA,
+        variantKey = variantKey(variant)
+    )
 
     /**
      * Checks if a model variant is already downloaded.
@@ -1120,7 +1193,7 @@ class ModelViewModel(
             // instead of flickering to "Download" while detectPartialDownloads() runs on IO
             needsExtraction = ParakeetDownloader.needsExtraction(ctx)
         )}
-        stopExtractionService()
+        stopExtractionService(ExtractionService.ModelType.PARAKEET)
         detectPartialDownloads()
     }
 
@@ -1252,11 +1325,13 @@ class ModelViewModel(
         _whisperState.update { it.copy(
             showDownloadDialog = if (dismissDialog) false else it.showDownloadDialog,
             selectedVariant = variant,
-            isDownloading = true,
-            downloadProgress = 0f,
-            downloadState = initialState,
-            errorMessage = null,
-            partialDownload = null
+            variantDownloadStates = it.variantDownloadStates + (variant to VariantDownloadState(
+                downloadState = initialState,
+                downloadProgress = 0f,
+                isDownloading = true,
+                errorMessage = null,
+                partialDownload = null
+            ))
         )}
 
         val context = ctx
@@ -1271,7 +1346,11 @@ class ModelViewModel(
      * Resumes a partial Whisper download.
      */
     fun resumeWhisperDownload(variant: WhisperModelManager.Variant) {
-        _whisperState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
+        _whisperState.update { it.copy(
+            variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                copy(partialDownload = null)
+            }
+        ) }
         startWhisperDownload(variant)
     }
 
@@ -1285,11 +1364,7 @@ class ModelViewModel(
             WhisperDownloader.clearPartialDownload(context, variant)
             _whisperState.update {
                 it.copy(
-                    isDownloading = false,
-                    downloadState = DownloadState.Idle,
-                    downloadProgress = 0f,
-                    partialDownload = null,
-                    partialDownloadVariant = null,
+                    variantDownloadStates = it.variantDownloadStates - variant,
                     variantsNeedingExtraction = emptySet()
                 )
             }
@@ -1317,30 +1392,15 @@ class ModelViewModel(
     /**
      * Cancels the Whisper download.
      */
-    fun cancelWhisperDownload() {
-        WhisperDownloader.cancel()
-        // Eagerly compute extraction state so the button shows "Extract" immediately
-        // instead of flickering to "Download" while detectPartialDownloads() runs on IO
-        val context = ctx
-        val eagerNeedsExtraction = WhisperModelManager.Variant.entries
-            .filter { WhisperDownloader.needsExtraction(context, it) }
-            .toSet()
-        val eagerOrphaned = WhisperModelManager.Variant.entries
-            .filter { variant ->
-                val modelDir = File(WhisperModelManager.getModelStorageDir(context), WhisperDownloader.getModelDirName(variant))
-                modelDir.exists() && !WhisperDownloader.isModelDownloaded(context, variant)
-            }
-            .toSet()
-        _whisperState.update { it.copy(
-            isDownloading = false,
-            downloadState = DownloadState.Cancelled("User cancelled"),
-            errorMessage = null,
-            variantsNeedingExtraction = eagerNeedsExtraction,
-            orphanedVariants = eagerOrphaned
-        )}
-        stopExtractionService()
-        detectPartialDownloads()
-    }
+    fun cancelWhisperDownload(variant: WhisperModelManager.Variant) = cancelVariantDownload(
+        variant,
+        cancelAction = { WhisperDownloader.cancel(variant) },
+        detectPartial = { ctx, v -> WhisperDownloader.detectPartialDownload(ctx, v) },
+        getCurrentStates = { _whisperState.value.variantDownloadStates },
+        applyUpdatedStates = { states -> _whisperState.update { it.copy(variantDownloadStates = states) } },
+        modelType = ExtractionService.ModelType.WHISPER,
+        variantKey = variantKey(variant)
+    )
 
     /**
      * Uses the Whisper model (switches backend to whisper).
@@ -1409,7 +1469,7 @@ class ModelViewModel(
     // ==================== Qwen3-ASR Confirmation Dialogs ====================
 
     fun showQwen3AsrDownloadDialog(variant: Qwen3AsrModelManager.Variant) {
-        _qwen3AsrState.update { it.copy(showDownloadDialog = true, selectedVariant = variant, errorMessage = null) }
+        _qwen3AsrState.update { it.copy(showDownloadDialog = true, selectedVariant = variant) }
     }
 
     fun dismissQwen3AsrDownloadDialog() {
@@ -1438,7 +1498,19 @@ class ModelViewModel(
     // ==================== Qwen3-ASR Download Methods ====================
 
     fun startQwen3AsrDownload(variant: Qwen3AsrModelManager.Variant) {
-        _qwen3AsrState.update { it.copy(isDownloading = true, errorMessage = null, showDownloadDialog = false, selectedVariant = variant) }
+        _qwen3AsrState.update {
+            it.copy(
+                showDownloadDialog = false,
+                selectedVariant = variant,
+                variantDownloadStates = it.variantDownloadStates + (variant to VariantDownloadState(
+                    downloadState = DownloadState.Connecting(""),
+                    downloadProgress = 0f,
+                    isDownloading = true,
+                    errorMessage = null,
+                    partialDownload = null
+                ))
+            )
+        }
         val context = ctx
         val intent = Intent(context, ExtractionService::class.java).apply {
             putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.QWEN3_ASR.key)
@@ -1447,15 +1519,22 @@ class ModelViewModel(
         ContextCompat.startForegroundService(context, intent)
     }
 
-    fun cancelQwen3AsrDownload() {
-        Qwen3AsrDownloader.cancel()
-        _qwen3AsrState.update { it.copy(isDownloading = false) }
-        stopExtractionService()
-        detectPartialDownloads()
-    }
+    fun cancelQwen3AsrDownload(variant: Qwen3AsrModelManager.Variant) = cancelVariantDownload(
+        variant,
+        cancelAction = { Qwen3AsrDownloader.cancel(variant) },
+        detectPartial = { ctx, v -> Qwen3AsrDownloader.detectPartialDownload(ctx, v) },
+        getCurrentStates = { _qwen3AsrState.value.variantDownloadStates },
+        applyUpdatedStates = { states -> _qwen3AsrState.update { it.copy(variantDownloadStates = states) } },
+        modelType = ExtractionService.ModelType.QWEN3_ASR,
+        variantKey = variantKey(variant)
+    )
 
     fun resumeQwen3AsrDownload(variant: Qwen3AsrModelManager.Variant) {
-        _qwen3AsrState.update { it.copy(partialDownload = null, partialDownloadVariant = null) }
+        _qwen3AsrState.update { it.copy(
+            variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                copy(partialDownload = null)
+            }
+        ) }
         startQwen3AsrDownload(variant)
     }
 
@@ -1463,7 +1542,7 @@ class ModelViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             Qwen3AsrDownloader.clearPartialDownload(ctx, variant)
             _qwen3AsrState.update {
-                it.copy(partialDownload = null, partialDownloadVariant = null)
+                it.copy(variantDownloadStates = it.variantDownloadStates - variant)
             }
         }
     }
