@@ -19,6 +19,7 @@ import kotlinx.coroutines.flow.first
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -31,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import com.antivocale.app.MainActivity
 import com.antivocale.app.R
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.data.PreferencesManager
@@ -846,6 +848,27 @@ fun LogEntryItem(
                                     )
                                     .padding(8.dp)
                             )
+                        }
+                        // PiP button — only on devices that support PiP
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.End
+                            ) {
+                                val context = LocalContext.current
+                                TextButton(onClick = {
+                                    (context as? MainActivity)?.enterPipMode()
+                                }) {
+                                    Icon(
+                                        Icons.Default.PictureInPictureAlt,
+                                        contentDescription = stringResource(R.string.pip_enter_description),
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(stringResource(R.string.pip_enter_button))
+                                }
+                            }
                         }
                     }
                 }
