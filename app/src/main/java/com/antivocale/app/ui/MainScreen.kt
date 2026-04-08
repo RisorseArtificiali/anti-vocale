@@ -13,13 +13,23 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.antivocale.app.R
 import com.antivocale.app.di.AppContainer
+import com.antivocale.app.ui.components.PipTranscriptionView
 import com.antivocale.app.ui.tabs.LogsTab
 import com.antivocale.app.ui.tabs.ModelTab
 import com.antivocale.app.ui.tabs.SettingsTab
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun MainScreen(startOnModelTab: Boolean = false) {
+fun MainScreen(
+    startOnModelTab: Boolean = false,
+    isInPipMode: Boolean = false
+) {
+    // PiP mode: show compact transcription view
+    if (isInPipMode) {
+        PipTranscriptionView()
+        return
+    }
+
     var selectedTabIndex by remember { mutableIntStateOf(if (startOnModelTab) 1 else 0) }
     val viewModel = AppContainer.logsViewModel
     val highlightTaskId by viewModel.highlightTaskId.collectAsState()

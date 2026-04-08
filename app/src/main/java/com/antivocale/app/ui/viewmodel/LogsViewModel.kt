@@ -48,6 +48,16 @@ class LogsViewModel(private val logDao: LogDao) : ViewModel() {
         else logs.filter { it.result.contains(query, ignoreCase = true) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    /**
+     * The currently active (PENDING) transcription entry.
+     * Prioritises entries that already have interim text from progressive transcription.
+     * Used by the PiP view to efficiently observe only the relevant entry.
+     */
+    val activeTranscription: StateFlow<LogEntry?> = logs.map { logList ->
+        logList.firstOrNull { it.status == LogEntry.Status.PENDING && it.result.isNotEmpty() }
+            ?: logList.firstOrNull { it.status == LogEntry.Status.PENDING }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
     fun addLog(entry: LogEntry) {
         viewModelScope.launch {
             logDao.insert(entry.toEntity())

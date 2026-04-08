@@ -511,4 +511,10 @@
     <string name="hide_details">Nascondi dettagli</string>
     <string name="show_details">Mostra dettagli</string>
     <string name="model_unknown">Sconosciuto</string>
+
+    <!-- Picture-in-Picture -->
+    <string name="pip_transcribing">Trascrizione in corso\u2026</string>
+    <string name="pip_waiting">In attesa della trascrizione\u2026</string>
+    <string name="pip_enter_button">PiP</string>
+    <string name="pip_enter_description">Mostra in finestra Picture-in-Picture</string>
 </resources>
