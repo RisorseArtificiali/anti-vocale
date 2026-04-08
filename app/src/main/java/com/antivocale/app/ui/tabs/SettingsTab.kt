@@ -121,6 +121,7 @@ fun SettingsTab(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -1547,6 +1548,7 @@ private fun PromptSettingsScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .navigationBarsPadding()
             .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -1688,11 +1690,10 @@ private fun PromptSettingsScreen(
                     .clickable {
                         promptInput = promptText
                         viewModel.saveDefaultPrompt(promptText)
-                        android.widget.Toast.makeText(
+                        com.antivocale.app.util.ToastCompat.show(
                             context,
-                            context.getString(R.string.prompt_applied),
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
+                            context.getString(R.string.prompt_applied)
+                        )
                     },
                 colors = CardDefaults.cardColors(
                     containerColor = if (defaultPrompt == promptText)

@@ -180,7 +180,7 @@ class ShareReceiverActivity : Activity() {
             R.string.added_to_queue
         else
             R.string.transcription_started
-        Toast.makeText(this, toastRes, Toast.LENGTH_SHORT).show()
+        com.antivocale.app.util.ToastCompat.show(this, toastRes)
 
         cleanup()
         finish()
@@ -202,6 +202,6 @@ class ShareReceiverActivity : Activity() {
     }
 
     private fun showErrorToast(message: String) {
-        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+        com.antivocale.app.util.ToastCompat.show(this, message, Toast.LENGTH_LONG)
     }
 }

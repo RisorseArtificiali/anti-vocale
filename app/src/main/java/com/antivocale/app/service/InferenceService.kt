@@ -1184,11 +1184,10 @@ class InferenceService : Service() {
 
             // Show toast on main thread
             Handler(Looper.getMainLooper()).post {
-                Toast.makeText(
+                com.antivocale.app.util.ToastCompat.show(
                     this@InferenceService,
-                    R.string.copied_to_clipboard,
-                    Toast.LENGTH_SHORT
-                ).show()
+                    R.string.copied_to_clipboard
+                )
             }
         }
     }

@@ -50,7 +50,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
         clipboardManager.setPrimaryClip(clip)
 
         Log.i(TAG, "Copied transcription to clipboard (${text.length} chars)")
-        Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+        com.antivocale.app.util.ToastCompat.show(context, R.string.copied_to_clipboard)
     }
 
     private fun handleShareAction(context: Context, intent: Intent) {
@@ -102,19 +102,11 @@ class NotificationActionReceiver : BroadcastReceiver() {
             transcriptionText = text,
             onSuccess = {
                 Log.i(TAG, "Share Back initiated successfully")
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.share_back),
-                    Toast.LENGTH_SHORT
-                ).show()
+                com.antivocale.app.util.ToastCompat.show(context, context.getString(R.string.share_back))
             },
             onError = { error ->
                 Log.e(TAG, "Share Back failed: $error")
-                Toast.makeText(
-                    context,
-                    error,
-                    Toast.LENGTH_LONG
-                ).show()
+                com.antivocale.app.util.ToastCompat.show(context, error, Toast.LENGTH_LONG)
             }
         )
     }

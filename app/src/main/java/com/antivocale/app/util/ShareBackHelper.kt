@@ -174,11 +174,10 @@ object ShareBackHelper {
             clipboardManager.setPrimaryClip(clip)
 
             android.os.Handler(android.os.Looper.getMainLooper()).post {
-                android.widget.Toast.makeText(
+                com.antivocale.app.util.ToastCompat.show(
                     context,
-                    R.string.copied_to_clipboard,
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+                    R.string.copied_to_clipboard
+                )
             }
 
             Log.i(TAG, "Text copied to clipboard: ${text.take(50)}...")
