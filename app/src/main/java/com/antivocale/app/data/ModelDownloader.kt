@@ -49,7 +49,8 @@ object ModelDownloader {
         val descriptionResId: Int?,
         val estimatedSizeMB: Long,
         val supportsAudio: Boolean,
-        val requiresAuth: Boolean = false
+        val requiresAuth: Boolean = false,
+        val supportedLanguageCodes: Set<String> = emptySet()
     ) {
         GEMMA_4_E2B(
             displayName = "Gemma 4 E2B",
@@ -57,7 +58,8 @@ object ModelDownloader {
             fileName = "gemma-4-E2B-it.litertlm",
             descriptionResId = R.string.model_desc_gemma_4_e2b,
             estimatedSizeMB = 2600L,
-            supportsAudio = true
+            supportsAudio = true,
+            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA
         ),
         GEMMA_4_E4B(
             displayName = "Gemma 4 E4B",
@@ -65,7 +67,8 @@ object ModelDownloader {
             fileName = "gemma-4-E4B-it.litertlm",
             descriptionResId = R.string.model_desc_gemma_4_e4b,
             estimatedSizeMB = 3700L,
-            supportsAudio = true
+            supportsAudio = true,
+            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA
         ),
         GEMMA_3N_E2B(
             displayName = "Gemma 3n E2B",
@@ -74,7 +77,8 @@ object ModelDownloader {
             descriptionResId = R.string.model_desc_gemma_3n_e2b,
             estimatedSizeMB = 3300L,
             supportsAudio = true,
-            requiresAuth = true
+            requiresAuth = true,
+            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA
         ),
         GEMMA_3N_E4B(
             displayName = "Gemma 3n E4B",
@@ -83,7 +87,8 @@ object ModelDownloader {
             descriptionResId = R.string.model_desc_gemma_3n_e4b,
             estimatedSizeMB = 4235L,
             supportsAudio = true,
-            requiresAuth = true
+            requiresAuth = true,
+            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA
         )
     }
 

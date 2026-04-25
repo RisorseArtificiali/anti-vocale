@@ -11,8 +11,8 @@ Android application written in Kotlin for transcribing voice messages locally on
 - Default branch: `main`
 - Git protocol: SSH
 - **adb path:** `~/Android/Sdk/platform-tools/adb`
-- **Build & install on device:** `./gradlew installDebug`
-- **Device:** Realme RMX3853 (Android 16, connects via wireless debugging)
+- **Build & install on device:** `./scripts/install.sh` (ALWAYS use this — never `./gradlew installDebug`)
+- **Device:** Realme RMX3853 (Android 16, connects via wireless debugging at `telefonopaolo:35685`)
 
 @import docs/BUILD.md
 

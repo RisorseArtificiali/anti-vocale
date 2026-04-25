@@ -11,4 +11,5 @@ interface ModelVariant {
     val descriptionResId: Int
     val dirName: String
     val estimatedSizeMB: Long
+    val supportedLanguageCodes: Set<String> get() = emptySet()
 }

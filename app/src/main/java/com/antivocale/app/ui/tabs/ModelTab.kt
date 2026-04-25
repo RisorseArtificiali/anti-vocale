@@ -42,9 +42,11 @@ import com.antivocale.app.service.InferenceService
 import com.antivocale.app.util.formatFileSize
 import com.antivocale.app.transcription.WhisperModelManager
 import com.antivocale.app.transcription.Qwen3AsrModelManager
+import com.antivocale.app.transcription.Language
 import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
+import com.antivocale.app.ui.components.LanguageFilterBar
 import com.antivocale.app.ui.components.ModelVariantCard
 import com.antivocale.app.ui.components.ModelVariantCardState
 import com.antivocale.app.ui.components.UnloadModelButton
@@ -53,6 +55,15 @@ import com.antivocale.app.ui.viewmodel.ModelViewModel
 
 private enum class PendingAction {
     PICK_FILE
+}
+
+private fun <T> filterVariants(
+    entries: List<T>,
+    languageCode: String?,
+    getCodes: (T) -> Set<String>
+): List<T> {
+    if (languageCode == null) return entries
+    return entries.filter { languageCode in getCodes(it) }
 }
 
 /** GGUF inference via llama-bro only ships native libs for arm64-v8a. */
@@ -148,6 +159,22 @@ fun ModelTab(
 
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
+
+    // Language filter state
+    var filterLanguageCode by remember { mutableStateOf<String?>(null) }
+
+    val visibleWhisperVariants = remember(filterLanguageCode) {
+        filterVariants(WhisperModelManager.Variant.entries, filterLanguageCode) { it.supportedLanguageCodes }
+    }
+    val visibleQwen3AsrVariants = remember(filterLanguageCode) {
+        filterVariants(Qwen3AsrModelManager.Variant.entries, filterLanguageCode) { it.supportedLanguageCodes }
+    }
+    val showParakeet = remember(filterLanguageCode) {
+        filterLanguageCode == null || filterLanguageCode in Language.PARAKEET
+    }
+    val visibleGemmaVariants = remember(filterLanguageCode) {
+        filterVariants(ModelDownloader.ModelVariant.entries, filterLanguageCode) { it.supportedLanguageCodes }
+    }
 
     // Auto-scroll when download error occurs (license requirement, auth error, etc.)
     // This scrolls to the error area so user can see what went wrong
@@ -579,6 +606,12 @@ fun ModelTab(
             }
         }
 
+        // Language filter
+        LanguageFilterBar(
+            selectedLanguageCode = filterLanguageCode,
+            onLanguageSelected = { filterLanguageCode = it }
+        )
+
         // Unload Model button — only shown when model is actually loaded in memory
         if (uiState.status == ModelViewModel.ModelStatus.READY) {
             UnloadModelButton(
@@ -588,18 +621,24 @@ fun ModelTab(
         }
 
         // Whisper section - multilingual ASR backend (recommended)
-        WhisperDownloadSection(
-            viewModel = viewModel,
-            activeModelName = uiState.modelName,
-            guardedModelSwitch = guardedSwitch
-        )
+        if (visibleWhisperVariants.isNotEmpty()) {
+            WhisperDownloadSection(
+                viewModel = viewModel,
+                activeModelName = uiState.modelName,
+                guardedModelSwitch = guardedSwitch,
+                visibleVariants = visibleWhisperVariants
+            )
+        }
 
         // Qwen3-ASR section - state-of-the-art multilingual ASR backend
-        Qwen3AsrDownloadSection(
-            viewModel = viewModel,
-            activeModelName = uiState.modelName,
-            guardedModelSwitch = guardedSwitch
-        )
+        if (visibleQwen3AsrVariants.isNotEmpty()) {
+            Qwen3AsrDownloadSection(
+                viewModel = viewModel,
+                activeModelName = uiState.modelName,
+                guardedModelSwitch = guardedSwitch,
+                visibleVariants = visibleQwen3AsrVariants
+            )
+        }
 
         // GGUF section - on-device LLM text generation via llama.cpp
         // Hidden: llama-bro 1.2.3 does not yet support the Gemma 4 GGUF architecture.
@@ -612,20 +651,25 @@ fun ModelTab(
         // )
 
         // Parakeet TDT section - fast multilingual ASR backend
-        ParakeetDownloadSection(
-            viewModel = viewModel,
-            activeModelName = uiState.modelName,
-            context = context,
-            guardedModelSwitch = guardedSwitch
-        )
+        if (showParakeet) {
+            ParakeetDownloadSection(
+                viewModel = viewModel,
+                activeModelName = uiState.modelName,
+                context = context,
+                guardedModelSwitch = guardedSwitch
+            )
+        }
 
         // Download models section - Gemma LLM models (advanced features)
-        ModelDownloadSection(
-            viewModel = viewModel,
-            context = context,
-            onNavigateToSettings = onNavigateToSettings,
-            activeModelName = uiState.modelName
-        )
+        if (visibleGemmaVariants.isNotEmpty()) {
+            ModelDownloadSection(
+                viewModel = viewModel,
+                context = context,
+                onNavigateToSettings = onNavigateToSettings,
+                activeModelName = uiState.modelName,
+                visibleVariants = visibleGemmaVariants
+            )
+        }
 
         // Select Model Button - secondary option for local files
         OutlinedButton(
@@ -690,7 +734,8 @@ private fun ModelDownloadSection(
     viewModel: ModelViewModel,
     context: android.content.Context,
     onNavigateToSettings: () -> Unit,
-    activeModelName: String
+    activeModelName: String,
+    visibleVariants: List<ModelDownloader.ModelVariant> = ModelDownloader.ModelVariant.entries
 ) {
     val downloadState by viewModel.downloadUiState.collectAsState()
 
@@ -722,7 +767,7 @@ private fun ModelDownloadSection(
         )
 
         // Model variant cards
-        ModelDownloader.ModelVariant.entries.forEach { variant ->
+        visibleVariants.forEach { variant ->
             val variantState = downloadState.variantDownloadStates[variant]
             ModelVariantCard(
                 variant = variant,
@@ -1040,7 +1085,8 @@ private fun getLocalizedLabel(labelKey: String): String {
 private fun Qwen3AsrDownloadSection(
     viewModel: ModelViewModel,
     activeModelName: String,
-    guardedModelSwitch: (() -> Unit) -> Unit = {}
+    guardedModelSwitch: (() -> Unit) -> Unit = {},
+    visibleVariants: List<Qwen3AsrModelManager.Variant> = Qwen3AsrModelManager.Variant.entries
 ) {
     val qwen3AsrState by viewModel.qwen3AsrState.collectAsState()
 
@@ -1093,7 +1139,7 @@ private fun Qwen3AsrDownloadSection(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Model variant cards
-            Qwen3AsrModelManager.Variant.entries.forEach { variant ->
+            visibleVariants.forEach { variant ->
                 val variantState = qwen3AsrState.variantDownloadStates[variant]
                 ModelVariantCard(
                     state = ModelVariantCardState(
@@ -1432,7 +1478,8 @@ private fun ParakeetDownloadSection(
 private fun WhisperDownloadSection(
     viewModel: ModelViewModel,
     activeModelName: String,
-    guardedModelSwitch: (() -> Unit) -> Unit = {}
+    guardedModelSwitch: (() -> Unit) -> Unit = {},
+    visibleVariants: List<WhisperModelManager.Variant> = WhisperModelManager.Variant.entries
 ) {
     val whisperState by viewModel.whisperState.collectAsState()
     var showSpeedComparison by remember { mutableStateOf(false) }
@@ -1494,7 +1541,7 @@ private fun WhisperDownloadSection(
             Spacer(modifier = Modifier.height(8.dp))
 
             // Model variant selection
-            WhisperModelManager.Variant.entries.forEach { variant ->
+            visibleVariants.forEach { variant ->
                 val needsExtraction = whisperState.variantsNeedingExtraction.contains(variant)
                 val isOrphaned = whisperState.orphanedVariants.contains(variant)
                 val variantState = whisperState.variantDownloadStates[variant]

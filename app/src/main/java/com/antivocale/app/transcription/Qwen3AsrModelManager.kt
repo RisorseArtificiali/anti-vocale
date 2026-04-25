@@ -30,13 +30,15 @@ object Qwen3AsrModelManager {
         override val titleResId: Int,
         override val descriptionResId: Int,
         override val dirName: String,
-        override val estimatedSizeMB: Long
+        override val estimatedSizeMB: Long,
+        override val supportedLanguageCodes: Set<String> = emptySet()
     ) : ModelVariant {
         QWEN3_ASR_0_6B(
             titleResId = R.string.qwen3_asr_0_6b_title,
             descriptionResId = R.string.qwen3_asr_0_6b_description,
             dirName = "sherpa-onnx-qwen3-asr-0.6b-int8",
-            estimatedSizeMB = 938
+            estimatedSizeMB = 938,
+            supportedLanguageCodes = Language.QWEN3_ASR
         )
     }
 

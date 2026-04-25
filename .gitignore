@@ -4,6 +4,9 @@
 *.ap_
 *.aab
 
+# Device config (contains pairing codes)
+.config/anti-vocale/device.env
+
 # Files for the ART/Dalvik VM
 *.dex
 
