@@ -12,11 +12,12 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.antivocale.app.R
-import com.antivocale.app.di.AppContainer
 import com.antivocale.app.ui.components.PipTranscriptionView
 import com.antivocale.app.ui.tabs.LogsTab
 import com.antivocale.app.ui.tabs.ModelTab
 import com.antivocale.app.ui.tabs.SettingsTab
+import com.antivocale.app.ui.viewmodel.LogsViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -31,7 +32,7 @@ fun MainScreen(
     }
 
     var selectedTabIndex by remember { mutableIntStateOf(if (startOnModelTab) 1 else 0) }
-    val viewModel = AppContainer.logsViewModel
+    val viewModel: LogsViewModel = hiltViewModel()
     val highlightTaskId by viewModel.highlightTaskId.collectAsState()
 
     // Force Logs tab when a highlight signal arrives

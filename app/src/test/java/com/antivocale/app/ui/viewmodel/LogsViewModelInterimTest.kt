@@ -1,12 +1,15 @@
 package com.antivocale.app.ui.viewmodel
 
+import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.LogEntity
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -28,6 +31,7 @@ import org.junit.Test
 class LogsViewModelInterimTest {
 
     private lateinit var logDao: LogDao
+    private lateinit var preferencesManager: PreferencesManager
     private lateinit var viewModel: LogsViewModel
     private val testDispatcher = StandardTestDispatcher()
 
@@ -45,7 +49,10 @@ class LogsViewModelInterimTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         logDao = mockk(relaxed = true)
-        viewModel = LogsViewModel(logDao)
+        preferencesManager = mockk(relaxed = true) {
+            every { swipeActionMode } returns flowOf("delete")
+        }
+        viewModel = LogsViewModel(logDao, preferencesManager)
     }
 
     @After

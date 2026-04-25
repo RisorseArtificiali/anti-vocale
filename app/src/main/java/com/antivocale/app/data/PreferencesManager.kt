@@ -114,7 +114,7 @@ class PreferencesManager(private val context: Context) {
 
     /**
      * Eagerly reads all preferences from DataStore and caches them in memory.
-     * Must be called once during app startup (from AppContainer.initialize()).
+     * Must be called once during app startup (from BridgeApplication.onCreate()).
      */
     fun initialize() {
         runBlocking {

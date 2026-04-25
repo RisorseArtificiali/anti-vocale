@@ -398,6 +398,7 @@
     <string name="notification_channel_inference_description">Background audio transcription processing</string>
     <string name="notification_channel_result">Transcription Result</string>
     <string name="notification_channel_result_description">Notification when transcription is complete</string>
+    <string name="notification_cancelling">Cancelling…</string>
 
     <!-- No-model notification -->
     <string name="notification_no_model_title">No transcription model</string>
@@ -515,4 +516,15 @@
     <string name="pip_waiting">Waiting for transcription\u2026</string>
     <string name="pip_enter_button">PiP</string>
     <string name="pip_enter_description">Show in Picture-in-Picture window</string>
+
+    <!-- GGUF model descriptions -->
+    <string name="model_title_gemma4_gguf_q4km">Gemma 4 GGUF (Q4_K_M)</string>
+    <string name="model_desc_gemma4_gguf_q4km">4.9 GB · Apache 2.0 · Text generation via llama.cpp. Best balance of quality and size.</string>
+    <string name="model_title_gemma4_gguf_q5km">Gemma 4 GGUF (Q5_K_M)</string>
+    <string name="model_desc_gemma4_gguf_q5km">5.3 GB · Apache 2.0 · Higher quality text generation via llama.cpp.</string>
+    <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
+    <string name="model_desc_gemma4_gguf_q8">7.4 GB · Apache 2.0 · Best quality text generation via llama.cpp. Requires 8GB+ RAM.</string>
+    <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
+    <string name="gguf_inference_unavailable">GGUF inference requires native llama.cpp library. Build libllama.so for Android ARM64.</string>
+    <string name="gguf_model_download_error">Failed to download GGUF model</string>
 </resources>

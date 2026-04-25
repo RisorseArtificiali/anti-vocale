@@ -100,4 +100,10 @@ sealed class BackendConfig {
         val numThreads: Int,
         val language: String = ""
     ) : BackendConfig()
+
+    data class GgufConfig(
+        val modelPath: String,
+        val contextSize: Int = 2048,
+        val threadCount: Int = 4
+    ) : BackendConfig()
 }

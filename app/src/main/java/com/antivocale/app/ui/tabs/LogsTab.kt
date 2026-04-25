@@ -36,13 +36,13 @@ import com.antivocale.app.MainActivity
 import com.antivocale.app.R
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.data.PreferencesManager
-import com.antivocale.app.di.AppContainer
 import com.antivocale.app.ui.components.SwipeAction
 import com.antivocale.app.ui.components.SwipeToRevealBox
 import com.antivocale.app.ui.components.rememberSwipeToRevealState
 import com.antivocale.app.util.ToastCompat
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.viewmodel.LogsViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
 import kotlin.math.roundToInt
 import java.util.*
@@ -128,14 +128,14 @@ private fun buildSwipeActions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogsTab(
-    viewModel: LogsViewModel = AppContainer.logsViewModel,
+    viewModel: LogsViewModel = hiltViewModel(),
     highlightTaskId: String? = null
 ) {
     val logs by viewModel.logs.collectAsState()
     val filteredLogs by viewModel.filteredLogs.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val context = LocalContext.current
-    val swipeActionMode by AppContainer.preferencesManager.swipeActionMode
+    val swipeActionMode by viewModel.swipeActionMode
         .collectAsState(initial = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
 
     // Lifted expanded state — tracks which taskIds are expanded

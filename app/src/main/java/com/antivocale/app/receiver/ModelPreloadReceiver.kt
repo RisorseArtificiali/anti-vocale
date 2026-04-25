@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.antivocale.app.di.AppContainer
+import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.CoroutineScope
@@ -12,6 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * BroadcastReceiver for preloading the model on demand.
@@ -27,7 +29,10 @@ import kotlinx.coroutines.launch
  *   Action: Send Intent
  *     Action: com.antivocale.app.PRELOAD_MODEL
  */
+@AndroidEntryPoint
 class ModelPreloadReceiver : BroadcastReceiver() {
+
+    @Inject lateinit var preferencesManager: PreferencesManager
 
     companion object {
         const val TAG = "ModelPreloadReceiver"
@@ -61,7 +66,7 @@ class ModelPreloadReceiver : BroadcastReceiver() {
                 }
 
                 // Get saved model path from preferences
-                val modelPath = AppContainer.preferencesManager.modelPath.first()
+                val modelPath = preferencesManager.modelPath.first()
 
                 if (modelPath.isNullOrBlank()) {
                     Log.w(TAG, "No model path configured")
@@ -91,7 +96,7 @@ class ModelPreloadReceiver : BroadcastReceiver() {
                     onSuccess = {
                         Log.i(TAG, "Model loaded successfully")
                         // Apply saved keep-alive timeout
-                        val timeout = AppContainer.preferencesManager.keepAliveTimeout.first()
+                        val timeout = preferencesManager.keepAliveTimeout.first()
                         LlmManager.setKeepAliveTimeout(timeout)
 
                         // Notify ViewModel to update UI state

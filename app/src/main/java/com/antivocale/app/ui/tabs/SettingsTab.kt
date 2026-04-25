@@ -30,13 +30,13 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
-import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.ui.components.UnloadModelButton
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
@@ -51,14 +51,7 @@ fun SettingsTab(
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
-    val viewModel: SettingsViewModel = viewModel(
-        factory = SettingsViewModel.Factory(
-            application = context.applicationContext as android.app.Application,
-            preferencesManager = AppContainer.preferencesManager,
-            huggingFaceTokenManager = AppContainer.huggingFaceTokenManager,
-            huggingFaceAuthManager = AppContainer.huggingFaceAuthManager
-        )
-    )
+    val viewModel: SettingsViewModel = hiltViewModel()
 
     val uiState by viewModel.uiState.collectAsState()
     val currentTimeout by viewModel.keepAliveTimeout.collectAsState()
@@ -109,7 +102,7 @@ fun SettingsTab(
     // Show sub-screens or main settings
     if (showPerAppSettings) {
         PerAppSettingsScreen(
-            preferencesManager = AppContainer.perAppPreferencesManager,
+            preferencesManager = viewModel.perAppPreferencesManager,
             onBack = { showPerAppSettings = false }
         )
     } else if (showPromptSettings) {
@@ -370,7 +363,7 @@ fun SettingsTab(
                         tokenState = tokenState,
                         onLoginClick = {
                             try {
-                                AppContainer.huggingFaceAuthManager.startAuthFlow(activity, oauthLauncher)
+                                viewModel.huggingFaceAuthManager.startAuthFlow(activity, oauthLauncher)
                             } catch (e: Exception) {
                                 viewModel.clearError()
                                 viewModel.clearOAuthState()
@@ -1466,7 +1459,7 @@ fun SettingsTab(
                 .fillMaxWidth()
                 .clickable {
                     perfStatsScope.launch {
-                        perfStatsProfiles = AppContainer.transcriptionCalibrator.getAllProfiles()
+                        perfStatsProfiles = viewModel.transcriptionCalibrator.getAllProfiles()
                         showPerfStatsDialog = true
                     }
                 },
@@ -1517,7 +1510,7 @@ fun SettingsTab(
                 onDismiss = { showPerfStatsDialog = false },
                 onReset = {
                     perfStatsScope.launch {
-                        AppContainer.transcriptionCalibrator.resetAll()
+                        viewModel.transcriptionCalibrator.resetAll()
                         perfStatsProfiles = emptyList()
                     }
                 }

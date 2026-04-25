@@ -35,9 +35,9 @@ import com.antivocale.app.R
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.download.DownloadState
-import com.antivocale.app.di.AppContainer
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.util.formatFileSize
 import com.antivocale.app.transcription.WhisperModelManager
@@ -83,9 +83,7 @@ private fun getStoragePermissions(): Array<String> {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModelTab(
-    viewModel: ModelViewModel = viewModel(
-        factory = ModelViewModel.Factory(AppContainer.preferencesManager)
-    ),
+    viewModel: ModelViewModel = hiltViewModel(),
     onNavigateToSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -104,7 +102,7 @@ fun ModelTab(
     val snackbarHostState = remember { SnackbarHostState() }
 
     // Observe token state changes and refresh ModelViewModel
-    val tokenState by AppContainer.huggingFaceTokenManager.tokenState.collectAsState()
+    val tokenState by viewModel.tokenState.collectAsState()
     LaunchedEffect(tokenState) {
         viewModel.refreshTokenState()
     }
@@ -159,7 +157,7 @@ fun ModelTab(
         viewModel.snackbarEvent.collect { message ->
             if (message == "auth_required") {
                 snackbarHostState.showSnackbar(
-                    message = AppContainer.applicationContext.getString(R.string.model_requires_auth),
+                    message = context.getString(R.string.model_requires_auth),
                     actionLabel = "Settings",
                     duration = SnackbarDuration.Long
                 ).let { result ->

@@ -18,9 +18,12 @@ import com.antivocale.app.R
 import com.antivocale.app.MainActivity
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
-import com.antivocale.app.di.AppContainer
+import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
+import com.antivocale.app.data.local.LogDao
+import com.antivocale.app.data.local.toEntity
+import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
@@ -31,6 +34,7 @@ import com.antivocale.app.receiver.NotificationActionReceiver
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.CrashReporter
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -38,6 +42,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Semaphore
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+import javax.inject.Inject
 
 /**
  * Foreground service for handling inference requests.
@@ -48,7 +53,13 @@ import java.util.concurrent.atomic.AtomicInteger
  * - Audio preprocessing
  * - Response broadcasting
  */
+@AndroidEntryPoint
 class InferenceService : Service() {
+
+    @Inject lateinit var preferencesManager: PreferencesManager
+    @Inject lateinit var perAppPreferencesManager: PerAppPreferencesManager
+    @Inject lateinit var logDao: LogDao
+    @Inject lateinit var transcriptionCalibrator: TranscriptionCalibrator
 
     companion object {
         const val TAG = "InferenceService"
@@ -226,8 +237,7 @@ class InferenceService : Service() {
         updateNotification(initialText)
 
         // Log request start
-        val logsViewModel = AppContainer.logsViewModel
-        logsViewModel.logRequest(
+        logRequest(
             taskId = request.taskId,
             type = if (request.requestType == "audio") LogEntry.Type.AUDIO else LogEntry.Type.TEXT,
             prompt = request.prompt,
@@ -247,7 +257,7 @@ class InferenceService : Service() {
             //    (prevents stale backend after user switches models)
             val hasBackend = TranscriptionBackendManager.hasActiveBackend()
             val backendReady = TranscriptionBackendManager.getActiveBackend()?.isReady() ?: false
-            val preferredBackendId = AppContainer.preferencesManager.transcriptionBackend.first()
+            val preferredBackendId = preferencesManager.transcriptionBackend.first()
             val activeBackendId = TranscriptionBackendManager.getActiveBackend()?.id
             val backendMismatch = hasBackend && activeBackendId != preferredBackendId
 
@@ -274,12 +284,12 @@ class InferenceService : Service() {
                     onSuccess = {
                         Log.i(TAG, "Backend auto-loaded successfully: $preferredBackendId")
                         // Apply saved keep-alive timeout
-                        val timeout = AppContainer.preferencesManager.keepAliveTimeout.first()
+                        val timeout = preferencesManager.keepAliveTimeout.first()
                         TranscriptionBackendManager.setKeepAliveTimeout(timeout)
                     },
                     onFailure = { error ->
                         val errorMsg = getString(R.string.error_load_backend, error.message)
-                        logsViewModel.logError(request.taskId, errorMsg, System.currentTimeMillis() - startTime)
+                        logError(request.taskId, errorMsg, System.currentTimeMillis() - startTime)
                         sendErrorReply(request.taskId, "BACKEND_LOAD_FAILED", errorMsg)
                         if (isShareRequest) {
                             if (isNoModelConfiguredError(error)) {
@@ -302,7 +312,7 @@ class InferenceService : Service() {
 
             result.fold(
                 onSuccess = { response ->
-                    logsViewModel.logSuccess(request.taskId, response, duration)
+                    logSuccess(request.taskId, response, duration)
                     sendSuccessReply(request.taskId, response)
                     // Show result notification for share requests
                     if (isShareRequest) {
@@ -313,7 +323,7 @@ class InferenceService : Service() {
                     }
                 },
                 onFailure = { error ->
-                    logsViewModel.logError(request.taskId, error.message ?: getString(R.string.logs_unknown_error), duration)
+                    logError(request.taskId, error.message ?: getString(R.string.logs_unknown_error), duration)
                     sendErrorReply(request.taskId, "INFERENCE_ERROR", error.message ?: getString(R.string.logs_unknown_error))
                     if (isShareRequest) showErrorNotification(error.message ?: getString(R.string.logs_unknown_error))
                 }
@@ -324,7 +334,7 @@ class InferenceService : Service() {
             // Mark the entry as cancelled if it's still PENDING,
             // so it doesn't stay stuck forever in the logs.
             val duration = System.currentTimeMillis() - startTime
-            logsViewModel.cancelIfPending(
+            cancelIfPending(
                 request.taskId,
                 getString(R.string.logs_transcription_cancelled),
                 duration
@@ -333,9 +343,75 @@ class InferenceService : Service() {
         } catch (e: Exception) {
             Log.e(TAG, "Error processing request", e)
             val duration = System.currentTimeMillis() - startTime
-            logsViewModel.logError(request.taskId, e.message ?: getString(R.string.logs_unknown_error), duration)
+            logError(request.taskId, e.message ?: getString(R.string.logs_unknown_error), duration)
             sendErrorReply(request.taskId, "PROCESSING_ERROR", e.message ?: getString(R.string.logs_unknown_error))
             if (isShareRequest) showErrorNotification(e.message ?: getString(R.string.logs_unknown_error))
+        }
+    }
+
+    // ---- Log helpers ----
+
+    private fun logRequest(
+        taskId: String,
+        type: LogEntry.Type,
+        prompt: String,
+        filePath: String? = null,
+        audioDurationSeconds: Double = 0.0,
+        sourcePackageName: String? = null
+    ) {
+        serviceScope.launch {
+            logDao.insert(
+                LogEntry(
+                    taskId = taskId,
+                    type = type,
+                    status = LogEntry.Status.PENDING,
+                    prompt = prompt,
+                    filePath = filePath,
+                    audioDurationSeconds = audioDurationSeconds,
+                    sourcePackageName = sourcePackageName
+                ).toEntity()
+            )
+        }
+    }
+
+    private fun logSuccess(taskId: String, result: String, durationMs: Long) {
+        serviceScope.launch {
+            val entity = logDao.getByTaskId(taskId) ?: return@launch
+            logDao.update(entity.toLogEntry().copy(
+                status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs
+            ).toEntity())
+        }
+    }
+
+    private fun logError(taskId: String, errorMessage: String, durationMs: Long = 0) {
+        serviceScope.launch {
+            val entity = logDao.getByTaskId(taskId) ?: return@launch
+            logDao.update(entity.toLogEntry().copy(
+                status = LogEntry.Status.ERROR, errorMessage = errorMessage, durationMs = durationMs
+            ).toEntity())
+        }
+    }
+
+    private suspend fun cancelIfPending(taskId: String, errorMessage: String, durationMs: Long) {
+        val entity = logDao.getByTaskId(taskId) ?: return
+        if (entity.status == LogEntry.Status.PENDING.name) {
+            logDao.update(entity.toLogEntry().copy(
+                status = LogEntry.Status.ERROR, errorMessage = errorMessage, durationMs = durationMs
+            ).toEntity())
+        }
+    }
+
+    private fun updateInterimResult(taskId: String, accumulatedText: String) {
+        serviceScope.launch {
+            val entity = logDao.getByTaskId(taskId) ?: return@launch
+            logDao.update(entity.toLogEntry().copy(result = accumulatedText).toEntity())
+        }
+    }
+
+    private fun updateAudioDuration(taskId: String, audioDurationSeconds: Double) {
+        serviceScope.launch {
+            val entity = logDao.getByTaskId(taskId) ?: return@launch
+            logDao.update(entity.toLogEntry().copy(audioDurationSeconds = audioDurationSeconds).toEntity())
         }
     }
 
@@ -343,11 +419,19 @@ class InferenceService : Service() {
      * Gets the saved model path from preferences.
      */
     private suspend fun getSavedModelPath(): String? {
-        return AppContainer.preferencesManager.modelPath.first()
+        return preferencesManager.modelPath.first()
     }
 
+    private suspend fun modelPathForBackend(backendId: String): String =
+        when (backendId) {
+            WhisperBackend.BACKEND_ID -> preferencesManager.whisperModelPath.first()
+            Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first()
+            SherpaOnnxBackend.BACKEND_ID -> preferencesManager.parakeetModelPath.first()
+            else -> preferencesManager.modelPath.first()
+        } ?: ""
+
     private suspend fun loadLlmBackend(): Result<Unit> {
-        val modelPath = AppContainer.preferencesManager.modelPath.first()
+        val modelPath = preferencesManager.modelPath.first()
 
         if (modelPath.isNullOrBlank()) {
             return Result.failure(IllegalStateException(getString(R.string.error_no_llm_model)))
@@ -393,7 +477,7 @@ class InferenceService : Service() {
             context = applicationContext,
             config = BackendConfig.SherpaOnnxConfig(
                 modelDir = modelPath,
-                numThreads = AppContainer.preferencesManager.threadCount.first(),
+                numThreads = preferencesManager.threadCount.first(),
                 language = language
             )
         )
@@ -401,22 +485,22 @@ class InferenceService : Service() {
 
     private suspend fun loadSherpaOnnxBackend() = loadSherpaOnnxModel(
         backendId = SherpaOnnxBackend.BACKEND_ID,
-        modelPathFlow = AppContainer.preferencesManager.parakeetModelPath,
+        modelPathFlow = preferencesManager.parakeetModelPath,
         label = "Parakeet"
     )
 
     private suspend fun loadWhisperBackend() = loadSherpaOnnxModel(
         backendId = WhisperBackend.BACKEND_ID,
-        modelPathFlow = AppContainer.preferencesManager.whisperModelPath,
+        modelPathFlow = preferencesManager.whisperModelPath,
         label = "Whisper",
-        language = AppContainer.preferencesManager.transcriptionLanguage.first().let { lang ->
+        language = preferencesManager.transcriptionLanguage.first().let { lang ->
             if (lang == "auto") "" else lang
         }
     )
 
     private suspend fun loadQwen3AsrBackend() = loadSherpaOnnxModel(
         backendId = Qwen3AsrBackend.BACKEND_ID,
-        modelPathFlow = AppContainer.preferencesManager.qwen3AsrModelPath,
+        modelPathFlow = preferencesManager.qwen3AsrModelPath,
         label = "Qwen3-ASR"
     )
 
@@ -463,8 +547,8 @@ class InferenceService : Service() {
 
         // Preprocess audio with proper error handling
         // Pass backend's max chunk duration and VAD toggle to AudioPreprocessor
-        val vadEnabled = AppContainer.preferencesManager.vadEnabled.first()
-        val threadCount = AppContainer.preferencesManager.threadCount.first()
+        val vadEnabled = preferencesManager.vadEnabled.first()
+        val threadCount = preferencesManager.threadCount.first()
         val preprocessingResult = try {
             AudioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = filePath,
@@ -487,7 +571,7 @@ class InferenceService : Service() {
         Log.i(TAG, "Audio preprocessed: $chunkCount chunks, ${audioDurationSeconds}s")
 
         // Update log entry with audio duration
-        AppContainer.logsViewModel.updateAudioDuration(request.taskId, preprocessingResult.totalDurationSeconds)
+        updateAudioDuration(request.taskId, preprocessingResult.totalDurationSeconds)
 
         // Track transcription start time for chronometer
         transcriptionStartTime = System.currentTimeMillis()
@@ -497,7 +581,7 @@ class InferenceService : Service() {
 
         // Process chunks in parallel (bounded by semaphore) and concatenate results
         // Use request prompt -> default prompt from settings -> hardcoded fallback
-        val savedDefaultPrompt = AppContainer.preferencesManager.defaultPrompt.first()
+        val savedDefaultPrompt = preferencesManager.defaultPrompt.first()
         val prompt = request.prompt.ifEmpty {
             savedDefaultPrompt.ifEmpty { getString(R.string.default_system_prompt) }
         }
@@ -532,7 +616,7 @@ class InferenceService : Service() {
         }
 
         // Progressive path: VAD-segmented audio + progressive toggle enabled
-        val progressiveEnabled = AppContainer.preferencesManager.progressiveTranscription.first()
+        val progressiveEnabled = preferencesManager.progressiveTranscription.first()
         if (preprocessingResult.isVadSegmented && progressiveEnabled) {
             Log.i(TAG, "VAD-segmented progressive path: $chunkCount segments")
             val accumulatedText = StringBuilder()
@@ -557,7 +641,7 @@ class InferenceService : Service() {
                             val trimmed = text.trim()
                             if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                             accumulatedText.append(trimmed)
-                            AppContainer.logsViewModel.updateInterimResult(request.taskId, accumulatedText.toString())
+                            updateInterimResult(request.taskId, accumulatedText.toString())
                             // Show only the latest segment in the notification (contentText is capped ~100 chars on some OEMs).
                             // The full accumulated text is visible in the app's LogsTab.
                             val latestSegment = text.trim()
@@ -602,15 +686,10 @@ class InferenceService : Service() {
 
         // Get calibration data for the active backend + model variant
         val backendId = backend.id
-        val modelPath = when (backendId) {
-            WhisperBackend.BACKEND_ID -> AppContainer.preferencesManager.whisperModelPath.first()
-            Qwen3AsrBackend.BACKEND_ID -> AppContainer.preferencesManager.qwen3AsrModelPath.first()
-            SherpaOnnxBackend.BACKEND_ID -> AppContainer.preferencesManager.parakeetModelPath.first()
-            else -> AppContainer.preferencesManager.modelPath.first()
-        } ?: ""
+        val modelPath = modelPathForBackend(backendId)
         val modelDisplayName = deriveDisplayName(backendId, modelPath, backend.displayName)
 
-        val calibrationProfile = AppContainer.transcriptionCalibrator.getEstimate(backendId, modelPath)
+        val calibrationProfile = transcriptionCalibrator.getEstimate(backendId, modelPath)
         val chunkDurationSeconds = (preprocessingResult.totalDurationSeconds / chunkCount).toLong()
         val estimatedChunkDurationMs = calibrationProfile?.let {
             if (it.hasEstimate) (it.msPerSecondOfAudio * chunkDurationSeconds).toLong() else null
@@ -732,15 +811,10 @@ class InferenceService : Service() {
         val totalProcessingTimeMs = System.currentTimeMillis() - startTimeMs
         try {
             val backendId = backend.id
-            val modelPath = when (backendId) {
-                WhisperBackend.BACKEND_ID -> AppContainer.preferencesManager.whisperModelPath.first()
-                Qwen3AsrBackend.BACKEND_ID -> AppContainer.preferencesManager.qwen3AsrModelPath.first()
-                SherpaOnnxBackend.BACKEND_ID -> AppContainer.preferencesManager.parakeetModelPath.first()
-                else -> AppContainer.preferencesManager.modelPath.first()
-            } ?: ""
+            val modelPath = modelPathForBackend(backendId)
             val modelDisplayName = deriveDisplayName(backendId, modelPath, backend.displayName)
 
-            AppContainer.transcriptionCalibrator.record(
+            transcriptionCalibrator.record(
                 backendId = backendId,
                 modelPath = modelPath,
                 displayName = modelDisplayName,
@@ -987,7 +1061,7 @@ class InferenceService : Service() {
                         val batchMs = measuredAvgBatchMs!!  // non-null after assignment above
                         launch {
                             try {
-                                AppContainer.transcriptionCalibrator.record(
+                                transcriptionCalibrator.record(
                                     backendId = backendId,
                                     modelPath = modelPath,
                                     displayName = modelDisplayName,
@@ -1166,14 +1240,14 @@ class InferenceService : Service() {
         // Get per-app preferences, fallback to global preference
         val autoCopyEnabled = if (sourcePackage != null) {
             try {
-                val prefs = AppContainer.perAppPreferencesManager.getCurrentPreferences(sourcePackage)
+                val prefs = perAppPreferencesManager.getCurrentPreferences(sourcePackage)
                 prefs.autoCopy
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to get per-app preferences for $sourcePackage, using global", e)
-                AppContainer.preferencesManager.autoCopyEnabled.first()
+                preferencesManager.autoCopyEnabled.first()
             }
         } else {
-            AppContainer.preferencesManager.autoCopyEnabled.first()
+            preferencesManager.autoCopyEnabled.first()
         }
 
         if (autoCopyEnabled) {
@@ -1209,7 +1283,7 @@ class InferenceService : Service() {
         // Get per-app preferences
         val prefs = if (sourcePackage != null) {
             try {
-                AppContainer.perAppPreferencesManager.getCurrentPreferences(sourcePackage)
+                perAppPreferencesManager.getCurrentPreferences(sourcePackage)
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to get per-app preferences for $sourcePackage, using defaults", e)
                 com.antivocale.app.data.AppNotificationPreferences.default()

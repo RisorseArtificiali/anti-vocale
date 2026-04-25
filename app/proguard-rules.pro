@@ -51,3 +51,9 @@
 # Preserve @Keep annotations that native libraries rely on
 -keep @androidx.annotation.Keep class * { *; }
 -keepclassmembers class * { @androidx.annotation.Keep *; }
+
+# llama.cpp / GGUF inference engine
+-keep class com.antivocale.app.llm.** { *; }
+-keepclassmembers class com.antivocale.app.llm.** { *; }
+-keep class de.kherud.llama.** { *; }
+-dontwarn de.kherud.llama.**

@@ -21,16 +21,23 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.antivocale.app.data.PreferencesManager
-import com.antivocale.app.di.AppContainer
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.MainScreen
 import com.antivocale.app.ui.theme.AntiVocaleTheme
 import com.antivocale.app.ui.theme.ThemeType
+import com.antivocale.app.ui.viewmodel.LogsViewModel
 import com.antivocale.app.util.DeviceCompatibility
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import androidx.activity.viewModels
+import javax.inject.Inject
 
+@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+
+    @Inject lateinit var preferencesManager: PreferencesManager
+    private val logsViewModel: LogsViewModel by viewModels()
 
     companion object {
         /** Intent extra: when true, the app opens on the Model tab. */
@@ -62,14 +69,14 @@ class MainActivity : AppCompatActivity() {
         // Handle notification highlight (cold start)
         val highlightTaskId = intent.getStringExtra(EXTRA_HIGHLIGHT_TASK_ID)
         if (highlightTaskId != null) {
-            AppContainer.logsViewModel.highlightLogEntry(highlightTaskId)
+            logsViewModel.highlightLogEntry(highlightTaskId)
             intent.removeExtra(EXTRA_HIGHLIGHT_TASK_ID)
         }
 
         requestNotificationPermissionIfNeeded()
         setContent {
             // Collect theme preference and convert to ThemeType
-            val themeName by AppContainer.preferencesManager.themePreference.collectAsState(initial = PreferencesManager.DEFAULT_THEME)
+            val themeName by preferencesManager.themePreference.collectAsState(initial = PreferencesManager.DEFAULT_THEME)
             val theme = try {
                 ThemeType.valueOf(themeName)
             } catch (e: IllegalArgumentException) {
@@ -104,7 +111,7 @@ class MainActivity : AppCompatActivity() {
         super.onNewIntent(intent)
         setIntent(intent)
         intent.getStringExtra(EXTRA_HIGHLIGHT_TASK_ID)?.let {
-            AppContainer.logsViewModel.highlightLogEntry(it)
+            logsViewModel.highlightLogEntry(it)
         }
     }
 

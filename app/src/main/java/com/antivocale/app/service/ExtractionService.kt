@@ -11,11 +11,12 @@ import androidx.core.app.NotificationCompat
 import com.antivocale.app.R
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.download.DownloadState
-import com.antivocale.app.di.AppContainer
+import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.util.CrashReporter
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
+import javax.inject.Inject
 
 /**
  * Foreground service that wraps model download + extraction so it survives
@@ -37,7 +39,10 @@ import java.util.concurrent.ConcurrentHashMap
  *
  * Notification follows the same pattern as [InferenceService].
  */
+@AndroidEntryPoint
 class ExtractionService : Service() {
+
+    @Inject lateinit var huggingFaceTokenManager: HuggingFaceTokenManager
 
     companion object {
         const val TAG = "ExtractionService"
@@ -125,6 +130,16 @@ class ExtractionService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_CANCEL) {
+            val type = ModelType.fromKey(intent.getStringExtra(EXTRA_MODEL_TYPE))
+            val variant = intent.getStringExtra(EXTRA_CANCEL_VARIANT)
+            val key = type?.let { jobKey(it, variant) }
+            val nid = key?.let { notificationIdForKey(it) } ?: NOTIFICATION_ID_BASE
+            startForeground(nid, createNotification(
+                getString(R.string.notification_cancelling),
+                title = key?.let { displayNames[it] } ?: getString(R.string.app_name),
+                notificationId = nid,
+                indeterminate = true
+            ))
             handleCancel(intent)
             return START_NOT_STICKY
         }
@@ -238,7 +253,7 @@ class ExtractionService : Service() {
                     ModelDownloader.downloadModel(
                         context = applicationContext,
                         variant = gemmaVariant,
-                        tokenManager = AppContainer.huggingFaceTokenManager,
+                        tokenManager = huggingFaceTokenManager,
                         onProgress = {},
                         onStateChange = { state ->
                             _progressState.tryEmit(ExtractionProgress(ModelType.GEMMA, variant, downloadState = state))

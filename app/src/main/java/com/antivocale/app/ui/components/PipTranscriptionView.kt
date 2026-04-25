@@ -40,8 +40,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.antivocale.app.R
-import com.antivocale.app.di.AppContainer
 import com.antivocale.app.ui.viewmodel.LogsViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
@@ -50,7 +50,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
  */
 @Composable
 fun PipTranscriptionView(
-    viewModel: LogsViewModel = AppContainer.logsViewModel
+    viewModel: LogsViewModel = hiltViewModel()
 ) {
     val activeTranscription by viewModel.activeTranscription.collectAsState()
     val scrollState = rememberScrollState()

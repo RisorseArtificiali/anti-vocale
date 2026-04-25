@@ -6,14 +6,12 @@ import android.content.Intent
 import android.net.Uri
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.R
 import com.antivocale.app.data.download.DownloadState
-import com.antivocale.app.di.AppContainer
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.service.ExtractionService
 import com.antivocale.app.transcription.Qwen3AsrBackend
@@ -26,6 +24,8 @@ import com.antivocale.app.transcription.WhisperModelManager
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -40,17 +40,20 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
+import javax.inject.Inject
 
-class ModelViewModel(
+@HiltViewModel
+class ModelViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
-    private val tokenManager: HuggingFaceTokenManager
+    private val tokenManager: HuggingFaceTokenManager,
+    @ApplicationContext private val ctx: Context
 ) : ViewModel() {
+
+    val tokenState = tokenManager.tokenState
 
     companion object {
         private const val TAG = "ModelViewModel"
     }
-
-    private val ctx: Context get() = com.antivocale.app.di.AppContainer.applicationContext
 
     enum class ModelStatus {
         UNLOADED, LOADING, READY, ERROR
@@ -1612,21 +1615,5 @@ class ModelViewModel(
         super.onCleared()
         LlmManager.setOnAutoUnloadCallback(null)
         LlmManager.setOnExternalLoadCallback(null)
-    }
-
-    /**
-     * Factory for creating ModelViewModel with dependencies
-     */
-    class Factory(
-        private val preferencesManager: PreferencesManager,
-        private val tokenManager: HuggingFaceTokenManager = AppContainer.huggingFaceTokenManager
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(ModelViewModel::class.java)) {
-                return ModelViewModel(preferencesManager, tokenManager) as T
-            }
-            throw IllegalArgumentException("Unknown ViewModel class")
-        }
     }
 }

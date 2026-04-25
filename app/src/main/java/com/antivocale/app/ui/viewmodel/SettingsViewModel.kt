@@ -4,7 +4,6 @@ import android.app.Application
 import android.content.Intent
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.antivocale.app.R
 import com.antivocale.app.data.DiscoveredModel
@@ -13,8 +12,9 @@ import com.antivocale.app.data.HuggingFaceAuthManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDiscovery
+import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
-import com.antivocale.app.di.AppContainer
+import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.Qwen3AsrModelManager
@@ -23,7 +23,9 @@ import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.LocaleManager
+import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -41,11 +43,15 @@ import kotlinx.coroutines.launch
  * - Model auto-unload settings
  * - HuggingFace token management (manual and OAuth)
  */
-class SettingsViewModel(
+@HiltViewModel
+class SettingsViewModel @Inject constructor(
     application: Application,
     private val preferencesManager: PreferencesManager,
     private val huggingFaceTokenManager: HuggingFaceTokenManager,
-    private val huggingFaceAuthManager: HuggingFaceAuthManager
+    val huggingFaceAuthManager: HuggingFaceAuthManager,
+    private val huggingFaceApiClient: HuggingFaceApiClient,
+    val perAppPreferencesManager: PerAppPreferencesManager,
+    val transcriptionCalibrator: TranscriptionCalibrator
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -398,7 +404,7 @@ class SettingsViewModel(
             _uiState.update { it.copy(isValidatingToken = true, errorMessage = null) }
             huggingFaceTokenManager.setTokenState(HuggingFaceTokenManager.TokenState.Validating)
 
-            val apiClient = AppContainer.huggingFaceApiClient
+            val apiClient = huggingFaceApiClient
             when (val result = apiClient.validateToken(token)) {
                 is HuggingFaceApiClient.ValidationResult.Success -> {
                     huggingFaceTokenManager.saveToken(token)
@@ -623,29 +629,6 @@ class SettingsViewModel(
                 currentModelPath = model.path,
                 currentModelName = model.name
             )}
-        }
-    }
-
-    /**
-     * Factory for creating SettingsViewModel with dependencies.
-     */
-    class Factory(
-        private val application: Application,
-        private val preferencesManager: PreferencesManager,
-        private val huggingFaceTokenManager: HuggingFaceTokenManager,
-        private val huggingFaceAuthManager: HuggingFaceAuthManager
-    ) : ViewModelProvider.Factory {
-        @Suppress("UNCHECKED_CAST")
-        override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
-            if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
-                return SettingsViewModel(
-                    application,
-                    preferencesManager,
-                    huggingFaceTokenManager,
-                    huggingFaceAuthManager
-                ) as T
-            }
-            throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
 }

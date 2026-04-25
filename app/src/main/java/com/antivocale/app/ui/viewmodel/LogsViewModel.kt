@@ -1,11 +1,14 @@
 package com.antivocale.app.ui.viewmodel
 
+import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
+import com.antivocale.app.data.PreferencesManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,7 +37,11 @@ data class LogEntry(
     enum class Status { PENDING, SUCCESS, ERROR }
 }
 
-class LogsViewModel(private val logDao: LogDao) : ViewModel() {
+@HiltViewModel
+class LogsViewModel @Inject constructor(
+    private val logDao: LogDao,
+    private val preferencesManager: PreferencesManager
+) : ViewModel() {
 
     val logs: StateFlow<List<LogEntry>> = logDao.getAll()
         .map { entities -> entities.map { it.toLogEntry() } }
@@ -160,6 +167,9 @@ class LogsViewModel(private val logDao: LogDao) : ViewModel() {
     fun clearSearch() {
         _searchQuery.value = ""
     }
+
+    val swipeActionMode: StateFlow<String> = preferencesManager.swipeActionMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
 
     // One-shot highlight signal: set a taskId to scroll-to + expand, then cleared by the UI
     private val _highlightTaskId = MutableStateFlow<String?>(null)
