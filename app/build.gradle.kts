@@ -20,7 +20,7 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.antivocale.app"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.antivocale.app"
@@ -139,6 +139,9 @@ dependencies {
 
     // sherpa-onnx for ONNX-based ASR (Parakeet TDT)
     implementation(files("libs/sherpa-onnx.aar"))
+
+    // llama-bro for GGUF on-device LLM inference (Gemma 4, Qwen, etc.)
+    implementation("com.github.whyisitworking:llama-bro:1.2.3")
 
     // Apache Commons Compress for tar.bz2 extraction
     implementation("org.apache.commons:commons-compress:1.26.1")

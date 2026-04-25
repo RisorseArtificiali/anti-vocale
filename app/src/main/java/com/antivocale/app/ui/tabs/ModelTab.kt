@@ -42,6 +42,7 @@ import com.antivocale.app.service.InferenceService
 import com.antivocale.app.util.formatFileSize
 import com.antivocale.app.transcription.WhisperModelManager
 import com.antivocale.app.transcription.Qwen3AsrModelManager
+import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
 import com.antivocale.app.ui.components.ModelVariantCard
@@ -53,6 +54,10 @@ import com.antivocale.app.ui.viewmodel.ModelViewModel
 private enum class PendingAction {
     PICK_FILE
 }
+
+/** GGUF inference via llama-bro only ships native libs for arm64-v8a. */
+private fun supportsArm64(): Boolean =
+    Build.SUPPORTED_ABIS?.any { it.equals("arm64-v8a", ignoreCase = true) } == true
 
 /**
  * Check if storage permission is needed
@@ -92,6 +97,7 @@ fun ModelTab(
     val parakeetState by viewModel.parakeetState.collectAsState()
     val whisperState by viewModel.whisperState.collectAsState()
     val qwen3AsrState by viewModel.qwen3AsrState.collectAsState()
+    val ggufState by viewModel.ggufState.collectAsState()
 
     // Transcription active state — used to warn about destructive operations
     val isTranscribing by InferenceService.isTranscribing.collectAsState()
@@ -434,6 +440,68 @@ fun ModelTab(
         }
     }
 
+    // GGUF download confirmation dialog
+    if (ggufState.showDownloadDialog) {
+        val variant = ggufState.selectedVariant
+        AlertDialog(
+            onDismissRequest = { viewModel.dismissGgufDownloadDialog() },
+            title = { Text(stringResource(R.string.gguf_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "GGUF")) },
+            text = { Text(stringResource(R.string.gguf_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 4900)) },
+            confirmButton = {
+                TextButton(onClick = { viewModel.confirmGgufDownload() }) {
+                    Text(stringResource(R.string.download))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.dismissGgufDownloadDialog() }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    // GGUF delete confirmation dialog
+    if (ggufState.showDeleteDialog) {
+        val variant = ggufState.variantToDelete
+        val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: "GGUF"
+        val isGgufModelActive = uiState.modelName == variantDisplayName
+
+        if (isTranscribing && isGgufModelActive) {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissGgufDeleteDialog() },
+                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
+                text = { Text(stringResource(R.string.dialog_delete_active_model_message, variantDisplayName)) },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.dismissGgufDeleteDialog() }) {
+                        Text(stringResource(R.string.action_understood))
+                    }
+                }
+            )
+        } else {
+            AlertDialog(
+                onDismissRequest = { viewModel.dismissGgufDeleteDialog() },
+                title = { Text(stringResource(R.string.dialog_delete_title)) },
+                text = {
+                    if (isTranscribing) {
+                        Text(stringResource(R.string.dialog_delete_inactive_model_message, variantDisplayName))
+                    } else {
+                        Text(stringResource(R.string.dialog_delete_message, variantDisplayName))
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { viewModel.confirmGgufDelete() }) {
+                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { viewModel.dismissGgufDeleteDialog() }) {
+                        Text(stringResource(R.string.action_cancel))
+                    }
+                }
+            )
+        }
+    }
+
     // Unload model confirmation dialog
     if (showUnloadDialog) {
         AlertDialog(
@@ -532,6 +600,16 @@ fun ModelTab(
             activeModelName = uiState.modelName,
             guardedModelSwitch = guardedSwitch
         )
+
+        // GGUF section - on-device LLM text generation via llama.cpp
+        // Hidden: llama-bro 1.2.3 does not yet support the Gemma 4 GGUF architecture.
+        // Re-enable when llama-bro ships LLM_ARCH_GEMMA4 or we convert to .litertlm.
+        // GgufDownloadSection(
+        //     viewModel = viewModel,
+        //     activeModelName = uiState.modelName,
+        //     guardedModelSwitch = guardedSwitch,
+        //     isSupported = supportsArm64()
+        // )
 
         // Parakeet TDT section - fast multilingual ASR backend
         ParakeetDownloadSection(
@@ -1039,6 +1117,110 @@ private fun Qwen3AsrDownloadSection(
                     onClearPartialClick = { viewModel.clearQwen3AsrPartialDownload(variant) },
                     onUseClick = { guardedModelSwitch { viewModel.useQwen3AsrModel(variant) } },
                     onDeleteClick = { viewModel.showQwen3AsrDeleteDialog(variant) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+        }
+    }
+}
+
+
+// ==================== GGUF Download Section ====================
+@Composable
+private fun GgufDownloadSection(
+    viewModel: ModelViewModel,
+    activeModelName: String,
+    guardedModelSwitch: (() -> Unit) -> Unit = {},
+    isSupported: Boolean = true
+) {
+    val ggufState by viewModel.ggufState.collectAsState()
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                !isSupported -> MaterialTheme.colorScheme.errorContainer
+                ggufState.isAnyDownloading -> MaterialTheme.colorScheme.secondaryContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = when {
+                            !isSupported -> Icons.Default.Warning
+                            ggufState.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
+                            ggufState.isAnyDownloading -> Icons.Default.CloudDownload
+                            else -> Icons.Default.SmartToy
+                        },
+                        contentDescription = null,
+                        tint = when {
+                            !isSupported -> MaterialTheme.colorScheme.error
+                            ggufState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
+                            ggufState.isAnyDownloading -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.gguf_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = stringResource(R.string.gguf_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            if (!isSupported) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.gguf_unsupported_arch),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+                return@Card
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Model variant cards
+            Gemma4GgufModelManager.GgufVariant.entries.forEach { variant ->
+                val variantState = ggufState.variantDownloadStates[variant]
+                ModelVariantCard(
+                    state = ModelVariantCardState(
+                        variant = variant,
+                        isActive = activeModelName == stringResource(variant.titleResId),
+                        downloadProgress = variantState?.downloadProgress ?: 0f,
+                        downloadState = variantState?.downloadState ?: DownloadState.Idle,
+                        errorMessage = variantState?.errorMessage,
+                        partialDownload = variantState?.partialDownload,
+                        buttonState = when {
+                            variantState?.isDownloading == true -> DownloadButtonState.Downloading
+                            ggufState.downloadedVariants.contains(variant) -> DownloadButtonState.Downloaded
+                            variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
+                            else -> DownloadButtonState.Idle
+                        }
+                    ),
+                    downloadButtonTextResId = R.string.download,
+                    onDownloadClick = { viewModel.showGgufDownloadDialog(variant) },
+                    onCancelClick = { viewModel.cancelGgufDownload(variant) },
+                    onResumeClick = { viewModel.resumeGgufDownload(variant) },
+                    onClearPartialClick = { viewModel.clearGgufPartialDownload(variant) },
+                    onUseClick = { guardedModelSwitch { viewModel.useGgufModel(variant) } },
+                    onDeleteClick = { viewModel.showGgufDeleteDialog(variant) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }

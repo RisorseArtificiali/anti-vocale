@@ -38,6 +38,8 @@ class PreferencesManager(private val context: Context) {
         private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
         // Qwen3-ASR model path (for sherpa-onnx Qwen3-ASR backend)
         private val QWEN3_ASR_MODEL_PATH = stringPreferencesKey("qwen3_asr_model_path")
+        // GGUF model path (for llama.cpp Gemma 4 GGUF backend)
+        private val GGUF_MODEL_PATH = stringPreferencesKey("gguf_model_path")
         // Auto-copy transcription results to clipboard
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
         // VAD silence stripping
@@ -80,6 +82,7 @@ class PreferencesManager(private val context: Context) {
         val parakeetModelPath: String? = null,
         val whisperModelPath: String? = null,
         val qwen3AsrModelPath: String? = null,
+        val ggufModelPath: String? = null,
         val autoCopyEnabled: Boolean = DEFAULT_AUTO_COPY_ENABLED,
         val vadEnabled: Boolean = DEFAULT_VAD_ENABLED,
         val progressiveTranscription: Boolean = DEFAULT_PROGRESSIVE_TRANSCRIPTION,
@@ -103,6 +106,7 @@ class PreferencesManager(private val context: Context) {
         parakeetModelPath = this[PARAKEET_MODEL_PATH],
         whisperModelPath = this[WHISPER_MODEL_PATH],
         qwen3AsrModelPath = this[QWEN3_ASR_MODEL_PATH],
+        ggufModelPath = this[GGUF_MODEL_PATH],
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: DEFAULT_AUTO_COPY_ENABLED,
         vadEnabled = this[VAD_ENABLED] ?: DEFAULT_VAD_ENABLED,
         progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: DEFAULT_PROGRESSIVE_TRANSCRIPTION,
@@ -285,6 +289,32 @@ class PreferencesManager(private val context: Context) {
             preferences.remove(QWEN3_ASR_MODEL_PATH)
         }
         cache.updateAndGet { it.copy(qwen3AsrModelPath = null) }
+    }
+
+    /**
+     * Flow of the GGUF model path (for llama.cpp Gemma 4 GGUF backend).
+     */
+    val ggufModelPath: Flow<String?> = context.dataStore.data.map { it.toCached().ggufModelPath }
+        .onStart { emit(cache.get().ggufModelPath) }
+
+    /**
+     * Saves the GGUF model path.
+     */
+    suspend fun saveGgufModelPath(path: String) {
+        context.dataStore.edit { preferences ->
+            preferences[GGUF_MODEL_PATH] = path
+        }
+        cache.updateAndGet { it.copy(ggufModelPath = path) }
+    }
+
+    /**
+     * Clears the GGUF model path.
+     */
+    suspend fun clearGgufModelPath() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(GGUF_MODEL_PATH)
+        }
+        cache.updateAndGet { it.copy(ggufModelPath = null) }
     }
 
     /**

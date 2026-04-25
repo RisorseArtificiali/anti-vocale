@@ -26,6 +26,7 @@ import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.Qwen3AsrBackend
+import com.antivocale.app.transcription.Gemma4GgufBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.WhisperBackend
@@ -277,6 +278,7 @@ class InferenceService : Service() {
                     SherpaOnnxBackend.BACKEND_ID -> loadSherpaOnnxBackend()
                     WhisperBackend.BACKEND_ID -> loadWhisperBackend()
                     Qwen3AsrBackend.BACKEND_ID -> loadQwen3AsrBackend()
+                    Gemma4GgufBackend.BACKEND_ID -> loadGgufBackend()
                     else -> loadLlmBackend()
                 }
 
@@ -427,6 +429,7 @@ class InferenceService : Service() {
             WhisperBackend.BACKEND_ID -> preferencesManager.whisperModelPath.first()
             Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first()
             SherpaOnnxBackend.BACKEND_ID -> preferencesManager.parakeetModelPath.first()
+            Gemma4GgufBackend.BACKEND_ID -> preferencesManager.ggufModelPath.first()
             else -> preferencesManager.modelPath.first()
         } ?: ""
 
@@ -504,6 +507,27 @@ class InferenceService : Service() {
         label = "Qwen3-ASR"
     )
 
+    private suspend fun loadGgufBackend(): Result<Unit> {
+        val modelPath = preferencesManager.ggufModelPath.first()
+
+        if (modelPath.isNullOrBlank()) {
+            return Result.failure(IllegalStateException(getString(R.string.error_no_model_configured, "GGUF")))
+        }
+
+        updateNotificationWithProgress(getString(R.string.loading_model, "GGUF"), indeterminate = true)
+        Log.i(TAG, "Auto-loading GGUF model from: $modelPath")
+
+        val threadCount = preferencesManager.threadCount.first()
+        return TranscriptionBackendManager.setActiveBackend(
+            backendId = Gemma4GgufBackend.BACKEND_ID,
+            context = applicationContext,
+            config = BackendConfig.GgufConfig(
+                modelPath = modelPath,
+                threadCount = threadCount
+            )
+        )
+    }
+
     private suspend fun processTextRequest(request: PendingRequest): Result<String> {
         Log.d(TAG, "Processing text request: ${request.taskId}")
         updateNotification(getString(R.string.generating_text))
@@ -541,6 +565,12 @@ class InferenceService : Service() {
 
         val backend = TranscriptionBackendManager.getActiveBackend()
             ?: return Result.failure(IllegalStateException(getString(R.string.error_no_active_backend)))
+
+        if (!backend.isAudioSupported()) {
+            return Result.failure(IllegalStateException(
+                getString(R.string.error_backend_no_audio_support, backend.displayName)
+            ))
+        }
 
         // Show indeterminate progress during preprocessing
         updateNotificationWithProgress(getString(R.string.preprocessing_audio), indeterminate = true)

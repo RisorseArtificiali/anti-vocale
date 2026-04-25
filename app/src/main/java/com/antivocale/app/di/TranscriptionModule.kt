@@ -1,6 +1,6 @@
 package com.antivocale.app.di
 
-import com.antivocale.app.llm.LlamaCppEngine
+import com.antivocale.app.llm.LlamaBroEngine
 import com.antivocale.app.transcription.Gemma4GgufBackend
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
@@ -42,5 +42,5 @@ object TranscriptionModule {
     @Provides
     @IntoSet
     @Singleton
-    fun provideGemma4GgufBackend(): TranscriptionBackend = Gemma4GgufBackend(LlamaCppEngine())
+    fun provideGemma4GgufBackend(): TranscriptionBackend = Gemma4GgufBackend(LlamaBroEngine())
 }

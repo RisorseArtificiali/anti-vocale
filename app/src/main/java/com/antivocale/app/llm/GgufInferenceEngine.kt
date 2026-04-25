@@ -43,7 +43,7 @@ interface GgufInferenceEngine {
      *
      * @return Result.success if the model loaded successfully
      */
-    fun initialize(config: ModelConfig): Result<Unit>
+    suspend fun initialize(config: ModelConfig): Result<Unit>
 
     /**
      * Generates text from a prompt, returning the complete response.

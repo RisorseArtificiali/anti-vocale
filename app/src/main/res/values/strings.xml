@@ -496,6 +496,7 @@
     <string name="error_load_backend">Failed to load backend: %1$s</string>
     <string name="error_no_active_backend">No active backend</string>
     <string name="error_no_file_path">No file path provided for audio request</string>
+    <string name="error_backend_no_audio_support">%1$s does not support audio transcription. Switch to a speech-to-text model in Settings.</string>
     <string name="error_no_transcription_produced">No transcription produced</string>
     <string name="error_no_llm_model">No LLM model configured. Open the app to download a model.</string>
     <string name="error_no_model_configured">No %1$s model configured. Open the app to download a model.</string>
@@ -527,4 +528,14 @@
     <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
     <string name="gguf_inference_unavailable">GGUF inference requires native llama.cpp library. Build libllama.so for Android ARM64.</string>
     <string name="gguf_model_download_error">Failed to download GGUF model</string>
+
+    <!-- GGUF model download section -->
+    <string name="gguf_title">Gemma 4 GGUF (Text Generation)</string>
+    <string name="gguf_description">On-device LLM for text generation — no cloud dependency. Requires native llama.cpp library.</string>
+    <string name="gguf_unsupported_arch">Not supported on this device (requires ARM64).</string>
+    <string name="gguf_download_confirm_title">Download %1$s?</string>
+    <string name="gguf_download_confirm_message">This will download ~%1$dMB. GGUF models enable local text generation without internet.</string>
+    <string name="gguf_downloaded">%1$s downloaded successfully</string>
+    <string name="gguf_delete_message">Delete %1$s? This will free ~%2$dMB of storage.</string>
+    <string name="gguf_deleted">%1$s deleted</string>
 </resources>

@@ -15,6 +15,7 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.WhisperDownloader
+import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.util.CrashReporter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
@@ -74,7 +75,8 @@ class ExtractionService : Service() {
         PARAKEET("parakeet"),
         WHISPER("whisper"),
         QWEN3_ASR("qwen3-asr"),
-        GEMMA("gemma");
+        GEMMA("gemma"),
+        GEMMA4_GGUF("gemma4-gguf");
 
         companion object {
             fun fromKey(key: String?): ModelType? = entries.find { it.key == key }
@@ -119,6 +121,10 @@ class ExtractionService : Service() {
                 qv?.let { getString(it.titleResId) } ?: "Qwen3-ASR"
             }
             ModelType.GEMMA -> GemmaVariant.fromString(variant).displayName
+            ModelType.GEMMA4_GGUF -> {
+                val gv = GgufVariant.fromString(variant)
+                gv?.let { getString(it.titleResId) } ?: "Gemma 4 GGUF"
+            }
         }
     }
 
@@ -261,6 +267,25 @@ class ExtractionService : Service() {
                         }
                     )
                 }
+                ModelType.GEMMA4_GGUF -> {
+                    val ggufVariant = GgufVariant.fromString(variant)
+                        ?: run {
+                            _progressState.tryEmit(ExtractionProgress(
+                                ModelType.GEMMA4_GGUF, variant,
+                                DownloadState.Error("Unknown GGUF variant: $variant")
+                            ))
+                            return
+                        }
+                    Gemma4GgufModelManager.download(
+                        context = applicationContext,
+                        variant = ggufVariant,
+                        onProgress = {},
+                        onStateChange = { state ->
+                            _progressState.tryEmit(ExtractionProgress(ModelType.GEMMA4_GGUF, variant, downloadState = state))
+                            updateNotificationFromState(key, state)
+                        }
+                    )
+                }
             }
         } catch (e: CancellationException) {
             Log.i(TAG, "Download cancelled: $key")
@@ -322,6 +347,13 @@ class ExtractionService : Service() {
                     ModelDownloader.cancel(GemmaVariant.fromString(variant))
                 } else {
                     ModelDownloader.cancel()
+                }
+            }
+            ModelType.GEMMA4_GGUF -> {
+                if (variant != null) {
+                    GgufVariant.fromString(variant)?.let { Gemma4GgufModelManager.cancel(it) }
+                } else {
+                    Gemma4GgufModelManager.cancel()
                 }
             }
         }
@@ -506,6 +538,18 @@ class ExtractionService : Service() {
                 "gemma_3n_e2b" -> ModelDownloader.ModelVariant.GEMMA_3N_E2B
                 "gemma_3n_e4b" -> ModelDownloader.ModelVariant.GEMMA_3N_E4B
                 else -> ModelDownloader.ModelVariant.GEMMA_4_E2B
+            }
+        }
+    }
+
+    /** Resolves a string variant name to a GGUF [Gemma4GgufModelManager.GgufVariant]. */
+    private object GgufVariant {
+        fun fromString(name: String?): Gemma4GgufModelManager.GgufVariant? {
+            return when (name) {
+                "q4_k_m" -> Gemma4GgufModelManager.GgufVariant.Q4_K_M
+                "q5_k_m" -> Gemma4GgufModelManager.GgufVariant.Q5_K_M
+                "q8_0" -> Gemma4GgufModelManager.GgufVariant.Q8_0
+                else -> null
             }
         }
     }

@@ -18,6 +18,8 @@ import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.Qwen3AsrModelManager
+import com.antivocale.app.transcription.Gemma4GgufBackend
+import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -584,6 +586,21 @@ class SettingsViewModel @Inject constructor(
                             Qwen3AsrModelManager.detectVariant(modelDir.name)?.let { v ->
                                 getApplication<Application>().getString(v.titleResId)
                             } ?: path.substringAfterLast("/")
+                        } else null
+                        _uiState.update { it.copy(
+                            currentModelPath = path,
+                            currentModelName = modelName
+                        )}
+                    }
+                }
+                Gemma4GgufBackend.BACKEND_ID -> {
+                    preferencesManager.ggufModelPath.collect { path ->
+                        val modelName = if (!path.isNullOrBlank()) {
+                            val fileName = java.io.File(path).name
+                            Gemma4GgufModelManager.GgufVariant.entries
+                                .find { it.fileName == fileName }
+                                ?.let { getApplication<Application>().getString(it.titleResId) }
+                                ?: fileName
                         } else null
                         _uiState.update { it.copy(
                             currentModelPath = path,
