@@ -4,11 +4,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -19,6 +21,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
@@ -32,13 +36,15 @@ fun LanguageFilterBar(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
+    var textFieldValue by remember { mutableStateOf(TextFieldValue()) }
 
     val selectedLabel = selectedLanguageCode?.let { code ->
         Language.FILTER_ENTRIES.find { it.code == code }?.let {
             stringResource(it.nameResId)
         }
     } ?: stringResource(R.string.lang_filter_all)
+
+    val searchQuery = textFieldValue.text
 
     val allEntries = Language.FILTER_ENTRIES
         .map { it to stringResource(it.nameResId) }
@@ -51,25 +57,26 @@ fun LanguageFilterBar(
         }
     }
 
-    val displayText = if (expanded) searchQuery else selectedLabel
+    val displayValue = if (expanded) textFieldValue
+        else TextFieldValue(selectedLabel, TextRange(selectedLabel.length))
 
     ExposedDropdownMenuBox(
         expanded = expanded,
         onExpandedChange = {
             if (it) {
-                searchQuery = ""
+                textFieldValue = TextFieldValue()
                 expanded = true
             } else {
                 expanded = false
-                searchQuery = ""
+                textFieldValue = TextFieldValue()
             }
         },
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = displayText,
+            value = displayValue,
             onValueChange = {
-                searchQuery = it
+                textFieldValue = it
                 if (!expanded) expanded = true
             },
             label = { Text(stringResource(R.string.lang_filter_label)) },
@@ -80,6 +87,17 @@ fun LanguageFilterBar(
                     modifier = Modifier.padding(start = 4.dp)
                 )
             },
+            trailingIcon = if (expanded && textFieldValue.text.isNotEmpty()) {
+                {
+                    IconButton(onClick = { textFieldValue = TextFieldValue() }) {
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.lang_filter_clear),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else null,
             singleLine = true,
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
@@ -91,21 +109,21 @@ fun LanguageFilterBar(
             expanded = expanded,
             onDismissRequest = {
                 expanded = false
-                searchQuery = ""
+                textFieldValue = TextFieldValue()
             }
         ) {
             if (searchQuery.isBlank()) {
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.lang_filter_all)) },
                     onClick = {
-                        onLanguageSelected(null)
                         expanded = false
-                        searchQuery = ""
+                        textFieldValue = TextFieldValue()
+                        onLanguageSelected(null)
                     }
                 )
             }
 
-            if (matchedEntries.isEmpty() && searchQuery.isNotBlank()) {
+            if (matchedEntries.isEmpty() && textFieldValue.text.isNotBlank()) {
                 DropdownMenuItem(
                     text = {
                         Text(
@@ -121,9 +139,9 @@ fun LanguageFilterBar(
                     DropdownMenuItem(
                         text = { Text(name) },
                         onClick = {
-                            onLanguageSelected(entry.code)
                             expanded = false
-                            searchQuery = ""
+                            textFieldValue = TextFieldValue()
+                            onLanguageSelected(entry.code)
                         }
                     )
                 }

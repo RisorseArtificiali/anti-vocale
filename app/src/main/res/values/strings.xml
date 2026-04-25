@@ -544,6 +544,7 @@
     <string name="lang_filter_all">All languages</string>
     <string name="lang_filter_search">Search language…</string>
     <string name="lang_filter_no_results">No matching language</string>
+    <string name="lang_filter_clear">Clear search</string>
     <string name="lang_afrikaans">Afrikaans</string>
     <string name="lang_arabic">Arabic</string>
     <string name="lang_azerbaijani">Azerbaijani</string>
