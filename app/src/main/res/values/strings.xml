@@ -380,6 +380,11 @@
     <string name="per_app_onboarding_message">Tap any app to configure auto-copy, share actions, and notification sounds for that specific app.</string>
     <string name="per_app_onboarding_got_it">Got it</string>
 
+    <!-- VAD Advisory (shown in Log tab when Parakeet is active with VAD enabled) -->
+    <string name="vad_advisory_title">VAD is not needed with Parakeet</string>
+    <string name="vad_advisory_description">Silence stripping adds processing overhead without improving results for this model. You can turn it off in Settings.</string>
+    <string name="vad_advisory_dismiss">Got it</string>
+
     <!-- Share Back -->
     <string name="share_back">Share Back</string>
     <string name="share_back_description">Share transcription back to source app</string>

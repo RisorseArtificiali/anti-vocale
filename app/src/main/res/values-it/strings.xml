@@ -376,6 +376,11 @@
     <string name="per_app_onboarding_message">Tocca un\'app per configurare copia automatica, azioni di condivisione e suoni di notifica per quella specifica app.</string>
     <string name="per_app_onboarding_got_it">Ho capito</string>
 
+    <!-- VAD Advisory (shown in Log tab when Parakeet is active with VAD enabled) -->
+    <string name="vad_advisory_title">VAD non necessario con Parakeet</string>
+    <string name="vad_advisory_description">La rimozione del silenzio aggiunge overhead senza migliorare i risultati per questo modello. Puoi disattivarlo nelle Impostazioni.</string>
+    <string name="vad_advisory_dismiss">Ho capito</string>
+
     <!-- Share Back -->
     <string name="share_back">Condividi Indietro</string>
     <string name="share_back_description">Condividi la trascrizione nell\'app di origine</string>

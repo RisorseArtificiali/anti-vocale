@@ -37,6 +37,7 @@ import com.antivocale.app.R
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.ui.components.SwipeAction
+import com.antivocale.app.ui.components.VadAdvisoryCard
 import com.antivocale.app.ui.components.SwipeToRevealBox
 import com.antivocale.app.ui.components.rememberSwipeToRevealState
 import com.antivocale.app.util.ToastCompat
@@ -137,6 +138,7 @@ fun LogsTab(
     val context = LocalContext.current
     val swipeActionMode by viewModel.swipeActionMode
         .collectAsState(initial = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
+    val showVadAdvisory by viewModel.showVadAdvisory.collectAsState()
 
     // Lifted expanded state — tracks which taskIds are expanded
     var expandedTaskIds by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -341,6 +343,13 @@ fun LogsTab(
                     bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 )
             ) {
+                item(key = "vad_advisory") {
+                    VadAdvisoryCard(
+                        visible = showVadAdvisory,
+                        onDismiss = { viewModel.dismissVadAdvisory() },
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
                 groupedLogs.forEach { (dateLabel, dateLogs) ->
                     // Date group header
                     item(key = "header_$dateLabel") {
@@ -558,7 +567,7 @@ private fun startOfDay(timestamp: Long): Long {
  * Returns -1 if not found.
  */
 internal fun indexOfTaskId(groupedLogs: List<DateGroup>, taskId: String): Int {
-    var flatIndex = 0
+    var flatIndex = 1  // Offset for vad_advisory item at position 0
     for (group in groupedLogs) {
         // Date group header occupies one slot
         flatIndex++
