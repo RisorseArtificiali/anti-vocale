@@ -14,7 +14,7 @@ class HuggingFaceApiClient @Inject constructor(
 ) {
 
     companion object {
-        private const val WHOAMI_URL = "https://huggingface.co/api/whoami-v2"
+        const val WHOAMI_URL = "https://huggingface.co/api/whoami-v2"
     }
 
     sealed class ValidationResult {
