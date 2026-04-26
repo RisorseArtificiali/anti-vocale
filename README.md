@@ -83,8 +83,19 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 
 | Model | Size | Languages | Notes |
 |-------|------|-----------|-------|
-| **Parakeet TDT 0.6B v3** | ~464MB | 25 European | Faster but less accurate |
-| **Qwen3-ASR 0.6B** | ~938MB | 52 | Poor Italian accuracy |
+| **Parakeet TDT 0.6B v3** | ~464MB | 25 European | Best speed/quality ratio, recommended default |
+| **Qwen3-ASR 0.6B** | ~938MB | 52 | 52 languages, poor Italian accuracy |
+
+### Italian ASR Benchmark
+
+[Full 4-model comparison](scripts/benchmark/README.md) on 8 Italian FLEURS samples (101.6s audio):
+
+| Model | WER | Speed | Size |
+|-------|-----|-------|------|
+| **Distil Large V3 IT** | **4.3%** | 0.723x | 939MB |
+| **Parakeet TDT** | 5.4% | **0.041x** | **640MB** |
+| Whisper Turbo | 6.3% | 1.217x | 990MB |
+| Qwen3-ASR 0.6B | 12.2% | 0.278x | 954MB |
 
 ### ASR (Streaming)
 
