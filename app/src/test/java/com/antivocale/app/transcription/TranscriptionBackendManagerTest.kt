@@ -1,6 +1,7 @@
 package com.antivocale.app.transcription
 
 import android.content.Context
+import com.antivocale.app.manager.LlmManager
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
@@ -12,6 +13,7 @@ import org.junit.Test
 
 class TranscriptionBackendManagerTest {
 
+    private lateinit var llmManager: LlmManager
     private lateinit var backendA: TranscriptionBackend
     private lateinit var backendB: TranscriptionBackend
     private lateinit var context: Context
@@ -19,6 +21,7 @@ class TranscriptionBackendManagerTest {
 
     @Before
     fun setUp() {
+        llmManager = mockk(relaxed = true)
         backendA = mockk(relaxed = true) {
             every { id } returns "backend_a"
             every { displayName } returns "Backend A"
@@ -38,7 +41,7 @@ class TranscriptionBackendManagerTest {
     }
 
     private fun createManager(vararg backends: TranscriptionBackend): TranscriptionBackendManager =
-        TranscriptionBackendManager(backends.toSet())
+        TranscriptionBackendManager(llmManager, backends.toSet())
 
     // --- Initialization ---
 
@@ -201,5 +204,42 @@ class TranscriptionBackendManagerTest {
         assertEquals(2, backends.size)
         assertTrue(backends.contains(backendA))
         assertTrue(backends.contains(backendB))
+    }
+
+    // --- unloadAll ---
+
+    @Test
+    fun `unloadAll unloads active transcription backend even without LlmManager`() = runTest {
+        coEvery { backendA.initialize(any(), any()) } returns Result.success(Unit)
+        val manager = createManager(backendA)
+
+        manager.setActiveBackend("backend_a", context, config)
+        manager.unloadAll()
+
+        verify { backendA.unload() }
+        assertFalse(manager.hasActiveBackend())
+    }
+
+    @Test
+    fun `unloadAll is safe when nothing is loaded`() {
+        val manager = createManager()
+        manager.unloadAll() // should not throw
+        assertFalse(manager.hasActiveBackend())
+    }
+
+    // --- Backend initialization failure ---
+
+    @Test
+    fun `backend initialization failure does not change active backend`() = runTest {
+        coEvery { backendA.initialize(any(), any()) } returns Result.success(Unit)
+        coEvery { backendB.initialize(any(), any()) } returns Result.failure(RuntimeException("fail"))
+        val manager = createManager(backendA, backendB)
+
+        manager.setActiveBackend("backend_a", context, config)
+        val result = manager.setActiveBackend("backend_b", context, config)
+
+        assertTrue(result.isFailure)
+        assertSame(backendA, manager.getActiveBackend())
+        assertEquals("backend_a", manager.activeBackendId.value)
     }
 }

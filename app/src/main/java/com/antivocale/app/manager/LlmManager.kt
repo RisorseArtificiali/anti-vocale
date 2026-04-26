@@ -35,7 +35,7 @@ import javax.inject.Singleton
  * - Keep-alive timeout for automatic unloading
  */
 @Singleton
-class LlmManager @Inject constructor() {
+open class LlmManager @Inject constructor() {
 
     companion object {
         private const val TAG = "LlmManager"
@@ -445,7 +445,7 @@ class LlmManager @Inject constructor() {
     /**
      * Checks if the model is ready for inference.
      */
-    fun isReady(): Boolean = isInitialized && (litertEngine != null || mediapipeInference != null)
+    open fun isReady(): Boolean = isInitialized && (litertEngine != null || mediapipeInference != null)
 
     /**
      * Checks if audio processing is available.
@@ -469,7 +469,7 @@ class LlmManager @Inject constructor() {
     /**
      * Unloads the model from memory.
      */
-    fun unload() {
+    open fun unload() {
         Log.i(TAG, "Unloading model")
 
         cancelKeepAliveTimer()

@@ -26,7 +26,7 @@ class HiltModuleTest {
 
     @Test
     fun `TranscriptionModule provides LlmTranscriptionBackend`() {
-        val backend = TranscriptionModule.provideLlmBackend()
+        val backend = TranscriptionModule.provideLlmBackend(mockk(relaxed = true))
         assertNotNull(backend)
         assertTrue(backend is LlmTranscriptionBackend)
     }
@@ -62,7 +62,7 @@ class HiltModuleTest {
     @Test
     fun `all provided backends have unique ids`() {
         val backends: List<TranscriptionBackend> = listOf(
-            TranscriptionModule.provideLlmBackend(),
+            TranscriptionModule.provideLlmBackend(mockk(relaxed = true)),
             TranscriptionModule.provideSherpaOnnxBackend(),
             TranscriptionModule.provideWhisperBackend(),
             TranscriptionModule.provideQwen3AsrBackend(),
@@ -75,7 +75,7 @@ class HiltModuleTest {
     @Test
     fun `all provided backends have non-empty display names`() {
         val backends: List<TranscriptionBackend> = listOf(
-            TranscriptionModule.provideLlmBackend(),
+            TranscriptionModule.provideLlmBackend(mockk(relaxed = true)),
             TranscriptionModule.provideSherpaOnnxBackend(),
             TranscriptionModule.provideWhisperBackend(),
             TranscriptionModule.provideQwen3AsrBackend(),
