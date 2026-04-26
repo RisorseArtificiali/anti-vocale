@@ -567,7 +567,7 @@ private fun startOfDay(timestamp: Long): Long {
  * Returns -1 if not found.
  */
 internal fun indexOfTaskId(groupedLogs: List<DateGroup>, taskId: String): Int {
-    var flatIndex = 0
+    var flatIndex = 1  // Offset for vad_advisory item at position 0
     for (group in groupedLogs) {
         // Date group header occupies one slot
         flatIndex++

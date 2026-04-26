@@ -9,6 +9,7 @@ import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -177,7 +178,7 @@ class LogsViewModel @Inject constructor(
         preferencesManager.vadEnabled,
         preferencesManager.vadAdvisoryDismissed
     ) { backendId, vadEnabled, dismissed ->
-        backendId == "sherpa-onnx" && vadEnabled && !dismissed
+        backendId == SherpaOnnxBackend.BACKEND_ID && vadEnabled && !dismissed
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun dismissVadAdvisory() {
