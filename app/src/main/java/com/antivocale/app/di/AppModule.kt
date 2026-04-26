@@ -4,6 +4,7 @@ import android.content.Context
 import com.antivocale.app.data.HuggingFaceApiClient
 import com.antivocale.app.data.HuggingFaceAuthManager
 import com.antivocale.app.data.HuggingFaceTokenManager
+import com.antivocale.app.data.HuggingFaceTokenManagerImpl
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.PreferencesManagerImpl
@@ -55,7 +56,7 @@ object AppModule {
     @Provides
     @Singleton
     fun provideHuggingFaceTokenManager(@ApplicationContext context: Context): HuggingFaceTokenManager {
-        return HuggingFaceTokenManager(context).apply { initialize() }
+        return HuggingFaceTokenManagerImpl(context).apply { initialize() }
     }
 
     @Provides
