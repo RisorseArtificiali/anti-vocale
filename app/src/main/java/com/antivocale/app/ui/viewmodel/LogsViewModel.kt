@@ -9,6 +9,7 @@ import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.transcription.TranscriptionBackendManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -170,6 +171,20 @@ class LogsViewModel @Inject constructor(
 
     val swipeActionMode: StateFlow<String> = preferencesManager.swipeActionMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
+
+    val showVadAdvisory: StateFlow<Boolean> = combine(
+        TranscriptionBackendManager.activeBackendId,
+        preferencesManager.vadEnabled,
+        preferencesManager.vadAdvisoryDismissed
+    ) { backendId, vadEnabled, dismissed ->
+        backendId == "sherpa-onnx" && vadEnabled && !dismissed
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    fun dismissVadAdvisory() {
+        viewModelScope.launch {
+            preferencesManager.saveVadAdvisoryDismissed(true)
+        }
+    }
 
     // One-shot highlight signal: set a taskId to scroll-to + expand, then cleared by the UI
     private val _highlightTaskId = MutableStateFlow<String?>(null)

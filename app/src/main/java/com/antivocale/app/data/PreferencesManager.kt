@@ -53,6 +53,8 @@ class PreferencesManager(private val context: Context) {
         private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
         // Swipe action mode ("REVEAL" or "IMMEDIATE_DELETE")
         private val SWIPE_ACTION_MODE = stringPreferencesKey("swipe_action_mode")
+        // VAD advisory dismissed (for Parakeet + VAD advisory card)
+        private val VAD_ADVISORY_DISMISSED = booleanPreferencesKey("vad_advisory_dismissed")
 
         // Default values (single source of truth)
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
@@ -89,7 +91,8 @@ class PreferencesManager(private val context: Context) {
         val defaultPrompt: String = DEFAULT_PROMPT_VALUE,
         val threadCount: Int = DEFAULT_THREAD_COUNT,
         val transcriptionLanguage: String = DEFAULT_TRANSCRIPTION_LANGUAGE,
-        val swipeActionMode: String = DEFAULT_SWIPE_ACTION_MODE
+        val swipeActionMode: String = DEFAULT_SWIPE_ACTION_MODE,
+        val vadAdvisoryDismissed: Boolean = false
     )
 
     /**
@@ -113,7 +116,8 @@ class PreferencesManager(private val context: Context) {
         defaultPrompt = this[DEFAULT_PROMPT] ?: DEFAULT_PROMPT_VALUE,
         threadCount = this[THREAD_COUNT] ?: DEFAULT_THREAD_COUNT,
         transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: DEFAULT_TRANSCRIPTION_LANGUAGE,
-        swipeActionMode = this[SWIPE_ACTION_MODE] ?: DEFAULT_SWIPE_ACTION_MODE
+        swipeActionMode = this[SWIPE_ACTION_MODE] ?: DEFAULT_SWIPE_ACTION_MODE,
+        vadAdvisoryDismissed = this[VAD_ADVISORY_DISMISSED] ?: false
     )
 
     /**
@@ -349,6 +353,16 @@ class PreferencesManager(private val context: Context) {
             preferences[VAD_ENABLED] = enabled
         }
         cache.updateAndGet { it.copy(vadEnabled = enabled) }
+    }
+
+    val vadAdvisoryDismissed: Flow<Boolean> = context.dataStore.data.map { it.toCached().vadAdvisoryDismissed }
+        .onStart { emit(cache.get().vadAdvisoryDismissed) }
+
+    suspend fun saveVadAdvisoryDismissed(dismissed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[VAD_ADVISORY_DISMISSED] = dismissed
+        }
+        cache.updateAndGet { it.copy(vadAdvisoryDismissed = dismissed) }
     }
 
     /**

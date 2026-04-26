@@ -37,6 +37,7 @@ import com.antivocale.app.R
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.ui.components.SwipeAction
+import com.antivocale.app.ui.components.VadAdvisoryCard
 import com.antivocale.app.ui.components.SwipeToRevealBox
 import com.antivocale.app.ui.components.rememberSwipeToRevealState
 import com.antivocale.app.util.ToastCompat
@@ -137,6 +138,7 @@ fun LogsTab(
     val context = LocalContext.current
     val swipeActionMode by viewModel.swipeActionMode
         .collectAsState(initial = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
+    val showVadAdvisory by viewModel.showVadAdvisory.collectAsState()
 
     // Lifted expanded state — tracks which taskIds are expanded
     var expandedTaskIds by remember { mutableStateOf<Set<String>>(emptySet()) }
@@ -341,6 +343,13 @@ fun LogsTab(
                     bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 )
             ) {
+                item(key = "vad_advisory") {
+                    VadAdvisoryCard(
+                        visible = showVadAdvisory,
+                        onDismiss = { viewModel.dismissVadAdvisory() },
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                    )
+                }
                 groupedLogs.forEach { (dateLabel, dateLogs) ->
                     // Date group header
                     item(key = "header_$dateLabel") {
