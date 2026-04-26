@@ -8,12 +8,14 @@ import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.PreferencesManagerImpl
 import com.antivocale.app.data.TranscriptionCalibrator
+import java.util.concurrent.TimeUnit
 import com.antivocale.app.data.local.AppDatabase
 import com.antivocale.app.data.local.LogDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
+import okhttp3.OkHttpClient
 import dagger.hilt.components.SingletonComponent
 import javax.inject.Singleton
 
@@ -58,16 +60,20 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideHuggingFaceApiClient(): HuggingFaceApiClient {
-        return HuggingFaceApiClient()
+    fun provideOkHttpClient(): OkHttpClient {
+        return OkHttpClient.Builder()
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
+            .build()
     }
 
     @Provides
     @Singleton
     fun provideHuggingFaceAuthManager(
         @ApplicationContext context: Context,
-        tokenManager: HuggingFaceTokenManager
+        tokenManager: HuggingFaceTokenManager,
+        apiClient: HuggingFaceApiClient
     ): HuggingFaceAuthManager {
-        return HuggingFaceAuthManager(context, tokenManager)
+        return HuggingFaceAuthManager(context, tokenManager, apiClient)
     }
 }

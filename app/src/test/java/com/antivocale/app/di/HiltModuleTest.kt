@@ -89,8 +89,8 @@ class HiltModuleTest {
     // --- AppModule (non-Android-dependent) ---
 
     @Test
-    fun `AppModule provides HuggingFaceApiClient`() {
-        val client = AppModule.provideHuggingFaceApiClient()
+    fun `AppModule provides OkHttpClient`() {
+        val client = AppModule.provideOkHttpClient()
         assertNotNull(client)
     }
 

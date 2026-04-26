@@ -52,7 +52,8 @@ import kotlin.coroutines.resumeWithException
  */
 class HuggingFaceAuthManager(
     private val context: Context,
-    private val huggingFaceTokenManager: HuggingFaceTokenManager
+    private val huggingFaceTokenManager: HuggingFaceTokenManager,
+    private val huggingFaceApiClient: HuggingFaceApiClient
 ) {
 
     private var authService: AuthorizationService? = null
@@ -338,12 +339,8 @@ class HuggingFaceAuthManager(
      * Fetches user info from HuggingFace API.
      */
     private fun fetchUserInfo(accessToken: String, onResult: (UserInfoResult) -> Unit) {
-        // Use the existing HuggingFaceApiClient to validate and get username
-        val apiClient = HuggingFaceApiClient()
-
-        // Launch a coroutine to validate the token
         GlobalScope.launch(Dispatchers.IO + CrashReporter.handler) {
-            when (val result = apiClient.validateToken(accessToken)) {
+            when (val result = huggingFaceApiClient.validateToken(accessToken)) {
                 is HuggingFaceApiClient.ValidationResult.Success -> {
                     onResult(UserInfoResult.Success(result.username))
                 }
