@@ -21,6 +21,11 @@ import java.nio.ByteOrder
  * - Supports 25 European languages with automatic detection (Parakeet TDT)
  * - ~464MB model size vs ~3.3GB for Gemma 3n
  * - 2.4-2.8x faster transcription
+ *
+ * Decoding: Uses greedy_search instead of modified_beam_search because
+ * benchmarking (2026-04-26, 8 Italian FLEURS samples) showed identical
+ * WER across all decoding methods, but greedy_search is ~3x faster.
+ * See memory/research_parakeet_decoding.md for full results.
  */
 class SherpaOnnxBackend : TranscriptionBackend {
 
@@ -98,8 +103,7 @@ class SherpaOnnxBackend : TranscriptionBackend {
                         sampleRate = 16000,
                         featureDim = 80
                     ),
-                    decodingMethod = "modified_beam_search",
-                    maxActivePaths = 25
+                    decodingMethod = "greedy_search"
                 )
 
                 Log.i(TAG, "Creating OfflineRecognizer...")
@@ -135,9 +139,15 @@ class SherpaOnnxBackend : TranscriptionBackend {
                 val samples = WavUtils.parseWavToFloats(audioData)
                 Log.d(TAG, "Parsed ${samples.size} audio samples")
 
+                // Append 1s of silence to improve final token accuracy.
+                // Benchmarking on real WhatsApp audio showed 2% WER improvement
+                // (12.1% → 10.1%) from giving the model a brief silence tail
+                // to finalize trailing tokens. More padding doesn't help further.
+                val padded = samples + FloatArray(16000)
+
                 // Create stream and process audio
                 val stream = rec.createStream()
-                stream.acceptWaveform(samples, 16000)
+                stream.acceptWaveform(padded, 16000)
                 rec.decode(stream)
 
                 // Get result
