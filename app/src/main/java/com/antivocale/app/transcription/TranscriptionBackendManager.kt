@@ -5,19 +5,23 @@ import android.util.Log
 import com.antivocale.app.manager.LlmManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Manages transcription backends and coordinates between them.
  *
  * Only one backend can be active at a time due to memory constraints.
- * Backends are registered at app startup and can be switched dynamically.
+ * Backends are provided via Hilt multibinding ([TranscriptionModule]).
  */
-object TranscriptionBackendManager {
+@Singleton
+class TranscriptionBackendManager @Inject constructor(
+    injectedBackends: Set<@JvmSuppressWildcards TranscriptionBackend>
+) {
 
-    private const val TAG = "TranscriptionBackendManager"
-
-    private val backends = mutableMapOf<String, TranscriptionBackend>()
+    private val backends: Map<String, TranscriptionBackend> = injectedBackends.associateBy { it.id }
     private val _activeBackendId = MutableStateFlow<String?>(null)
+    @Volatile
     private var _activeBackend: TranscriptionBackend? = null
 
     /**
@@ -25,14 +29,13 @@ object TranscriptionBackendManager {
      */
     val activeBackendId = _activeBackendId.asStateFlow()
 
-    /**
-     * Registers a transcription backend.
-     *
-     * @param backend The backend to register
-     */
-    fun registerBackend(backend: TranscriptionBackend) {
-        backends[backend.id] = backend
-        Log.i(TAG, "Registered backend: ${backend.id} (${backend.displayName})")
+    init {
+        if (backends.size != injectedBackends.size) {
+            Log.w(TAG, "Duplicate backend IDs detected: ${injectedBackends.map { it.id }.groupingBy { it }.eachCount().filter { it.value > 1 }.keys}")
+        }
+        backends.values.forEach { backend ->
+            Log.i(TAG, "Registered backend: ${backend.id} (${backend.displayName})")
+        }
     }
 
     /**
@@ -133,11 +136,7 @@ object TranscriptionBackendManager {
         _activeBackend?.setKeepAliveTimeout(minutes)
     }
 
-    /**
-     * Clears all backends (for testing/reset).
-     */
-    fun clear() {
-        unloadActiveBackend()
-        backends.clear()
+    companion object {
+        private const val TAG = "TranscriptionBackendManager"
     }
 }

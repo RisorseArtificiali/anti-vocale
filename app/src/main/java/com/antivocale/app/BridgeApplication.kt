@@ -2,8 +2,6 @@ package com.antivocale.app
 
 import android.app.Application
 import com.antivocale.app.data.PreferencesManager
-import com.antivocale.app.transcription.TranscriptionBackend
-import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.LocaleManager
 import dagger.hilt.android.HiltAndroidApp
@@ -14,7 +12,6 @@ import javax.inject.Inject
 class BridgeApplication : Application() {
 
     @Inject lateinit var preferencesManager: PreferencesManager
-    @Inject lateinit var backends: Set<@JvmSuppressWildcards TranscriptionBackend>
 
     companion object {
         private const val PREFS_NAME = "localai_migration_prefs"
@@ -23,7 +20,6 @@ class BridgeApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        backends.forEach { TranscriptionBackendManager.registerBackend(it) }
         preferencesManager.initialize()
         com.antivocale.app.util.SharedAudioHandler.cleanupOldFiles(this)
         migrateLanguagePreference()

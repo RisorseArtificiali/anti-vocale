@@ -53,7 +53,8 @@ class SettingsViewModel @Inject constructor(
     val huggingFaceAuthManager: HuggingFaceAuthManager,
     private val huggingFaceApiClient: HuggingFaceApiClient,
     val perAppPreferencesManager: PerAppPreferencesManager,
-    val transcriptionCalibrator: TranscriptionCalibrator
+    val transcriptionCalibrator: TranscriptionCalibrator,
+    private val backendManager: TranscriptionBackendManager
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -327,7 +328,7 @@ class SettingsViewModel @Inject constructor(
      * Works for both LLM backend and other backends via TranscriptionBackendManager.
      */
     fun unloadModel() {
-        TranscriptionBackendManager.unloadAll()
+        backendManager.unloadAll()
         Log.i(TAG, "Model unloaded manually")
     }
 

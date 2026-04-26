@@ -6,7 +6,6 @@ import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackend
-import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.WhisperBackend
 import dagger.Module
 import dagger.Provides

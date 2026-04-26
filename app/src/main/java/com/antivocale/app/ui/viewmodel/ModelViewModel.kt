@@ -52,6 +52,7 @@ class ModelViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val tokenManager: HuggingFaceTokenManager,
     private val benchmarkManager: BenchmarkManager,
+    private val backendManager: TranscriptionBackendManager,
     @ApplicationContext private val ctx: Context
 ) : ViewModel() {
 
@@ -84,7 +85,6 @@ class ModelViewModel @Inject constructor(
      * Parakeet download UI state
      */
     data class ParakeetUiState(
-        val isDownloaded: Boolean = false,
         val isDownloading: Boolean = false,
         val downloadProgress: Float = 0f,
         val downloadState: DownloadState = DownloadState.Idle,
@@ -93,9 +93,7 @@ class ModelViewModel @Inject constructor(
         // Confirmation dialogs
         val showDownloadDialog: Boolean = false,
         val showDeleteDialog: Boolean = false,
-        val partialDownload: DownloadState.PartiallyDownloaded? = null,
-        val needsExtraction: Boolean = false,
-        val hasOrphanedFiles: Boolean = false
+        val partialDownload: DownloadState.PartiallyDownloaded? = null
     )
 
     /**
@@ -318,10 +316,7 @@ class ModelViewModel @Inject constructor(
                 viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.parakeet_downloaded)) }
             },
             onCancelled = {
-                _parakeetState.update { it.copy(
-                    isDownloading = false,
-                    needsExtraction = ParakeetDownloader.needsExtraction(ctx)
-                )}
+                _parakeetState.update { it.copy(isDownloading = false) }
                 detectPartialDownloads()
             }
         )
@@ -549,17 +544,9 @@ class ModelViewModel @Inject constructor(
             // would look like a partial download to the detector)
             if (!_parakeetState.value.isDownloading && !ParakeetDownloader.isModelDownloaded(context)) {
                 val partial = ParakeetDownloader.detectPartialDownload(context)
-                val needsExtraction = ParakeetDownloader.needsExtraction(context)
-                val parakeetModelDir = java.io.File(ParakeetModelManager.getModelStorageDir(context), "parakeet-tdt-0.6b-v3-int8")
                 _parakeetState.update {
-                    it.copy(
-                        partialDownload = partial,
-                        needsExtraction = needsExtraction,
-                        hasOrphanedFiles = parakeetModelDir.exists()
-                    )
+                    it.copy(partialDownload = partial)
                 }
-            } else {
-                _parakeetState.update { it.copy(needsExtraction = false, hasOrphanedFiles = false) }
             }
 
             // Check Whisper variants
@@ -846,7 +833,7 @@ class ModelViewModel @Inject constructor(
     }
 
     fun unloadModel() {
-        TranscriptionBackendManager.unloadAll()
+        backendManager.unloadAll()
 
         _uiState.update { it.copy(
             modelName = "",
@@ -1154,11 +1141,7 @@ class ModelViewModel @Inject constructor(
      * Confirms and starts the Parakeet download.
      */
     fun confirmParakeetDownload() {
-        val needsExtraction = _parakeetState.value.needsExtraction
-        startParakeetDownload(
-            dismissDialog = true,
-            initialState = if (needsExtraction) DownloadState.Extracting(0, 0) else DownloadState.Connecting("")
-        )
+        startParakeetDownload(dismissDialog = true)
     }
 
     /**
@@ -1220,28 +1203,13 @@ class ModelViewModel @Inject constructor(
      */
     fun clearParakeetPartialDownload() {
         viewModelScope.launch {
-            val context = ctx
-            ParakeetDownloader.clearPartialDownload(context)
+            ParakeetDownloader.clearPartialDownload(ctx)
             _parakeetState.update { it.copy(
                 isDownloading = false,
                 downloadState = DownloadState.Idle,
                 downloadProgress = 0f,
-                partialDownload = null,
-                needsExtraction = false
+                partialDownload = null
             )}
-            detectPartialDownloads()
-        }
-    }
-
-    /**
-     * Clears an orphaned Parakeet model directory (partial extraction leftovers).
-     * The tar file is preserved so extraction can be retried.
-     */
-    fun clearOrphanedParakeetFiles() {
-        viewModelScope.launch {
-            val context = ctx
-            ParakeetDownloader.deleteModel(context)
-            _parakeetState.update { it.copy(hasOrphanedFiles = false) }
             detectPartialDownloads()
         }
     }
@@ -1254,10 +1222,7 @@ class ModelViewModel @Inject constructor(
         _parakeetState.update { it.copy(
             isDownloading = false,
             downloadState = DownloadState.Cancelled("User cancelled"),
-            errorMessage = null,
-            // Eagerly set extraction state so the button shows "Extract" immediately
-            // instead of flickering to "Download" while detectPartialDownloads() runs on IO
-            needsExtraction = ParakeetDownloader.needsExtraction(ctx)
+            errorMessage = null
         )}
         stopExtractionService(ExtractionService.ModelType.PARAKEET)
         detectPartialDownloads()
@@ -1875,7 +1840,7 @@ class ModelViewModel @Inject constructor(
         _benchmarkTargetName.value = displayName
         _benchmarkState.value = BenchmarkState.Idle
 
-        val backend = TranscriptionBackendManager.getBackend(backendId) ?: run {
+        val backend = backendManager.getBackend(backendId) ?: run {
             _benchmarkState.value = BenchmarkState.Error("Unknown backend: $backendId")
             return
         }

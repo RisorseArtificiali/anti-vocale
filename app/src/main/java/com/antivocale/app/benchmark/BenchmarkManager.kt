@@ -6,7 +6,6 @@ import android.util.Log
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.TranscriptionBackend
-import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.util.WavUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException

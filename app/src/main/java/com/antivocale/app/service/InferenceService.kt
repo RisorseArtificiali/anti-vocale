@@ -61,6 +61,7 @@ class InferenceService : Service() {
     @Inject lateinit var perAppPreferencesManager: PerAppPreferencesManager
     @Inject lateinit var logDao: LogDao
     @Inject lateinit var transcriptionCalibrator: TranscriptionCalibrator
+    @Inject lateinit var backendManager: TranscriptionBackendManager
 
     companion object {
         const val TAG = "InferenceService"
@@ -256,10 +257,10 @@ class InferenceService : Service() {
             // 2. That backend is ready (loaded)
             // 3. The active backend matches the user's current preference
             //    (prevents stale backend after user switches models)
-            val hasBackend = TranscriptionBackendManager.hasActiveBackend()
-            val backendReady = TranscriptionBackendManager.getActiveBackend()?.isReady() ?: false
+            val hasBackend = backendManager.hasActiveBackend()
+            val backendReady = backendManager.getActiveBackend()?.isReady() ?: false
             val preferredBackendId = preferencesManager.transcriptionBackend.first()
-            val activeBackendId = TranscriptionBackendManager.getActiveBackend()?.id
+            val activeBackendId = backendManager.getActiveBackend()?.id
             val backendMismatch = hasBackend && activeBackendId != preferredBackendId
 
             if (!hasBackend || !backendReady || backendMismatch) {
@@ -268,7 +269,7 @@ class InferenceService : Service() {
                 // If backend exists but isn't the right one or isn't ready, unload it first
                 if (hasBackend) {
                     Log.i(TAG, "Unloading previous backend: $activeBackendId")
-                    TranscriptionBackendManager.unloadActiveBackend()
+                    backendManager.unloadActiveBackend()
                 }
 
                 Log.i(TAG, "Loading backend from preferences: $preferredBackendId")
@@ -287,7 +288,7 @@ class InferenceService : Service() {
                         Log.i(TAG, "Backend auto-loaded successfully: $preferredBackendId")
                         // Apply saved keep-alive timeout
                         val timeout = preferencesManager.keepAliveTimeout.first()
-                        TranscriptionBackendManager.setKeepAliveTimeout(timeout)
+                        backendManager.setKeepAliveTimeout(timeout)
                     },
                     onFailure = { error ->
                         val errorMsg = getString(R.string.error_load_backend, error.message)
@@ -443,7 +444,7 @@ class InferenceService : Service() {
         updateNotificationWithProgress(getString(R.string.loading_model, "LLM"), indeterminate = true)
         Log.i(TAG, "Auto-loading LLM model from: $modelPath")
 
-        return TranscriptionBackendManager.setActiveBackend(
+        return backendManager.setActiveBackend(
             backendId = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND,
             context = applicationContext,
             config = BackendConfig.LiteRTConfig(modelPath = modelPath)
@@ -475,7 +476,7 @@ class InferenceService : Service() {
         updateNotificationWithProgress(getString(R.string.loading_model, label), indeterminate = true)
         Log.i(TAG, "Auto-loading $label model from: $modelPath")
 
-        return TranscriptionBackendManager.setActiveBackend(
+        return backendManager.setActiveBackend(
             backendId = backendId,
             context = applicationContext,
             config = BackendConfig.SherpaOnnxConfig(
@@ -518,7 +519,7 @@ class InferenceService : Service() {
         Log.i(TAG, "Auto-loading GGUF model from: $modelPath")
 
         val threadCount = preferencesManager.threadCount.first()
-        return TranscriptionBackendManager.setActiveBackend(
+        return backendManager.setActiveBackend(
             backendId = Gemma4GgufBackend.BACKEND_ID,
             context = applicationContext,
             config = BackendConfig.GgufConfig(
@@ -536,7 +537,7 @@ class InferenceService : Service() {
             return Result.failure(IllegalArgumentException("Empty prompt provided"))
         }
 
-        val backend = TranscriptionBackendManager.getActiveBackend()
+        val backend = backendManager.getActiveBackend()
             ?: return Result.failure(IllegalStateException(getString(R.string.error_no_active_backend)))
 
         if (!backend.supportsText) {
@@ -563,7 +564,7 @@ class InferenceService : Service() {
             return Result.failure(PreprocessingError.FileNotFound)
         }
 
-        val backend = TranscriptionBackendManager.getActiveBackend()
+        val backend = backendManager.getActiveBackend()
             ?: return Result.failure(IllegalStateException(getString(R.string.error_no_active_backend)))
 
         if (!backend.isAudioSupported()) {
@@ -619,7 +620,7 @@ class InferenceService : Service() {
         Log.i(TAG, "Request prompt: '${request.prompt}'")
         Log.i(TAG, "Saved default prompt: '$savedDefaultPrompt'")
         Log.i(TAG, "Final prompt: '$prompt'")
-        Log.i(TAG, "Active backend: ${TranscriptionBackendManager.getActiveBackend()?.displayName}")
+        Log.i(TAG, "Active backend: ${backendManager.getActiveBackend()?.displayName}")
         Log.i(TAG, "===========================")
 
         // Fast path: single chunk — skip parallel chunking machinery
