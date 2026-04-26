@@ -54,12 +54,16 @@ class SettingsViewModel @Inject constructor(
     private val huggingFaceApiClient: HuggingFaceApiClient,
     val perAppPreferencesManager: PerAppPreferencesManager,
     val transcriptionCalibrator: TranscriptionCalibrator,
-    private val backendManager: TranscriptionBackendManager
+    private val backendManager: TranscriptionBackendManager,
+    private val llmManager: LlmManager
 ) : AndroidViewModel(application) {
 
     companion object {
         private const val TAG = "SettingsViewModel"
     }
+
+    val llmIsReadyFlow: StateFlow<Boolean> = llmManager.isReadyFlow
+    val llmRemainingTimeSeconds: Long? get() = llmManager.getRemainingTimeSeconds()
 
     // Keep-alive timeout options in minutes
     val timeoutOptions = listOf(1, 2, 5, 10, 15, 30, 60)
@@ -230,8 +234,8 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.saveKeepAliveTimeout(minutes)
 
                 // Apply to LlmManager if model is loaded
-                if (LlmManager.isReady()) {
-                    LlmManager.setKeepAliveTimeout(minutes)
+                if (llmManager.isReady()) {
+                    llmManager.setKeepAliveTimeout(minutes)
                 }
 
                 _uiState.update { it.copy(isSaving = false, saveSuccess = true) }

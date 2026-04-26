@@ -15,6 +15,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.util.concurrent.atomic.AtomicReference
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Singleton manager for on-device LLM inference.
@@ -32,10 +34,13 @@ import java.util.concurrent.atomic.AtomicReference
  * - Audio transcription (multimodal)
  * - Keep-alive timeout for automatic unloading
  */
-object LlmManager {
+@Singleton
+class LlmManager @Inject constructor() {
 
-    private const val TAG = "LlmManager"
-    private const val MAX_TOKENS = 2048
+    companion object {
+        private const val TAG = "LlmManager"
+        private const val MAX_TOKENS = 2048
+    }
 
     // Reactive state for UI observation
     private val _isReady = MutableStateFlow(false)

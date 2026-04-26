@@ -33,6 +33,7 @@ import javax.inject.Inject
 class ModelPreloadReceiver : BroadcastReceiver() {
 
     @Inject lateinit var preferencesManager: PreferencesManager
+    @Inject lateinit var llmManager: LlmManager
 
     companion object {
         const val TAG = "ModelPreloadReceiver"
@@ -56,9 +57,9 @@ class ModelPreloadReceiver : BroadcastReceiver() {
         CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler).launch {
             try {
                 // Check if model is already loaded
-                if (LlmManager.isReady()) {
+                if (llmManager.isReady()) {
                     Log.i(TAG, "Model already loaded, resetting keep-alive timer")
-                    LlmManager.resetKeepAliveTimer()
+                    llmManager.resetKeepAliveTimer()
                     if (!isSilent) {
                         sendReply(context, "SUCCESS", "Model already loaded")
                     }
@@ -90,17 +91,17 @@ class ModelPreloadReceiver : BroadcastReceiver() {
 
                 // Load the model
                 Log.i(TAG, "Loading model from: $modelPath")
-                val result = LlmManager.initialize(context, modelPath)
+                val result = llmManager.initialize(context, modelPath)
 
                 result.fold(
                     onSuccess = {
                         Log.i(TAG, "Model loaded successfully")
                         // Apply saved keep-alive timeout
                         val timeout = preferencesManager.keepAliveTimeout.first()
-                        LlmManager.setKeepAliveTimeout(timeout)
+                        llmManager.setKeepAliveTimeout(timeout)
 
                         // Notify ViewModel to update UI state
-                        LlmManager.notifyExternalLoad(modelPath)
+                        llmManager.notifyExternalLoad(modelPath)
 
                         if (!isSilent) {
                             sendReply(context, "SUCCESS", "Model loaded successfully")

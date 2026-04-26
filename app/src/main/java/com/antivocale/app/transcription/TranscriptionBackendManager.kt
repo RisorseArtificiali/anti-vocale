@@ -16,6 +16,7 @@ import javax.inject.Singleton
  */
 @Singleton
 class TranscriptionBackendManager @Inject constructor(
+    private val llmManager: LlmManager,
     injectedBackends: Set<@JvmSuppressWildcards TranscriptionBackend>
 ) {
 
@@ -111,8 +112,8 @@ class TranscriptionBackendManager @Inject constructor(
      * Synchronous — safe to call from any thread.
      */
     fun unloadAll() {
-        if (LlmManager.isReady()) {
-            LlmManager.unload()
+        if (llmManager.isReady()) {
+            llmManager.unload()
         }
         unloadActiveBackend()
     }

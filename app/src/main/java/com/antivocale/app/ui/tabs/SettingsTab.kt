@@ -37,7 +37,6 @@ import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
-import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.ui.components.UnloadModelButton
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.theme.ThemeType
@@ -96,8 +95,8 @@ fun SettingsTab(
     // Check if model is currently loaded (only relevant for LLM backend)
     // Use StateFlow for reactive updates when model state changes
     val isLlmBackend = settingsState.transcriptionBackend == PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
-    val isModelLoaded by LlmManager.isReadyFlow.collectAsState()
-    val remainingTime = LlmManager.getRemainingTimeSeconds() ?: 0L
+    val isModelLoaded by viewModel.llmIsReadyFlow.collectAsState()
+    val remainingTime = viewModel.llmRemainingTimeSeconds ?: 0L
 
     // Show sub-screens or main settings
     if (showPerAppSettings) {

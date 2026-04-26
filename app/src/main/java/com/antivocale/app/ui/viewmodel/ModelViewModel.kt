@@ -53,6 +53,7 @@ class ModelViewModel @Inject constructor(
     private val tokenManager: HuggingFaceTokenManager,
     private val benchmarkManager: BenchmarkManager,
     private val backendManager: TranscriptionBackendManager,
+    private val llmManager: LlmManager,
     @ApplicationContext private val ctx: Context
 ) : ViewModel() {
 
@@ -197,11 +198,11 @@ class ModelViewModel @Inject constructor(
 
     init {
         // Set up auto-unload callback
-        LlmManager.setOnAutoUnloadCallback {
+        llmManager.setOnAutoUnloadCallback {
             onModelAutoUnloaded()
         }
         // Set up external load callback (e.g., from ModelPreloadReceiver)
-        LlmManager.setOnExternalLoadCallback { modelPath ->
+        llmManager.setOnExternalLoadCallback { modelPath ->
             onModelExternallyLoaded(modelPath)
         }
         // Observe ExtractionService progress state
@@ -810,7 +811,7 @@ class ModelViewModel @Inject constructor(
                 statusMessage = ctx.getString(R.string.model_loading)
             )}
 
-            val result = LlmManager.initialize(context, modelPath)
+            val result = llmManager.initialize(context, modelPath)
 
             result.fold(
                 onSuccess = {
@@ -1597,7 +1598,7 @@ class ModelViewModel @Inject constructor(
                 }
 
                 _snackbarEvent.send(message)
-                LlmManager.resetKeepAliveTimer()
+                llmManager.resetKeepAliveTimer()
             }
         }
     }
@@ -1775,7 +1776,7 @@ class ModelViewModel @Inject constructor(
                 }
 
                 _snackbarEvent.send(message)
-                LlmManager.resetKeepAliveTimer()
+                llmManager.resetKeepAliveTimer()
             }
         }
     }
@@ -1900,7 +1901,7 @@ class ModelViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         benchmarkJob?.cancel()
-        LlmManager.setOnAutoUnloadCallback(null)
-        LlmManager.setOnExternalLoadCallback(null)
+        llmManager.setOnAutoUnloadCallback(null)
+        llmManager.setOnExternalLoadCallback(null)
     }
 }
