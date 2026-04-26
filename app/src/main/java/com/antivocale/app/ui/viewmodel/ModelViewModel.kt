@@ -26,6 +26,9 @@ import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.Gemma4GgufBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import com.antivocale.app.transcription.BackendConfig
+import com.antivocale.app.benchmark.BenchmarkManager
+import com.antivocale.app.benchmark.BenchmarkState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +51,7 @@ import javax.inject.Inject
 class ModelViewModel @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val tokenManager: HuggingFaceTokenManager,
+    private val benchmarkManager: BenchmarkManager,
     @ApplicationContext private val ctx: Context
 ) : ViewModel() {
 
@@ -1848,8 +1852,89 @@ class ModelViewModel @Inject constructor(
         }
     }
 
+    // ==================== Benchmark ====================
+
+    private data class BenchmarkTarget(
+        val backendId: String,
+        val modelPath: String,
+        val displayName: String
+    )
+
+    private val _benchmarkState = MutableStateFlow<BenchmarkState>(BenchmarkState.Idle)
+    val benchmarkState: StateFlow<BenchmarkState> = _benchmarkState.asStateFlow()
+
+    private val _benchmarkTargetName = MutableStateFlow("")
+    val benchmarkTargetName: StateFlow<String> = _benchmarkTargetName.asStateFlow()
+
+    private var benchmarkJob: kotlinx.coroutines.Job? = null
+    private var lastBenchmarkTarget: BenchmarkTarget? = null
+
+    fun startBenchmark(backendId: String, modelPath: String, displayName: String) {
+        benchmarkJob?.cancel()
+        lastBenchmarkTarget = BenchmarkTarget(backendId, modelPath, displayName)
+        _benchmarkTargetName.value = displayName
+        _benchmarkState.value = BenchmarkState.Idle
+
+        val backend = TranscriptionBackendManager.getBackend(backendId) ?: run {
+            _benchmarkState.value = BenchmarkState.Error("Unknown backend: $backendId")
+            return
+        }
+
+        benchmarkJob = viewModelScope.launch(Dispatchers.IO) {
+            val threadCount = preferencesManager.threadCount.first()
+
+            val config = when (backendId) {
+                WhisperBackend.BACKEND_ID -> {
+                    val lang = preferencesManager.transcriptionLanguage.first()
+                    BackendConfig.SherpaOnnxConfig(
+                        modelDir = modelPath,
+                        numThreads = threadCount,
+                        language = if (lang == "auto") "" else lang
+                    )
+                }
+                SherpaOnnxBackend.BACKEND_ID, Qwen3AsrBackend.BACKEND_ID -> BackendConfig.SherpaOnnxConfig(
+                    modelDir = modelPath,
+                    numThreads = threadCount
+                )
+                Gemma4GgufBackend.BACKEND_ID -> BackendConfig.GgufConfig(
+                    modelPath = modelPath,
+                    threadCount = threadCount
+                )
+                else -> {
+                    _benchmarkState.value = BenchmarkState.Error("Unsupported backend for benchmark")
+                    return@launch
+                }
+            }
+
+            val result = benchmarkManager.runBenchmark(backend, config) { progress ->
+                _benchmarkState.value = BenchmarkState.Running(progress)
+            }
+            _benchmarkState.value = result.fold(
+                onSuccess = { BenchmarkState.Complete(it) },
+                onFailure = { BenchmarkState.Error(it.message ?: "Benchmark failed") }
+            )
+        }
+    }
+
+    fun rerunBenchmark() {
+        val target = lastBenchmarkTarget ?: return
+        startBenchmark(target.backendId, target.modelPath, target.displayName)
+    }
+
+    fun cancelBenchmark() {
+        benchmarkJob?.cancel()
+        benchmarkJob = null
+        _benchmarkState.value = BenchmarkState.Idle
+    }
+
+    fun dismissBenchmark() {
+        _benchmarkState.value = BenchmarkState.Idle
+        _benchmarkTargetName.value = ""
+    }
+
     override fun onCleared() {
         super.onCleared()
+        benchmarkJob?.cancel()
         LlmManager.setOnAutoUnloadCallback(null)
         LlmManager.setOnExternalLoadCallback(null)
     }

@@ -12,6 +12,9 @@ import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
+// Tests for Gemma4GgufBackend wiring to GgufInferenceEngine.
+// Engine integration tests require native libs — see TASK-121, TASK-154.
+
 class Gemma4GgufBackendTest {
 
     private lateinit var engine: GgufInferenceEngine
@@ -58,12 +61,12 @@ class Gemma4GgufBackendTest {
             contextSize = 4096,
             threadCount = 6
         )
-        every { engine.initialize(any()) } returns Result.success(Unit)
+        coEvery { engine.initialize(any()) } returns Result.success(Unit)
 
         val result = backend.initialize(context, config)
 
         assertTrue(result.isSuccess)
-        verify {
+        coVerify {
             engine.initialize(GgufInferenceEngine.ModelConfig(
                 modelPath = "/data/models/gguf/model.gguf",
                 contextSize = 4096,
@@ -83,13 +86,13 @@ class Gemma4GgufBackendTest {
     }
 
     @Test
-    fun `initialize uses default context size and thread count`() {
+    fun `initialize uses default context size and thread count`() = runTest {
         val config = BackendConfig.GgufConfig(modelPath = "/path/model.gguf")
-        every { engine.initialize(any()) } returns Result.success(Unit)
+        coEvery { engine.initialize(any()) } returns Result.success(Unit)
 
-        runTest { backend.initialize(context, config) }
+        backend.initialize(context, config)
 
-        verify {
+        coVerify {
             engine.initialize(GgufInferenceEngine.ModelConfig(
                 modelPath = "/path/model.gguf",
                 contextSize = 2048,
@@ -154,6 +157,5 @@ class Gemma4GgufBackendTest {
     @Test
     fun `setKeepAliveTimeout does not crash`() {
         backend.setKeepAliveTimeout(15)
-        // No exception thrown
     }
 }

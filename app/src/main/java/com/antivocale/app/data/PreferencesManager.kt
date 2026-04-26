@@ -53,6 +53,8 @@ class PreferencesManager(private val context: Context) {
         private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
         // Swipe action mode ("REVEAL" or "IMMEDIATE_DELETE")
         private val SWIPE_ACTION_MODE = stringPreferencesKey("swipe_action_mode")
+        // Benchmark results (JSON string per model ID)
+        private val BENCHMARK_RESULTS = stringPreferencesKey("benchmark_results")
 
         // Default values (single source of truth)
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
@@ -436,5 +438,64 @@ class PreferencesManager(private val context: Context) {
             preferences[SWIPE_ACTION_MODE] = mode
         }
         cache.updateAndGet { it.copy(swipeActionMode = mode) }
+    }
+
+    /**
+     * Saves a benchmark result for a model.
+     */
+    suspend fun saveBenchmarkResult(modelId: String, jsonResult: String) {
+        context.dataStore.edit { preferences ->
+            val existing = preferences[BENCHMARK_RESULTS] ?: "{}"
+            val obj = runCatching { org.json.JSONObject(existing) }.getOrDefault(org.json.JSONObject())
+            val results = obj.optJSONObject("results") ?: org.json.JSONObject()
+            results.put(modelId, jsonResult)
+            obj.put("results", results)
+            preferences[BENCHMARK_RESULTS] = obj.toString()
+        }
+    }
+
+    /**
+     * Gets a cached benchmark result for a model.
+     */
+    fun getBenchmarkResult(modelId: String): Flow<String?> =
+        context.dataStore.data.map { prefs ->
+            val all = prefs[BENCHMARK_RESULTS] ?: "{}"
+            runCatching {
+                org.json.JSONObject(all).optJSONObject("results")?.optString(modelId)
+            }.getOrNull()
+        }
+
+    /**
+     * Gets all cached benchmark results.
+     */
+    fun getAllBenchmarkResults(): Flow<Map<String, String>> =
+        context.dataStore.data.map { prefs ->
+            val all = prefs[BENCHMARK_RESULTS] ?: "{}"
+            runCatching {
+                val results = org.json.JSONObject(all).optJSONObject("results") ?: org.json.JSONObject()
+                results.keys().asSequence().associateWith { results.getString(it) }
+            }.getOrDefault(emptyMap())
+        }
+
+    /**
+     * Clears a cached benchmark result for a model.
+     */
+    suspend fun clearBenchmarkResult(modelId: String) {
+        context.dataStore.edit { preferences ->
+            val existing = preferences[BENCHMARK_RESULTS] ?: "{}"
+            val obj = runCatching { org.json.JSONObject(existing) }.getOrDefault(org.json.JSONObject())
+            val results = obj.optJSONObject("results")
+            results?.remove(modelId)
+            preferences[BENCHMARK_RESULTS] = obj.toString()
+        }
+    }
+
+    /**
+     * Clears all cached benchmark results.
+     */
+    suspend fun clearAllBenchmarkResults() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(BENCHMARK_RESULTS)
+        }
     }
 }

@@ -598,4 +598,28 @@
     <string name="lang_uzbek">Uzbek</string>
     <string name="lang_vietnamese">Vietnamese</string>
     <string name="lang_chinese">Chinese</string>
+
+    <!-- Model Benchmark -->
+    <string name="benchmark_title">Benchmark %1$s</string>
+    <string name="benchmark_preparing">Preparing benchmark…</string>
+    <string name="benchmark_running">Running benchmark…</string>
+    <string name="benchmark_progress">%1$d%% complete</string>
+    <string name="benchmark_cancel">Cancel</string>
+    <string name="benchmark_rerun">Run Again</string>
+    <string name="benchmark_retry">Retry</string>
+    <string name="benchmark_speed_label">Speed</string>
+    <string name="benchmark_speed_value">%1$.1f s/min audio</string>
+    <string name="benchmark_time_label">Inference time</string>
+    <string name="benchmark_time_value">%1$d ms</string>
+    <string name="benchmark_memory_label">Peak memory</string>
+    <string name="benchmark_memory_value">%1$.0f MB</string>
+    <string name="benchmark_duration_label">Sample duration</string>
+    <string name="benchmark_duration_value">%1$.0f s</string>
+    <string name="benchmark_rating_fast">Fast</string>
+    <string name="benchmark_rating_good">Good</string>
+    <string name="benchmark_rating_moderate">Moderate</string>
+    <string name="benchmark_rating_slow">Slow</string>
+    <string name="benchmark_disclaimer">Results may vary based on device load and temperature.</string>
+    <string name="benchmark_button">Benchmark</string>
+    <string name="benchmark_cached_result">Last benchmark: %1$s</string>
 </resources>

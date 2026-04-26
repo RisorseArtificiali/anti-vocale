@@ -540,4 +540,28 @@
     <string name="gguf_downloaded">%1$s scaricato con successo</string>
     <string name="gguf_delete_message">Eliminare %1$s? Verranno liberati ~%2$dMB di spazio.</string>
     <string name="gguf_deleted">%1$s eliminato</string>
+
+    <!-- Benchmark modello -->
+    <string name="benchmark_title">Benchmark %1$s</string>
+    <string name="benchmark_preparing">Preparazione benchmark…</string>
+    <string name="benchmark_running">Esecuzione benchmark…</string>
+    <string name="benchmark_progress">%1$d%% completato</string>
+    <string name="benchmark_cancel">Annulla</string>
+    <string name="benchmark_rerun">Riesegui</string>
+    <string name="benchmark_retry">Riprova</string>
+    <string name="benchmark_speed_label">Velocità</string>
+    <string name="benchmark_speed_value">%1$.1f s/min audio</string>
+    <string name="benchmark_time_label">Tempo inferenza</string>
+    <string name="benchmark_time_value">%1$d ms</string>
+    <string name="benchmark_memory_label">Memoria picco</string>
+    <string name="benchmark_memory_value">%1$.0f MB</string>
+    <string name="benchmark_duration_label">Durata campione</string>
+    <string name="benchmark_duration_value">%1$.0f s</string>
+    <string name="benchmark_rating_fast">Veloce</string>
+    <string name="benchmark_rating_good">Buono</string>
+    <string name="benchmark_rating_moderate">Moderato</string>
+    <string name="benchmark_rating_slow">Lento</string>
+    <string name="benchmark_disclaimer">I risultati possono variare in base al carico e alla temperatura del dispositivo.</string>
+    <string name="benchmark_button">Benchmark</string>
+    <string name="benchmark_cached_result">Ultimo benchmark: %1$s</string>
 </resources>

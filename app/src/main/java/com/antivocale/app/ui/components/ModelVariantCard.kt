@@ -94,7 +94,8 @@ fun ModelVariantCard(
     onClearPartialClick: () -> Unit = {},
     onExtraActionClick: () -> Unit = {},
     onUseClick: () -> Unit = {},
-    onDeleteClick: () -> Unit = {}
+    onDeleteClick: () -> Unit = {},
+    onBenchmarkClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -225,6 +226,11 @@ fun ModelVariantCard(
                             }
                         } else {
                             Spacer(modifier = Modifier.weight(1f))
+                        }
+                        if (onBenchmarkClick != null) {
+                            OutlinedButton(onClick = onBenchmarkClick) {
+                                Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.benchmark_button))
+                            }
                         }
                         OutlinedButton(
                             onClick = onDeleteClick,

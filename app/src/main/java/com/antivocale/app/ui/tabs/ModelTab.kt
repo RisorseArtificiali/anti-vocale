@@ -41,6 +41,11 @@ import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.util.formatFileSize
 import com.antivocale.app.transcription.WhisperModelManager
+import com.antivocale.app.transcription.WhisperBackend
+import com.antivocale.app.transcription.SherpaOnnxBackend
+import com.antivocale.app.transcription.Qwen3AsrBackend
+import com.antivocale.app.transcription.WhisperDownloader
+import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.Language
 import com.antivocale.app.transcription.Gemma4GgufModelManager
@@ -51,6 +56,8 @@ import com.antivocale.app.ui.components.ModelVariantCard
 import com.antivocale.app.ui.components.ModelVariantCardState
 import com.antivocale.app.ui.components.UnloadModelButton
 import com.antivocale.app.ui.components.PartialDownloadSection
+import com.antivocale.app.ui.components.BenchmarkDialog
+import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 
 private enum class PendingAction {
@@ -587,6 +594,21 @@ fun ModelTab(
         )
     }
 
+    // Benchmark dialog
+    val benchmarkState by viewModel.benchmarkState.collectAsState()
+    val benchmarkTargetName by viewModel.benchmarkTargetName.collectAsState()
+    if (benchmarkState !is BenchmarkState.Idle || benchmarkTargetName.isNotEmpty()) {
+        BenchmarkDialog(
+            modelName = benchmarkTargetName,
+            state = benchmarkState,
+            onDismiss = { viewModel.dismissBenchmark() },
+            onCancel = { viewModel.cancelBenchmark() },
+            onRerun = {
+                viewModel.rerunBenchmark()
+            }
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -1088,6 +1110,7 @@ private fun Qwen3AsrDownloadSection(
     guardedModelSwitch: (() -> Unit) -> Unit = {},
     visibleVariants: List<Qwen3AsrModelManager.Variant> = Qwen3AsrModelManager.Variant.entries
 ) {
+    val context = LocalContext.current
     val qwen3AsrState by viewModel.qwen3AsrState.collectAsState()
 
     Card(
@@ -1162,7 +1185,17 @@ private fun Qwen3AsrDownloadSection(
                     onResumeClick = { viewModel.resumeQwen3AsrDownload(variant) },
                     onClearPartialClick = { viewModel.clearQwen3AsrPartialDownload(variant) },
                     onUseClick = { guardedModelSwitch { viewModel.useQwen3AsrModel(variant) } },
-                    onDeleteClick = { viewModel.showQwen3AsrDeleteDialog(variant) }
+                    onDeleteClick = { viewModel.showQwen3AsrDeleteDialog(variant) },
+                    onBenchmarkClick = {
+                        val path = Qwen3AsrDownloader.getModelPath(context, variant)
+                        if (path != null) {
+                            viewModel.startBenchmark(
+                                Qwen3AsrBackend.BACKEND_ID,
+                                path,
+                                context.getString(variant.titleResId)
+                            )
+                        }
+                    }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -1418,6 +1451,18 @@ private fun ParakeetDownloadSection(
                         } else {
                             Spacer(modifier = Modifier.weight(1f))
                         }
+                        OutlinedButton(onClick = {
+                            val path = parakeetState.modelPath
+                            if (path != null) {
+                                viewModel.startBenchmark(
+                                    SherpaOnnxBackend.BACKEND_ID,
+                                    path,
+                                    parakeetName
+                                )
+                            }
+                        }) {
+                            Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.benchmark_button))
+                        }
                         // Delete button
                         OutlinedButton(
                             onClick = { viewModel.showParakeetDeleteDialog() },
@@ -1481,6 +1526,7 @@ private fun WhisperDownloadSection(
     guardedModelSwitch: (() -> Unit) -> Unit = {},
     visibleVariants: List<WhisperModelManager.Variant> = WhisperModelManager.Variant.entries
 ) {
+    val context = LocalContext.current
     val whisperState by viewModel.whisperState.collectAsState()
     var showSpeedComparison by remember { mutableStateOf(false) }
 
@@ -1603,7 +1649,17 @@ private fun WhisperDownloadSection(
                     onClearPartialClick = { viewModel.clearWhisperPartialDownload(variant) },
                     onExtraActionClick = { viewModel.clearOrphanedWhisperFiles(variant) },
                     onUseClick = { guardedModelSwitch { viewModel.useWhisperModel(variant) } },
-                    onDeleteClick = { viewModel.showWhisperDeleteDialog(variant) }
+                    onDeleteClick = { viewModel.showWhisperDeleteDialog(variant) },
+                    onBenchmarkClick = {
+                        val path = WhisperDownloader.getModelPath(context, variant)
+                        if (path != null) {
+                            viewModel.startBenchmark(
+                                WhisperBackend.BACKEND_ID,
+                                path,
+                                context.getString(variant.titleResId)
+                            )
+                        }
+                    }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
