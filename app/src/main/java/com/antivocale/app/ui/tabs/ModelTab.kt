@@ -271,11 +271,11 @@ fun ModelTab(
     if (parakeetState.showDownloadDialog) {
         AlertDialog(
             onDismissRequest = { viewModel.dismissParakeetDownloadDialog() },
-            title = { Text(stringResource(if (parakeetState.needsExtraction) R.string.parakeet_extract_confirm_title else R.string.parakeet_download_confirm_title)) },
-            text = { Text(stringResource(if (parakeetState.needsExtraction) R.string.parakeet_extract_confirm_message else R.string.parakeet_download_confirm_message)) },
+            title = { Text(stringResource(R.string.parakeet_download_confirm_title)) },
+            text = { Text(stringResource(R.string.parakeet_download_confirm_message)) },
             confirmButton = {
                 TextButton(onClick = { viewModel.confirmParakeetDownload() }) {
-                    Text(stringResource(if (parakeetState.needsExtraction) R.string.extract_model else R.string.download))
+                    Text(stringResource(R.string.download))
                 }
             },
             dismissButton = {
@@ -1477,33 +1477,13 @@ private fun ParakeetDownloadSection(
                         // PartialDownloadSection above already shows Resume/Clear buttons
                     }
                     else -> {
-                        val needsExtraction = parakeetState.needsExtraction
-                        if (parakeetState.hasOrphanedFiles && parakeetState.needsExtraction) {
-                            OutlinedButton(
-                                onClick = { viewModel.clearOrphanedParakeetFiles() },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(Icons.Default.DeleteSweep, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.download_clear_partial))
-                            }
-                        } else {
-                            Button(
-                                onClick = { viewModel.showParakeetDownloadDialog() },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = if (needsExtraction) Icons.Default.FileDownload else Icons.Default.Download,
-                                    contentDescription = null
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    if (needsExtraction)
-                                        stringResource(R.string.extract_model)
-                                    else
-                                        stringResource(R.string.parakeet_download)
-                                )
-                            }
+                        Button(
+                            onClick = { viewModel.showParakeetDownloadDialog() },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Icon(Icons.Default.Download, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.parakeet_download))
                         }
                     }
                 }

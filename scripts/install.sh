@@ -31,6 +31,14 @@ if [[ ! -f "$APK" ]]; then
     exit 1
 fi
 
+APK_AGE_SEC=$(( $(date +%s) - $(date +%s -r "$APK") ))
+if (( APK_AGE_SEC > 60 )); then
+    AGE_MIN=$(( APK_AGE_SEC / 60 ))
+    echo "APK is ${AGE_MIN}m old — rebuild first:"
+    echo "  ./gradlew assembleDebug"
+    exit 1
+fi
+
 # Pair if code provided (optional — often already paired)
 if [[ -n "$PAIRING_CODE" ]]; then
     echo "Pairing with $DEVICE..."

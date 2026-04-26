@@ -99,8 +99,6 @@
     <string name="parakeet_download">Scarica Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Scaricare Parakeet TDT?</string>
     <string name="parakeet_download_confirm_message">Verranno scaricati ~464MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
-    <string name="parakeet_extract_confirm_title">Estrarre Parakeet TDT?</string>
-    <string name="parakeet_extract_confirm_message">Il file del modello è già stato scaricato. Verrà estratto per l\'uso.</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper (Multilingue)</string>
