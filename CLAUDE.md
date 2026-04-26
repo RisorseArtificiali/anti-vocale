@@ -16,6 +16,10 @@ Android application written in Kotlin for transcribing voice messages locally on
 
 @import docs/BUILD.md
 
+## Skills
+
+- **`/model-scout [scope]`** -- Scout HuggingFace, GitHub releases, and the ASR landscape for new models, framework updates, and techniques that could improve on-device transcription. Scopes: `full`, `asr`, `llm`, `frameworks`, `parakeet`, `whisper`, `qwen`. Reports saved to `docs/scout-reports/`.
+
 ## Release Checklist: New Models / Native Libraries / Architectures
 
 Whenever integrating a new model, native library, JNI bridge, or supporting a new CPU architecture, **always** verify ProGuard/R8 rules before shipping a release build:
@@ -29,8 +33,6 @@ Whenever integrating a new model, native library, JNI bridge, or supporting a ne
 4. **Key symptom**: model or native component works in debug but crashes immediately in release → almost always an R8 stripping issue.
 
 **Context**: The distil-large-v3 Whisper model crashed on the v1.1.1 Play Store release because R8 stripped Kotlin metadata and transcription backend classes needed for JNI reflection. The fix was adding keep rules for `*Annotation*/InnerClasses/Signature`, `com.antivocale.app.transcription.**`, and `@androidx.annotation.Keep`.
-
-<!-- BACKLOG.MD MCP GUIDELINES START -->
 
 <CRITICAL_INSTRUCTION>
 
@@ -53,5 +55,3 @@ The overview resource contains:
 You MUST read the overview resource to understand the complete workflow. The information is NOT summarized here.
 
 </CRITICAL_INSTRUCTION>
-
-<!-- BACKLOG.MD MCP GUIDELINES END -->
