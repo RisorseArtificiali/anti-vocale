@@ -41,6 +41,7 @@ data class LogEntry(
 
 @HiltViewModel
 class LogsViewModel @Inject constructor(
+    private val transcriptionBackendManager: TranscriptionBackendManager,
     private val logDao: LogDao,
     private val preferencesManager: PreferencesManager
 ) : ViewModel() {
@@ -174,7 +175,7 @@ class LogsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
 
     val showVadAdvisory: StateFlow<Boolean> = combine(
-        TranscriptionBackendManager.activeBackendId,
+        transcriptionBackendManager.activeBackendId,
         preferencesManager.vadEnabled,
         preferencesManager.vadAdvisoryDismissed
     ) { backendId, vadEnabled, dismissed ->

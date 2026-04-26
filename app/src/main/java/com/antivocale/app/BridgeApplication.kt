@@ -20,7 +20,6 @@ class BridgeApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        preferencesManager.initialize()
         com.antivocale.app.util.SharedAudioHandler.cleanupOldFiles(this)
         migrateLanguagePreference()
         installGlobalExceptionHandler()

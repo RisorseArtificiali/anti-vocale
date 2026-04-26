@@ -1,64 +1,57 @@
 package com.antivocale.app.data
 
-import android.content.Context
-import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.booleanPreferencesKey
-import androidx.datastore.preferences.core.intPreferencesKey
-import androidx.datastore.preferences.core.edit
-import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.datastore.preferences.preferencesDataStore
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.runBlocking
 
-private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "localai_preferences")
+interface PreferencesManager {
 
-/**
- * Manages persistent app preferences using DataStore.
- */
-class PreferencesManager(private val context: Context) {
+    val modelPath: Flow<String?>
+    val keepAliveTimeout: Flow<Int>
+    val themePreference: Flow<String>
+    val transcriptionBackend: Flow<String>
+    val parakeetModelPath: Flow<String?>
+    val whisperModelPath: Flow<String?>
+    val qwen3AsrModelPath: Flow<String?>
+    val ggufModelPath: Flow<String?>
+    val autoCopyEnabled: Flow<Boolean>
+    val vadEnabled: Flow<Boolean>
+    val vadAdvisoryDismissed: Flow<Boolean>
+    val progressiveTranscription: Flow<Boolean>
+    val defaultPrompt: Flow<String>
+    val threadCount: Flow<Int>
+    val transcriptionLanguage: Flow<String>
+    val swipeActionMode: Flow<String>
+
+    suspend fun saveModelPath(path: String)
+    suspend fun clearModelPath()
+    suspend fun saveKeepAliveTimeout(minutes: Int)
+    suspend fun saveThemePreference(theme: String)
+    suspend fun saveTranscriptionBackend(backendId: String)
+    suspend fun saveParakeetModelPath(path: String)
+    suspend fun clearParakeetModelPath()
+    suspend fun saveWhisperModelPath(path: String)
+    suspend fun clearWhisperModelPath()
+    suspend fun saveQwen3AsrModelPath(path: String)
+    suspend fun clearQwen3AsrModelPath()
+    suspend fun saveGgufModelPath(path: String)
+    suspend fun clearGgufModelPath()
+    suspend fun saveAutoCopyEnabled(enabled: Boolean)
+    suspend fun saveVadEnabled(enabled: Boolean)
+    suspend fun saveVadAdvisoryDismissed(dismissed: Boolean)
+    suspend fun saveProgressiveTranscription(enabled: Boolean)
+    suspend fun saveDefaultPrompt(prompt: String)
+    suspend fun saveThreadCount(threads: Int)
+    suspend fun saveTranscriptionLanguage(language: String)
+    suspend fun saveSwipeActionMode(mode: String)
+
+    suspend fun saveBenchmarkResult(modelId: String, jsonResult: String)
+    fun getBenchmarkResult(modelId: String): Flow<String?>
+    fun getAllBenchmarkResults(): Flow<Map<String, String>>
+    suspend fun clearBenchmarkResult(modelId: String)
+    suspend fun clearAllBenchmarkResults()
+
+    suspend fun getLegacyLanguagePreference(): String
 
     companion object {
-        private val MODEL_PATH = stringPreferencesKey("model_path")
-        private val KEEP_ALIVE_TIMEOUT = intPreferencesKey("keep_alive_timeout_v2")
-        // Legacy key for migration from string-based storage
-        private val KEEP_ALIVE_TIMEOUT_LEGACY = stringPreferencesKey("keep_alive_timeout")
-        // Kept for migration purposes only
-        private val LANGUAGE_PREFERENCE = stringPreferencesKey("language_preference")
-        private val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
-        // Transcription backend preference
-        private val TRANSCRIPTION_BACKEND = stringPreferencesKey("transcription_backend")
-        // Parakeet model path (for sherpa-onnx backend)
-        private val PARAKEET_MODEL_PATH = stringPreferencesKey("parakeet_model_path")
-        // Whisper model path (for sherpa-onnx Whisper backend)
-        private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
-        // Qwen3-ASR model path (for sherpa-onnx Qwen3-ASR backend)
-        private val QWEN3_ASR_MODEL_PATH = stringPreferencesKey("qwen3_asr_model_path")
-        // GGUF model path (for llama.cpp Gemma 4 GGUF backend)
-        private val GGUF_MODEL_PATH = stringPreferencesKey("gguf_model_path")
-        // Auto-copy transcription results to clipboard
-        private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
-        // VAD silence stripping
-        private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
-        private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
-        // Default prompt for transcription
-        private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
-        // Inference thread count
-        private val THREAD_COUNT = intPreferencesKey("thread_count")
-        // Transcription language ("auto" for auto-detect, or ISO 639-1 code)
-        private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
-        // Swipe action mode ("REVEAL" or "IMMEDIATE_DELETE")
-        private val SWIPE_ACTION_MODE = stringPreferencesKey("swipe_action_mode")
-        // Benchmark results (JSON string per model ID)
-        private val BENCHMARK_RESULTS = stringPreferencesKey("benchmark_results")
-        // VAD advisory dismissed (for Parakeet + VAD advisory card)
-        private val VAD_ADVISORY_DISMISSED = booleanPreferencesKey("vad_advisory_dismissed")
-
-        // Default values (single source of truth)
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
         val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2)
         const val DEFAULT_AUTO_COPY_ENABLED = false
@@ -70,446 +63,5 @@ class PreferencesManager(private val context: Context) {
         const val DEFAULT_LANGUAGE = "system"
         const val DEFAULT_TRANSCRIPTION_LANGUAGE = "auto"
         const val DEFAULT_SWIPE_ACTION_MODE = "REVEAL"
-    }
-
-    /**
-     * In-memory cache of all preferences, populated eagerly at startup.
-     * Eliminates UI flicker by providing synchronous initial values via .onStart.
-     */
-    private val cache = AtomicReference(CachedPreferences())
-
-    private data class CachedPreferences(
-        val modelPath: String? = null,
-        val keepAliveTimeout: Int = DEFAULT_KEEP_ALIVE_TIMEOUT,
-        val themePreference: String = DEFAULT_THEME,
-        val transcriptionBackend: String = DEFAULT_TRANSCRIPTION_BACKEND,
-        val parakeetModelPath: String? = null,
-        val whisperModelPath: String? = null,
-        val qwen3AsrModelPath: String? = null,
-        val ggufModelPath: String? = null,
-        val autoCopyEnabled: Boolean = DEFAULT_AUTO_COPY_ENABLED,
-        val vadEnabled: Boolean = DEFAULT_VAD_ENABLED,
-        val progressiveTranscription: Boolean = DEFAULT_PROGRESSIVE_TRANSCRIPTION,
-        val defaultPrompt: String = DEFAULT_PROMPT_VALUE,
-        val threadCount: Int = DEFAULT_THREAD_COUNT,
-        val transcriptionLanguage: String = DEFAULT_TRANSCRIPTION_LANGUAGE,
-        val swipeActionMode: String = DEFAULT_SWIPE_ACTION_MODE,
-        val vadAdvisoryDismissed: Boolean = false
-    )
-
-    /**
-     * Maps a DataStore [Preferences] snapshot to [CachedPreferences],
-     * applying defaults and legacy migration in one place.
-     */
-    private fun Preferences.toCached() = CachedPreferences(
-        modelPath = this[MODEL_PATH],
-        keepAliveTimeout = this[KEEP_ALIVE_TIMEOUT]
-            ?: this[KEEP_ALIVE_TIMEOUT_LEGACY]?.toIntOrNull()
-            ?: DEFAULT_KEEP_ALIVE_TIMEOUT,
-        themePreference = this[THEME_PREFERENCE] ?: DEFAULT_THEME,
-        transcriptionBackend = this[TRANSCRIPTION_BACKEND] ?: DEFAULT_TRANSCRIPTION_BACKEND,
-        parakeetModelPath = this[PARAKEET_MODEL_PATH],
-        whisperModelPath = this[WHISPER_MODEL_PATH],
-        qwen3AsrModelPath = this[QWEN3_ASR_MODEL_PATH],
-        ggufModelPath = this[GGUF_MODEL_PATH],
-        autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: DEFAULT_AUTO_COPY_ENABLED,
-        vadEnabled = this[VAD_ENABLED] ?: DEFAULT_VAD_ENABLED,
-        progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: DEFAULT_PROGRESSIVE_TRANSCRIPTION,
-        defaultPrompt = this[DEFAULT_PROMPT] ?: DEFAULT_PROMPT_VALUE,
-        threadCount = this[THREAD_COUNT] ?: DEFAULT_THREAD_COUNT,
-        transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: DEFAULT_TRANSCRIPTION_LANGUAGE,
-        swipeActionMode = this[SWIPE_ACTION_MODE] ?: DEFAULT_SWIPE_ACTION_MODE,
-        vadAdvisoryDismissed = this[VAD_ADVISORY_DISMISSED] ?: false
-    )
-
-    /**
-     * Eagerly reads all preferences from DataStore and caches them in memory.
-     * Must be called once during app startup (from BridgeApplication.onCreate()).
-     */
-    fun initialize() {
-        runBlocking {
-            cache.set(context.dataStore.data.first().toCached())
-        }
-    }
-
-    /**
-     * Flow of the saved model path.
-     */
-    val modelPath: Flow<String?> = context.dataStore.data.map { it.toCached().modelPath }
-        .onStart { emit(cache.get().modelPath) }
-
-    /**
-     * Saves the model path.
-     */
-    suspend fun saveModelPath(path: String) {
-        context.dataStore.edit { preferences ->
-            preferences[MODEL_PATH] = path
-        }
-        cache.updateAndGet { it.copy(modelPath = path) }
-    }
-
-    /**
-     * Clears the saved model path.
-     */
-    suspend fun clearModelPath() {
-        context.dataStore.edit { preferences ->
-            preferences.remove(MODEL_PATH)
-        }
-        cache.updateAndGet { it.copy(modelPath = null) }
-    }
-
-    /**
-     * Flow of the keep-alive timeout in minutes.
-     */
-    val keepAliveTimeout: Flow<Int> = context.dataStore.data.map { it.toCached().keepAliveTimeout }
-        .onStart { emit(cache.get().keepAliveTimeout) }
-
-    /**
-     * Saves the keep-alive timeout.
-     */
-    suspend fun saveKeepAliveTimeout(minutes: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[KEEP_ALIVE_TIMEOUT] = minutes
-            preferences.remove(KEEP_ALIVE_TIMEOUT_LEGACY)
-        }
-        cache.updateAndGet { it.copy(keepAliveTimeout = minutes) }
-    }
-
-    /**
-     * Reads the legacy language preference for migration purposes.
-     * Returns "system" by default.
-     */
-    suspend fun getLegacyLanguagePreference(): String {
-        return context.dataStore.data.map { preferences ->
-            preferences[LANGUAGE_PREFERENCE] ?: DEFAULT_LANGUAGE
-        }.first()
-    }
-
-    /**
-     * Flow of the saved theme preference.
-     * Returns "DEFAULT" by default.
-     */
-    val themePreference: Flow<String> = context.dataStore.data.map { it.toCached().themePreference }
-        .onStart { emit(cache.get().themePreference) }
-
-    /**
-     * Saves the theme preference.
-     */
-    suspend fun saveThemePreference(theme: String) {
-        context.dataStore.edit { preferences ->
-            preferences[THEME_PREFERENCE] = theme
-        }
-        cache.updateAndGet { it.copy(themePreference = theme) }
-    }
-
-    /**
-     * Flow of the selected transcription backend.
-     * Returns "llm" by default (LiteRT-LM backend).
-     */
-    val transcriptionBackend: Flow<String> = context.dataStore.data.map { it.toCached().transcriptionBackend }
-        .onStart { emit(cache.get().transcriptionBackend) }
-
-    /**
-     * Saves the transcription backend preference.
-     */
-    suspend fun saveTranscriptionBackend(backendId: String) {
-        context.dataStore.edit { preferences ->
-            preferences[TRANSCRIPTION_BACKEND] = backendId
-        }
-        cache.updateAndGet { it.copy(transcriptionBackend = backendId) }
-    }
-
-    /**
-     * Flow of the Parakeet model path (for sherpa-onnx backend).
-     */
-    val parakeetModelPath: Flow<String?> = context.dataStore.data.map { it.toCached().parakeetModelPath }
-        .onStart { emit(cache.get().parakeetModelPath) }
-
-    /**
-     * Saves the Parakeet model path.
-     */
-    suspend fun saveParakeetModelPath(path: String) {
-        context.dataStore.edit { preferences ->
-            preferences[PARAKEET_MODEL_PATH] = path
-        }
-        cache.updateAndGet { it.copy(parakeetModelPath = path) }
-    }
-
-    /**
-     * Clears the Parakeet model path.
-     */
-    suspend fun clearParakeetModelPath() {
-        context.dataStore.edit { preferences ->
-            preferences.remove(PARAKEET_MODEL_PATH)
-        }
-        cache.updateAndGet { it.copy(parakeetModelPath = null) }
-    }
-
-    /**
-     * Flow of the Whisper model path (for sherpa-onnx Whisper backend).
-     */
-    val whisperModelPath: Flow<String?> = context.dataStore.data.map { it.toCached().whisperModelPath }
-        .onStart { emit(cache.get().whisperModelPath) }
-
-    /**
-     * Saves the Whisper model path.
-     */
-    suspend fun saveWhisperModelPath(path: String) {
-        context.dataStore.edit { preferences ->
-            preferences[WHISPER_MODEL_PATH] = path
-        }
-        cache.updateAndGet { it.copy(whisperModelPath = path) }
-    }
-
-    /**
-     * Clears the Whisper model path.
-     */
-    suspend fun clearWhisperModelPath() {
-        context.dataStore.edit { preferences ->
-            preferences.remove(WHISPER_MODEL_PATH)
-        }
-        cache.updateAndGet { it.copy(whisperModelPath = null) }
-    }
-
-    /**
-     * Flow of the Qwen3-ASR model path (for sherpa-onnx Qwen3-ASR backend).
-     */
-    val qwen3AsrModelPath: Flow<String?> = context.dataStore.data.map { it.toCached().qwen3AsrModelPath }
-        .onStart { emit(cache.get().qwen3AsrModelPath) }
-
-    /**
-     * Saves the Qwen3-ASR model path.
-     */
-    suspend fun saveQwen3AsrModelPath(path: String) {
-        context.dataStore.edit { preferences ->
-            preferences[QWEN3_ASR_MODEL_PATH] = path
-        }
-        cache.updateAndGet { it.copy(qwen3AsrModelPath = path) }
-    }
-
-    /**
-     * Clears the Qwen3-ASR model path.
-     */
-    suspend fun clearQwen3AsrModelPath() {
-        context.dataStore.edit { preferences ->
-            preferences.remove(QWEN3_ASR_MODEL_PATH)
-        }
-        cache.updateAndGet { it.copy(qwen3AsrModelPath = null) }
-    }
-
-    /**
-     * Flow of the GGUF model path (for llama.cpp Gemma 4 GGUF backend).
-     */
-    val ggufModelPath: Flow<String?> = context.dataStore.data.map { it.toCached().ggufModelPath }
-        .onStart { emit(cache.get().ggufModelPath) }
-
-    /**
-     * Saves the GGUF model path.
-     */
-    suspend fun saveGgufModelPath(path: String) {
-        context.dataStore.edit { preferences ->
-            preferences[GGUF_MODEL_PATH] = path
-        }
-        cache.updateAndGet { it.copy(ggufModelPath = path) }
-    }
-
-    /**
-     * Clears the GGUF model path.
-     */
-    suspend fun clearGgufModelPath() {
-        context.dataStore.edit { preferences ->
-            preferences.remove(GGUF_MODEL_PATH)
-        }
-        cache.updateAndGet { it.copy(ggufModelPath = null) }
-    }
-
-    /**
-     * Flow of auto-copy enabled preference.
-     * Returns false by default (user must manually copy).
-     */
-    val autoCopyEnabled: Flow<Boolean> = context.dataStore.data.map { it.toCached().autoCopyEnabled }
-        .onStart { emit(cache.get().autoCopyEnabled) }
-
-    /**
-     * Saves the auto-copy enabled preference.
-     */
-    suspend fun saveAutoCopyEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[AUTO_COPY_ENABLED] = enabled
-        }
-        cache.updateAndGet { it.copy(autoCopyEnabled = enabled) }
-    }
-
-    /**
-     * Flow of VAD silence stripping enabled preference.
-     * Returns false by default (VAD disabled, user must opt in).
-     */
-    val vadEnabled: Flow<Boolean> = context.dataStore.data.map { it.toCached().vadEnabled }
-        .onStart { emit(cache.get().vadEnabled) }
-
-    /**
-     * Saves the VAD enabled preference.
-     */
-    suspend fun saveVadEnabled(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[VAD_ENABLED] = enabled
-        }
-        cache.updateAndGet { it.copy(vadEnabled = enabled) }
-    }
-
-    val vadAdvisoryDismissed: Flow<Boolean> = context.dataStore.data.map { it.toCached().vadAdvisoryDismissed }
-        .onStart { emit(cache.get().vadAdvisoryDismissed) }
-
-    suspend fun saveVadAdvisoryDismissed(dismissed: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[VAD_ADVISORY_DISMISSED] = dismissed
-        }
-        cache.updateAndGet { it.copy(vadAdvisoryDismissed = dismissed) }
-    }
-
-    /**
-     * Flow of progressive transcription enabled preference.
-     * Returns true by default (progressive display enabled).
-     */
-    val progressiveTranscription: Flow<Boolean> = context.dataStore.data.map { it.toCached().progressiveTranscription }
-        .onStart { emit(cache.get().progressiveTranscription) }
-
-    /**
-     * Saves the progressive transcription preference.
-     */
-    suspend fun saveProgressiveTranscription(enabled: Boolean) {
-        context.dataStore.edit { preferences ->
-            preferences[PROGRESSIVE_TRANSCRIPTION] = enabled
-        }
-        cache.updateAndGet { it.copy(progressiveTranscription = enabled) }
-    }
-
-    /**
-     * Flow of the default prompt for transcription.
-     * Returns empty string by default (use system default).
-     */
-    val defaultPrompt: Flow<String> = context.dataStore.data.map { it.toCached().defaultPrompt }
-        .onStart { emit(cache.get().defaultPrompt) }
-
-    /**
-     * Saves the default prompt.
-     * Enforces a maximum length of 500 characters.
-     */
-    suspend fun saveDefaultPrompt(prompt: String) {
-        val truncated = prompt.take(500)
-        context.dataStore.edit { preferences ->
-            preferences[DEFAULT_PROMPT] = truncated
-        }
-        cache.updateAndGet { it.copy(defaultPrompt = truncated) }
-    }
-
-    /**
-     * Flow of the inference thread count.
-     * Returns auto-detected value on first launch.
-     */
-    val threadCount: Flow<Int> = context.dataStore.data.map { it.toCached().threadCount }
-        .onStart { emit(cache.get().threadCount) }
-
-    /**
-     * Saves the inference thread count.
-     */
-    suspend fun saveThreadCount(threads: Int) {
-        context.dataStore.edit { preferences ->
-            preferences[THREAD_COUNT] = threads
-        }
-        cache.updateAndGet { it.copy(threadCount = threads) }
-    }
-
-    /**
-     * Flow of the transcription language preference.
-     * Returns "auto" by default (auto-detect language).
-     */
-    val transcriptionLanguage: Flow<String> = context.dataStore.data.map { it.toCached().transcriptionLanguage }
-        .onStart { emit(cache.get().transcriptionLanguage) }
-
-    /**
-     * Saves the transcription language preference.
-     */
-    suspend fun saveTranscriptionLanguage(language: String) {
-        context.dataStore.edit { preferences ->
-            preferences[TRANSCRIPTION_LANGUAGE] = language
-        }
-        cache.updateAndGet { it.copy(transcriptionLanguage = language) }
-    }
-
-    /**
-     * Flow of the swipe action mode preference.
-     * Returns "REVEAL" by default.
-     */
-    val swipeActionMode: Flow<String> = context.dataStore.data.map { it.toCached().swipeActionMode }
-        .onStart { emit(cache.get().swipeActionMode) }
-
-    /**
-     * Saves the swipe action mode preference.
-     */
-    suspend fun saveSwipeActionMode(mode: String) {
-        context.dataStore.edit { preferences ->
-            preferences[SWIPE_ACTION_MODE] = mode
-        }
-        cache.updateAndGet { it.copy(swipeActionMode = mode) }
-    }
-
-    /**
-     * Saves a benchmark result for a model.
-     */
-    suspend fun saveBenchmarkResult(modelId: String, jsonResult: String) {
-        context.dataStore.edit { preferences ->
-            val existing = preferences[BENCHMARK_RESULTS] ?: "{}"
-            val obj = runCatching { org.json.JSONObject(existing) }.getOrDefault(org.json.JSONObject())
-            val results = obj.optJSONObject("results") ?: org.json.JSONObject()
-            results.put(modelId, jsonResult)
-            obj.put("results", results)
-            preferences[BENCHMARK_RESULTS] = obj.toString()
-        }
-    }
-
-    /**
-     * Gets a cached benchmark result for a model.
-     */
-    fun getBenchmarkResult(modelId: String): Flow<String?> =
-        context.dataStore.data.map { prefs ->
-            val all = prefs[BENCHMARK_RESULTS] ?: "{}"
-            runCatching {
-                org.json.JSONObject(all).optJSONObject("results")?.optString(modelId)
-            }.getOrNull()
-        }
-
-    /**
-     * Gets all cached benchmark results.
-     */
-    fun getAllBenchmarkResults(): Flow<Map<String, String>> =
-        context.dataStore.data.map { prefs ->
-            val all = prefs[BENCHMARK_RESULTS] ?: "{}"
-            runCatching {
-                val results = org.json.JSONObject(all).optJSONObject("results") ?: org.json.JSONObject()
-                results.keys().asSequence().associateWith { results.getString(it) }
-            }.getOrDefault(emptyMap())
-        }
-
-    /**
-     * Clears a cached benchmark result for a model.
-     */
-    suspend fun clearBenchmarkResult(modelId: String) {
-        context.dataStore.edit { preferences ->
-            val existing = preferences[BENCHMARK_RESULTS] ?: "{}"
-            val obj = runCatching { org.json.JSONObject(existing) }.getOrDefault(org.json.JSONObject())
-            val results = obj.optJSONObject("results")
-            results?.remove(modelId)
-            preferences[BENCHMARK_RESULTS] = obj.toString()
-        }
-    }
-
-    /**
-     * Clears all cached benchmark results.
-     */
-    suspend fun clearAllBenchmarkResults() {
-        context.dataStore.edit { preferences ->
-            preferences.remove(BENCHMARK_RESULTS)
-        }
     }
 }

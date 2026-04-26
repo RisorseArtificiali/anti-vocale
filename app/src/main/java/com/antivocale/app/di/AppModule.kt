@@ -6,6 +6,7 @@ import com.antivocale.app.data.HuggingFaceAuthManager
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.PreferencesManagerImpl
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.local.AppDatabase
 import com.antivocale.app.data.local.LogDao
@@ -23,7 +24,7 @@ object AppModule {
     @Provides
     @Singleton
     fun providePreferencesManager(@ApplicationContext context: Context): PreferencesManager {
-        return PreferencesManager(context).apply { initialize() }
+        return PreferencesManagerImpl(context).apply { initialize() }
     }
 
     @Provides
