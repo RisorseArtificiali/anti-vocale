@@ -177,8 +177,7 @@ class ParakeetDownloadStateTest {
         // User already has Whisper selected
         val uiState = ModelViewModel.UiState(
             modelName = "Whisper Small",
-            modelPath = "/data/user/0/app/sherpa-onnx-whisper-small",
-            isModelPathValid = true
+            modelPath = "/data/user/0/app/sherpa-onnx-whisper-small"
         )
 
         assertFalse(
@@ -191,8 +190,7 @@ class ParakeetDownloadStateTest {
     fun `auto-selection does NOT trigger when Parakeet is already selected`() {
         val uiState = ModelViewModel.UiState(
             modelName = "Parakeet TDT",
-            modelPath = "/data/user/0/app/parakeet-tdt/parakeet-tdt-0.6b-v3-int8",
-            isModelPathValid = true
+            modelPath = "/data/user/0/app/parakeet-tdt/parakeet-tdt-0.6b-v3-int8"
         )
 
         assertFalse(

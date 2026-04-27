@@ -35,8 +35,7 @@ class ModelUiStateTest {
         val state = ModelViewModel.UiState(
             status = ModelViewModel.ModelStatus.UNLOADED,
             modelName = "Distil Large v3",
-            modelPath = "/data/user/0/.../whisper-model",
-            isModelPathValid = true
+            modelPath = "/data/user/0/.../whisper-model"
         )
 
         assertFalse(
@@ -84,8 +83,7 @@ class ModelUiStateTest {
         val state = ModelViewModel.UiState(
             status = ModelViewModel.ModelStatus.READY,
             modelName = "Distil Large v3",
-            modelPath = "/data/user/0/.../whisper-model",
-            isModelPathValid = true
+            modelPath = "/data/user/0/.../whisper-model"
         )
 
         assertTrue(
@@ -101,16 +99,14 @@ class ModelUiStateTest {
         val loaded = ModelViewModel.UiState(
             status = ModelViewModel.ModelStatus.READY,
             modelName = "Distil Large v3",
-            modelPath = "/data/user/0/.../whisper-model",
-            memoryUsage = 2048
+            modelPath = "/data/user/0/.../whisper-model"
         )
 
         // Simulates what unloadModel() does
         val unloaded = loaded.copy(
             modelName = "",
             modelPath = "",
-            status = ModelViewModel.ModelStatus.UNLOADED,
-            memoryUsage = 0
+            status = ModelViewModel.ModelStatus.UNLOADED
         )
 
         assertEquals(ModelViewModel.ModelStatus.UNLOADED, unloaded.status)
@@ -122,22 +118,19 @@ class ModelUiStateTest {
         val ready = ModelViewModel.UiState(
             status = ModelViewModel.ModelStatus.READY,
             modelName = "Gemma 4 E2B",
-            modelPath = "/data/user/0/.../gemma.ml",
-            memoryUsage = 4096
+            modelPath = "/data/user/0/.../gemma.ml"
         )
 
         // Simulates what onModelAutoUnloaded() does
         val autoUnloaded = ready.copy(
             modelName = "",
             modelPath = "",
-            status = ModelViewModel.ModelStatus.UNLOADED,
-            memoryUsage = 0
+            status = ModelViewModel.ModelStatus.UNLOADED
         )
 
         assertEquals(ModelViewModel.ModelStatus.UNLOADED, autoUnloaded.status)
         assertTrue(autoUnloaded.modelName.isBlank())
         assertTrue(autoUnloaded.modelPath.isBlank())
-        assertEquals(0L, autoUnloaded.memoryUsage)
     }
 
     @Test
@@ -147,7 +140,6 @@ class ModelUiStateTest {
         val restored = ModelViewModel.UiState().copy(
             modelPath = "/data/user/0/.../whisper-model",
             modelName = "Distil Large v3",
-            isModelPathValid = true,
             statusMessage = "Model ready"
             // status intentionally NOT changed — must stay UNLOADED
         )
