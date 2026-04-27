@@ -59,6 +59,24 @@ object ResumeDownloadHelper {
         }
     }
 
+    /**
+     * Checks whether a downloaded file is complete by comparing against
+     * its `.size` sidecar (written during download by [downloadWithResume]).
+     *
+     * - Sidecar exists + file >= expected size → complete
+     * - Sidecar exists + file < expected size → partial download
+     * - No sidecar + file exists with content → assume complete (tar.bz2 / sideload)
+     */
+    fun isFileComplete(file: File): Boolean {
+        if (!file.exists() || file.length() == 0L) return false
+        val sidecar = sizeSidecar(file)
+        if (sidecar.exists()) {
+            val expected = sidecar.readText().trim().toLongOrNull() ?: return true
+            return file.length() >= expected
+        }
+        return true
+    }
+
     /** Deletes both a tar/temp file and its `.size` sidecar. */
     fun clearTarDownload(tarFile: File) {
         sizeSidecar(tarFile).delete()
@@ -168,10 +186,14 @@ object ResumeDownloadHelper {
         // download completion across app restarts (instead of relying on
         // hard-coded ESTIMATED_SIZES which may not match the real file).
         try {
-            sizeSidecar(config.tempFile).writeText(totalBytes.toString())
+            val sidecar = sizeSidecar(config.tempFile)
+            sidecar.parentFile?.mkdirs()
+            sidecar.writeText(totalBytes.toString())
         } catch (e: Exception) {
             Log.w(TAG, "Failed to write .size sidecar: ${e.message}")
         }
+
+        config.tempFile.parentFile?.mkdirs()
 
         val inputStream = connection.inputStream
         val outputStream = FileOutputStream(config.tempFile, true) // append for resume

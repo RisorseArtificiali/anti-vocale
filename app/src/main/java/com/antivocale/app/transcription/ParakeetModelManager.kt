@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
+import com.antivocale.app.data.download.ResumeDownloadHelper
 import java.io.File
 
 /**
@@ -68,9 +69,11 @@ object ParakeetModelManager {
     fun validateModelDirectory(modelDir: File): ParakeetModel? {
         if (!modelDir.isDirectory) return null
 
-        // Check all required files exist
+        // Check all required files exist (ONNX files verified via .size sidecar)
         val missingFiles = REQUIRED_FILES.filter { requiredFile ->
-            !File(modelDir, requiredFile).exists()
+            val file = File(modelDir, requiredFile)
+            if (file.name.endsWith(".onnx")) !ResumeDownloadHelper.isFileComplete(file)
+            else !file.exists()
         }
 
         if (missingFiles.isNotEmpty()) {
@@ -99,7 +102,9 @@ object ParakeetModelManager {
         if (!dir.exists() || !dir.isDirectory) return false
 
         return REQUIRED_FILES.all { requiredFile ->
-            File(dir, requiredFile).exists()
+            val file = File(dir, requiredFile)
+            if (file.name.endsWith(".onnx")) ResumeDownloadHelper.isFileComplete(file)
+            else file.exists()
         }
     }
 

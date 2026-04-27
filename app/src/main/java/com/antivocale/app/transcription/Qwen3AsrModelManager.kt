@@ -3,6 +3,7 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.R
+import com.antivocale.app.data.download.ResumeDownloadHelper
 import java.io.File
 
 object Qwen3AsrModelManager {
@@ -60,9 +61,9 @@ object Qwen3AsrModelManager {
         if (!modelDir.isDirectory) return false
         val tokenizerDir = File(modelDir, TOKENIZER_DIR_NAME)
         if (!tokenizerDir.exists() || !tokenizerDir.isDirectory) return false
-        if (CONV_FRONTEND_PATTERNS.map { File(modelDir, it) }.firstOrNull { it.exists() } == null) return false
-        if (ENCODER_PATTERNS.map { File(modelDir, it) }.firstOrNull { it.exists() } == null) return false
-        return DECODER_PATTERNS.map { File(modelDir, it) }.firstOrNull { it.exists() } != null
+        if (CONV_FRONTEND_PATTERNS.map { File(modelDir, it) }.firstOrNull { ResumeDownloadHelper.isFileComplete(it) } == null) return false
+        if (ENCODER_PATTERNS.map { File(modelDir, it) }.firstOrNull { ResumeDownloadHelper.isFileComplete(it) } == null) return false
+        return DECODER_PATTERNS.map { File(modelDir, it) }.firstOrNull { ResumeDownloadHelper.isFileComplete(it) } != null
     }
 
     fun validateModelDirectory(modelDir: File): Qwen3AsrModel? {

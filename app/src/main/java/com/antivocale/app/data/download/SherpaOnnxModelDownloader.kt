@@ -9,7 +9,6 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Generic downloader for sherpa-onnx models from HuggingFace.
@@ -56,7 +55,7 @@ class SherpaOnnxModelDownloader<V>(
         if (!hasPartialFiles) return null
 
         val estimatedSizeMB = config.estimatedSizeMB(variant)
-        val estimatedBytes = (estimatedSizeMB * 1024 * 1024 * 1.1).toLong()
+        val estimatedBytes = estimatedSizeMB * 1024 * 1024
         val totalBytes = if (totalExpected > 0) totalExpected else estimatedBytes
         val progressPercent = ((totalDownloaded.toFloat() / totalBytes) * 100).toInt().coerceIn(0, 99)
 
@@ -74,8 +73,12 @@ class SherpaOnnxModelDownloader<V>(
         val modelDirName = config.modelDirNames[variant] ?: return false
         val modelDir = File(config.modelStorageDir(context), modelDirName)
         if (!modelDir.exists()) return true
-        modelDir.deleteRecursively()
-        return true
+        val deleted = modelDir.deleteRecursively()
+        if (!deleted || modelDir.exists()) {
+            Log.w(config.tag, "clearPartialDownload: deleteRecursively failed for ${modelDir.absolutePath}")
+            modelDir.walkBottomUp().forEach { it.delete() }
+        }
+        return !modelDir.exists()
     }
 
     suspend fun downloadModel(
@@ -103,7 +106,8 @@ class SherpaOnnxModelDownloader<V>(
             ?: return@withContext Result.failure(IllegalArgumentException("No URLs for variant: $variant"))
 
         val estimatedSizeMB = config.estimatedSizeMB(variant)
-        val requiredBytes = (estimatedSizeMB * 1024 * 1024 * 1.1).toLong()
+        val estimatedBytes = estimatedSizeMB * 1024 * 1024
+        val requiredBytes = (estimatedBytes * 1.1).toLong()
         val availableBytes = context.filesDir.usableSpace
         if (availableBytes < requiredBytes) {
             val errorMsg = "Insufficient storage. Need ~${estimatedSizeMB}MB, have ${availableBytes / (1024 * 1024)}MB available."
@@ -115,8 +119,7 @@ class SherpaOnnxModelDownloader<V>(
 
         if (!modelDir.exists()) modelDir.mkdirs()
 
-        val totalFiles = files.size
-        val completedFiles = AtomicInteger(0)
+        val perFileBytes = ConcurrentHashMap<String, Long>()
 
         // Phase 1: Identify already-complete files
         val filesToDownload = mutableListOf<String>()
@@ -126,19 +129,26 @@ class SherpaOnnxModelDownloader<V>(
             val storedTotal = sidecar.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull()
             if (targetFile.exists() && storedTotal != null && targetFile.length() >= storedTotal) {
                 Log.i(config.tag, "File already complete, skipping: $fileName")
-                val done = completedFiles.incrementAndGet()
-                onProgress(done.toFloat() / totalFiles)
+                perFileBytes[fileName] = targetFile.length()
             } else {
                 filesToDownload.add(fileName)
             }
         }
 
-        if (completedFiles.get() > 0) {
-            onStateChange(DownloadState.CopyingFiles(completedFiles.get(), totalFiles, ""))
+        if (perFileBytes.isNotEmpty()) {
+            val totalSoFar = perFileBytes.values.sum()
+            onProgress((totalSoFar.toFloat() / estimatedBytes).coerceIn(0f, 1f))
         }
 
         // Phase 2: Download remaining files in parallel
         if (filesToDownload.isNotEmpty()) {
+            val totalSoFar = perFileBytes.values.sum()
+            val progress = (totalSoFar.toFloat() / estimatedBytes).coerceIn(0f, 1f)
+            onStateChange(DownloadState.Downloading(
+                bytesDownloaded = totalSoFar,
+                totalBytes = estimatedBytes,
+                progressPercent = progress * 100f
+            ))
             if (cancelFlags[variant] == true) {
                 onStateChange(DownloadState.Cancelled("User cancelled"))
                 return@withContext Result.failure(Exception("Download cancelled"))
@@ -170,8 +180,21 @@ class SherpaOnnxModelDownloader<V>(
                             val downloadResult = downloadWithRetry(
                                 config = downloadConfig,
                                 tag = config.tag,
-                                onProgress = { },
-                                onStateChange = { }
+                                onProgress = { _ ->
+                                    val totalSoFar = perFileBytes.values.sum()
+                                    val progress = (totalSoFar.toFloat() / estimatedBytes).coerceIn(0f, 1f)
+                                    onProgress(progress)
+                                    onStateChange(DownloadState.Downloading(
+                                        bytesDownloaded = totalSoFar,
+                                        totalBytes = estimatedBytes,
+                                        progressPercent = progress * 100f
+                                    ))
+                                },
+                                onStateChange = { state ->
+                                    if (state is DownloadState.Downloading) {
+                                        perFileBytes[fileName] = state.bytesDownloaded
+                                    }
+                                }
                             )
 
                             if (downloadResult.isFailure) {
@@ -179,19 +202,19 @@ class SherpaOnnxModelDownloader<V>(
                                     ?: Exception("Download failed: $fileName")
                             }
 
-                            val done = completedFiles.incrementAndGet()
-                            onProgress(done.toFloat() / totalFiles)
-                            onStateChange(DownloadState.CopyingFiles(done, totalFiles, fileName))
+                            perFileBytes[fileName] = downloadResult.getOrThrow().length()
+                            val totalSoFar = perFileBytes.values.sum()
+                            onProgress((totalSoFar.toFloat() / estimatedBytes).coerceIn(0f, 1f))
                         }
                     }.awaitAll()
                 }
             } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
                 if (cancelFlags[variant] == true) {
                     onStateChange(DownloadState.Cancelled("User cancelled"))
                     return@withContext Result.failure(Exception("Download cancelled"))
                 }
-                throw e
-            } catch (e: Exception) {
                 onStateChange(DownloadState.Error(e.message ?: "Download failed", e))
                 return@withContext Result.failure(e)
             }

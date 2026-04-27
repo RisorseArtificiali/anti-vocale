@@ -197,6 +197,7 @@ fun ModelTab(
     // Collect one-time Snackbar events from ViewModel (Channel-based for guaranteed delivery)
     LaunchedEffect(Unit) {
         viewModel.snackbarEvent.collect { event ->
+            snackbarHostState.currentSnackbarData?.dismiss()
             when (event) {
                 is ModelViewModel.SnackbarEvent.AuthRequired -> {
                     snackbarHostState.showSnackbar(
@@ -786,7 +787,7 @@ private fun ModelVariantCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
             ) {
                 when {
                     isDownloading -> {
@@ -802,20 +803,14 @@ private fun ModelVariantCard(
                     }
                     isDownloaded -> {
                         if (!isActive) {
-                            // Use button (only when not active)
                             Button(
                                 onClick = onUseClick,
-                                modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary
                                 )
                             ) {
-                                Icon(Icons.Default.Check, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.use_model))
+                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
                             }
-                        } else {
-                            Spacer(modifier = Modifier.weight(1f))
                         }
                         // Delete button
                         OutlinedButton(
@@ -1225,7 +1220,7 @@ private fun ParakeetDownloadSection(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
             ) {
                 when {
                     parakeetState.isDownloading -> {
@@ -1247,17 +1242,12 @@ private fun ParakeetDownloadSection(
                         if (!isActive) {
                             Button(
                                 onClick = { guardedModelSwitch { viewModel.useParakeetModel() } },
-                                modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary
                                 )
                             ) {
-                                Icon(Icons.Default.Check, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.use_model))
+                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
                             }
-                        } else {
-                            Spacer(modifier = Modifier.weight(1f))
                         }
                         OutlinedButton(onClick = {
                             val path = parakeetState.modelPath

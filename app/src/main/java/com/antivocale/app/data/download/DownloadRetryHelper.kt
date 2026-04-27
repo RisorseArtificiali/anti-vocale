@@ -2,6 +2,7 @@ package com.antivocale.app.data.download
 
 import android.util.Log
 import java.io.File
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -50,6 +51,12 @@ suspend fun downloadWithRetry(
             val error = result.exceptionOrNull()!!
             lastError = error
 
+            // Don't retry user-initiated cancellations
+            if (error is DownloadException.Cancelled) {
+                onStateChange(DownloadState.Cancelled("User cancelled"))
+                return@withContext result
+            }
+
             // Don't retry auth/forbidden errors — these require user action
             if (error is DownloadException.Unauthorized || error is DownloadException.Forbidden) {
                 onStateChange(stateMapper(DownloadState.Error(error.message ?: "Error")))
@@ -82,6 +89,8 @@ suspend fun downloadWithRetry(
                 delay(delayMs)
             }
 
+        } catch (e: CancellationException) {
+            throw e // structured concurrency — never swallow
         } catch (e: Exception) {
             lastError = e
             if (attempt < maxRetries) {

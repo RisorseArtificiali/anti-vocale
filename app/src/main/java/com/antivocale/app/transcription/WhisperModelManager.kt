@@ -3,6 +3,7 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.R
+import com.antivocale.app.data.download.ResumeDownloadHelper
 import java.io.File
 
 /**
@@ -175,17 +176,17 @@ object WhisperModelManager {
         // Check for encoder file (separate encoder-decoder model)
         val encoderFile = ENCODER_PATTERNS
             .map { File(modelDir, it) }
-            .firstOrNull { it.exists() }
+            .firstOrNull { ResumeDownloadHelper.isFileComplete(it) }
 
         // Check for decoder file (separate encoder-decoder model)
         val decoderFile = DECODER_PATTERNS
             .map { File(modelDir, it) }
-            .firstOrNull { it.exists() }
+            .firstOrNull { ResumeDownloadHelper.isFileComplete(it) }
 
         // Check for combined encoder-decoder file (legacy format)
         val encoderDecoderFile = ENCODER_DECODER_PATTERNS
             .map { File(modelDir, it) }
-            .firstOrNull { it.exists() }
+            .firstOrNull { ResumeDownloadHelper.isFileComplete(it) }
 
         // Must have either: (separate encoder AND decoder) OR (combined encoder-decoder)
         val hasSeparateEncoderDecoder = encoderFile != null && decoderFile != null
@@ -252,12 +253,12 @@ object WhisperModelManager {
         if (!hasTokens) return false
 
         // Check for separate encoder AND decoder files
-        val hasEncoder = ENCODER_PATTERNS.any { File(dir, it).exists() }
-        val hasDecoder = DECODER_PATTERNS.any { File(dir, it).exists() }
+        val hasEncoder = ENCODER_PATTERNS.any { ResumeDownloadHelper.isFileComplete(File(dir, it)) }
+        val hasDecoder = DECODER_PATTERNS.any { ResumeDownloadHelper.isFileComplete(File(dir, it)) }
         val hasSeparateFiles = hasEncoder && hasDecoder
 
         // Or check for combined encoder-decoder file (legacy)
-        val hasCombined = ENCODER_DECODER_PATTERNS.any { File(dir, it).exists() }
+        val hasCombined = ENCODER_DECODER_PATTERNS.any { ResumeDownloadHelper.isFileComplete(File(dir, it)) }
 
         return hasSeparateFiles || hasCombined
     }

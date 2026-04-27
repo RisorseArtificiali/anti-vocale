@@ -32,7 +32,7 @@ import com.antivocale.app.benchmark.BenchmarkState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -40,7 +40,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.io.File
@@ -195,9 +194,11 @@ class ModelViewModel @Inject constructor(
         data object AuthRequired : SnackbarEvent()
     }
 
-    // Channel for one-time Snackbar events (guarantees delivery)
-    private val _snackbarEvent = Channel<SnackbarEvent>()
-    val snackbarEvent: kotlinx.coroutines.flow.Flow<SnackbarEvent> = _snackbarEvent.receiveAsFlow()
+    private val _snackbarEvent = MutableSharedFlow<SnackbarEvent>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
+    val snackbarEvent: SharedFlow<SnackbarEvent> = _snackbarEvent.asSharedFlow()
 
     init {
         // Set up auto-unload callback
@@ -275,7 +276,7 @@ class ModelViewModel @Inject constructor(
         updateFlow: (DownloadState, Float?) -> Unit,
         onError: (String, Throwable?) -> Unit,
         onComplete: (File) -> Unit,
-        onCancelled: () -> Unit = { /* no-op: cancelVariantDownload handles partial detection */ }
+        onCancelled: () -> Unit = { detectPartialDownloads() }
     ) {
         when (state) {
             is DownloadState.Downloading -> {
@@ -285,17 +286,13 @@ class ModelViewModel @Inject constructor(
             is DownloadState.Error -> {
                 updateFlow(state, null)
                 onError(state.message, state.throwable)
-                viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(state.message)) }
+                viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(state.message)) }
             }
             is DownloadState.Complete -> {
                 updateFlow(state, 1f)
                 onComplete(state.file)
             }
             is DownloadState.Cancelled -> {
-                // Don't update the flow — skip straight to onCancelled.
-                // The cancel method's IO coroutine owns the atomic
-                // Downloading → PartiallyDownloaded transition.
-                // Any state change here would cause an Idle flicker.
                 onCancelled()
             }
             else -> {
@@ -317,7 +314,7 @@ class ModelViewModel @Inject constructor(
                     preferencesManager.saveParakeetModelPath(file.absolutePath)
                     if (_uiState.value.modelName.isBlank()) useParakeetModel()
                 }
-                viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(ctx.getString(R.string.parakeet_downloaded))) }
+                viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.parakeet_downloaded))) }
             },
             onCancelled = {
                 _parakeetState.update { it.copy(isDownloading = false) }
@@ -364,8 +361,18 @@ class ModelViewModel @Inject constructor(
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useWhisperModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
-                    viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(ctx.getString(R.string.whisper_downloaded, displayName))) }
+                    viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.whisper_downloaded, displayName))) }
                 }
+            },
+            onCancelled = {
+                if (variant != null) {
+                    _whisperState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = null)
+                        })
+                    }
+                }
+                detectPartialDownloads()
             }
         )
     }
@@ -406,8 +413,18 @@ class ModelViewModel @Inject constructor(
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useQwen3AsrModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
-                    viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(ctx.getString(R.string.qwen3_asr_downloaded, displayName))) }
+                    viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.qwen3_asr_downloaded, displayName))) }
                 }
+            },
+            onCancelled = {
+                if (variant != null) {
+                    _qwen3AsrState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = null)
+                        })
+                    }
+                }
+                detectPartialDownloads()
             }
         )
     }
@@ -452,7 +469,7 @@ class ModelViewModel @Inject constructor(
                 } else {
                     SnackbarEvent.Message(message)
                 }
-                viewModelScope.launch { _snackbarEvent.send(event) }
+                viewModelScope.launch { _snackbarEvent.tryEmit(event) }
             },
             onComplete = { file ->
                 _downloadUiState.update {
@@ -462,6 +479,16 @@ class ModelViewModel @Inject constructor(
                 }
                 refreshDownloadedModels()
                 if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
+            },
+            onCancelled = {
+                if (variant != null) {
+                    _downloadUiState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = null)
+                        })
+                    }
+                }
+                detectPartialDownloads()
             }
         )
     }
@@ -1005,7 +1032,7 @@ class ModelViewModel @Inject constructor(
                     status = ModelStatus.UNLOADED,
                     statusMessage = message
                 )}
-                _snackbarEvent.send(SnackbarEvent.Message(message))
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
             }
         }
     }
@@ -1232,7 +1259,7 @@ class ModelViewModel @Inject constructor(
                     statusMessage = message
                 )}
 
-                _snackbarEvent.send(SnackbarEvent.Message(message))
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
             }
         }
     }
@@ -1247,7 +1274,7 @@ class ModelViewModel @Inject constructor(
             if (success) {
                 preferencesManager.saveParakeetModelPath("")
                 _parakeetState.update { it.copy(modelPath = null) }
-                _snackbarEvent.send(SnackbarEvent.Message(context.getString(R.string.parakeet_deleted)))
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.parakeet_deleted)))
             }
         }
     }
@@ -1439,7 +1466,7 @@ class ModelViewModel @Inject constructor(
                     statusMessage = message
                 )}
 
-                _snackbarEvent.send(SnackbarEvent.Message(message))
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
             }
         }
     }
@@ -1463,7 +1490,7 @@ class ModelViewModel @Inject constructor(
                     preferencesManager.clearWhisperModelPath()
                     _uiState.update { it.copy(modelPath = "", modelName = "") }
                 }
-                _snackbarEvent.send(SnackbarEvent.Message(context.getString(R.string.whisper_deleted, displayName)))
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.whisper_deleted, displayName)))
             }
         }
     }
@@ -1582,7 +1609,7 @@ class ModelViewModel @Inject constructor(
                     )
                 }
 
-                _snackbarEvent.send(SnackbarEvent.Message(message))
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
                 llmManager.resetKeepAliveTimer()
             }
         }
@@ -1602,7 +1629,7 @@ class ModelViewModel @Inject constructor(
                     _uiState.update { it.copy(modelPath = "", modelName = "") }
                 }
                 val displayName = context.getString(variant.titleResId)
-                _snackbarEvent.send(SnackbarEvent.Message(context.getString(R.string.qwen3_asr_deleted, displayName)))
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.qwen3_asr_deleted, displayName)))
             }
         }
     }
@@ -1645,8 +1672,18 @@ class ModelViewModel @Inject constructor(
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useGgufModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
-                    viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(ctx.getString(R.string.gguf_downloaded, displayName))) }
+                    viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.gguf_downloaded, displayName))) }
                 }
+            },
+            onCancelled = {
+                if (variant != null) {
+                    _ggufState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = null)
+                        })
+                    }
+                }
+                detectPartialDownloads()
             }
         )
     }
@@ -1760,7 +1797,7 @@ class ModelViewModel @Inject constructor(
                     )
                 }
 
-                _snackbarEvent.send(SnackbarEvent.Message(message))
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
                 llmManager.resetKeepAliveTimer()
             }
         }
@@ -1780,7 +1817,7 @@ class ModelViewModel @Inject constructor(
                     _uiState.update { it.copy(modelPath = "", modelName = "") }
                 }
                 val displayName = context.getString(variant.titleResId)
-                _snackbarEvent.send(SnackbarEvent.Message(context.getString(R.string.gguf_deleted, displayName)))
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.gguf_deleted, displayName)))
             }
         }
     }

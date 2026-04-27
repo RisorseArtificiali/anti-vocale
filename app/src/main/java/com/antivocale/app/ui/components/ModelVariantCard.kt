@@ -198,7 +198,7 @@ fun ModelVariantCard(
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
             ) {
                 when (state.buttonState) {
                     is DownloadButtonState.Downloading -> {
@@ -215,17 +215,12 @@ fun ModelVariantCard(
                         if (!state.isActive) {
                             Button(
                                 onClick = onUseClick,
-                                modifier = Modifier.weight(1f),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary
                                 )
                             ) {
-                                Icon(Icons.Default.Check, contentDescription = null)
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(stringResource(R.string.use_model))
+                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
                             }
-                        } else {
-                            Spacer(modifier = Modifier.weight(1f))
                         }
                         if (onBenchmarkClick != null) {
                             OutlinedButton(onClick = onBenchmarkClick) {
@@ -345,22 +340,6 @@ internal fun DownloadProgressView(
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
-            }
-        }
-        is DownloadState.CopyingFiles -> {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                LinearProgressIndicator(
-                    progress = { downloadProgress },
-                    modifier = Modifier.fillMaxWidth()
-                )
-                Text(
-                    if (state.fileName.isNotEmpty()) {
-                        stringResource(R.string.download_status_copying_file, state.fileName)
-                    } else {
-                        stringResource(R.string.download_status_copying_files)
-                    },
-                    style = MaterialTheme.typography.bodySmall
-                )
             }
         }
         is DownloadState.CheckingAccess,
