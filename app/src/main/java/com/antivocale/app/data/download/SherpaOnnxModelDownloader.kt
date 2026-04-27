@@ -3,9 +3,13 @@ package com.antivocale.app.data.download
 import android.content.Context
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Generic downloader for sherpa-onnx models from HuggingFace.
@@ -112,60 +116,85 @@ class SherpaOnnxModelDownloader<V>(
         if (!modelDir.exists()) modelDir.mkdirs()
 
         val totalFiles = files.size
-        var completedFiles = 0
+        val completedFiles = AtomicInteger(0)
 
+        // Phase 1: Identify already-complete files
+        val filesToDownload = mutableListOf<String>()
         for (fileName in files) {
-            val fileUrl = hfFileUrl(modelDirName, fileName)
+            val targetFile = File(modelDir, fileName)
+            val sidecar = ResumeDownloadHelper.sizeSidecar(targetFile)
+            val storedTotal = sidecar.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull()
+            if (targetFile.exists() && storedTotal != null && targetFile.length() >= storedTotal) {
+                Log.i(config.tag, "File already complete, skipping: $fileName")
+                val done = completedFiles.incrementAndGet()
+                onProgress(done.toFloat() / totalFiles)
+            } else {
+                filesToDownload.add(fileName)
+            }
+        }
 
+        if (completedFiles.get() > 0) {
+            onStateChange(DownloadState.CopyingFiles(completedFiles.get(), totalFiles, ""))
+        }
+
+        // Phase 2: Download remaining files in parallel
+        if (filesToDownload.isNotEmpty()) {
             if (cancelFlags[variant] == true) {
                 onStateChange(DownloadState.Cancelled("User cancelled"))
                 return@withContext Result.failure(Exception("Download cancelled"))
             }
 
-            val targetFile = File(modelDir, fileName)
-            if (config.ensureParentDirs) {
-                targetFile.parentFile?.mkdirs()
+            try {
+                coroutineScope {
+                    filesToDownload.map { fileName ->
+                        async(Dispatchers.IO) {
+                            if (cancelFlags[variant] == true) return@async
+
+                            val targetFile = File(modelDir, fileName)
+                            if (config.ensureParentDirs) {
+                                targetFile.parentFile?.mkdirs()
+                            }
+
+                            Log.i(config.tag, "Downloading: $fileName")
+
+                            val downloadConfig = DownloadConfig(
+                                url = hfFileUrl(modelDirName, fileName),
+                                tempFile = targetFile,
+                                targetFile = targetFile,
+                                estimatedSizeBytes = 0L,
+                                connectTimeoutMs = 60_000,
+                                readTimeoutMs = 120_000,
+                                isCancelled = { cancelFlags[variant] == true }
+                            )
+
+                            val downloadResult = downloadWithRetry(
+                                config = downloadConfig,
+                                tag = config.tag,
+                                onProgress = { },
+                                onStateChange = { }
+                            )
+
+                            if (downloadResult.isFailure) {
+                                throw downloadResult.exceptionOrNull()
+                                    ?: Exception("Download failed: $fileName")
+                            }
+
+                            val done = completedFiles.incrementAndGet()
+                            onProgress(done.toFloat() / totalFiles)
+                            onStateChange(DownloadState.CopyingFiles(done, totalFiles, fileName))
+                        }
+                    }.awaitAll()
+                }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                if (cancelFlags[variant] == true) {
+                    onStateChange(DownloadState.Cancelled("User cancelled"))
+                    return@withContext Result.failure(Exception("Download cancelled"))
+                }
+                throw e
+            } catch (e: Exception) {
+                onStateChange(DownloadState.Error(e.message ?: "Download failed", e))
+                return@withContext Result.failure(e)
             }
-
-            // Skip if file is complete (verified against .size sidecar)
-            val sidecar = ResumeDownloadHelper.sizeSidecar(targetFile)
-            val storedTotal = sidecar.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull()
-            if (targetFile.exists() && storedTotal != null && targetFile.length() >= storedTotal) {
-                Log.i(config.tag, "File already complete, skipping: $fileName")
-                completedFiles++
-                onProgress(completedFiles.toFloat() / totalFiles)
-                onStateChange(DownloadState.CopyingFiles(completedFiles, totalFiles, fileName))
-                continue
-            }
-
-            Log.i(config.tag, "Downloading: $fileName")
-            onStateChange(DownloadState.Connecting(fileUrl))
-
-            val downloadConfig = DownloadConfig(
-                url = fileUrl,
-                tempFile = targetFile,
-                targetFile = targetFile,
-                estimatedSizeBytes = 0L,
-                connectTimeoutMs = 60_000,
-                readTimeoutMs = 120_000,
-                isCancelled = { cancelFlags[variant] == true }
-            )
-
-            val downloadResult = downloadWithRetry(
-                config = downloadConfig,
-                tag = config.tag,
-                onProgress = { fileProg ->
-                    onProgress((completedFiles + fileProg) / totalFiles)
-                },
-                onStateChange = onStateChange
-            )
-
-            if (downloadResult.isFailure) {
-                return@withContext downloadResult
-            }
-
-            completedFiles++
-            onStateChange(DownloadState.CopyingFiles(completedFiles, totalFiles, fileName))
         }
 
         if (!config.isValidModel(modelDir)) {
