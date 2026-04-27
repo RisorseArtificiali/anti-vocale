@@ -347,6 +347,22 @@ internal fun DownloadProgressView(
                 }
             }
         }
+        is DownloadState.CopyingFiles -> {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                LinearProgressIndicator(
+                    progress = { downloadProgress },
+                    modifier = Modifier.fillMaxWidth()
+                )
+                Text(
+                    if (state.fileName.isNotEmpty()) {
+                        stringResource(R.string.download_status_copying_file, state.fileName)
+                    } else {
+                        stringResource(R.string.download_status_copying_files)
+                    },
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
         is DownloadState.CheckingAccess,
         is DownloadState.Connecting -> {
             Row(

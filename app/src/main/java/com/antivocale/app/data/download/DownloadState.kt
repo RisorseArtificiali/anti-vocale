@@ -36,6 +36,13 @@ sealed class DownloadState {
         val currentFileSize: Long = 0
     ) : DownloadState()
 
+    /** Copying individual model files (sherpa-onnx downloads). */
+    data class CopyingFiles(
+        val fileIndex: Int,
+        val totalFiles: Int,
+        val fileName: String = ""
+    ) : DownloadState()
+
     /** A partial download was detected on app start (resume available). */
     data class PartiallyDownloaded(
         val bytesDownloaded: Long,

@@ -133,6 +133,8 @@
     <string name="download_status_downloading">Download in corso…</string>
     <string name="download_status_extracting">Estrazione di %1$s…</string>
     <string name="download_status_extracting_files">Estrazione file…</string>
+    <string name="download_status_copying_file">Copia di %1$s…</string>
+    <string name="download_status_copying_files">Copia file…</string>
     <string name="download_status_connecting">Connessione…</string>
     <string name="download_status_file_progress">%1$d/%2$d</string>
     <string name="download_status_checking_access">Verifica accesso…</string>

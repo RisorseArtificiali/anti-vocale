@@ -134,7 +134,7 @@ class SherpaOnnxModelDownloader<V>(
                 Log.i(config.tag, "File already complete, skipping: $fileName")
                 completedFiles++
                 onProgress(completedFiles.toFloat() / totalFiles)
-                onStateChange(DownloadState.Extracting(completedFiles, totalFiles, fileName))
+                onStateChange(DownloadState.CopyingFiles(completedFiles, totalFiles, fileName))
                 continue
             }
 
@@ -165,7 +165,7 @@ class SherpaOnnxModelDownloader<V>(
             }
 
             completedFiles++
-            onStateChange(DownloadState.Extracting(completedFiles, totalFiles, fileName))
+            onStateChange(DownloadState.CopyingFiles(completedFiles, totalFiles, fileName))
         }
 
         if (!config.isValidModel(modelDir)) {

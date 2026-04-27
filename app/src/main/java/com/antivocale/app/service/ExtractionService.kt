@@ -488,6 +488,18 @@ class ExtractionService : Service() {
                         indeterminate = state.totalFiles <= 0,
                         subText = getString(R.string.notification_extracting_hint)))
             }
+            is DownloadState.CopyingFiles -> {
+                val text = if (state.totalFiles > 0) {
+                    getString(R.string.notification_copying_progress, state.fileIndex, state.totalFiles)
+                } else {
+                    getString(R.string.download_status_copying_files)
+                }
+                val maxProgress = if (state.totalFiles > 0) state.totalFiles else 0
+                val progress = if (state.totalFiles > 0) state.fileIndex else 0
+                notificationManager.notify(nid,
+                    createNotification(text, title, nid, progress = progress, maxProgress = maxProgress,
+                        indeterminate = state.totalFiles <= 0))
+            }
             is DownloadState.Complete -> {
                 notificationManager.notify(nid,
                     createNotification(getString(R.string.notification_download_complete), title, nid,

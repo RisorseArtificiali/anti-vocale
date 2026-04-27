@@ -133,6 +133,8 @@
     <string name="download_status_downloading">Downloading…</string>
     <string name="download_status_extracting">Extracting %1$s…</string>
     <string name="download_status_extracting_files">Extracting files…</string>
+    <string name="download_status_copying_file">Copying %1$s…</string>
+    <string name="download_status_copying_files">Copying files…</string>
     <string name="download_status_connecting">Connecting…</string>
     <string name="download_status_file_progress">%1$d/%2$d</string>
     <string name="download_status_checking_access">Checking access…</string>
@@ -395,6 +397,7 @@
     <string name="notification_channel_extraction_description">Downloads and extracts ML models in the background</string>
     <string name="notification_downloading_progress">Downloading… %1$d%%</string>
     <string name="notification_extracting_progress">Extracting files… %1$d/%2$d</string>
+    <string name="notification_copying_progress">Copying files… %1$d/%2$d</string>
     <string name="notification_extracting_hint">This may take more than 5 minutes</string>
     <string name="notification_download_complete">Download complete</string>
     <string name="notification_channel_inference">Transcription Service</string>
