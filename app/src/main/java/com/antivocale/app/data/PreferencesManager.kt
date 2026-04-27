@@ -53,7 +53,7 @@ interface PreferencesManager {
 
     companion object {
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
-        val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2)
+        val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2).coerceAtMost(8)
         const val DEFAULT_AUTO_COPY_ENABLED = false
         const val DEFAULT_VAD_ENABLED = false
         const val DEFAULT_PROGRESSIVE_TRANSCRIPTION = true

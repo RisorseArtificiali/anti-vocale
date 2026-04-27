@@ -52,7 +52,12 @@ class PreferencesManagerTest {
 
     @Test
     fun `DEFAULT_THREAD_COUNT respects available processors`() {
-        val expected = maxOf(2, Runtime.getRuntime().availableProcessors() - 2)
+        val expected = maxOf(2, Runtime.getRuntime().availableProcessors() - 2).coerceAtMost(8)
         assertEquals(expected, PreferencesManager.DEFAULT_THREAD_COUNT)
+    }
+
+    @Test
+    fun `DEFAULT_THREAD_COUNT is capped at 8`() {
+        assertTrue(PreferencesManager.DEFAULT_THREAD_COUNT <= 8)
     }
 }
