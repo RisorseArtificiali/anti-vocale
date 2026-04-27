@@ -161,9 +161,7 @@ class ModelViewModel @Inject constructor(
         val status: ModelStatus = ModelStatus.UNLOADED,
         val statusMessage: String = "",
         val modelPath: String = "",
-        val modelName: String = "",
-        val memoryUsage: Long = 0,
-        val isModelPathValid: Boolean = false
+        val modelName: String = ""
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -192,9 +190,14 @@ class ModelViewModel @Inject constructor(
     private val _ggufState = MutableStateFlow(GgufUiState())
     val ggufState: StateFlow<GgufUiState> = _ggufState.asStateFlow()
 
+    sealed class SnackbarEvent {
+        data class Message(val text: String) : SnackbarEvent()
+        data object AuthRequired : SnackbarEvent()
+    }
+
     // Channel for one-time Snackbar events (guarantees delivery)
-    private val _snackbarEvent = Channel<String>()
-    val snackbarEvent: kotlinx.coroutines.flow.Flow<String> = _snackbarEvent.receiveAsFlow()
+    private val _snackbarEvent = Channel<SnackbarEvent>()
+    val snackbarEvent: kotlinx.coroutines.flow.Flow<SnackbarEvent> = _snackbarEvent.receiveAsFlow()
 
     init {
         // Set up auto-unload callback
@@ -282,7 +285,7 @@ class ModelViewModel @Inject constructor(
             is DownloadState.Error -> {
                 updateFlow(state, null)
                 onError(state.message, state.throwable)
-                viewModelScope.launch { _snackbarEvent.send(state.message) }
+                viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(state.message)) }
             }
             is DownloadState.Complete -> {
                 updateFlow(state, 1f)
@@ -314,7 +317,7 @@ class ModelViewModel @Inject constructor(
                     preferencesManager.saveParakeetModelPath(file.absolutePath)
                     if (_uiState.value.modelName.isBlank()) useParakeetModel()
                 }
-                viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.parakeet_downloaded)) }
+                viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(ctx.getString(R.string.parakeet_downloaded))) }
             },
             onCancelled = {
                 _parakeetState.update { it.copy(isDownloading = false) }
@@ -361,7 +364,7 @@ class ModelViewModel @Inject constructor(
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useWhisperModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
-                    viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.whisper_downloaded, displayName)) }
+                    viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(ctx.getString(R.string.whisper_downloaded, displayName))) }
                 }
             }
         )
@@ -403,7 +406,7 @@ class ModelViewModel @Inject constructor(
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useQwen3AsrModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
-                    viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.qwen3_asr_downloaded, displayName)) }
+                    viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(ctx.getString(R.string.qwen3_asr_downloaded, displayName))) }
                 }
             }
         )
@@ -444,7 +447,12 @@ class ModelViewModel @Inject constructor(
                     is ModelDownloader.DownloadError.StorageError -> "Not enough storage"
                     is ModelDownloader.DownloadError.NetworkError -> "Network error: ${error.message}"
                 }
-                viewModelScope.launch { _snackbarEvent.send(message) }
+                val event = if (error is ModelDownloader.DownloadError.AuthRequired) {
+                    SnackbarEvent.AuthRequired
+                } else {
+                    SnackbarEvent.Message(message)
+                }
+                viewModelScope.launch { _snackbarEvent.send(event) }
             },
             onComplete = { file ->
                 _downloadUiState.update {
@@ -645,7 +653,6 @@ class ModelViewModel @Inject constructor(
                         _uiState.update { it.copy(
                             modelPath = parakeetPath,
                             modelName = parakeetName,
-                            isModelPathValid = isValid,
                             statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, parakeetName) else ctx.getString(R.string.backend_model_not_found, parakeetName)
                         )}
                     }
@@ -663,7 +670,6 @@ class ModelViewModel @Inject constructor(
                         _uiState.update { it.copy(
                             modelPath = whisperPath,
                             modelName = modelName,
-                            isModelPathValid = isValid,
                             statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
                         )}
                     }
@@ -681,7 +687,6 @@ class ModelViewModel @Inject constructor(
                         _uiState.update { it.copy(
                             modelPath = qwen3Path,
                             modelName = modelName,
-                            isModelPathValid = isValid,
                             statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
                         )}
                     }
@@ -698,7 +703,6 @@ class ModelViewModel @Inject constructor(
                         _uiState.update { it.copy(
                             modelPath = ggufPath,
                             modelName = modelName,
-                            isModelPathValid = isValid,
                             statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
                         )}
                     }
@@ -711,7 +715,6 @@ class ModelViewModel @Inject constructor(
                         _uiState.update { it.copy(
                             modelPath = savedPath,
                             modelName = extractFileName(savedPath),
-                            isModelPathValid = isValid,
                             statusMessage = if (isValid) ctx.getString(R.string.saved_model_found) else ctx.getString(R.string.saved_model_not_found)
                         )}
                     }
@@ -742,7 +745,6 @@ class ModelViewModel @Inject constructor(
                 _uiState.update { it.copy(
                     modelPath = copiedPath,
                     modelName = fileName,
-                    isModelPathValid = true,
                     status = ModelStatus.UNLOADED,
                     statusMessage = ctx.getString(R.string.model_selected, fileName)
                 )}
@@ -815,12 +817,9 @@ class ModelViewModel @Inject constructor(
 
             result.fold(
                 onSuccess = {
-                    val memoryUsage = estimateMemoryUsage(modelPath)
-
                     _uiState.update { it.copy(
                         status = ModelStatus.READY,
-                        statusMessage = ctx.getString(R.string.model_ready_inference),
-                        memoryUsage = memoryUsage
+                        statusMessage = ctx.getString(R.string.model_ready_inference)
                     )}
                 },
                 onFailure = { error ->
@@ -840,8 +839,7 @@ class ModelViewModel @Inject constructor(
             modelName = "",
             modelPath = "",
             status = ModelStatus.UNLOADED,
-            statusMessage = ctx.getString(R.string.model_unloaded),
-            memoryUsage = 0
+            statusMessage = ctx.getString(R.string.model_unloaded)
         )}
         Log.i(TAG, "Model unloaded manually")
     }
@@ -864,13 +862,6 @@ class ModelViewModel @Inject constructor(
         return File(path).name
     }
 
-    private fun estimateMemoryUsage(modelPath: String): Long {
-        // Estimate memory usage based on model file size
-        // Gemma models are typically 2-4GB
-        val fileSize = File(modelPath).length()
-        // Model in memory is roughly 1.2x the file size due to KV cache
-        return (fileSize * 1.2 / (1024 * 1024)).toLong()
-    }
 
     /**
      * Called when the model is automatically unloaded due to inactivity timeout.
@@ -880,8 +871,7 @@ class ModelViewModel @Inject constructor(
             modelName = "",
             modelPath = "",
             status = ModelStatus.UNLOADED,
-            statusMessage = ctx.getString(R.string.model_auto_unloaded),
-            memoryUsage = 0
+            statusMessage = ctx.getString(R.string.model_auto_unloaded)
         )}
     }
 
@@ -891,14 +881,11 @@ class ModelViewModel @Inject constructor(
      */
     private fun onModelExternallyLoaded(modelPath: String) {
         val modelName = extractFileName(modelPath)
-        val memoryUsage = estimateMemoryUsage(modelPath)
         _uiState.update { it.copy(
             modelPath = modelPath,
             modelName = modelName,
-            isModelPathValid = true,
             status = ModelStatus.READY,
-            statusMessage = ctx.getString(R.string.model_externally_loaded),
-            memoryUsage = memoryUsage
+            statusMessage = ctx.getString(R.string.model_externally_loaded)
         )}
     }
 
@@ -1015,11 +1002,10 @@ class ModelViewModel @Inject constructor(
                 _uiState.update { it.copy(
                     modelPath = modelPath,
                     modelName = variant.displayName,
-                    isModelPathValid = true,
                     status = ModelStatus.UNLOADED,
                     statusMessage = message
                 )}
-                _snackbarEvent.send(message)
+                _snackbarEvent.send(SnackbarEvent.Message(message))
             }
         }
     }
@@ -1039,7 +1025,6 @@ class ModelViewModel @Inject constructor(
                     _uiState.update { it.copy(
                         modelPath = "",
                         modelName = "",
-                        isModelPathValid = false,
                         status = ModelStatus.UNLOADED,
                         statusMessage = ctx.getString(R.string.model_deleted_status)
                     )}
@@ -1247,7 +1232,7 @@ class ModelViewModel @Inject constructor(
                     statusMessage = message
                 )}
 
-                _snackbarEvent.send(message)
+                _snackbarEvent.send(SnackbarEvent.Message(message))
             }
         }
     }
@@ -1262,7 +1247,7 @@ class ModelViewModel @Inject constructor(
             if (success) {
                 preferencesManager.saveParakeetModelPath("")
                 _parakeetState.update { it.copy(modelPath = null) }
-                _snackbarEvent.send(context.getString(R.string.parakeet_deleted))
+                _snackbarEvent.send(SnackbarEvent.Message(context.getString(R.string.parakeet_deleted)))
             }
         }
     }
@@ -1454,7 +1439,7 @@ class ModelViewModel @Inject constructor(
                     statusMessage = message
                 )}
 
-                _snackbarEvent.send(message)
+                _snackbarEvent.send(SnackbarEvent.Message(message))
             }
         }
     }
@@ -1476,9 +1461,9 @@ class ModelViewModel @Inject constructor(
                 val savedPath = preferencesManager.whisperModelPath.first()
                 if (savedPath?.contains(variant.dirName) == true) {
                     preferencesManager.clearWhisperModelPath()
-                    _uiState.update { it.copy(modelPath = "", modelName = "", isModelPathValid = false) }
+                    _uiState.update { it.copy(modelPath = "", modelName = "") }
                 }
-                _snackbarEvent.send(context.getString(R.string.whisper_deleted, displayName))
+                _snackbarEvent.send(SnackbarEvent.Message(context.getString(R.string.whisper_deleted, displayName)))
             }
         }
     }
@@ -1597,7 +1582,7 @@ class ModelViewModel @Inject constructor(
                     )
                 }
 
-                _snackbarEvent.send(message)
+                _snackbarEvent.send(SnackbarEvent.Message(message))
                 llmManager.resetKeepAliveTimer()
             }
         }
@@ -1614,10 +1599,10 @@ class ModelViewModel @Inject constructor(
                 val savedPath = preferencesManager.qwen3AsrModelPath.first()
                 if (savedPath != null && savedPath.contains(Qwen3AsrDownloader.getModelDirName(variant))) {
                     preferencesManager.clearQwen3AsrModelPath()
-                    _uiState.update { it.copy(modelPath = "", modelName = "", isModelPathValid = false) }
+                    _uiState.update { it.copy(modelPath = "", modelName = "") }
                 }
                 val displayName = context.getString(variant.titleResId)
-                _snackbarEvent.send(context.getString(R.string.qwen3_asr_deleted, displayName))
+                _snackbarEvent.send(SnackbarEvent.Message(context.getString(R.string.qwen3_asr_deleted, displayName)))
             }
         }
     }
@@ -1660,7 +1645,7 @@ class ModelViewModel @Inject constructor(
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useGgufModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
-                    viewModelScope.launch { _snackbarEvent.send(ctx.getString(R.string.gguf_downloaded, displayName)) }
+                    viewModelScope.launch { _snackbarEvent.send(SnackbarEvent.Message(ctx.getString(R.string.gguf_downloaded, displayName))) }
                 }
             }
         )
@@ -1775,7 +1760,7 @@ class ModelViewModel @Inject constructor(
                     )
                 }
 
-                _snackbarEvent.send(message)
+                _snackbarEvent.send(SnackbarEvent.Message(message))
                 llmManager.resetKeepAliveTimer()
             }
         }
@@ -1792,10 +1777,10 @@ class ModelViewModel @Inject constructor(
                 val savedPath = preferencesManager.ggufModelPath.first()
                 if (savedPath != null && savedPath.contains(variant.fileName)) {
                     preferencesManager.clearGgufModelPath()
-                    _uiState.update { it.copy(modelPath = "", modelName = "", isModelPathValid = false) }
+                    _uiState.update { it.copy(modelPath = "", modelName = "") }
                 }
                 val displayName = context.getString(variant.titleResId)
-                _snackbarEvent.send(context.getString(R.string.gguf_deleted, displayName))
+                _snackbarEvent.send(SnackbarEvent.Message(context.getString(R.string.gguf_deleted, displayName)))
             }
         }
     }
@@ -1811,7 +1796,6 @@ class ModelViewModel @Inject constructor(
             _uiState.update { it.copy(
                 modelPath = modelPath,
                 modelName = file.name,
-                isModelPathValid = true,
                 status = ModelStatus.UNLOADED,
                 statusMessage = ctx.getString(R.string.downloaded_model_selected)
             )}

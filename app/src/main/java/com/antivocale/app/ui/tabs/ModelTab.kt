@@ -194,22 +194,25 @@ fun ModelTab(
 
     // Collect one-time Snackbar events from ViewModel (Channel-based for guaranteed delivery)
     LaunchedEffect(Unit) {
-        viewModel.snackbarEvent.collect { message ->
-            if (message == "auth_required") {
-                snackbarHostState.showSnackbar(
-                    message = context.getString(R.string.model_requires_auth),
-                    actionLabel = "Settings",
-                    duration = SnackbarDuration.Long
-                ).let { result ->
-                    if (result == SnackbarResult.ActionPerformed) {
-                        onNavigateToSettings()
+        viewModel.snackbarEvent.collect { event ->
+            when (event) {
+                is ModelViewModel.SnackbarEvent.AuthRequired -> {
+                    snackbarHostState.showSnackbar(
+                        message = context.getString(R.string.model_requires_auth),
+                        actionLabel = "Settings",
+                        duration = SnackbarDuration.Long
+                    ).let { result ->
+                        if (result == SnackbarResult.ActionPerformed) {
+                            onNavigateToSettings()
+                        }
                     }
                 }
-            } else {
-                snackbarHostState.showSnackbar(
-                    message = message,
-                    duration = SnackbarDuration.Long
-                )
+                is ModelViewModel.SnackbarEvent.Message -> {
+                    snackbarHostState.showSnackbar(
+                        message = event.text,
+                        duration = SnackbarDuration.Long
+                    )
+                }
             }
             viewModel.clearDownloadError()
         }
