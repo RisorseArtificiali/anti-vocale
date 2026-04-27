@@ -44,6 +44,10 @@ Choose from 9 models:
 
 No network, no accounts, no data collection, no ads, no tracking.
 
+**OPEN SOURCE**
+
+Source code: https://github.com/paoloantinori/anti-vocale
+
 **REQUIREMENTS**
 
 Android 8.0+ | 4GB+ RAM recommended | 350MB-4.5GB storage
@@ -97,6 +101,10 @@ Scegli tra 9 modelli:
 **PRIVACY**
 
 Nessuna connessione, nessun account, nessun dato raccolto, nessuna pubblicità, nessun tracciamento.
+
+**OPEN SOURCE**
+
+Codice sorgente: https://github.com/paoloantinori/anti-vocale
 
 **REQUISITI**
 
