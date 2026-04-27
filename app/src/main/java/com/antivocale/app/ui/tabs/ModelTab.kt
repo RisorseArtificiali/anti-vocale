@@ -57,6 +57,8 @@ import com.antivocale.app.ui.components.ModelVariantCardState
 import com.antivocale.app.ui.components.UnloadModelButton
 import com.antivocale.app.ui.components.PartialDownloadSection
 import com.antivocale.app.ui.components.BenchmarkDialog
+import com.antivocale.app.ui.components.DeleteConfirmationDialog
+import com.antivocale.app.ui.components.DownloadConfirmationDialog
 import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 
@@ -222,70 +224,22 @@ fun ModelTab(
     if (downloadUiState.modelToDelete != null) {
         val deletingModelName = downloadUiState.modelToDelete?.displayName ?: ""
         val isActiveModel = uiState.modelName == deletingModelName
-
-        if (isTranscribing && isActiveModel) {
-            // Hard block: cannot delete the model currently being used for transcription
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissDeleteDialog() },
-                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
-                text = {
-                    Text(stringResource(R.string.dialog_delete_active_model_message, deletingModelName))
-                },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.dismissDeleteDialog() }) {
-                        Text(stringResource(R.string.action_understood))
-                    }
-                }
-            )
-        } else {
-            AlertDialog(
-                onDismissRequest = {
-                    viewModel.dismissDeleteDialog()
-                },
-                title = { Text(stringResource(R.string.dialog_delete_title)) },
-                text = {
-                    if (isTranscribing) {
-                        Text(stringResource(R.string.dialog_delete_inactive_model_message, deletingModelName))
-                    } else {
-                        Text(stringResource(R.string.dialog_delete_message, deletingModelName))
-                    }
-                },
-                confirmButton = {
-                    TextButton(
-                        onClick = {
-                            viewModel.confirmDeleteModel()
-                        }
-                    ) {
-                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = {
-                        viewModel.dismissDeleteDialog()
-                    }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                }
-            )
-        }
+        DeleteConfirmationDialog(
+            modelName = deletingModelName,
+            isTranscribing = isTranscribing,
+            isActiveModel = isActiveModel,
+            onConfirm = { viewModel.confirmDeleteModel() },
+            onDismiss = { viewModel.dismissDeleteDialog() }
+        )
     }
 
     // Parakeet download confirmation dialog
     if (parakeetState.showDownloadDialog) {
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissParakeetDownloadDialog() },
-            title = { Text(stringResource(R.string.parakeet_download_confirm_title)) },
-            text = { Text(stringResource(R.string.parakeet_download_confirm_message)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmParakeetDownload() }) {
-                    Text(stringResource(R.string.download))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissParakeetDownloadDialog() }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
+        DownloadConfirmationDialog(
+            title = stringResource(R.string.parakeet_download_confirm_title),
+            message = stringResource(R.string.parakeet_download_confirm_message),
+            onConfirm = { viewModel.confirmParakeetDownload() },
+            onDismiss = { viewModel.dismissParakeetDownloadDialog() }
         )
     }
 
@@ -293,61 +247,23 @@ fun ModelTab(
     if (parakeetState.showDeleteDialog) {
         val parakeetName = stringResource(R.string.parakeet_name)
         val isParakeetActive = uiState.modelName == parakeetName
-
-        if (isTranscribing && isParakeetActive) {
-            // Hard block: Parakeet is the active transcription model
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissParakeetDeleteDialog() },
-                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
-                text = { Text(stringResource(R.string.dialog_delete_active_model_message, parakeetName)) },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.dismissParakeetDeleteDialog() }) {
-                        Text(stringResource(R.string.action_understood))
-                    }
-                }
-            )
-        } else {
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissParakeetDeleteDialog() },
-                title = { Text(stringResource(R.string.dialog_delete_title)) },
-                text = {
-                    if (isTranscribing) {
-                        Text(stringResource(R.string.dialog_delete_inactive_model_message, parakeetName))
-                    } else {
-                        Text(stringResource(R.string.dialog_delete_message, parakeetName))
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.confirmParakeetDelete() }) {
-                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.dismissParakeetDeleteDialog() }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                }
-            )
-        }
+        DeleteConfirmationDialog(
+            modelName = parakeetName,
+            isTranscribing = isTranscribing,
+            isActiveModel = isParakeetActive,
+            onConfirm = { viewModel.confirmParakeetDelete() },
+            onDismiss = { viewModel.dismissParakeetDeleteDialog() }
+        )
     }
 
     // Gemma download confirmation dialog
     if (downloadUiState.showDownloadDialog) {
         val variant = downloadUiState.selectedVariant
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissDownloadDialog() },
-            title = { Text(stringResource(R.string.gemma_download_confirm_title, variant?.displayName ?: "Gemma")) },
-            text = { Text(stringResource(R.string.gemma_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 0)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmDownload() }) {
-                    Text(stringResource(R.string.download))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissDownloadDialog() }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
+        DownloadConfirmationDialog(
+            title = stringResource(R.string.gemma_download_confirm_title, variant?.displayName ?: "Gemma"),
+            message = stringResource(R.string.gemma_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 0),
+            onConfirm = { viewModel.confirmDownload() },
+            onDismiss = { viewModel.dismissDownloadDialog() }
         )
     }
 
@@ -355,20 +271,12 @@ fun ModelTab(
     if (whisperState.showDownloadDialog) {
         val variant = whisperState.selectedVariant
         val isExtract = variant != null && whisperState.variantsNeedingExtraction.contains(variant)
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissWhisperDownloadDialog() },
-            title = { Text(stringResource(if (isExtract) R.string.whisper_extract_confirm_title else R.string.whisper_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "Whisper")) },
-            text = { Text(stringResource(if (isExtract) R.string.whisper_extract_confirm_message else R.string.whisper_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 75)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmWhisperDownload() }) {
-                    Text(stringResource(if (isExtract) R.string.extract_model else R.string.download))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissWhisperDownloadDialog() }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
+        DownloadConfirmationDialog(
+            title = stringResource(if (isExtract) R.string.whisper_extract_confirm_title else R.string.whisper_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "Whisper"),
+            message = stringResource(if (isExtract) R.string.whisper_extract_confirm_message else R.string.whisper_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 75),
+            confirmButtonText = stringResource(if (isExtract) R.string.extract_model else R.string.download),
+            onConfirm = { viewModel.confirmWhisperDownload() },
+            onDismiss = { viewModel.dismissWhisperDownloadDialog() }
         )
     }
 
@@ -377,61 +285,23 @@ fun ModelTab(
         val variant = whisperState.variantToDelete
         val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: "Whisper"
         val isWhisperModelActive = uiState.modelName == variantDisplayName
-
-        if (isTranscribing && isWhisperModelActive) {
-            // Hard block: this Whisper variant is the active transcription model
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissWhisperDeleteDialog() },
-                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
-                text = { Text(stringResource(R.string.dialog_delete_active_model_message, variantDisplayName)) },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.dismissWhisperDeleteDialog() }) {
-                        Text(stringResource(R.string.action_understood))
-                    }
-                }
-            )
-        } else {
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissWhisperDeleteDialog() },
-                title = { Text(stringResource(R.string.dialog_delete_title)) },
-                text = {
-                    if (isTranscribing) {
-                        Text(stringResource(R.string.dialog_delete_inactive_model_message, variantDisplayName))
-                    } else {
-                        Text(stringResource(R.string.dialog_delete_message, variantDisplayName))
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.confirmWhisperDelete() }) {
-                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.dismissWhisperDeleteDialog() }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                }
-            )
-        }
+        DeleteConfirmationDialog(
+            modelName = variantDisplayName,
+            isTranscribing = isTranscribing,
+            isActiveModel = isWhisperModelActive,
+            onConfirm = { viewModel.confirmWhisperDelete() },
+            onDismiss = { viewModel.dismissWhisperDeleteDialog() }
+        )
     }
 
     // Qwen3-ASR download confirmation dialog
     if (qwen3AsrState.showDownloadDialog) {
         val variant = qwen3AsrState.selectedVariant
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissQwen3AsrDownloadDialog() },
-            title = { Text(stringResource(R.string.qwen3_asr_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "Qwen3-ASR")) },
-            text = { Text(stringResource(R.string.qwen3_asr_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 827)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmQwen3AsrDownload() }) {
-                    Text(stringResource(R.string.download))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissQwen3AsrDownloadDialog() }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
+        DownloadConfirmationDialog(
+            title = stringResource(R.string.qwen3_asr_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "Qwen3-ASR"),
+            message = stringResource(R.string.qwen3_asr_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 827),
+            onConfirm = { viewModel.confirmQwen3AsrDownload() },
+            onDismiss = { viewModel.dismissQwen3AsrDownloadDialog() }
         )
     }
 
@@ -440,60 +310,23 @@ fun ModelTab(
         val variant = qwen3AsrState.variantToDelete
         val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: "Qwen3-ASR"
         val isQwen3ModelActive = uiState.modelName == variantDisplayName
-
-        if (isTranscribing && isQwen3ModelActive) {
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissQwen3AsrDeleteDialog() },
-                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
-                text = { Text(stringResource(R.string.dialog_delete_active_model_message, variantDisplayName)) },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.dismissQwen3AsrDeleteDialog() }) {
-                        Text(stringResource(R.string.action_understood))
-                    }
-                }
-            )
-        } else {
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissQwen3AsrDeleteDialog() },
-                title = { Text(stringResource(R.string.dialog_delete_title)) },
-                text = {
-                    if (isTranscribing) {
-                        Text(stringResource(R.string.dialog_delete_inactive_model_message, variantDisplayName))
-                    } else {
-                        Text(stringResource(R.string.dialog_delete_message, variantDisplayName))
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.confirmQwen3AsrDelete() }) {
-                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.dismissQwen3AsrDeleteDialog() }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                }
-            )
-        }
+        DeleteConfirmationDialog(
+            modelName = variantDisplayName,
+            isTranscribing = isTranscribing,
+            isActiveModel = isQwen3ModelActive,
+            onConfirm = { viewModel.confirmQwen3AsrDelete() },
+            onDismiss = { viewModel.dismissQwen3AsrDeleteDialog() }
+        )
     }
 
     // GGUF download confirmation dialog
     if (ggufState.showDownloadDialog) {
         val variant = ggufState.selectedVariant
-        AlertDialog(
-            onDismissRequest = { viewModel.dismissGgufDownloadDialog() },
-            title = { Text(stringResource(R.string.gguf_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "GGUF")) },
-            text = { Text(stringResource(R.string.gguf_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 4900)) },
-            confirmButton = {
-                TextButton(onClick = { viewModel.confirmGgufDownload() }) {
-                    Text(stringResource(R.string.download))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { viewModel.dismissGgufDownloadDialog() }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
+        DownloadConfirmationDialog(
+            title = stringResource(R.string.gguf_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "GGUF"),
+            message = stringResource(R.string.gguf_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 4900),
+            onConfirm = { viewModel.confirmGgufDownload() },
+            onDismiss = { viewModel.dismissGgufDownloadDialog() }
         )
     }
 
@@ -502,41 +335,13 @@ fun ModelTab(
         val variant = ggufState.variantToDelete
         val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: "GGUF"
         val isGgufModelActive = uiState.modelName == variantDisplayName
-
-        if (isTranscribing && isGgufModelActive) {
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissGgufDeleteDialog() },
-                title = { Text(stringResource(R.string.dialog_transcription_active_title)) },
-                text = { Text(stringResource(R.string.dialog_delete_active_model_message, variantDisplayName)) },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.dismissGgufDeleteDialog() }) {
-                        Text(stringResource(R.string.action_understood))
-                    }
-                }
-            )
-        } else {
-            AlertDialog(
-                onDismissRequest = { viewModel.dismissGgufDeleteDialog() },
-                title = { Text(stringResource(R.string.dialog_delete_title)) },
-                text = {
-                    if (isTranscribing) {
-                        Text(stringResource(R.string.dialog_delete_inactive_model_message, variantDisplayName))
-                    } else {
-                        Text(stringResource(R.string.dialog_delete_message, variantDisplayName))
-                    }
-                },
-                confirmButton = {
-                    TextButton(onClick = { viewModel.confirmGgufDelete() }) {
-                        Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = { viewModel.dismissGgufDeleteDialog() }) {
-                        Text(stringResource(R.string.action_cancel))
-                    }
-                }
-            )
-        }
+        DeleteConfirmationDialog(
+            modelName = variantDisplayName,
+            isTranscribing = isTranscribing,
+            isActiveModel = isGgufModelActive,
+            onConfirm = { viewModel.confirmGgufDelete() },
+            onDismiss = { viewModel.dismissGgufDeleteDialog() }
+        )
     }
 
     // Unload model confirmation dialog
