@@ -220,6 +220,19 @@ class SherpaOnnxModelDownloader<V>(
             }
         }
 
+        // Verify SHA256 integrity if hashes are available
+        val hashes = config.expectedSha256[variant]
+        if (hashes != null && hashes.isNotEmpty()) {
+            val failed = HashVerifier.verifyDirectory(modelDir, hashes)
+            if (failed.isNotEmpty()) {
+                val errorMsg = "SHA256 verification failed for: ${failed.joinToString()}. Files may be corrupted."
+                Log.e(config.tag, errorMsg)
+                onStateChange(DownloadState.Error(errorMsg))
+                modelDir.deleteRecursively()
+                return@withContext Result.failure(Exception(errorMsg))
+            }
+        }
+
         if (!config.isValidModel(modelDir)) {
             val errorMsg = "Missing files after download in ${modelDir.absolutePath}"
             onStateChange(DownloadState.Error(errorMsg))
@@ -292,6 +305,7 @@ class SherpaOnnxModelDownloader<V>(
  * @param modelStorageDir Returns the base storage directory for this backend
  * @param isValidModel Returns true if the model directory contains all required files
  * @param ensureParentDirs If true, creates parent directories for each file (e.g. tokenizer/)
+ * @param expectedSha256 Map from variant to (filename → expected SHA256 hash). Empty by default.
  */
 data class SherpaOnnxModelConfig<V>(
     val tag: String,
@@ -300,5 +314,6 @@ data class SherpaOnnxModelConfig<V>(
     val estimatedSizeMB: (V) -> Long,
     val modelStorageDir: (Context) -> File,
     val isValidModel: (File) -> Boolean,
-    val ensureParentDirs: Boolean = false
+    val ensureParentDirs: Boolean = false,
+    val expectedSha256: Map<V, Map<String, String>> = emptyMap()
 )

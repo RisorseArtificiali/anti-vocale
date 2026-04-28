@@ -50,7 +50,8 @@ object ModelDownloader {
         val estimatedSizeMB: Long,
         val supportsAudio: Boolean,
         val requiresAuth: Boolean = false,
-        val supportedLanguageCodes: Set<String> = emptySet()
+        val supportedLanguageCodes: Set<String> = emptySet(),
+        val expectedSha256: String? = null
     ) {
         GEMMA_4_E2B(
             displayName = "Gemma 4 E2B",
@@ -234,8 +235,18 @@ object ModelDownloader {
             onStateChange = onStateChange
         )
 
-        // Emit Complete on success so the ViewModel transitions from "Downloading 100%" to "Use Model"
+        // Verify SHA256 integrity if an expected hash is available
         if (result.isSuccess) {
+            val expectedHash = variant.expectedSha256
+            if (expectedHash != null) {
+                if (!com.antivocale.app.data.download.HashVerifier.verify(targetFile, expectedHash)) {
+                    val errorMsg = "SHA256 verification failed for ${targetFile.name}. File may be corrupted."
+                    Log.e(TAG, errorMsg)
+                    targetFile.delete()
+                    onStateChange(DownloadState.Error(errorMsg))
+                    return@withContext Result.failure(Exception(errorMsg))
+                }
+            }
             onStateChange(DownloadState.Complete(targetFile))
         }
 
