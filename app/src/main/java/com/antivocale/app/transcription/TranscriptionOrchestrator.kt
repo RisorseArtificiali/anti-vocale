@@ -336,10 +336,13 @@ class TranscriptionOrchestrator @Inject constructor(
 
         // Fast path: single chunk
         if (chunkCount == 1) {
+            val t0 = System.currentTimeMillis()
             val result = backend.transcribeAudio(
                 prompt = resolvedPrompt,
                 audioData = preprocessingResult.chunks.first()
             )
+            val inferMs = System.currentTimeMillis() - t0
+            Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
             return when {
                 result.isSuccess && result.getOrNull()?.isNotBlank() == true -> {
                     recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)

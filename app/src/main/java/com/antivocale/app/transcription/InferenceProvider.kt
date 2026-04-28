@@ -6,8 +6,8 @@ import android.os.Build
  * Resolves the ONNX Runtime execution provider for inference.
  *
  * sherpa-onnx supports "nnapi" (Android Neural Networks API) and "cpu".
- * NNAPI can route to NPU/GPU/DSP for significant speedups on capable devices,
- * but support varies across Android versions and silicon vendors.
+ * NNAPI can route to NPU/GPU/DSP but often adds driver overhead that
+ * outweighs the benefit for small models. Default is CPU.
  */
 object InferenceProvider {
 
@@ -19,15 +19,15 @@ object InferenceProvider {
     /**
      * Resolves the actual provider string to pass to sherpa-onnx.
      *
-     * - "auto" → "nnapi" if device supports it, else "cpu"
+     * - "auto" → "cpu" (NNAPI driver overhead often hurts small models)
      * - "nnapi" → "nnapi" (user explicitly wants NNAPI)
-     * - "cpu" → "cpu" (user explicitly wants CPU, e.g. for debugging)
+     * - "cpu" → "cpu" (user explicitly wants CPU)
      */
     fun resolve(preference: String): String {
         return when (preference) {
             NNAPI -> NNAPI
             CPU -> CPU
-            else -> if (isNnapiAvailable()) NNAPI else CPU
+            else -> CPU
         }
     }
 

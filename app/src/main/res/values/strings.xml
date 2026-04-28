@@ -279,9 +279,9 @@
     <string name="thread_count_value">%1$d</string>
 
     <string name="inference_provider_title">Inference Provider</string>
-    <string name="inference_provider_description">Hardware accelerator for ONNX inference. NNAPI uses the device NPU/GPU for faster transcription when available.</string>
-    <string name="inference_provider_auto">Auto (NNAPI if available)</string>
-    <string name="inference_provider_nnapi">NNAPI (hardware accelerated)</string>
+    <string name="inference_provider_description">Execution backend for ONNX inference. NNAPI may use the device NPU/GPU, but can be slower than CPU for some models.</string>
+    <string name="inference_provider_auto">Auto (CPU)</string>
+    <string name="inference_provider_nnapi">NNAPI (hardware acceleration)</string>
     <string name="inference_provider_cpu">CPU only</string>
 
     <string name="saving">Saving…</string>
