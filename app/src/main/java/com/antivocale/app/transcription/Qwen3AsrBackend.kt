@@ -2,7 +2,6 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
-import com.antivocale.app.util.WavUtils
 import com.k2fsa.sherpa.onnx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -116,19 +115,16 @@ class Qwen3AsrBackend : TranscriptionBackend {
         }
     }
 
-    override suspend fun transcribeAudio(audioData: ByteArray, prompt: String): Result<String> {
+    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<String> {
         val rec = recognizer
             ?: return Result.failure(IllegalStateException("Backend not initialized"))
 
         return withContext(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Transcribing audio: ${audioData.size} bytes")
-
-                val samples = WavUtils.parseWavToFloats(audioData)
-                Log.d(TAG, "Parsed ${samples.size} audio samples, duration: ${samples.size / 16000.0f}s")
+                Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
 
                 val stream = rec.createStream()
-                stream.acceptWaveform(samples, 16000)
+                stream.acceptWaveform(samples, sampleRate)
                 rec.decode(stream)
 
                 val result = rec.getResult(stream)

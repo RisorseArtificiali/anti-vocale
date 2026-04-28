@@ -1,5 +1,6 @@
 package com.antivocale.app.util
 
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 
@@ -44,6 +45,37 @@ object WavUtils {
         return buffer
     }
 
+    /**
+     * Creates a WAV byte array from mono FloatArray samples.
+     * Used by LLM backends that require WAV format (LiteRT-LM Content.AudioBytes).
+     */
+    fun floatSamplesToWav(samples: FloatArray, sampleRate: Int): ByteArray {
+        val pcmData = ByteArray(samples.size * 2)
+        val buf = ByteBuffer.wrap(pcmData).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer()
+        for (i in samples.indices) {
+            buf.put(i, (samples[i] * 32767f).toInt().coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort())
+        }
+
+        val channels = 1
+        val bitsPerSample = 16
+        val wavData = ByteArrayOutputStream()
+        wavData.write("RIFF".toByteArray())
+        writeIntLE(wavData, 36 + pcmData.size)
+        wavData.write("WAVE".toByteArray())
+        wavData.write("fmt ".toByteArray())
+        writeIntLE(wavData, 16)
+        writeShortLE(wavData, 1)
+        writeShortLE(wavData, channels)
+        writeIntLE(wavData, sampleRate)
+        writeIntLE(wavData, sampleRate * channels * bitsPerSample / 8)
+        writeShortLE(wavData, channels * bitsPerSample / 8)
+        writeShortLE(wavData, bitsPerSample)
+        wavData.write("data".toByteArray())
+        writeIntLE(wavData, pcmData.size)
+        wavData.write(pcmData)
+        return wavData.toByteArray()
+    }
+
     fun readLittleEndianInt(buffer: ByteArray, offset: Int): Int =
         (buffer[offset].toInt() and 0xFF) or
         ((buffer[offset + 1].toInt() and 0xFF) shl 8) or
@@ -57,33 +89,24 @@ object WavUtils {
         buffer[offset + 3] = (value shr 24 and 0xFF).toByte()
     }
 
+    private fun writeIntLE(out: ByteArrayOutputStream, value: Int) {
+        out.write(byteArrayOf(
+            (value and 0xFF).toByte(),
+            (value shr 8 and 0xFF).toByte(),
+            (value shr 16 and 0xFF).toByte(),
+            (value shr 24 and 0xFF).toByte()
+        ))
+    }
+
     private fun writeShortLE(buffer: ByteArray, offset: Int, value: Short) {
         buffer[offset] = (value.toInt() and 0xFF).toByte()
         buffer[offset + 1] = (value.toInt() shr 8 and 0xFF).toByte()
     }
 
-    /**
-     * Parses WAV ByteArray to FloatArray samples.
-     *
-     * Assumes WAV format with 44-byte header and 16-bit signed PCM samples.
-     * Converts to normalized float values in range [-1.0, 1.0].
-     */
-    fun parseWavToFloats(wavData: ByteArray): FloatArray {
-        if (wavData.size <= WAV_HEADER_SIZE) {
-            throw IllegalArgumentException("WAV data too short: ${wavData.size} bytes")
-        }
-
-        val numSamples = (wavData.size - WAV_HEADER_SIZE) / 2
-        val samples = FloatArray(numSamples)
-
-        val buffer = ByteBuffer.wrap(wavData, WAV_HEADER_SIZE, wavData.size - WAV_HEADER_SIZE)
-        buffer.order(ByteOrder.LITTLE_ENDIAN)
-
-        for (i in 0 until numSamples) {
-            val shortValue = buffer.short
-            samples[i] = shortValue / 32768.0f
-        }
-
-        return samples
+    private fun writeShortLE(out: ByteArrayOutputStream, value: Int) {
+        out.write(byteArrayOf(
+            (value and 0xFF).toByte(),
+            (value shr 8 and 0xFF).toByte()
+        ))
     }
 }

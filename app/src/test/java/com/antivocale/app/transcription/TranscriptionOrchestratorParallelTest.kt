@@ -9,6 +9,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Rule
@@ -42,8 +43,8 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
 
     // ---- Helpers ----
 
-    private fun stubPreprocessing(chunkCount: Int, durationSeconds: Double = 120.0): List<ByteArray> {
-        val chunks = (1..chunkCount).map { byteArrayOf(0x52, 0x49, 0x46, 0x46, it.toByte()) }
+    private fun stubPreprocessing(chunkCount: Int, durationSeconds: Double = 120.0): List<FloatArray> {
+        val chunks = (1..chunkCount).map { FloatArray(1000) { 0.5f } }
         every {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = any(),
@@ -51,14 +52,48 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
             )
         } returns AudioPreprocessor.PreprocessingResult(
             chunks = chunks,
+            sampleRate = 16000,
             totalDurationSeconds = durationSeconds,
             chunkCount = chunkCount,
             isVadSegmented = false
         )
+
+        // Also mock the streaming pipeline path used when pipeline is enabled
+        val streamEvents = buildList {
+            add(AudioPreprocessor.StreamEvent.Header(
+                AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = durationSeconds,
+                    expectedChunkCount = chunkCount
+                )
+            ))
+            chunks.forEachIndexed { index, samples ->
+                add(AudioPreprocessor.StreamEvent.Chunk(
+                    AudioPreprocessor.StreamChunk(
+                        samples = samples,
+                        sampleRate = 16000,
+                        chunkIndex = index,
+                        isLast = index == chunks.lastIndex
+                    )
+                ))
+            }
+        }
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any()
+            )
+        } returns flow {
+            streamEvents.forEach { emit(it) }
+        }
+
         return chunks
     }
 
@@ -95,7 +130,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
         stubPreprocessing(chunkCount = 4)
 
         var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any()) } answers {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             Result.success(chunkTexts[callIndex++])
         }
 
@@ -112,7 +147,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
         stubPreprocessing(chunkCount = 4)
 
         var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any()) } answers {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             Result.success(chunkTexts[callIndex++])
         }
 
@@ -123,12 +158,12 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
     }
 
     @Test
-    fun `parallel chunks with one failure - entire result is failure`() = runTest {
+    fun `parallel chunks with one failure - succeeds with remaining chunks`() = runTest {
         val chunkTexts = listOf("chunk1", "chunk2", "chunk3", "chunk4")
         stubPreprocessing(chunkCount = 4)
 
         var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any()) } answers {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             val idx = callIndex++
             if (idx == 2) {
                 Result.failure(RuntimeException("Chunk 3 failed"))
@@ -141,13 +176,8 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
         try {
             val result = scope.runParallelAudioRequest()
 
-            assertTrue("Expected failure", result.isFailure)
-            val error = result.exceptionOrNull()
-            assertNotNull(error)
-            assertTrue(
-                "Expected chunk failure message, got: ${error?.message}",
-                error?.message?.contains("Chunk") == true || error?.message?.contains("failed") == true
-            )
+            assertTrue("Expected success with partial results", result.isSuccess)
+            assertEquals("chunk1 chunk2 chunk4", result.getOrNull())
         } finally {
             scope.cancel()
         }
@@ -158,7 +188,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
         stubPreprocessing(chunkCount = 4)
 
         var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any()) } answers {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             val idx = callIndex++
             Result.success("text$idx")
         }
@@ -183,7 +213,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
         stubPreprocessing(chunkCount = 4)
 
         var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any()) } answers {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             val idx = callIndex++
             Result.success("text$idx")
         }
@@ -206,7 +236,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
     fun `parallel chunks all blank - returns failure`() = runTest {
         stubPreprocessing(chunkCount = 3)
 
-        coEvery { backend.transcribeAudio(any(), any()) } returns Result.success("   ")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("   ")
 
         val result = runParallelAudioRequest()
 

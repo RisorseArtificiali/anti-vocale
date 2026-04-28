@@ -2,13 +2,10 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
-import com.antivocale.app.util.WavUtils
 import com.k2fsa.sherpa.onnx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 /**
  * Transcription backend using sherpa-onnx with Whisper models.
@@ -126,21 +123,17 @@ class WhisperBackend : TranscriptionBackend {
         }
     }
 
-    override suspend fun transcribeAudio(audioData: ByteArray, prompt: String): Result<String> {
+    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<String> {
         val rec = recognizer
             ?: return Result.failure(IllegalStateException("Backend not initialized"))
 
         return withContext(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Transcribing audio: ${audioData.size} bytes")
-
-                // Convert WAV ByteArray to float samples
-                val samples = WavUtils.parseWavToFloats(audioData)
-                Log.d(TAG, "Parsed ${samples.size} audio samples, duration: ${samples.size / 16000.0f}s")
+                Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
 
                 // Create stream and process audio
                 val stream = rec.createStream()
-                stream.acceptWaveform(samples, 16000)
+                stream.acceptWaveform(samples, sampleRate)
                 rec.decode(stream)
 
                 // Get result

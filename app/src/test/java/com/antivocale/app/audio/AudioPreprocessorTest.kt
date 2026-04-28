@@ -63,14 +63,16 @@ class AudioPreprocessorTest {
 
     @Test
     fun `PreprocessingResult stores correct values`() {
-        val chunks = listOf(byteArrayOf(1, 2, 3), byteArrayOf(4, 5, 6))
+        val chunks = listOf(FloatArray(3) { 0.1f }, FloatArray(3) { 0.2f })
         val result = AudioPreprocessor.PreprocessingResult(
             chunks = chunks,
+            sampleRate = 16000,
             totalDurationSeconds = 45.0,
             chunkCount = 2
         )
 
         assertEquals(2, result.chunks.size)
+        assertEquals(16000, result.sampleRate)
         assertEquals(45.0, result.totalDurationSeconds, 0.001)
         assertEquals(2, result.chunkCount)
     }

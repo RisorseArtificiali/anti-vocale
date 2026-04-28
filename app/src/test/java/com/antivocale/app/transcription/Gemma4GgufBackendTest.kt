@@ -124,7 +124,7 @@ class Gemma4GgufBackendTest {
 
     @Test
     fun `transcribeAudio returns failure`() = runTest {
-        val result = backend.transcribeAudio(ByteArray(100), "transcribe")
+        val result = backend.transcribeAudio(FloatArray(100), 16000, "transcribe")
 
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is UnsupportedOperationException)

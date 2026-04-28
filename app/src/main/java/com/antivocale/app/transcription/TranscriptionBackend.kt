@@ -45,8 +45,11 @@ interface TranscriptionBackend {
 
     /**
      * Transcribes audio data to text.
+     *
+     * @param samples PCM float samples normalized to [-1.0, 1.0], mono channel
+     * @param sampleRate Sample rate of the audio data
      */
-    suspend fun transcribeAudio(audioData: ByteArray, prompt: String): Result<String>
+    suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<String>
 
     /**
      * Generates text from a prompt.

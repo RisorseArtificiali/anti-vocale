@@ -19,7 +19,8 @@ class AudioPreprocessorProgressiveTest {
     @Test
     fun `PreprocessingResult defaults isVadSegmented to false`() {
         val result = AudioPreprocessor.PreprocessingResult(
-            chunks = listOf(byteArrayOf(1, 2, 3)),
+            chunks = listOf(FloatArray(3) { it.toFloat() }),
+            sampleRate = 16000,
             totalDurationSeconds = 5.0,
             chunkCount = 1
         )
@@ -30,7 +31,8 @@ class AudioPreprocessorProgressiveTest {
     @Test
     fun `PreprocessingResult with isVadSegmented true stores correct flag`() {
         val result = AudioPreprocessor.PreprocessingResult(
-            chunks = listOf(byteArrayOf(1), byteArrayOf(2)),
+            chunks = listOf(FloatArray(1) { 1.0f }, FloatArray(1) { 2.0f }),
+            sampleRate = 16000,
             totalDurationSeconds = 8.0,
             chunkCount = 2,
             isVadSegmented = true
@@ -44,13 +46,14 @@ class AudioPreprocessorProgressiveTest {
     @Test
     fun `PreprocessingResult chunk count matches segments count`() {
         val segments = listOf(
-            byteArrayOf(1, 2, 3),
-            byteArrayOf(4, 5),
-            byteArrayOf(6, 7, 8, 9)
+            FloatArray(3) { 1.0f },
+            FloatArray(2) { 2.0f },
+            FloatArray(4) { 3.0f }
         )
 
         val result = AudioPreprocessor.PreprocessingResult(
             chunks = segments,
+            sampleRate = 16000,
             totalDurationSeconds = 12.0,
             chunkCount = segments.size,
             isVadSegmented = true
@@ -62,9 +65,9 @@ class AudioPreprocessorProgressiveTest {
 
     @Test
     fun `PreprocessingResult single segment isVadSegmented false`() {
-        // Single segment should use the non-progressive path
         val result = AudioPreprocessor.PreprocessingResult(
-            chunks = listOf(byteArrayOf(1, 2, 3)),
+            chunks = listOf(FloatArray(3) { it.toFloat() }),
+            sampleRate = 16000,
             totalDurationSeconds = 5.0,
             chunkCount = 1,
             isVadSegmented = false
@@ -78,16 +81,14 @@ class AudioPreprocessorProgressiveTest {
 
     @Test
     fun `PreprocessingResult totalDurationSeconds reflects speech-only duration`() {
-        // When VAD strips silence, the duration should reflect only speech
-        // not the original audio length (e.g., 30s audio with 10s speech → 10s)
         val result = AudioPreprocessor.PreprocessingResult(
-            chunks = listOf(byteArrayOf(1, 2)),
+            chunks = listOf(FloatArray(2) { 1.0f }),
+            sampleRate = 16000,
             totalDurationSeconds = 10.0,
             chunkCount = 1,
             isVadSegmented = true
         )
 
-        // Duration should be the speech-only duration, not the original
         assertEquals(10.0, result.totalDurationSeconds, 0.001)
         assertTrue(result.isVadSegmented)
     }
@@ -96,10 +97,9 @@ class AudioPreprocessorProgressiveTest {
 
     @Test
     fun `PreprocessingResult without isVadSegmented parameter defaults to false`() {
-        // Existing code that doesn't pass isVadSegmented should still compile
-        // and behave correctly (non-progressive path)
         val result = AudioPreprocessor.PreprocessingResult(
-            chunks = listOf(byteArrayOf(1)),
+            chunks = listOf(FloatArray(1) { 1.0f }),
+            sampleRate = 16000,
             totalDurationSeconds = 30.0,
             chunkCount = 1
         )

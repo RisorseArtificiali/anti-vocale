@@ -1,15 +1,16 @@
 package com.antivocale.app.audio
 
 import android.content.Context
-import android.media.AudioFormat
 import android.media.MediaCodec
-import android.media.MediaCodecInfo
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.util.Log
-import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.trySendBlocking
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.flow
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.inject.Inject
@@ -37,14 +38,42 @@ class AudioPreprocessor @Inject constructor() {
     }
 
     /**
-     * Result of audio preprocessing containing one or more WAV chunks.
+     * Result of audio preprocessing containing one or more audio chunks.
      */
     data class PreprocessingResult(
-        val chunks: List<ByteArray>,
+        val chunks: List<FloatArray>,
+        val sampleRate: Int,
         val totalDurationSeconds: Double,
         val chunkCount: Int,
         val isVadSegmented: Boolean = false
     )
+
+    /**
+     * A single chunk emitted by the streaming preprocessor.
+     */
+    data class StreamChunk(
+        val samples: FloatArray,
+        val sampleRate: Int,
+        val chunkIndex: Int,
+        val isLast: Boolean
+    )
+
+    /**
+     * Metadata emitted before the first stream chunk.
+     */
+    data class StreamHeader(
+        val sampleRate: Int,
+        val totalDurationSeconds: Double,
+        val expectedChunkCount: Int
+    )
+
+    /**
+     * Sealed output of the streaming preprocessor.
+     */
+    sealed class StreamEvent {
+        data class Header(val header: StreamHeader) : StreamEvent()
+        data class Chunk(val chunk: StreamChunk) : StreamEvent()
+    }
 
     /**
      * Sealed class for preprocessing errors
@@ -78,31 +107,13 @@ class AudioPreprocessor @Inject constructor() {
         vadProvider: String = "cpu"
     ): PreprocessingResult {
         Log.d(TAG, "Preparing audio: $inputPath")
-
-        // Validate input file exists
-        val inputFile = File(inputPath)
-        if (!inputFile.exists()) {
-            Log.e(TAG, "Input file does not exist: $inputPath")
-            throw PreprocessingError.FileNotFound
-        }
-
-        // Check file size
-        val fileSize = inputFile.length()
-        if (fileSize > MAX_FILE_SIZE_BYTES) {
-            Log.e(TAG, "File too large: $fileSize bytes")
-            throw PreprocessingError.FileTooLarge
-        }
-
-        if (fileSize == 0L) {
-            Log.e(TAG, "File is empty")
-            throw PreprocessingError.InvalidFormat
-        }
+        validateInputFile(inputPath)
 
         // Extract and resample audio
-        val pcmData = extractAndResampleAudio(inputPath)
+        val audioData = extractToMonoFloat(inputPath)
 
         // Get duration
-        val duration = pcmData.size.toDouble() / TARGET_SAMPLE_RATE / 2 // 16-bit = 2 bytes
+        val duration = audioData.samples.size.toDouble() / audioData.sampleRate
 
         if (duration > MAX_DURATION_SECONDS) {
             Log.e(TAG, "Audio too long: ${duration}s")
@@ -112,17 +123,17 @@ class AudioPreprocessor @Inject constructor() {
         Log.d(TAG, "Audio duration: ${duration}s")
 
         // Apply VAD silence stripping if enabled
-        var pcmToProcess: ByteArray
+        var samplesToProcess: FloatArray
         if (enableVad && context != null) {
             try {
-                val floatSamples = VadProcessor.pcmBytesToFloats(pcmData)
+                val floatSamples = audioData.samples
                 val vadResult = VadProcessor.detectSpeech(context, floatSamples, vadNumThreads, vadProvider)
                 val segments = vadResult.speechSegments
 
                 // Multiple segments: merge adjacent ones up to 28s (WhisperX-style).
                 // No overlap = no repetition. Boundaries are on VAD silence gaps.
                 if (segments.size > 1) {
-                    val maxMergeSamples = TARGET_SAMPLE_RATE * 28 // 28s, under Whisper's 30s limit
+                    val maxMergeSamples = audioData.sampleRate * 28 // 28s, under Whisper's 30s limit
 
                     val mergedSegments = mutableListOf<FloatArray>()
                     var current = segments[0].clone()
@@ -141,17 +152,14 @@ class AudioPreprocessor @Inject constructor() {
                     }
                     mergedSegments.add(current)
 
-                    val segmentWavs = mergedSegments.map { seg ->
-                        val segPcm = VadProcessor.floatsToPcmBytes(seg)
-                        createWavByteArray(segPcm)
-                    }
                     Log.i(TAG, "VAD progressive: ${segments.size} raw → ${mergedSegments.size} merged segments, " +
                             "${"%.1f".format(vadResult.originalDurationSeconds)}s → " +
                             "${"%.1f".format(vadResult.totalSpeechDurationSeconds)}s speech")
                     return PreprocessingResult(
-                        chunks = segmentWavs,
+                        chunks = mergedSegments,
+                        sampleRate = audioData.sampleRate,
                         totalDurationSeconds = vadResult.totalSpeechDurationSeconds,
-                        chunkCount = segmentWavs.size,
+                        chunkCount = mergedSegments.size,
                         isVadSegmented = true
                     )
                 }
@@ -165,59 +173,260 @@ class AudioPreprocessor @Inject constructor() {
                     offset += seg.size
                 }
 
-                val strippedPcm = VadProcessor.floatsToPcmBytes(merged)
-                val strippedDuration = strippedPcm.size.toDouble() / TARGET_SAMPLE_RATE / 2
+                val strippedDuration = merged.size.toDouble() / audioData.sampleRate
                 Log.i(TAG, "VAD stripped ${"%.1f".format(vadResult.originalDurationSeconds)}s → " +
                         "${"%.1f".format(strippedDuration)}s (${vadResult.segmentCount} segments)")
 
-                pcmToProcess = strippedPcm
+                samplesToProcess = merged
             } catch (e: Exception) {
                 Log.e(TAG, "VAD processing failed, using full audio", e)
-                pcmToProcess = pcmData
+                samplesToProcess = audioData.samples
             }
         } else {
-            pcmToProcess = pcmData
+            samplesToProcess = audioData.samples
         }
 
-        val processedDuration = pcmToProcess.size.toDouble() / TARGET_SAMPLE_RATE / 2
+        val processedDuration = samplesToProcess.size.toDouble() / audioData.sampleRate
 
         // Chunk if necessary
         if (maxChunkDurationSeconds == null || processedDuration <= maxChunkDurationSeconds) {
-            val wavBytes = createWavByteArray(pcmToProcess)
             return PreprocessingResult(
-                chunks = listOf(wavBytes),
+                chunks = listOf(samplesToProcess),
+                sampleRate = audioData.sampleRate,
                 totalDurationSeconds = processedDuration,
                 chunkCount = 1
             )
         } else {
-            return chunkAudio(pcmToProcess, processedDuration, maxChunkDurationSeconds)
+            return chunkFloatAudio(samplesToProcess, audioData.sampleRate, processedDuration, maxChunkDurationSeconds)
         }
     }
 
     /**
-     * Extracts audio from file and resamples to 16kHz mono PCM.
+     * Streaming variant: produces audio chunks via Flow as MediaCodec decodes them.
+     *
+     * Emits StreamEvent.Header first (with total duration/chunk count), then
+     * StreamEvent.Chunk for each transcription-sized chunk as it becomes available.
+     * This allows the consumer to start transcribing chunk N while chunk N+1
+     * is still being decoded.
+     *
+     * Falls back to collecting all chunks synchronously for VAD-enabled requests.
      */
-    private fun extractAndResampleAudio(inputPath: String): ByteArray {
+    fun prepareAudioStream(
+        inputPath: String,
+        maxChunkDurationSeconds: Int? = 30,
+        context: Context? = null,
+        enableVad: Boolean = false,
+        vadNumThreads: Int = 1,
+        vadProvider: String = "cpu"
+    ): Flow<StreamEvent> = flow {
+        validateInputFile(inputPath)
+
+        // VAD requires full audio — use synchronous path and emit results
+        if (enableVad && context != null) {
+            val result = prepareAudioForMediaPipe(
+                inputPath = inputPath,
+                cacheDir = File(File(inputPath).parent ?: "."),
+                maxChunkDurationSeconds = maxChunkDurationSeconds,
+                context = context,
+                enableVad = true,
+                vadNumThreads = vadNumThreads,
+                vadProvider = vadProvider
+            )
+            emit(StreamEvent.Header(StreamHeader(
+                sampleRate = result.sampleRate,
+                totalDurationSeconds = result.totalDurationSeconds,
+                expectedChunkCount = result.chunkCount
+            )))
+            result.chunks.forEachIndexed { i, chunk ->
+                emit(StreamEvent.Chunk(StreamChunk(
+                    samples = chunk,
+                    sampleRate = result.sampleRate,
+                    chunkIndex = i,
+                    isLast = i == result.chunks.lastIndex
+                )))
+            }
+            return@flow
+        }
+
+        // Streaming path: decode and emit chunks
+        val channel = Channel<StreamEvent>(capacity = Channel.BUFFERED)
+        val decoderThread = Thread {
+            val extractor = MediaExtractor()
+            try {
+                extractor.setDataSource(inputPath)
+                val audioTrackIndex = findAudioTrack(extractor)
+                val inputFormat = extractor.getTrackFormat(audioTrackIndex)
+                extractor.selectTrack(audioTrackIndex)
+                val inputSampleRate = inputFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+                val inputChannels = inputFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
+                val mime = inputFormat.getString(MediaFormat.KEY_MIME)!!
+
+                val durationUs = inputFormat.getLong(MediaFormat.KEY_DURATION)
+                val totalDurationSeconds = durationUs / 1_000_000.0
+                if (totalDurationSeconds > MAX_DURATION_SECONDS) {
+                    channel.close(PreprocessingError.DurationTooLong)
+                    return@Thread
+                }
+
+                val chunkSamples = if (maxChunkDurationSeconds != null) inputSampleRate * maxChunkDurationSeconds else Int.MAX_VALUE
+                val expectedChunks = if (maxChunkDurationSeconds != null) {
+                    (totalDurationSeconds / maxChunkDurationSeconds).toInt().coerceAtLeast(1)
+                } else 1
+
+                channel.trySendBlocking(StreamEvent.Header(StreamHeader(
+                    sampleRate = inputSampleRate,
+                    totalDurationSeconds = totalDurationSeconds,
+                    expectedChunkCount = expectedChunks
+                )))
+
+                val decoder = MediaCodec.createDecoderByType(mime)
+                val accumulator = mutableListOf<FloatArray>()
+                var accumulatedSamples = 0
+                var chunkIndex = 0
+                try {
+                    decoder.configure(inputFormat, null, null, 0)
+                    decoder.start()
+
+                    val bufferInfo = MediaCodec.BufferInfo()
+                    var inputEOS = false
+                    var outputEOS = false
+
+                    while (!outputEOS) {
+                        if (!inputEOS) {
+                            val inputBufferIndex = decoder.dequeueInputBuffer(TIMEOUT_US)
+                            if (inputBufferIndex >= 0) {
+                                val inputBuffer = decoder.getInputBuffer(inputBufferIndex)
+                                val sampleSize = extractor.readSampleData(inputBuffer!!, 0)
+                                if (sampleSize < 0) {
+                                    decoder.queueInputBuffer(inputBufferIndex, 0, 0, 0, MediaCodec.BUFFER_FLAG_END_OF_STREAM)
+                                    inputEOS = true
+                                } else {
+                                    decoder.queueInputBuffer(inputBufferIndex, 0, sampleSize, extractor.sampleTime, 0)
+                                    extractor.advance()
+                                }
+                            }
+                        }
+
+                        val outputBufferIndex = decoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_US)
+                        if (outputBufferIndex >= 0) {
+                            val outputBuffer = decoder.getOutputBuffer(outputBufferIndex)
+                            if (outputBuffer != null && bufferInfo.size > 0) {
+                                val decoded = decodeChunkToMonoFloat(outputBuffer, bufferInfo, inputChannels)
+                                accumulator.add(decoded)
+                                accumulatedSamples += decoded.size
+
+                                while (accumulatedSamples >= chunkSamples && chunkSamples < Int.MAX_VALUE) {
+                                    val chunk = mergeAccumulated(accumulator, chunkSamples)
+                                    channel.trySendBlocking(StreamEvent.Chunk(StreamChunk(
+                                        samples = chunk,
+                                        sampleRate = inputSampleRate,
+                                        chunkIndex = chunkIndex,
+                                        isLast = false
+                                    )))
+                                    chunkIndex++
+                                    accumulatedSamples = accumulator.sumOf { it.size }
+                                }
+                            }
+                            decoder.releaseOutputBuffer(outputBufferIndex, false)
+                            if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) outputEOS = true
+                        } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                            Log.d(TAG, "Output format changed: ${decoder.outputFormat}")
+                        }
+                    }
+                } finally {
+                    try { decoder.stop() } catch (_: Exception) {}
+                    decoder.release()
+                }
+
+                // Emit remaining samples as final chunk
+                if (accumulator.isNotEmpty()) {
+                    val remaining = mergeAccumulated(accumulator, Int.MAX_VALUE)
+                    if (remaining.isNotEmpty()) {
+                        channel.trySendBlocking(StreamEvent.Chunk(StreamChunk(
+                            samples = remaining,
+                            sampleRate = inputSampleRate,
+                            chunkIndex = -1,
+                            isLast = true
+                        )))
+                    }
+                }
+                channel.close()
+            } catch (e: PreprocessingError) {
+                channel.close(e)
+            } catch (e: Exception) {
+                Log.e(TAG, "Error streaming audio", e)
+                channel.close(PreprocessingError.ConversionFailed(e.message ?: "Unknown error"))
+            } finally {
+                extractor.release()
+            }
+        }
+        decoderThread.start()
+
+        try {
+            for (event in channel) {
+                emit(event)
+            }
+        } catch (e: PreprocessingError) {
+            throw e
+        } catch (e: Exception) {
+            throw PreprocessingError.ConversionFailed(e.message ?: "Unknown error")
+        } finally {
+            decoderThread.interrupt()
+        }
+    }
+
+    /**
+     * Merges accumulated FloatArray chunks and extracts up to [maxSamples] samples.
+     * Remaining samples are left in the accumulator.
+     */
+    private fun mergeAccumulated(accumulator: MutableList<FloatArray>, maxSamples: Int): FloatArray {
+        val totalSize = accumulator.sumOf { it.size }
+        if (totalSize == 0) return FloatArray(0)
+
+        val extractSize = minOf(maxSamples, totalSize)
+        val result = FloatArray(extractSize)
+        var written = 0
+        val iter = accumulator.iterator()
+
+        while (iter.hasNext() && written < extractSize) {
+            val chunk = iter.next()
+            val toWrite = minOf(chunk.size, extractSize - written)
+            System.arraycopy(chunk, 0, result, written, toWrite)
+            written += toWrite
+
+            if (toWrite < chunk.size) {
+                // Partial consumption — replace with remaining portion
+                iter.remove()
+                accumulator.add(0, chunk.copyOfRange(toWrite, chunk.size))
+                break
+            } else {
+                iter.remove()
+            }
+        }
+
+        return result
+    }
+
+    private data class MonoAudioData(
+        val samples: FloatArray,
+        val sampleRate: Int
+    )
+
+    /**
+     * Extracts audio from file and converts to mono FloatArray in a single pass.
+     *
+     * Reads directly from MediaCodec's output ByteBuffer, performs stereo→mono
+     * averaging and normalizes to float [-1.0, 1.0] without intermediate ByteArrays.
+     * Does NOT resample — sherpa-onnx handles resampling internally with a
+     * higher-quality sinc resampler.
+     */
+    private fun extractToMonoFloat(inputPath: String): MonoAudioData {
         val extractor = MediaExtractor()
 
         try {
             extractor.setDataSource(inputPath)
 
-            // Find audio track
-            var audioTrackIndex = -1
-            for (i in 0 until extractor.trackCount) {
-                val format = extractor.getTrackFormat(i)
-                val mime = format.getString(MediaFormat.KEY_MIME)
-                if (mime?.startsWith("audio/") == true) {
-                    audioTrackIndex = i
-                    break
-                }
-            }
-
-            if (audioTrackIndex == -1) {
-                throw PreprocessingError.NoAudioTrack
-            }
-
+            val audioTrackIndex = findAudioTrack(extractor)
             val inputFormat = extractor.getTrackFormat(audioTrackIndex)
             extractor.selectTrack(audioTrackIndex)
 
@@ -227,198 +436,150 @@ class AudioPreprocessor @Inject constructor() {
 
             Log.d(TAG, "Input: $mime, ${inputSampleRate}Hz, $inputChannels channels")
 
-            val isPassthrough = inputSampleRate == TARGET_SAMPLE_RATE && inputChannels == TARGET_CHANNELS
-            if (isPassthrough) {
-                Log.d(TAG, "Fast path: input already 16kHz mono, skipping resampling")
-            }
-
-            // Create decoder
             val decoder = MediaCodec.createDecoderByType(mime)
-            decoder.configure(inputFormat, null, null, 0)
-            decoder.start()
+            val sampleChunks = mutableListOf<FloatArray>()
+            try {
+                decoder.configure(inputFormat, null, null, 0)
+                decoder.start()
 
-            val pcmData = ByteArrayOutputStream()
-            val bufferInfo = MediaCodec.BufferInfo()
-            var inputEOS = false
-            var outputEOS = false
+                val bufferInfo = MediaCodec.BufferInfo()
+                var inputEOS = false
+                var outputEOS = false
 
-            val resampleRatio = TARGET_SAMPLE_RATE.toDouble() / inputSampleRate
+                while (!outputEOS) {
+                    if (!inputEOS) {
+                        val inputBufferIndex = decoder.dequeueInputBuffer(TIMEOUT_US)
+                        if (inputBufferIndex >= 0) {
+                            val inputBuffer = decoder.getInputBuffer(inputBufferIndex)
+                            val sampleSize = extractor.readSampleData(inputBuffer!!, 0)
 
-            while (!outputEOS) {
-                // Feed input to decoder
-                if (!inputEOS) {
-                    val inputBufferIndex = decoder.dequeueInputBuffer(TIMEOUT_US)
-                    if (inputBufferIndex >= 0) {
-                        val inputBuffer = decoder.getInputBuffer(inputBufferIndex)
-                        val sampleSize = extractor.readSampleData(inputBuffer!!, 0)
-
-                        if (sampleSize < 0) {
-                            decoder.queueInputBuffer(
-                                inputBufferIndex, 0, 0, 0,
-                                MediaCodec.BUFFER_FLAG_END_OF_STREAM
-                            )
-                            inputEOS = true
-                        } else {
-                            val presentationTimeUs = extractor.sampleTime
-                            decoder.queueInputBuffer(
-                                inputBufferIndex, 0, sampleSize,
-                                presentationTimeUs, 0
-                            )
-                            extractor.advance()
-                        }
-                    }
-                }
-
-                // Get decoded output
-                val outputBufferIndex = decoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_US)
-                if (outputBufferIndex >= 0) {
-                    val outputBuffer = decoder.getOutputBuffer(outputBufferIndex)
-
-                    if (outputBuffer != null && bufferInfo.size > 0) {
-                        val chunk = ByteArray(bufferInfo.size)
-                        outputBuffer.get(chunk)
-                        outputBuffer.clear()
-
-                        if (isPassthrough) {
-                            pcmData.write(chunk)
-                        } else {
-                            val monoData = if (inputChannels == 2) stereoToMono(chunk) else chunk
-                            val resampledData = if (inputSampleRate != TARGET_SAMPLE_RATE) resampleAudio(monoData, resampleRatio) else monoData
-                            pcmData.write(resampledData)
+                            if (sampleSize < 0) {
+                                decoder.queueInputBuffer(
+                                    inputBufferIndex, 0, 0, 0,
+                                    MediaCodec.BUFFER_FLAG_END_OF_STREAM
+                                )
+                                inputEOS = true
+                            } else {
+                                decoder.queueInputBuffer(
+                                    inputBufferIndex, 0, sampleSize,
+                                    extractor.sampleTime, 0
+                                )
+                                extractor.advance()
+                            }
                         }
                     }
 
-                    decoder.releaseOutputBuffer(outputBufferIndex, false)
+                    val outputBufferIndex = decoder.dequeueOutputBuffer(bufferInfo, TIMEOUT_US)
+                    if (outputBufferIndex >= 0) {
+                        val outputBuffer = decoder.getOutputBuffer(outputBufferIndex)
 
-                    if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
-                        outputEOS = true
+                        if (outputBuffer != null && bufferInfo.size > 0) {
+                            val chunk = decodeChunkToMonoFloat(outputBuffer, bufferInfo, inputChannels)
+                            sampleChunks.add(chunk)
+                        }
+
+                        decoder.releaseOutputBuffer(outputBufferIndex, false)
+
+                        if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) {
+                            outputEOS = true
+                        }
+                    } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                        Log.d(TAG, "Output format changed: ${decoder.outputFormat}")
                     }
-                } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
-                    Log.d(TAG, "Output format changed: ${decoder.outputFormat}")
                 }
+            } finally {
+                try { decoder.stop() } catch (_: Exception) {}
+                decoder.release()
             }
 
-            decoder.stop()
-            decoder.release()
-            extractor.release()
+            // Merge chunks into single FloatArray
+            val totalSamples = sampleChunks.sumOf { it.size }
+            val merged = FloatArray(totalSamples)
+            var offset = 0
+            for (chunk in sampleChunks) {
+                System.arraycopy(chunk, 0, merged, offset, chunk.size)
+                offset += chunk.size
+            }
 
-            val result = pcmData.toByteArray()
-            Log.d(TAG, "Extracted ${result.size} bytes of PCM audio (passthrough=$isPassthrough)")
-            return result
+            Log.d(TAG, "Extracted ${merged.size} mono float samples at ${inputSampleRate}Hz")
+            return MonoAudioData(samples = merged, sampleRate = inputSampleRate)
 
+        } catch (e: PreprocessingError) {
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "Error extracting audio", e)
             throw PreprocessingError.ConversionFailed(e.message ?: "Unknown error")
+        } finally {
+            extractor.release()
         }
     }
 
-    /**
-     * Converts stereo PCM to mono by averaging channels.
-     */
-    private fun stereoToMono(stereoData: ByteArray): ByteArray {
-        val monoSamples = stereoData.size / 4 // 2 bytes per sample, 2 channels
-        val monoData = ByteArray(monoSamples * 2)
+    private fun validateInputFile(inputPath: String) {
+        val inputFile = File(inputPath)
+        if (!inputFile.exists()) throw PreprocessingError.FileNotFound
+        val fileSize = inputFile.length()
+        if (fileSize > MAX_FILE_SIZE_BYTES) throw PreprocessingError.FileTooLarge
+        if (fileSize == 0L) throw PreprocessingError.InvalidFormat
+    }
 
-        for (i in 0 until monoSamples) {
-            val leftSample = ByteBuffer.wrap(stereoData, i * 4, 2)
-                .order(ByteOrder.LITTLE_ENDIAN).short
-            val rightSample = ByteBuffer.wrap(stereoData, i * 4 + 2, 2)
-                .order(ByteOrder.LITTLE_ENDIAN).short
-
-            val monoSample = ((leftSample.toInt() + rightSample.toInt()) / 2).toShort()
-
-            ByteBuffer.wrap(monoData, i * 2, 2)
-                .order(ByteOrder.LITTLE_ENDIAN)
-                .putShort(monoSample)
+    private fun findAudioTrack(extractor: MediaExtractor): Int {
+        for (i in 0 until extractor.trackCount) {
+            val mime = extractor.getTrackFormat(i).getString(MediaFormat.KEY_MIME)
+            if (mime?.startsWith("audio/") == true) return i
         }
-
-        return monoData
+        throw PreprocessingError.NoAudioTrack
     }
 
     /**
-     * Simple linear interpolation resampling.
+     * Converts a MediaCodec output chunk directly to mono FloatArray.
+     *
+     * Reads 16-bit PCM from the ByteBuffer, performs stereo→mono averaging,
+     * and normalizes to [-1.0, 1.0] in a single pass — no intermediate ByteArrays.
      */
-    private fun resampleAudio(inputData: ByteArray, ratio: Double): ByteArray {
-        val inputSamples = inputData.size / 2 // 16-bit samples
-        val outputSamples = (inputSamples * ratio).toInt()
-        val outputData = ByteArray(outputSamples * 2)
+    private fun decodeChunkToMonoFloat(
+        buffer: ByteBuffer,
+        info: MediaCodec.BufferInfo,
+        channels: Int
+    ): FloatArray {
+        val bytesPerFrame = channels * 2 // 16-bit = 2 bytes per channel
+        val numFrames = info.size / bytesPerFrame
+        val samples = FloatArray(numFrames)
 
-        for (i in 0 until outputSamples) {
-            val srcPos = i / ratio
-            val srcIndex = srcPos.toInt()
+        buffer.position(info.offset)
+        buffer.order(ByteOrder.LITTLE_ENDIAN)
 
-            if (srcIndex < inputSamples - 1) {
-                // Linear interpolation
-                val frac = srcPos - srcIndex
-
-                val sample1 = ByteBuffer.wrap(inputData, srcIndex * 2, 2)
-                    .order(ByteOrder.LITTLE_ENDIAN).short
-                val sample2 = ByteBuffer.wrap(inputData, (srcIndex + 1) * 2, 2)
-                    .order(ByteOrder.LITTLE_ENDIAN).short
-
-                val interpolatedSample = (sample1 * (1 - frac) + sample2 * frac).toInt().toShort()
-
-                ByteBuffer.wrap(outputData, i * 2, 2)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                    .putShort(interpolatedSample)
-            } else if (srcIndex < inputSamples) {
-                // Last sample
-                val sample = ByteBuffer.wrap(inputData, srcIndex * 2, 2)
-                    .order(ByteOrder.LITTLE_ENDIAN).short
-                ByteBuffer.wrap(outputData, i * 2, 2)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                    .putShort(sample)
+        for (i in 0 until numFrames) {
+            samples[i] = if (channels == 2) {
+                val left = buffer.short
+                val right = buffer.short
+                ((left.toInt() + right.toInt()) / 2) / 32768.0f
+            } else {
+                buffer.short / 32768.0f
             }
         }
 
-        return outputData
+        return samples
     }
 
     /**
-     * Creates a WAV file byte array from PCM data.
+     * Chunks float audio data into segments of specified duration.
      */
-    private fun createWavByteArray(pcmData: ByteArray): ByteArray {
-        val wavData = ByteArrayOutputStream()
-
-        // RIFF header
-        wavData.write("RIFF".toByteArray())
-        wavData.write(intToLittleEndian(36 + pcmData.size))
-        wavData.write("WAVE".toByteArray())
-
-        // fmt chunk
-        wavData.write("fmt ".toByteArray())
-        wavData.write(intToLittleEndian(16)) // Chunk size
-        wavData.write(shortToLittleEndian(1)) // Audio format (PCM)
-        wavData.write(shortToLittleEndian(TARGET_CHANNELS))
-        wavData.write(intToLittleEndian(TARGET_SAMPLE_RATE))
-        wavData.write(intToLittleEndian(TARGET_SAMPLE_RATE * TARGET_CHANNELS * 2)) // Byte rate
-        wavData.write(shortToLittleEndian(TARGET_CHANNELS * 2)) // Block align
-        wavData.write(shortToLittleEndian(16)) // Bits per sample
-
-        // data chunk
-        wavData.write("data".toByteArray())
-        wavData.write(intToLittleEndian(pcmData.size))
-        wavData.write(pcmData)
-
-        return wavData.toByteArray()
-    }
-
-    /**
-     * Chunks audio data into segments of specified duration.
-     */
-    private fun chunkAudio(pcmData: ByteArray, duration: Double, maxChunkDurationSeconds: Int): PreprocessingResult {
-        val samplesPerChunk = TARGET_SAMPLE_RATE * maxChunkDurationSeconds * 2 // 16-bit = 2 bytes
-        val chunks = mutableListOf<ByteArray>()
+    private fun chunkFloatAudio(
+        samples: FloatArray,
+        sampleRate: Int,
+        duration: Double,
+        maxChunkDurationSeconds: Int
+    ): PreprocessingResult {
+        val samplesPerChunk = sampleRate * maxChunkDurationSeconds
+        val chunks = mutableListOf<FloatArray>()
         var offset = 0
         var chunkIndex = 0
 
-        while (offset < pcmData.size) {
-            val chunkSize = minOf(samplesPerChunk.toInt(), pcmData.size - offset)
-            val chunkData = pcmData.copyOfRange(offset, offset + chunkSize)
-            val wavChunk = createWavByteArray(chunkData)
-            chunks.add(wavChunk)
+        while (offset < samples.size) {
+            val chunkSize = minOf(samplesPerChunk, samples.size - offset)
+            chunks.add(samples.copyOfRange(offset, offset + chunkSize))
 
-            Log.d(TAG, "Created chunk $chunkIndex: ${chunkSize / 2} samples")
+            Log.d(TAG, "Created chunk $chunkIndex: $chunkSize samples")
 
             offset += chunkSize
             chunkIndex++
@@ -426,6 +587,7 @@ class AudioPreprocessor @Inject constructor() {
 
         return PreprocessingResult(
             chunks = chunks,
+            sampleRate = sampleRate,
             totalDurationSeconds = duration,
             chunkCount = chunks.size
         )
@@ -454,22 +616,6 @@ class AudioPreprocessor @Inject constructor() {
             Log.e(TAG, "Error getting audio duration", e)
             return 0.0
         }
-    }
-
-    private fun intToLittleEndian(value: Int): ByteArray {
-        return byteArrayOf(
-            (value and 0xFF).toByte(),
-            ((value shr 8) and 0xFF).toByte(),
-            ((value shr 16) and 0xFF).toByte(),
-            ((value shr 24) and 0xFF).toByte()
-        )
-    }
-
-    private fun shortToLittleEndian(value: Int): ByteArray {
-        return byteArrayOf(
-            (value and 0xFF).toByte(),
-            ((value shr 8) and 0xFF).toByte()
-        )
     }
 
     /**

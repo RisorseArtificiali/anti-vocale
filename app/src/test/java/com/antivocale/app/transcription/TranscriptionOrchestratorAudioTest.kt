@@ -7,6 +7,7 @@ import com.antivocale.app.data.TranscriptionCalibrator
 import io.mockk.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
@@ -30,12 +31,40 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
 
     // ---- Helper ----
 
-    private fun singleChunkResult(audioBytes: ByteArray = byteArrayOf(1, 2, 3)) =
+    private fun singleChunkResult(audioSamples: FloatArray = FloatArray(3) { it.toFloat() }) =
         AudioPreprocessor.PreprocessingResult(
-            chunks = listOf(audioBytes),
+            chunks = listOf(audioSamples),
+            sampleRate = 16000,
             totalDurationSeconds = 5.0,
             chunkCount = 1
         )
+
+    private fun stubSingleChunkStream(audioSamples: FloatArray = FloatArray(3) { it.toFloat() }) {
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any()
+            )
+        } returns flow {
+            emit(AudioPreprocessor.StreamEvent.Header(
+                AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = 5.0,
+                    expectedChunkCount = 1
+                )
+            ))
+            emit(AudioPreprocessor.StreamEvent.Chunk(
+                AudioPreprocessor.StreamChunk(
+                    samples = audioSamples,
+                    sampleRate = 16000,
+                    chunkIndex = 0,
+                    isLast = true
+                )
+            ))
+        }
+    }
 
     private suspend fun CoroutineScope.callProcessRequest(
         taskId: String = "test-1",
@@ -73,11 +102,13 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
             )
         } returns singleChunkResult()
+        stubSingleChunkStream()
 
-        coEvery { backend.transcribeAudio(any(), any()) } returns Result.success("  Hello world  ")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("  Hello world  ")
 
         val result = callProcessRequest(filePath = audioFile.absolutePath)
 
@@ -98,11 +129,13 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
             )
         } returns singleChunkResult()
+        stubSingleChunkStream()
 
-        coEvery { backend.transcribeAudio(any(), any()) } returns Result.success("   ")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("   ")
 
         val result = callProcessRequest(filePath = audioFile.absolutePath)
 
@@ -125,11 +158,13 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
             )
         } returns singleChunkResult()
+        stubSingleChunkStream()
 
-        coEvery { backend.transcribeAudio(any(), any()) } returns Result.success("Transcribed text")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("Transcribed text")
 
         val result = callProcessRequest(
             filePath = audioFile.absolutePath,
@@ -137,7 +172,7 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         )
 
         assertTrue(result.isSuccess)
-        coVerify { backend.transcribeAudio(any(), eq("Translate to Italian")) }
+        coVerify { backend.transcribeAudio(any(), any(), eq("Translate to Italian")) }
     }
 
     @Test
@@ -152,11 +187,13 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
             )
         } returns singleChunkResult()
+        stubSingleChunkStream()
 
-        coEvery { backend.transcribeAudio(any(), any()) } returns Result.success("Transcribed text")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("Transcribed text")
 
         val result = callProcessRequest(
             filePath = audioFile.absolutePath,
@@ -164,7 +201,7 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         )
 
         assertTrue(result.isSuccess)
-        coVerify { backend.transcribeAudio(any(), eq("Custom prompt")) }
+        coVerify { backend.transcribeAudio(any(), any(), eq("Custom prompt")) }
     }
 
     @Test
@@ -177,7 +214,16 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
+            )
+        } throws PreprocessingError.FileNotFound
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any()
             )
         } throws PreprocessingError.FileNotFound
 
@@ -200,7 +246,16 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
+            )
+        } throws RuntimeException("Codec exploded")
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any()
             )
         } throws RuntimeException("Codec exploded")
 
@@ -209,7 +264,7 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         assertTrue(result.isFailure)
         val error = result.exceptionOrNull()
         assertTrue(error is IllegalStateException)
-        assertTrue(error?.message?.contains("Audio preprocessing failed") == true)
+        assertTrue(error?.message?.contains("Pipeline failed") == true)
         verify {
             listener.onError(eq("test-1"), eq("INFERENCE_ERROR"), any(), eq(false), eq(false), any())
         }
@@ -250,7 +305,16 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
+            )
+        } throws PreprocessingError.FileNotFound
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any()
             )
         } throws PreprocessingError.FileNotFound
 

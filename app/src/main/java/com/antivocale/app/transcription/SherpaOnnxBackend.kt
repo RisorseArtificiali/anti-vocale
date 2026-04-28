@@ -2,13 +2,10 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
-import com.antivocale.app.util.WavUtils
 import com.k2fsa.sherpa.onnx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 
 /**
  * Transcription backend using sherpa-onnx with ONNX Runtime.
@@ -127,28 +124,24 @@ class SherpaOnnxBackend : TranscriptionBackend {
         }
     }
 
-    override suspend fun transcribeAudio(audioData: ByteArray, prompt: String): Result<String> {
+    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<String> {
         val rec = recognizer
             ?: return Result.failure(IllegalStateException("Backend not initialized"))
 
         return withContext(Dispatchers.IO) {
             try {
-                Log.d(TAG, "Transcribing audio: ${audioData.size} bytes")
-
-                // Convert WAV ByteArray to float samples
-                // WAV format: 44-byte header + 16-bit PCM samples
-                val samples = WavUtils.parseWavToFloats(audioData)
-                Log.d(TAG, "Parsed ${samples.size} audio samples")
+                Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
 
                 // Append 1s of silence to improve final token accuracy.
                 // Benchmarking on real WhatsApp audio showed 2% WER improvement
                 // (12.1% → 10.1%) from giving the model a brief silence tail
                 // to finalize trailing tokens. More padding doesn't help further.
-                val padded = samples + FloatArray(16000)
+                val silencePad = FloatArray(sampleRate)
+                val padded = samples + silencePad
 
                 // Create stream and process audio
                 val stream = rec.createStream()
-                stream.acceptWaveform(padded, 16000)
+                stream.acceptWaveform(padded, sampleRate)
                 rec.decode(stream)
 
                 // Get result

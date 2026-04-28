@@ -61,7 +61,7 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         coroutineScope = scope
     )
 
-    private fun stubVadPreprocessing(chunks: List<ByteArray>) {
+    private fun stubVadPreprocessing(chunks: List<FloatArray>) {
         every {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = audioFile.absolutePath,
@@ -69,10 +69,12 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
             )
         } returns PreprocessingResult(
             chunks = chunks,
+            sampleRate = 16000,
             totalDurationSeconds = 30.0,
             chunkCount = chunks.size,
             isVadSegmented = true
@@ -83,9 +85,9 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
 
     @Test
     fun `progressive segments all succeed`() = runTest {
-        val chunk1 = ByteArray(100) { 1 }
-        val chunk2 = ByteArray(100) { 2 }
-        val chunk3 = ByteArray(100) { 3 }
+        val chunk1 = FloatArray(100) { 1.0f }
+        val chunk2 = FloatArray(100) { 2.0f }
+        val chunk3 = FloatArray(100) { 3.0f }
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
         val results = listOf(
@@ -94,7 +96,7 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             Result.success("seg3")
         )
         var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any()) } answers {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             results[callIndex++]
         }
 
@@ -126,9 +128,9 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
 
     @Test
     fun `progressive segments with one failure`() = runTest {
-        val chunk1 = ByteArray(100) { 1 }
-        val chunk2 = ByteArray(100) { 2 }
-        val chunk3 = ByteArray(100) { 3 }
+        val chunk1 = FloatArray(100) { 1.0f }
+        val chunk2 = FloatArray(100) { 2.0f }
+        val chunk3 = FloatArray(100) { 3.0f }
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
         val results = listOf(
@@ -137,7 +139,7 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             Result.success("seg3")
         )
         var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any()) } answers {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             results[callIndex++]
         }
 
@@ -153,12 +155,12 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
 
     @Test
     fun `progressive segments all fail`() = runTest {
-        val chunk1 = ByteArray(100) { 1 }
-        val chunk2 = ByteArray(100) { 2 }
-        val chunk3 = ByteArray(100) { 3 }
+        val chunk1 = FloatArray(100) { 1.0f }
+        val chunk2 = FloatArray(100) { 2.0f }
+        val chunk3 = FloatArray(100) { 3.0f }
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
-        coEvery { backend.transcribeAudio(any(), any()) } returns Result.failure(
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.failure(
             RuntimeException("backend error")
         )
 
@@ -177,9 +179,9 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
 
     @Test
     fun `progressive segments with blank results`() = runTest {
-        val chunk1 = ByteArray(100) { 1 }
-        val chunk2 = ByteArray(100) { 2 }
-        val chunk3 = ByteArray(100) { 3 }
+        val chunk1 = FloatArray(100) { 1.0f }
+        val chunk2 = FloatArray(100) { 2.0f }
+        val chunk3 = FloatArray(100) { 3.0f }
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
         val results = listOf(
@@ -188,7 +190,7 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             Result.success("\t\n")
         )
         var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any()) } answers {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             results[callIndex++]
         }
 
@@ -209,12 +211,12 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
     fun `progressive segments skips VAD when progressive disabled`() = runTest {
         every { preferencesManager.progressiveTranscription } returns flowOf(false)
 
-        val chunk1 = ByteArray(100) { 1 }
-        val chunk2 = ByteArray(100) { 2 }
-        val chunk3 = ByteArray(100) { 3 }
+        val chunk1 = FloatArray(100) { 1.0f }
+        val chunk2 = FloatArray(100) { 2.0f }
+        val chunk3 = FloatArray(100) { 3.0f }
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
-        coEvery { backend.transcribeAudio(any(), any()) } returns Result.success("text")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("text")
 
         val result = runProcessRequest(scope = this)
 
@@ -225,13 +227,13 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
 
     @Test
     fun `progressive segments records calibration`() = runTest {
-        val chunk1 = ByteArray(100) { 1 }
-        val chunk2 = ByteArray(100) { 2 }
+        val chunk1 = FloatArray(100) { 1.0f }
+        val chunk2 = FloatArray(100) { 2.0f }
         stubVadPreprocessing(listOf(chunk1, chunk2))
 
         val results = listOf(Result.success("first"), Result.success("second"))
         var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any()) } answers {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             results[callIndex++]
         }
 

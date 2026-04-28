@@ -3,6 +3,7 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.manager.LlmManager
+import com.antivocale.app.util.WavUtils
 
 class LlmTranscriptionBackend(
     private val llmManager: LlmManager
@@ -25,8 +26,9 @@ class LlmTranscriptionBackend(
         return llmManager.initialize(context, llmConfig.modelPath)
     }
 
-    override suspend fun transcribeAudio(audioData: ByteArray, prompt: String): Result<String> {
-        return llmManager.generateFromAudio(prompt, audioData)
+    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<String> {
+        val wavBytes = WavUtils.floatSamplesToWav(samples, sampleRate)
+        return llmManager.generateFromAudio(prompt, wavBytes)
     }
 
     override suspend fun generateText(prompt: String): Result<String> {

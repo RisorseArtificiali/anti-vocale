@@ -22,7 +22,8 @@ object TranscriptionModule {
     @Provides
     @IntoSet
     @Singleton
-    fun provideLlmBackend(llmManager: LlmManager): TranscriptionBackend = LlmTranscriptionBackend(llmManager)
+    fun provideLlmBackend(llmManager: LlmManager): TranscriptionBackend =
+        LlmTranscriptionBackend(llmManager)
 
     @Provides
     @IntoSet

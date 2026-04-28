@@ -55,11 +55,12 @@ abstract class TranscriptionOrchestratorTestBase {
         every { preferencesManager.inferenceProvider } returns flowOf("auto")
         every { preferencesManager.defaultPrompt } returns flowOf("")
         every { preferencesManager.keepAliveTimeout } returns flowOf(5)
+        every { preferencesManager.progressiveTranscription } returns flowOf(false)
         every { preferencesManager.whisperModelPath } returns flowOf("/models/whisper")
     }
 
     protected fun stubPreprocessing(
-        chunks: List<ByteArray>,
+        chunks: List<FloatArray>,
         totalDurationSeconds: Double = 30.0,
         isVadSegmented: Boolean = false
     ) {
@@ -75,6 +76,7 @@ abstract class TranscriptionOrchestratorTestBase {
             )
         } returns AudioPreprocessor.PreprocessingResult(
             chunks = chunks,
+            sampleRate = 16000,
             totalDurationSeconds = totalDurationSeconds,
             chunkCount = chunks.size,
             isVadSegmented = isVadSegmented

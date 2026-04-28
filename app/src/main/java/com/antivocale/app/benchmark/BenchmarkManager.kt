@@ -6,7 +6,6 @@ import android.util.Log
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.TranscriptionBackend
-import com.antivocale.app.util.WavUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
@@ -89,9 +88,11 @@ class BenchmarkManager @Inject constructor(
         internal const val SAMPLE_DURATION_SECONDS = 10f
     }
 
-    private val sampleAudio: ByteArray by lazy {
-        WavUtils.generateSilence(durationSeconds = SAMPLE_DURATION_SECONDS)
+    private val sampleAudio: FloatArray by lazy {
+        FloatArray((16000 * SAMPLE_DURATION_SECONDS).toInt())
     }
+
+    private val sampleRate: Int = 16000
 
     /**
      * Run a benchmark for the given model configuration.
@@ -123,7 +124,7 @@ class BenchmarkManager @Inject constructor(
                 onProgress(0.5f)
 
                 val startTime = System.currentTimeMillis()
-                val transcriptionResult = backend.transcribeAudio(sampleAudio, "")
+                val transcriptionResult = backend.transcribeAudio(sampleAudio, sampleRate, "")
                 val inferenceTimeMs = System.currentTimeMillis() - startTime
 
                 onProgress(0.8f)
