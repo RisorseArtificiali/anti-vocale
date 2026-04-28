@@ -122,6 +122,14 @@
             </intent-filter>
         </activity>
 
+        <!-- Debug-only activity for automated benchmarking (exported for adb am start) -->
+        <activity
+            android:name=".receiver.BenchmarkActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- BroadcastReceiver for notification actions -->
         <receiver
             android:name=".receiver.NotificationActionReceiver"

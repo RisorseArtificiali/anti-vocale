@@ -311,7 +311,7 @@ class TranscriptionOrchestrator @Inject constructor(
             ))
         }
 
-        // Preprocess audio
+        // Read settings
         val vadEnabled = preferencesManager.vadEnabled.first()
         val threadCount = preferencesManager.threadCount.first()
         val providerPref = preferencesManager.inferenceProvider.first()
@@ -321,6 +321,8 @@ class TranscriptionOrchestrator @Inject constructor(
         // Use streaming pipeline for multi-chunk non-VAD scenarios
         val maxChunkDuration = backend.maxChunkDurationSeconds
         val usePipeline = !vadEnabled && maxChunkDuration != null && !progressiveEnabled
+
+        val totalStartMs = System.currentTimeMillis()
 
         if (usePipeline) {
             return processPipelinedAudio(
@@ -335,6 +337,7 @@ class TranscriptionOrchestrator @Inject constructor(
             )
         }
 
+        val preprocessStartMs = System.currentTimeMillis()
         val preprocessingResult = try {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = filePath,
@@ -353,7 +356,8 @@ class TranscriptionOrchestrator @Inject constructor(
 
         val chunkCount = preprocessingResult.chunkCount
         val audioDurationSeconds = preprocessingResult.totalDurationSeconds.toInt()
-        Log.i(TAG, "Audio preprocessed: $chunkCount chunks, ${audioDurationSeconds}s")
+        val preprocessMs = System.currentTimeMillis() - preprocessStartMs
+        Log.i(TAG, "PERF: preprocessing ${preprocessMs}ms for ${audioDurationSeconds}s audio, $chunkCount chunks, backend=${backend.id}, pipeline=false")
 
         updateAudioDuration(taskId, preprocessingResult.totalDurationSeconds)
 
@@ -460,6 +464,8 @@ class TranscriptionOrchestrator @Inject constructor(
             )
         }
 
+        val totalMs = System.currentTimeMillis() - chunkProcessingStartTime
+        Log.i(TAG, "PERF: progressive total ${totalMs}ms for ${audioDurationSeconds}s audio, $chunkCount segments, backend=${backend.id}")
         recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
 
         return if (accumulatedText.isEmpty()) {
@@ -556,6 +562,9 @@ class TranscriptionOrchestrator @Inject constructor(
         val combinedResult = results.filterNotNull().joinToString(" ")
         Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.filterNotNull().size}/$chunkCount chunks")
 
+        val totalMs = System.currentTimeMillis() - chunkProcessingStartTime
+        Log.i(TAG, "PERF: parallel total ${totalMs}ms for ${audioDurationSeconds}s audio, $chunkCount chunks, backend=${backend.id}")
+
         recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
 
         return if (combinedResult.isBlank()) {
@@ -582,10 +591,12 @@ class TranscriptionOrchestrator @Inject constructor(
     ): Result<String> {
         val resolvedPrompt = resolvePrompt(prompt)
 
-        val transcriptionStartTime = System.currentTimeMillis()
+        val pipelineStartMs = System.currentTimeMillis()
         val chunkProcessingStartTime = System.currentTimeMillis()
         val results = mutableListOf<String>()
         var totalDurationSeconds = 0.0
+        var firstChunkDecodeMs = 0L
+        var firstChunkInferStartMs = 0L
 
         try {
             audioPreprocessor.prepareAudioStream(
@@ -602,6 +613,12 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                     is AudioPreprocessor.StreamEvent.Chunk -> {
                         val chunk = event.chunk
+                        val chunkReceiveMs = System.currentTimeMillis() - pipelineStartMs
+                        if (chunk.chunkIndex == 0) {
+                            firstChunkDecodeMs = chunkReceiveMs
+                            firstChunkInferStartMs = System.currentTimeMillis()
+                            Log.i(TAG, "PERF: pipeline first chunk decoded in ${firstChunkDecodeMs}ms")
+                        }
                         Log.d(TAG, "Pipeline: transcribing chunk ${chunk.chunkIndex} (${chunk.samples.size} samples)")
 
                         val chunkResult = backend.transcribeAudio(
@@ -619,6 +636,8 @@ class TranscriptionOrchestrator @Inject constructor(
                         )
 
                         if (chunk.chunkIndex == 0 && results.isNotEmpty()) {
+                            val ttft = System.currentTimeMillis() - firstChunkInferStartMs
+                            Log.i(TAG, "PERF: pipeline time-to-first-text = ${System.currentTimeMillis() - pipelineStartMs}ms (decode=${firstChunkDecodeMs}ms + infer=${ttft}ms)")
                             listener.onStatusUpdate("Transcribing…")
                         }
                     }
@@ -633,8 +652,8 @@ class TranscriptionOrchestrator @Inject constructor(
         val combinedResult = results.joinToString(" ")
         recordCalibration(backend, totalDurationSeconds.toInt(), chunkProcessingStartTime)
 
-        val inferMs = System.currentTimeMillis() - transcriptionStartTime
-        Log.i(TAG, "Pipeline complete: ${results.size} chunks, ${inferMs}ms total")
+        val totalMs = System.currentTimeMillis() - pipelineStartMs
+        Log.i(TAG, "PERF: pipeline total ${totalMs}ms for ${totalDurationSeconds}s audio, ${results.size} chunks, backend=${backend.id}, ttft_decode=${firstChunkDecodeMs}ms")
 
         return if (combinedResult.isBlank()) {
             Result.failure(IllegalStateException("No transcription produced"))
