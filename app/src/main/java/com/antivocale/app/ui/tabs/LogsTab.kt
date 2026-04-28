@@ -311,13 +311,16 @@ fun LogsTab(
                 state = listState,
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(
-                    top = innerPadding.calculateTopPadding() + 4.dp,
                     bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 )
             ) {
-                // Header: Recent Requests + Search bar (scrolls with content)
                 item(key = "header") {
-                    Column(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(MaterialTheme.colorScheme.surface)
+                            .padding(top = innerPadding.calculateTopPadding())
+                    ) {
                         Row(
                             modifier = Modifier
                                 .padding(horizontal = 16.dp, vertical = 4.dp)
