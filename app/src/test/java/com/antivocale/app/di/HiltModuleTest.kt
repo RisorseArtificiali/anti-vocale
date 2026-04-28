@@ -3,6 +3,8 @@ package com.antivocale.app.di
 import com.antivocale.app.data.HuggingFaceApiClient
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.AppDatabase
+import com.antivocale.app.llm.GgufInferenceEngine
+import com.antivocale.app.llm.LlamaBroEngine
 import com.antivocale.app.transcription.Gemma4GgufBackend
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
@@ -54,19 +56,21 @@ class HiltModuleTest {
 
     @Test
     fun `TranscriptionModule provides Gemma4GgufBackend`() {
-        val backend = TranscriptionModule.provideGemma4GgufBackend()
+        val engine = mockk<GgufInferenceEngine>(relaxed = true)
+        val backend = TranscriptionModule.provideGemma4GgufBackend(engine)
         assertNotNull(backend)
         assertTrue(backend is Gemma4GgufBackend)
     }
 
     @Test
     fun `all provided backends have unique ids`() {
+        val engine = mockk<GgufInferenceEngine>(relaxed = true)
         val backends: List<TranscriptionBackend> = listOf(
             TranscriptionModule.provideLlmBackend(mockk(relaxed = true)),
             TranscriptionModule.provideSherpaOnnxBackend(),
             TranscriptionModule.provideWhisperBackend(),
             TranscriptionModule.provideQwen3AsrBackend(),
-            TranscriptionModule.provideGemma4GgufBackend()
+            TranscriptionModule.provideGemma4GgufBackend(engine)
         )
         val ids = backends.map { it.id }
         assertEquals("All backend IDs must be unique", ids.size, ids.toSet().size)
@@ -74,12 +78,13 @@ class HiltModuleTest {
 
     @Test
     fun `all provided backends have non-empty display names`() {
+        val engine = mockk<GgufInferenceEngine>(relaxed = true)
         val backends: List<TranscriptionBackend> = listOf(
             TranscriptionModule.provideLlmBackend(mockk(relaxed = true)),
             TranscriptionModule.provideSherpaOnnxBackend(),
             TranscriptionModule.provideWhisperBackend(),
             TranscriptionModule.provideQwen3AsrBackend(),
-            TranscriptionModule.provideGemma4GgufBackend()
+            TranscriptionModule.provideGemma4GgufBackend(engine)
         )
         backends.forEach { backend ->
             assertTrue("${backend.id} has empty display name", backend.displayName.isNotBlank())

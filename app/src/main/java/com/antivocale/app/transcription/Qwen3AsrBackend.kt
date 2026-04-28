@@ -6,6 +6,8 @@ import com.k2fsa.sherpa.onnx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Transcription backend using sherpa-onnx with Qwen3-ASR models.
@@ -19,7 +21,8 @@ import java.io.File
  * - No language parameter needed
  * - Separate conv_frontend, encoder, decoder, and tokenizer directory
  */
-class Qwen3AsrBackend : TranscriptionBackend {
+@Singleton
+class Qwen3AsrBackend @Inject constructor() : TranscriptionBackend {
 
     companion object {
         const val BACKEND_ID = "qwen3-asr"

@@ -6,6 +6,8 @@ import com.k2fsa.sherpa.onnx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Transcription backend using sherpa-onnx with Whisper models.
@@ -20,7 +22,8 @@ import java.io.File
  * - ~110MB (Tiny) or ~197MB (Base) model sizes
  * - Slower than Parakeet but more accurate for non-English languages
  */
-class WhisperBackend : TranscriptionBackend {
+@Singleton
+class WhisperBackend @Inject constructor() : TranscriptionBackend {
 
     companion object {
         const val BACKEND_ID = "whisper"

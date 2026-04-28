@@ -3,8 +3,11 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.llm.GgufInferenceEngine
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class Gemma4GgufBackend(
+@Singleton
+class Gemma4GgufBackend @Inject constructor(
     private val engine: GgufInferenceEngine
 ) : TranscriptionBackend {
 

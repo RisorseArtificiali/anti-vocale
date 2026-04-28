@@ -4,8 +4,11 @@ import android.content.Context
 import android.util.Log
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.util.WavUtils
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class LlmTranscriptionBackend(
+@Singleton
+class LlmTranscriptionBackend @Inject constructor(
     private val llmManager: LlmManager
 ) : TranscriptionBackend {
 

@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
 import java.io.File
+import javax.inject.Inject
 
 /**
  * GGUF inference engine backed by llama-bro SDK (llama.cpp via JNI).
@@ -23,7 +24,7 @@ import java.io.File
  * llama-bro ships pre-built native libraries for arm64-v8a and provides
  * a Kotlin Flow API for model loading, text generation, and streaming.
  */
-class LlamaBroEngine : GgufInferenceEngine {
+class LlamaBroEngine @Inject constructor() : GgufInferenceEngine {
 
     companion object {
         private const val TAG = "LlamaBroEngine"

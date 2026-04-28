@@ -6,6 +6,8 @@ import com.k2fsa.sherpa.onnx.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Transcription backend using sherpa-onnx with ONNX Runtime.
@@ -24,7 +26,8 @@ import java.io.File
  * WER across all decoding methods, but greedy_search is ~3x faster.
  * See memory/research_parakeet_decoding.md for full results.
  */
-class SherpaOnnxBackend : TranscriptionBackend {
+@Singleton
+class SherpaOnnxBackend @Inject constructor() : TranscriptionBackend {
 
     companion object {
         const val BACKEND_ID = "sherpa-onnx"
