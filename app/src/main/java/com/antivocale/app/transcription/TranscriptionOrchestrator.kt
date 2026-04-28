@@ -203,6 +203,7 @@ class TranscriptionOrchestrator @Inject constructor(
         Log.i(TAG, "Auto-loading $label model from: $modelPath")
         val providerPref = preferencesManager.inferenceProvider.first()
         val resolvedProvider = InferenceProvider.resolve(providerPref)
+        Log.i(TAG, "Inference provider: pref=$providerPref resolved=$resolvedProvider")
         return backendManager.setActiveBackend(
             backendId = backendId,
             context = context,
