@@ -19,6 +19,10 @@ import javax.inject.Inject
  *
  * Accepts intent extras to set preferences, then triggers transcription.
  * Being a visible activity satisfies Android 16 foreground service restrictions.
+ *
+ * Uses singleTop launchMode so repeated `am start` calls deliver to the same
+ * instance via onNewIntent, allowing back-to-back benchmark runs without
+ * force-stopping (which would kill the warm model).
  */
 @AndroidEntryPoint
 class BenchmarkActivity : ComponentActivity() {
@@ -38,19 +42,27 @@ class BenchmarkActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        handleIntent(intent)
+    }
 
-        val backend = intent.getStringExtra(EXTRA_BACKEND) ?: run { finish(); return }
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleIntent(intent)
+    }
+
+    private fun handleIntent(intent: Intent) {
+        val backend = intent.getStringExtra(EXTRA_BACKEND) ?: return
         val vad = intent.getBooleanExtra(EXTRA_VAD, false)
         val progressive = intent.getBooleanExtra(EXTRA_PROGRESSIVE, false)
         val provider = intent.getStringExtra(EXTRA_PROVIDER) ?: "cpu"
-        val filePath = intent.getStringExtra(EXTRA_FILE_PATH) ?: run { finish(); return }
+        val filePath = intent.getStringExtra(EXTRA_FILE_PATH) ?: return
         val runId = intent.getStringExtra(EXTRA_RUN_ID) ?: "bench_${System.currentTimeMillis()}"
 
         Log.i(TAG, "BENCH_CONFIG: run=$runId backend=$backend vad=$vad progressive=$progressive provider=$provider file=$filePath")
 
         CoroutineScope(Dispatchers.Main).launch {
             try {
-                // Set preferences
                 preferencesManager.saveTranscriptionBackend(backend)
                 preferencesManager.saveVadEnabled(vad)
                 preferencesManager.saveProgressiveTranscription(progressive)
@@ -59,7 +71,6 @@ class BenchmarkActivity : ComponentActivity() {
                 // Wait for DataStore persistence
                 delay(500)
 
-                // Force-stop and reload backend by starting transcription
                 val taskId = "bench_${runId}"
                 val serviceIntent = Intent(this@BenchmarkActivity, InferenceService::class.java).apply {
                     putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
@@ -73,12 +84,6 @@ class BenchmarkActivity : ComponentActivity() {
             } catch (e: Exception) {
                 Log.e(TAG, "BENCH_ERROR: run=$runId", e)
             }
-
-            // Stay alive for 5 minutes to keep the foreground service running.
-            // Android 16 kills FGS when the launching activity finishes,
-            // and LLM backends (Gemma 4B) can take several minutes to complete.
-            delay(300_000)
-            finish()
         }
     }
 }
