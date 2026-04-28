@@ -634,4 +634,6 @@
     <string name="benchmark_disclaimer">Results may vary based on device load and temperature.</string>
     <string name="benchmark_button">Benchmark</string>
     <string name="benchmark_cached_result">Last benchmark: %1$s</string>
+    <string name="benchmark_provider_label">Provider</string>
+    <string name="benchmark_provider_value">%1$s</string>
 </resources>

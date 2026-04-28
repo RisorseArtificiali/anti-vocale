@@ -23,7 +23,8 @@ data class BenchmarkResult(
     val inferenceTimeMs: Long,
     val audioDurationSeconds: Float,
     val peakMemoryMb: Float,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val provider: String = ""
 ) {
     /** Seconds of processing time per minute of audio (extrapolated). */
     val secondsPerMinute: Float
@@ -44,6 +45,7 @@ data class BenchmarkResult(
         put("audioDurationSeconds", audioDurationSeconds.toDouble())
         put("peakMemoryMb", peakMemoryMb.toDouble())
         put("timestamp", timestamp)
+        if (provider.isNotEmpty()) put("provider", provider)
     }.toString()
 
     companion object {
@@ -54,7 +56,8 @@ data class BenchmarkResult(
                 inferenceTimeMs = obj.getLong("inferenceTimeMs"),
                 audioDurationSeconds = obj.getDouble("audioDurationSeconds").toFloat(),
                 peakMemoryMb = obj.getDouble("peakMemoryMb").toFloat(),
-                timestamp = obj.optLong("timestamp", System.currentTimeMillis())
+                timestamp = obj.optLong("timestamp", System.currentTimeMillis()),
+                provider = obj.optString("provider", "")
             )
         }.getOrNull()
     }
@@ -136,7 +139,8 @@ class BenchmarkManager @Inject constructor(
                     modelId = backend.id,
                     inferenceTimeMs = inferenceTimeMs,
                     audioDurationSeconds = SAMPLE_DURATION_SECONDS,
-                    peakMemoryMb = peakMemoryMb
+                    peakMemoryMb = peakMemoryMb,
+                    provider = (config as? BackendConfig.SherpaOnnxConfig)?.provider ?: ""
                 )
 
                 saveResult(result)

@@ -197,6 +197,14 @@ private fun BenchmarkResultContent(result: BenchmarkResult) {
             value = stringResource(R.string.benchmark_duration_value, result.audioDurationSeconds)
         )
 
+        if (result.provider.isNotEmpty()) {
+            MetricRow(
+                icon = { Icon(Icons.Default.Memory, contentDescription = null) },
+                label = stringResource(R.string.benchmark_provider_label),
+                value = stringResource(R.string.benchmark_provider_value, result.provider.uppercase())
+            )
+        }
+
         Spacer(Modifier.height(4.dp))
         Text(
             text = stringResource(R.string.benchmark_disclaimer),

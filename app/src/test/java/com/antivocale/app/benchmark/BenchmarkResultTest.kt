@@ -81,7 +81,7 @@ class BenchmarkResultTest {
 
     @Test
     fun `toJson and fromJson roundtrip`() {
-        val original = BenchmarkResult("whisper", 4500, 10f, 256.5f, 1700000000000L)
+        val original = BenchmarkResult("whisper", 4500, 10f, 256.5f, 1700000000000L, "cpu")
         val json = original.toJson()
         val restored = BenchmarkResult.fromJson(json)
 
@@ -91,6 +91,7 @@ class BenchmarkResultTest {
         assertEquals(original.audioDurationSeconds, restored.audioDurationSeconds, 0.01f)
         assertEquals(original.peakMemoryMb, restored.peakMemoryMb, 0.01f)
         assertEquals(original.timestamp, restored.timestamp)
+        assertEquals(original.provider, restored.provider)
     }
 
     @Test
@@ -118,6 +119,50 @@ class BenchmarkResultTest {
         val result = BenchmarkResult.fromJson(json)
         assertNotNull(result)
         assertEquals("test", result!!.modelId)
+    }
+
+    // ==================== provider ====================
+
+    @Test
+    fun `provider defaults to empty string`() {
+        val result = BenchmarkResult("test", 5000, 10f, 100f)
+        assertEquals("", result.provider)
+    }
+
+    @Test
+    fun `provider is serialized to JSON`() {
+        val result = BenchmarkResult("test", 5000, 10f, 100f, provider = "nnapi")
+        val json = result.toJson()
+        assertTrue(json.contains("\"provider\":\"nnapi\""))
+    }
+
+    @Test
+    fun `provider is not included in JSON when empty`() {
+        val result = BenchmarkResult("test", 5000, 10f, 100f, provider = "")
+        val json = result.toJson()
+        assertFalse(json.contains("\"provider\""))
+    }
+
+    @Test
+    fun `fromJson restores provider`() {
+        val original = BenchmarkResult("test", 5000, 10f, 100f, provider = "cpu")
+        val restored = BenchmarkResult.fromJson(original.toJson())!!
+        assertEquals("cpu", restored.provider)
+    }
+
+    @Test
+    fun `fromJson defaults provider to empty string for old results`() {
+        val json = """{"modelId":"test","inferenceTimeMs":5000,"audioDurationSeconds":10.0,"peakMemoryMb":100.0}"""
+        val result = BenchmarkResult.fromJson(json)!!
+        assertEquals("", result.provider)
+    }
+
+    @Test
+    fun `nnapi provider roundtrip`() {
+        val original = BenchmarkResult("whisper", 3000, 10f, 200f, provider = "nnapi")
+        val restored = BenchmarkResult.fromJson(original.toJson())!!
+        assertEquals("nnapi", restored.provider)
+        assertEquals(original.modelId, restored.modelId)
     }
 
     // ==================== WAV generation ====================

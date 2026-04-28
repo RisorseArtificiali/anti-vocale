@@ -27,6 +27,7 @@ import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.Gemma4GgufBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.BackendConfig
+import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.benchmark.BenchmarkManager
 import com.antivocale.app.benchmark.BenchmarkState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -1869,6 +1870,8 @@ class ModelViewModel @Inject constructor(
 
         benchmarkJob = viewModelScope.launch(Dispatchers.IO) {
             val threadCount = preferencesManager.threadCount.first()
+            val providerPref = preferencesManager.inferenceProvider.first()
+            val resolvedProvider = InferenceProvider.resolve(providerPref)
 
             val config = when (backendId) {
                 WhisperBackend.BACKEND_ID -> {
@@ -1876,12 +1879,14 @@ class ModelViewModel @Inject constructor(
                     BackendConfig.SherpaOnnxConfig(
                         modelDir = modelPath,
                         numThreads = threadCount,
-                        language = if (lang == "auto") "" else lang
+                        language = if (lang == "auto") "" else lang,
+                        provider = resolvedProvider
                     )
                 }
                 SherpaOnnxBackend.BACKEND_ID, Qwen3AsrBackend.BACKEND_ID -> BackendConfig.SherpaOnnxConfig(
                     modelDir = modelPath,
-                    numThreads = threadCount
+                    numThreads = threadCount,
+                    provider = resolvedProvider
                 )
                 Gemma4GgufBackend.BACKEND_ID -> BackendConfig.GgufConfig(
                     modelPath = modelPath,
