@@ -74,7 +74,8 @@ class AudioPreprocessor @Inject constructor() {
         maxChunkDurationSeconds: Int? = 30,
         context: Context? = null,
         enableVad: Boolean = false,
-        vadNumThreads: Int = 1
+        vadNumThreads: Int = 1,
+        vadProvider: String = "cpu"
     ): PreprocessingResult {
         Log.d(TAG, "Preparing audio: $inputPath")
 
@@ -115,7 +116,7 @@ class AudioPreprocessor @Inject constructor() {
         if (enableVad && context != null) {
             try {
                 val floatSamples = VadProcessor.pcmBytesToFloats(pcmData)
-                val vadResult = VadProcessor.detectSpeech(context, floatSamples, vadNumThreads)
+                val vadResult = VadProcessor.detectSpeech(context, floatSamples, vadNumThreads, vadProvider)
                 val segments = vadResult.speechSegments
 
                 // Multiple segments: merge adjacent ones up to 28s (WhisperX-style).

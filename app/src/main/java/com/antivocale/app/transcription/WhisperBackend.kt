@@ -93,7 +93,8 @@ class WhisperBackend : TranscriptionBackend {
                     tokens = modelFiles.tokensPath,
                     modelType = "whisper",
                     numThreads = sherpaConfig.numThreads,
-                    debug = false
+                    debug = false,
+                    provider = sherpaConfig.provider
                 )
 
                 val recognizerConfig = OfflineRecognizerConfig(

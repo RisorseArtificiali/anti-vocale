@@ -34,6 +34,7 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         every { preferencesManager.keepAliveTimeout } returns flowOf(5)
         every { preferencesManager.whisperModelPath } returns flowOf("/models/whisper")
         every { preferencesManager.progressiveTranscription } returns flowOf(true)
+        every { preferencesManager.inferenceProvider } returns flowOf("auto")
         every { preferencesManager.transcriptionLanguage } returns flowOf("it")
 
         audioFile = temporaryFolder.newFile("test_audio.wav")

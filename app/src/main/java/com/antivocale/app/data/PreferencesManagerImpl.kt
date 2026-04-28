@@ -37,6 +37,7 @@ class PreferencesManagerImpl(
         private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
         private val THREAD_COUNT = intPreferencesKey("thread_count")
+        private val INFERENCE_PROVIDER = stringPreferencesKey("inference_provider")
         private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
         private val SWIPE_ACTION_MODE = stringPreferencesKey("swipe_action_mode")
         private val BENCHMARK_RESULTS = stringPreferencesKey("benchmark_results")
@@ -59,6 +60,7 @@ class PreferencesManagerImpl(
         val progressiveTranscription: Boolean = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         val defaultPrompt: String = PreferencesManager.DEFAULT_PROMPT_VALUE,
         val threadCount: Int = PreferencesManager.DEFAULT_THREAD_COUNT,
+        val inferenceProvider: String = PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         val transcriptionLanguage: String = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
         val swipeActionMode: String = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
         val vadAdvisoryDismissed: Boolean = false
@@ -80,6 +82,7 @@ class PreferencesManagerImpl(
         progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         defaultPrompt = this[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE,
         threadCount = this[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT,
+        inferenceProvider = this[INFERENCE_PROVIDER] ?: PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
         swipeActionMode = this[SWIPE_ACTION_MODE] ?: PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
         vadAdvisoryDismissed = this[VAD_ADVISORY_DISMISSED] ?: false
@@ -273,6 +276,16 @@ class PreferencesManagerImpl(
             preferences[THREAD_COUNT] = threads
         }
         cache.updateAndGet { it.copy(threadCount = threads) }
+    }
+
+    override val inferenceProvider: Flow<String> = context.dataStore.data.map { it[INFERENCE_PROVIDER] ?: PreferencesManager.DEFAULT_INFERENCE_PROVIDER }
+        .onStart { emit(cache.get().inferenceProvider) }
+
+    override suspend fun saveInferenceProvider(provider: String) {
+        context.dataStore.edit { preferences ->
+            preferences[INFERENCE_PROVIDER] = provider
+        }
+        cache.updateAndGet { it.copy(inferenceProvider = provider) }
     }
 
     override val transcriptionLanguage: Flow<String> = context.dataStore.data.map { it[TRANSCRIPTION_LANGUAGE] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE }

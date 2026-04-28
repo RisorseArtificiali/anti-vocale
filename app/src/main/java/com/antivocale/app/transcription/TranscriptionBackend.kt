@@ -98,7 +98,8 @@ sealed class BackendConfig {
         val modelDir: String,
         val modelType: String = "nemo_transducer",
         val numThreads: Int,
-        val language: String = ""
+        val language: String = "",
+        val provider: String = "cpu"
     ) : BackendConfig()
 
     data class GgufConfig(

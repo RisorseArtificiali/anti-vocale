@@ -15,6 +15,7 @@ import com.antivocale.app.data.ModelDiscovery
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
+import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.Qwen3AsrModelManager
@@ -131,6 +132,14 @@ class SettingsViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = PreferencesManager.DEFAULT_THREAD_COUNT
+        )
+
+    // Inference provider (auto/nnapi/cpu)
+    val inferenceProvider: StateFlow<String> = preferencesManager.inferenceProvider
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_INFERENCE_PROVIDER
         )
 
     // Auto-detected thread count (fixed at init time)
@@ -262,6 +271,16 @@ class SettingsViewModel @Inject constructor(
                 preferencesManager.saveThreadCount(threads)
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to save thread count", e)
+            }
+        }
+    }
+
+    fun saveInferenceProvider(provider: String) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.saveInferenceProvider(provider)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to save inference provider", e)
             }
         }
     }

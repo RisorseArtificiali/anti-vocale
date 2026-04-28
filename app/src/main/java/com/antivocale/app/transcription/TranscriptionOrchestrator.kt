@@ -201,13 +201,16 @@ class TranscriptionOrchestrator @Inject constructor(
             return Result.failure(IllegalStateException("$label model directory not found: $modelPath"))
         }
         Log.i(TAG, "Auto-loading $label model from: $modelPath")
+        val providerPref = preferencesManager.inferenceProvider.first()
+        val resolvedProvider = InferenceProvider.resolve(providerPref)
         return backendManager.setActiveBackend(
             backendId = backendId,
             context = context,
             config = BackendConfig.SherpaOnnxConfig(
                 modelDir = modelPath,
                 numThreads = preferencesManager.threadCount.first(),
-                language = language
+                language = language,
+                provider = resolvedProvider
             )
         )
     }
@@ -297,6 +300,8 @@ class TranscriptionOrchestrator @Inject constructor(
         // Preprocess audio
         val vadEnabled = preferencesManager.vadEnabled.first()
         val threadCount = preferencesManager.threadCount.first()
+        val providerPref = preferencesManager.inferenceProvider.first()
+        val resolvedProvider = InferenceProvider.resolve(providerPref)
         val preprocessingResult = try {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = filePath,
@@ -304,7 +309,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 maxChunkDurationSeconds = backend.maxChunkDurationSeconds,
                 context = context,
                 enableVad = vadEnabled,
-                vadNumThreads = threadCount
+                vadNumThreads = threadCount,
+                vadProvider = resolvedProvider
             )
         } catch (e: PreprocessingError) {
             return Result.failure(e)

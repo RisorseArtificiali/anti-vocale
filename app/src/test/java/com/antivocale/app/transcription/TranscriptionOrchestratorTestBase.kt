@@ -52,6 +52,7 @@ abstract class TranscriptionOrchestratorTestBase {
         every { preferencesManager.transcriptionBackend } returns flowOf("whisper")
         every { preferencesManager.vadEnabled } returns flowOf(false)
         every { preferencesManager.threadCount } returns flowOf(4)
+        every { preferencesManager.inferenceProvider } returns flowOf("auto")
         every { preferencesManager.defaultPrompt } returns flowOf("")
         every { preferencesManager.keepAliveTimeout } returns flowOf(5)
         every { preferencesManager.whisperModelPath } returns flowOf("/models/whisper")
@@ -69,7 +70,8 @@ abstract class TranscriptionOrchestratorTestBase {
                 maxChunkDurationSeconds = any(),
                 context = any(),
                 enableVad = any(),
-                vadNumThreads = any()
+                vadNumThreads = any(),
+                vadProvider = any()
             )
         } returns AudioPreprocessor.PreprocessingResult(
             chunks = chunks,

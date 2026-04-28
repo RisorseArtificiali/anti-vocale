@@ -276,6 +276,12 @@
     <string name="thread_count_auto">%1$d (rilevato automaticamente)</string>
     <string name="thread_count_value">%1$d</string>
 
+    <string name="inference_provider_title">Provider di Inferenza</string>
+    <string name="inference_provider_description">Acceleratore hardware per inferenza ONNX. NNAPI utilizza NPU/GPU del dispositivo per trascrizioni più veloci quando disponibile.</string>
+    <string name="inference_provider_auto">Auto (NNAPI se disponibile)</string>
+    <string name="inference_provider_nnapi">NNAPI (accelerazione hardware)</string>
+    <string name="inference_provider_cpu">Solo CPU</string>
+
     <string name="saving">Salvataggio…</string>
     <string name="settings_saved">Impostazioni salvate</string>
     <string name="save">Salva</string>

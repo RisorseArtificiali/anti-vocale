@@ -16,6 +16,11 @@ class TranscriptionOrchestratorBackendLoadTest : TranscriptionOrchestratorTestBa
 
     private val tempDirs = mutableListOf<File>()
 
+    override fun baseSetUp() {
+        super.baseSetUp()
+        every { preferencesManager.inferenceProvider } returns flowOf("auto")
+    }
+
     @After
     fun tearDown() {
         tempDirs.forEach { it.deleteRecursively() }

@@ -94,7 +94,8 @@ class SherpaOnnxBackend : TranscriptionBackend {
                     tokens = "${modelDirectory}/tokens.txt",
                     modelType = sherpaConfig.modelType,
                     numThreads = sherpaConfig.numThreads,
-                    debug = false
+                    debug = false,
+                    provider = sherpaConfig.provider
                 )
 
                 val recognizerConfig = OfflineRecognizerConfig(

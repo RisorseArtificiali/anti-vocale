@@ -41,7 +41,7 @@ data class VadResult(
      * @param pcmSamples Float array of PCM samples normalized to [-1.0, 1.0]
      * @return VadResult containing speech segments and timing info
      */
-    fun detectSpeech(context: Context, pcmSamples: FloatArray, threadCount: Int): VadResult {
+    fun detectSpeech(context: Context, pcmSamples: FloatArray, threadCount: Int, onnxProvider: String = "cpu"): VadResult {
         val startTime = System.currentTimeMillis()
         val originalDurationSeconds = pcmSamples.size.toDouble() / SAMPLE_RATE
 
@@ -59,7 +59,7 @@ data class VadResult(
             tenVadModelConfig = TenVadModelConfig()  // empty, not used
             sampleRate = SAMPLE_RATE
             numThreads = threadCount
-            provider = "cpu"
+            provider = onnxProvider
             debug = false
         }
 

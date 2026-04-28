@@ -18,6 +18,7 @@ interface PreferencesManager {
     val progressiveTranscription: Flow<Boolean>
     val defaultPrompt: Flow<String>
     val threadCount: Flow<Int>
+    val inferenceProvider: Flow<String>
     val transcriptionLanguage: Flow<String>
     val swipeActionMode: Flow<String>
 
@@ -40,6 +41,7 @@ interface PreferencesManager {
     suspend fun saveProgressiveTranscription(enabled: Boolean)
     suspend fun saveDefaultPrompt(prompt: String)
     suspend fun saveThreadCount(threads: Int)
+    suspend fun saveInferenceProvider(provider: String)
     suspend fun saveTranscriptionLanguage(language: String)
     suspend fun saveSwipeActionMode(mode: String)
 
@@ -63,5 +65,6 @@ interface PreferencesManager {
         const val DEFAULT_LANGUAGE = "system"
         const val DEFAULT_TRANSCRIPTION_LANGUAGE = "auto"
         const val DEFAULT_SWIPE_ACTION_MODE = "REVEAL"
+        const val DEFAULT_INFERENCE_PROVIDER = "auto"
     }
 }

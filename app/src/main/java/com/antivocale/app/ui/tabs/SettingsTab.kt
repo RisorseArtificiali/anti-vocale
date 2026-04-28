@@ -33,6 +33,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
+import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
@@ -58,6 +59,7 @@ fun SettingsTab(
     val vadEnabled by viewModel.vadEnabled.collectAsState()
     val progressiveEnabled by viewModel.progressiveTranscription.collectAsState()
     val threadCount by viewModel.threadCount.collectAsState()
+    val inferenceProvider by viewModel.inferenceProvider.collectAsState()
     val autoDetectedThreads = viewModel.autoDetectedThreadCount
     val currentLanguage by viewModel.currentLanguage.collectAsState()
     val currentTranscriptionLanguage by viewModel.currentTranscriptionLanguage.collectAsState()
@@ -891,6 +893,93 @@ fun SettingsTab(
                                     threadExpanded = false
                                 },
                                 trailingIcon = if (threadCount == threads) {
+                                    { Icon(Icons.Default.Check, contentDescription = null) }
+                                } else null
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Inference Provider Setting
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Bolt,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.inference_provider_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.inference_provider_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                var providerExpanded by remember { mutableStateOf(false) }
+                ExposedDropdownMenuBox(
+                    expanded = providerExpanded,
+                    onExpandedChange = { providerExpanded = it }
+                ) {
+                    TextField(
+                        value = when (inferenceProvider) {
+                            InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
+                            InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
+                            InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
+                            else -> inferenceProvider
+                        },
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text(stringResource(R.string.inference_provider_title)) },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = providerExpanded) },
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
+                        colors = ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
+                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    )
+                    ExposedDropdownMenu(
+                        expanded = providerExpanded,
+                        onDismissRequest = { providerExpanded = false },
+                        modifier = Modifier.exposedDropdownSize()
+                    ) {
+                        InferenceProvider.options.forEach { option ->
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        when (option) {
+                                            InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
+                                            InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
+                                            InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
+                                            else -> option
+                                        }
+                                    )
+                                },
+                                onClick = {
+                                    viewModel.saveInferenceProvider(option)
+                                    providerExpanded = false
+                                },
+                                trailingIcon = if (inferenceProvider == option) {
                                     { Icon(Icons.Default.Check, contentDescription = null) }
                                 } else null
                             )

@@ -83,7 +83,8 @@ class Qwen3AsrBackend : TranscriptionBackend {
                     qwen3Asr = qwen3Config,
                     modelType = "qwen3_asr",
                     numThreads = sherpaConfig.numThreads,
-                    debug = false
+                    debug = false,
+                    provider = sherpaConfig.provider
                 )
 
                 val recognizerConfig = OfflineRecognizerConfig(
