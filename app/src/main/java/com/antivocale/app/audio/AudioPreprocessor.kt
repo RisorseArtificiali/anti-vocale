@@ -227,27 +227,21 @@ class AudioPreprocessor @Inject constructor() {
 
             Log.d(TAG, "Input: $mime, ${inputSampleRate}Hz, $inputChannels channels")
 
+            val isPassthrough = inputSampleRate == TARGET_SAMPLE_RATE && inputChannels == TARGET_CHANNELS
+            if (isPassthrough) {
+                Log.d(TAG, "Fast path: input already 16kHz mono, skipping resampling")
+            }
+
             // Create decoder
             val decoder = MediaCodec.createDecoderByType(mime)
             decoder.configure(inputFormat, null, null, 0)
             decoder.start()
-
-            // Create resampler/encoder for output
-            val outputFormat = MediaFormat.createAudioFormat(
-                MediaFormat.MIMETYPE_AUDIO_RAW,
-                TARGET_SAMPLE_RATE,
-                TARGET_CHANNELS
-            ).apply {
-                setInteger(MediaFormat.KEY_PCM_ENCODING, AudioFormat.ENCODING_PCM_16BIT)
-                setInteger(MediaFormat.KEY_BIT_RATE, TARGET_SAMPLE_RATE * TARGET_CHANNELS * 16)
-            }
 
             val pcmData = ByteArrayOutputStream()
             val bufferInfo = MediaCodec.BufferInfo()
             var inputEOS = false
             var outputEOS = false
 
-            // Resampling ratio
             val resampleRatio = TARGET_SAMPLE_RATE.toDouble() / inputSampleRate
 
             while (!outputEOS) {
@@ -281,26 +275,17 @@ class AudioPreprocessor @Inject constructor() {
                     val outputBuffer = decoder.getOutputBuffer(outputBufferIndex)
 
                     if (outputBuffer != null && bufferInfo.size > 0) {
-                        // Read PCM data
                         val chunk = ByteArray(bufferInfo.size)
                         outputBuffer.get(chunk)
                         outputBuffer.clear()
 
-                        // Convert to mono if stereo
-                        val monoData = if (inputChannels == 2) {
-                            stereoToMono(chunk)
+                        if (isPassthrough) {
+                            pcmData.write(chunk)
                         } else {
-                            chunk
+                            val monoData = if (inputChannels == 2) stereoToMono(chunk) else chunk
+                            val resampledData = if (inputSampleRate != TARGET_SAMPLE_RATE) resampleAudio(monoData, resampleRatio) else monoData
+                            pcmData.write(resampledData)
                         }
-
-                        // Resample if needed
-                        val resampledData = if (inputSampleRate != TARGET_SAMPLE_RATE) {
-                            resampleAudio(monoData, resampleRatio)
-                        } else {
-                            monoData
-                        }
-
-                        pcmData.write(resampledData)
                     }
 
                     decoder.releaseOutputBuffer(outputBufferIndex, false)
@@ -318,7 +303,7 @@ class AudioPreprocessor @Inject constructor() {
             extractor.release()
 
             val result = pcmData.toByteArray()
-            Log.d(TAG, "Extracted ${result.size} bytes of PCM audio")
+            Log.d(TAG, "Extracted ${result.size} bytes of PCM audio (passthrough=$isPassthrough)")
             return result
 
         } catch (e: Exception) {
