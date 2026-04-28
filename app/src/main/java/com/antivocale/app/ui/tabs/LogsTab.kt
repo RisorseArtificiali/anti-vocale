@@ -12,15 +12,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.unit.IntOffset
 import kotlinx.coroutines.flow.first
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import androidx.compose.material3.ColorScheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -45,7 +41,6 @@ import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
-import kotlin.math.roundToInt
 import java.util.*
 
 /**
@@ -167,9 +162,6 @@ fun LogsTab(
         groupLogsByDate(filteredLogs, context)
     }
 
-    // Scroll behavior for auto-hiding the header
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-
     // Clear-all confirmation dialog (outside Scaffold so it overlays everything)
     if (showClearDialog) {
         AlertDialog(
@@ -193,68 +185,7 @@ fun LogsTab(
     }
 
     Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .nestedScroll(scrollBehavior.nestedScrollConnection),
-        topBar = {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onSizeChanged { size ->
-                        scrollBehavior.state.heightOffsetLimit = -size.height.toFloat()
-                    }
-                    .offset { IntOffset(0, scrollBehavior.state.heightOffset.roundToInt()) },
-                tonalElevation = 2.dp
-            ) {
-                Column {
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 16.dp, vertical = 4.dp)
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.logs_recent_requests, logs.size),
-                            style = MaterialTheme.typography.titleSmall
-                        )
-                        TextButton(
-                            onClick = { showClearDialog = true },
-                            enabled = logs.isNotEmpty()
-                        ) {
-                            Icon(
-                                Icons.Default.DeleteSweep,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(stringResource(R.string.logs_clear))
-                        }
-                    }
-
-                    // Search bar
-                    OutlinedTextField(
-                        value = searchQuery,
-                        onValueChange = { viewModel.onSearchQueryChanged(it) },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
-                        leadingIcon = {
-                            Icon(Icons.Default.Search, contentDescription = null)
-                        },
-                        trailingIcon = {
-                            if (searchQuery.isNotEmpty()) {
-                                IconButton(onClick = { viewModel.clearSearch() }) {
-                                    Icon(Icons.Default.Clear, contentDescription = null)
-                                }
-                            }
-                        },
-                        singleLine = true
-                    )
-                }
-            }
-        },
+        modifier = Modifier.fillMaxSize(),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
         val interruptedText by viewModel.interruptedTranscription.collectAsState()
@@ -384,6 +315,55 @@ fun LogsTab(
                     bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                 )
             ) {
+                // Header: Recent Requests + Search bar (scrolls with content)
+                item(key = "header") {
+                    Column(modifier = Modifier.fillMaxWidth()) {
+                        Row(
+                            modifier = Modifier
+                                .padding(horizontal = 16.dp, vertical = 4.dp)
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(R.string.logs_recent_requests, logs.size),
+                                style = MaterialTheme.typography.titleSmall
+                            )
+                            TextButton(
+                                onClick = { showClearDialog = true },
+                                enabled = logs.isNotEmpty()
+                            ) {
+                                Icon(
+                                    Icons.Default.DeleteSweep,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(stringResource(R.string.logs_clear))
+                            }
+                        }
+
+                        OutlinedTextField(
+                            value = searchQuery,
+                            onValueChange = { viewModel.onSearchQueryChanged(it) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp),
+                            placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
+                            leadingIcon = {
+                                Icon(Icons.Default.Search, contentDescription = null)
+                            },
+                            trailingIcon = {
+                                if (searchQuery.isNotEmpty()) {
+                                    IconButton(onClick = { viewModel.clearSearch() }) {
+                                        Icon(Icons.Default.Clear, contentDescription = null)
+                                    }
+                                }
+                            },
+                            singleLine = true
+                        )
+                    }
+                }
                 item(key = "vad_advisory") {
                     VadAdvisoryCard(
                         visible = showVadAdvisory,
@@ -602,13 +582,16 @@ private fun startOfDay(timestamp: Long): Long {
     return cal.timeInMillis
 }
 
+/** Fixed LazyColumn items above the date groups: header (0) and vad_advisory (1). */
+private const val FIXED_ITEMS_ABOVE_GROUPS = 2
+
 /**
  * Computes the flat LazyColumn index for a given taskId within grouped logs.
  * Each group contributes 1 header item + N entry items.
  * Returns -1 if not found.
  */
 internal fun indexOfTaskId(groupedLogs: List<DateGroup>, taskId: String): Int {
-    var flatIndex = 1  // Offset for vad_advisory item at position 0
+    var flatIndex = FIXED_ITEMS_ABOVE_GROUPS
     for (group in groupedLogs) {
         // Date group header occupies one slot
         flatIndex++
@@ -906,7 +889,6 @@ fun LogEntryItem(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.End
                             ) {
-                                val context = LocalContext.current
                                 TextButton(onClick = {
                                     (context as? MainActivity)?.enterPipMode()
                                 }) {
