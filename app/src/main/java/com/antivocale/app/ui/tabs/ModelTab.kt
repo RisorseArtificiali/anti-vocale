@@ -982,7 +982,7 @@ private fun Qwen3AsrDownloadSection(
                             else -> DownloadButtonState.Idle
                         }
                     ),
-                    downloadButtonTextResId = R.string.qwen3_asr_download,
+                    downloadButtonTextResId = R.string.download,
                     onDownloadClick = { viewModel.showQwen3AsrDownloadDialog(variant) },
                     onCancelClick = { viewModel.cancelQwen3AsrDownload(variant) },
                     onResumeClick = { viewModel.resumeQwen3AsrDownload(variant) },
@@ -1281,7 +1281,7 @@ private fun ParakeetDownloadSection(
                         ) {
                             Icon(Icons.Default.Download, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.parakeet_download))
+                            Text(stringResource(R.string.download))
                         }
                     }
                 }
@@ -1386,7 +1386,7 @@ private fun WhisperDownloadSection(
                             else -> DownloadButtonState.Idle
                         }
                     ),
-                    downloadButtonTextResId = R.string.whisper_download,
+                    downloadButtonTextResId = R.string.download,
                     extraBadges = {
                         if (variant == WhisperModelManager.Variant.TURBO) {
                             Surface(
