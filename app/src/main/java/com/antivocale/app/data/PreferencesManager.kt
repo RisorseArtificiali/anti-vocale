@@ -53,6 +53,11 @@ interface PreferencesManager {
 
     suspend fun getLegacyLanguagePreference(): String
 
+    val partialTranscriptionText: Flow<String?>
+    val partialTranscriptionTimestamp: Flow<Long?>
+    suspend fun savePartialTranscriptionState(text: String)
+    suspend fun clearPartialTranscriptionState()
+
     companion object {
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
         val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2).coerceAtMost(8)

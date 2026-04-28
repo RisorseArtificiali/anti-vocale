@@ -257,6 +257,47 @@ fun LogsTab(
         },
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { innerPadding ->
+        val interruptedText by viewModel.interruptedTranscription.collectAsState()
+
+        if (interruptedText != null) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                color = MaterialTheme.colorScheme.errorContainer,
+                shape = MaterialTheme.shapes.small
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        Icons.Default.Warning,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = stringResource(R.string.transcription_interrupted_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Text(
+                            text = interruptedText!!.take(200),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
+                            maxLines = 3
+                        )
+                    }
+                    TextButton(onClick = { viewModel.dismissInterruptedTranscription() }) {
+                        Text(stringResource(R.string.action_dismiss))
+                    }
+                }
+            }
+        }
+
         if (logs.isEmpty()) {
             Box(
                 modifier = Modifier

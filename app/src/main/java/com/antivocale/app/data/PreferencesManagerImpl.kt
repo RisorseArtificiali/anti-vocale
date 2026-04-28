@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.util.concurrent.atomic.AtomicReference
@@ -42,6 +43,8 @@ class PreferencesManagerImpl(
         private val SWIPE_ACTION_MODE = stringPreferencesKey("swipe_action_mode")
         private val BENCHMARK_RESULTS = stringPreferencesKey("benchmark_results")
         private val VAD_ADVISORY_DISMISSED = booleanPreferencesKey("vad_advisory_dismissed")
+        private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
+        private val PARTIAL_TRANSCRIPTION_TIMESTAMP = longPreferencesKey("partial_transcription_timestamp")
     }
 
     private val cache = AtomicReference(CachedPreferences())
@@ -349,6 +352,24 @@ class PreferencesManagerImpl(
     override suspend fun clearAllBenchmarkResults() {
         context.dataStore.edit { preferences ->
             preferences.remove(BENCHMARK_RESULTS)
+        }
+    }
+
+    override val partialTranscriptionText: Flow<String?> = context.dataStore.data.map { it[PARTIAL_TRANSCRIPTION_TEXT] }
+
+    override val partialTranscriptionTimestamp: Flow<Long?> = context.dataStore.data.map { it[PARTIAL_TRANSCRIPTION_TIMESTAMP] }
+
+    override suspend fun savePartialTranscriptionState(text: String) {
+        context.dataStore.edit { preferences ->
+            preferences[PARTIAL_TRANSCRIPTION_TEXT] = text
+            preferences[PARTIAL_TRANSCRIPTION_TIMESTAMP] = System.currentTimeMillis()
+        }
+    }
+
+    override suspend fun clearPartialTranscriptionState() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(PARTIAL_TRANSCRIPTION_TEXT)
+            preferences.remove(PARTIAL_TRANSCRIPTION_TIMESTAMP)
         }
     }
 }

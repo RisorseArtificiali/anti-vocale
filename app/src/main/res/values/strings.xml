@@ -636,4 +636,6 @@
     <string name="benchmark_cached_result">Last benchmark: %1$s</string>
     <string name="benchmark_provider_label">Provider</string>
     <string name="benchmark_provider_value">%1$s</string>
+    <string name="transcription_interrupted_title">Transcription was interrupted</string>
+    <string name="action_dismiss">Dismiss</string>
 </resources>

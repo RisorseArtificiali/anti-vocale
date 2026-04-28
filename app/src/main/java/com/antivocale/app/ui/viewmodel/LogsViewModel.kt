@@ -16,8 +16,10 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -67,6 +69,23 @@ class LogsViewModel @Inject constructor(
         logList.firstOrNull { it.status == LogEntry.Status.PENDING && it.result.isNotEmpty() }
             ?: logList.firstOrNull { it.status == LogEntry.Status.PENDING }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    private val _interruptedTranscription = MutableStateFlow<String?>(null)
+    val interruptedTranscription: StateFlow<String?> = _interruptedTranscription.asStateFlow()
+
+    init {
+        viewModelScope.launch {
+            val text = preferencesManager.partialTranscriptionText.first()
+            if (text != null) {
+                _interruptedTranscription.value = text
+                preferencesManager.clearPartialTranscriptionState()
+            }
+        }
+    }
+
+    fun dismissInterruptedTranscription() {
+        _interruptedTranscription.value = null
+    }
 
     fun addLog(entry: LogEntry) {
         viewModelScope.launch {

@@ -37,7 +37,11 @@ class TranscriptionOrchestrator @Inject constructor(
     companion object {
         private const val TAG = "TranscriptionOrchestrator"
         private const val MAX_CONCURRENT_CHUNKS = 2
+        private const val PARTIAL_SAVE_INTERVAL_MS = 5000L
     }
+
+    @Volatile
+    private var lastPartialSaveMs: Long = 0L
 
     private val chunkSemaphore = Semaphore(MAX_CONCURRENT_CHUNKS)
 
@@ -698,6 +702,8 @@ class TranscriptionOrchestrator @Inject constructor(
         logDao.update(entity.toLogEntry().copy(
             status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs
         ).toEntity())
+        preferencesManager.clearPartialTranscriptionState()
+        lastPartialSaveMs = 0L
     }
 
     private suspend fun logError(taskId: String, errorMessage: String, durationMs: Long = 0) {
@@ -705,6 +711,8 @@ class TranscriptionOrchestrator @Inject constructor(
         logDao.update(entity.toLogEntry().copy(
             status = LogEntry.Status.ERROR, errorMessage = errorMessage, durationMs = durationMs
         ).toEntity())
+        preferencesManager.clearPartialTranscriptionState()
+        lastPartialSaveMs = 0L
     }
 
     private suspend fun cancelIfPending(taskId: String, errorMessage: String, durationMs: Long) {
@@ -719,6 +727,16 @@ class TranscriptionOrchestrator @Inject constructor(
     private suspend fun updateInterimResult(taskId: String, accumulatedText: String) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(result = accumulatedText).toEntity())
+
+        val now = System.currentTimeMillis()
+        if (now - lastPartialSaveMs >= PARTIAL_SAVE_INTERVAL_MS) {
+            lastPartialSaveMs = now
+            try {
+                preferencesManager.savePartialTranscriptionState(accumulatedText)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to save partial transcription state", e)
+            }
+        }
     }
 
     private suspend fun updateAudioDuration(taskId: String, audioDurationSeconds: Double) {
