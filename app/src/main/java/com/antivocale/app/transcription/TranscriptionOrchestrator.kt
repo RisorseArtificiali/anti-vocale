@@ -31,7 +31,8 @@ class TranscriptionOrchestrator @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val logDao: LogDao,
     private val transcriptionCalibrator: TranscriptionCalibrator,
-    private val backendManager: TranscriptionBackendManager
+    private val backendManager: TranscriptionBackendManager,
+    private val audioPreprocessor: AudioPreprocessor
 ) {
     companion object {
         private const val TAG = "TranscriptionOrchestrator"
@@ -95,6 +96,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     prompt = prompt,
                     queuePosition = queuePosition,
                     queueTotal = queueTotal,
+                    context = context,
                     cacheDir = cacheDir,
                     listener = listener,
                     coroutineScope = coroutineScope
@@ -274,17 +276,13 @@ class TranscriptionOrchestrator @Inject constructor(
         prompt: String,
         queuePosition: Int,
         queueTotal: Int,
+        context: Context,
         cacheDir: File,
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope
     ): Result<String> {
         if (filePath.isNullOrEmpty()) {
             return Result.failure(IllegalArgumentException("No file path provided"))
-        }
-
-        val audioFile = File(filePath)
-        if (!audioFile.exists()) {
-            return Result.failure(PreprocessingError.FileNotFound)
         }
 
         val backend = backendManager.getActiveBackend()
@@ -300,11 +298,11 @@ class TranscriptionOrchestrator @Inject constructor(
         val vadEnabled = preferencesManager.vadEnabled.first()
         val threadCount = preferencesManager.threadCount.first()
         val preprocessingResult = try {
-            AudioPreprocessor.prepareAudioForMediaPipe(
+            audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = filePath,
                 cacheDir = cacheDir,
                 maxChunkDurationSeconds = backend.maxChunkDurationSeconds,
-                context = null,
+                context = context,
                 enableVad = vadEnabled,
                 vadNumThreads = threadCount
             )

@@ -12,6 +12,8 @@ import java.io.File
 import java.io.FileOutputStream
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import javax.inject.Inject
+import javax.inject.Singleton
 
 /**
  * Handles audio preprocessing for Gemma multimodal models (via LiteRT-LM).
@@ -22,14 +24,17 @@ import java.nio.ByteOrder
  * Note: FFmpegKit was retired in January 2025. This implementation uses
  * native Android APIs which are more reliable and don't require external dependencies.
  */
-object AudioPreprocessor {
+@Singleton
+class AudioPreprocessor @Inject constructor() {
 
-    private const val TAG = "AudioPreprocessor"
-    private const val TARGET_SAMPLE_RATE = 16000
-    private const val TARGET_CHANNELS = 1
-    private const val MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024 // 100MB limit
-    private const val MAX_DURATION_SECONDS = 600 // 10 minutes max
-    private const val TIMEOUT_US = 10000L
+    companion object {
+        private const val TAG = "AudioPreprocessor"
+        private const val TARGET_SAMPLE_RATE = 16000
+        private const val TARGET_CHANNELS = 1
+        private const val MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024 // 100MB limit
+        private const val MAX_DURATION_SECONDS = 600 // 10 minutes max
+        private const val TIMEOUT_US = 10000L
+    }
 
     /**
      * Result of audio preprocessing containing one or more WAV chunks.

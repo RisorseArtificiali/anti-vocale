@@ -1,44 +1,16 @@
 package com.antivocale.app.transcription
 
 import android.content.Context
-import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
-import com.antivocale.app.data.local.LogDao
-
-import com.antivocale.app.service.TranscriptionListener
 import io.mockk.*
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
-import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class TranscriptionOrchestratorTest {
-
-    private lateinit var preferencesManager: PreferencesManager
-    private lateinit var logDao: LogDao
-    private lateinit var transcriptionCalibrator: TranscriptionCalibrator
-    private lateinit var backendManager: TranscriptionBackendManager
-    private lateinit var listener: TranscriptionListener
-    private lateinit var orchestrator: TranscriptionOrchestrator
-
-    @Before
-    fun setUp() {
-        preferencesManager = mockk(relaxed = true)
-        logDao = mockk(relaxed = true) {
-            // Return null by default so logError/logSuccess exit early
-            coEvery { getByTaskId(any()) } returns null
-        }
-        transcriptionCalibrator = mockk(relaxed = true)
-        backendManager = mockk(relaxed = true)
-        listener = mockk(relaxed = true)
-
-        orchestrator = TranscriptionOrchestrator(
-            preferencesManager, logDao, transcriptionCalibrator, backendManager
-        )
-    }
+class TranscriptionOrchestratorTest : TranscriptionOrchestratorTestBase() {
 
     // --- Pure Utility Tests ---
 
@@ -156,7 +128,6 @@ class TranscriptionOrchestratorTest {
 
     @Test
     fun `processRequest returns error when no backend configured`() = runTest {
-        // No model path configured
         every { preferencesManager.modelPath } returns flowOf(null)
         every { preferencesManager.transcriptionBackend } returns flowOf("llm")
         every { backendManager.hasActiveBackend() } returns false
@@ -355,7 +326,7 @@ class TranscriptionOrchestratorTest {
         coEvery { backendManager.setActiveBackend(any(), any(), any()) } returns Result.success(Unit)
 
         val context = mockk<Context>(relaxed = true)
-        val result = orchestrator.processRequest(
+        orchestrator.processRequest(
             taskId = "test-backend",
             requestType = "text",
             prompt = "hi",
