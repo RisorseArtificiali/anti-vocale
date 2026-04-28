@@ -48,6 +48,7 @@ import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.Language
+import com.antivocale.app.transcription.Gemma4GgufBackend
 import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
@@ -1015,6 +1016,7 @@ private fun GgufDownloadSection(
     guardedModelSwitch: (() -> Unit) -> Unit = {},
     isSupported: Boolean = true
 ) {
+    val context = LocalContext.current
     val ggufState by viewModel.ggufState.collectAsState()
 
     Card(
@@ -1102,7 +1104,17 @@ private fun GgufDownloadSection(
                     onResumeClick = { viewModel.resumeGgufDownload(variant) },
                     onClearPartialClick = { viewModel.clearGgufPartialDownload(variant) },
                     onUseClick = { guardedModelSwitch { viewModel.useGgufModel(variant) } },
-                    onDeleteClick = { viewModel.showGgufDeleteDialog(variant) }
+                    onDeleteClick = { viewModel.showGgufDeleteDialog(variant) },
+                    onBenchmarkClick = {
+                        val path = Gemma4GgufModelManager.getLocalPath(context, variant)
+                        if (path != null) {
+                            viewModel.startBenchmark(
+                                Gemma4GgufBackend.BACKEND_ID,
+                                path,
+                                context.getString(variant.titleResId)
+                            )
+                        }
+                    }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
