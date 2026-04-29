@@ -320,7 +320,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         // Use streaming pipeline for multi-chunk non-VAD scenarios
         val maxChunkDuration = backend.maxChunkDurationSeconds
-        val usePipeline = !vadEnabled && maxChunkDuration != null && !progressiveEnabled
+        val usePipeline = !vadEnabled && maxChunkDuration != null
 
         val totalStartMs = System.currentTimeMillis()
 
@@ -333,7 +333,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 context = context,
                 coroutineScope = coroutineScope,
                 listener = listener,
-                prompt = prompt
+                prompt = prompt,
+                progressiveEnabled = progressiveEnabled
             )
         }
 
@@ -404,6 +405,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         // Multi-chunk path: parallel processing with progress tracking
         return processParallelChunks(
+            taskId = taskId,
             chunks = preprocessingResult.chunks,
             sampleRate = preprocessingResult.sampleRate,
             prompt = resolvedPrompt,
@@ -414,7 +416,8 @@ class TranscriptionOrchestrator @Inject constructor(
             queueTotal = queueTotal,
             listener = listener,
             coroutineScope = coroutineScope,
-            transcriptionStartTime = transcriptionStartTime
+            transcriptionStartTime = transcriptionStartTime,
+            progressiveEnabled = progressiveEnabled
         )
     }
 
@@ -448,11 +451,10 @@ class TranscriptionOrchestrator @Inject constructor(
                         if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                         accumulatedText.append(trimmed)
                         updateInterimResult(taskId, accumulatedText.toString())
-                        val latestSegment = text.trim()
-                        Log.i(TAG, "Progressive preview: segment ${latestSegment.length} chars, total ${accumulatedText.length} chars")
+                        Log.i(TAG, "Progressive preview: segment ${trimmed.length} chars, total ${accumulatedText.length} chars")
                         listener.onInterimResult(
-                            contentText = latestSegment,
-                            bigText = latestSegment,
+                            contentText = trimmed,
+                            bigText = trimmed,
                             subText = "Segment $segNumber/$chunkCount"
                         )
                     }
@@ -479,6 +481,7 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     private suspend fun processParallelChunks(
+        taskId: String,
         chunks: List<FloatArray>,
         sampleRate: Int,
         prompt: String,
@@ -489,7 +492,8 @@ class TranscriptionOrchestrator @Inject constructor(
         queueTotal: Int,
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope,
-        transcriptionStartTime: Long
+        transcriptionStartTime: Long,
+        progressiveEnabled: Boolean = false
     ): Result<String> {
         val chunkCount = chunks.size
         val completedChunks = AtomicInteger(0)
@@ -542,12 +546,25 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             }
 
+            val progressiveText = if (progressiveEnabled) StringBuilder() else null
+
             deferredResults.forEachIndexed { index, deferred ->
                 val chunkResult = deferred.await()
                 chunkResult.fold(
                     onSuccess = { text ->
                         if (text.isNotBlank()) {
-                            results[index] = text.trim()
+                            val trimmed = text.trim()
+                            results[index] = trimmed
+                            if (progressiveText != null) {
+                                if (progressiveText.isNotEmpty()) progressiveText.append(' ')
+                                progressiveText.append(trimmed)
+                                updateInterimResult(taskId, progressiveText.toString())
+                                listener.onInterimResult(
+                                    contentText = trimmed,
+                                    bigText = trimmed,
+                                    subText = "Chunk ${index + 1}/$chunkCount"
+                                )
+                            }
                         }
                     },
                     onFailure = { error ->
@@ -587,16 +604,19 @@ class TranscriptionOrchestrator @Inject constructor(
         context: Context,
         coroutineScope: CoroutineScope,
         listener: TranscriptionListener,
-        prompt: String
+        prompt: String,
+        progressiveEnabled: Boolean = false
     ): Result<String> {
         val resolvedPrompt = resolvePrompt(prompt)
 
         val pipelineStartMs = System.currentTimeMillis()
         val chunkProcessingStartTime = System.currentTimeMillis()
-        val results = mutableListOf<String>()
+        val accumulatedText = StringBuilder()
         var totalDurationSeconds = 0.0
+        var expectedChunkCount = 0
         var firstChunkDecodeMs = 0L
         var firstChunkInferStartMs = 0L
+        var failedChunks = 0
 
         try {
             audioPreprocessor.prepareAudioStream(
@@ -608,6 +628,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 when (event) {
                     is AudioPreprocessor.StreamEvent.Header -> {
                         totalDurationSeconds = event.header.totalDurationSeconds
+                        expectedChunkCount = event.header.expectedChunkCount
                         updateAudioDuration(taskId, event.header.totalDurationSeconds)
                         Log.i(TAG, "Pipeline: expecting ${event.header.expectedChunkCount} chunks, ${event.header.totalDurationSeconds}s")
                     }
@@ -628,14 +649,27 @@ class TranscriptionOrchestrator @Inject constructor(
                         )
                         chunkResult.fold(
                             onSuccess = { text ->
-                                if (text.isNotBlank()) results.add(text.trim())
+                                if (text.isNotBlank()) {
+                                    val trimmed = text.trim()
+                                    if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
+                                    accumulatedText.append(trimmed)
+                                    if (progressiveEnabled) {
+                                        updateInterimResult(taskId, accumulatedText.toString())
+                                        listener.onInterimResult(
+                                            contentText = trimmed,
+                                            bigText = trimmed,
+                                            subText = "Chunk ${chunk.chunkIndex + 1}/$expectedChunkCount"
+                                        )
+                                    }
+                                }
                             },
                             onFailure = { error ->
+                                failedChunks++
                                 Log.e(TAG, "Pipeline chunk ${chunk.chunkIndex} failed", error)
                             }
                         )
 
-                        if (chunk.chunkIndex == 0 && results.isNotEmpty()) {
+                        if (chunk.chunkIndex == 0 && accumulatedText.isNotEmpty()) {
                             val ttft = System.currentTimeMillis() - firstChunkInferStartMs
                             Log.i(TAG, "PERF: pipeline time-to-first-text = ${System.currentTimeMillis() - pipelineStartMs}ms (decode=${firstChunkDecodeMs}ms + infer=${ttft}ms)")
                             listener.onStatusUpdate("Transcribing…")
@@ -649,15 +683,18 @@ class TranscriptionOrchestrator @Inject constructor(
             return Result.failure(IllegalStateException("Pipeline failed: ${e.message}"))
         }
 
-        val combinedResult = results.joinToString(" ")
+        val combinedResult = accumulatedText.toString()
         recordCalibration(backend, totalDurationSeconds.toInt(), chunkProcessingStartTime)
 
         val totalMs = System.currentTimeMillis() - pipelineStartMs
-        Log.i(TAG, "PERF: pipeline total ${totalMs}ms for ${totalDurationSeconds}s audio, ${results.size} chunks, backend=${backend.id}, ttft_decode=${firstChunkDecodeMs}ms")
+        Log.i(TAG, "PERF: pipeline total ${totalMs}ms for ${totalDurationSeconds}s audio, ${expectedChunkCount} chunks, backend=${backend.id}, ttft_decode=${firstChunkDecodeMs}ms")
 
         return if (combinedResult.isBlank()) {
             Result.failure(IllegalStateException("No transcription produced"))
         } else {
+            if (failedChunks > 0) {
+                Log.w(TAG, "Pipeline completed with $failedChunks/$expectedChunkCount failed chunks")
+            }
             Result.success(combinedResult)
         }
     }
