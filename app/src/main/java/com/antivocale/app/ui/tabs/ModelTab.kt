@@ -1189,6 +1189,17 @@ private fun ParakeetDownloadSection(
                                     )
                                 }
                             }
+                            Surface(
+                                color = MaterialTheme.colorScheme.tertiary,
+                                shape = MaterialTheme.shapes.small
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.recommended),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onTertiary,
+                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                )
+                            }
                         }
                         Text(
                             text = stringResource(R.string.parakeet_description),
@@ -1400,26 +1411,13 @@ private fun WhisperDownloadSection(
                     ),
                     downloadButtonTextResId = R.string.download,
                     extraBadges = {
-                        if (variant == WhisperModelManager.Variant.TURBO) {
-                            Surface(
-                                color = MaterialTheme.colorScheme.tertiary,
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.recommended),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onTertiary,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
                         if (variant == WhisperModelManager.Variant.DISTIL_LARGE_V3) {
                             Surface(
                                 color = MaterialTheme.colorScheme.secondary,
                                 shape = MaterialTheme.shapes.small
                             ) {
                                 Text(
-                                    text = stringResource(R.string.fastest_badge),
+                                    text = stringResource(R.string.best_italian_badge),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSecondary,
                                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -1539,6 +1537,15 @@ private fun WhisperDownloadSection(
                                 speed = stringResource(R.string.speed_comparison_distil_it_speed),
                                 quality = stringResource(R.string.speed_comparison_distil_it_quality),
                                 badge = stringResource(R.string.speed_comparison_distil_it_note),
+                                muted = false
+                            )
+                            // Parakeet TDT
+                            ComparisonRow(
+                                name = stringResource(R.string.speed_comparison_parakeet_name),
+                                size = stringResource(R.string.speed_comparison_parakeet_size),
+                                speed = stringResource(R.string.speed_comparison_parakeet_speed),
+                                quality = stringResource(R.string.speed_comparison_parakeet_quality),
+                                badge = stringResource(R.string.speed_comparison_parakeet_note),
                                 muted = false
                             )
                         }

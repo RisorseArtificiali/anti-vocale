@@ -94,8 +94,8 @@
     <string name="model_desc_gemma_3n_e4b">4.2GB - Multimodal (text + audio), higher quality</string>
 
     <!-- Parakeet model -->
-    <string name="parakeet_title">Parakeet TDT (Alternative)</string>
-    <string name="parakeet_description">~464MB • 25 languages • Faster but less accurate</string>
+    <string name="parakeet_title">Parakeet TDT</string>
+    <string name="parakeet_description">~464MB • 25 languages • Fast • Recommended</string>
     <string name="parakeet_download">Download Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Download Parakeet TDT?</string>
     <string name="parakeet_download_confirm_message">This will download ~464MB. Parakeet is faster but less accurate than Gemma for transcription.</string>
@@ -106,7 +106,7 @@
     <string name="whisper_small_title">Whisper Small</string>
     <string name="whisper_small_description">~358MB • Lower accuracy, especially on noisy audio • Only for low-spec devices</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
-    <string name="whisper_turbo_description">~988MB • Near large-v3 quality • Best value</string>
+    <string name="whisper_turbo_description">~988MB • Near large-v3 quality • Balanced multilingual</string>
     <string name="whisper_medium_title">Whisper Medium</string>
     <string name="whisper_medium_description">~903MB • Very accurate • Best for Italian</string>
     <string name="whisper_distil_large_v3_title">Distil Italian</string>
@@ -184,6 +184,7 @@
     <string name="requires_huggingface_token">Requires HuggingFace token.</string>
     <string name="add_in_settings">Add in Settings</string>
     <string name="recommended">Recommended</string>
+    <string name="best_italian_badge">Best Italian</string>
     <string name="downloading">Downloading…</string>
     <string name="connecting_to_huggingface">Connecting to HuggingFace…</string>
     <string name="cancel_download">Cancel Download</string>
@@ -449,7 +450,12 @@
     <string name="speed_comparison_distil_it_size">~1.0GB</string>
     <string name="speed_comparison_distil_it_speed">~1.8x</string>
     <string name="speed_comparison_distil_it_quality">Best (Italian)</string>
-    <string name="speed_comparison_distil_it_note">Recommended</string>
+    <string name="speed_comparison_distil_it_note">Best Italian</string>
+    <string name="speed_comparison_parakeet_name">Parakeet TDT</string>
+    <string name="speed_comparison_parakeet_size">~464MB</string>
+    <string name="speed_comparison_parakeet_speed">~17x</string>
+    <string name="speed_comparison_parakeet_quality">Very Good</string>
+    <string name="speed_comparison_parakeet_note">Recommended</string>
     <string name="fastest_badge">Fastest</string>
     <string name="coming_soon_badge">Coming soon</string>
 
