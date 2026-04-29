@@ -672,7 +672,9 @@ class TranscriptionOrchestrator @Inject constructor(
                         if (chunk.chunkIndex == 0 && accumulatedText.isNotEmpty()) {
                             val ttft = System.currentTimeMillis() - firstChunkInferStartMs
                             Log.i(TAG, "PERF: pipeline time-to-first-text = ${System.currentTimeMillis() - pipelineStartMs}ms (decode=${firstChunkDecodeMs}ms + infer=${ttft}ms)")
-                            listener.onStatusUpdate("Transcribing…")
+                            if (!progressiveEnabled) {
+                                listener.onStatusUpdate("Transcribing…")
+                            }
                         }
                     }
                 }
