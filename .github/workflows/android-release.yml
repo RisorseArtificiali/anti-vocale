@@ -6,7 +6,7 @@ on:
   pull_request:
     branches: [ main ]
   release:
-    types: [ published ]
+    types: [ published, prereleased ]
   workflow_dispatch:
     inputs:
       tag:
@@ -39,7 +39,7 @@ jobs:
         run: |
           mkdir -p app/libs
           curl -L -o app/libs/sherpa-onnx.aar \
-            https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.28/sherpa-onnx-1.12.28.aar
+            https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.12.40/sherpa-onnx-1.12.40.aar
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
