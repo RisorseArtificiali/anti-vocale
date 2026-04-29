@@ -101,8 +101,8 @@
     <string name="parakeet_download_confirm_message">Verranno scaricati ~464MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
 
     <!-- Whisper model -->
-    <string name="whisper_title">Whisper (Multilingue)</string>
-    <string name="whisper_description">Ideale per italiano e altre lingue</string>
+    <string name="whisper_title">Whisper</string>
+    <string name="whisper_description">Riconoscimento vocale multilingue</string>
     <string name="whisper_small_title">Whisper Small</string>
     <string name="whisper_small_description">~358MB • Precisione inferiore, specialmente con audio rumoroso • Solo per dispositivi con poca memoria</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
@@ -177,7 +177,7 @@
     <string name="generating_text">Generazione risposta testuale…</string>
 
     <!-- Model Tab - Download section -->
-    <string name="download_models">Scarica Modelli</string>
+    <string name="download_models">Modelli Gemma</string>
     <string name="gemma_advanced_features_description">LLM multimodali completi con funzionalità avanzate: trascrizione, trasformazione del testo e arricchimento.</string>
     <string name="requires_huggingface_token">Richiede token HuggingFace.</string>
     <string name="add_in_settings">Aggiungi in Impostazioni</string>
@@ -544,6 +544,10 @@
     <string name="model_desc_gemma4_gguf_q5km">5,3 GB · Apache 2.0 · Generazione testo di qualità superiore via llama.cpp.</string>
     <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
     <string name="model_desc_gemma4_gguf_q8">7,4 GB · Apache 2.0 · Generazione testo della migliore qualità via llama.cpp. Richiede 8GB+ RAM.</string>
+    <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
+    <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
+    <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
+    <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
     <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
     <string name="gguf_inference_unavailable">Inferenza GGUF richiede la libreria nativa llama.cpp. Compila libllama.so per Android ARM64.</string>
     <string name="gguf_model_download_error">Download del modello GGUF non riuscito</string>
@@ -581,4 +585,45 @@
     <string name="benchmark_disclaimer">I risultati possono variare in base al carico e alla temperatura del dispositivo.</string>
     <string name="benchmark_button">Benchmark</string>
     <string name="benchmark_cached_result">Ultimo benchmark: %1$s</string>
+
+    <!-- Model Info Overlay -->
+    <string name="model_info_title">Informazioni modello</string>
+    <string name="model_info_section_languages">Lingue supportate</string>
+    <string name="model_info_section_recommendations">Raccomandazioni</string>
+    <string name="model_info_section_technical">Dettagli tecnici</string>
+    <string name="model_info_section_performance">Suggerimenti sulle prestazioni</string>
+    <string name="model_info_languages_count">%d lingue</string>
+    <string name="model_info_no_languages">Supporto lingue sconosciuto</string>
+    <string name="model_info_architecture">Architettura</string>
+    <string name="model_info_arch_encoder_decoder">Encoder-Decoder (Whisper)</string>
+    <string name="model_info_arch_transducer">Transducer (TDT)</string>
+    <string name="model_info_arch_ctc">CTC (Connectionist Temporal Classification)</string>
+    <string name="model_info_arch_llm">Modello linguistico grande</string>
+    <string name="model_info_model_size">Dimensione modello</string>
+    <string name="model_info_max_audio">Durata massima audio</string>
+    <string name="model_info_max_audio_unlimited">Illimitata</string>
+    <string name="model_info_max_audio_seconds">%d secondi</string>
+    <string name="model_info_quantization">Quantizzazione</string>
+    <string name="model_info_recommended_threads">Thread consigliati</string>
+    <string name="model_info_threads_range">%1$d – %2$d</string>
+    <string name="model_info_arm64_only">Solo dispositivi ARM64</string>
+    <string name="model_info_progressive">Trascrizione progressiva</string>
+    <string name="model_info_vad_recommended">Pre-elaborazione VAD consigliata</string>
+    <string name="model_info_best_for_whisper_small">Modello multilingue compatto per test rapidi</string>
+    <string name="model_info_notes_whisper_small">Buon punto di partenza. Accuratezza limitata rispetto ai modelli più grandi.</string>
+    <string name="model_info_best_for_whisper_turbo">ASR multilingue bilanciato con rilevamento automatico</string>
+    <string name="model_info_notes_whisper_turbo">Quasi la qualità di large-v3 a velocità moderata. Adatto per utenti multilingue.</string>
+    <string name="model_info_best_for_whisper_medium">Modello multilingue di dimensioni medie</string>
+    <string name="model_info_notes_whisper_medium">Buon compromesso tra accuratezza e utilizzo delle risorse.</string>
+    <string name="model_info_best_for_distil_it">Migliore accuratezza italiano (4,3%% WER)</string>
+    <string name="model_info_notes_distil_it">Solo italiano. Massima accuratezza per messaggi vocali italiani. Priorità all\'accuratezza rispetto alla velocità.</string>
+    <string name="model_info_best_for_qwen3">Rilevamento automatico in 52 lingue</string>
+    <string name="model_info_notes_qwen3">Copertura linguistica più ampia. Nota: tronca audio oltre i 30 secondi. Solo dispositivi ARM64.</string>
+    <string name="model_info_best_for_parakeet">Trascrizione più veloce (17,6x più veloce di Whisper, 5,4%% WER)</string>
+    <string name="model_info_notes_parakeet">Nessun limite di durata audio. VAD non necessario. Ideale per chi priorità alla velocità.</string>
+    <string name="model_info_best_for_gemma">LLM multimodale per compiti testo + audio</string>
+    <string name="model_info_notes_gemma">Non ottimizzato per ASR puro. Usare per funzionalità avanzate come comprensione audio combinata con generazione testo.</string>
+    <string name="model_info_benchmark_wer">Tasso di errore parole (italiano): %.1f%%</string>
+    <string name="model_info_relative_speed">Velocità: %s</string>
+    <string name="model_info_close">Chiudi</string>
 </resources>

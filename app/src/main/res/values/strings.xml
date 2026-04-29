@@ -101,8 +101,8 @@
     <string name="parakeet_download_confirm_message">This will download ~464MB. Parakeet is faster but less accurate than Gemma for transcription.</string>
 
     <!-- Whisper model -->
-    <string name="whisper_title">Whisper (Multilingual)</string>
-    <string name="whisper_description">Best for Italian and other languages</string>
+    <string name="whisper_title">Whisper</string>
+    <string name="whisper_description">Multilingual speech recognition</string>
     <string name="whisper_small_title">Whisper Small</string>
     <string name="whisper_small_description">~358MB • Lower accuracy, especially on noisy audio • Only for low-spec devices</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
@@ -179,7 +179,7 @@
     <string name="generating_text">Generating text response…</string>
 
     <!-- Model Tab - Download section -->
-    <string name="download_models">Download Models</string>
+    <string name="download_models">Gemma Models</string>
     <string name="gemma_advanced_features_description">Full multimodal LLMs with advanced features: transcription, text transformation, and enrichment.</string>
     <string name="requires_huggingface_token">Requires HuggingFace token.</string>
     <string name="add_in_settings">Add in Settings</string>
@@ -543,6 +543,10 @@
     <string name="model_desc_gemma4_gguf_q5km">5.3 GB · Apache 2.0 · Higher quality text generation via llama.cpp.</string>
     <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
     <string name="model_desc_gemma4_gguf_q8">7.4 GB · Apache 2.0 · Best quality text generation via llama.cpp. Requires 8GB+ RAM.</string>
+    <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
+    <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
+    <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
+    <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
     <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
     <string name="gguf_inference_unavailable">GGUF inference requires native llama.cpp library. Build libllama.so for Android ARM64.</string>
     <string name="gguf_model_download_error">Failed to download GGUF model</string>
@@ -644,4 +648,45 @@
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">Transcription was interrupted</string>
     <string name="action_dismiss">Dismiss</string>
+
+    <!-- Model Info Overlay -->
+    <string name="model_info_title">Model Information</string>
+    <string name="model_info_section_languages">Supported Languages</string>
+    <string name="model_info_section_recommendations">Recommendations</string>
+    <string name="model_info_section_technical">Technical Details</string>
+    <string name="model_info_section_performance">Performance Tips</string>
+    <string name="model_info_languages_count">%d languages</string>
+    <string name="model_info_no_languages">Language support unknown</string>
+    <string name="model_info_architecture">Architecture</string>
+    <string name="model_info_arch_encoder_decoder">Encoder-Decoder (Whisper)</string>
+    <string name="model_info_arch_transducer">Transducer (TDT)</string>
+    <string name="model_info_arch_ctc">CTC (Connectionist Temporal Classification)</string>
+    <string name="model_info_arch_llm">Large Language Model</string>
+    <string name="model_info_model_size">Model size</string>
+    <string name="model_info_max_audio">Max audio length</string>
+    <string name="model_info_max_audio_unlimited">Unlimited</string>
+    <string name="model_info_max_audio_seconds">%d seconds</string>
+    <string name="model_info_quantization">Quantization</string>
+    <string name="model_info_recommended_threads">Recommended threads</string>
+    <string name="model_info_threads_range">%1$d – %2$d</string>
+    <string name="model_info_arm64_only">ARM64 devices only</string>
+    <string name="model_info_progressive">Progressive transcription</string>
+    <string name="model_info_vad_recommended">VAD preprocessing recommended</string>
+    <string name="model_info_best_for_whisper_small">Compact multilingual model for quick testing</string>
+    <string name="model_info_notes_whisper_small">Good starting point. Limited accuracy compared to larger models.</string>
+    <string name="model_info_best_for_whisper_turbo">Balanced multilingual ASR with auto-detection</string>
+    <string name="model_info_notes_whisper_turbo">Near large-v3 quality at moderate speed. Good for multilingual users.</string>
+    <string name="model_info_best_for_whisper_medium">Mid-size multilingual model</string>
+    <string name="model_info_notes_whisper_medium">Good balance between accuracy and resource usage.</string>
+    <string name="model_info_best_for_distil_it">Best Italian accuracy (4.3%% WER)</string>
+    <string name="model_info_notes_distil_it">Italian-only. Highest accuracy for Italian voice messages. Prioritize accuracy over speed.</string>
+    <string name="model_info_best_for_qwen3">52-language auto-detection</string>
+    <string name="model_info_notes_qwen3">Broadest language coverage. Note: truncates audio longer than 30 seconds. ARM64 devices only.</string>
+    <string name="model_info_best_for_parakeet">Fastest transcription (17.6x faster than Whisper, 5.4%% WER)</string>
+    <string name="model_info_notes_parakeet">No audio length limit. VAD not needed. Best for users who prioritize speed.</string>
+    <string name="model_info_best_for_gemma">Multimodal LLM for text + audio tasks</string>
+    <string name="model_info_notes_gemma">Not optimized for pure ASR. Use for advanced features like audio understanding combined with text generation.</string>
+    <string name="model_info_benchmark_wer">Word Error Rate (Italian): %.1f%%</string>
+    <string name="model_info_relative_speed">Speed: %s</string>
+    <string name="model_info_close">Close</string>
 </resources>

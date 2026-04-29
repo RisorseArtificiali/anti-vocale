@@ -95,7 +95,8 @@ fun ModelVariantCard(
     onExtraActionClick: () -> Unit = {},
     onUseClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
-    onBenchmarkClick: (() -> Unit)? = null
+    onBenchmarkClick: (() -> Unit)? = null,
+    onInfoClick: (() -> Unit)? = null
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
@@ -162,6 +163,9 @@ fun ModelVariantCard(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                }
+                if (onInfoClick != null) {
+                    InfoIconButton(onClick = onInfoClick)
                 }
             }
 
@@ -462,5 +466,20 @@ internal fun PartialDownloadSection(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun InfoIconButton(onClick: () -> Unit) {
+    IconButton(
+        onClick = onClick,
+        modifier = Modifier.size(32.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Default.Info,
+            contentDescription = stringResource(R.string.model_info_title),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }

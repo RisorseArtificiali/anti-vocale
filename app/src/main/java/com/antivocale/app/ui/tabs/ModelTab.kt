@@ -11,7 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.ClickableText
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -50,8 +49,11 @@ import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.Language
 import com.antivocale.app.transcription.Gemma4GgufBackend
 import com.antivocale.app.transcription.Gemma4GgufModelManager
+import com.antivocale.app.transcription.ModelInfoProvider
+import com.antivocale.app.transcription.ModelVariant
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
+import com.antivocale.app.ui.components.InfoIconButton
 import com.antivocale.app.ui.components.LanguageFilterBar
 import com.antivocale.app.ui.components.ModelVariantCard
 import com.antivocale.app.ui.components.ModelVariantCardState
@@ -60,8 +62,17 @@ import com.antivocale.app.ui.components.PartialDownloadSection
 import com.antivocale.app.ui.components.BenchmarkDialog
 import com.antivocale.app.ui.components.DeleteConfirmationDialog
 import com.antivocale.app.ui.components.DownloadConfirmationDialog
+import com.antivocale.app.ui.components.ModelInfoOverlay
 import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.ui.viewmodel.ModelViewModel
+
+private val ParakeetVariant = object : ModelVariant {
+    override val titleResId = R.string.parakeet_title
+    override val descriptionResId = R.string.parakeet_description
+    override val dirName = "parakeet-tdt"
+    override val estimatedSizeMB = 827L
+    override val supportedLanguageCodes = Language.PARAKEET
+}
 
 private enum class PendingAction {
     PICK_FILE
@@ -124,6 +135,8 @@ fun ModelTab(
     val isTranscribing by InferenceService.isTranscribing.collectAsState()
     var pendingModelSwitch by remember { mutableStateOf<(() -> Unit)?>(null) }
     var showUnloadDialog by remember { mutableStateOf(false) }
+
+    var modelInfoVariant by remember { mutableStateOf<ModelVariant?>(null) }
 
     // Snackbar host state for displaying errors
     val snackbarHostState = remember { SnackbarHostState() }
@@ -419,6 +432,16 @@ fun ModelTab(
         )
     }
 
+    // Model info overlay
+    val infoVariant = modelInfoVariant
+    if (infoVariant != null) {
+        ModelInfoOverlay(
+            variant = infoVariant,
+            info = ModelInfoProvider.getInfo(infoVariant),
+            onDismiss = { modelInfoVariant = null }
+        )
+    }
+
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
@@ -458,7 +481,8 @@ fun ModelTab(
                 viewModel = viewModel,
                 activeModelName = uiState.modelName,
                 guardedModelSwitch = guardedSwitch,
-                visibleVariants = visibleWhisperVariants
+                visibleVariants = visibleWhisperVariants,
+                onInfoClick = { modelInfoVariant = it }
             )
         }
 
@@ -468,7 +492,8 @@ fun ModelTab(
                 viewModel = viewModel,
                 activeModelName = uiState.modelName,
                 guardedModelSwitch = guardedSwitch,
-                visibleVariants = visibleQwen3AsrVariants
+                visibleVariants = visibleQwen3AsrVariants,
+                onInfoClick = { modelInfoVariant = it }
             )
         }
 
@@ -479,7 +504,8 @@ fun ModelTab(
         //     viewModel = viewModel,
         //     activeModelName = uiState.modelName,
         //     guardedModelSwitch = guardedSwitch,
-        //     isSupported = supportsArm64()
+        //     isSupported = supportsArm64(),
+        //     onInfoClick = { modelInfoVariant = it }
         // )
 
         // Parakeet TDT section - fast multilingual ASR backend
@@ -488,7 +514,8 @@ fun ModelTab(
                 viewModel = viewModel,
                 activeModelName = uiState.modelName,
                 context = context,
-                guardedModelSwitch = guardedSwitch
+                guardedModelSwitch = guardedSwitch,
+                onInfoClick = { modelInfoVariant = ParakeetVariant }
             )
         }
 
@@ -499,7 +526,9 @@ fun ModelTab(
                 context = context,
                 onNavigateToSettings = onNavigateToSettings,
                 activeModelName = uiState.modelName,
-                visibleVariants = visibleGemmaVariants
+                visibleVariants = visibleGemmaVariants,
+                guardedModelSwitch = guardedSwitch,
+                onInfoClick = { modelInfoVariant = it }
             )
         }
 
@@ -559,7 +588,7 @@ fun ModelTab(
 // ==================== Model Download Section ====================
 
 /**
- * Model download section with cards for each available model variant.
+ * Gemma LiteRT-LM download section using the shared [ModelVariantCard].
  */
 @Composable
 private fun ModelDownloadSection(
@@ -567,337 +596,109 @@ private fun ModelDownloadSection(
     context: android.content.Context,
     onNavigateToSettings: () -> Unit,
     activeModelName: String,
-    visibleVariants: List<ModelDownloader.ModelVariant> = ModelDownloader.ModelVariant.entries
+    visibleVariants: List<ModelDownloader.ModelVariant> = ModelDownloader.ModelVariant.entries,
+    guardedModelSwitch: (() -> Unit) -> Unit = {},
+    onInfoClick: (ModelVariant) -> Unit = {}
 ) {
     val downloadState by viewModel.downloadUiState.collectAsState()
 
-    Column(
-        verticalArrangement = Arrangement.spacedBy(12.dp)
-    ) {
-        // Section header
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                Icons.Default.CloudDownload,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-            Text(
-                text = stringResource(R.string.download_models),
-                style = MaterialTheme.typography.titleSmall
-            )
-        }
-
-        // Description: Gemma are full LLMs with advanced features
-        Text(
-            text = stringResource(R.string.gemma_advanced_features_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        // Model variant cards
-        visibleVariants.forEach { variant ->
-            val variantState = downloadState.variantDownloadStates[variant]
-            ModelVariantCard(
-                variant = variant,
-                downloadState = downloadState,
-                isDownloaded = downloadState.downloadedModels.contains(variant),
-                isActive = activeModelName == variant.displayName,
-                isDownloading = variantState?.isDownloading == true,
-                downloadProgress = variantState?.downloadProgress ?: 0f,
-                currentDownloadState = variantState?.downloadState ?: DownloadState.Idle,
-                downloadError = if (downloadState.selectedVariant == variant) downloadState.downloadError else null,
-                partialDownload = variantState?.partialDownload,
-                onSelect = { viewModel.selectModel(variant) },
-                onDownloadClick = { viewModel.showDownloadDialog(variant) },
-                onCancelClick = { viewModel.cancelDownload(variant) },
-                onResumeClick = { viewModel.resumeDownload(variant) },
-                onClearPartialClick = { viewModel.clearPartialDownload(variant) },
-                onUseClick = { viewModel.useDownloadedModel(variant) },
-                onClearError = { viewModel.clearDownloadError() },
-                onDeleteClick = {
-                    viewModel.showDeleteDialog(variant)
-                },
-                hasToken = downloadState.hasToken,
-                onNavigateToSettings = onNavigateToSettings,
-                context = context
-            )
-        }
-    }
-}
-
-/**
- * Card for a single model variant showing its info and download status.
- */
-@Composable
-private fun ModelVariantCard(
-    variant: ModelDownloader.ModelVariant,
-    downloadState: ModelViewModel.DownloadUiState,
-    isDownloaded: Boolean,
-    isActive: Boolean,
-    isDownloading: Boolean,
-    downloadProgress: Float,
-    currentDownloadState: DownloadState,
-    downloadError: ModelDownloader.DownloadError?,
-    partialDownload: DownloadState.PartiallyDownloaded? = null,
-    onSelect: () -> Unit,
-    onDownloadClick: () -> Unit,
-    onCancelClick: () -> Unit,
-    onResumeClick: () -> Unit,
-    onClearPartialClick: () -> Unit,
-    onUseClick: () -> Unit,
-    onClearError: () -> Unit,
-    onDeleteClick: () -> Unit,
-    hasToken: Boolean = false,
-    onNavigateToSettings: () -> Unit = {},
-    context: android.content.Context
-) {
-    var showInfo by remember { mutableStateOf(false) }
-
     Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .animateContentSize(),
+        modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
-            containerColor = when {
-                isDownloading -> MaterialTheme.colorScheme.secondaryContainer
-                downloadError != null && downloadState.selectedVariant == variant ->
-                    MaterialTheme.colorScheme.errorContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header row
+            // Header
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    // Status icon
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = when {
-                            isDownloaded -> Icons.Default.CheckCircle
-                            isDownloading -> Icons.Default.CloudDownload
-                            downloadError != null && downloadState.selectedVariant == variant ->
-                                Icons.Default.Error
-                            variant == ModelDownloader.ModelVariant.GEMMA_4_E2B ->
-                                Icons.Default.Star
-                            else -> Icons.Default.Storage
-                        },
+                        imageVector = Icons.Default.CloudDownload,
                         contentDescription = null,
-                        tint = when {
-                            isDownloaded -> MaterialTheme.colorScheme.primary
-                            isDownloading -> MaterialTheme.colorScheme.secondary
-                            downloadError != null && downloadState.selectedVariant == variant ->
-                                MaterialTheme.colorScheme.error
-                            variant == ModelDownloader.ModelVariant.GEMMA_4_E2B ->
-                                MaterialTheme.colorScheme.tertiary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
                     )
-
                     Spacer(modifier = Modifier.width(12.dp))
-
-                    // Model name and badge
                     Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = variant.displayName.substringBefore("(").trim().removeSuffix(" "),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            // Active badge
-                            if (isActive) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.active_badge),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                        }
-                        variant.descriptionResId?.let {
-                            Text(
-                                text = stringResource(it),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        Text(
+                            text = stringResource(R.string.download_models),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = stringResource(R.string.gemma_advanced_features_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
-
-                // Info toggle
-                IconButton(onClick = { showInfo = !showInfo }) {
-                    Icon(
-                        if (showInfo) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                        contentDescription = if (showInfo) "Show less" else "Show more"
-                    )
-                }
             }
 
-            // Expanded info section
-            if (showInfo) {
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider()
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    InfoRow(getLocalizedLabel("File name"), variant.fileName)
-                    InfoRow(
-                        getLocalizedLabel("Supports audio"),
-                        if (variant.supportsAudio) stringResource(R.string.label_yes_multimodal) else stringResource(R.string.label_no_text_only)
-                    )
-                    InfoRow(getLocalizedLabel("HuggingFace"), variant.huggingFaceRepo)
-                }
-            }
-
-            // Download progress
-            if (isDownloading) {
-                Spacer(modifier = Modifier.height(16.dp))
-                DownloadProgressView(currentDownloadState, downloadProgress)
-            }
-
-            // Partial download (from per-variant state)
-            partialDownload?.let { partial ->
-                Spacer(modifier = Modifier.height(8.dp))
-                PartialDownloadSection(
-                    partial = partial,
-                    onResumeClick = onResumeClick,
-                    onClearClick = onClearPartialClick
-                )
-            }
-
-            // Action buttons
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-            ) {
-                when {
-                    isDownloading -> {
-                        // Cancel button
-                        OutlinedButton(
-                            onClick = onCancelClick,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Close, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.cancel_download))
+            // Model variant cards
+            visibleVariants.forEachIndexed { index, variant ->
+                val variantState = downloadState.variantDownloadStates[variant]
+                ModelVariantCard(
+                    state = ModelVariantCardState(
+                        variant = variant,
+                        isActive = activeModelName == stringResource(variant.titleResId),
+                        downloadProgress = variantState?.downloadProgress ?: 0f,
+                        downloadState = variantState?.downloadState ?: DownloadState.Idle,
+                        errorMessage = variantState?.errorMessage,
+                        partialDownload = variantState?.partialDownload,
+                        buttonState = when {
+                            variantState?.isDownloading == true -> DownloadButtonState.Downloading
+                            downloadState.downloadedModels.contains(variant) -> DownloadButtonState.Downloaded
+                            variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
+                            else -> DownloadButtonState.Idle
                         }
-                    }
-                    isDownloaded -> {
-                        if (!isActive) {
-                            Button(
-                                onClick = onUseClick,
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
+                    ),
+                    downloadButtonTextResId = R.string.download,
+                    onDownloadClick = { viewModel.showDownloadDialog(variant) },
+                    onCancelClick = { viewModel.cancelDownload(variant) },
+                    onResumeClick = { viewModel.resumeDownload(variant) },
+                    onClearPartialClick = { viewModel.clearPartialDownload(variant) },
+                    onUseClick = { guardedModelSwitch { viewModel.useDownloadedModel(variant) } },
+                    onDeleteClick = { viewModel.showDeleteDialog(variant) },
+                    onInfoClick = { onInfoClick(variant) }
+                )
+
+                // Auth warning for gated models when no token is configured
+                if (variant.requiresAuth && !downloadState.hasToken) {
+                    val tokenWarning = stringResource(R.string.requires_huggingface_token)
+                    val addSettings = stringResource(R.string.add_in_settings)
+                    val errorColor = MaterialTheme.colorScheme.error
+                    val primaryColor = MaterialTheme.colorScheme.primary
+                    val authWarningText = remember(tokenWarning, addSettings, errorColor, primaryColor) {
+                        buildAnnotatedString {
+                            withStyle(SpanStyle(color = errorColor)) {
+                                append(tokenWarning + " ")
+                            }
+                            withStyle(SpanStyle(
+                                color = primaryColor,
+                                textDecoration = TextDecoration.Underline
+                            )) {
+                                append(addSettings)
                             }
                         }
-                        // Delete button
-                        OutlinedButton(
-                            onClick = onDeleteClick,
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
-                        }
                     }
-                    partialDownload != null -> {
-                        // PartialDownloadSection above already shows Resume/Clear buttons
-                    }
-                    else -> {
-                        // Download button
-                        Button(
-                            onClick = onDownloadClick,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.download))
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(2.dp))
+                    ClickableText(
+                        text = authWarningText,
+                        style = MaterialTheme.typography.labelSmall,
+                        onClick = { onNavigateToSettings() }
+                    )
                 }
-            }
 
-            // Auth warning for gated models when no token is configured
-            if (variant.requiresAuth && !hasToken) {
-                val tokenWarning = stringResource(R.string.requires_huggingface_token)
-                val addSettings = stringResource(R.string.add_in_settings)
-                val errorColor = MaterialTheme.colorScheme.error
-                val primaryColor = MaterialTheme.colorScheme.primary
-                val authWarningText = remember(tokenWarning, addSettings, errorColor, primaryColor) {
-                    buildAnnotatedString {
-                        withStyle(SpanStyle(color = errorColor)) {
-                            append(tokenWarning + " ")
-                        }
-                        withStyle(SpanStyle(
-                            color = primaryColor,
-                            textDecoration = TextDecoration.Underline
-                        )) {
-                            append(addSettings)
-                        }
-                    }
+                if (index < visibleVariants.lastIndex) {
+                    Spacer(modifier = Modifier.height(8.dp))
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                ClickableText(
-                    text = authWarningText,
-                    style = MaterialTheme.typography.labelSmall,
-                    onClick = { onNavigateToSettings() }
-                )
             }
         }
-    }
-}
-
-@Composable
-private fun InfoRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        Text(
-            text = "$label:",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.width(100.dp)
-        )
-        Text(
-            text = value,
-            style = MaterialTheme.typography.labelSmall,
-            modifier = Modifier.weight(1f)
-        )
-    }
-}
-
-// Helper function to get localized label strings
-@Composable
-private fun getLocalizedLabel(labelKey: String): String {
-    return when (labelKey) {
-        "File name" -> stringResource(R.string.label_filename)
-        "Supports audio" -> stringResource(R.string.label_supports_audio)
-        "HuggingFace" -> stringResource(R.string.label_huggingface)
-        else -> labelKey
     }
 }
 
@@ -912,7 +713,8 @@ private fun Qwen3AsrDownloadSection(
     viewModel: ModelViewModel,
     activeModelName: String,
     guardedModelSwitch: (() -> Unit) -> Unit = {},
-    visibleVariants: List<Qwen3AsrModelManager.Variant> = Qwen3AsrModelManager.Variant.entries
+    visibleVariants: List<Qwen3AsrModelManager.Variant> = Qwen3AsrModelManager.Variant.entries,
+    onInfoClick: (ModelVariant) -> Unit = {}
 ) {
     val context = LocalContext.current
     val qwen3AsrState by viewModel.qwen3AsrState.collectAsState()
@@ -999,7 +801,8 @@ private fun Qwen3AsrDownloadSection(
                                 context.getString(variant.titleResId)
                             )
                         }
-                    }
+                    },
+                    onInfoClick = { onInfoClick(variant) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -1014,7 +817,8 @@ private fun GgufDownloadSection(
     viewModel: ModelViewModel,
     activeModelName: String,
     guardedModelSwitch: (() -> Unit) -> Unit = {},
-    isSupported: Boolean = true
+    isSupported: Boolean = true,
+    onInfoClick: (ModelVariant) -> Unit = {}
 ) {
     val context = LocalContext.current
     val ggufState by viewModel.ggufState.collectAsState()
@@ -1114,7 +918,8 @@ private fun GgufDownloadSection(
                                 context.getString(variant.titleResId)
                             )
                         }
-                    }
+                    },
+                    onInfoClick = { onInfoClick(variant) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
@@ -1124,12 +929,14 @@ private fun GgufDownloadSection(
 
 
 // ==================== Parakeet Download Section ====================
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ParakeetDownloadSection(
     viewModel: ModelViewModel,
     activeModelName: String,
     context: Context,
-    guardedModelSwitch: (() -> Unit) -> Unit
+    guardedModelSwitch: (() -> Unit) -> Unit,
+    onInfoClick: (ModelVariant) -> Unit = {}
 ) {
     val parakeetState by viewModel.parakeetState.collectAsState()
     val parakeetName = stringResource(R.string.parakeet_name)
@@ -1151,7 +958,10 @@ private fun ParakeetDownloadSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.weight(1f),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Icon(
                         imageVector = when {
                             parakeetState.modelPath != null -> Icons.Default.CheckCircle
@@ -1168,8 +978,8 @@ private fun ParakeetDownloadSection(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
+                        FlowRow(
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
@@ -1208,103 +1018,113 @@ private fun ParakeetDownloadSection(
                         )
                     }
                 }
+                InfoIconButton(onClick = { onInfoClick(ParakeetVariant) })
             }
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Download progress
-            if (parakeetState.isDownloading) {
-                Spacer(modifier = Modifier.height(16.dp))
-                DownloadProgressView(parakeetState.downloadState, parakeetState.downloadProgress, showExtractingFileSize = true)
-            }
-
-            // Error message
-            parakeetState.errorMessage?.let { error ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = error,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-            }
-
-            // Partial download
-            parakeetState.partialDownload?.let { partial ->
-                Spacer(modifier = Modifier.height(8.dp))
-                PartialDownloadSection(
-                    partial = partial,
-                    onResumeClick = { viewModel.resumeParakeetDownload() },
-                    onClearClick = { viewModel.clearParakeetPartialDownload() }
-                )
-            }
-
-            // Action buttons
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Row(
+            // Inner card wrapping download content
+            Card(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
             ) {
-                when {
-                    parakeetState.isDownloading -> {
-                        OutlinedButton(
-                            onClick = { viewModel.cancelParakeetDownload() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Close, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                if (parakeetState.downloadState is DownloadState.Extracting)
-                                    stringResource(R.string.cancel_extract)
-                                else
-                                    stringResource(R.string.cancel_download)
-                            )
-                        }
+                Column(modifier = Modifier.padding(12.dp)) {
+                    // Download progress
+                    if (parakeetState.isDownloading) {
+                        DownloadProgressView(parakeetState.downloadState, parakeetState.downloadProgress, showExtractingFileSize = true)
                     }
-                    parakeetState.modelPath != null -> {
-                        if (!isActive) {
-                            Button(
-                                onClick = { guardedModelSwitch { viewModel.useParakeetModel() } },
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
+
+                    // Error message
+                    parakeetState.errorMessage?.let { error ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+
+                    // Partial download
+                    parakeetState.partialDownload?.let { partial ->
+                        Spacer(modifier = Modifier.height(8.dp))
+                        PartialDownloadSection(
+                            partial = partial,
+                            onResumeClick = { viewModel.resumeParakeetDownload() },
+                            onClearClick = { viewModel.clearParakeetPartialDownload() }
+                        )
+                    }
+
+                    // Action buttons
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                    ) {
+                        when {
+                            parakeetState.isDownloading -> {
+                                OutlinedButton(
+                                    onClick = { viewModel.cancelParakeetDownload() },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.Close, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        if (parakeetState.downloadState is DownloadState.Extracting)
+                                            stringResource(R.string.cancel_extract)
+                                        else
+                                            stringResource(R.string.cancel_download)
+                                    )
+                                }
                             }
-                        }
-                        OutlinedButton(onClick = {
-                            val path = parakeetState.modelPath
-                            if (path != null) {
-                                viewModel.startBenchmark(
-                                    SherpaOnnxBackend.BACKEND_ID,
-                                    path,
-                                    parakeetName
-                                )
+                            parakeetState.modelPath != null -> {
+                                if (!isActive) {
+                                    Button(
+                                        onClick = { guardedModelSwitch { viewModel.useParakeetModel() } },
+                                        colors = ButtonDefaults.buttonColors(
+                                            containerColor = MaterialTheme.colorScheme.primary
+                                        )
+                                    ) {
+                                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
+                                    }
+                                }
+                                OutlinedButton(onClick = {
+                                    val path = parakeetState.modelPath
+                                    if (path != null) {
+                                        viewModel.startBenchmark(
+                                            SherpaOnnxBackend.BACKEND_ID,
+                                            path,
+                                            parakeetName
+                                        )
+                                    }
+                                }) {
+                                    Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.benchmark_button))
+                                }
+                                // Delete button
+                                OutlinedButton(
+                                    onClick = { viewModel.showParakeetDeleteDialog() },
+                                    colors = ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.error
+                                    )
+                                ) {
+                                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
+                                }
                             }
-                        }) {
-                            Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.benchmark_button))
-                        }
-                        // Delete button
-                        OutlinedButton(
-                            onClick = { viewModel.showParakeetDeleteDialog() },
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
-                        }
-                    }
-                    parakeetState.partialDownload != null -> {
-                        // PartialDownloadSection above already shows Resume/Clear buttons
-                    }
-                    else -> {
-                        Button(
-                            onClick = { viewModel.showParakeetDownloadDialog() },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(Icons.Default.Download, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.download))
+                            parakeetState.partialDownload != null -> {
+                                // PartialDownloadSection above already shows Resume/Clear buttons
+                            }
+                            else -> {
+                                Button(
+                                    onClick = { viewModel.showParakeetDownloadDialog() },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(Icons.Default.Download, contentDescription = null)
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(stringResource(R.string.download))
+                                }
+                            }
                         }
                     }
                 }
@@ -1325,7 +1145,8 @@ private fun WhisperDownloadSection(
     viewModel: ModelViewModel,
     activeModelName: String,
     guardedModelSwitch: (() -> Unit) -> Unit = {},
-    visibleVariants: List<WhisperModelManager.Variant> = WhisperModelManager.Variant.entries
+    visibleVariants: List<WhisperModelManager.Variant> = WhisperModelManager.Variant.entries,
+    onInfoClick: (ModelVariant) -> Unit = {}
 ) {
     val context = LocalContext.current
     val whisperState by viewModel.whisperState.collectAsState()
@@ -1447,7 +1268,8 @@ private fun WhisperDownloadSection(
                                 context.getString(variant.titleResId)
                             )
                         }
-                    }
+                    },
+                    onInfoClick = { onInfoClick(variant) }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }

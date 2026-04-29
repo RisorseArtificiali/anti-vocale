@@ -46,13 +46,15 @@ object ModelDownloader {
         val displayName: String,
         val huggingFaceRepo: String,
         val fileName: String,
-        val descriptionResId: Int?,
-        val estimatedSizeMB: Long,
+        override val descriptionResId: Int,
+        override val estimatedSizeMB: Long,
         val supportsAudio: Boolean,
         val requiresAuth: Boolean = false,
-        val supportedLanguageCodes: Set<String> = emptySet(),
-        val expectedSha256: String? = null
-    ) {
+        override val supportedLanguageCodes: Set<String> = emptySet(),
+        val expectedSha256: String? = null,
+        override val titleResId: Int,
+        override val dirName: String
+    ) : com.antivocale.app.transcription.ModelVariant {
         GEMMA_4_E2B(
             displayName = "Gemma 4 E2B",
             huggingFaceRepo = "litert-community/gemma-4-E2B-it-litert-lm",
@@ -60,7 +62,9 @@ object ModelDownloader {
             descriptionResId = R.string.model_desc_gemma_4_e2b,
             estimatedSizeMB = 2600L,
             supportsAudio = true,
-            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA
+            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA,
+            titleResId = R.string.model_title_gemma_4_e2b,
+            dirName = "gemma-4-e2b"
         ),
         GEMMA_4_E4B(
             displayName = "Gemma 4 E4B",
@@ -69,7 +73,9 @@ object ModelDownloader {
             descriptionResId = R.string.model_desc_gemma_4_e4b,
             estimatedSizeMB = 3700L,
             supportsAudio = true,
-            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA
+            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA,
+            titleResId = R.string.model_title_gemma_4_e4b,
+            dirName = "gemma-4-e4b"
         ),
         GEMMA_3N_E2B(
             displayName = "Gemma 3n E2B",
@@ -79,7 +85,9 @@ object ModelDownloader {
             estimatedSizeMB = 3300L,
             supportsAudio = true,
             requiresAuth = true,
-            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA
+            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA,
+            titleResId = R.string.model_title_gemma_3n_e2b,
+            dirName = "gemma-3n-e2b"
         ),
         GEMMA_3N_E4B(
             displayName = "Gemma 3n E4B",
@@ -89,7 +97,9 @@ object ModelDownloader {
             estimatedSizeMB = 4235L,
             supportsAudio = true,
             requiresAuth = true,
-            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA
+            supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA,
+            titleResId = R.string.model_title_gemma_3n_e4b,
+            dirName = "gemma-3n-e4b"
         )
     }
 
