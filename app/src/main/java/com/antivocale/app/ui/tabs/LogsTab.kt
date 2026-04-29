@@ -186,15 +186,15 @@ fun LogsTab(
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
-    ) { innerPadding ->
+    ) { _ ->
         val interruptedText by viewModel.interruptedTranscription.collectAsState()
 
         if (interruptedText != null) {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(innerPadding)
                     .padding(horizontal = 16.dp, vertical = 8.dp),
                 color = MaterialTheme.colorScheme.errorContainer,
                 shape = MaterialTheme.shapes.small
@@ -233,7 +233,6 @@ fun LogsTab(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(innerPadding)
                     .padding(horizontal = 32.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -261,8 +260,7 @@ fun LogsTab(
             // Search yielded no results
             Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding),
+                    .fillMaxSize(),
                 contentAlignment = Alignment.Center
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -319,7 +317,6 @@ fun LogsTab(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.surface)
-                            .padding(top = innerPadding.calculateTopPadding())
                     ) {
                         Row(
                             modifier = Modifier
@@ -706,7 +703,6 @@ fun LogEntryItem(
             } else if (log.status == LogEntry.Status.PENDING) {
                 Spacer(modifier = Modifier.height(6.dp))
                 if (log.result.isNotEmpty()) {
-                    // Interim transcription text during progressive VAD transcription
                     Text(
                         text = highlightText(
                             getPreviewText(log.result),
@@ -725,6 +721,10 @@ fun LogEntryItem(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
+                Spacer(modifier = Modifier.height(4.dp))
+                LinearProgressIndicator(
+                    modifier = Modifier.fillMaxWidth(),
+                )
             }
 
             // === EXPANDED VIEW ===
@@ -883,6 +883,12 @@ fun LogEntryItem(
                                         shape = MaterialTheme.shapes.small
                                     )
                                     .padding(8.dp)
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(R.string.transcription_started),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                         // PiP button — only on devices that support PiP
