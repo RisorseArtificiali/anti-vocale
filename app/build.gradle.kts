@@ -137,7 +137,7 @@ dependencies {
     // AppAuth for OAuth authentication (HuggingFace)
     implementation("net.openid:appauth:0.11.1")
 
-    // sherpa-onnx v1.12.40 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR)
+    // sherpa-onnx v1.13.0 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR)
     implementation(files("libs/sherpa-onnx.aar"))
 
     // llama-bro for GGUF on-device LLM inference (Gemma 4, Qwen, etc.)
