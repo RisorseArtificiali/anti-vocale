@@ -689,4 +689,7 @@
     <string name="model_info_benchmark_wer">Word Error Rate (Italian): %.1f%%</string>
     <string name="model_info_relative_speed">Speed: %s</string>
     <string name="model_info_close">Close</string>
+
+    <!-- Skeleton loading -->
+    <string name="skeleton_loading_content_description">Loading transcription</string>
 </resources>

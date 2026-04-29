@@ -626,4 +626,7 @@
     <string name="model_info_benchmark_wer">Tasso di errore parole (italiano): %.1f%%</string>
     <string name="model_info_relative_speed">Velocità: %s</string>
     <string name="model_info_close">Chiudi</string>
+
+    <!-- Skeleton loading -->
+    <string name="skeleton_loading_content_description">Caricamento trascrizione</string>
 </resources>

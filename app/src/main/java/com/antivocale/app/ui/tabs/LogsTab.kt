@@ -32,6 +32,9 @@ import com.antivocale.app.MainActivity
 import com.antivocale.app.R
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.data.PreferencesManager
+import androidx.compose.animation.Crossfade
+import com.antivocale.app.ui.components.SkeletonTranscriptionCard
+import com.antivocale.app.ui.components.SkeletonTranscriptionPreview
 import com.antivocale.app.ui.components.SwipeAction
 import com.antivocale.app.ui.components.VadAdvisoryCard
 import com.antivocale.app.ui.components.SwipeToRevealBox
@@ -702,29 +705,26 @@ fun LogEntryItem(
                 )
             } else if (log.status == LogEntry.Status.PENDING) {
                 Spacer(modifier = Modifier.height(6.dp))
-                if (log.result.isNotEmpty()) {
-                    Text(
-                        text = highlightText(
-                            getPreviewText(log.result),
-                            searchQuery,
-                            MaterialTheme.colorScheme.tertiary
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                } else {
-                    Text(
-                        text = stringResource(R.string.transcription_started),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Crossfade(
+                    targetState = log.result.isNotEmpty(),
+                    label = "pending_skeleton"
+                ) { hasResult ->
+                    if (hasResult) {
+                        Text(
+                            text = highlightText(
+                                getPreviewText(log.result),
+                                searchQuery,
+                                MaterialTheme.colorScheme.tertiary
+                            ),
+                            style = MaterialTheme.typography.bodyMedium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    } else {
+                        SkeletonTranscriptionPreview()
+                    }
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                LinearProgressIndicator(
-                    modifier = Modifier.fillMaxWidth(),
-                )
             }
 
             // === EXPANDED VIEW ===
@@ -885,11 +885,8 @@ fun LogEntryItem(
                                     .padding(8.dp)
                             )
                         } else {
-                            Text(
-                                text = stringResource(R.string.transcription_started),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            SkeletonTranscriptionCard()
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                         // PiP button — only on devices that support PiP
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
