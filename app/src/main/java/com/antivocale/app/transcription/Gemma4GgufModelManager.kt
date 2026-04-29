@@ -61,6 +61,7 @@ object Gemma4GgufModelManager {
         override val descriptionResId: Int,
         override val dirName: String,
         override val estimatedSizeMB: Long,
+        override val supportedLanguageCodes: Set<String> = Language.GEMMA,
         val fileName: String
     ) : ModelVariant {
         Q4_K_M(

@@ -141,7 +141,9 @@ dependencies {
     implementation(files("libs/sherpa-onnx.aar"))
 
     // llama-bro for GGUF on-device LLM inference (Gemma 4, Qwen, etc.)
-    implementation("com.github.whyisitworking:llama-bro:1.2.3")
+    // Fork with bumped llama.cpp including LLM_ARCH_GEMMA4 support
+    // Upstream PR: https://github.com/whyisitworking/llama-bro/pull/3
+    implementation("com.github.paoloantinori:llama-bro:v1.3.0-gemma4")
 
     // Apache Commons Compress for tar.bz2 extraction
     implementation("org.apache.commons:commons-compress:1.26.1")
