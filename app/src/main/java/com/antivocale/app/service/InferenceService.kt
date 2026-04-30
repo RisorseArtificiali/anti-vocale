@@ -24,6 +24,7 @@ import com.antivocale.app.receiver.NotificationActionReceiver
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
+import com.antivocale.app.transcription.Language
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.CrashReporter
 import dagger.hilt.android.AndroidEntryPoint
@@ -55,6 +56,8 @@ class InferenceService : Service(), TranscriptionListener {
         const val RESULT_CHANNEL_ID = "transcription_result_channel"
         const val NOTIFICATION_ID = 1001
         const val RESULT_NOTIFICATION_ID = 1002
+
+        private const val CONFIDENCE_MEDIUM_THRESHOLD = 0.5f
 
         private const val RC_LAUNCH_DEFAULT = 0
         private const val RC_LAUNCH_MODEL_TAB = 1
@@ -243,13 +246,15 @@ class InferenceService : Service(), TranscriptionListener {
         resultText: String,
         isShareRequest: Boolean,
         sourcePackage: String?,
-        durationMs: Long
+        durationMs: Long,
+        confidence: Float?,
+        detectedLanguage: String?
     ) {
         sendSuccessReply(taskId, resultText)
         if (isShareRequest) {
             serviceScope.launch {
                 autoCopyIfEnabled(resultText, sourcePackage)
-                showResultNotification(resultText, sourcePackage, taskId)
+                showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage)
             }
         }
     }
@@ -479,7 +484,13 @@ class InferenceService : Service(), TranscriptionListener {
         Log.i(TAG, "Updated notification with queue hint: $queuedCount queued")
     }
 
-    private suspend fun showResultNotification(transcriptionText: String, sourcePackage: String?, taskId: String) {
+    private suspend fun showResultNotification(
+        transcriptionText: String,
+        sourcePackage: String?,
+        taskId: String,
+        confidence: Float?,
+        detectedLanguage: String?
+    ) {
         val prefs = if (sourcePackage != null) {
             try {
                 perAppPreferencesManager.getCurrentPreferences(sourcePackage)
@@ -579,8 +590,22 @@ class InferenceService : Service(), TranscriptionListener {
             Log.d(TAG, "Custom notification sound: ${prefs.notificationSound} (not yet implemented)")
         }
 
+        // Confidence and language indicator in subtext
+        val subTextParts = mutableListOf<String>()
         if (isTruncated) {
-            builder.setSubText(getString(R.string.char_counter, 100, transcriptionText.length))
+            subTextParts.add(getString(R.string.char_counter, 100, transcriptionText.length))
+        }
+        val langLabel = detectedLanguage?.let { lang ->
+            Language.FILTER_ENTRIES.find { it.code == lang }?.let { getString(it.nameResId) }
+        }
+        if (langLabel != null) {
+            subTextParts.add(getString(R.string.detected_language, langLabel))
+        }
+        if (confidence != null && confidence < CONFIDENCE_MEDIUM_THRESHOLD) {
+            subTextParts.add(getString(R.string.confidence_low))
+        }
+        if (subTextParts.isNotEmpty()) {
+            builder.setSubText(subTextParts.joinToString(" · "))
         }
 
         val notification = builder.build()

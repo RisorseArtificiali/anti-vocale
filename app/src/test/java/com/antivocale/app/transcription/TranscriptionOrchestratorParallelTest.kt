@@ -131,7 +131,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
 
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(chunkTexts[callIndex++])
+            Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
         }
 
         val result = runParallelAudioRequest()
@@ -148,7 +148,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
 
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(chunkTexts[callIndex++])
+            Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
         }
 
         val result = runParallelAudioRequest()
@@ -168,7 +168,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
             if (idx == 2) {
                 Result.failure(RuntimeException("Chunk 3 failed"))
             } else {
-                Result.success(chunkTexts[idx])
+                Result.success(TranscriptionResult(text = chunkTexts[idx]))
             }
         }
 
@@ -190,7 +190,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             val idx = callIndex++
-            Result.success("text$idx")
+            Result.success(TranscriptionResult(text = "text$idx"))
         }
 
         val result = runParallelAudioRequest()
@@ -215,7 +215,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             val idx = callIndex++
-            Result.success("text$idx")
+            Result.success(TranscriptionResult(text = "text$idx"))
         }
 
         val result = runParallelAudioRequest(queuePosition = 2, queueTotal = 5)
@@ -236,7 +236,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
     fun `parallel chunks all blank - returns failure`() = runTest {
         stubPreprocessing(chunkCount = 3)
 
-        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("   ")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success(TranscriptionResult(text = "   "))
 
         val result = runParallelAudioRequest()
 

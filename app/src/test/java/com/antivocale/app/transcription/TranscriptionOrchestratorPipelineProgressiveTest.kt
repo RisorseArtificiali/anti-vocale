@@ -111,7 +111,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         val chunkTexts = listOf("first", "second", "third")
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(chunkTexts[callIndex++])
+            Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
         }
 
         val result = runPipelineRequest()
@@ -150,7 +150,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
 
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(listOf("hello", "world")[callIndex++])
+            Result.success(TranscriptionResult(text = listOf("hello", "world")[callIndex++]))
         }
 
         val result = runPipelineRequest()
@@ -166,7 +166,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         val chunkTexts = listOf("first", "   ", "third")
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(chunkTexts[callIndex++])
+            Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
         }
 
         val result = runPipelineRequest()
@@ -198,7 +198,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             val idx = callIndex++
             if (idx == 1) Result.failure(RuntimeException("Chunk failed"))
-            else Result.success(listOf("first", "second", "third")[idx])
+            else Result.success(TranscriptionResult(text = listOf("first", "second", "third")[idx]))
         }
 
         val result = runPipelineRequest()
@@ -229,7 +229,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
 
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(listOf("a", "b", "c")[callIndex++])
+            Result.success(TranscriptionResult(text = listOf("a", "b", "c")[callIndex++]))
         }
 
         val result = runPipelineRequest()
@@ -246,7 +246,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         val chunkTexts = listOf("Hello", "world", "from", "pipeline")
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(chunkTexts[callIndex++])
+            Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
         }
 
         val result = runPipelineRequest()

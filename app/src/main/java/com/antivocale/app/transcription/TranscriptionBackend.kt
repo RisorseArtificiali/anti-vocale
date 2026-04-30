@@ -48,8 +48,9 @@ interface TranscriptionBackend {
      *
      * @param samples PCM float samples normalized to [-1.0, 1.0], mono channel
      * @param sampleRate Sample rate of the audio data
+     * @return Result containing [TranscriptionResult] with text, optional confidence, and detected language
      */
-    suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<String>
+    suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<TranscriptionResult>
 
     /**
      * Generates text from a prompt.
@@ -110,4 +111,30 @@ sealed class BackendConfig {
         val contextSize: Int = 2048,
         val threadCount: Int = 4
     ) : BackendConfig()
+}
+
+/**
+ * Result from audio transcription containing the text and optional metadata.
+ */
+data class TranscriptionResult(
+    val text: String,
+    val confidence: Float? = null,
+    val detectedLanguage: String? = null
+) {
+    companion object {
+        private val WHITESPACE = Regex("\\s+")
+
+        fun computeConfidence(text: String, sampleCount: Int, sampleRate: Int): Float? {
+            val audioDurationSeconds = sampleCount.toFloat() / sampleRate
+            if (audioDurationSeconds <= 0f) return null
+            val wordCount = text.split(WHITESPACE).count { it.isNotEmpty() }
+            if (wordCount == 0) return null
+            val wps = wordCount / audioDurationSeconds
+            return when {
+                wps >= 1.5f -> 0.85f.coerceAtMost(0.7f + 0.15f * minOf(1f, (wps - 1.5f) / 3f))
+                wps >= 0.5f -> 0.4f + 0.3f * ((wps - 0.5f) / 1f)
+                else -> (wps / 0.5f) * 0.4f
+            }
+        }
+    }
 }

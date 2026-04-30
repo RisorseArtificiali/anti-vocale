@@ -38,7 +38,7 @@ class Gemma4GgufBackend @Inject constructor(
         )
     }
 
-    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<String> {
+    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<TranscriptionResult> {
         return Result.failure(
             UnsupportedOperationException("Audio transcription not supported by GGUF backend")
         )

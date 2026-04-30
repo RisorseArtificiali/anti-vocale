@@ -29,9 +29,11 @@ class LlmTranscriptionBackend @Inject constructor(
         return llmManager.initialize(context, llmConfig.modelPath)
     }
 
-    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<String> {
+    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<TranscriptionResult> {
         val wavBytes = WavUtils.floatSamplesToWav(samples, sampleRate)
-        return llmManager.generateFromAudio(prompt, wavBytes)
+        return llmManager.generateFromAudio(prompt, wavBytes).map { text ->
+            TranscriptionResult(text = text)
+        }
     }
 
     override suspend fun generateText(prompt: String): Result<String> {

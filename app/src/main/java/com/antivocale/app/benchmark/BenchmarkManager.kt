@@ -124,7 +124,7 @@ class BenchmarkManager @Inject constructor(
                 onProgress(0.5f)
 
                 val startTime = System.currentTimeMillis()
-                val transcriptionResult = backend.transcribeAudio(sampleAudio, sampleRate, "")
+                val transcriptionResult = backend.transcribeAudio(sampleAudio, sampleRate, "").map { it.text }
                 val inferenceTimeMs = System.currentTimeMillis() - startTime
 
                 onProgress(0.8f)

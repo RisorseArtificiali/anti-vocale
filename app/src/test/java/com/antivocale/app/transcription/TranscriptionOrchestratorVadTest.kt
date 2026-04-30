@@ -91,9 +91,9 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
         val results = listOf(
-            Result.success("seg1"),
-            Result.success("seg2"),
-            Result.success("seg3")
+            Result.success(TranscriptionResult(text = "seg1")),
+            Result.success(TranscriptionResult(text = "seg2")),
+            Result.success(TranscriptionResult(text = "seg3"))
         )
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
@@ -134,9 +134,9 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
         val results = listOf(
-            Result.success("seg1"),
+            Result.success(TranscriptionResult(text = "seg1")),
             Result.failure<Nothing>(RuntimeException("backend error")),
-            Result.success("seg3")
+            Result.success(TranscriptionResult(text = "seg3"))
         )
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
@@ -185,9 +185,9 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
         val results = listOf(
-            Result.success("   "),
-            Result.success(""),
-            Result.success("\t\n")
+            Result.success(TranscriptionResult(text = "   ")),
+            Result.success(TranscriptionResult(text = "")),
+            Result.success(TranscriptionResult(text = "\t\n"))
         )
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
@@ -216,7 +216,7 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         val chunk3 = FloatArray(100) { 3.0f }
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
-        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("text")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success(TranscriptionResult(text = "text"))
 
         val result = runProcessRequest(scope = this)
 
@@ -231,7 +231,7 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         val chunk2 = FloatArray(100) { 2.0f }
         stubVadPreprocessing(listOf(chunk1, chunk2))
 
-        val results = listOf(Result.success("first"), Result.success("second"))
+        val results = listOf(Result.success(TranscriptionResult(text = "first")), Result.success(TranscriptionResult(text = "second")))
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             results[callIndex++]

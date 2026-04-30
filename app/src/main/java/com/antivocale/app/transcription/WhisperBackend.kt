@@ -126,7 +126,7 @@ class WhisperBackend @Inject constructor() : TranscriptionBackend {
         }
     }
 
-    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<String> {
+    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<TranscriptionResult> {
         val rec = recognizer
             ?: return Result.failure(IllegalStateException("Backend not initialized"))
 
@@ -142,6 +142,7 @@ class WhisperBackend @Inject constructor() : TranscriptionBackend {
                 // Get result
                 val result = rec.getResult(stream)
                 val transcription = result.text
+                val detectedLang = result.lang.ifBlank { null }
 
                 // Release stream
                 stream.release()
@@ -151,7 +152,12 @@ class WhisperBackend @Inject constructor() : TranscriptionBackend {
                 if (transcription.isBlank()) {
                     Result.failure(IllegalStateException("No transcription produced"))
                 } else {
-                    Result.success(transcription)
+                    val confidence = TranscriptionResult.computeConfidence(transcription, samples.size, sampleRate)
+                    Result.success(TranscriptionResult(
+                        text = transcription,
+                        confidence = confidence,
+                        detectedLanguage = detectedLang
+                    ))
                 }
 
             } catch (e: Exception) {

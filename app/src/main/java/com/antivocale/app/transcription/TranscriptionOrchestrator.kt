@@ -113,9 +113,12 @@ class TranscriptionOrchestrator @Inject constructor(
             val duration = System.currentTimeMillis() - startTime
 
             result.fold(
-                onSuccess = { response ->
-                    logSuccess(taskId, response, duration)
-                    listener.onSuccess(taskId, response, isShareRequest, sourcePackage, duration)
+                onSuccess = { transcriptionResult ->
+                    logSuccess(taskId, transcriptionResult.text, duration)
+                    listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
+                        confidence = transcriptionResult.confidence,
+                        detectedLanguage = transcriptionResult.detectedLanguage
+                    )
                 },
                 onFailure = { error ->
                     val errorMsg = error.message ?: "Unknown error"
@@ -125,7 +128,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             )
 
-            return result
+            return result.map { it.text }
 
         } catch (e: CancellationException) {
             val duration = System.currentTimeMillis() - startTime
@@ -264,7 +267,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
     // ---- Text Processing ----
 
-    private suspend fun processTextRequest(prompt: String): Result<String> {
+    private suspend fun processTextRequest(prompt: String): Result<TranscriptionResult> {
         if (prompt.isEmpty()) {
             return Result.failure(IllegalArgumentException("Empty prompt provided"))
         }
@@ -275,7 +278,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 "Current backend (${backend.displayName}) does not support text generation. Switch to LLM backend in Settings."
             ))
         }
-        return backend.generateText(prompt)
+        return backend.generateText(prompt).map { text -> TranscriptionResult(text = text) }
     }
 
     // ---- Audio Processing ----
@@ -297,7 +300,7 @@ class TranscriptionOrchestrator @Inject constructor(
         cacheDir: File,
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope
-    ): Result<String> {
+    ): Result<TranscriptionResult> {
         if (filePath.isNullOrEmpty()) {
             return Result.failure(IllegalArgumentException("No file path provided"))
         }
@@ -379,12 +382,16 @@ class TranscriptionOrchestrator @Inject constructor(
             val inferMs = System.currentTimeMillis() - t0
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
             return when {
-                result.isSuccess && result.getOrNull()?.isNotBlank() == true -> {
-                    recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
-                    Result.success(result.getOrNull()!!.trim())
+                result.isSuccess -> {
+                    val tr = result.getOrNull()!!
+                    if (tr.text.isNotBlank()) {
+                        recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
+                        Result.success(tr.copy(text = tr.text.trim()))
+                    } else {
+                        Result.failure(IllegalStateException("No transcription produced"))
+                    }
                 }
-                result.isFailure -> Result.failure(result.exceptionOrNull()!!)
-                else -> Result.failure(IllegalStateException("No transcription produced"))
+                else -> Result.failure(result.exceptionOrNull()!!)
             }
         }
 
@@ -431,11 +438,13 @@ class TranscriptionOrchestrator @Inject constructor(
         chunkProcessingStartTime: Long,
         listener: TranscriptionListener,
         transcriptionStartTime: Long
-    ): Result<String> {
+    ): Result<TranscriptionResult> {
         val chunkCount = chunks.size
         Log.i(TAG, "VAD-segmented progressive path: $chunkCount segments")
         val accumulatedText = StringBuilder()
         var failedSegments = 0
+        var minConfidence: Float? = null
+        var detectedLang: String? = null
 
         for (i in chunks.indices) {
             val segNumber = i + 1
@@ -445,9 +454,9 @@ class TranscriptionOrchestrator @Inject constructor(
 
             val segResult = backend.transcribeAudio(samples = chunks[i], sampleRate = sampleRate, prompt = prompt)
             segResult.fold(
-                onSuccess = { text ->
-                    if (text.isNotBlank()) {
-                        val trimmed = text.trim()
+                onSuccess = { tr ->
+                    if (tr.text.isNotBlank()) {
+                        val trimmed = tr.text.trim()
                         if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                         accumulatedText.append(trimmed)
                         updateInterimResult(taskId, accumulatedText.toString())
@@ -458,6 +467,8 @@ class TranscriptionOrchestrator @Inject constructor(
                             subText = "Segment $segNumber/$chunkCount"
                         )
                     }
+                    minConfidence = aggregateConfidence(minConfidence, tr.confidence)
+                    if (detectedLang == null) detectedLang = tr.detectedLanguage
                 },
                 onFailure = { error ->
                     failedSegments++
@@ -476,7 +487,11 @@ class TranscriptionOrchestrator @Inject constructor(
             if (failedSegments > 0) {
                 Log.w(TAG, "Completed with $failedSegments/$chunkCount failed segments")
             }
-            Result.success(accumulatedText.toString())
+            Result.success(TranscriptionResult(
+                text = accumulatedText.toString(),
+                confidence = minConfidence,
+                detectedLanguage = detectedLang
+            ))
         }
     }
 
@@ -494,10 +509,12 @@ class TranscriptionOrchestrator @Inject constructor(
         coroutineScope: CoroutineScope,
         transcriptionStartTime: Long,
         progressiveEnabled: Boolean = false
-    ): Result<String> {
+    ): Result<TranscriptionResult> {
         val chunkCount = chunks.size
         val completedChunks = AtomicInteger(0)
         val results = arrayOfNulls<String>(chunkCount)
+        val chunkConfidences = arrayOfNulls<Float>(chunkCount)
+        val chunkLanguages = arrayOfNulls<String>(chunkCount)
 
         Log.i(TAG, "Processing $chunkCount chunks with up to $MAX_CONCURRENT_CHUNKS concurrent transcriptions")
 
@@ -551,10 +568,12 @@ class TranscriptionOrchestrator @Inject constructor(
             deferredResults.forEachIndexed { index, deferred ->
                 val chunkResult = deferred.await()
                 chunkResult.fold(
-                    onSuccess = { text ->
-                        if (text.isNotBlank()) {
-                            val trimmed = text.trim()
+                    onSuccess = { tr ->
+                        if (tr.text.isNotBlank()) {
+                            val trimmed = tr.text.trim()
                             results[index] = trimmed
+                            chunkConfidences[index] = tr.confidence
+                            chunkLanguages[index] = tr.detectedLanguage
                             if (progressiveText != null) {
                                 if (progressiveText.isNotEmpty()) progressiveText.append(' ')
                                 progressiveText.append(trimmed)
@@ -587,7 +606,13 @@ class TranscriptionOrchestrator @Inject constructor(
         return if (combinedResult.isBlank()) {
             Result.failure(IllegalStateException("No transcription produced"))
         } else {
-            Result.success(combinedResult)
+            val minConfidence = chunkConfidences.filterNotNull().minOrNull()
+            val detectedLang = chunkLanguages.firstOrNull { it != null }
+            Result.success(TranscriptionResult(
+                text = combinedResult,
+                confidence = minConfidence,
+                detectedLanguage = detectedLang
+            ))
         }
     }
 
@@ -606,7 +631,7 @@ class TranscriptionOrchestrator @Inject constructor(
         listener: TranscriptionListener,
         prompt: String,
         progressiveEnabled: Boolean = false
-    ): Result<String> {
+    ): Result<TranscriptionResult> {
         val resolvedPrompt = resolvePrompt(prompt)
 
         val pipelineStartMs = System.currentTimeMillis()
@@ -617,6 +642,8 @@ class TranscriptionOrchestrator @Inject constructor(
         var firstChunkDecodeMs = 0L
         var firstChunkInferStartMs = 0L
         var failedChunks = 0
+        var minConfidence: Float? = null
+        var detectedLang: String? = null
 
         try {
             audioPreprocessor.prepareAudioStream(
@@ -648,9 +675,9 @@ class TranscriptionOrchestrator @Inject constructor(
                             prompt = resolvedPrompt
                         )
                         chunkResult.fold(
-                            onSuccess = { text ->
-                                if (text.isNotBlank()) {
-                                    val trimmed = text.trim()
+                            onSuccess = { tr ->
+                                if (tr.text.isNotBlank()) {
+                                    val trimmed = tr.text.trim()
                                     if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                     accumulatedText.append(trimmed)
                                     if (progressiveEnabled) {
@@ -662,6 +689,8 @@ class TranscriptionOrchestrator @Inject constructor(
                                         )
                                     }
                                 }
+                                minConfidence = aggregateConfidence(minConfidence, tr.confidence)
+                                if (detectedLang == null) detectedLang = tr.detectedLanguage
                             },
                             onFailure = { error ->
                                 failedChunks++
@@ -697,7 +726,11 @@ class TranscriptionOrchestrator @Inject constructor(
             if (failedChunks > 0) {
                 Log.w(TAG, "Pipeline completed with $failedChunks/$expectedChunkCount failed chunks")
             }
-            Result.success(combinedResult)
+            Result.success(TranscriptionResult(
+                text = combinedResult,
+                confidence = minConfidence,
+                detectedLanguage = detectedLang
+            ))
         }
     }
 
@@ -970,6 +1003,12 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     internal fun ceilDiv(a: Int, b: Int): Int = (a + b - 1) / b
+
+    internal fun aggregateConfidence(current: Float?, next: Float?): Float? {
+        if (current == null) return next
+        if (next == null) return current
+        return minOf(current, next)
+    }
 
     internal fun isNoModelConfiguredError(error: Throwable): Boolean {
         val msg = error.message ?: return false

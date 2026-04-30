@@ -33,7 +33,9 @@ interface TranscriptionListener {
         resultText: String,
         isShareRequest: Boolean,
         sourcePackage: String?,
-        durationMs: Long
+        durationMs: Long,
+        confidence: Float? = null,
+        detectedLanguage: String? = null
     )
 
     /** Transcription or backend loading failed */

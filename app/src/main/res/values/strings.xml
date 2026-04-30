@@ -163,6 +163,8 @@
     <string name="copy">Copy</string>
     <string name="share">Share</string>
     <string name="char_counter">%1$d of %2$d chars</string>
+    <string name="detected_language">Detected: %1$s</string>
+    <string name="confidence_low">Low confidence</string>
     <string name="no_audio_file">No audio file received</string>
     <string name="failed_to_process_audio">Failed to process audio file</string>
     <string name="transcription_started">Transcription started…</string>

@@ -108,7 +108,7 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         } returns singleChunkResult()
         stubSingleChunkStream()
 
-        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("  Hello world  ")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success(TranscriptionResult(text = "  Hello world  "))
 
         val result = callProcessRequest(filePath = audioFile.absolutePath)
 
@@ -135,7 +135,7 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         } returns singleChunkResult()
         stubSingleChunkStream()
 
-        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("   ")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success(TranscriptionResult(text = "   "))
 
         val result = callProcessRequest(filePath = audioFile.absolutePath)
 
@@ -164,7 +164,7 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         } returns singleChunkResult()
         stubSingleChunkStream()
 
-        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("Transcribed text")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success(TranscriptionResult(text = "Transcribed text"))
 
         val result = callProcessRequest(
             filePath = audioFile.absolutePath,
@@ -193,7 +193,7 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         } returns singleChunkResult()
         stubSingleChunkStream()
 
-        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success("Transcribed text")
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success(TranscriptionResult(text = "Transcribed text"))
 
         val result = callProcessRequest(
             filePath = audioFile.absolutePath,
