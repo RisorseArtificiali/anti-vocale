@@ -169,6 +169,19 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE
         )
 
+    val groupLogsByConversation: StateFlow<Boolean> = preferencesManager.groupLogsByConversation
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION
+        )
+
+    fun saveGroupLogsByConversation(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveGroupLogsByConversation(enabled)
+        }
+    }
+
     // Current language from Per-App Language API (not DataStore)
     private val _currentLanguage = MutableStateFlow(LocaleManager.getCurrentLocaleCode())
     val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()

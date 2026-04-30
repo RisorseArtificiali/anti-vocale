@@ -193,6 +193,15 @@ class LogsViewModel @Inject constructor(
     val swipeActionMode: StateFlow<String> = preferencesManager.swipeActionMode
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
 
+    val groupLogsByConversation: StateFlow<Boolean> = preferencesManager.groupLogsByConversation
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION)
+
+    fun saveGroupLogsByConversation(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveGroupLogsByConversation(enabled)
+        }
+    }
+
     val showVadAdvisory: StateFlow<Boolean> = combine(
         transcriptionBackendManager.activeBackendId,
         preferencesManager.vadEnabled,

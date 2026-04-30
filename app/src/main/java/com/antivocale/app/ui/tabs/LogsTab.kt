@@ -46,6 +46,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+internal data class ConversationGroup(
+    val packageName: String?,
+    val appName: String,
+    override val logs: List<LogEntry>
+) : LogGroup
+
+private interface LogGroup {
+    val logs: List<LogEntry>
+}
+
 /**
  * Copies transcription text to clipboard and shows a toast.
  */
@@ -137,9 +147,11 @@ fun LogsTab(
     val swipeActionMode by viewModel.swipeActionMode
         .collectAsState(initial = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
     val showVadAdvisory by viewModel.showVadAdvisory.collectAsState()
+    val groupByConversation by viewModel.groupLogsByConversation.collectAsState()
 
     // Lifted expanded state — tracks which taskIds are expanded
     var expandedTaskIds by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var expandedConversationGroups by remember { mutableStateOf<Set<String>>(emptySet()) }
     var revealedLogId by remember { mutableStateOf<String?>(null) }
 
     var showClearDialog by remember { mutableStateOf(false) }
@@ -160,9 +172,12 @@ fun LogsTab(
         recentlyDeletedEntry = null
     }
 
-    // Group filtered logs by date
+    // Group filtered logs by date or conversation
     val groupedLogs = remember(filteredLogs) {
         groupLogsByDate(filteredLogs, context)
+    }
+    val conversationGroups = remember(filteredLogs, groupByConversation) {
+        if (groupByConversation) groupLogsByConversation(filteredLogs, context) else emptyList()
     }
 
     // Clear-all confirmation dialog (outside Scaffold so it overlays everything)
@@ -298,11 +313,18 @@ fun LogsTab(
                     // Wait for clearSearch to propagate to filteredLogs
                     viewModel.filteredLogs.first()
                 }
-                // Find flat index in grouped list
-                val freshGrouped = groupLogsByDate(filteredLogs, context)
-                val flatIndex = indexOfTaskId(freshGrouped, taskId)
+                expandedTaskIds = expandedTaskIds + taskId
+                val flatIndex = if (groupByConversation) {
+                    val freshConversation = groupLogsByConversation(filteredLogs, context)
+                    val entry = filteredLogs.find { it.taskId == taskId }
+                    val groupKey = entry?.sourcePackageName ?: "__unknown__"
+                    expandedConversationGroups = expandedConversationGroups + groupKey
+                    indexOfTaskIdInGroups(freshConversation, taskId)
+                } else {
+                    val freshGrouped = groupLogsByDate(filteredLogs, context)
+                    indexOfTaskIdInGroups(freshGrouped, taskId)
+                }
                 if (flatIndex >= 0) {
-                    expandedTaskIds = expandedTaskIds + taskId
                     listState.animateScrollToItem(flatIndex)
                 }
                 viewModel.clearHighlight()
@@ -374,121 +396,82 @@ fun LogsTab(
                         modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                     )
                 }
-                groupedLogs.forEach { (dateLabel, dateLogs) ->
-                    // Date group header
-                    item(key = "header_$dateLabel") {
-                        DateGroupHeader(label = dateLabel, count = dateLogs.size)
-                    }
-
-                    // Logs for this date
-                    items(dateLogs, key = { it.id }) { log ->
-                        val isExpanded = log.taskId in expandedTaskIds
-
-                        if (swipeActionMode == "REVEAL") {
-                            // Swipe-to-reveal mode: show action buttons behind the card
-                            val revealState = rememberSwipeToRevealState()
-
-                            // Only one message can be revealed at a time
-                            LaunchedEffect(log.id, revealState.isRevealed) {
-                                if (revealState.isRevealed && revealedLogId != log.id) {
-                                    revealedLogId = log.id
-                                }
-                            }
-                            LaunchedEffect(log.id, revealedLogId) {
-                                if (revealedLogId != null && revealedLogId != log.id && revealState.isRevealed) {
-                                    revealState.reset()
-                                }
-                            }
-
-                            val colorScheme = MaterialTheme.colorScheme
-                            val actions = remember(log.id, log.status, log.result, colorScheme) {
-                                buildSwipeActions(
-                                    log = log,
-                                    context = context,
-                                    viewModel = viewModel,
-                                    onDeleted = { entry -> recentlyDeletedEntry = entry },
-                                    copyLabel = context.getString(R.string.swipe_action_copy_description),
-                                    shareLabel = context.getString(R.string.swipe_action_share_description),
-                                    deleteLabel = context.getString(R.string.swipe_action_delete_description),
-                                    colors = colorScheme
-                                )
-                            }
-                            SwipeToRevealBox(
-                                state = revealState,
-                                actions = actions
-                            ) {
-                                LogEntryItem(
-                                    log = log,
-                                    searchQuery = searchQuery,
-                                    expanded = isExpanded,
-                                    onExpandChange = { expanded ->
-                                        if (revealState.isRevealed) {
-                                            revealState.reset()
-                                        } else {
-                                            expandedTaskIds = if (expanded) {
-                                                expandedTaskIds + log.taskId
-                                            } else {
-                                                expandedTaskIds - log.taskId
-                                            }
-                                        }
+                if (groupByConversation && conversationGroups.isNotEmpty()) {
+                    conversationGroups.forEach { group ->
+                        val groupKey = group.packageName ?: "__unknown__"
+                        val isGroupExpanded = groupKey in expandedConversationGroups
+                        item(key = "conv_$groupKey") {
+                            ConversationGroupHeader(
+                                appName = group.appName,
+                                count = group.logs.size,
+                                lastTimestamp = group.logs.first().timestamp,
+                                expanded = isGroupExpanded,
+                                onToggle = {
+                                    expandedConversationGroups = if (isGroupExpanded) {
+                                        expandedConversationGroups - groupKey
+                                    } else {
+                                        expandedConversationGroups + groupKey
                                     }
-                                )
-                            }
-                        } else {
-                            // Immediate delete mode: original SwipeToDismissBox behavior
-                            val dismissState = rememberSwipeToDismissBoxState(
-                                confirmValueChange = {
-                                    if (it == SwipeToDismissBoxValue.EndToStart) {
-                                        recentlyDeletedEntry = log
-                                        viewModel.deleteLog(log.id)
-                                        true
-                                    } else false
                                 }
                             )
-                            SwipeToDismissBox(
-                                state = dismissState,
-                                backgroundContent = {
-                                    val color by animateColorAsState(
-                                        if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
-                                            dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
-                                        ) MaterialTheme.colorScheme.errorContainer
-                                        else MaterialTheme.colorScheme.surface,
-                                        label = "swipe_bg"
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(color)
-                                            .padding(horizontal = 20.dp),
-                                        contentAlignment = Alignment.CenterEnd
-                                    ) {
-                                        Icon(
-                                            Icons.Default.Delete,
-                                            contentDescription = stringResource(R.string.logs_delete_entry),
-                                            tint = MaterialTheme.colorScheme.onErrorContainer
-                                        )
-                                    }
-                                },
-                                enableDismissFromStartToEnd = false
-                            ) {
-                                LogEntryItem(
+                        }
+                        if (isGroupExpanded) {
+                            items(group.logs, key = { it.id }) { log ->
+                                LogEntryWithSwipe(
                                     log = log,
                                     searchQuery = searchQuery,
-                                    expanded = isExpanded,
+                                    isExpanded = log.taskId in expandedTaskIds,
+                                    swipeActionMode = swipeActionMode,
+                                    revealedLogId = revealedLogId,
+                                    onRevealedLogIdChange = { revealedLogId = it },
                                     onExpandChange = { expanded ->
                                         expandedTaskIds = if (expanded) {
                                             expandedTaskIds + log.taskId
                                         } else {
                                             expandedTaskIds - log.taskId
                                         }
-                                    }
+                                    },
+                                    onDeleted = { entry -> recentlyDeletedEntry = entry },
+                                    onDeleteLog = { id -> viewModel.deleteLog(id) }
+                                )
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(horizontal = 16.dp),
+                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                                 )
                             }
                         }
-                        HorizontalDivider(
-                            modifier = Modifier.padding(horizontal = 16.dp),
-                            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                        )
+                    }
+                } else {
+                    groupedLogs.forEach { (dateLabel, dateLogs) ->
+                        // Date group header
+                        item(key = "header_$dateLabel") {
+                            DateGroupHeader(label = dateLabel, count = dateLogs.size)
+                        }
+
+                        // Logs for this date
+                        items(dateLogs, key = { it.id }) { log ->
+                            LogEntryWithSwipe(
+                                log = log,
+                                searchQuery = searchQuery,
+                                isExpanded = log.taskId in expandedTaskIds,
+                                swipeActionMode = swipeActionMode,
+                                revealedLogId = revealedLogId,
+                                onRevealedLogIdChange = { revealedLogId = it },
+                                onExpandChange = { expanded ->
+                                    expandedTaskIds = if (expanded) {
+                                        expandedTaskIds + log.taskId
+                                    } else {
+                                        expandedTaskIds - log.taskId
+                                    }
+                                },
+                                onDeleted = { entry -> recentlyDeletedEntry = entry },
+                                onDeleteLog = { id -> viewModel.deleteLog(id) }
+                            )
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                            )
+                        }
                     }
                 }
             }
@@ -525,7 +508,7 @@ private fun DateGroupHeader(label: String, count: Int) {
     }
 }
 
-internal data class DateGroup(val label: String, val logs: List<LogEntry>)
+internal data class DateGroup(val label: String, override val logs: List<LogEntry>) : LogGroup
 
 private fun groupLogsByDate(logs: List<LogEntry>, context: Context): List<DateGroup> {
     val now = System.currentTimeMillis()
@@ -588,15 +571,9 @@ private fun startOfDay(timestamp: Long): Long {
 /** Fixed LazyColumn items above the date groups: header (0) and vad_advisory (1). */
 private const val FIXED_ITEMS_ABOVE_GROUPS = 2
 
-/**
- * Computes the flat LazyColumn index for a given taskId within grouped logs.
- * Each group contributes 1 header item + N entry items.
- * Returns -1 if not found.
- */
-internal fun indexOfTaskId(groupedLogs: List<DateGroup>, taskId: String): Int {
+internal fun indexOfTaskIdInGroups(groups: List<LogGroup>, taskId: String): Int {
     var flatIndex = FIXED_ITEMS_ABOVE_GROUPS
-    for (group in groupedLogs) {
-        // Date group header occupies one slot
+    for (group in groups) {
         flatIndex++
         for (log in group.logs) {
             if (log.taskId == taskId) return flatIndex
@@ -1014,4 +991,179 @@ private fun highlightText(
             currentIndex = matchIndex + query.length
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun LogEntryWithSwipe(
+    log: LogEntry,
+    searchQuery: String,
+    isExpanded: Boolean,
+    swipeActionMode: String,
+    revealedLogId: String?,
+    onRevealedLogIdChange: (String?) -> Unit,
+    onExpandChange: (Boolean) -> Unit,
+    onDeleted: (LogEntry) -> Unit,
+    onDeleteLog: (String) -> Unit
+) {
+    val context = LocalContext.current
+    if (swipeActionMode == "REVEAL") {
+        val revealState = rememberSwipeToRevealState()
+
+        LaunchedEffect(log.id, revealState.isRevealed) {
+            if (revealState.isRevealed && revealedLogId != log.id) {
+                onRevealedLogIdChange(log.id)
+            }
+        }
+        LaunchedEffect(log.id, revealedLogId) {
+            if (revealedLogId != null && revealedLogId != log.id && revealState.isRevealed) {
+                revealState.reset()
+            }
+        }
+
+        val colorScheme = MaterialTheme.colorScheme
+        val actions = remember(log.id, log.status, log.result, colorScheme) {
+            buildSwipeActions(
+                log = log,
+                context = context,
+                viewModel = viewModel,
+                onDeleted = onDeleted,
+                copyLabel = context.getString(R.string.swipe_action_copy_description),
+                shareLabel = context.getString(R.string.swipe_action_share_description),
+                deleteLabel = context.getString(R.string.swipe_action_delete_description),
+                colors = colorScheme
+            )
+        }
+        SwipeToRevealBox(
+            state = revealState,
+            actions = actions
+        ) {
+            LogEntryItem(
+                log = log,
+                searchQuery = searchQuery,
+                expanded = isExpanded,
+                onExpandChange = { expanded ->
+                    if (revealState.isRevealed) {
+                        revealState.reset()
+                    } else {
+                        onExpandChange(expanded)
+                    }
+                }
+            )
+        }
+    } else {
+        val dismissState = rememberSwipeToDismissBoxState(
+            confirmValueChange = {
+                if (it == SwipeToDismissBoxValue.EndToStart) {
+                    onDeleted(log)
+                    onDeleteLog(log.id)
+                    true
+                } else false
+            }
+        )
+        SwipeToDismissBox(
+            state = dismissState,
+            backgroundContent = {
+                val color by animateColorAsState(
+                    if (dismissState.currentValue == SwipeToDismissBoxValue.EndToStart ||
+                        dismissState.targetValue == SwipeToDismissBoxValue.EndToStart
+                    ) MaterialTheme.colorScheme.errorContainer
+                    else MaterialTheme.colorScheme.surface,
+                    label = "swipe_bg"
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(color)
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.CenterEnd
+                ) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = stringResource(R.string.logs_delete_entry),
+                        tint = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            },
+            enableDismissFromStartToEnd = false
+        ) {
+            LogEntryItem(
+                log = log,
+                searchQuery = searchQuery,
+                expanded = isExpanded,
+                onExpandChange = onExpandChange
+            )
+        }
+    }
+}
+
+@Composable
+private fun ConversationGroupHeader(
+    appName: String,
+    count: Int,
+    lastTimestamp: Long,
+    expanded: Boolean,
+    onToggle: () -> Unit
+) {
+    val context = LocalContext.current
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f),
+        shape = MaterialTheme.shapes.small,
+        onClick = onToggle
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+                tint = MaterialTheme.colorScheme.onSecondaryContainer
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = appName.ifBlank { stringResource(R.string.conversation_group_unknown) },
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.conversation_group_count, count),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.weight(1f))
+            Text(
+                text = formatRelativeTime(lastTimestamp, context),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+        }
+    }
+}
+
+private fun groupLogsByConversation(
+    logs: List<LogEntry>,
+    context: Context
+): List<ConversationGroup> {
+    return logs
+        .groupBy { it.sourcePackageName }
+        .map { (packageName, entries) ->
+            val sorted = entries.sortedByDescending { it.timestamp }
+            ConversationGroup(
+                packageName = packageName,
+                appName = packageName?.let { AppInfoUtils.getAppName(context, it) }
+                    ?: context.getString(R.string.conversation_group_unknown),
+                logs = sorted
+            )
+        }
+        .sortedByDescending { it.logs.first().timestamp }
 }

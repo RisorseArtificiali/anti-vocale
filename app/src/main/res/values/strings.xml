@@ -692,4 +692,10 @@
 
     <!-- Skeleton loading -->
     <string name="skeleton_loading_content_description">Loading transcription</string>
+
+    <!-- Conversation Grouping -->
+    <string name="conversation_grouping_title">Group by Conversation</string>
+    <string name="conversation_grouping_description">Group transcriptions by source app (WhatsApp, Telegram, etc.) into collapsible sections.</string>
+    <string name="conversation_group_count">%1$d messages</string>
+    <string name="conversation_group_unknown">Other</string>
 </resources>

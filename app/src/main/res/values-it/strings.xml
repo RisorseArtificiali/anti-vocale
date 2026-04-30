@@ -629,4 +629,10 @@
 
     <!-- Skeleton loading -->
     <string name="skeleton_loading_content_description">Caricamento trascrizione</string>
+
+    <!-- Raggruppamento conversazioni -->
+    <string name="conversation_grouping_title">Raggruppa per conversazione</string>
+    <string name="conversation_grouping_description">Raggruppa le trascrizioni per app di origine (WhatsApp, Telegram, ecc.) in sezioni comprimibili.</string>
+    <string name="conversation_group_count">%1$d messaggi</string>
+    <string name="conversation_group_unknown">Altro</string>
 </resources>

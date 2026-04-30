@@ -43,6 +43,7 @@ class PreferencesManagerImpl(
         private val SWIPE_ACTION_MODE = stringPreferencesKey("swipe_action_mode")
         private val BENCHMARK_RESULTS = stringPreferencesKey("benchmark_results")
         private val VAD_ADVISORY_DISMISSED = booleanPreferencesKey("vad_advisory_dismissed")
+        private val GROUP_LOGS_BY_CONVERSATION = booleanPreferencesKey("group_logs_by_conversation")
         private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
         private val PARTIAL_TRANSCRIPTION_TIMESTAMP = longPreferencesKey("partial_transcription_timestamp")
     }
@@ -66,7 +67,8 @@ class PreferencesManagerImpl(
         val inferenceProvider: String = PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         val transcriptionLanguage: String = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
         val swipeActionMode: String = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
-        val vadAdvisoryDismissed: Boolean = false
+        val vadAdvisoryDismissed: Boolean = false,
+        val groupLogsByConversation: Boolean = PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION
     )
 
     private fun Preferences.toCached() = CachedPreferences(
@@ -88,7 +90,8 @@ class PreferencesManagerImpl(
         inferenceProvider = this[INFERENCE_PROVIDER] ?: PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
         swipeActionMode = this[SWIPE_ACTION_MODE] ?: PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
-        vadAdvisoryDismissed = this[VAD_ADVISORY_DISMISSED] ?: false
+        vadAdvisoryDismissed = this[VAD_ADVISORY_DISMISSED] ?: false,
+        groupLogsByConversation = this[GROUP_LOGS_BY_CONVERSATION] ?: PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION
     )
 
     fun initialize() {
@@ -371,5 +374,15 @@ class PreferencesManagerImpl(
             preferences.remove(PARTIAL_TRANSCRIPTION_TEXT)
             preferences.remove(PARTIAL_TRANSCRIPTION_TIMESTAMP)
         }
+    }
+
+    override val groupLogsByConversation: Flow<Boolean> = context.dataStore.data.map { it[GROUP_LOGS_BY_CONVERSATION] ?: PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION }
+        .onStart { emit(cache.get().groupLogsByConversation) }
+
+    override suspend fun saveGroupLogsByConversation(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[GROUP_LOGS_BY_CONVERSATION] = enabled
+        }
+        cache.updateAndGet { it.copy(groupLogsByConversation = enabled) }
     }
 }

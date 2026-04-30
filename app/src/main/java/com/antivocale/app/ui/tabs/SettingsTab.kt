@@ -65,6 +65,7 @@ fun SettingsTab(
     val currentTranscriptionLanguage by viewModel.currentTranscriptionLanguage.collectAsState()
     val currentTheme by viewModel.currentTheme.collectAsState()
     val swipeActionMode by viewModel.swipeActionMode.collectAsState()
+    val groupLogsByConversation by viewModel.groupLogsByConversation.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
     val tokenInput by viewModel.tokenInput.collectAsState()
     val oauthState by viewModel.oauthState.collectAsState()
@@ -1116,6 +1117,50 @@ fun SettingsTab(
                     checked = progressiveEnabled,
                     onCheckedChange = { enabled ->
                         viewModel.saveProgressiveTranscription(enabled)
+                    }
+                )
+            }
+        }
+
+        // Conversation Grouping Setting
+        Card(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Forum,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.conversation_grouping_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = stringResource(R.string.conversation_grouping_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Spacer(modifier = Modifier.width(16.dp))
+                Switch(
+                    checked = groupLogsByConversation,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveGroupLogsByConversation(enabled)
                     }
                 )
             }
