@@ -14,6 +14,7 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDiscovery
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.manager.LlmManager
@@ -56,7 +57,8 @@ class SettingsViewModel @Inject constructor(
     val perAppPreferencesManager: PerAppPreferencesManager,
     val transcriptionCalibrator: TranscriptionCalibrator,
     private val backendManager: TranscriptionBackendManager,
-    private val llmManager: LlmManager
+    private val llmManager: LlmManager,
+    private val shareTargetManager: ShareTargetManager
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -179,6 +181,20 @@ class SettingsViewModel @Inject constructor(
     fun saveGroupLogsByConversation(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveGroupLogsByConversation(enabled)
+        }
+    }
+
+    val advancedSharingEnabled: StateFlow<Boolean> = preferencesManager.advancedSharingEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED
+        )
+
+    fun saveAdvancedSharingEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveAdvancedSharingEnabled(enabled)
+            shareTargetManager.setAdvancedSharingEnabled(enabled)
         }
     }
 

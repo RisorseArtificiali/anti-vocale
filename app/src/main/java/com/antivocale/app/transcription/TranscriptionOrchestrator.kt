@@ -142,6 +142,13 @@ class TranscriptionOrchestrator @Inject constructor(
             logError(taskId, errorMsg, duration)
             listener.onError(taskId, "PROCESSING_ERROR", errorMsg, isShareRequest, false, duration)
             return Result.failure(e)
+        } finally {
+            if (backendOverride != null) {
+                try {
+                    backendManager.unloadActiveBackend()
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 

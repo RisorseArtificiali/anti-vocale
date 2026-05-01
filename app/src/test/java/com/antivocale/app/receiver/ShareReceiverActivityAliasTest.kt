@@ -31,6 +31,11 @@ class ShareReceiverActivityAliasTest {
     }
 
     @Test
+    fun `qwen3 alias maps to qwen3-asr backend`() {
+        assertEquals("qwen3-asr", ShareReceiverActivity.backendIdForAlias("com.antivocale.app.ShareQwen3"))
+    }
+
+    @Test
     fun `empty string returns null`() {
         assertNull(ShareReceiverActivity.backendIdForAlias(""))
     }

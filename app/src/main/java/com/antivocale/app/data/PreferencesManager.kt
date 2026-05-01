@@ -22,6 +22,7 @@ interface PreferencesManager {
     val transcriptionLanguage: Flow<String>
     val swipeActionMode: Flow<String>
     val groupLogsByConversation: Flow<Boolean>
+    val advancedSharingEnabled: Flow<Boolean>
 
     suspend fun saveModelPath(path: String)
     suspend fun clearModelPath()
@@ -46,6 +47,7 @@ interface PreferencesManager {
     suspend fun saveTranscriptionLanguage(language: String)
     suspend fun saveSwipeActionMode(mode: String)
     suspend fun saveGroupLogsByConversation(enabled: Boolean)
+    suspend fun saveAdvancedSharingEnabled(enabled: Boolean)
 
     suspend fun saveBenchmarkResult(modelId: String, jsonResult: String)
     fun getBenchmarkResult(modelId: String): Flow<String?>
@@ -74,5 +76,6 @@ interface PreferencesManager {
         const val DEFAULT_SWIPE_ACTION_MODE = "REVEAL"
         const val DEFAULT_INFERENCE_PROVIDER = "auto"
         const val DEFAULT_GROUP_LOGS_BY_CONVERSATION = true
+        const val DEFAULT_ADVANCED_SHARING_ENABLED = false
     }
 }

@@ -10,6 +10,8 @@ import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.ShareTargetManager
+import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.R
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.manager.LlmManager
@@ -54,6 +56,7 @@ class ModelViewModel @Inject constructor(
     private val benchmarkManager: BenchmarkManager,
     private val backendManager: TranscriptionBackendManager,
     private val llmManager: LlmManager,
+    private val shareTargetManager: ShareTargetManager,
     @ApplicationContext private val ctx: Context
 ) : ViewModel() {
 
@@ -313,6 +316,7 @@ class ModelViewModel @Inject constructor(
                 _parakeetState.update { it.copy(isDownloading = false, modelPath = file.absolutePath, partialDownload = null) }
                 viewModelScope.launch {
                     preferencesManager.saveParakeetModelPath(file.absolutePath)
+                    shareTargetManager.onModelDownloaded()
                     if (_uiState.value.modelName.isBlank()) useParakeetModel()
                 }
                 viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.parakeet_downloaded))) }
@@ -359,6 +363,7 @@ class ModelViewModel @Inject constructor(
                         variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
                     )
                 }
+                shareTargetManager.onModelDownloaded()
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useWhisperModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
@@ -411,6 +416,7 @@ class ModelViewModel @Inject constructor(
                         variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
                     )
                 }
+                shareTargetManager.onModelDownloaded()
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useQwen3AsrModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
@@ -479,6 +485,7 @@ class ModelViewModel @Inject constructor(
                     )
                 }
                 refreshDownloadedModels()
+                shareTargetManager.onModelDownloaded()
                 if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
             },
             onCancelled = {
@@ -1050,6 +1057,7 @@ class ModelViewModel @Inject constructor(
                 // Clear model path if this was the selected model
                 if (_uiState.value.modelPath.contains(variant.fileName)) {
                     preferencesManager.saveModelPath("")
+                    shareTargetManager.onModelDeleted(LlmTranscriptionBackend.BACKEND_ID)
                     _uiState.update { it.copy(
                         modelPath = "",
                         modelName = "",
@@ -1275,6 +1283,7 @@ class ModelViewModel @Inject constructor(
             if (success) {
                 preferencesManager.saveParakeetModelPath("")
                 _parakeetState.update { it.copy(modelPath = null) }
+                shareTargetManager.onModelDeleted(SherpaOnnxBackend.BACKEND_ID)
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.parakeet_deleted)))
             }
         }
@@ -1490,6 +1499,7 @@ class ModelViewModel @Inject constructor(
                 if (savedPath?.contains(variant.dirName) == true) {
                     preferencesManager.clearWhisperModelPath()
                     _uiState.update { it.copy(modelPath = "", modelName = "") }
+                    shareTargetManager.onModelDeleted(WhisperBackend.BACKEND_ID)
                 }
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.whisper_deleted, displayName)))
             }
@@ -1628,6 +1638,7 @@ class ModelViewModel @Inject constructor(
                 if (savedPath != null && savedPath.contains(Qwen3AsrDownloader.getModelDirName(variant))) {
                     preferencesManager.clearQwen3AsrModelPath()
                     _uiState.update { it.copy(modelPath = "", modelName = "") }
+                    shareTargetManager.onModelDeleted(Qwen3AsrBackend.BACKEND_ID)
                 }
                 val displayName = context.getString(variant.titleResId)
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.qwen3_asr_deleted, displayName)))

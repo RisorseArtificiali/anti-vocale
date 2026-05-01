@@ -126,7 +126,7 @@
         <activity-alias
             android:name=".ShareParakeet"
             android:targetActivity=".receiver.ShareReceiverActivity"
-            android:enabled="true"
+            android:enabled="false"
             android:exported="true"
             android:label="@string/share_target_parakeet"
             android:excludeFromRecents="true"
@@ -147,7 +147,7 @@
         <activity-alias
             android:name=".ShareWhisper"
             android:targetActivity=".receiver.ShareReceiverActivity"
-            android:enabled="true"
+            android:enabled="false"
             android:exported="true"
             android:label="@string/share_target_whisper"
             android:excludeFromRecents="true"
@@ -168,9 +168,30 @@
         <activity-alias
             android:name=".ShareGemma"
             android:targetActivity=".receiver.ShareReceiverActivity"
-            android:enabled="true"
+            android:enabled="false"
             android:exported="true"
             android:label="@string/share_target_gemma"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/ogg" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".ShareQwen3"
+            android:targetActivity=".receiver.ShareReceiverActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:label="@string/share_target_qwen3"
             android:excludeFromRecents="true"
             android:taskAffinity=""
             android:theme="@android:style/Theme.Translucent.NoTitleBar">

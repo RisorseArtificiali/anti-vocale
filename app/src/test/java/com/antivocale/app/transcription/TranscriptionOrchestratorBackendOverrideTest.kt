@@ -225,4 +225,44 @@ class TranscriptionOrchestratorBackendOverrideTest : TranscriptionOrchestratorTe
             result.exceptionOrNull()?.message?.contains("No Parakeet model configured") == true
         )
     }
+
+    @Test
+    fun `override unloads backend after transcription`() = runTest {
+        val parakeetDir = createTempModelDir("parakeet")
+
+        // Override says sherpa-onnx
+        every { preferencesManager.parakeetModelPath } returns flowOf(parakeetDir.absolutePath)
+        every { preferencesManager.threadCount } returns flowOf(4)
+        every { preferencesManager.keepAliveTimeout } returns flowOf(5)
+        every { backendManager.hasActiveBackend() } returns false
+        coEvery { backendManager.setActiveBackend(any(), any(), any()) } returns Result.success(Unit)
+        every { backendManager.unloadActiveBackend() } returns Unit
+
+        val context = mockk<Context>(relaxed = true)
+        orchestrator.processRequest(
+            taskId = "test-restore",
+            requestType = "text",
+            prompt = "hi",
+            filePath = null,
+            source = "share",
+            sourcePackage = null,
+            backendOverride = SherpaOnnxBackend.BACKEND_ID,
+            queuePosition = 1,
+            queueTotal = 1,
+            context = context,
+            cacheDir = File("/cache"),
+            listener = listener,
+            coroutineScope = this
+        )
+
+        // Should load sherpa-onnx for the override, then unload it
+        coVerify(ordering = io.mockk.Ordering.ORDERED) {
+            backendManager.setActiveBackend(
+                backendId = SherpaOnnxBackend.BACKEND_ID,
+                context = context,
+                config = any()
+            )
+        }
+        verify { backendManager.unloadActiveBackend() }
+    }
 }

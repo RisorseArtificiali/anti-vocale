@@ -8,6 +8,7 @@ import com.antivocale.app.data.HuggingFaceTokenManagerImpl
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.PreferencesManagerImpl
+import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import java.util.concurrent.TimeUnit
 import com.antivocale.app.data.local.AppDatabase
@@ -40,6 +41,15 @@ object AppModule {
     @Singleton
     fun provideTranscriptionCalibrator(@ApplicationContext context: Context): TranscriptionCalibrator {
         return TranscriptionCalibrator(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideShareTargetManager(
+        @ApplicationContext context: Context,
+        preferencesManager: PreferencesManager
+    ): ShareTargetManager {
+        return ShareTargetManager(context, preferencesManager)
     }
 
     @Provides
