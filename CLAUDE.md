@@ -3,7 +3,7 @@
 Android application written in Kotlin for transcribing voice messages locally on-device.
 
 ## Project Info
-- **GitHub:** Private repo at `paoloantinori/voice_message_reader` (being renamed to `anti-vocale`)
+- **GitHub:** `RisorseArtificiali/anti-vocale` (fork: `paoloantinor/anti-vocale`)
 - **Language:** Kotlin
 - **Platform:** Android
 
@@ -15,6 +15,21 @@ Android application written in Kotlin for transcribing voice messages locally on
 - **Device:** Realme RMX3853 (Android 16, connects via wireless debugging at `telefonopaolo:35685`)
 
 @import docs/BUILD.md
+
+## Key Identifiers
+
+- **Package:** `com.antivocale.app`
+
+## Project Structure
+
+- `app/src/main/java/com/antivocale/app/` — Main source
+  - `transcription/` — Transcription backends (Whisper/sherpa-onnx, LiteRT-LM)
+  - `ui/` — Compose UI screens and view models
+  - `receiver/` — Broadcast receivers (Tasker integration)
+  - `model/` — Model management and configuration
+- `app/libs/` — Prebuilt AARs (sherpa-onnx, tracked via Git LFS)
+- `docs/` — Build guides, research notes, scout reports
+- `scripts/` — Build/install helpers (`install.sh`)
 
 ## Skills
 
