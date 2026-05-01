@@ -1,6 +1,5 @@
 package com.antivocale.app.ui.viewmodel
 
-import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.data.local.toLogEntry
@@ -10,8 +9,6 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -32,8 +29,6 @@ import org.junit.Test
 class LogsViewModelActiveTranscriptionTest {
 
     private lateinit var logDao: LogDao
-    private lateinit var preferencesManager: PreferencesManager
-    private lateinit var transcriptionBackendManager: TranscriptionBackendManager
     private lateinit var viewModel: LogsViewModel
     private val testDispatcher = StandardTestDispatcher()
     private val logsFlow = MutableStateFlow<List<LogEntity>>(emptyList())
@@ -43,11 +38,7 @@ class LogsViewModelActiveTranscriptionTest {
         Dispatchers.setMain(testDispatcher)
         logDao = mockk(relaxed = true)
         every { logDao.getAll() } returns logsFlow
-        transcriptionBackendManager = mockk(relaxed = true)
-        preferencesManager = mockk(relaxed = true) {
-            every { swipeActionMode } returns flowOf("delete")
-        }
-        viewModel = LogsViewModel(transcriptionBackendManager, logDao, preferencesManager)
+        viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager())
     }
 
     @After
