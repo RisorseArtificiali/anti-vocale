@@ -52,7 +52,7 @@ internal data class ConversationGroup(
     override val logs: List<LogEntry>
 ) : LogGroup
 
-private interface LogGroup {
+internal interface LogGroup {
     val logs: List<LogEntry>
 }
 
@@ -432,7 +432,8 @@ fun LogsTab(
                                         }
                                     },
                                     onDeleted = { entry -> recentlyDeletedEntry = entry },
-                                    onDeleteLog = { id -> viewModel.deleteLog(id) }
+                                    onDeleteLog = { id -> viewModel.deleteLog(id) },
+                                    viewModel = viewModel
                                 )
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -465,7 +466,8 @@ fun LogsTab(
                                     }
                                 },
                                 onDeleted = { entry -> recentlyDeletedEntry = entry },
-                                onDeleteLog = { id -> viewModel.deleteLog(id) }
+                                onDeleteLog = { id -> viewModel.deleteLog(id) },
+                                viewModel = viewModel
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -1004,7 +1006,8 @@ private fun LogEntryWithSwipe(
     onRevealedLogIdChange: (String?) -> Unit,
     onExpandChange: (Boolean) -> Unit,
     onDeleted: (LogEntry) -> Unit,
-    onDeleteLog: (String) -> Unit
+    onDeleteLog: (String) -> Unit,
+    viewModel: LogsViewModel
 ) {
     val context = LocalContext.current
     if (swipeActionMode == "REVEAL") {

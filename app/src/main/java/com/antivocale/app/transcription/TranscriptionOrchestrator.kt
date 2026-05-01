@@ -62,6 +62,7 @@ class TranscriptionOrchestrator @Inject constructor(
         filePath: String?,
         source: String?,
         sourcePackage: String?,
+        backendOverride: String? = null,
         queuePosition: Int,
         queueTotal: Int,
         context: Context,
@@ -84,7 +85,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         try {
             // Ensure the correct backend is loaded
-            val loadResult = ensureBackendLoaded(context)
+            val loadResult = ensureBackendLoaded(context, backendOverride)
             if (loadResult.isFailure) {
                 val error = loadResult.exceptionOrNull()!!
                 val errorMsg = "Failed to load backend: ${error.message}"
@@ -146,10 +147,13 @@ class TranscriptionOrchestrator @Inject constructor(
 
     // ---- Backend Loading ----
 
-    private suspend fun ensureBackendLoaded(context: Context): Result<Unit> {
+    private suspend fun ensureBackendLoaded(
+        context: Context,
+        backendOverride: String? = null
+    ): Result<Unit> {
         val hasBackend = backendManager.hasActiveBackend()
         val backendReady = backendManager.getActiveBackend()?.isReady() ?: false
-        val preferredBackendId = preferencesManager.transcriptionBackend.first()
+        val preferredBackendId = backendOverride ?: preferencesManager.transcriptionBackend.first()
         val activeBackendId = backendManager.getActiveBackend()?.id
         val backendMismatch = hasBackend && activeBackendId != preferredBackendId
 

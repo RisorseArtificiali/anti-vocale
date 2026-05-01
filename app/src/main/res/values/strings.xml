@@ -695,6 +695,11 @@
     <!-- Skeleton loading -->
     <string name="skeleton_loading_content_description">Loading transcription</string>
 
+    <!-- Share target profiles (appear as separate entries in Android share sheet) -->
+    <string name="share_target_parakeet">Anti-Vocale (Parakeet)</string>
+    <string name="share_target_whisper">Anti-Vocale (Whisper)</string>
+    <string name="share_target_gemma">Anti-Vocale (Gemma)</string>
+
     <!-- Conversation Grouping -->
     <string name="conversation_grouping_title">Group by Conversation</string>
     <string name="conversation_grouping_description">Group transcriptions by source app (WhatsApp, Telegram, etc.) into collapsible sections.</string>

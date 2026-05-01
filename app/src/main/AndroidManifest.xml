@@ -122,6 +122,70 @@
             </intent-filter>
         </activity>
 
+        <!-- Share target aliases: each appears as a separate option in the Android share sheet -->
+        <activity-alias
+            android:name=".ShareParakeet"
+            android:targetActivity=".receiver.ShareReceiverActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:label="@string/share_target_parakeet"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/ogg" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".ShareWhisper"
+            android:targetActivity=".receiver.ShareReceiverActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:label="@string/share_target_whisper"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/ogg" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".ShareGemma"
+            android:targetActivity=".receiver.ShareReceiverActivity"
+            android:enabled="true"
+            android:exported="true"
+            android:label="@string/share_target_gemma"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/ogg" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- Debug-only activity for automated benchmarking (exported for adb am start) -->
         <activity
             android:name=".receiver.BenchmarkActivity"
