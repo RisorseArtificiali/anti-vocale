@@ -42,6 +42,8 @@ import com.antivocale.app.ui.components.rememberSwipeToRevealState
 import com.antivocale.app.util.ToastCompat
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.viewmodel.LogsViewModel
+import androidx.compose.runtime.produceState
+import com.antivocale.app.ui.dialogs.RetranscribeDialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
 import java.util.*
@@ -156,6 +158,27 @@ fun LogsTab(
 
     var showClearDialog by remember { mutableStateOf(false) }
     var recentlyDeletedEntry by remember { mutableStateOf<LogEntry?>(null) }
+    var retranscribeTarget by remember { mutableStateOf<LogEntry?>(null) }
+    val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
+
+    if (retranscribeTarget != null) {
+        val retranscribeBackends by produceState(
+            initialValue = emptyList<LogsViewModel.BackendOption>(),
+            key1 = retranscribeTarget
+        ) {
+            value = viewModel.getAvailableAudioBackendsWithModels()
+        }
+        RetranscribeDialog(
+            availableBackends = retranscribeBackends,
+            onBackendSelected = { backendId ->
+                retranscribeTarget?.let { entry ->
+                    viewModel.reTranscribeWithBackend(entry, backendId, context)
+                }
+                retranscribeTarget = null
+            },
+            onDismiss = { retranscribeTarget = null }
+        )
+    }
 
     // Undo deletion via Snackbar
     val snackbarHostState = remember { SnackbarHostState() }
@@ -433,7 +456,8 @@ fun LogsTab(
                                     },
                                     onDeleted = { entry -> recentlyDeletedEntry = entry },
                                     onDeleteLog = { id -> viewModel.deleteLog(id) },
-                                    viewModel = viewModel
+                                    viewModel = viewModel,
+                                    onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null
                                 )
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -467,7 +491,8 @@ fun LogsTab(
                                 },
                                 onDeleted = { entry -> recentlyDeletedEntry = entry },
                                 onDeleteLog = { id -> viewModel.deleteLog(id) },
-                                viewModel = viewModel
+                                viewModel = viewModel,
+                                onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null
                             )
                             HorizontalDivider(
                                 modifier = Modifier.padding(horizontal = 16.dp),
@@ -591,7 +616,8 @@ fun LogEntryItem(
     log: LogEntry,
     searchQuery: String = "",
     expanded: Boolean = false,
-    onExpandChange: (Boolean) -> Unit = {}
+    onExpandChange: (Boolean) -> Unit = {},
+    onRetranscribe: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
 
@@ -816,6 +842,18 @@ fun LogEntryItem(
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(stringResource(R.string.share_transcription))
                                 }
+                                // Re-transcribe button (audio entries with file)
+                                if (onRetranscribe != null) {
+                                    TextButton(onClick = onRetranscribe) {
+                                        Icon(
+                                            Icons.Default.Refresh,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(stringResource(R.string.retranscribe))
+                                    }
+                                }
                             }
                         }
                     }
@@ -1007,7 +1045,8 @@ private fun LogEntryWithSwipe(
     onExpandChange: (Boolean) -> Unit,
     onDeleted: (LogEntry) -> Unit,
     onDeleteLog: (String) -> Unit,
-    viewModel: LogsViewModel
+    viewModel: LogsViewModel,
+    onRetranscribe: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     if (swipeActionMode == "REVEAL") {
@@ -1051,7 +1090,8 @@ private fun LogEntryWithSwipe(
                     } else {
                         onExpandChange(expanded)
                     }
-                }
+                },
+                onRetranscribe = onRetranscribe
             )
         }
     } else {
@@ -1094,7 +1134,8 @@ private fun LogEntryWithSwipe(
                 log = log,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
-                onExpandChange = onExpandChange
+                onExpandChange = onExpandChange,
+                onRetranscribe = onRetranscribe
             )
         }
     }

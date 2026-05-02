@@ -154,7 +154,7 @@
     <string name="gemma_download_confirm_message">This will download ~%1$dMB. Gemma models are full LLMs with advanced features but use more storage.</string>
 
     <!-- Transcription -->
-    <string name="share_transcription">Share Transcription</string>
+    <string name="share_transcription">Share</string>
     <string name="copy_transcription">Copy to Clipboard</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_received_for_transcription">Audio received for transcription</string>
@@ -717,4 +717,15 @@
     <string name="conversation_grouping_description">Group transcriptions by source app (WhatsApp, Telegram, etc.) into collapsible sections.</string>
     <string name="conversation_group_count">%1$d messages</string>
     <string name="conversation_group_unknown">Other</string>
+
+    <!-- Re-transcribe -->
+    <string name="retranscribe">Retry</string>
+    <string name="retranscribe_title">Re-transcribe with…</string>
+    <string name="retranscribe_subtitle">Select a model to re-transcribe this audio</string>
+    <string name="retranscribe_confirm">Transcribe</string>
+    <string name="retranscribe_no_models">No audio models configured. Download a model from the Model tab first.</string>
+    <string name="retranscribe_file_not_found">Audio file no longer available</string>
+    <string name="retranscribe_active_badge">Active</string>
+    <string name="retranscribe_setting_title">Re-transcribe Button</string>
+    <string name="retranscribe_setting_description">Show a button on audio transcriptions to retry with a different model.</string>
 </resources>

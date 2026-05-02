@@ -1,16 +1,25 @@
 package com.antivocale.app.ui.viewmodel
 
+import android.content.Intent
+import android.widget.Toast
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.core.content.ContextCompat
+import com.antivocale.app.R
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.receiver.TaskerRequestReceiver
+import com.antivocale.app.service.InferenceService
+import com.antivocale.app.transcription.LlmTranscriptionBackend
+import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import com.antivocale.app.transcription.WhisperBackend
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +29,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.launch
+import java.io.File
 import java.util.UUID
 
 data class LogEntry(
@@ -196,6 +205,9 @@ class LogsViewModel @Inject constructor(
     val groupLogsByConversation: StateFlow<Boolean> = preferencesManager.groupLogsByConversation
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION)
 
+    val showRetranscribeButton: StateFlow<Boolean> = preferencesManager.showRetranscribeButton
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON)
+
     fun saveGroupLogsByConversation(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveGroupLogsByConversation(enabled)
@@ -226,5 +238,61 @@ class LogsViewModel @Inject constructor(
 
     fun clearHighlight() {
         _highlightTaskId.value = null
+    }
+
+    data class BackendOption(
+        val backendId: String,
+        val displayName: String,
+        val isCurrentBackend: Boolean
+    )
+
+    suspend fun getAvailableAudioBackendsWithModels(): List<BackendOption> {
+        val currentBackendId = transcriptionBackendManager.activeBackendId.first()
+        val backends = transcriptionBackendManager.getAvailableBackends()
+            .filter { it.supportsAudio }
+
+        val modelPaths = mapOf(
+            WhisperBackend.BACKEND_ID to preferencesManager.whisperModelPath.first(),
+            SherpaOnnxBackend.BACKEND_ID to preferencesManager.parakeetModelPath.first(),
+            Qwen3AsrBackend.BACKEND_ID to preferencesManager.qwen3AsrModelPath.first(),
+            LlmTranscriptionBackend.BACKEND_ID to preferencesManager.modelPath.first()
+        )
+
+        return backends
+            .filter { backend -> modelPaths[backend.id]?.isNotBlank() == true }
+            .map { backend ->
+                BackendOption(
+                    backendId = backend.id,
+                    displayName = backend.displayName,
+                    isCurrentBackend = backend.id == currentBackendId
+                )
+            }
+    }
+
+    fun reTranscribeWithBackend(
+        originalEntry: LogEntry,
+        backendId: String,
+        context: android.content.Context
+    ) {
+        val filePath = originalEntry.filePath ?: return
+        if (!File(filePath).exists()) {
+            Toast.makeText(context, context.getString(R.string.retranscribe_file_not_found), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        val newTaskId = UUID.randomUUID().toString()
+
+        val intent = Intent(context, InferenceService::class.java).apply {
+            putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, newTaskId)
+            putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
+            putExtra(TaskerRequestReceiver.EXTRA_PROMPT, originalEntry.prompt)
+            putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
+            putExtra(InferenceService.EXTRA_SOURCE, "retranscribe")
+            putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, backendId)
+            originalEntry.sourcePackageName?.let {
+                putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, it)
+            }
+        }
+        ContextCompat.startForegroundService(context, intent)
     }
 }

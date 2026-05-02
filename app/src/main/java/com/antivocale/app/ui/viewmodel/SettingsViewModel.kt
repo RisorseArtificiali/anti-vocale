@@ -198,6 +198,19 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    val showRetranscribeButton: StateFlow<Boolean> = preferencesManager.showRetranscribeButton
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON
+        )
+
+    fun saveShowRetranscribeButton(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveShowRetranscribeButton(enabled)
+        }
+    }
+
     // Current language from Per-App Language API (not DataStore)
     private val _currentLanguage = MutableStateFlow(LocaleManager.getCurrentLocaleCode())
     val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()

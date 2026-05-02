@@ -154,7 +154,7 @@
     <string name="gemma_download_confirm_message">Verranno scaricati circa %1$dMB. I modelli Gemma sono LLM completi con funzionalità avanzate ma richiedono più spazio.</string>
 
     <!-- Transcription -->
-    <string name="share_transcription">Condividi Trascrizione</string>
+    <string name="share_transcription">Condividi</string>
     <string name="copy_transcription">Copia negli Appunti</string>
     <string name="copied_to_clipboard">Copiato negli appunti</string>
     <string name="audio_received_for_transcription">Audio ricevuto per la trascrizione</string>
@@ -652,4 +652,15 @@
     <string name="conversation_grouping_description">Raggruppa le trascrizioni per app di origine (WhatsApp, Telegram, ecc.) in sezioni comprimibili.</string>
     <string name="conversation_group_count">%1$d messaggi</string>
     <string name="conversation_group_unknown">Altro</string>
+
+    <!-- Ri-trascrizione -->
+    <string name="retranscribe">Riprova</string>
+    <string name="retranscribe_title">Ri-trascrivi con…</string>
+    <string name="retranscribe_subtitle">Seleziona un modello per ri-trascrivere questo audio</string>
+    <string name="retranscribe_confirm">Trascrivi</string>
+    <string name="retranscribe_no_models">Nessun modello audio configurato. Scarica un modello dalla scheda Modello.</string>
+    <string name="retranscribe_file_not_found">File audio non più disponibile</string>
+    <string name="retranscribe_active_badge">Attivo</string>
+    <string name="retranscribe_setting_title">Pulsante Ri-trascrivi</string>
+    <string name="retranscribe_setting_description">Mostra un pulsante sulle trascrizioni audio per riprovare con un modello diverso.</string>
 </resources>

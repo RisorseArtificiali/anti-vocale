@@ -74,6 +74,7 @@ fun SettingsTab(
     val swipeActionMode by viewModel.swipeActionMode.collectAsState()
     val groupLogsByConversation by viewModel.groupLogsByConversation.collectAsState()
     val advancedSharingEnabled by viewModel.advancedSharingEnabled.collectAsState()
+    val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
     val tokenInput by viewModel.tokenInput.collectAsState()
     val oauthState by viewModel.oauthState.collectAsState()
@@ -1206,6 +1207,15 @@ fun SettingsTab(
                     }
                 }
             }
+
+            // Re-transcribe Button Setting
+            ToggleSettingCard(
+                icon = Icons.Default.Refresh,
+                title = stringResource(R.string.retranscribe_setting_title),
+                description = stringResource(R.string.retranscribe_setting_description),
+                checked = showRetranscribeButton,
+                onCheckedChange = { viewModel.saveShowRetranscribeButton(it) }
+            )
 
             // Per-App Settings Navigation Card
             Card(

@@ -45,6 +45,7 @@ class PreferencesManagerImpl(
         private val VAD_ADVISORY_DISMISSED = booleanPreferencesKey("vad_advisory_dismissed")
         private val GROUP_LOGS_BY_CONVERSATION = booleanPreferencesKey("group_logs_by_conversation")
         private val ADVANCED_SHARING_ENABLED = booleanPreferencesKey("advanced_sharing_enabled")
+        private val SHOW_RETRANSCRIBE_BUTTON = booleanPreferencesKey("show_retranscribe_button")
         private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
         private val PARTIAL_TRANSCRIPTION_TIMESTAMP = longPreferencesKey("partial_transcription_timestamp")
     }
@@ -70,7 +71,8 @@ class PreferencesManagerImpl(
         val swipeActionMode: String = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
         val vadAdvisoryDismissed: Boolean = false,
         val groupLogsByConversation: Boolean = PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION,
-        val advancedSharingEnabled: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED
+        val advancedSharingEnabled: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
+        val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON
     )
 
     private fun Preferences.toCached() = CachedPreferences(
@@ -94,7 +96,8 @@ class PreferencesManagerImpl(
         swipeActionMode = this[SWIPE_ACTION_MODE] ?: PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
         vadAdvisoryDismissed = this[VAD_ADVISORY_DISMISSED] ?: false,
         groupLogsByConversation = this[GROUP_LOGS_BY_CONVERSATION] ?: PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION,
-        advancedSharingEnabled = this[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED
+        advancedSharingEnabled = this[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
+        showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON
     )
 
     fun initialize() {
@@ -397,5 +400,15 @@ class PreferencesManagerImpl(
             preferences[ADVANCED_SHARING_ENABLED] = enabled
         }
         cache.updateAndGet { it.copy(advancedSharingEnabled = enabled) }
+    }
+
+    override val showRetranscribeButton: Flow<Boolean> = context.dataStore.data.map { it[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON }
+        .onStart { emit(cache.get().showRetranscribeButton) }
+
+    override suspend fun saveShowRetranscribeButton(enabled: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[SHOW_RETRANSCRIBE_BUTTON] = enabled
+        }
+        cache.updateAndGet { it.copy(showRetranscribeButton = enabled) }
     }
 }
