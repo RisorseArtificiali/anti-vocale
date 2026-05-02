@@ -219,6 +219,7 @@
     <string name="settings_section_transcription">Transcription</string>
     <string name="settings_section_appearance">Appearance</string>
     <string name="settings_section_advanced">Advanced</string>
+    <string name="oauth_connected">OAuth Connected</string>
 
     <!-- Settings Tab - Model status -->
     <string name="model_loaded">Model Loaded</string>
@@ -243,7 +244,6 @@
     <string name="setup_step2">2. Sign in to your HuggingFace account</string>
     <string name="setup_step3">3. Authorize the app</string>
     <string name="setup_step4">4. You\'ll be redirected back automatically</string>
-    <string name="oauth_connected">OAuth Connected</string>
     <string name="token_valid">Token Valid</string>
     <string name="username_label">Username: %1$s</string>
     <string name="token_label">Token: %1$s</string>

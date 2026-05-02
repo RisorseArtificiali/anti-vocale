@@ -39,11 +39,15 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
 import com.antivocale.app.ui.components.CollapsibleSection
+import com.antivocale.app.ui.components.SettingsDropdown
+import com.antivocale.app.ui.components.ToggleSettingCard
 import com.antivocale.app.ui.components.UnloadModelButton
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
+
+private const val HF_TOKEN_SETTINGS_URL = "https://huggingface.co/settings/tokens"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -88,9 +92,6 @@ fun SettingsTab(
         viewModel.handleOAuthResult(result.data)
     }
 
-    // Model selection state
-    val settingsState by viewModel.uiState.collectAsState()
-
     // Load models on first composition
     LaunchedEffect(Unit) {
         viewModel.loadCurrentModel()
@@ -98,8 +99,7 @@ fun SettingsTab(
     }
 
     // Check if model is currently loaded (only relevant for LLM backend)
-    // Use StateFlow for reactive updates when model state changes
-    val isLlmBackend = settingsState.transcriptionBackend == PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
+    val isLlmBackend = uiState.transcriptionBackend == PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
     val isModelLoaded by viewModel.llmIsReadyFlow.collectAsState()
     val remainingTime = viewModel.llmRemainingTimeSeconds ?: 0L
 
@@ -218,7 +218,7 @@ fun SettingsTab(
                     }
 
                     // Current model display
-                    if (settingsState.currentModelPath != null) {
+                    if (uiState.currentModelPath != null) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -231,12 +231,12 @@ fun SettingsTab(
                             )
                             Column {
                                 Text(
-                                    text = settingsState.currentModelName ?: stringResource(R.string.model_unknown),
+                                    text = uiState.currentModelName ?: stringResource(R.string.model_unknown),
                                     style = MaterialTheme.typography.bodyMedium,
                                     fontWeight = FontWeight.Medium
                                 )
                                 Text(
-                                    text = settingsState.currentModelPath ?: "",
+                                    text = uiState.currentModelPath ?: "",
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     maxLines = 1
@@ -297,52 +297,20 @@ fun SettingsTab(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     // Transcription language dropdown
-                    var transcriptionLanguageExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = transcriptionLanguageExpanded,
-                        onExpandedChange = { transcriptionLanguageExpanded = it }
-                    ) {
-                        TextField(
-                            value = viewModel.transcriptionLanguageOptions.find { it.code == currentTranscriptionLanguage }?.let {
-                                if (it.code == "auto") stringResource(R.string.transcription_language_auto) else it.displayName
-                            } ?: currentTranscriptionLanguage,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.transcription_language_title)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = transcriptionLanguageExpanded) },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            enabled = !uiState.isSaving,
-                            colors = ExposedDropdownMenuDefaults.textFieldColors(
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = transcriptionLanguageExpanded,
-                            onDismissRequest = { transcriptionLanguageExpanded = false },
-                            modifier = Modifier.exposedDropdownSize()
-                        ) {
-                            viewModel.transcriptionLanguageOptions.forEach { option ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (option.code == "auto") stringResource(R.string.transcription_language_auto)
-                                            else option.displayName
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.saveTranscriptionLanguage(option.code)
-                                        transcriptionLanguageExpanded = false
-                                    },
-                                    trailingIcon = if (currentTranscriptionLanguage == option.code) {
-                                        { Icon(Icons.Default.Check, contentDescription = null) }
-                                    } else null
-                                )
-                            }
-                        }
-                    }
+                    SettingsDropdown(
+                        currentValue = currentTranscriptionLanguage,
+                        options = viewModel.transcriptionLanguageOptions.map { it.code },
+                        currentValueDisplay = viewModel.transcriptionLanguageOptions.find { it.code == currentTranscriptionLanguage }?.let {
+                            if (it.code == "auto") stringResource(R.string.transcription_language_auto) else it.displayName
+                        } ?: currentTranscriptionLanguage,
+                        optionDisplay = { code ->
+                            if (code == "auto") stringResource(R.string.transcription_language_auto)
+                            else viewModel.transcriptionLanguageOptions.find { it.code == code }?.displayName ?: code
+                        },
+                        onOptionSelected = { viewModel.saveTranscriptionLanguage(it) },
+                        label = stringResource(R.string.transcription_language_title),
+                        enabled = !uiState.isSaving
+                    )
 
                     Text(
                         text = stringResource(R.string.transcription_language_note),
@@ -353,136 +321,37 @@ fun SettingsTab(
             }
 
             // Auto-Copy Setting
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.ContentCopy,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.auto_copy_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.auto_copy_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Switch(
-                        checked = autoCopyEnabled,
-                        onCheckedChange = { enabled ->
-                            viewModel.saveAutoCopyEnabled(enabled)
-                        }
-                    )
+            ToggleSettingCard(
+                icon = Icons.Default.ContentCopy,
+                title = stringResource(R.string.auto_copy_title),
+                description = stringResource(R.string.auto_copy_description),
+                checked = autoCopyEnabled,
+                onCheckedChange = { enabled ->
+                    viewModel.saveAutoCopyEnabled(enabled)
                 }
-            }
+            )
 
             // VAD Silence Stripping Setting
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.GraphicEq,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.vad_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.vad_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Switch(
-                        checked = vadEnabled,
-                        onCheckedChange = { enabled ->
-                            viewModel.saveVadEnabled(enabled)
-                        }
-                    )
+            ToggleSettingCard(
+                icon = Icons.Default.GraphicEq,
+                title = stringResource(R.string.vad_title),
+                description = stringResource(R.string.vad_description),
+                checked = vadEnabled,
+                onCheckedChange = { enabled ->
+                    viewModel.saveVadEnabled(enabled)
                 }
-            }
+            )
 
             // Progressive Transcription Display Setting
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Visibility,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.progressive_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.progressive_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Switch(
-                        checked = progressiveEnabled,
-                        onCheckedChange = { enabled ->
-                            viewModel.saveProgressiveTranscription(enabled)
-                        }
-                    )
+            ToggleSettingCard(
+                icon = Icons.Default.Visibility,
+                title = stringResource(R.string.progressive_title),
+                description = stringResource(R.string.progressive_description),
+                checked = progressiveEnabled,
+                onCheckedChange = { enabled ->
+                    viewModel.saveProgressiveTranscription(enabled)
                 }
-            }
+            )
 
             // Default Prompt Setting Navigation Card
             Card(
@@ -561,57 +430,25 @@ fun SettingsTab(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     // Timeout dropdown
-                    var expanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it }
-                    ) {
-                        TextField(
-                            value = when (currentTimeout) {
+                    SettingsDropdown(
+                        currentValue = currentTimeout,
+                        options = viewModel.timeoutOptions,
+                        currentValueDisplay = when (currentTimeout) {
+                            1 -> stringResource(R.string.timeout_1_minute)
+                            60 -> stringResource(R.string.timeout_1_hour)
+                            else -> stringResource(R.string.timeout_minutes, currentTimeout)
+                        },
+                        optionDisplay = { minutes ->
+                            when (minutes) {
                                 1 -> stringResource(R.string.timeout_1_minute)
                                 60 -> stringResource(R.string.timeout_1_hour)
-                                else -> stringResource(R.string.timeout_minutes, currentTimeout)
-                            },
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.auto_unload_timeout)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            enabled = !uiState.isSaving,
-                            colors = ExposedDropdownMenuDefaults.textFieldColors(
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false },
-                            modifier = Modifier.exposedDropdownSize()
-                        ) {
-                            viewModel.timeoutOptions.forEach { minutes ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            when (minutes) {
-                                                1 -> stringResource(R.string.timeout_1_minute)
-                                                60 -> stringResource(R.string.timeout_1_hour)
-                                                else -> stringResource(R.string.timeout_minutes, minutes)
-                                            }
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.saveKeepAliveTimeout(minutes)
-                                        expanded = false
-                                    },
-                                    trailingIcon = if (currentTimeout == minutes) {
-                                        { Icon(Icons.Default.Check, contentDescription = null) }
-                                    } else null
-                                )
+                                else -> stringResource(R.string.timeout_minutes, minutes)
                             }
-                        }
-                    }
+                        },
+                        onOptionSelected = { viewModel.saveKeepAliveTimeout(it) },
+                        label = stringResource(R.string.auto_unload_timeout),
+                        enabled = !uiState.isSaving
+                    )
 
                     // Saving indicator
                     if (uiState.isSaving) {
@@ -705,45 +542,15 @@ fun SettingsTab(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     // Theme dropdown
-                    var themeExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = themeExpanded,
-                        onExpandedChange = { themeExpanded = it }
-                    ) {
-                        TextField(
-                            value = currentTheme.displayName,
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.theme_title)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = themeExpanded) },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            enabled = !uiState.isSaving,
-                            colors = ExposedDropdownMenuDefaults.textFieldColors(
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = themeExpanded,
-                            onDismissRequest = { themeExpanded = false },
-                            modifier = Modifier.exposedDropdownSize()
-                        ) {
-                            viewModel.themeOptions.forEach { theme ->
-                                DropdownMenuItem(
-                                    text = { Text(theme.displayName) },
-                                    onClick = {
-                                        viewModel.saveThemePreference(theme)
-                                        themeExpanded = false
-                                    },
-                                    trailingIcon = if (currentTheme == theme) {
-                                        { Icon(Icons.Default.Check, contentDescription = null) }
-                                    } else null
-                                )
-                            }
-                        }
-                    }
+                    SettingsDropdown(
+                        currentValue = currentTheme,
+                        options = viewModel.themeOptions,
+                        currentValueDisplay = currentTheme.displayName,
+                        optionDisplay = { it.displayName },
+                        onOptionSelected = { viewModel.saveThemePreference(it) },
+                        label = stringResource(R.string.theme_title),
+                        enabled = !uiState.isSaving
+                    )
                 }
             }
 
@@ -780,59 +587,27 @@ fun SettingsTab(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     // Language dropdown
-                    var languageExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = languageExpanded,
-                        onExpandedChange = { languageExpanded = it }
-                    ) {
-                        TextField(
-                            value = when (currentLanguage) {
+                    SettingsDropdown(
+                        currentValue = currentLanguage,
+                        options = viewModel.languageOptions.map { it.code },
+                        currentValueDisplay = when (currentLanguage) {
+                            "system" -> stringResource(R.string.language_system)
+                            "en" -> stringResource(R.string.language_english)
+                            "it" -> stringResource(R.string.language_italian)
+                            else -> currentLanguage
+                        },
+                        optionDisplay = { code ->
+                            when (code) {
                                 "system" -> stringResource(R.string.language_system)
                                 "en" -> stringResource(R.string.language_english)
                                 "it" -> stringResource(R.string.language_italian)
-                                else -> currentLanguage
-                            },
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.language_title)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded) },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            enabled = !uiState.isSaving,
-                            colors = ExposedDropdownMenuDefaults.textFieldColors(
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = languageExpanded,
-                            onDismissRequest = { languageExpanded = false },
-                            modifier = Modifier.exposedDropdownSize()
-                        ) {
-                            viewModel.languageOptions.forEach { option ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            when (option.code) {
-                                                "system" -> stringResource(R.string.language_system)
-                                                "en" -> stringResource(R.string.language_english)
-                                                "it" -> stringResource(R.string.language_italian)
-                                                else -> option.displayName
-                                            }
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.saveLanguagePreference(option.code)
-                                        languageExpanded = false
-                                    },
-                                    trailingIcon = if (currentLanguage == option.code) {
-                                        { Icon(Icons.Default.Check, contentDescription = null) }
-                                    } else null
-                                )
+                                else -> viewModel.languageOptions.find { it.code == code }?.displayName ?: code
                             }
-                        }
-                    }
+                        },
+                        onOptionSelected = { viewModel.saveLanguagePreference(it) },
+                        label = stringResource(R.string.language_title),
+                        enabled = !uiState.isSaving
+                    )
                 }
             }
 
@@ -867,98 +642,38 @@ fun SettingsTab(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                    var swipeActionExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = swipeActionExpanded,
-                        onExpandedChange = { swipeActionExpanded = it }
-                    ) {
-                        TextField(
-                            value = when (swipeActionMode) {
+                    SettingsDropdown(
+                        currentValue = swipeActionMode,
+                        options = listOf("REVEAL", "IMMEDIATE_DELETE"),
+                        currentValueDisplay = when (swipeActionMode) {
+                            "REVEAL" -> stringResource(R.string.swipe_action_reveal)
+                            "IMMEDIATE_DELETE" -> stringResource(R.string.swipe_action_immediate_delete)
+                            else -> swipeActionMode
+                        },
+                        optionDisplay = { mode ->
+                            when (mode) {
                                 "REVEAL" -> stringResource(R.string.swipe_action_reveal)
                                 "IMMEDIATE_DELETE" -> stringResource(R.string.swipe_action_immediate_delete)
-                                else -> swipeActionMode
-                            },
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.swipe_action_title)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = swipeActionExpanded) },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            enabled = !uiState.isSaving,
-                            colors = ExposedDropdownMenuDefaults.textFieldColors(
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = swipeActionExpanded,
-                            onDismissRequest = { swipeActionExpanded = false },
-                            modifier = Modifier.exposedDropdownSize()
-                        ) {
-                            listOf(
-                                "REVEAL" to stringResource(R.string.swipe_action_reveal),
-                                "IMMEDIATE_DELETE" to stringResource(R.string.swipe_action_immediate_delete)
-                            ).forEach { (mode, label) ->
-                                DropdownMenuItem(
-                                    text = { Text(label) },
-                                    onClick = {
-                                        viewModel.saveSwipeActionMode(mode)
-                                        swipeActionExpanded = false
-                                    },
-                                    trailingIcon = if (swipeActionMode == mode) {
-                                        { Icon(Icons.Default.Check, contentDescription = null) }
-                                    } else null
-                                )
+                                else -> mode
                             }
-                        }
-                    }
+                        },
+                        onOptionSelected = { viewModel.saveSwipeActionMode(it) },
+                        label = stringResource(R.string.swipe_action_title),
+                        enabled = !uiState.isSaving
+                    )
                 }
             }
 
             // Conversation Grouping Setting
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Forum,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.conversation_grouping_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.conversation_grouping_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Switch(
-                        checked = groupLogsByConversation,
-                        onCheckedChange = { enabled ->
-                            viewModel.saveGroupLogsByConversation(enabled)
-                        }
-                    )
+            ToggleSettingCard(
+                icon = Icons.Default.Forum,
+                title = stringResource(R.string.conversation_grouping_title),
+                description = stringResource(R.string.conversation_grouping_description),
+                checked = groupLogsByConversation,
+                onCheckedChange = { enabled ->
+                    viewModel.saveGroupLogsByConversation(enabled)
                 }
-            }
+            )
         }
 
         // ==================== Section 3: Advanced ====================
@@ -1232,7 +947,7 @@ fun SettingsTab(
                                                 onClick = {
                                                     val intent = android.content.Intent(
                                                         android.content.Intent.ACTION_VIEW,
-                                                        android.net.Uri.parse("https://huggingface.co/settings/tokens")
+                                                        android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
                                                     )
                                                     context.startActivity(intent)
                                                 }
@@ -1366,7 +1081,7 @@ fun SettingsTab(
                                                 onClick = {
                                                     val intent = android.content.Intent(
                                                         android.content.Intent.ACTION_VIEW,
-                                                        android.net.Uri.parse("https://huggingface.co/settings/tokens")
+                                                        android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
                                                     )
                                                     context.startActivity(intent)
                                                 }
@@ -1425,55 +1140,22 @@ fun SettingsTab(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     // Thread count dropdown
-                    var threadExpanded by remember { mutableStateOf(false) }
-                    val threadOptions = (1..8).toList()
-                    ExposedDropdownMenuBox(
-                        expanded = threadExpanded,
-                        onExpandedChange = { threadExpanded = it }
-                    ) {
-                        TextField(
-                            value = if (threadCount == autoDetectedThreads)
-                                stringResource(R.string.thread_count_auto, autoDetectedThreads)
+                    SettingsDropdown(
+                        currentValue = threadCount,
+                        options = (1..8).toList(),
+                        currentValueDisplay = if (threadCount == autoDetectedThreads)
+                            stringResource(R.string.thread_count_auto, autoDetectedThreads)
+                        else
+                            stringResource(R.string.thread_count_value, threadCount),
+                        optionDisplay = { threads ->
+                            if (threads == autoDetectedThreads)
+                                stringResource(R.string.thread_count_auto, threads)
                             else
-                                stringResource(R.string.thread_count_value, threadCount),
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.thread_count_title)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = threadExpanded) },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            colors = ExposedDropdownMenuDefaults.textFieldColors(
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = threadExpanded,
-                            onDismissRequest = { threadExpanded = false },
-                            modifier = Modifier.exposedDropdownSize()
-                        ) {
-                            threadOptions.forEach { threads ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            if (threads == autoDetectedThreads)
-                                                stringResource(R.string.thread_count_auto, threads)
-                                            else
-                                                stringResource(R.string.thread_count_value, threads)
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.saveThreadCount(threads)
-                                        threadExpanded = false
-                                    },
-                                    trailingIcon = if (threadCount == threads) {
-                                        { Icon(Icons.Default.Check, contentDescription = null) }
-                                    } else null
-                                )
-                            }
-                        }
-                    }
+                                stringResource(R.string.thread_count_value, threads)
+                        },
+                        onOptionSelected = { viewModel.saveThreadCount(it) },
+                        label = stringResource(R.string.thread_count_title)
+                    )
                 }
             }
 
@@ -1509,58 +1191,26 @@ fun SettingsTab(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                    var providerExpanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(
-                        expanded = providerExpanded,
-                        onExpandedChange = { providerExpanded = it }
-                    ) {
-                        TextField(
-                            value = when (inferenceProvider) {
+                    SettingsDropdown(
+                        currentValue = inferenceProvider,
+                        options = InferenceProvider.options,
+                        currentValueDisplay = when (inferenceProvider) {
+                            InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
+                            InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
+                            InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
+                            else -> inferenceProvider
+                        },
+                        optionDisplay = { option ->
+                            when (option) {
                                 InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
                                 InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
                                 InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                                else -> inferenceProvider
-                            },
-                            onValueChange = {},
-                            readOnly = true,
-                            label = { Text(stringResource(R.string.inference_provider_title)) },
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = providerExpanded) },
-                            modifier = Modifier
-                                .menuAnchor()
-                                .fillMaxWidth(),
-                            colors = ExposedDropdownMenuDefaults.textFieldColors(
-                                focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        )
-                        ExposedDropdownMenu(
-                            expanded = providerExpanded,
-                            onDismissRequest = { providerExpanded = false },
-                            modifier = Modifier.exposedDropdownSize()
-                        ) {
-                            InferenceProvider.options.forEach { option ->
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(
-                                            when (option) {
-                                                InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
-                                                InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
-                                                InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                                                else -> option
-                                            }
-                                        )
-                                    },
-                                    onClick = {
-                                        viewModel.saveInferenceProvider(option)
-                                        providerExpanded = false
-                                    },
-                                    trailingIcon = if (inferenceProvider == option) {
-                                        { Icon(Icons.Default.Check, contentDescription = null) }
-                                    } else null
-                                )
+                                else -> option
                             }
-                        }
-                    }
+                        },
+                        onOptionSelected = { viewModel.saveInferenceProvider(it) },
+                        label = stringResource(R.string.inference_provider_title)
+                    )
                 }
             }
 
@@ -1982,7 +1632,7 @@ private fun OAuthLoginSection(
                             )
                             Text(
                                 text = when (state.authType) {
-                                    HuggingFaceTokenManager.AuthType.OAUTH -> "OAuth Connected"
+                                    HuggingFaceTokenManager.AuthType.OAUTH -> stringResource(R.string.oauth_connected)
                                     HuggingFaceTokenManager.AuthType.MANUAL -> stringResource(R.string.token_valid)
                                 },
                                 style = MaterialTheme.typography.labelLarge,
@@ -2060,7 +1710,7 @@ private fun OAuthLoginSection(
                         onClick = {
                             val intent = android.content.Intent(
                                 android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse("https://huggingface.co/settings/tokens")
+                                android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
                             )
                             context.startActivity(intent)
                         }

@@ -22,20 +22,21 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
 fun CollapsibleSection(
     title: String,
     icon: ImageVector,
+    modifier: Modifier = Modifier,
     initiallyExpanded: Boolean = true,
     content: @Composable () -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -64,9 +65,7 @@ fun CollapsibleSection(
         }
         Spacer(modifier = Modifier.height(8.dp))
         AnimatedVisibility(visible = expanded) {
-            Column {
-                content()
-            }
+            content()
         }
     }
 }
