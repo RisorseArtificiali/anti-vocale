@@ -26,7 +26,6 @@ import com.antivocale.app.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -42,6 +41,7 @@ import com.antivocale.app.ui.components.CollapsibleSection
 import com.antivocale.app.ui.components.HF_TOKEN_SETTINGS_URL
 import com.antivocale.app.ui.components.OAuthLoginSection
 import com.antivocale.app.ui.components.SettingsDropdown
+import com.antivocale.app.ui.components.TokenInputField
 import com.antivocale.app.ui.components.ToggleSettingCard
 import com.antivocale.app.ui.components.UnloadModelButton
 import com.antivocale.app.ui.dialogs.PerformanceStatsDialog
@@ -900,34 +900,12 @@ fun SettingsTab(
                                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            OutlinedTextField(
+                                            TokenInputField(
                                                 value = tokenInput,
                                                 onValueChange = { viewModel.onTokenInputChanged(it) },
-                                                label = { Text(stringResource(R.string.huggingface_token_label)) },
-                                                placeholder = { Text(stringResource(R.string.token_placeholder)) },
-                                                singleLine = true,
-                                                visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                                trailingIcon = {
-                                                    Row {
-                                                        IconButton(onClick = {
-                                                            clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()?.let {
-                                                                viewModel.onTokenInputChanged(it)
-                                                            }
-                                                        }) {
-                                                            Icon(
-                                                                imageVector = Icons.Default.ContentPaste,
-                                                                contentDescription = stringResource(R.string.paste_from_clipboard)
-                                                            )
-                                                        }
-                                                        IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
-                                                            Icon(
-                                                                imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                                contentDescription = if (tokenPasswordVisible) stringResource(R.string.hide_token) else stringResource(R.string.show_token)
-                                                            )
-                                                        }
-                                                    }
-                                                },
-                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                                tokenPasswordVisible = tokenPasswordVisible,
+                                                onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
+                                                clipboardManager = clipboardManager,
                                                 modifier = Modifier.weight(1f),
                                                 isError = true
                                             )
@@ -974,34 +952,12 @@ fun SettingsTab(
                                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            OutlinedTextField(
+                                            TokenInputField(
                                                 value = tokenInput,
                                                 onValueChange = { viewModel.onTokenInputChanged(it) },
-                                                label = { Text(stringResource(R.string.huggingface_token_label)) },
-                                                placeholder = { Text(stringResource(R.string.token_placeholder)) },
-                                                singleLine = true,
-                                                visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                                trailingIcon = {
-                                                    Row {
-                                                        IconButton(onClick = {
-                                                            clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()?.let {
-                                                                viewModel.onTokenInputChanged(it)
-                                                            }
-                                                        }) {
-                                                            Icon(
-                                                                imageVector = Icons.Default.ContentPaste,
-                                                                contentDescription = stringResource(R.string.paste_from_clipboard)
-                                                            )
-                                                        }
-                                                        IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
-                                                            Icon(
-                                                                imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                                contentDescription = if (tokenPasswordVisible) stringResource(R.string.hide_token) else stringResource(R.string.show_token)
-                                                            )
-                                                        }
-                                                    }
-                                                },
-                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                                tokenPasswordVisible = tokenPasswordVisible,
+                                                onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
+                                                clipboardManager = clipboardManager,
                                                 modifier = Modifier.weight(1f),
                                                 enabled = false
                                             )
@@ -1021,34 +977,12 @@ fun SettingsTab(
                                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            OutlinedTextField(
+                                            TokenInputField(
                                                 value = tokenInput,
                                                 onValueChange = { viewModel.onTokenInputChanged(it) },
-                                                label = { Text(stringResource(R.string.huggingface_token_label)) },
-                                                placeholder = { Text(stringResource(R.string.token_placeholder)) },
-                                                singleLine = true,
-                                                visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                                trailingIcon = {
-                                                    Row {
-                                                        IconButton(onClick = {
-                                                            clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()?.let {
-                                                                viewModel.onTokenInputChanged(it)
-                                                            }
-                                                        }) {
-                                                            Icon(
-                                                                imageVector = Icons.Default.ContentPaste,
-                                                                contentDescription = stringResource(R.string.paste_from_clipboard)
-                                                            )
-                                                        }
-                                                        IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
-                                                            Icon(
-                                                                imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                                contentDescription = if (tokenPasswordVisible) stringResource(R.string.hide_token) else stringResource(R.string.show_token)
-                                                            )
-                                                        }
-                                                    }
-                                                },
-                                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                                                tokenPasswordVisible = tokenPasswordVisible,
+                                                onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
+                                                clipboardManager = clipboardManager,
                                                 modifier = Modifier.weight(1f)
                                             )
                                         }
