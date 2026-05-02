@@ -215,6 +215,11 @@
     <string name="action_delete">Delete</string>
     <string name="action_cancel">Cancel</string>
 
+    <!-- Settings Tab - Section Titles -->
+    <string name="settings_section_transcription">Transcription</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_advanced">Advanced</string>
+
     <!-- Settings Tab - Model status -->
     <string name="model_loaded">Model Loaded</string>
     <string name="model_not_loaded">Model Unloaded (Auto-loads on demand)</string>

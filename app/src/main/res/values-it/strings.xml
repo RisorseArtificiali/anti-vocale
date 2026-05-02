@@ -213,6 +213,11 @@
     <string name="action_delete">Elimina</string>
     <string name="action_cancel">Annulla</string>
 
+    <!-- Impostazioni - Titoli Sezioni -->
+    <string name="settings_section_transcription">Trascrizione</string>
+    <string name="settings_section_appearance">Aspetto</string>
+    <string name="settings_section_advanced">Avanzate</string>
+
     <!-- Settings Tab - Model status -->
     <string name="model_loaded">Modello Caricato</string>
     <string name="model_not_loaded">Modello Scaricato (Caricamento automatico)</string>
