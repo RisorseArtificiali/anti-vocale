@@ -22,12 +22,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
-/**
- * A reusable settings card with a toggle switch.
- *
- * Layout: Card containing a Row with icon+title+description on the left
- * and a Switch toggle on the right.
- */
 @Composable
 fun ToggleSettingCard(
     icon: ImageVector,

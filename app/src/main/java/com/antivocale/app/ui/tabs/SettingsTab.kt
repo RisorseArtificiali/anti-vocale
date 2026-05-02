@@ -39,6 +39,7 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
 import com.antivocale.app.ui.components.CollapsibleSection
+import com.antivocale.app.ui.components.HF_TOKEN_SETTINGS_URL
 import com.antivocale.app.ui.components.OAuthLoginSection
 import com.antivocale.app.ui.components.SettingsDropdown
 import com.antivocale.app.ui.components.ToggleSettingCard
@@ -49,8 +50,6 @@ import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
-
-private const val HF_TOKEN_SETTINGS_URL = "https://huggingface.co/settings/tokens"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -126,7 +125,6 @@ fun SettingsTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // ==================== Section 1: Transcription ====================
         CollapsibleSection(
             title = stringResource(R.string.settings_section_transcription),
             icon = Icons.Default.Mic,
@@ -506,7 +504,6 @@ fun SettingsTab(
             }
         }
 
-        // ==================== Section 2: Appearance ====================
         CollapsibleSection(
             title = stringResource(R.string.settings_section_appearance),
             icon = Icons.Default.Palette,
@@ -679,7 +676,6 @@ fun SettingsTab(
             )
         }
 
-        // ==================== Section 3: Advanced ====================
         CollapsibleSection(
             title = stringResource(R.string.settings_section_advanced),
             icon = Icons.Default.Settings,
@@ -1371,7 +1367,6 @@ fun SettingsTab(
             }
         }
 
-        // ==================== Outside sections ====================
 
         // Performance Stats Dialog
         if (showPerfStatsDialog) {

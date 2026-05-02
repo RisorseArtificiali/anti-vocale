@@ -45,9 +45,6 @@ import com.antivocale.app.ui.viewmodel.SettingsViewModel
 
 internal const val HF_TOKEN_SETTINGS_URL = "https://huggingface.co/settings/tokens"
 
-/**
- * OAuth login section with login button and status display.
- */
 @Composable
 fun OAuthLoginSection(
     oauthState: SettingsViewModel.OAuthState,
@@ -158,8 +155,6 @@ fun OAuthLoginSection(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    // Alternative: Get token manually link
-                    val context = LocalContext.current
                     TextButton(
                         onClick = {
                             val intent = android.content.Intent(
