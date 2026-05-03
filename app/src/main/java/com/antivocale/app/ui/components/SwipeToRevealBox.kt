@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -80,11 +81,15 @@ fun SwipeToRevealBox(
     state: SwipeToRevealState,
     actions: List<SwipeAction>,
     modifier: Modifier = Modifier,
+    onSwipeStart: (() -> Unit)? = null,
     content: @Composable () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
     val revealDistancePx = with(density) { ACTION_BUTTON_WIDTH.toPx() * actions.size }
+
+    // Keep callback reference fresh across recompositions without changing pointerInput key
+    val currentOnSwipeStart by rememberUpdatedState(onSwipeStart)
 
     // Bind coroutine scope so reset() can be called from non-suspend contexts
     LaunchedEffect(state) { state.scope = scope }
@@ -132,6 +137,7 @@ fun SwipeToRevealBox(
                 }
                 .pointerInput(revealDistancePx) {
                     detectHorizontalDragGestures(
+                        onDragStart = { currentOnSwipeStart?.invoke() },
                         onDragEnd = {
                             val current = state.offsetX
                             val target = if (current < -revealDistancePx * 0.4f) {

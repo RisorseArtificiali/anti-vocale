@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -326,6 +327,13 @@ fun LogsTab(
             }
         } else {
             val listState = rememberLazyListState()
+            val listScope = rememberCoroutineScope()
+
+            fun collapseAndScrollTo(taskId: String, groups: List<LogGroup>) {
+                expandedTaskIds = expandedTaskIds - taskId
+                val idx = indexOfTaskIdInGroups(groups, taskId)
+                if (idx >= 0) listScope.launch { listState.animateScrollToItem(idx) }
+            }
 
             // Scroll to and expand the highlighted entry
             LaunchedEffect(highlightTaskId) {
@@ -454,6 +462,7 @@ fun LogsTab(
                                             expandedTaskIds - log.taskId
                                         }
                                     },
+                                    onSwipeCollapse = { collapseAndScrollTo(log.taskId, conversationGroups) },
                                     onDeleted = { entry -> recentlyDeletedEntry = entry },
                                     onDeleteLog = { id -> viewModel.deleteLog(id) },
                                     viewModel = viewModel,
@@ -489,6 +498,7 @@ fun LogsTab(
                                         expandedTaskIds - log.taskId
                                     }
                                 },
+                                onSwipeCollapse = { collapseAndScrollTo(log.taskId, groupedLogs) },
                                 onDeleted = { entry -> recentlyDeletedEntry = entry },
                                 onDeleteLog = { id -> viewModel.deleteLog(id) },
                                 viewModel = viewModel,
@@ -1043,6 +1053,7 @@ private fun LogEntryWithSwipe(
     revealedLogId: String?,
     onRevealedLogIdChange: (String?) -> Unit,
     onExpandChange: (Boolean) -> Unit,
+    onSwipeCollapse: () -> Unit = {},
     onDeleted: (LogEntry) -> Unit,
     onDeleteLog: (String) -> Unit,
     viewModel: LogsViewModel,
@@ -1078,7 +1089,10 @@ private fun LogEntryWithSwipe(
         }
         SwipeToRevealBox(
             state = revealState,
-            actions = actions
+            actions = actions,
+            onSwipeStart = {
+                if (isExpanded) onSwipeCollapse()
+            }
         ) {
             LogEntryItem(
                 log = log,
