@@ -52,8 +52,9 @@
 -keep @androidx.annotation.Keep class * { *; }
 -keepclassmembers class * { @androidx.annotation.Keep *; }
 
-# llama.cpp / GGUF inference engine
+# llama-bro SDK (llama.cpp via JNI) for GGUF inference
 -keep class com.antivocale.app.llm.** { *; }
 -keepclassmembers class com.antivocale.app.llm.** { *; }
--keep class de.kherud.llama.** { *; }
--dontwarn de.kherud.llama.**
+-keep class com.suhel.llamabro.** { *; }
+-keepclassmembers class com.suhel.llamabro.** { *; }
+-dontwarn com.suhel.llamabro.**
