@@ -17,12 +17,9 @@ import javax.inject.Inject
 /**
  * Debug-only transparent activity for automated benchmarking.
  *
- * Accepts intent extras to set preferences, then triggers transcription.
- * Being a visible activity satisfies Android 16 foreground service restrictions.
- *
- * Uses singleTop launchMode so repeated `am start` calls deliver to the same
- * instance via onNewIntent, allowing back-to-back benchmark runs without
- * force-stopping (which would kill the warm model).
+ * Each invocation triggers a fresh transcription. The benchmark script
+ * force-stops the app between tests, so this activity is created fresh
+ * each time, satisfying Android 16 FGS restrictions.
  */
 @AndroidEntryPoint
 class BenchmarkActivity : ComponentActivity() {
@@ -45,12 +42,6 @@ class BenchmarkActivity : ComponentActivity() {
         handleIntent(intent)
     }
 
-    override fun onNewIntent(intent: Intent) {
-        super.onNewIntent(intent)
-        setIntent(intent)
-        handleIntent(intent)
-    }
-
     private fun handleIntent(intent: Intent) {
         val backend = intent.getStringExtra(EXTRA_BACKEND) ?: return
         val vad = intent.getBooleanExtra(EXTRA_VAD, false)
@@ -68,7 +59,6 @@ class BenchmarkActivity : ComponentActivity() {
                 preferencesManager.saveProgressiveTranscription(progressive)
                 preferencesManager.saveInferenceProvider(provider)
 
-                // Wait for DataStore persistence
                 delay(500)
 
                 val taskId = "bench_${runId}"
