@@ -47,8 +47,8 @@ import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.Language
-import com.antivocale.app.transcription.Gemma4GgufBackend
-import com.antivocale.app.transcription.Gemma4GgufModelManager
+// GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
+// GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.ModelInfoProvider
 import com.antivocale.app.transcription.ModelVariant
 import com.antivocale.app.ui.components.DownloadButtonState
@@ -334,30 +334,9 @@ fun ModelTab(
         )
     }
 
-    // GGUF download confirmation dialog
-    if (ggufState.showDownloadDialog) {
-        val variant = ggufState.selectedVariant
-        DownloadConfirmationDialog(
-            title = stringResource(R.string.gguf_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "GGUF"),
-            message = stringResource(R.string.gguf_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 4900),
-            onConfirm = { viewModel.confirmGgufDownload() },
-            onDismiss = { viewModel.dismissGgufDownloadDialog() }
-        )
-    }
-
-    // GGUF delete confirmation dialog
-    if (ggufState.showDeleteDialog) {
-        val variant = ggufState.variantToDelete
-        val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: "GGUF"
-        val isGgufModelActive = uiState.modelName == variantDisplayName
-        DeleteConfirmationDialog(
-            modelName = variantDisplayName,
-            isTranscribing = isTranscribing,
-            isActiveModel = isGgufModelActive,
-            onConfirm = { viewModel.confirmGgufDelete() },
-            onDismiss = { viewModel.dismissGgufDeleteDialog() }
-        )
-    }
+    // GGUF: disabled — download/delete dialogs commented out (GgufVariant type unavailable)
+    // if (ggufState.showDownloadDialog) { ... viewModel.confirmGgufDownload() ... }
+    // if (ggufState.showDeleteDialog) { ... viewModel.confirmGgufDelete() ... }
 
     // Unload model confirmation dialog
     if (showUnloadDialog) {
@@ -812,120 +791,122 @@ private fun Qwen3AsrDownloadSection(
 
 
 // ==================== GGUF Download Section ====================
-@Composable
-private fun GgufDownloadSection(
-    viewModel: ModelViewModel,
-    activeModelName: String,
-    guardedModelSwitch: (() -> Unit) -> Unit = {},
-    isSupported: Boolean = true,
-    onInfoClick: (ModelVariant) -> Unit = {}
-) {
-    val context = LocalContext.current
-    val ggufState by viewModel.ggufState.collectAsState()
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                !isSupported -> MaterialTheme.colorScheme.errorContainer
-                ggufState.isAnyDownloading -> MaterialTheme.colorScheme.secondaryContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = when {
-                            !isSupported -> Icons.Default.Warning
-                            ggufState.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
-                            ggufState.isAnyDownloading -> Icons.Default.CloudDownload
-                            else -> Icons.Default.SmartToy
-                        },
-                        contentDescription = null,
-                        tint = when {
-                            !isSupported -> MaterialTheme.colorScheme.error
-                            ggufState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
-                            ggufState.isAnyDownloading -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.gguf_title),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = stringResource(R.string.gguf_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            if (!isSupported) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.gguf_unsupported_arch),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-                return@Card
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Model variant cards
-            Gemma4GgufModelManager.GgufVariant.entries.forEach { variant ->
-                val variantState = ggufState.variantDownloadStates[variant]
-                ModelVariantCard(
-                    state = ModelVariantCardState(
-                        variant = variant,
-                        isActive = activeModelName == stringResource(variant.titleResId),
-                        downloadProgress = variantState?.downloadProgress ?: 0f,
-                        downloadState = variantState?.downloadState ?: DownloadState.Idle,
-                        errorMessage = variantState?.errorMessage,
-                        partialDownload = variantState?.partialDownload,
-                        buttonState = when {
-                            variantState?.isDownloading == true -> DownloadButtonState.Downloading
-                            ggufState.downloadedVariants.contains(variant) -> DownloadButtonState.Downloaded
-                            variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
-                            else -> DownloadButtonState.Idle
-                        }
-                    ),
-                    downloadButtonTextResId = R.string.download,
-                    onDownloadClick = { viewModel.showGgufDownloadDialog(variant) },
-                    onCancelClick = { viewModel.cancelGgufDownload(variant) },
-                    onResumeClick = { viewModel.resumeGgufDownload(variant) },
-                    onClearPartialClick = { viewModel.clearGgufPartialDownload(variant) },
-                    onUseClick = { guardedModelSwitch { viewModel.useGgufModel(variant) } },
-                    onDeleteClick = { viewModel.showGgufDeleteDialog(variant) },
-                    onBenchmarkClick = {
-                        val path = Gemma4GgufModelManager.getLocalPath(context, variant)
-                        if (path != null) {
-                            viewModel.startBenchmark(
-                                Gemma4GgufBackend.BACKEND_ID,
-                                path,
-                                context.getString(variant.titleResId)
-                            )
-                        }
-                    },
-                    onInfoClick = { onInfoClick(variant) }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-    }
-}
+/* GGUF: disabled — uncomment when re-enabling GGUF
+// @Composable
+// private fun GgufDownloadSection(
+//     viewModel: ModelViewModel,
+//     activeModelName: String,
+//     guardedModelSwitch: (() -> Unit) -> Unit = {},
+//     isSupported: Boolean = true,
+//     onInfoClick: (ModelVariant) -> Unit = {}
+// ) {
+//     val context = LocalContext.current
+//     val ggufState by viewModel.ggufState.collectAsState()
+// 
+//     Card(
+//         modifier = Modifier.fillMaxWidth(),
+//         colors = CardDefaults.cardColors(
+//             containerColor = when {
+//                 !isSupported -> MaterialTheme.colorScheme.errorContainer
+//                 ggufState.isAnyDownloading -> MaterialTheme.colorScheme.secondaryContainer
+//                 else -> MaterialTheme.colorScheme.surfaceVariant
+//             }
+//         )
+//     ) {
+//         Column(modifier = Modifier.padding(16.dp)) {
+//             // Header
+//             Row(
+//                 modifier = Modifier.fillMaxWidth(),
+//                 horizontalArrangement = Arrangement.SpaceBetween,
+//                 verticalAlignment = Alignment.CenterVertically
+//             ) {
+//                 Row(verticalAlignment = Alignment.CenterVertically) {
+//                     Icon(
+//                         imageVector = when {
+//                             !isSupported -> Icons.Default.Warning
+//                             ggufState.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
+//                             ggufState.isAnyDownloading -> Icons.Default.CloudDownload
+//                             else -> Icons.Default.SmartToy
+//                         },
+//                         contentDescription = null,
+//                         tint = when {
+//                             !isSupported -> MaterialTheme.colorScheme.error
+//                             ggufState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
+//                             ggufState.isAnyDownloading -> MaterialTheme.colorScheme.secondary
+//                             else -> MaterialTheme.colorScheme.onSurfaceVariant
+//                         },
+//                         modifier = Modifier.size(24.dp)
+//                     )
+//                     Spacer(modifier = Modifier.width(12.dp))
+//                     Column {
+//                         Text(
+//                             text = stringResource(R.string.gguf_title),
+//                             style = MaterialTheme.typography.titleMedium
+//                         )
+//                         Text(
+//                             text = stringResource(R.string.gguf_description),
+//                             style = MaterialTheme.typography.bodySmall,
+//                             color = MaterialTheme.colorScheme.onSurfaceVariant
+//                         )
+//                     }
+//                 }
+//             }
+// 
+//             if (!isSupported) {
+//                 Spacer(modifier = Modifier.height(8.dp))
+//                 Text(
+//                     text = stringResource(R.string.gguf_unsupported_arch),
+//                     style = MaterialTheme.typography.bodySmall,
+//                     color = MaterialTheme.colorScheme.error
+//                 )
+//                 return@Card
+//             }
+// 
+//             Spacer(modifier = Modifier.height(8.dp))
+// 
+//             // Model variant cards
+//             Gemma4GgufModelManager.GgufVariant.entries.forEach { variant ->
+//                 val variantState = ggufState.variantDownloadStates[variant]
+//                 ModelVariantCard(
+//                     state = ModelVariantCardState(
+//                         variant = variant,
+//                         isActive = activeModelName == stringResource(variant.titleResId),
+//                         downloadProgress = variantState?.downloadProgress ?: 0f,
+//                         downloadState = variantState?.downloadState ?: DownloadState.Idle,
+//                         errorMessage = variantState?.errorMessage,
+//                         partialDownload = variantState?.partialDownload,
+//                         buttonState = when {
+//                             variantState?.isDownloading == true -> DownloadButtonState.Downloading
+//                             ggufState.downloadedVariants.contains(variant) -> DownloadButtonState.Downloaded
+//                             variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
+//                             else -> DownloadButtonState.Idle
+//                         }
+//                     ),
+//                     downloadButtonTextResId = R.string.download,
+//                     onDownloadClick = { viewModel.showGgufDownloadDialog(variant) },
+//                     onCancelClick = { viewModel.cancelGgufDownload(variant) },
+//                     onResumeClick = { viewModel.resumeGgufDownload(variant) },
+//                     onClearPartialClick = { viewModel.clearGgufPartialDownload(variant) },
+//                     onUseClick = { guardedModelSwitch { viewModel.useGgufModel(variant) } },
+//                     onDeleteClick = { viewModel.showGgufDeleteDialog(variant) },
+//                     onBenchmarkClick = {
+//                         val path = Gemma4GgufModelManager.getLocalPath(context, variant)
+//                         if (path != null) {
+//                             viewModel.startBenchmark(
+//                                 Gemma4GgufBackend.BACKEND_ID,
+//                                 path,
+//                                 context.getString(variant.titleResId)
+//                             )
+//                         }
+//                     },
+//                     onInfoClick = { onInfoClick(variant) }
+//                 )
+//                 Spacer(modifier = Modifier.height(8.dp))
+//             }
+//         }
+//     }
+// }
+*/
 
 
 // ==================== Parakeet Download Section ====================

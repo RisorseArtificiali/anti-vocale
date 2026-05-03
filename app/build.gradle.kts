@@ -140,10 +140,11 @@ dependencies {
     // sherpa-onnx v1.13.0 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR)
     implementation(files("libs/sherpa-onnx.aar"))
 
-    // llama-bro for GGUF on-device LLM inference (Gemma 4, Qwen, etc.)
-    // Fork with bumped llama.cpp including LLM_ARCH_GEMMA4 support
-    // Upstream PR: https://github.com/whyisitworking/llama-bro/pull/3
-    implementation("com.github.paoloantinori:llama-bro:v1.3.0-gemma4")
+    // GGUF/llama-bro: disabled until llama-bro supports Gemma 4 architecture
+    // Re-enable: ./gradlew -Penable.gguf installDebug
+    if (project.hasProperty("enable.gguf")) {
+        implementation("com.github.paoloantinori:llama-bro:v1.3.0-gemma4")
+    }
 
     // Apache Commons Compress for tar.bz2 extraction
     implementation("org.apache.commons:commons-compress:1.26.1")

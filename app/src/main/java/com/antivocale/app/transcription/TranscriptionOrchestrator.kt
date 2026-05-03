@@ -176,7 +176,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 SherpaOnnxBackend.BACKEND_ID -> loadSherpaOnnxBackend(context)
                 WhisperBackend.BACKEND_ID -> loadWhisperBackend(context)
                 Qwen3AsrBackend.BACKEND_ID -> loadQwen3AsrBackend(context)
-                Gemma4GgufBackend.BACKEND_ID -> loadGgufBackend(context)
+                "gemma4_gguf" -> loadGgufBackend(context)
                 else -> loadLlmBackend(context)
             }
 
@@ -260,20 +260,22 @@ class TranscriptionOrchestrator @Inject constructor(
         context = context
     )
 
+    // GGUF: disabled — move files from gguf-disabled/ to re-enable the body below
     private suspend fun loadGgufBackend(context: Context): Result<Unit> {
-        val modelPath = preferencesManager.ggufModelPath.first()
-        if (modelPath.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("No GGUF model configured. Download or select a model in Settings."))
-        }
-        Log.i(TAG, "Auto-loading GGUF model from: $modelPath")
-        return backendManager.setActiveBackend(
-            backendId = Gemma4GgufBackend.BACKEND_ID,
-            context = context,
-            config = BackendConfig.GgufConfig(
-                modelPath = modelPath,
-                threadCount = preferencesManager.threadCount.first()
-            )
-        )
+        return Result.failure(IllegalStateException("GGUF backend not available"))
+        // val modelPath = preferencesManager.ggufModelPath.first()
+        // if (modelPath.isNullOrBlank()) {
+        //     return Result.failure(IllegalStateException("No GGUF model configured. Download or select a model in Settings."))
+        // }
+        // Log.i(TAG, "Auto-loading GGUF model from: $modelPath")
+        // return backendManager.setActiveBackend(
+        //     backendId = "gemma4_gguf",
+        //     context = context,
+        //     config = BackendConfig.GgufConfig(
+        //         modelPath = modelPath,
+        //         threadCount = preferencesManager.threadCount.first()
+        //     )
+        // )
     }
 
     // ---- Text Processing ----
@@ -960,7 +962,7 @@ class TranscriptionOrchestrator @Inject constructor(
             WhisperBackend.BACKEND_ID -> preferencesManager.whisperModelPath.first()
             Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first()
             SherpaOnnxBackend.BACKEND_ID -> preferencesManager.parakeetModelPath.first()
-            Gemma4GgufBackend.BACKEND_ID -> preferencesManager.ggufModelPath.first()
+            "gemma4_gguf" -> preferencesManager.ggufModelPath.first()
             else -> preferencesManager.modelPath.first()
         } ?: ""
 

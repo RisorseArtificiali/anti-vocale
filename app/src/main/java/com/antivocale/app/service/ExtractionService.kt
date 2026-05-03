@@ -15,7 +15,7 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.WhisperDownloader
-import com.antivocale.app.transcription.Gemma4GgufModelManager
+// GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.util.CrashReporter
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
@@ -121,10 +121,9 @@ class ExtractionService : Service() {
                 qv?.let { getString(it.titleResId) } ?: "Qwen3-ASR"
             }
             ModelType.GEMMA -> GemmaVariant.fromString(variant).displayName
-            ModelType.GEMMA4_GGUF -> {
-                val gv = GgufVariant.fromString(variant)
-                gv?.let { getString(it.titleResId) } ?: "Gemma 4 GGUF"
-            }
+            // GGUF: disabled
+            // ModelType.GEMMA4_GGUF -> { val gv = GgufVariant.fromString(variant); gv?.let { getString(it.titleResId) } ?: "Gemma 4 GGUF" }
+            ModelType.GEMMA4_GGUF -> "Gemma 4 GGUF"
         }
     }
 
@@ -267,24 +266,9 @@ class ExtractionService : Service() {
                         }
                     )
                 }
+                // GGUF: disabled
                 ModelType.GEMMA4_GGUF -> {
-                    val ggufVariant = GgufVariant.fromString(variant)
-                        ?: run {
-                            _progressState.tryEmit(ExtractionProgress(
-                                ModelType.GEMMA4_GGUF, variant,
-                                DownloadState.Error("Unknown GGUF variant: $variant")
-                            ))
-                            return
-                        }
-                    Gemma4GgufModelManager.download(
-                        context = applicationContext,
-                        variant = ggufVariant,
-                        onProgress = {},
-                        onStateChange = { state ->
-                            _progressState.tryEmit(ExtractionProgress(ModelType.GEMMA4_GGUF, variant, downloadState = state))
-                            updateNotificationFromState(key, state)
-                        }
-                    )
+                    _progressState.tryEmit(ExtractionProgress(modelType, variant, DownloadState.Error("GGUF not available")))
                 }
             }
         } catch (e: CancellationException) {
@@ -349,13 +333,8 @@ class ExtractionService : Service() {
                     ModelDownloader.cancel()
                 }
             }
-            ModelType.GEMMA4_GGUF -> {
-                if (variant != null) {
-                    GgufVariant.fromString(variant)?.let { Gemma4GgufModelManager.cancel(it) }
-                } else {
-                    Gemma4GgufModelManager.cancel()
-                }
-            }
+            // GGUF: disabled
+            ModelType.GEMMA4_GGUF -> { /* no-op: GGUF downloader not available */ }
         }
     }
 
@@ -543,14 +522,15 @@ class ExtractionService : Service() {
     }
 
     /** Resolves a string variant name to a GGUF [Gemma4GgufModelManager.GgufVariant]. */
-    private object GgufVariant {
-        fun fromString(name: String?): Gemma4GgufModelManager.GgufVariant? {
-            return when (name) {
-                "q4_k_m" -> Gemma4GgufModelManager.GgufVariant.Q4_K_M
-                "q5_k_m" -> Gemma4GgufModelManager.GgufVariant.Q5_K_M
-                "q8_0" -> Gemma4GgufModelManager.GgufVariant.Q8_0
-                else -> null
-            }
-        }
-    }
+    // GGUF: disabled — uncomment when re-enabling GGUF
+    // private object GgufVariant {
+    //     fun fromString(name: String?): Gemma4GgufModelManager.GgufVariant? {
+    //         return when (name) {
+    //             "q4_k_m" -> Gemma4GgufModelManager.GgufVariant.Q4_K_M
+    //             "q5_k_m" -> Gemma4GgufModelManager.GgufVariant.Q5_K_M
+    //             "q8_0" -> Gemma4GgufModelManager.GgufVariant.Q8_0
+    //             else -> null
+    //         }
+    //     }
+    // }
 }

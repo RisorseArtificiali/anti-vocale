@@ -20,8 +20,8 @@ import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.Qwen3AsrModelManager
-import com.antivocale.app.transcription.Gemma4GgufBackend
-import com.antivocale.app.transcription.Gemma4GgufModelManager
+// GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
+// GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -659,14 +659,11 @@ class SettingsViewModel @Inject constructor(
                         )}
                     }
                 }
-                Gemma4GgufBackend.BACKEND_ID -> {
+                "gemma4_gguf" -> {
+                    // GGUF: disabled — show filename only
                     preferencesManager.ggufModelPath.collect { path ->
                         val modelName = if (!path.isNullOrBlank()) {
-                            val fileName = java.io.File(path).name
-                            Gemma4GgufModelManager.GgufVariant.entries
-                                .find { it.fileName == fileName }
-                                ?.let { getApplication<Application>().getString(it.titleResId) }
-                                ?: fileName
+                            java.io.File(path).name
                         } else null
                         _uiState.update { it.copy(
                             currentModelPath = path,
