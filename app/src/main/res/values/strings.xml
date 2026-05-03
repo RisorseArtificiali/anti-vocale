@@ -108,7 +108,7 @@
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~988MB • Near large-v3 quality • Balanced multilingual</string>
     <string name="whisper_medium_title">Whisper Medium</string>
-    <string name="whisper_medium_description">~903MB • Very accurate • Best for Italian</string>
+    <string name="whisper_medium_description">~903MB • Very accurate • Multilingual</string>
     <string name="whisper_distil_large_v3_title">Distil Italian</string>
     <string name="whisper_distil_large_v3_description">~939MB • 2 decoder layers • Fastest • Optimized for Italian</string>
     <string name="whisper_download">Download Whisper</string>
