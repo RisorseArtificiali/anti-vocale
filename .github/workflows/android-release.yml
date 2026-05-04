@@ -16,6 +16,10 @@ on:
         description: 'Publish to Play Store internal track'
         type: boolean
         default: false
+      promote-to-production:
+        description: 'Promote latest internal release to production'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -61,6 +65,17 @@ jobs:
           sed -i 's|/path/to/keystore.jks|app/release.keystore|' keystore.properties
           ./gradlew bundleRelease
 
+      - name: Extract release notes
+        if: >-
+          (github.event_name == 'release' && github.event.action == 'published') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
+        env:
+          RELEASE_BODY: ${{ github.event.release.body }}
+        run: |
+          python3 scripts/extract-release-notes.py \
+            --fallback "$RELEASE_BODY" \
+            --output-dir whats-new
+
       - name: Upload Debug APK artifact
         uses: actions/upload-artifact@v4
         with:
@@ -76,6 +91,15 @@ jobs:
           name: app-release-aab
           path: app/build/outputs/bundle/release/app-release.aab
 
+      - name: Upload release notes artifact
+        if: >-
+          (github.event_name == 'release' && github.event.action == 'published') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-notes
+          path: whats-new/
+
       - name: Attach APK to GitHub Release
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
         uses: softprops/action-gh-release@v2
@@ -86,7 +110,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-play-store:
-    name: Publish to Play Store
+    name: Publish to Play Store (internal)
     runs-on: ubuntu-latest
     if: >-
       (github.event_name == 'release' && github.event.action == 'published') ||
@@ -99,6 +123,12 @@ jobs:
         with:
           name: app-release-aab
 
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: whats-new
+
       - name: Upload AAB to Play Store (internal track)
         uses: r0adkll/upload-google-play@v1
         with:
@@ -107,4 +137,21 @@ jobs:
           releaseFiles: app-release.aab
           track: internal
           status: completed
-          whatsNewDirectory: docs/play-store/whats-new
+          whatsNewDirectory: whats-new
+
+  promote-production:
+    name: Promote to Production
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && github.event.inputs.promote-to-production == 'true'
+    environment: production
+
+    steps:
+      - name: Promote internal to production
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.antivocale.app
+          # releaseFiles is required by the action even for track-to-track promotions
+          releaseFiles: _
+          track: production
+          status: completed
