@@ -12,13 +12,17 @@ on:
       tag:
         description: 'Release tag to attach APK to (e.g., 0.1)'
         required: false
+      publish-to-play-store:
+        description: 'Publish to Play Store internal track'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
 
 jobs:
   build:
-    name: Build APK
+    name: Build
     runs-on: ubuntu-latest
 
     steps:
@@ -47,25 +51,60 @@ jobs:
       - name: Build Debug APK
         run: ./gradlew assembleDebug
 
-      - name: Upload APK as artifact
+      - name: Build Release AAB
+        if: >-
+          (github.event_name == 'release' && github.event.action == 'published') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+          echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
+          sed -i 's|/path/to/keystore.jks|app/release.keystore|' keystore.properties
+          ./gradlew bundleRelease
+
+      - name: Upload Debug APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
 
-      - name: Attach APK to GitHub Release (release event)
-        if: github.event_name == 'release'
+      - name: Upload Release AAB artifact
+        if: >-
+          (github.event_name == 'release' && github.event.action == 'published') ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-aab
+          path: app/build/outputs/bundle/release/app-release.aab
+
+      - name: Attach APK to GitHub Release
+        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ github.event.inputs.tag || '' }}
           files: app/build/outputs/apk/debug/app-debug.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Attach APK to GitHub Release (manual with tag)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''
-        uses: softprops/action-gh-release@v2
+  publish-play-store:
+    name: Publish to Play Store
+    runs-on: ubuntu-latest
+    if: >-
+      (github.event_name == 'release' && github.event.action == 'published') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
+    needs: build
+
+    steps:
+      - name: Download Release AAB
+        uses: actions/download-artifact@v4
         with:
-          tag_name: ${{ github.event.inputs.tag }}
-          files: app/build/outputs/apk/debug/app-debug.apk
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: app-release-aab
+
+      - name: Upload AAB to Play Store (internal track)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.antivocale.app
+          releaseFiles: app-release.aab
+          track: internal
+          status: completed
+          whatsNewDirectory: docs/play-store/whats-new
