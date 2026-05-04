@@ -166,7 +166,7 @@ class TestParseStoreListing:
         expected = [
             "en-US", "it-IT", "de-DE", "fr-FR", "es-ES", "pt-BR",
             "ja-JP", "ko-KR", "zh-CN", "ru-RU", "nl-NL", "pl-PL",
-            "tr-TR", "ar-SA", "hi-IN",
+            "tr-TR", "ar", "hi-IN",
         ]
         for locale in expected:
             assert locale in listings, f"Missing locale: {locale}"

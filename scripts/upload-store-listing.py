@@ -37,6 +37,11 @@ DIR_TO_LOCALE: dict[str, str] = {
     "it": "it-IT",
 }
 
+# Play Console uses "ar" not "ar-SA" for Arabic listings.
+LISTING_LOCALE_ALIASES: dict[str, str] = {
+    "ar-SA": "ar",
+}
+
 IMAGE_TYPES = ["phoneScreenshots"]
 
 
@@ -127,7 +132,8 @@ def parse_store_listing(path: str) -> dict[str, dict[str, str]]:
         full_desc = re.sub(r"^Italiano\s*/\s*Italian:\s*\n", "", after_code.lstrip("\n"))
         full_desc = full_desc.strip()
 
-        listings[locale] = {"short": short_desc, "full": full_desc}
+        api_locale = LISTING_LOCALE_ALIASES.get(locale, locale)
+        listings[api_locale] = {"short": short_desc, "full": full_desc}
 
     return listings
 
