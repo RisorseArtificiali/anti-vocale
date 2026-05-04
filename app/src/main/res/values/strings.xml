@@ -108,7 +108,7 @@
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~988MB • Near large-v3 quality • Balanced multilingual</string>
     <string name="whisper_medium_title">Whisper Medium</string>
-    <string name="whisper_medium_description">~903MB • Very accurate • Best for Italian</string>
+    <string name="whisper_medium_description">~903MB • Very accurate • Multilingual</string>
     <string name="whisper_distil_large_v3_title">Distil Italian</string>
     <string name="whisper_distil_large_v3_description">~939MB • 2 decoder layers • Fastest • Optimized for Italian</string>
     <string name="whisper_download">Download Whisper</string>
@@ -154,7 +154,7 @@
     <string name="gemma_download_confirm_message">This will download ~%1$dMB. Gemma models are full LLMs with advanced features but use more storage.</string>
 
     <!-- Transcription -->
-    <string name="share_transcription">Share Transcription</string>
+    <string name="share_transcription">Share</string>
     <string name="copy_transcription">Copy to Clipboard</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_received_for_transcription">Audio received for transcription</string>
@@ -215,6 +215,12 @@
     <string name="action_delete">Delete</string>
     <string name="action_cancel">Cancel</string>
 
+    <!-- Settings Tab - Section Titles -->
+    <string name="settings_section_transcription">Transcription</string>
+    <string name="settings_section_appearance">Appearance</string>
+    <string name="settings_section_advanced">Advanced</string>
+    <string name="oauth_connected">OAuth Connected</string>
+
     <!-- Settings Tab - Model status -->
     <string name="model_loaded">Model Loaded</string>
     <string name="model_not_loaded">Model Unloaded (Auto-loads on demand)</string>
@@ -238,7 +244,6 @@
     <string name="setup_step2">2. Sign in to your HuggingFace account</string>
     <string name="setup_step3">3. Authorize the app</string>
     <string name="setup_step4">4. You\'ll be redirected back automatically</string>
-    <string name="oauth_connected">OAuth Connected</string>
     <string name="token_valid">Token Valid</string>
     <string name="username_label">Username: %1$s</string>
     <string name="token_label">Token: %1$s</string>
@@ -695,9 +700,32 @@
     <!-- Skeleton loading -->
     <string name="skeleton_loading_content_description">Loading transcription</string>
 
+    <!-- Share target profiles (appear as separate entries in Android share sheet) -->
+    <string name="share_target_parakeet">Anti-Vocale (Parakeet)</string>
+    <string name="share_target_whisper">Anti-Vocale (Whisper)</string>
+    <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
+    <string name="share_target_gemma">Anti-Vocale (Gemma)</string>
+
+    <!-- Advanced sharing settings -->
+    <string name="share_targets_title">Share Targets</string>
+    <string name="share_targets_description">Show each downloaded model as a separate option in the Android share sheet. When you share audio via a specific model, it is used temporarily for that transcription only.</string>
+    <string name="advanced_sharing_toggle">Show models in share sheet</string>
+    <string name="share_targets_models_info">Each downloaded model will appear as a separate share target. Deleting a model removes its share target.</string>
+
     <!-- Conversation Grouping -->
     <string name="conversation_grouping_title">Group by Conversation</string>
     <string name="conversation_grouping_description">Group transcriptions by source app (WhatsApp, Telegram, etc.) into collapsible sections.</string>
     <string name="conversation_group_count">%1$d messages</string>
     <string name="conversation_group_unknown">Other</string>
+
+    <!-- Re-transcribe -->
+    <string name="retranscribe">Retry</string>
+    <string name="retranscribe_title">Re-transcribe with…</string>
+    <string name="retranscribe_subtitle">Select a model to re-transcribe this audio</string>
+    <string name="retranscribe_confirm">Transcribe</string>
+    <string name="retranscribe_no_models">No audio models configured. Download a model from the Model tab first.</string>
+    <string name="retranscribe_file_not_found">Audio file no longer available</string>
+    <string name="retranscribe_active_badge">Active</string>
+    <string name="retranscribe_setting_title">Re-transcribe Button</string>
+    <string name="retranscribe_setting_description">Show a button on audio transcriptions to retry with a different model.</string>
 </resources>

@@ -10,6 +10,8 @@ import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.ShareTargetManager
+import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.R
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.manager.LlmManager
@@ -23,8 +25,8 @@ import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.transcription.WhisperModelManager
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.Qwen3AsrModelManager
-import com.antivocale.app.transcription.Gemma4GgufModelManager
-import com.antivocale.app.transcription.Gemma4GgufBackend
+// GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
+// GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.InferenceProvider
@@ -54,6 +56,7 @@ class ModelViewModel @Inject constructor(
     private val benchmarkManager: BenchmarkManager,
     private val backendManager: TranscriptionBackendManager,
     private val llmManager: LlmManager,
+    private val shareTargetManager: ShareTargetManager,
     @ApplicationContext private val ctx: Context
 ) : ViewModel() {
 
@@ -143,16 +146,17 @@ class ModelViewModel @Inject constructor(
     }
 
     /**
-     * GGUF download UI state — uses per-variant maps for download tracking.
+     * GGUF download UI state — uses String-based variant keys since GGUF classes are disabled.
+     * GGUF: change String back to Gemma4GgufModelManager.GgufVariant when re-enabling
      */
     data class GgufUiState(
-        val selectedVariant: Gemma4GgufModelManager.GgufVariant? = null,
-        val downloadedVariants: Set<Gemma4GgufModelManager.GgufVariant> = emptySet(),
-        val variantDownloadStates: Map<Gemma4GgufModelManager.GgufVariant, VariantDownloadState> = emptyMap(),
+        val selectedVariant: String? = null,
+        val downloadedVariants: Set<String> = emptySet(),
+        val variantDownloadStates: Map<String, VariantDownloadState> = emptyMap(),
         val modelPath: String? = null,
         val showDownloadDialog: Boolean = false,
         val showDeleteDialog: Boolean = false,
-        val variantToDelete: Gemma4GgufModelManager.GgufVariant? = null
+        val variantToDelete: String? = null
     ) {
         val isAnyDownloading: Boolean get() = variantDownloadStates.values.any { it.isDownloading }
     }
@@ -217,7 +221,8 @@ class ModelViewModel @Inject constructor(
                     ExtractionService.ModelType.PARAKEET -> handleServiceProgressParakeet(progress)
                     ExtractionService.ModelType.WHISPER -> handleServiceProgressWhisper(progress)
                     ExtractionService.ModelType.QWEN3_ASR -> handleServiceProgressQwen3Asr(progress)
-                    ExtractionService.ModelType.GEMMA4_GGUF -> handleServiceProgressGguf(progress)
+                    // GGUF: disabled
+                    ExtractionService.ModelType.GEMMA4_GGUF -> { /* no-op */ }
                     ExtractionService.ModelType.GEMMA -> handleServiceProgressGemma(progress)
                 }
             }
@@ -234,8 +239,7 @@ class ModelViewModel @Inject constructor(
         refreshWhisperState()
         // Check for Qwen3-ASR model
         refreshQwen3AsrState()
-        // Check for GGUF models
-        refreshGgufState()
+        // GGUF: disabled — refreshGgufState() commented out
         // Detect partial downloads
         detectPartialDownloads()
     }
@@ -313,6 +317,7 @@ class ModelViewModel @Inject constructor(
                 _parakeetState.update { it.copy(isDownloading = false, modelPath = file.absolutePath, partialDownload = null) }
                 viewModelScope.launch {
                     preferencesManager.saveParakeetModelPath(file.absolutePath)
+                    shareTargetManager.onModelDownloaded()
                     if (_uiState.value.modelName.isBlank()) useParakeetModel()
                 }
                 viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.parakeet_downloaded))) }
@@ -359,6 +364,7 @@ class ModelViewModel @Inject constructor(
                         variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
                     )
                 }
+                shareTargetManager.onModelDownloaded()
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useWhisperModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
@@ -411,6 +417,7 @@ class ModelViewModel @Inject constructor(
                         variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
                     )
                 }
+                shareTargetManager.onModelDownloaded()
                 if (variant != null) {
                     if (_uiState.value.modelName.isBlank()) useQwen3AsrModel(variant)
                     val displayName = ctx.getString(variant.titleResId)
@@ -479,6 +486,7 @@ class ModelViewModel @Inject constructor(
                     )
                 }
                 refreshDownloadedModels()
+                shareTargetManager.onModelDownloaded()
                 if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
             },
             onCancelled = {
@@ -639,23 +647,7 @@ class ModelViewModel @Inject constructor(
                 }
             }
 
-            // Check GGUF variants
-            val activeGgufDownloads = _ggufState.value.variantDownloadStates
-                .filter { it.value.isDownloading }.keys
-            val ggufPartials = mutableMapOf<Gemma4GgufModelManager.GgufVariant, DownloadState.PartiallyDownloaded>()
-            for (variant in Gemma4GgufModelManager.GgufVariant.entries) {
-                if (!Gemma4GgufModelManager.isDownloaded(context, variant) && variant !in activeGgufDownloads) {
-                    val partial = Gemma4GgufModelManager.detectPartialDownload(context, variant)
-                    if (partial != null) {
-                        ggufPartials[variant] = partial
-                    }
-                }
-            }
-            if (ggufPartials.isNotEmpty()) {
-                _ggufState.update {
-                    it.copy(variantDownloadStates = it.variantDownloadStates.mergePartials(ggufPartials))
-                }
-            }
+            // GGUF: disabled — partial download detection skipped entirely
         }
     }
 
@@ -719,15 +711,13 @@ class ModelViewModel @Inject constructor(
                         )}
                     }
                 }
-                Gemma4GgufBackend.BACKEND_ID -> {
+                "gemma4_gguf" -> {
+                    // GGUF: disabled — show filename only since Gemma4GgufModelManager is excluded
                     val ggufPath = preferencesManager.ggufModelPath.first()
                     if (!ggufPath.isNullOrBlank()) {
                         val ggufFile = File(ggufPath)
                         val isValid = ggufFile.exists() && ggufFile.isFile
-                        val variant = Gemma4GgufModelManager.GgufVariant.entries
-                            .find { it.fileName == ggufFile.name }
-                        val modelName = variant?.let { ctx.getString(it.titleResId) }
-                            ?: ggufPath.substringAfterLast("/")
+                        val modelName = ggufPath.substringAfterLast("/")
                         _uiState.update { it.copy(
                             modelPath = ggufPath,
                             modelName = modelName,
@@ -1050,6 +1040,7 @@ class ModelViewModel @Inject constructor(
                 // Clear model path if this was the selected model
                 if (_uiState.value.modelPath.contains(variant.fileName)) {
                     preferencesManager.saveModelPath("")
+                    shareTargetManager.onModelDeleted(LlmTranscriptionBackend.BACKEND_ID)
                     _uiState.update { it.copy(
                         modelPath = "",
                         modelName = "",
@@ -1275,6 +1266,7 @@ class ModelViewModel @Inject constructor(
             if (success) {
                 preferencesManager.saveParakeetModelPath("")
                 _parakeetState.update { it.copy(modelPath = null) }
+                shareTargetManager.onModelDeleted(SherpaOnnxBackend.BACKEND_ID)
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.parakeet_deleted)))
             }
         }
@@ -1490,6 +1482,7 @@ class ModelViewModel @Inject constructor(
                 if (savedPath?.contains(variant.dirName) == true) {
                     preferencesManager.clearWhisperModelPath()
                     _uiState.update { it.copy(modelPath = "", modelName = "") }
+                    shareTargetManager.onModelDeleted(WhisperBackend.BACKEND_ID)
                 }
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.whisper_deleted, displayName)))
             }
@@ -1628,6 +1621,7 @@ class ModelViewModel @Inject constructor(
                 if (savedPath != null && savedPath.contains(Qwen3AsrDownloader.getModelDirName(variant))) {
                     preferencesManager.clearQwen3AsrModelPath()
                     _uiState.update { it.copy(modelPath = "", modelName = "") }
+                    shareTargetManager.onModelDeleted(Qwen3AsrBackend.BACKEND_ID)
                 }
                 val displayName = context.getString(variant.titleResId)
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.qwen3_asr_deleted, displayName)))
@@ -1635,7 +1629,9 @@ class ModelViewModel @Inject constructor(
         }
     }
 
-    // ==================== GGUF Service Progress & Methods ====================
+    // ==================== GGUF: DISABLED ====================
+    // Move files from app/src/gguf-disabled/ back to main and uncomment to re-enable
+    /* GGUF disabled
 
     private fun handleServiceProgressGguf(progress: ExtractionService.ExtractionProgress) {
         val variant = Gemma4GgufModelManager.GgufVariant.entries
@@ -1779,49 +1775,11 @@ class ModelViewModel @Inject constructor(
             }
         }
     }
+    */
 
-    fun useGgufModel(variant: Gemma4GgufModelManager.GgufVariant) {
-        viewModelScope.launch {
-            val context = ctx
-            val modelPath = Gemma4GgufModelManager.getLocalPath(context, variant)
-            if (modelPath != null) {
-                preferencesManager.saveGgufModelPath(modelPath)
-                preferencesManager.saveTranscriptionBackend(Gemma4GgufBackend.BACKEND_ID)
-
-                val displayName = context.getString(variant.titleResId)
-                val message = context.getString(R.string.model_selected_message, displayName)
-                _uiState.update {
-                    it.copy(
-                        modelName = displayName,
-                        status = ModelStatus.UNLOADED,
-                        statusMessage = message
-                    )
-                }
-
-                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
-                llmManager.resetKeepAliveTimer()
-            }
-        }
-    }
-
-    fun deleteGgufModel(variant: Gemma4GgufModelManager.GgufVariant) {
-        viewModelScope.launch(Dispatchers.IO) {
-            val context = ctx
-            val success = Gemma4GgufModelManager.delete(context, variant)
-            if (success) {
-                _ggufState.update {
-                    it.copy(downloadedVariants = _ggufState.value.downloadedVariants - variant)
-                }
-                val savedPath = preferencesManager.ggufModelPath.first()
-                if (savedPath != null && savedPath.contains(variant.fileName)) {
-                    preferencesManager.clearGgufModelPath()
-                    _uiState.update { it.copy(modelPath = "", modelName = "") }
-                }
-                val displayName = context.getString(variant.titleResId)
-                _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.gguf_deleted, displayName)))
-            }
-        }
-    }
+    // GGUF: disabled — move files from gguf-disabled/ to re-enable
+    // fun useGgufModel(variant: Gemma4GgufModelManager.GgufVariant) { ... }
+    // fun deleteGgufModel(variant: Gemma4GgufModelManager.GgufVariant) { ... }
 
     /**
      * Sets a downloaded File as the active model.
@@ -1888,7 +1846,7 @@ class ModelViewModel @Inject constructor(
                     numThreads = threadCount,
                     provider = resolvedProvider
                 )
-                Gemma4GgufBackend.BACKEND_ID -> BackendConfig.GgufConfig(
+                "gemma4_gguf" /* GGUF: Gemma4GgufBackend.BACKEND_ID */ -> BackendConfig.GgufConfig(
                     modelPath = modelPath,
                     threadCount = threadCount
                 )

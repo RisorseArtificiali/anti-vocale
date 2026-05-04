@@ -3,7 +3,7 @@
 Android application written in Kotlin for transcribing voice messages locally on-device.
 
 ## Project Info
-- **GitHub:** Private repo at `paoloantinori/voice_message_reader` (being renamed to `anti-vocale`)
+- **GitHub:** `RisorseArtificiali/anti-vocale` (fork: `paoloantinor/anti-vocale`)
 - **Language:** Kotlin
 - **Platform:** Android
 
@@ -15,6 +15,21 @@ Android application written in Kotlin for transcribing voice messages locally on
 - **Device:** Realme RMX3853 (Android 16, connects via wireless debugging at `telefonopaolo:35685`)
 
 @import docs/BUILD.md
+
+## Key Identifiers
+
+- **Package:** `com.antivocale.app`
+
+## Project Structure
+
+- `app/src/main/java/com/antivocale/app/` — Main source
+  - `transcription/` — Transcription backends (Whisper/sherpa-onnx, LiteRT-LM)
+  - `ui/` — Compose UI screens and view models
+  - `receiver/` — Broadcast receivers (Tasker integration)
+  - `model/` — Model management and configuration
+- `app/libs/` — Prebuilt AARs (sherpa-onnx, tracked via Git LFS)
+- `docs/` — Build guides, research notes, scout reports
+- `scripts/` — Build/install helpers (`install.sh`)
 
 ## Skills
 
@@ -33,6 +48,23 @@ Whenever integrating a new model, native library, JNI bridge, or supporting a ne
 4. **Key symptom**: model or native component works in debug but crashes immediately in release → almost always an R8 stripping issue.
 
 **Context**: The distil-large-v3 Whisper model crashed on the v1.1.1 Play Store release because R8 stripped Kotlin metadata and transcription backend classes needed for JNI reflection. The fix was adding keep rules for `*Annotation*/InnerClasses/Signature`, `com.antivocale.app.transcription.**`, and `@androidx.annotation.Keep`.
+
+### Pre-Release R8 Audit Procedure
+
+Before every release, run this audit to catch R8 stripping issues:
+
+1. **Find all JNI/native dependencies** — scan `app/build.gradle.kts` for native library dependencies (AARs with `.so` files, JNI bridges)
+2. **Cross-reference with proguard-rules.pro** — every native library package MUST have a `-keep class` entry
+3. **Check for stale rules** — if a library was replaced (e.g., `de.kherud.llama` → `com.suhel.llamabro`), update the keep rule to match the new package
+4. **Verify dynamically-registered classes** — classes registered via Hilt multibinding, map lookups, or string-based instantiation need keep rules. The existing `com.antivocale.app.transcription.**` rule covers backend classes
+5. **Audit command**: `grep -E 'import (com\.|de\.|org\.)' app/src/main/java/ -rh | sed 's/.*import //' | sed 's/\..*//' | sort -u` — compare output against keep rule packages
+
+**Known native libraries and their keep rule packages**:
+| Library | Keep Package | Notes |
+|---------|-------------|-------|
+| sherpa-onnx | `com.k2fsa.sherpa.onnx.**` | ONNX inference via JNI |
+| LiteRT-LM | `com.google.ai.edge.litertlm.**` | Gemma inference via JNI |
+| llama-bro | `com.suhel.llamabro.**` | GGUF inference via llama.cpp JNI |
 
 <CRITICAL_INSTRUCTION>
 

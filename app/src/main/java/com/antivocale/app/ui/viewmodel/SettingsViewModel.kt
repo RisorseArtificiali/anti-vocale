@@ -14,13 +14,14 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDiscovery
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.Qwen3AsrModelManager
-import com.antivocale.app.transcription.Gemma4GgufBackend
-import com.antivocale.app.transcription.Gemma4GgufModelManager
+// GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
+// GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -56,7 +57,8 @@ class SettingsViewModel @Inject constructor(
     val perAppPreferencesManager: PerAppPreferencesManager,
     val transcriptionCalibrator: TranscriptionCalibrator,
     private val backendManager: TranscriptionBackendManager,
-    private val llmManager: LlmManager
+    private val llmManager: LlmManager,
+    private val shareTargetManager: ShareTargetManager
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -179,6 +181,33 @@ class SettingsViewModel @Inject constructor(
     fun saveGroupLogsByConversation(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveGroupLogsByConversation(enabled)
+        }
+    }
+
+    val advancedSharingEnabled: StateFlow<Boolean> = preferencesManager.advancedSharingEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED
+        )
+
+    fun saveAdvancedSharingEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveAdvancedSharingEnabled(enabled)
+            shareTargetManager.setAdvancedSharingEnabled(enabled)
+        }
+    }
+
+    val showRetranscribeButton: StateFlow<Boolean> = preferencesManager.showRetranscribeButton
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON
+        )
+
+    fun saveShowRetranscribeButton(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveShowRetranscribeButton(enabled)
         }
     }
 
@@ -630,14 +659,11 @@ class SettingsViewModel @Inject constructor(
                         )}
                     }
                 }
-                Gemma4GgufBackend.BACKEND_ID -> {
+                "gemma4_gguf" -> {
+                    // GGUF: disabled — show filename only
                     preferencesManager.ggufModelPath.collect { path ->
                         val modelName = if (!path.isNullOrBlank()) {
-                            val fileName = java.io.File(path).name
-                            Gemma4GgufModelManager.GgufVariant.entries
-                                .find { it.fileName == fileName }
-                                ?.let { getApplication<Application>().getString(it.titleResId) }
-                                ?: fileName
+                            java.io.File(path).name
                         } else null
                         _uiState.update { it.copy(
                             currentModelPath = path,

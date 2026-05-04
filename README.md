@@ -15,7 +15,10 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 - **Fully offline** - All processing happens on-device, no data leaves your phone
 - **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, or Qwen3-ASR models
 - **Share integration** - Share audio from any messaging app to transcribe
+- **Model-specific share targets** - Pick a specific model directly from the Android share sheet
+- **Re-transcribe** - Retry any transcription with a different model from the log
 - **Smart notifications** - Copy result or send it back to the source app with one tap
+- **Confidence indicator** - Shows detected language and warns about low-confidence results
 - **Progressive display** - See transcription text appear segment-by-segment instead of waiting for the full result
 - **Swipe actions** - Swipe log entries to copy, share, or delete
 - **Persistent transcription log** - All transcriptions saved to local database with search
@@ -24,6 +27,7 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 - **Performance stats** - Track real-world transcription speed per model on your device
 - **VAD silence stripping** - Optionally strip silent segments before transcription for faster results
 - **Configurable inference threads** - Auto-detects or manually sets thread count for performance tuning
+- **Organized settings** - Grouped into Transcription, Appearance, and Advanced sections
 - **Per-app settings** - Configure notification behavior per messaging app
 - **Picture-in-Picture** - See live transcription in a floating window while using other apps
 - **Multilingual UI** - App interface fully translated in English and Italian
@@ -134,7 +138,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions.
 Messaging App (WhatsApp/Telegram/...)
     |
     v  [Share Intent]
-ShareReceiverActivity
+ShareReceiverActivity / ShareTargetManager (model-specific aliases)
     |
     v
 InferenceService (Foreground Service)
@@ -143,14 +147,14 @@ InferenceService (Foreground Service)
 AudioPreprocessor (16kHz mono WAV, 30s chunks)
     |
     v
-TranscriptionBackendManager
+TranscriptionOrchestrator
     |--- SherpaOnnxBackend (Parakeet TDT)
     |--- WhisperBackend (Whisper models)
     |--- Qwen3AsrBackend (Qwen3-ASR)
     |--- LlmTranscriptionBackend (Gemma via LiteRT-LM)
     |
     v
-Notification (Copy / Send to [App])
+Notification (Copy / Send to [App]) + Confidence Indicator
 ```
 
 ## Automation

@@ -2,6 +2,7 @@ package com.antivocale.app
 
 import android.app.Application
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.LocaleManager
 import dagger.hilt.android.HiltAndroidApp
@@ -12,6 +13,7 @@ import javax.inject.Inject
 class BridgeApplication : Application() {
 
     @Inject lateinit var preferencesManager: PreferencesManager
+    @Inject lateinit var shareTargetManager: ShareTargetManager
 
     companion object {
         private const val PREFS_NAME = "localai_migration_prefs"
@@ -21,6 +23,7 @@ class BridgeApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         com.antivocale.app.util.SharedAudioHandler.cleanupOldFiles(this)
+        shareTargetManager.syncAll()
         migrateLanguagePreference()
         installGlobalExceptionHandler()
     }

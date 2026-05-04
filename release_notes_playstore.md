@@ -1,13 +1,13 @@
 <en-US>
-    🚀 Faster model downloads - Models now download as individual files, no extraction needed
-    🔧 Fixed crash on startup with Whisper Distil Italian model
-    📊 Crash reporting - Improved stability monitoring to catch issues faster
-    🇮🇹 Whisper models now include: Small, Turbo, Medium, and Distil Italian
+    🔄 Re-transcribe - Retry any transcription with a different model from the log
+    🔀 Model-specific sharing - Pick Parakeet, Whisper, Qwen3, or Gemma directly from the share sheet
+    📊 Confidence indicator - See detected language and low-confidence warnings in notifications
+    ⚙️ Reorganized settings - Grouped into Transcription, Appearance, and Advanced sections
 </en-US>
 
 <it-IT>
-    🚀 Download modelli più veloci - I modelli vengono scaricati come file singoli, senza estrazione
-    🔧 Risolto il crash all'avvio con il modello Whisper Distil Italian
-    📊 Segnalazione crash - Migliorato il monitoraggio della stabilità
-    🇮🇹 Modelli Whisper disponibili: Small, Turbo, Medium e Distil Italian
+    🔄 Ri-trascrizione - Riprova qualsiasi trascrizione con un modello diverso dal registro
+    🔀 Condivisione per modello - Scegli Parakeet, Whisper, Qwen3 o Gemma direttamente dal foglio di condivisione
+    📊 Indicatore di confidenza - Visualizza la lingua rilevata e avvisi di bassa confidenza nelle notifiche
+    ⚙️ Impostazioni riorganizzate - Raggruppate in sezioni Trascrizione, Aspetto e Avanzate
 </it-IT>

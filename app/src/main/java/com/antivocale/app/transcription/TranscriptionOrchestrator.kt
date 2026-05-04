@@ -62,6 +62,7 @@ class TranscriptionOrchestrator @Inject constructor(
         filePath: String?,
         source: String?,
         sourcePackage: String?,
+        backendOverride: String? = null,
         queuePosition: Int,
         queueTotal: Int,
         context: Context,
@@ -84,7 +85,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         try {
             // Ensure the correct backend is loaded
-            val loadResult = ensureBackendLoaded(context)
+            val loadResult = ensureBackendLoaded(context, backendOverride)
             if (loadResult.isFailure) {
                 val error = loadResult.exceptionOrNull()!!
                 val errorMsg = "Failed to load backend: ${error.message}"
@@ -141,15 +142,25 @@ class TranscriptionOrchestrator @Inject constructor(
             logError(taskId, errorMsg, duration)
             listener.onError(taskId, "PROCESSING_ERROR", errorMsg, isShareRequest, false, duration)
             return Result.failure(e)
+        } finally {
+            if (backendOverride != null) {
+                try {
+                    backendManager.unloadActiveBackend()
+                } catch (_: Exception) {
+                }
+            }
         }
     }
 
     // ---- Backend Loading ----
 
-    private suspend fun ensureBackendLoaded(context: Context): Result<Unit> {
+    private suspend fun ensureBackendLoaded(
+        context: Context,
+        backendOverride: String? = null
+    ): Result<Unit> {
         val hasBackend = backendManager.hasActiveBackend()
         val backendReady = backendManager.getActiveBackend()?.isReady() ?: false
-        val preferredBackendId = preferencesManager.transcriptionBackend.first()
+        val preferredBackendId = backendOverride ?: preferencesManager.transcriptionBackend.first()
         val activeBackendId = backendManager.getActiveBackend()?.id
         val backendMismatch = hasBackend && activeBackendId != preferredBackendId
 
@@ -165,7 +176,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 SherpaOnnxBackend.BACKEND_ID -> loadSherpaOnnxBackend(context)
                 WhisperBackend.BACKEND_ID -> loadWhisperBackend(context)
                 Qwen3AsrBackend.BACKEND_ID -> loadQwen3AsrBackend(context)
-                Gemma4GgufBackend.BACKEND_ID -> loadGgufBackend(context)
+                "gemma4_gguf" -> loadGgufBackend(context)
                 else -> loadLlmBackend(context)
             }
 
@@ -249,20 +260,22 @@ class TranscriptionOrchestrator @Inject constructor(
         context = context
     )
 
+    // GGUF: disabled — move files from gguf-disabled/ to re-enable the body below
     private suspend fun loadGgufBackend(context: Context): Result<Unit> {
-        val modelPath = preferencesManager.ggufModelPath.first()
-        if (modelPath.isNullOrBlank()) {
-            return Result.failure(IllegalStateException("No GGUF model configured. Download or select a model in Settings."))
-        }
-        Log.i(TAG, "Auto-loading GGUF model from: $modelPath")
-        return backendManager.setActiveBackend(
-            backendId = Gemma4GgufBackend.BACKEND_ID,
-            context = context,
-            config = BackendConfig.GgufConfig(
-                modelPath = modelPath,
-                threadCount = preferencesManager.threadCount.first()
-            )
-        )
+        return Result.failure(IllegalStateException("GGUF backend not available"))
+        // val modelPath = preferencesManager.ggufModelPath.first()
+        // if (modelPath.isNullOrBlank()) {
+        //     return Result.failure(IllegalStateException("No GGUF model configured. Download or select a model in Settings."))
+        // }
+        // Log.i(TAG, "Auto-loading GGUF model from: $modelPath")
+        // return backendManager.setActiveBackend(
+        //     backendId = "gemma4_gguf",
+        //     context = context,
+        //     config = BackendConfig.GgufConfig(
+        //         modelPath = modelPath,
+        //         threadCount = preferencesManager.threadCount.first()
+        //     )
+        // )
     }
 
     // ---- Text Processing ----
@@ -949,7 +962,7 @@ class TranscriptionOrchestrator @Inject constructor(
             WhisperBackend.BACKEND_ID -> preferencesManager.whisperModelPath.first()
             Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first()
             SherpaOnnxBackend.BACKEND_ID -> preferencesManager.parakeetModelPath.first()
-            Gemma4GgufBackend.BACKEND_ID -> preferencesManager.ggufModelPath.first()
+            "gemma4_gguf" -> preferencesManager.ggufModelPath.first()
             else -> preferencesManager.modelPath.first()
         } ?: ""
 

@@ -14,6 +14,10 @@ import android.widget.Toast
 import com.antivocale.app.R
 import com.antivocale.app.receiver.ChooserBroadcastReceiver
 import com.antivocale.app.service.InferenceService
+import com.antivocale.app.transcription.LlmTranscriptionBackend
+import com.antivocale.app.transcription.Qwen3AsrBackend
+import com.antivocale.app.transcription.SherpaOnnxBackend
+import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.util.SharedAudioHandler
 
 /**
@@ -27,6 +31,18 @@ class ShareReceiverActivity : Activity() {
     companion object {
         const val TAG = "ShareReceiverActivity"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
+        private const val ALIAS_PARAKEET = "com.antivocale.app.ShareParakeet"
+        private const val ALIAS_WHISPER = "com.antivocale.app.ShareWhisper"
+        private const val ALIAS_QWEN3 = "com.antivocale.app.ShareQwen3"
+        private const val ALIAS_GEMMA = "com.antivocale.app.ShareGemma"
+
+        internal fun backendIdForAlias(aliasClassName: String): String? = when (aliasClassName) {
+            ALIAS_PARAKEET -> SherpaOnnxBackend.BACKEND_ID
+            ALIAS_WHISPER -> WhisperBackend.BACKEND_ID
+            ALIAS_QWEN3 -> Qwen3AsrBackend.BACKEND_ID
+            ALIAS_GEMMA -> LlmTranscriptionBackend.BACKEND_ID
+            else -> null
+        }
     }
 
     private var sourcePackage: String? = null
@@ -171,6 +187,13 @@ class ShareReceiverActivity : Activity() {
             }
             // Don't pass a prompt - let InferenceService use the default from settings
             putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_SHARE)
+            // Pass backend override if triggered via a share target alias
+            intent?.component?.className?.let { alias ->
+                backendIdForAlias(alias)?.let { backendId ->
+                    putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, backendId)
+                    Log.i(TAG, "Share target alias detected: $alias -> backend: $backendId")
+                }
+            }
         }
 
         startForegroundService(serviceIntent)

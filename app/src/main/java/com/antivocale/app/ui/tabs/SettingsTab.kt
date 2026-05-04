@@ -26,7 +26,6 @@ import com.antivocale.app.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,8 +37,16 @@ import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
+import com.antivocale.app.ui.components.CollapsibleSection
+import com.antivocale.app.ui.components.HF_TOKEN_SETTINGS_URL
+import com.antivocale.app.ui.components.OAuthLoginSection
+import com.antivocale.app.ui.components.SettingsDropdown
+import com.antivocale.app.ui.components.TokenInputField
+import com.antivocale.app.ui.components.ToggleSettingCard
 import com.antivocale.app.ui.components.UnloadModelButton
+import com.antivocale.app.ui.dialogs.PerformanceStatsDialog
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
+import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
@@ -66,6 +73,8 @@ fun SettingsTab(
     val currentTheme by viewModel.currentTheme.collectAsState()
     val swipeActionMode by viewModel.swipeActionMode.collectAsState()
     val groupLogsByConversation by viewModel.groupLogsByConversation.collectAsState()
+    val advancedSharingEnabled by viewModel.advancedSharingEnabled.collectAsState()
+    val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
     val tokenInput by viewModel.tokenInput.collectAsState()
     val oauthState by viewModel.oauthState.collectAsState()
@@ -86,9 +95,6 @@ fun SettingsTab(
         viewModel.handleOAuthResult(result.data)
     }
 
-    // Model selection state
-    val settingsState by viewModel.uiState.collectAsState()
-
     // Load models on first composition
     LaunchedEffect(Unit) {
         viewModel.loadCurrentModel()
@@ -96,8 +102,7 @@ fun SettingsTab(
     }
 
     // Check if model is currently loaded (only relevant for LLM backend)
-    // Use StateFlow for reactive updates when model state changes
-    val isLlmBackend = settingsState.transcriptionBackend == PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
+    val isLlmBackend = uiState.transcriptionBackend == PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
     val isModelLoaded by viewModel.llmIsReadyFlow.collectAsState()
     val remainingTime = viewModel.llmRemainingTimeSeconds ?: 0L
 
@@ -121,134 +126,378 @@ fun SettingsTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Model Status Card (only show for LLM backend)
-        if (isLlmBackend) {
+        CollapsibleSection(
+            title = stringResource(R.string.settings_section_transcription),
+            icon = Icons.Default.Mic,
+            initiallyExpanded = true
+        ) {
+            // Model Status Card (only show for LLM backend)
+            if (isLlmBackend) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                        containerColor = if (isModelLoaded)
+                            MaterialTheme.colorScheme.primaryContainer
+                        else
+                            MaterialTheme.colorScheme.surfaceVariant
+                    )
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.RemoveCircleOutline,
+                                contentDescription = null,
+                                tint = if (isModelLoaded)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Text(
+                                text = if (isModelLoaded) stringResource(R.string.model_loaded) else stringResource(R.string.model_not_loaded),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    if (isModelLoaded && remainingTime > 0L) {
+                        val minutes = remainingTime / 60
+                        val seconds = remainingTime % 60
+                        Text(
+                            text = stringResource(R.string.auto_unload_in, minutes, seconds),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+
+                    // Unload button - show when model is loaded
+                    if (isModelLoaded) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        UnloadModelButton(
+                            onClick = { viewModel.unloadModel() },
+                            isTranscribing = isTranscribing
+                        )
+                    }
+
+                    if (!isModelLoaded) {
+                        Text(
+                            text = stringResource(R.string.load_model_from_tab),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            }
+
+            // Active Model Selection Card
             Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = if (isModelLoaded)
-                        MaterialTheme.colorScheme.primaryContainer
-                    else
-                        MaterialTheme.colorScheme.surfaceVariant
-                )
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.RemoveCircleOutline,
+                            imageVector = Icons.Default.Storage,
                             contentDescription = null,
-                            tint = if (isModelLoaded)
-                                MaterialTheme.colorScheme.primary
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = if (isModelLoaded) stringResource(R.string.model_loaded) else stringResource(R.string.model_not_loaded),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                            text = stringResource(R.string.active_model),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
 
-                if (isModelLoaded && remainingTime > 0L) {
-                    val minutes = remainingTime / 60
-                    val seconds = remainingTime % 60
+                    // Current model display
+                    if (uiState.currentModelPath != null) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Column {
+                                Text(
+                                    text = uiState.currentModelName ?: stringResource(R.string.model_unknown),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = uiState.currentModelPath ?: "",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                                )
+                            }
+                        }
+                    } else {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = stringResource(R.string.no_model_selected_error),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Transcription Language Setting
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Translate,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.transcription_language_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
                     Text(
-                        text = stringResource(R.string.auto_unload_in, minutes, seconds),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        text = stringResource(R.string.transcription_language_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
 
-                // Unload button - show when model is loaded
-                if (isModelLoaded) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    UnloadModelButton(
-                        onClick = { viewModel.unloadModel() },
-                        isTranscribing = isTranscribing
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    // Transcription language dropdown
+                    SettingsDropdown(
+                        currentValue = currentTranscriptionLanguage,
+                        options = viewModel.transcriptionLanguageOptions.map { it.code },
+                        currentValueDisplay = viewModel.transcriptionLanguageOptions.find { it.code == currentTranscriptionLanguage }?.let {
+                            if (it.code == "auto") stringResource(R.string.transcription_language_auto) else it.displayName
+                        } ?: currentTranscriptionLanguage,
+                        optionDisplay = { code ->
+                            if (code == "auto") stringResource(R.string.transcription_language_auto)
+                            else viewModel.transcriptionLanguageOptions.find { it.code == code }?.displayName ?: code
+                        },
+                        onOptionSelected = { viewModel.saveTranscriptionLanguage(it) },
+                        label = stringResource(R.string.transcription_language_title),
+                        enabled = !uiState.isSaving
                     )
-                }
 
-                if (!isModelLoaded) {
                     Text(
-                        text = stringResource(R.string.load_model_from_tab),
+                        text = stringResource(R.string.transcription_language_note),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
-        }
-        }
 
-        // Active Model Selection Card
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Auto-Copy Setting
+            ToggleSettingCard(
+                icon = Icons.Default.ContentCopy,
+                title = stringResource(R.string.auto_copy_title),
+                description = stringResource(R.string.auto_copy_description),
+                checked = autoCopyEnabled,
+                onCheckedChange = { enabled ->
+                    viewModel.saveAutoCopyEnabled(enabled)
+                }
+            )
+
+            // VAD Silence Stripping Setting
+            ToggleSettingCard(
+                icon = Icons.Default.GraphicEq,
+                title = stringResource(R.string.vad_title),
+                description = stringResource(R.string.vad_description),
+                checked = vadEnabled,
+                onCheckedChange = { enabled ->
+                    viewModel.saveVadEnabled(enabled)
+                }
+            )
+
+            // Progressive Transcription Display Setting
+            ToggleSettingCard(
+                icon = Icons.Default.Visibility,
+                title = stringResource(R.string.progressive_title),
+                description = stringResource(R.string.progressive_description),
+                checked = progressiveEnabled,
+                onCheckedChange = { enabled ->
+                    viewModel.saveProgressiveTranscription(enabled)
+                }
+            )
+
+            // Default Prompt Setting Navigation Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showPromptSettings = true },
+                shape = MaterialTheme.shapes.medium
             ) {
                 Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Storage,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.active_model),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                // Current model display
-                if (settingsState.currentModelPath != null) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.CheckCircle,
+                            imageVector = Icons.Default.Edit,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Column {
                             Text(
-                                text = settingsState.currentModelName ?: stringResource(R.string.model_unknown),
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Medium
+                                text = stringResource(R.string.default_prompt_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
                             Text(
-                                text = settingsState.currentModelPath ?: "",
+                                text = stringResource(R.string.default_prompt_description),
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
-                } else {
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = stringResource(R.string.open_prompt_settings),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Keep-Alive Timeout Setting
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.Warning,
+                            imageVector = Icons.Default.Timer,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(16.dp)
+                            tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = stringResource(R.string.no_model_selected_error),
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = stringResource(R.string.auto_unload_timeout),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.timeout_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    // Timeout dropdown
+                    SettingsDropdown(
+                        currentValue = currentTimeout,
+                        options = viewModel.timeoutOptions,
+                        currentValueDisplay = when (currentTimeout) {
+                            1 -> stringResource(R.string.timeout_1_minute)
+                            60 -> stringResource(R.string.timeout_1_hour)
+                            else -> stringResource(R.string.timeout_minutes, currentTimeout)
+                        },
+                        optionDisplay = { minutes ->
+                            when (minutes) {
+                                1 -> stringResource(R.string.timeout_1_minute)
+                                60 -> stringResource(R.string.timeout_1_hour)
+                                else -> stringResource(R.string.timeout_minutes, minutes)
+                            }
+                        },
+                        onOptionSelected = { viewModel.saveKeepAliveTimeout(it) },
+                        label = stringResource(R.string.auto_unload_timeout),
+                        enabled = !uiState.isSaving
+                    )
+
+                    // Saving indicator
+                    if (uiState.isSaving) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.saving),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    }
+
+                    // Success indicator
+                    if (uiState.saveSuccess == true) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.settings_saved),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    // Error message
+                    uiState.errorMessage?.let { error ->
+                        Text(
+                            text = error,
+                            style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
@@ -256,1384 +505,812 @@ fun SettingsTab(
             }
         }
 
-        // HuggingFace Token Card
-        Card(
-            modifier = Modifier.fillMaxWidth()
+        CollapsibleSection(
+            title = stringResource(R.string.settings_section_appearance),
+            icon = Icons.Default.Palette,
+            initiallyExpanded = true
         ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Theme Setting
+            Card(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Key,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.huggingface_auth),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.huggingface_auth_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Setup Guide (expandable) - only show when no valid token
-                if (tokenState !is HuggingFaceTokenManager.TokenState.Valid) {
-                    var showSetupGuide by remember { mutableStateOf(false) }
-                    Card(
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Icon(
-                                        Icons.Default.HelpOutline,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Text(
-                                        stringResource(R.string.setup_guide),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                }
-                                IconButton(
-                                    onClick = { showSetupGuide = !showSetupGuide },
-                                    modifier = Modifier.size(24.dp)
-                                ) {
-                                    Icon(
-                                        if (showSetupGuide) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                        contentDescription = if (showSetupGuide) stringResource(R.string.show_less) else stringResource(R.string.show_more),
-                                        tint = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                }
-                            }
-                            if (showSetupGuide) {
-                                Spacer(modifier = Modifier.height(8.dp))
-                                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    Text(
-                                        stringResource(R.string.setup_step1),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                    Text(
-                                        stringResource(R.string.setup_step2),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                    Text(
-                                        stringResource(R.string.setup_step3),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                    Text(
-                                        stringResource(R.string.setup_step4),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onTertiaryContainer
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                // OAuth Login Section (if configured) - PRIMARY OPTION
-                if (viewModel.isOAuthConfigured && activity != null) {
-                    OAuthLoginSection(
-                        oauthState = oauthState,
-                        tokenState = tokenState,
-                        onLoginClick = {
-                            try {
-                                viewModel.huggingFaceAuthManager.startAuthFlow(activity, oauthLauncher)
-                            } catch (e: Exception) {
-                                viewModel.clearError()
-                                viewModel.clearOAuthState()
-                            }
-                        },
-                        onLogoutClick = { viewModel.clearToken() },
-                        onDismissError = { viewModel.clearOAuthState() }
-                    )
-                }
-
-                // Show token status if valid
-                when (val currentState = tokenState) {
-                    is HuggingFaceTokenManager.TokenState.Valid -> {
-                        // Already handled by OAuth section or show here for manual tokens
-                        if (currentState.authType == HuggingFaceTokenManager.AuthType.MANUAL) {
-                            var showManualDetails by remember { mutableStateOf(false) }
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { showManualDetails = !showManualDetails },
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Row(
-                                    modifier = Modifier.weight(1f),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.CheckCircle,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(16.dp)
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.token_valid),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        color = MaterialTheme.colorScheme.primary
-                                    )
-                                    Icon(
-                                        imageVector = if (showManualDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                        contentDescription = if (showManualDetails) stringResource(R.string.hide_details) else stringResource(R.string.show_details),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                                IconButton(onClick = { viewModel.clearToken() }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = stringResource(R.string.clear_token),
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
-                                }
-                            }
-                            if (showManualDetails) {
-                                Column(
-                                    modifier = Modifier.padding(start = 24.dp),
-                                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.username_label, currentState.username),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.token_label, currentState.maskedToken),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    else -> {
-                        // Advanced: Manual Token Section (collapsible)
-                        var showAdvanced by remember { mutableStateOf(false) }
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                        TextButton(
-                            onClick = { showAdvanced = !showAdvanced },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Icon(
-                                imageVector = if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = null
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(if (showAdvanced) stringResource(R.string.hide_advanced) else stringResource(R.string.advanced_manual_token))
-                        }
-
-                        if (!showAdvanced) {
-                            Text(
-                                text = stringResource(R.string.manual_token_scope_info),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        if (showAdvanced) {
-                            val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-                            when (val innerState = tokenState) {
-                                is HuggingFaceTokenManager.TokenState.Invalid -> {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        OutlinedTextField(
-                                            value = tokenInput,
-                                            onValueChange = { viewModel.onTokenInputChanged(it) },
-                                            label = { Text(stringResource(R.string.huggingface_token_label)) },
-                                            placeholder = { Text(stringResource(R.string.token_placeholder)) },
-                                            singleLine = true,
-                                            visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                            trailingIcon = {
-                                                Row {
-                                                    IconButton(onClick = {
-                                                        clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()?.let {
-                                                            viewModel.onTokenInputChanged(it)
-                                                        }
-                                                    }) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.ContentPaste,
-                                                            contentDescription = stringResource(R.string.paste_from_clipboard)
-                                                        )
-                                                    }
-                                                    IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
-                                                        Icon(
-                                                            imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                            contentDescription = if (tokenPasswordVisible) stringResource(R.string.hide_token) else stringResource(R.string.show_token)
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                            modifier = Modifier.weight(1f),
-                                            isError = true
-                                        )
-                                    }
-                                    Text(
-                                        text = innerState.error,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                    // Fix buttons
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        FilledTonalButton(
-                                            onClick = {
-                                                val intent = android.content.Intent(
-                                                    android.content.Intent.ACTION_VIEW,
-                                                    android.net.Uri.parse("https://huggingface.co/settings/tokens")
-                                                )
-                                                context.startActivity(intent)
-                                            }
-                                        ) {
-                                            Icon(
-                                                Icons.AutoMirrored.Filled.OpenInNew,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(Modifier.width(4.dp))
-                                            Text(stringResource(R.string.create_token))
-                                        }
-                                        OutlinedButton(
-                                            onClick = { viewModel.validateAndSaveToken() },
-                                            enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken
-                                        ) {
-                                            Text(stringResource(R.string.retry))
-                                        }
-                                    }
-                                }
-
-                                is HuggingFaceTokenManager.TokenState.Validating -> {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        OutlinedTextField(
-                                            value = tokenInput,
-                                            onValueChange = { viewModel.onTokenInputChanged(it) },
-                                            label = { Text(stringResource(R.string.huggingface_token_label)) },
-                                            placeholder = { Text(stringResource(R.string.token_placeholder)) },
-                                            singleLine = true,
-                                            visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                            trailingIcon = {
-                                                Row {
-                                                    IconButton(onClick = {
-                                                        clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()?.let {
-                                                            viewModel.onTokenInputChanged(it)
-                                                        }
-                                                    }) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.ContentPaste,
-                                                            contentDescription = stringResource(R.string.paste_from_clipboard)
-                                                        )
-                                                    }
-                                                    IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
-                                                        Icon(
-                                                            imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                            contentDescription = if (tokenPasswordVisible) stringResource(R.string.hide_token) else stringResource(R.string.show_token)
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                            modifier = Modifier.weight(1f),
-                                            enabled = false
-                                        )
-                                    }
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                                        Text(stringResource(R.string.validating_token))
-                                    }
-                                }
-
-                                is HuggingFaceTokenManager.TokenState.Idle -> {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        OutlinedTextField(
-                                            value = tokenInput,
-                                            onValueChange = { viewModel.onTokenInputChanged(it) },
-                                            label = { Text(stringResource(R.string.huggingface_token_label)) },
-                                            placeholder = { Text(stringResource(R.string.token_placeholder)) },
-                                            singleLine = true,
-                                            visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                                            trailingIcon = {
-                                                Row {
-                                                    IconButton(onClick = {
-                                                        clipboardManager.primaryClip?.getItemAt(0)?.text?.toString()?.let {
-                                                            viewModel.onTokenInputChanged(it)
-                                                        }
-                                                    }) {
-                                                        Icon(
-                                                            imageVector = Icons.Default.ContentPaste,
-                                                            contentDescription = stringResource(R.string.paste_from_clipboard)
-                                                        )
-                                                    }
-                                                    IconButton(onClick = { tokenPasswordVisible = !tokenPasswordVisible }) {
-                                                        Icon(
-                                                            imageVector = if (tokenPasswordVisible) Icons.Default.VisibilityOff else Icons.Default.Visibility,
-                                                            contentDescription = if (tokenPasswordVisible) stringResource(R.string.hide_token) else stringResource(R.string.show_token)
-                                                        )
-                                                    }
-                                                }
-                                            },
-                                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                                            modifier = Modifier.weight(1f)
-                                        )
-                                    }
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                    ) {
-                                        FilledTonalButton(
-                                            onClick = { viewModel.validateAndSaveToken() },
-                                            enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken
-                                        ) {
-                                            if (uiState.isValidatingToken) {
-                                                CircularProgressIndicator(
-                                                    modifier = Modifier.size(16.dp),
-                                                    strokeWidth = 2.dp
-                                                )
-                                            } else {
-                                                Icon(
-                                                    imageVector = Icons.Default.Check,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(18.dp)
-                                                )
-                                            }
-                                            Spacer(modifier = Modifier.width(8.dp))
-                                            Text(if (uiState.isValidatingToken) stringResource(R.string.validating) else stringResource(R.string.validate_and_save))
-                                        }
-                                        // Link to token creation page
-                                        TextButton(
-                                            onClick = {
-                                                val intent = android.content.Intent(
-                                                    android.content.Intent.ACTION_VIEW,
-                                                    android.net.Uri.parse("https://huggingface.co/settings/tokens")
-                                                )
-                                                context.startActivity(intent)
-                                            }
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(16.dp)
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(stringResource(R.string.get_token))
-                                        }
-                                    }
-                                }
-
-                                is HuggingFaceTokenManager.TokenState.Valid -> {
-                                    // Already handled above
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        // Keep-Alive Timeout Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Timer,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.auto_unload_timeout),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.timeout_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                // Timeout dropdown
-                var expanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = expanded,
-                    onExpandedChange = { expanded = it }
-                ) {
-                    TextField(
-                        value = when (currentTimeout) {
-                            1 -> stringResource(R.string.timeout_1_minute)
-                            60 -> stringResource(R.string.timeout_1_hour)
-                            else -> stringResource(R.string.timeout_minutes, currentTimeout)
-                        },
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.auto_unload_timeout)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        enabled = !uiState.isSaving,
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                    ExposedDropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false },
-                        modifier = Modifier.exposedDropdownSize()
-                    ) {
-                        viewModel.timeoutOptions.forEach { minutes ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        when (minutes) {
-                                            1 -> stringResource(R.string.timeout_1_minute)
-                                            60 -> stringResource(R.string.timeout_1_hour)
-                                            else -> stringResource(R.string.timeout_minutes, minutes)
-                                        }
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.saveKeepAliveTimeout(minutes)
-                                    expanded = false
-                                },
-                                trailingIcon = if (currentTimeout == minutes) {
-                                    { Icon(Icons.Default.Check, contentDescription = null) }
-                                } else null
-                            )
-                        }
-                    }
-                }
-
-                // Saving indicator
-                if (uiState.isSaving) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            strokeWidth = 2.dp
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(R.string.saving),
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
-                }
-
-                // Success indicator
-                if (uiState.saveSuccess == true) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = stringResource(R.string.settings_saved),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
-                // Error message
-                uiState.errorMessage?.let { error ->
-                    Text(
-                        text = error,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            }
-        }
-
-        // Thread Count Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Memory,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.thread_count_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.thread_count_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                // Thread count dropdown
-                var threadExpanded by remember { mutableStateOf(false) }
-                val threadOptions = (1..8).toList()
-                ExposedDropdownMenuBox(
-                    expanded = threadExpanded,
-                    onExpandedChange = { threadExpanded = it }
-                ) {
-                    TextField(
-                        value = if (threadCount == autoDetectedThreads)
-                            stringResource(R.string.thread_count_auto, autoDetectedThreads)
-                        else
-                            stringResource(R.string.thread_count_value, threadCount),
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.thread_count_title)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = threadExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                    ExposedDropdownMenu(
-                        expanded = threadExpanded,
-                        onDismissRequest = { threadExpanded = false },
-                        modifier = Modifier.exposedDropdownSize()
-                    ) {
-                        threadOptions.forEach { threads ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        if (threads == autoDetectedThreads)
-                                            stringResource(R.string.thread_count_auto, threads)
-                                        else
-                                            stringResource(R.string.thread_count_value, threads)
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.saveThreadCount(threads)
-                                    threadExpanded = false
-                                },
-                                trailingIcon = if (threadCount == threads) {
-                                    { Icon(Icons.Default.Check, contentDescription = null) }
-                                } else null
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Inference Provider Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Bolt,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.inference_provider_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.inference_provider_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                var providerExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = providerExpanded,
-                    onExpandedChange = { providerExpanded = it }
-                ) {
-                    TextField(
-                        value = when (inferenceProvider) {
-                            InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
-                            InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
-                            InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                            else -> inferenceProvider
-                        },
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.inference_provider_title)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = providerExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                    ExposedDropdownMenu(
-                        expanded = providerExpanded,
-                        onDismissRequest = { providerExpanded = false },
-                        modifier = Modifier.exposedDropdownSize()
-                    ) {
-                        InferenceProvider.options.forEach { option ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        when (option) {
-                                            InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
-                                            InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
-                                            InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                                            else -> option
-                                        }
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.saveInferenceProvider(option)
-                                    providerExpanded = false
-                                },
-                                trailingIcon = if (inferenceProvider == option) {
-                                    { Icon(Icons.Default.Check, contentDescription = null) }
-                                } else null
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Auto-Copy Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.ContentCopy,
+                            imageVector = Icons.Default.Palette,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = stringResource(R.string.auto_copy_title),
+                            text = stringResource(R.string.theme_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
-                        text = stringResource(R.string.auto_copy_description),
+                        text = stringResource(R.string.theme_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Switch(
-                    checked = autoCopyEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveAutoCopyEnabled(enabled)
-                    }
-                )
-            }
-        }
 
-        // VAD Silence Stripping Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    // Theme dropdown
+                    SettingsDropdown(
+                        currentValue = currentTheme,
+                        options = viewModel.themeOptions,
+                        currentValueDisplay = currentTheme.displayName,
+                        optionDisplay = { it.displayName },
+                        onOptionSelected = { viewModel.saveThemePreference(it) },
+                        label = stringResource(R.string.theme_title),
+                        enabled = !uiState.isSaving
+                    )
+                }
+            }
+
+            // Language Setting (App Language)
+            Card(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Column(modifier = Modifier.weight(1f)) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            imageVector = Icons.Default.GraphicEq,
+                            imageVector = Icons.Default.Language,
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary
                         )
                         Text(
-                            text = stringResource(R.string.vad_title),
+                            text = stringResource(R.string.language_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+
                     Text(
-                        text = stringResource(R.string.vad_description),
+                        text = stringResource(R.string.language_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Switch(
-                    checked = vadEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveVadEnabled(enabled)
-                    }
-                )
-            }
-        }
 
-        // Progressive Transcription Display Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Visibility,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.progressive_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.progressive_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Switch(
-                    checked = progressiveEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveProgressiveTranscription(enabled)
-                    }
-                )
-            }
-        }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-        // Conversation Grouping Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Forum,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.conversation_grouping_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = stringResource(R.string.conversation_grouping_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-                Spacer(modifier = Modifier.width(16.dp))
-                Switch(
-                    checked = groupLogsByConversation,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveGroupLogsByConversation(enabled)
-                    }
-                )
-            }
-        }
-
-        // Swipe Action Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Swipe,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.swipe_action_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.swipe_action_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                var swipeActionExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = swipeActionExpanded,
-                    onExpandedChange = { swipeActionExpanded = it }
-                ) {
-                    TextField(
-                        value = when (swipeActionMode) {
-                            "REVEAL" -> stringResource(R.string.swipe_action_reveal)
-                            "IMMEDIATE_DELETE" -> stringResource(R.string.swipe_action_immediate_delete)
-                            else -> swipeActionMode
-                        },
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.swipe_action_title)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = swipeActionExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        enabled = !uiState.isSaving,
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                    ExposedDropdownMenu(
-                        expanded = swipeActionExpanded,
-                        onDismissRequest = { swipeActionExpanded = false },
-                        modifier = Modifier.exposedDropdownSize()
-                    ) {
-                        listOf(
-                            "REVEAL" to stringResource(R.string.swipe_action_reveal),
-                            "IMMEDIATE_DELETE" to stringResource(R.string.swipe_action_immediate_delete)
-                        ).forEach { (mode, label) ->
-                            DropdownMenuItem(
-                                text = { Text(label) },
-                                onClick = {
-                                    viewModel.saveSwipeActionMode(mode)
-                                    swipeActionExpanded = false
-                                },
-                                trailingIcon = if (swipeActionMode == mode) {
-                                    { Icon(Icons.Default.Check, contentDescription = null) }
-                                } else null
-                            )
-                        }
-                    }
-                }
-            }
-        }
-
-        // Language Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Language,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.language_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.language_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                // Language dropdown
-                var languageExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = languageExpanded,
-                    onExpandedChange = { languageExpanded = it }
-                ) {
-                    TextField(
-                        value = when (currentLanguage) {
+                    // Language dropdown
+                    SettingsDropdown(
+                        currentValue = currentLanguage,
+                        options = viewModel.languageOptions.map { it.code },
+                        currentValueDisplay = when (currentLanguage) {
                             "system" -> stringResource(R.string.language_system)
                             "en" -> stringResource(R.string.language_english)
                             "it" -> stringResource(R.string.language_italian)
                             else -> currentLanguage
                         },
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.language_title)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = languageExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        enabled = !uiState.isSaving,
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        optionDisplay = { code ->
+                            when (code) {
+                                "system" -> stringResource(R.string.language_system)
+                                "en" -> stringResource(R.string.language_english)
+                                "it" -> stringResource(R.string.language_italian)
+                                else -> viewModel.languageOptions.find { it.code == code }?.displayName ?: code
+                            }
+                        },
+                        onOptionSelected = { viewModel.saveLanguagePreference(it) },
+                        label = stringResource(R.string.language_title),
+                        enabled = !uiState.isSaving
                     )
-                    ExposedDropdownMenu(
-                        expanded = languageExpanded,
-                        onDismissRequest = { languageExpanded = false },
-                        modifier = Modifier.exposedDropdownSize()
+                }
+            }
+
+            // Swipe Action Setting
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        viewModel.languageOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        when (option.code) {
-                                            "system" -> stringResource(R.string.language_system)
-                                            "en" -> stringResource(R.string.language_english)
-                                            "it" -> stringResource(R.string.language_italian)
-                                            else -> option.displayName
+                        Icon(
+                            imageVector = Icons.Default.Swipe,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.swipe_action_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.swipe_action_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    SettingsDropdown(
+                        currentValue = swipeActionMode,
+                        options = listOf("REVEAL", "IMMEDIATE_DELETE"),
+                        currentValueDisplay = when (swipeActionMode) {
+                            "REVEAL" -> stringResource(R.string.swipe_action_reveal)
+                            "IMMEDIATE_DELETE" -> stringResource(R.string.swipe_action_immediate_delete)
+                            else -> swipeActionMode
+                        },
+                        optionDisplay = { mode ->
+                            when (mode) {
+                                "REVEAL" -> stringResource(R.string.swipe_action_reveal)
+                                "IMMEDIATE_DELETE" -> stringResource(R.string.swipe_action_immediate_delete)
+                                else -> mode
+                            }
+                        },
+                        onOptionSelected = { viewModel.saveSwipeActionMode(it) },
+                        label = stringResource(R.string.swipe_action_title),
+                        enabled = !uiState.isSaving
+                    )
+                }
+            }
+
+            // Conversation Grouping Setting
+            ToggleSettingCard(
+                icon = Icons.Default.Forum,
+                title = stringResource(R.string.conversation_grouping_title),
+                description = stringResource(R.string.conversation_grouping_description),
+                checked = groupLogsByConversation,
+                onCheckedChange = { enabled ->
+                    viewModel.saveGroupLogsByConversation(enabled)
+                }
+            )
+        }
+
+        CollapsibleSection(
+            title = stringResource(R.string.settings_section_advanced),
+            icon = Icons.Default.Settings,
+            initiallyExpanded = false
+        ) {
+            // HuggingFace Token Card
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Key,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.huggingface_auth),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.huggingface_auth_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    // Setup Guide (expandable) - only show when no valid token
+                    if (tokenState !is HuggingFaceTokenManager.TokenState.Valid) {
+                        var showSetupGuide by remember { mutableStateOf(false) }
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                            )
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        Icon(
+                                            Icons.Default.HelpOutline,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                        Text(
+                                            stringResource(R.string.setup_guide),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { showSetupGuide = !showSetupGuide },
+                                        modifier = Modifier.size(24.dp)
+                                    ) {
+                                        Icon(
+                                            if (showSetupGuide) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                            contentDescription = if (showSetupGuide) stringResource(R.string.show_less) else stringResource(R.string.show_more),
+                                            tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    }
+                                }
+                                if (showSetupGuide) {
+                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        Text(
+                                            stringResource(R.string.setup_step1),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                        Text(
+                                            stringResource(R.string.setup_step2),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                        Text(
+                                            stringResource(R.string.setup_step3),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                        Text(
+                                            stringResource(R.string.setup_step4),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    // OAuth Login Section (if configured) - PRIMARY OPTION
+                    if (viewModel.isOAuthConfigured && activity != null) {
+                        OAuthLoginSection(
+                            oauthState = oauthState,
+                            tokenState = tokenState,
+                            onLoginClick = {
+                                try {
+                                    viewModel.huggingFaceAuthManager.startAuthFlow(activity, oauthLauncher)
+                                } catch (e: Exception) {
+                                    viewModel.clearError()
+                                    viewModel.clearOAuthState()
+                                }
+                            },
+                            onLogoutClick = { viewModel.clearToken() },
+                            onDismissError = { viewModel.clearOAuthState() }
+                        )
+                    }
+
+                    // Show token status if valid
+                    when (val currentState = tokenState) {
+                        is HuggingFaceTokenManager.TokenState.Valid -> {
+                            // Already handled by OAuth section or show here for manual tokens
+                            if (currentState.authType == HuggingFaceTokenManager.AuthType.MANUAL) {
+                                var showManualDetails by remember { mutableStateOf(false) }
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { showManualDetails = !showManualDetails },
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        modifier = Modifier.weight(1f),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.token_valid),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            color = MaterialTheme.colorScheme.primary
+                                        )
+                                        Icon(
+                                            imageVector = if (showManualDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                            contentDescription = if (showManualDetails) stringResource(R.string.hide_details) else stringResource(R.string.show_details),
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    IconButton(onClick = { viewModel.clearToken() }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = stringResource(R.string.clear_token),
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
+                                }
+                                if (showManualDetails) {
+                                    Column(
+                                        modifier = Modifier.padding(start = 24.dp),
+                                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.username_label, currentState.username),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                        Text(
+                                            text = stringResource(R.string.token_label, currentState.maskedToken),
+                                            style = MaterialTheme.typography.bodySmall,
+                                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        else -> {
+                            // Advanced: Manual Token Section (collapsible)
+                            var showAdvanced by remember { mutableStateOf(false) }
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                            TextButton(
+                                onClick = { showAdvanced = !showAdvanced },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Icon(
+                                    imageVector = if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                    contentDescription = null
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(if (showAdvanced) stringResource(R.string.hide_advanced) else stringResource(R.string.advanced_manual_token))
+                            }
+
+                            if (!showAdvanced) {
+                                Text(
+                                    text = stringResource(R.string.manual_token_scope_info),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+
+                            if (showAdvanced) {
+                                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                                when (val innerState = tokenState) {
+                                    is HuggingFaceTokenManager.TokenState.Invalid -> {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            TokenInputField(
+                                                value = tokenInput,
+                                                onValueChange = { viewModel.onTokenInputChanged(it) },
+                                                tokenPasswordVisible = tokenPasswordVisible,
+                                                onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
+                                                clipboardManager = clipboardManager,
+                                                modifier = Modifier.weight(1f),
+                                                isError = true
+                                            )
                                         }
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.saveLanguagePreference(option.code)
-                                    languageExpanded = false
-                                },
-                                trailingIcon = if (currentLanguage == option.code) {
-                                    { Icon(Icons.Default.Check, contentDescription = null) }
-                                } else null
-                            )
+                                        Text(
+                                            text = innerState.error,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                        // Fix buttons
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            FilledTonalButton(
+                                                onClick = {
+                                                    val intent = android.content.Intent(
+                                                        android.content.Intent.ACTION_VIEW,
+                                                        android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
+                                                    )
+                                                    context.startActivity(intent)
+                                                }
+                                            ) {
+                                                Icon(
+                                                    Icons.AutoMirrored.Filled.OpenInNew,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Spacer(Modifier.width(4.dp))
+                                                Text(stringResource(R.string.create_token))
+                                            }
+                                            OutlinedButton(
+                                                onClick = { viewModel.validateAndSaveToken() },
+                                                enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken
+                                            ) {
+                                                Text(stringResource(R.string.retry))
+                                            }
+                                        }
+                                    }
+
+                                    is HuggingFaceTokenManager.TokenState.Validating -> {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            TokenInputField(
+                                                value = tokenInput,
+                                                onValueChange = { viewModel.onTokenInputChanged(it) },
+                                                tokenPasswordVisible = tokenPasswordVisible,
+                                                onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
+                                                clipboardManager = clipboardManager,
+                                                modifier = Modifier.weight(1f),
+                                                enabled = false
+                                            )
+                                        }
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                                            Text(stringResource(R.string.validating_token))
+                                        }
+                                    }
+
+                                    is HuggingFaceTokenManager.TokenState.Idle -> {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            TokenInputField(
+                                                value = tokenInput,
+                                                onValueChange = { viewModel.onTokenInputChanged(it) },
+                                                tokenPasswordVisible = tokenPasswordVisible,
+                                                onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
+                                                clipboardManager = clipboardManager,
+                                                modifier = Modifier.weight(1f)
+                                            )
+                                        }
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        ) {
+                                            FilledTonalButton(
+                                                onClick = { viewModel.validateAndSaveToken() },
+                                                enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken
+                                            ) {
+                                                if (uiState.isValidatingToken) {
+                                                    CircularProgressIndicator(
+                                                        modifier = Modifier.size(16.dp),
+                                                        strokeWidth = 2.dp
+                                                    )
+                                                } else {
+                                                    Icon(
+                                                        imageVector = Icons.Default.Check,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.width(8.dp))
+                                                Text(if (uiState.isValidatingToken) stringResource(R.string.validating) else stringResource(R.string.validate_and_save))
+                                            }
+                                            // Link to token creation page
+                                            TextButton(
+                                                onClick = {
+                                                    val intent = android.content.Intent(
+                                                        android.content.Intent.ACTION_VIEW,
+                                                        android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
+                                                    )
+                                                    context.startActivity(intent)
+                                                }
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                                Spacer(modifier = Modifier.width(4.dp))
+                                                Text(stringResource(R.string.get_token))
+                                            }
+                                        }
+                                    }
+
+                                    is HuggingFaceTokenManager.TokenState.Valid -> {
+                                        // Already handled above
+                                    }
+                                }
+                            }
                         }
                     }
                 }
             }
-        }
 
-        // Transcription Language Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            // Thread Count Setting
+            Card(
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Translate,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.transcription_language_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.transcription_language_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                // Transcription language dropdown
-                var transcriptionLanguageExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = transcriptionLanguageExpanded,
-                    onExpandedChange = { transcriptionLanguageExpanded = it }
-                ) {
-                    TextField(
-                        value = viewModel.transcriptionLanguageOptions.find { it.code == currentTranscriptionLanguage }?.let {
-                            if (it.code == "auto") stringResource(R.string.transcription_language_auto) else it.displayName
-                        } ?: currentTranscriptionLanguage,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.transcription_language_title)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = transcriptionLanguageExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        enabled = !uiState.isSaving,
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                    ExposedDropdownMenu(
-                        expanded = transcriptionLanguageExpanded,
-                        onDismissRequest = { transcriptionLanguageExpanded = false },
-                        modifier = Modifier.exposedDropdownSize()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        viewModel.transcriptionLanguageOptions.forEach { option ->
-                            DropdownMenuItem(
-                                text = {
-                                    Text(
-                                        if (option.code == "auto") stringResource(R.string.transcription_language_auto)
-                                        else option.displayName
-                                    )
-                                },
-                                onClick = {
-                                    viewModel.saveTranscriptionLanguage(option.code)
-                                    transcriptionLanguageExpanded = false
-                                },
-                                trailingIcon = if (currentTranscriptionLanguage == option.code) {
-                                    { Icon(Icons.Default.Check, contentDescription = null) }
-                                } else null
-                            )
-                        }
+                        Icon(
+                            imageVector = Icons.Default.Memory,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.thread_count_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                }
 
-                Text(
-                    text = stringResource(R.string.transcription_language_note),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        // Theme Setting
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Palette,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
                     Text(
-                        text = stringResource(R.string.theme_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        text = stringResource(R.string.thread_count_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    // Thread count dropdown
+                    SettingsDropdown(
+                        currentValue = threadCount,
+                        options = (1..8).toList(),
+                        currentValueDisplay = if (threadCount == autoDetectedThreads)
+                            stringResource(R.string.thread_count_auto, autoDetectedThreads)
+                        else
+                            stringResource(R.string.thread_count_value, threadCount),
+                        optionDisplay = { threads ->
+                            if (threads == autoDetectedThreads)
+                                stringResource(R.string.thread_count_auto, threads)
+                            else
+                                stringResource(R.string.thread_count_value, threads)
+                        },
+                        onOptionSelected = { viewModel.saveThreadCount(it) },
+                        label = stringResource(R.string.thread_count_title)
                     )
                 }
+            }
 
-                Text(
-                    text = stringResource(R.string.theme_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                // Theme dropdown
-                var themeExpanded by remember { mutableStateOf(false) }
-                ExposedDropdownMenuBox(
-                    expanded = themeExpanded,
-                    onExpandedChange = { themeExpanded = it }
+            // Inference Provider Setting
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    TextField(
-                        value = currentTheme.displayName,
-                        onValueChange = {},
-                        readOnly = true,
-                        label = { Text(stringResource(R.string.theme_title)) },
-                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = themeExpanded) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
-                        enabled = !uiState.isSaving,
-                        colors = ExposedDropdownMenuDefaults.textFieldColors(
-                            focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                            unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    )
-                    ExposedDropdownMenu(
-                        expanded = themeExpanded,
-                        onDismissRequest = { themeExpanded = false },
-                        modifier = Modifier.exposedDropdownSize()
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        viewModel.themeOptions.forEach { theme ->
-                            DropdownMenuItem(
-                                text = { Text(theme.displayName) },
-                                onClick = {
-                                    viewModel.saveThemePreference(theme)
-                                    themeExpanded = false
-                                },
-                                trailingIcon = if (currentTheme == theme) {
-                                    { Icon(Icons.Default.Check, contentDescription = null) }
-                                } else null
+                        Icon(
+                            imageVector = Icons.Default.Bolt,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.inference_provider_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.inference_provider_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    SettingsDropdown(
+                        currentValue = inferenceProvider,
+                        options = InferenceProvider.options,
+                        currentValueDisplay = when (inferenceProvider) {
+                            InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
+                            InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
+                            InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
+                            else -> inferenceProvider
+                        },
+                        optionDisplay = { option ->
+                            when (option) {
+                                InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
+                                InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
+                                InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
+                                else -> option
+                            }
+                        },
+                        onOptionSelected = { viewModel.saveInferenceProvider(it) },
+                        label = stringResource(R.string.inference_provider_title)
+                    )
+                }
+            }
+
+            // Advanced Sharing Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Share,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.share_targets_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.share_targets_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.advanced_sharing_toggle),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                        Switch(
+                            checked = advancedSharingEnabled,
+                            onCheckedChange = { viewModel.saveAdvancedSharingEnabled(it) }
+                        )
+                    }
+
+                    if (advancedSharingEnabled) {
+                        Text(
+                            text = stringResource(R.string.share_targets_models_info),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Re-transcribe Button Setting
+            ToggleSettingCard(
+                icon = Icons.Default.Refresh,
+                title = stringResource(R.string.retranscribe_setting_title),
+                description = stringResource(R.string.retranscribe_setting_description),
+                checked = showRetranscribeButton,
+                onCheckedChange = { viewModel.saveShowRetranscribeButton(it) }
+            )
+
+            // Per-App Settings Navigation Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showPerAppSettings = true },
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Settings,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column {
+                            Text(
+                                text = stringResource(R.string.per_app_settings_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = stringResource(R.string.per_app_settings_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = stringResource(R.string.open_per_app_settings),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            // Performance Stats Card
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        perfStatsScope.launch {
+                            perfStatsProfiles = viewModel.transcriptionCalibrator.getAllProfiles()
+                            showPerfStatsDialog = true
+                        }
+                    },
+                shape = MaterialTheme.shapes.medium
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Speed,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column {
+                            Text(
+                                text = stringResource(R.string.performance_stats_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = stringResource(R.string.performance_stats_subtitle),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = stringResource(R.string.open_performance_stats),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                 }
             }
         }
 
-        // Default Prompt Setting Navigation Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showPromptSettings = true },
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column {
-                        Text(
-                            text = stringResource(R.string.default_prompt_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.default_prompt_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = stringResource(R.string.open_prompt_settings),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        // Per-App Settings Navigation Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showPerAppSettings = true },
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Settings,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column {
-                        Text(
-                            text = stringResource(R.string.per_app_settings_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.per_app_settings_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = stringResource(R.string.open_per_app_settings),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
-
-        // Performance Stats Card
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    perfStatsScope.launch {
-                        perfStatsProfiles = viewModel.transcriptionCalibrator.getAllProfiles()
-                        showPerfStatsDialog = true
-                    }
-                },
-            shape = MaterialTheme.shapes.medium
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Speed,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column {
-                        Text(
-                            text = stringResource(R.string.performance_stats_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.performance_stats_subtitle),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                Icon(
-                    imageVector = Icons.Default.ChevronRight,
-                    contentDescription = stringResource(R.string.open_performance_stats),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        }
 
         // Performance Stats Dialog
         if (showPerfStatsDialog) {
@@ -1654,684 +1331,4 @@ fun SettingsTab(
         Spacer(modifier = Modifier.height(32.dp))
     }
     } // End of if-else for showPerAppSettings
-}
-
-// ==================== Prompt Settings Screen ====================
-
-@Composable
-private fun PromptSettingsScreen(
-    viewModel: SettingsViewModel,
-    onBack: () -> Unit
-) {
-    val defaultPrompt by viewModel.defaultPrompt.collectAsState()
-    var promptInput by remember { mutableStateOf(defaultPrompt) }
-    val context = LocalContext.current
-
-    LaunchedEffect(defaultPrompt) {
-        promptInput = defaultPrompt
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // Header with back button
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.Default.ArrowBack,
-                    contentDescription = stringResource(R.string.back)
-                )
-            }
-            Text(
-                text = stringResource(R.string.default_prompt_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        // Description
-        Text(
-            text = stringResource(R.string.default_prompt_description),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        // Current default info
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.surfaceVariant,
-            shape = MaterialTheme.shapes.small
-        ) {
-            Column(
-                modifier = Modifier.padding(12.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.current_default_prompt_label),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = defaultPrompt.ifEmpty { stringResource(R.string.builtin_default_prompt) },
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontStyle = if (defaultPrompt.isEmpty()) androidx.compose.ui.text.font.FontStyle.Italic else androidx.compose.ui.text.font.FontStyle.Normal
-                )
-            }
-        }
-
-        // Compatibility info banner
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-            shape = MaterialTheme.shapes.small
-        ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Info,
-                    contentDescription = null,
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                Text(
-                    text = stringResource(R.string.default_prompt_compatibility_info),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-
-        // Prompt input field
-        OutlinedTextField(
-            value = promptInput,
-            onValueChange = { newValue ->
-                if (newValue.length <= 500) {
-                    promptInput = newValue
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.default_prompt_placeholder)) },
-            minLines = 3,
-            maxLines = 6,
-            supportingText = {
-                Text(
-                    text = stringResource(R.string.default_prompt_chars, promptInput.length),
-                    modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.End
-                )
-            },
-            trailingIcon = {
-                if (promptInput != defaultPrompt) {
-                    IconButton(onClick = {
-                        viewModel.saveDefaultPrompt(promptInput)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = stringResource(R.string.save)
-                        )
-                    }
-                }
-            }
-        )
-
-        HorizontalDivider()
-
-        // Example Prompts Section
-        Text(
-            text = stringResource(R.string.example_prompts_title),
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = stringResource(R.string.example_prompts_description),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-
-        val examplePrompts = listOf(
-            R.string.example_prompt_transcribe,
-            R.string.example_prompt_summarize,
-            R.string.example_prompt_formal,
-            R.string.example_prompt_translate_en,
-            R.string.example_prompt_translate_it,
-            R.string.example_prompt_notes
-        )
-
-        examplePrompts.forEach { promptResId ->
-            val promptText = stringResource(promptResId)
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        promptInput = promptText
-                        viewModel.saveDefaultPrompt(promptText)
-                        com.antivocale.app.util.ToastCompat.show(
-                            context,
-                            context.getString(R.string.prompt_applied)
-                        )
-                    },
-                colors = CardDefaults.cardColors(
-                    containerColor = if (defaultPrompt == promptText)
-                        MaterialTheme.colorScheme.primaryContainer
-                    else
-                        MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    if (defaultPrompt == promptText) {
-                        Icon(
-                            imageVector = Icons.Default.CheckCircle,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                    Text(
-                        text = promptText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-    }
-}
-
-// ==================== OAuth Login Section ====================
-
-/**
- * OAuth login section with login button and status display.
- */
-@Composable
-private fun OAuthLoginSection(
-    oauthState: SettingsViewModel.OAuthState,
-    tokenState: HuggingFaceTokenManager.TokenState,
-    onLoginClick: () -> Unit,
-    onLogoutClick: () -> Unit,
-    onDismissError: () -> Unit
-) {
-    val context = LocalContext.current
-    when (oauthState) {
-        is SettingsViewModel.OAuthState.Idle -> {
-            // Show current token status or login button
-            when (val state = tokenState) {
-                is HuggingFaceTokenManager.TokenState.Valid -> {
-                    var showDetails by remember { mutableStateOf(false) }
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showDetails = !showDetails },
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            modifier = Modifier.weight(1f),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = when (state.authType) {
-                                    HuggingFaceTokenManager.AuthType.OAUTH -> MaterialTheme.colorScheme.tertiary
-                                    HuggingFaceTokenManager.AuthType.MANUAL -> MaterialTheme.colorScheme.primary
-                                },
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = when (state.authType) {
-                                    HuggingFaceTokenManager.AuthType.OAUTH -> "OAuth Connected"
-                                    HuggingFaceTokenManager.AuthType.MANUAL -> stringResource(R.string.token_valid)
-                                },
-                                style = MaterialTheme.typography.labelLarge,
-                                color = when (state.authType) {
-                                    HuggingFaceTokenManager.AuthType.OAUTH -> MaterialTheme.colorScheme.tertiary
-                                    HuggingFaceTokenManager.AuthType.MANUAL -> MaterialTheme.colorScheme.primary
-                                }
-                            )
-                            Icon(
-                                imageVector = if (showDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                contentDescription = if (showDetails) stringResource(R.string.hide_details) else stringResource(R.string.show_details),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-                        IconButton(onClick = onLogoutClick) {
-                            Icon(
-                                imageVector = Icons.Default.Logout,
-                                contentDescription = stringResource(R.string.logout),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                    if (showDetails) {
-                        Column(
-                            modifier = Modifier.padding(start = 24.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.username_label, state.username),
-                                style = MaterialTheme.typography.bodyMedium
-                            )
-                            Text(
-                                text = stringResource(R.string.token_label, state.maskedToken),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            if (state.authType == HuggingFaceTokenManager.AuthType.OAUTH && state.expiresAt != null) {
-                                val expiresText = formatExpiration(state.expiresAt, context)
-                                val isExpiringSoon = state.needsRefresh()
-                                Text(
-                                    text = stringResource(R.string.expires_label, expiresText),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (isExpiringSoon)
-                                        MaterialTheme.colorScheme.error
-                                    else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    }
-                }
-                else -> {
-                    // No valid token - show login button prominently
-                    Button(
-                        onClick = onLoginClick,
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.tertiary
-                        )
-                    ) {
-                        Icon(Icons.Default.Login, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(stringResource(R.string.login_with_huggingface))
-                    }
-                    Text(
-                        text = stringResource(R.string.oauth_login_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    // Alternative: Get token manually link
-                    val context = LocalContext.current
-                    TextButton(
-                        onClick = {
-                            val intent = android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse("https://huggingface.co/settings/tokens")
-                            )
-                            context.startActivity(intent)
-                        }
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text(stringResource(R.string.create_account_link))
-                    }
-                }
-            }
-        }
-        is SettingsViewModel.OAuthState.InProgress -> {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularProgressIndicator(modifier = Modifier.size(20.dp))
-                Spacer(modifier = Modifier.width(12.dp))
-                Text(stringResource(R.string.authenticating))
-            }
-        }
-        is SettingsViewModel.OAuthState.Success -> {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    Icons.Default.CheckCircle,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.logged_in_as, oauthState.username),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-        }
-        is SettingsViewModel.OAuthState.Error -> {
-            Card(
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.errorContainer
-                )
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        Icons.Default.Error,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = oauthState.message,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer,
-                        modifier = Modifier.weight(1f)
-                    )
-                    IconButton(onClick = onDismissError) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = stringResource(R.string.dismiss),
-                            tint = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * Formats expiration timestamp to a human-readable string.
- */
-private fun formatExpiration(expiresAt: Long, context: Context): String {
-    val now = System.currentTimeMillis()
-    val remaining = expiresAt - now
-
-    return when {
-        remaining <= 0 -> context.getString(R.string.expired)
-        remaining < 60_000 -> "${remaining / 1000}s"
-        remaining < 3_600_000 -> "${remaining / 60_000}m"
-        remaining < 86_400_000 -> "${remaining / 3_600_000}h"
-        else -> "${remaining / 86_400_000}d"
-    }
-}
-
-
-// ==================== Performance Stats Dialog ====================
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun PerformanceStatsDialog(
-    profiles: List<CalibrationProfile>,
-    isTranscribing: Boolean,
-    onDismiss: () -> Unit,
-    onReset: () -> Unit
-) {
-    var showResetConfirm by remember { mutableStateOf(false) }
-
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Speed,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Text(stringResource(R.string.performance_stats_title))
-            }
-        },
-        text = {
-            if (profiles.isEmpty()) {
-                Text(
-                    text = stringResource(R.string.performance_stats_empty),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    Text(
-                        text = stringResource(R.string.performance_stats_subtitle),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    // Find slowest speed for relative calculation
-                    val slowestMsPerSec = profiles.maxOf { it.msPerSecondOfAudio }
-                    val fastestProfile = profiles.first()
-
-                    profiles.forEach { profile ->
-                        val isFastest = profile == fastestProfile && profiles.size > 1
-
-                        // Real-time factor: lower ms/s = faster. RTF < 1.0 means faster than real-time.
-                        val rtf = profile.msPerSecondOfAudio / 1000f
-                        val speedLabel = if (rtf <= 1f) {
-                            String.format("%.1fx real-time", 1f / rtf)
-                        } else {
-                            String.format("%.2fx real-time", 1f / rtf)
-                        }
-                        val relativeSpeed = if (slowestMsPerSec > 0 && profiles.size > 1) {
-                            slowestMsPerSec / profile.msPerSecondOfAudio
-                        } else null
-
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = MaterialTheme.shapes.small,
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isFastest)
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                                else
-                                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            )
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(10.dp),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                // Row 1: Model name + Fastest badge
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    Text(
-                                        text = profile.displayName,
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier.weight(1f),
-                                        maxLines = 1
-                                    )
-                                    if (isFastest) {
-                                        Surface(
-                                            shape = MaterialTheme.shapes.extraSmall,
-                                            color = MaterialTheme.colorScheme.primary
-                                        ) {
-                                            Text(
-                                                text = stringResource(R.string.performance_stats_fastest_badge),
-                                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                                                style = MaterialTheme.typography.labelSmall,
-                                                color = MaterialTheme.colorScheme.onPrimary,
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-                                }
-
-                                // Row 2: Speed + relative
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = speedLabel,
-                                        style = MaterialTheme.typography.bodyMedium,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (isFastest) MaterialTheme.colorScheme.primary
-                                        else MaterialTheme.colorScheme.onSurface
-                                    )
-                                    if (relativeSpeed != null) {
-                                        Text(
-                                            text = String.format("(%.1fx)", relativeSpeed),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                // Row 3: Metadata
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    Text(
-                                        text = stringResource(
-                                            R.string.performance_stats_samples_count,
-                                            profile.sampleCount
-                                        ),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    if (profile.lastTimestamp > 0) {
-                                        Text(
-                                            text = formatLastUsed(profile.lastTimestamp),
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    // Total audio processed
-                    val totalAudio = profiles.sumOf { it.totalAudioSeconds }
-                    if (totalAudio > 0) {
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
-                        Text(
-                            text = stringResource(
-                                R.string.performance_stats_total_audio,
-                                formatAudioDuration(totalAudio)
-                            ),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-        },
-        confirmButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (profiles.isNotEmpty()) {
-                    TextButton(onClick = { showResetConfirm = true }) {
-                        Text(
-                            text = stringResource(R.string.performance_stats_clear),
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(R.string.dismiss))
-                }
-            }
-        }
-    )
-
-    // Reset confirmation dialog
-    if (showResetConfirm) {
-        AlertDialog(
-            onDismissRequest = { showResetConfirm = false },
-            title = { Text(stringResource(R.string.performance_stats_clear)) },
-            text = {
-                if (isTranscribing) {
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(stringResource(R.string.performance_stats_clear_confirm))
-                        HorizontalDivider()
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Text(
-                                text = stringResource(R.string.warn_reset_stats_during_transcription),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                } else {
-                    Text(stringResource(R.string.performance_stats_clear_confirm))
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        onReset()
-                        showResetConfirm = false
-                    }
-                ) {
-                    Text(
-                        text = stringResource(R.string.performance_stats_clear),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showResetConfirm = false }) {
-                    Text(stringResource(R.string.action_cancel))
-                }
-            }
-        )
-    }
-}
-
-@Composable
-private fun formatLastUsed(timestamp: Long): String {
-    if (timestamp <= 0) return ""
-    val elapsed = System.currentTimeMillis() - timestamp
-    val minutes = elapsed / 60_000
-    val hours = elapsed / 3_600_000
-    val days = elapsed / 86_400_000
-
-    return when {
-        minutes < 1 -> stringResource(R.string.performance_stats_just_now)
-        minutes < 60 -> stringResource(R.string.performance_stats_minutes_ago, minutes)
-        hours < 24 -> stringResource(R.string.performance_stats_hours_ago, hours)
-        else -> stringResource(R.string.performance_stats_days_ago, days)
-    }
-}
-
-private fun formatAudioDuration(totalSeconds: Long): String {
-    val hours = totalSeconds / 3600
-    val minutes = (totalSeconds % 3600) / 60
-    val seconds = totalSeconds % 60
-
-    return when {
-        hours > 0 -> String.format("%dh %dm", hours, minutes)
-        minutes > 0 -> String.format("%dm %ds", minutes, seconds)
-        else -> String.format("%ds", seconds)
-    }
 }

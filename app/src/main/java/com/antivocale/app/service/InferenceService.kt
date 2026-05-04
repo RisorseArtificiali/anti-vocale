@@ -68,6 +68,7 @@ class InferenceService : Service(), TranscriptionListener {
 
         const val EXTRA_SHARED_URI = "shared_uri"
         const val EXTRA_MIME_TYPE = "mime_type"
+        const val EXTRA_BACKEND_OVERRIDE = "backend_override"
 
         const val ACTION_CANCEL = "com.antivocale.app.CANCEL_TRANSCRIPTION"
 
@@ -89,7 +90,8 @@ class InferenceService : Service(), TranscriptionListener {
         val filePath: String?,
         val startTime: Long = System.currentTimeMillis(),
         val source: String? = null,
-        val sourcePackage: String? = null
+        val sourcePackage: String? = null,
+        val backendOverride: String? = null
     )
 
     // ---- Android Lifecycle ----
@@ -120,7 +122,8 @@ class InferenceService : Service(), TranscriptionListener {
             prompt = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_PROMPT) ?: "",
             filePath = filePath,
             source = intent?.getStringExtra(EXTRA_SOURCE),
-            sourcePackage = intent?.getStringExtra(EXTRA_SOURCE_PACKAGE)
+            sourcePackage = intent?.getStringExtra(EXTRA_SOURCE_PACKAGE),
+            backendOverride = intent?.getStringExtra(EXTRA_BACKEND_OVERRIDE)
         )
 
         requestQueue.add(request)
@@ -179,6 +182,7 @@ class InferenceService : Service(), TranscriptionListener {
                         filePath = request.filePath,
                         source = request.source,
                         sourcePackage = request.sourcePackage,
+                        backendOverride = request.backendOverride,
                         queuePosition = currentIndex,
                         queueTotal = totalInBatch,
                         context = applicationContext,

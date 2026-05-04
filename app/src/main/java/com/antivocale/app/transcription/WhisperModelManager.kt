@@ -16,7 +16,7 @@ import java.io.File
  * Supported variants:
  * - Small: ~610MB, good accuracy, recommended starting point
  * - Turbo: ~538MB, near large-v3 quality, best value
- * - Medium: ~1.8GB, very accurate, best for Italian
+ * - Medium: ~1.8GB, very accurate, multilingual
  */
 object WhisperModelManager {
 
