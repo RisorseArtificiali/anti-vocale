@@ -15,6 +15,11 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.PI
+import kotlin.math.sin
+import kotlin.math.sqrt
 
 /**
  * Handles audio preprocessing for Gemma multimodal models (via LiteRT-LM).
@@ -576,31 +581,81 @@ class AudioPreprocessor @Inject constructor() {
     }
 
     /**
-     * Resamples a FloatArray from a higher sample rate to 16kHz using linear interpolation.
+     * Resamples a FloatArray using Kaiser-windowed sinc interpolation.
      * [ratio] = inputRate / targetRate (e.g. 48000/16000 = 3.0).
      *
-     * Performance-critical: without this, high-rate input (e.g. 48kHz OGG) passes ratio×
-     * more samples to sherpa-onnx's internal resampler. Pre-resampling here cuts the data
-     * to 1/ratio of the original — on-device benchmarking showed ~2x Parakeet slowdown
-     * when this was accidentally removed.
+     * Uses a 16-tap windowed-sinc filter with Kaiser window (beta=5.0) for ~50dB
+     * stopband attenuation, suppressing aliasing artifacts that linear interpolation
+     * leaves in the 4-8kHz band where ASR models are most sensitive.
+     *
+     * Coefficients are precomputed into a polyphase table so the inner loop is pure
+     * multiply-accumulate with no transcendental function calls.
+     *
+     * Performance-critical: without pre-resampling, high-rate input (e.g. 48kHz OGG)
+     * passes ratio× more samples to sherpa-onnx — on-device benchmarking showed ~2x
+     * Parakeet slowdown when this was accidentally removed.
      */
     private fun resampleFloat(input: FloatArray, ratio: Double): FloatArray {
         val outputSize = (input.size / ratio).toInt()
+        if (outputSize == 0) return FloatArray(0)
         val output = FloatArray(outputSize)
 
-        for (i in 0 until outputSize) {
-            val srcPos = i * ratio
-            val srcIndex = srcPos.toInt()
+        val cutoff = if (ratio > 1.0) 1.0 / ratio else 1.0
+        val numTaps = 16
+        val halfTaps = numTaps / 2
+        val kaiserBeta = 5.0
+        val besselDenom = besselI0(kaiserBeta)
 
-            if (srcIndex < input.size - 1) {
-                val frac = (srcPos - srcIndex).toFloat()
-                output[i] = input[srcIndex] * (1.0f - frac) + input[srcIndex + 1] * frac
-            } else if (srcIndex < input.size) {
-                output[i] = input[srcIndex]
+        // Polyphase table: PHASES rows × numTaps columns.
+        // Each row holds the precomputed sinc×kaiser weights for one fractional position.
+        val phases = 64
+        val table = DoubleArray(phases * numTaps)
+        for (p in 0 until phases) {
+            val frac = p.toDouble() / phases
+            for (k in 0 until numTaps) {
+                val x = (k - halfTaps).toDouble() - frac
+                val sincVal = if (abs(x) < 1e-10) {
+                    cutoff
+                } else {
+                    cutoff * sin(PI * cutoff * x) / (PI * cutoff * x)
+                }
+                val windowPos = x / halfTaps
+                val kaiserArg = kaiserBeta * sqrt(max(0.0, 1.0 - windowPos * windowPos))
+                table[p * numTaps + k] = sincVal * besselI0(kaiserArg) / besselDenom
             }
         }
 
+        // Inner loop: table lookup + multiply-accumulate only.
+        for (i in 0 until outputSize) {
+            val srcPos = i * ratio
+            val center = srcPos.toInt()
+            val frac = srcPos - center
+            val phase = (frac * phases).toInt().coerceIn(0, phases - 1)
+            val coeffs = phase * numTaps
+
+            var sum = 0.0
+            for (k in 0 until numTaps) {
+                val idx = center + k - halfTaps
+                if (idx >= 0 && idx < input.size) {
+                    sum += input[idx] * table[coeffs + k]
+                }
+            }
+            output[i] = sum.toFloat()
+        }
+
         return output
+    }
+
+    /** Modified Bessel function I₀(x) via Taylor series. Used during polyphase table construction. */
+    private fun besselI0(x: Double): Double {
+        var sum = 1.0
+        var term = 1.0
+        for (k in 1 until 25) {
+            term *= (x / (2.0 * k)) * (x / (2.0 * k))
+            sum += term
+            if (term < 1e-12) break
+        }
+        return sum
     }
 
     /**
