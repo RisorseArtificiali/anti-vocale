@@ -1,4 +1,8 @@
 <en-US>
+What's new in 1.5.2:
+
+• Improved audio resampling for better transcription accuracy
+
 What's new in 1.5.1:
 
 • Improved audio resampling for better transcription accuracy
@@ -91,6 +95,10 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.5.2:
+
+• Migliorato il ricampionamento audio per una maggiore accuratezza della trascrizione
+
 Novità della versione 1.5.1:
 
 • Migliorato il ricampionamento audio per una maggiore accuratezza della trascrizione
