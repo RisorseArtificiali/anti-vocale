@@ -62,7 +62,7 @@ jobs:
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
           echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
-          sed -i 's|/path/to/keystore.jks|app/release.keystore|' keystore.properties
+          sed -i 's|storeFile=.*|storeFile=release.keystore|' keystore.properties
           ./gradlew bundleRelease
 
       - name: Extract release notes
