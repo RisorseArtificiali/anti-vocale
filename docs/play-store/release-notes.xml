@@ -1,4 +1,14 @@
 <en-US>
+What's new in 1.5.1:
+
+• Improved audio resampling for better transcription accuracy
+
+What's new in 1.5.0:
+
+• Major transcription engine upgrade with new backend options
+• Improved model management and download experience
+• Performance optimizations for faster on-device inference
+
 What's new in 1.4.0:
 
 • Picture-in-Picture mode — see live transcription text in a floating window while using other apps
@@ -81,6 +91,16 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.5.1:
+
+• Migliorato il ricampionamento audio per una maggiore accuratezza della trascrizione
+
+Novità della versione 1.5.0:
+
+• Importante aggiornamento del motore di trascrizione con nuove opzioni di backend
+• Migliorata la gestione e il download dei modelli
+• Ottimizzazioni delle prestazioni per inferenza più rapida on-device
+
 Novità della versione 1.4.0:
 
 • Modalità Picture-in-Picture — visualizza il testo della trascrizione in tempo reale in una finestra fluttuante mentre usi altre app
