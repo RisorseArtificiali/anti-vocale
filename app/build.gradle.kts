@@ -65,12 +65,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
 
     buildFeatures {
@@ -100,7 +100,7 @@ dependencies {
 
     // LiteRT-LM for multimodal inference (text + audio)
     // https://maven.google.com/web/index.html#com.google.ai.edge.litertlm:litertlm-android
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.9.0")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.11.0")
 
     // MediaPipe GenAI - kept as fallback for text-only inference
     implementation("com.google.mediapipe:tasks-genai:0.10.33")

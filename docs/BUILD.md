@@ -116,7 +116,7 @@ android {
 
 dependencies {
     // LiteRT-LM for multimodal inference (text + audio)
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.9.0-alpha02")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.11.0")
 
     // MediaPipe GenAI - fallback for text-only inference
     implementation("com.google.mediapipe:tasks-genai:0.10.14")
