@@ -4,16 +4,16 @@ This document describes the verified steps to build the Anti-Vocale app with Lit
 
 ## Prerequisites
 
-- **Java**: 25.0.2-tem (via SDKMAN) - **Required version**
-- **Gradle**: 9.3.1 (via SDKMAN) - **Do NOT use gradlew**
+- **Java**: 21+ (JDK 21 required — LiteRT-LM v0.10.0+ ships Java 21 bytecode)
+- **Gradle**: 8.11.1 (via wrapper `./gradlew`)
 - **Android SDK**: API 34
 - **adb**: Must be in PATH
-- **Kotlin**: 2.1.10 (required for LiteRT-LM compatibility)
+- **Kotlin**: 2.2.0
 
 ## Quick Start (One-Liner Build)
 
 ```bash
-source ~/.sdkman/bin/sdkman-init.sh && sdk use java 25.0.2-tem && sdk use gradle 9.3.1 && export PATH="$HOME/Android/Sdk/platform-tools:$PATH" && gradle assembleDebug
+source ~/.sdkman/bin/sdkman-init.sh && sdk use java 21.0.7-tem && export PATH="$HOME/Android/Sdk/platform-tools:$PATH" && ./gradlew assembleDebug
 ```
 
 ## Environment Setup
@@ -25,38 +25,36 @@ Ensure you have the correct tools installed via SDKMAN:
 curl -s "https://get.sdkman.io" | bash
 source ~/.sdkman/bin/sdkman-init.sh
 
-# Install required versions
-sdk install java 25.0.2-tem
-sdk install gradle 9.3.1
+# Install JDK 21
+sdk install java 21.0.7-tem
 
-# Activate correct tool versions
-sdk use java 25.0.2-tem
-sdk use gradle 9.3.1
+# Activate
+sdk use java 21.0.7-tem
 
 # Add adb to PATH (required for install/deploy)
 export PATH="$HOME/Android/Sdk/platform-tools:$PATH"
 
 # Verify versions
-java -version      # Should show 25.0.2-tem
-gradle --version   # Should show 9.3.1
+java -version      # Should show 21.x
+./gradlew --version   # Should show 8.11.1
 adb version        # Should not error
 ```
 
 ## Common Mistakes to Avoid
 
-### 1. Using `./gradlew` Instead of System Gradle
+### 1. Using a JDK older than 21
 
 **Don't do this:**
 ```bash
-./gradlew assembleDebug  # ❌ WRONG - may fail with cryptic errors
+sdk use java 17.0.12-tem && ./gradlew assembleDebug  # ❌ FAILS - LiteRT-LM requires JDK 21+
 ```
 
 **Do this instead:**
 ```bash
-gradle assembleDebug     # ✅ CORRECT - uses SDKMAN-configured Gradle
+sdk use java 21.0.7-tem && ./gradlew assembleDebug   # ✅ WORKS
 ```
 
-**Why:** The gradle wrapper uses the system's default Java, not the SDKMAN-configured version. This can cause cryptic errors like `25.0.2` without clear context.
+**Why:** LiteRT-LM v0.10.0+ ships Java 21 bytecode (class file version 65.0). Compiling with JDK 17 produces `invalid source release: 21`.
 
 ### 2. adb Not in PATH
 
@@ -85,9 +83,9 @@ The project requires specific Kotlin and dependency versions for LiteRT-LM compa
 
 ```kotlin
 plugins {
-    id("com.android.application") version "8.3.0" apply false
-    id("org.jetbrains.kotlin.android") version "2.1.10" apply false
-    id("org.jetbrains.kotlin.plugin.compose") version "2.1.10" apply false
+    id("com.android.application") version "8.10.0" apply false
+    id("org.jetbrains.kotlin.android") version "2.2.0" apply false
+    id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
 }
 ```
 
