@@ -133,14 +133,14 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         val chunk3 = FloatArray(100) { 3.0f }
         stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
 
-        val results = listOf(
-            Result.success(TranscriptionResult(text = "seg1")),
-            Result.failure<Nothing>(RuntimeException("backend error")),
-            Result.success(TranscriptionResult(text = "seg3"))
-        )
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            results[callIndex++]
+            callIndex++
+            when (callIndex) {
+                1 -> Result.success(TranscriptionResult(text = "seg1"))
+                2 -> Result.failure(RuntimeException("backend error"))
+                else -> Result.success(TranscriptionResult(text = "seg3"))
+            }
         }
 
         val result = runProcessRequest(scope = this)
@@ -150,7 +150,13 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
 
         verify(exactly = 2) { listener.onInterimResult(any(), any(), any()) }
 
-        verify { listener.onSuccess(eq("vad-test"), eq("seg1 seg3"), any(), any(), any()) }
+        verify {
+            listener.onSuccess(
+                eq("vad-test"), eq("seg1 seg3"), any(), any(), any(),
+                confidence = any(), detectedLanguage = any(),
+                isPartial = true, failedChunkCount = eq(1)
+            )
+        }
     }
 
     @Test

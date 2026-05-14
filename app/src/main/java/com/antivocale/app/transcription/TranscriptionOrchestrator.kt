@@ -118,7 +118,9 @@ class TranscriptionOrchestrator @Inject constructor(
                     logSuccess(taskId, transcriptionResult.text, duration)
                     listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
                         confidence = transcriptionResult.confidence,
-                        detectedLanguage = transcriptionResult.detectedLanguage
+                        detectedLanguage = transcriptionResult.detectedLanguage,
+                        isPartial = transcriptionResult.isPartial,
+                        failedChunkCount = transcriptionResult.failedChunkCount
                     )
                 },
                 onFailure = { error ->
@@ -503,7 +505,9 @@ class TranscriptionOrchestrator @Inject constructor(
             Result.success(TranscriptionResult(
                 text = accumulatedText.toString(),
                 confidence = minConfidence,
-                detectedLanguage = detectedLang
+                detectedLanguage = detectedLang,
+                isPartial = failedSegments > 0,
+                failedChunkCount = failedSegments
             ))
         }
     }
@@ -562,6 +566,8 @@ class TranscriptionOrchestrator @Inject constructor(
             )
         }
 
+        var failedChunks = 0
+
         coroutineScope {
             val deferredResults = chunks.mapIndexed { index, chunk ->
                 async {
@@ -600,7 +606,23 @@ class TranscriptionOrchestrator @Inject constructor(
                         }
                     },
                     onFailure = { error ->
-                        throw Exception("Chunk ${index + 1} failed: ${error.message}", error)
+                        Log.w(TAG, "Parallel chunk ${index + 1} failed, retrying with memory cleanup", error)
+                        val retried = retryChunkWithGc(backend, chunks[index], sampleRate, prompt)
+                        retried.fold(
+                            onSuccess = { tr ->
+                                Log.i(TAG, "Parallel chunk ${index + 1} retry succeeded")
+                                if (tr.text.isNotBlank()) {
+                                    val trimmed = tr.text.trim()
+                                    results[index] = trimmed
+                                    chunkConfidences[index] = tr.confidence
+                                    chunkLanguages[index] = tr.detectedLanguage
+                                }
+                            },
+                            onFailure = { retryError ->
+                                failedChunks++
+                                Log.e(TAG, "Parallel chunk ${index + 1} retry also failed", retryError)
+                            }
+                        )
                     }
                 )
             }
@@ -619,12 +641,17 @@ class TranscriptionOrchestrator @Inject constructor(
         return if (combinedResult.isBlank()) {
             Result.failure(IllegalStateException("No transcription produced"))
         } else {
+            if (failedChunks > 0) {
+                Log.w(TAG, "Parallel completed with $failedChunks/$chunkCount failed chunks")
+            }
             val minConfidence = chunkConfidences.filterNotNull().minOrNull()
             val detectedLang = chunkLanguages.firstOrNull { it != null }
             Result.success(TranscriptionResult(
                 text = combinedResult,
                 confidence = minConfidence,
-                detectedLanguage = detectedLang
+                detectedLanguage = detectedLang,
+                isPartial = failedChunks > 0,
+                failedChunkCount = failedChunks
             ))
         }
     }
@@ -706,8 +733,32 @@ class TranscriptionOrchestrator @Inject constructor(
                                 if (detectedLang == null) detectedLang = tr.detectedLanguage
                             },
                             onFailure = { error ->
-                                failedChunks++
-                                Log.e(TAG, "Pipeline chunk ${chunk.chunkIndex} failed", error)
+                                Log.w(TAG, "Pipeline chunk ${chunk.chunkIndex} failed, retrying with memory cleanup", error)
+                                val retried = retryChunkWithGc(backend, chunk.samples, chunk.sampleRate, resolvedPrompt)
+                                retried.fold(
+                                    onSuccess = { tr ->
+                                        Log.i(TAG, "Pipeline chunk ${chunk.chunkIndex} retry succeeded")
+                                        if (tr.text.isNotBlank()) {
+                                            val trimmed = tr.text.trim()
+                                            if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
+                                            accumulatedText.append(trimmed)
+                                            if (progressiveEnabled) {
+                                                updateInterimResult(taskId, accumulatedText.toString())
+                                                listener.onInterimResult(
+                                                    contentText = trimmed,
+                                                    bigText = trimmed,
+                                                    subText = "Chunk ${chunk.chunkIndex + 1}/$expectedChunkCount (retry)"
+                                                )
+                                            }
+                                        }
+                                        minConfidence = aggregateConfidence(minConfidence, tr.confidence)
+                                        if (detectedLang == null) detectedLang = tr.detectedLanguage
+                                    },
+                                    onFailure = { retryError ->
+                                        failedChunks++
+                                        Log.e(TAG, "Pipeline chunk ${chunk.chunkIndex} retry also failed", retryError)
+                                    }
+                                )
                             }
                         )
 
@@ -742,7 +793,9 @@ class TranscriptionOrchestrator @Inject constructor(
             Result.success(TranscriptionResult(
                 text = combinedResult,
                 confidence = minConfidence,
-                detectedLanguage = detectedLang
+                detectedLanguage = detectedLang,
+                isPartial = failedChunks > 0,
+                failedChunkCount = failedChunks
             ))
         }
     }
@@ -953,6 +1006,20 @@ class TranscriptionOrchestrator @Inject constructor(
     private suspend fun updateAudioDuration(taskId: String, audioDurationSeconds: Double) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(audioDurationSeconds = audioDurationSeconds).toEntity())
+    }
+
+    // ---- Chunk Retry ----
+
+    /** Retries after GC to reclaim ONNX tensor memory on low-RAM devices. */
+    private suspend fun retryChunkWithGc(
+        backend: TranscriptionBackend,
+        samples: FloatArray,
+        sampleRate: Int,
+        prompt: String
+    ): Result<TranscriptionResult> {
+        System.gc()
+        delay(100)
+        return backend.transcribeAudio(samples = samples, sampleRate = sampleRate, prompt = prompt)
     }
 
     // ---- Utilities ----

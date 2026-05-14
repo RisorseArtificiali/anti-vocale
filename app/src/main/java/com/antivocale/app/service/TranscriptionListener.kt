@@ -35,7 +35,9 @@ interface TranscriptionListener {
         sourcePackage: String?,
         durationMs: Long,
         confidence: Float? = null,
-        detectedLanguage: String? = null
+        detectedLanguage: String? = null,
+        isPartial: Boolean = false,
+        failedChunkCount: Int = 0
     )
 
     /** Transcription or backend loading failed */

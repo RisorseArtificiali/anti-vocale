@@ -252,13 +252,15 @@ class InferenceService : Service(), TranscriptionListener {
         sourcePackage: String?,
         durationMs: Long,
         confidence: Float?,
-        detectedLanguage: String?
+        detectedLanguage: String?,
+        isPartial: Boolean,
+        failedChunkCount: Int
     ) {
         sendSuccessReply(taskId, resultText)
         if (isShareRequest) {
             serviceScope.launch {
                 autoCopyIfEnabled(resultText, sourcePackage)
-                showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage)
+                showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount)
             }
         }
     }
@@ -493,7 +495,9 @@ class InferenceService : Service(), TranscriptionListener {
         sourcePackage: String?,
         taskId: String,
         confidence: Float?,
-        detectedLanguage: String?
+        detectedLanguage: String?,
+        isPartial: Boolean = false,
+        failedChunkCount: Int = 0
     ) {
         val prefs = if (sourcePackage != null) {
             try {
@@ -526,8 +530,14 @@ class InferenceService : Service(), TranscriptionListener {
             transcriptionText
         }
 
+        val title = if (isPartial) {
+            getString(R.string.transcription_partial, failedChunkCount)
+        } else {
+            getString(R.string.transcription_complete)
+        }
+
         val builder = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
-            .setContentTitle(getString(R.string.transcription_complete))
+            .setContentTitle(title)
             .setContentText(previewText)
             .setStyle(NotificationCompat.BigTextStyle().bigText(transcriptionText))
             .setSmallIcon(android.R.drawable.ic_dialog_info)

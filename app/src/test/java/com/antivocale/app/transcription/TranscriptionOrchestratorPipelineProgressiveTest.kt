@@ -44,7 +44,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         chunkCount: Int,
         durationSeconds: Double = 120.0
     ): List<FloatArray> {
-        val chunks = (1..chunkCount).map { FloatArray(1000) { 0.5f } }
+        val chunks = (1..chunkCount).map { idx -> FloatArray(1000) { idx.toFloat() } }
 
         val streamEvents = buildList {
             add(AudioPreprocessor.StreamEvent.Header(
@@ -195,10 +195,21 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         stubMultiChunkStream(chunkCount = 3)
 
         var callIndex = 0
+        val failedSampleRef = mutableSetOf<FloatArray>()
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            val idx = callIndex++
-            if (idx == 1) Result.failure(RuntimeException("Chunk failed"))
-            else Result.success(TranscriptionResult(text = listOf("first", "second", "third")[idx]))
+            val samples = firstArg<FloatArray>()
+            // Fail if we've seen this exact samples array fail before (retry detection)
+            if (failedSampleRef.any { it.contentEquals(samples) }) {
+                Result.failure(RuntimeException("Chunk retry failed"))
+            } else {
+                val idx = callIndex++
+                if (idx == 1) {
+                    failedSampleRef.add(samples)
+                    Result.failure(RuntimeException("Chunk failed"))
+                } else {
+                    Result.success(TranscriptionResult(text = listOf("first", "second", "third")[idx]))
+                }
+            }
         }
 
         val result = runPipelineRequest()

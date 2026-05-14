@@ -165,7 +165,8 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             val idx = callIndex++
-            if (idx == 2) {
+            // Chunk 2 fails first attempt and retry (idx=2 and idx=4+)
+            if (idx == 2 || idx >= 4) {
                 Result.failure(RuntimeException("Chunk 3 failed"))
             } else {
                 Result.success(TranscriptionResult(text = chunkTexts[idx]))

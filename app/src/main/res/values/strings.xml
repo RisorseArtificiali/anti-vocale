@@ -159,6 +159,7 @@
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="audio_received_for_transcription">Audio received for transcription</string>
     <string name="transcription_complete">Transcription complete</string>
+    <string name="transcription_partial">Transcription incomplete (%1$d chunk(s) failed)</string>
     <string name="transcription_failed">Transcription failed</string>
     <string name="copy">Copy</string>
     <string name="share">Share</string>

@@ -119,7 +119,9 @@ sealed class BackendConfig {
 data class TranscriptionResult(
     val text: String,
     val confidence: Float? = null,
-    val detectedLanguage: String? = null
+    val detectedLanguage: String? = null,
+    val isPartial: Boolean = false,
+    val failedChunkCount: Int = 0
 ) {
     companion object {
         private val WHITESPACE = Regex("\\s+")
