@@ -1,4 +1,10 @@
 <en-US>
+What's new in 1.5.3:
+
+• Fixed long transcriptions silently dropping the last segment on low-memory devices
+• Failed chunks are now retried with memory cleanup before giving up
+• Notification warns when transcription is incomplete (some chunks failed)
+
 What's new in 1.5.2:
 
 • Improved audio resampling for better transcription accuracy
@@ -95,6 +101,12 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.5.3:
+
+• Risolto troncamento silenzioso dell'ultimo segmento in trascrizioni lunghe su dispositivi con poca memoria
+• I chunk falliti vengono ora ritentati con pulizia della memoria prima di arrendersi
+• La notifica avvisa quando la trascrizione è incompleta (alcuni chunk sono falliti)
+
 Novità della versione 1.5.2:
 
 • Migliorato il ricampionamento audio per una maggiore accuratezza della trascrizione
