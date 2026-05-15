@@ -20,6 +20,10 @@ on:
         description: 'Promote latest internal release to production'
         type: boolean
         default: false
+      draft-release:
+        description: 'Create as draft (not published)'
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -50,7 +54,7 @@ jobs:
         run: |
           mkdir -p app/libs
           curl -L -o app/libs/sherpa-onnx.aar \
-            https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.0/sherpa-onnx-1.13.0.aar
+            https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.2/sherpa-onnx-1.13.2.aar
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug
@@ -154,4 +158,4 @@ jobs:
           # releaseFiles is required by the action even for track-to-track promotions
           releaseFiles: _
           track: production
-          status: completed
+          status: ${{ github.event.inputs.draft-release == 'true' && 'draft' || 'completed' }}
