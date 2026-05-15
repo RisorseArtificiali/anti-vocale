@@ -62,7 +62,7 @@ jobs:
       - name: Build Release AAB
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.publish-to-play-store == 'true' || github.event.inputs.promote-to-production == 'true'))
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
           echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
@@ -72,7 +72,7 @@ jobs:
       - name: Extract release notes
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.publish-to-play-store == 'true' || github.event.inputs.promote-to-production == 'true'))
         env:
           RELEASE_BODY: ${{ github.event.release.body }}
         run: |
@@ -89,7 +89,7 @@ jobs:
       - name: Upload Release AAB artifact
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.publish-to-play-store == 'true' || github.event.inputs.promote-to-production == 'true'))
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
@@ -98,7 +98,7 @@ jobs:
       - name: Upload release notes artifact
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.publish-to-play-store == 'true' || github.event.inputs.promote-to-production == 'true'))
         uses: actions/upload-artifact@v4
         with:
           name: release-notes
@@ -147,24 +147,27 @@ jobs:
     name: Promote to Production
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && github.event.inputs.promote-to-production == 'true'
+    needs: build
     environment: production
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - name: Download Release AAB
+        uses: actions/download-artifact@v4
+        with:
+          name: app-release-aab
 
-      - name: Extract release notes
-        run: |
-          python3 scripts/extract-release-notes.py \
-            --output-dir whats-new
+      - name: Download release notes
+        uses: actions/download-artifact@v4
+        with:
+          name: release-notes
+          path: whats-new
 
-      - name: Promote internal to production
+      - name: Upload to Play Store (production)
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.antivocale.app
-          # releaseFiles is required by the action even for track-to-track promotions
-          releaseFiles: _
+          releaseFiles: app-release.aab
           track: production
           status: ${{ github.event.inputs.draft-release == 'true' && 'draft' || 'completed' }}
           whatsNewDirectory: whats-new
