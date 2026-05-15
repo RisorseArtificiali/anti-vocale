@@ -150,6 +150,14 @@ jobs:
     environment: production
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Extract release notes
+        run: |
+          python3 scripts/extract-release-notes.py \
+            --output-dir whats-new
+
       - name: Promote internal to production
         uses: r0adkll/upload-google-play@v1
         with:
@@ -159,3 +167,4 @@ jobs:
           releaseFiles: _
           track: production
           status: ${{ github.event.inputs.draft-release == 'true' && 'draft' || 'completed' }}
+          whatsNewDirectory: whats-new
