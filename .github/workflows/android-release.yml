@@ -12,14 +12,14 @@ on:
       tag:
         description: 'Release tag to attach APK to (e.g., 0.1)'
         required: false
-      publish-to-play-store:
-        description: 'Publish to Play Store internal track'
-        type: boolean
-        default: false
-      promote-to-production:
-        description: 'Promote latest internal release to production'
-        type: boolean
-        default: false
+      play-store-track:
+        description: 'Upload AAB to Play Store track'
+        type: choice
+        options:
+          - ''
+          - internal
+          - production
+        default: ''
       draft-release:
         description: 'Create as draft (not published)'
         type: boolean
@@ -62,7 +62,7 @@ jobs:
       - name: Build Release AAB
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.publish-to-play-store == 'true' || github.event.inputs.promote-to-production == 'true'))
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
         run: |
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
           echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
@@ -72,7 +72,7 @@ jobs:
       - name: Extract release notes
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.publish-to-play-store == 'true' || github.event.inputs.promote-to-production == 'true'))
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
         env:
           RELEASE_BODY: ${{ github.event.release.body }}
         run: |
@@ -89,7 +89,7 @@ jobs:
       - name: Upload Release AAB artifact
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.publish-to-play-store == 'true' || github.event.inputs.promote-to-production == 'true'))
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
@@ -98,7 +98,7 @@ jobs:
       - name: Upload release notes artifact
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
-          (github.event_name == 'workflow_dispatch' && (github.event.inputs.publish-to-play-store == 'true' || github.event.inputs.promote-to-production == 'true'))
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
         uses: actions/upload-artifact@v4
         with:
           name: release-notes
@@ -114,39 +114,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish-play-store:
-    name: Publish to Play Store (internal)
+    name: Publish to Play Store
     runs-on: ubuntu-latest
     if: >-
       (github.event_name == 'release' && github.event.action == 'published') ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.publish-to-play-store == 'true')
-    needs: build
-
-    steps:
-      - name: Download Release AAB
-        uses: actions/download-artifact@v4
-        with:
-          name: app-release-aab
-
-      - name: Download release notes
-        uses: actions/download-artifact@v4
-        with:
-          name: release-notes
-          path: whats-new
-
-      - name: Upload AAB to Play Store (internal track)
-        uses: r0adkll/upload-google-play@v1
-        with:
-          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
-          packageName: com.antivocale.app
-          releaseFiles: app-release.aab
-          track: internal
-          status: completed
-          whatsNewDirectory: whats-new
-
-  promote-production:
-    name: Promote to Production
-    runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' && github.event.inputs.promote-to-production == 'true'
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
     needs: build
     environment: production
 
@@ -162,12 +134,12 @@ jobs:
           name: release-notes
           path: whats-new
 
-      - name: Upload to Play Store (production)
+      - name: Upload AAB to Play Store
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.antivocale.app
           releaseFiles: app-release.aab
-          track: production
-          status: ${{ github.event.inputs.draft-release == 'true' && 'draft' || 'completed' }}
+          track: ${{ github.event.inputs.play-store-track || 'internal' }}
+          status: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.draft-release == 'true') && 'draft' || 'completed' }}
           whatsNewDirectory: whats-new
