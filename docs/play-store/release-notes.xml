@@ -1,4 +1,8 @@
 <en-US>
+What's new in 1.5.4:
+
+• Upgraded sherpa-onnx to v1.13.2 for improved ONNX inference
+
 What's new in 1.5.3:
 
 • Fixed long transcriptions silently dropping the last segment on low-memory devices
@@ -101,6 +105,10 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.5.4:
+
+• Aggiornato sherpa-onnx a v1.13.2 per inferenza ONNX migliorata
+
 Novità della versione 1.5.3:
 
 • Risolto troncamento silenzioso dell'ultimo segmento in trascrizioni lunghe su dispositivi con poca memoria

@@ -26,8 +26,8 @@ android {
         applicationId = "com.antivocale.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.5.3"
+        versionCode = 19
+        versionName = "1.5.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -137,7 +137,7 @@ dependencies {
     // AppAuth for OAuth authentication (HuggingFace)
     implementation("net.openid:appauth:0.11.1")
 
-    // sherpa-onnx v1.13.1 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR)
+    // sherpa-onnx v1.13.2 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR)
     implementation(files("libs/sherpa-onnx.aar"))
 
     // GGUF/llama-bro: disabled until llama-bro supports Gemma 4 architecture
