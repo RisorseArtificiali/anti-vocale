@@ -94,7 +94,7 @@ android {
 
 dependencies {
     // Firebase (BoM manages all Firebase library versions)
-    implementation(platform("com.google.firebase:firebase-bom:33.9.0"))
+    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
     implementation("com.google.firebase:firebase-crashlytics")
     implementation("com.google.firebase:firebase-analytics")
 

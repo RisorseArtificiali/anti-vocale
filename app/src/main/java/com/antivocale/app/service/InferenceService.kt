@@ -1,8 +1,8 @@
 package com.antivocale.app.service
 
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
+import com.antivocale.app.util.AppNotificationChannel
 import android.app.Service
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -52,8 +52,8 @@ class InferenceService : Service(), TranscriptionListener {
 
     companion object {
         const val TAG = "InferenceService"
-        const val CHANNEL_ID = "inference_channel"
-        const val RESULT_CHANNEL_ID = "transcription_result_channel"
+        val CHANNEL_ID = AppNotificationChannel.INFERENCE.id
+        val RESULT_CHANNEL_ID = AppNotificationChannel.TRANSCRIPTION_RESULT.id
         const val NOTIFICATION_ID = 1001
         const val RESULT_NOTIFICATION_ID = 1002
 
@@ -333,27 +333,11 @@ class InferenceService : Service(), TranscriptionListener {
     // ---- Notifications ----
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(R.string.notification_channel_inference),
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = getString(R.string.notification_channel_inference_description)
-            setShowBadge(false)
-        }
-        notificationManager.createNotificationChannel(channel)
+        AppNotificationChannel.INFERENCE.create(this)
     }
 
     private fun createResultNotificationChannel() {
-        val channel = NotificationChannel(
-            RESULT_CHANNEL_ID,
-            getString(R.string.notification_channel_result),
-            NotificationManager.IMPORTANCE_HIGH
-        ).apply {
-            description = getString(R.string.notification_channel_result_description)
-            setShowBadge(true)
-        }
-        notificationManager.createNotificationChannel(channel)
+        AppNotificationChannel.TRANSCRIPTION_RESULT.create(this)
     }
 
     private fun createNotification(

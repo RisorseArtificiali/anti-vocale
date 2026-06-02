@@ -168,7 +168,7 @@ class SherpaOnnxModelDownloader<V>(
                             Log.i(config.tag, "Downloading: $fileName")
 
                             val downloadConfig = DownloadConfig(
-                                url = hfFileUrl(modelDirName, fileName),
+                                url = hfFileUrl(config.hfRepoNames[variant] ?: "pantinor/$modelDirName", fileName),
                                 tempFile = targetFile,
                                 targetFile = targetFile,
                                 estimatedSizeBytes = 0L,
@@ -289,8 +289,8 @@ class SherpaOnnxModelDownloader<V>(
     companion object {
         private const val HF_BASE_URL = "https://huggingface.co"
 
-        private fun hfFileUrl(repoName: String, fileName: String): String =
-            "$HF_BASE_URL/pantinor/$repoName/resolve/main/$fileName"
+        private fun hfFileUrl(fullRepoPath: String, fileName: String): String =
+            "$HF_BASE_URL/$fullRepoPath/resolve/main/$fileName"
     }
 }
 
@@ -315,5 +315,7 @@ data class SherpaOnnxModelConfig<V>(
     val modelStorageDir: (Context) -> File,
     val isValidModel: (File) -> Boolean,
     val ensureParentDirs: Boolean = false,
-    val expectedSha256: Map<V, Map<String, String>> = emptyMap()
+    val expectedSha256: Map<V, Map<String, String>> = emptyMap(),
+    /** Full "owner/repo" overrides for variants that don't live under the default "pantinor/" namespace. */
+    val hfRepoNames: Map<V, String> = emptyMap()
 )

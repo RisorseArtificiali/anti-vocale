@@ -207,6 +207,15 @@
             </intent-filter>
         </activity-alias>
 
+        <!-- Transparent trampoline for Tasker: brings app to foreground so InferenceService
+             can be started legally on Android 12+. Finishes immediately, never visible. -->
+        <activity
+            android:name=".receiver.TaskerTrampolineActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- Debug-only activity for automated benchmarking (exported for adb am start) -->
         <activity
             android:name=".receiver.BenchmarkActivity"
@@ -233,6 +242,15 @@
             android:name=".receiver.ChooserBroadcastReceiver"
             android:enabled="true"
             android:exported="false" />
+
+        <!-- Prevent Firebase ComponentDiscoveryService from being started as a foreground service.
+             It's only needed for meta-data component discovery at build time, not at runtime.
+             Without this, Android can crash the app with ForegroundServiceDidNotStartInTimeException. -->
+        <service
+            android:name="com.google.firebase.components.ComponentDiscoveryService"
+            android:enabled="false"
+            android:exported="false"
+            tools:node="replace" />
 
         <!-- Foreground service for inference processing -->
         <service

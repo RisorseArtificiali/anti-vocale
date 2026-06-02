@@ -36,6 +36,7 @@ interface PreferencesManager {
     suspend fun clearWhisperModelPath()
     suspend fun saveQwen3AsrModelPath(path: String)
     suspend fun clearQwen3AsrModelPath()
+
     suspend fun saveGgufModelPath(path: String)
     suspend fun clearGgufModelPath()
     suspend fun saveAutoCopyEnabled(enabled: Boolean)

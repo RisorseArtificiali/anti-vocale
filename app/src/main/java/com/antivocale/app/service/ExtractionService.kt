@@ -1,8 +1,8 @@
 package com.antivocale.app.service
 
 import android.app.Notification
-import android.app.NotificationChannel
 import android.app.NotificationManager
+import com.antivocale.app.util.AppNotificationChannel
 import android.app.Service
 import android.content.Intent
 import android.os.IBinder
@@ -47,7 +47,7 @@ class ExtractionService : Service() {
 
     companion object {
         const val TAG = "ExtractionService"
-        const val CHANNEL_ID = "extraction_channel"
+        val CHANNEL_ID = AppNotificationChannel.EXTRACTION.id
         private const val NOTIFICATION_ID_BASE = 2001
         private const val NOTIFICATION_ID_RANGE = 100
 
@@ -371,16 +371,7 @@ class ExtractionService : Service() {
     }
 
     private fun createNotificationChannel() {
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(R.string.notification_channel_extraction),
-            NotificationManager.IMPORTANCE_LOW
-        ).apply {
-            description = getString(R.string.notification_channel_extraction_description)
-            setShowBadge(false)
-        }
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.createNotificationChannel(channel)
+        AppNotificationChannel.EXTRACTION.create(this)
     }
 
     private fun createNotification(

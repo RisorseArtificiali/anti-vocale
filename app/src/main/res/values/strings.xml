@@ -426,6 +426,11 @@
     <string name="notification_no_model_message">Open the app to download a transcription model</string>
     <string name="notification_no_model_action">Open app</string>
 
+    <!-- Tasker fallback notification -->
+    <string name="notification_channel_tasker_fallback">Tasker Automation</string>
+    <string name="notification_channel_tasker_fallback_description">Tap to start transcription when triggered from the background</string>
+    <string name="tasker_fallback_notification_text">Tap to start transcription</string>
+
     <!-- Dismiss -->
     <string name="dismiss">Dismiss</string>
 
