@@ -11,8 +11,9 @@ import java.io.File
  * Nemotron models are stored in app-specific storage and contain:
  * - encoder.onnx
  * - encoder.onnx.data
- * - decoder_joint.onnx
- * - tokenizer.model
+ * - decoder.onnx
+ * - joiner.onnx
+ * - tokens.txt
  */
 object NemotronModelManager {
 
@@ -70,54 +71,55 @@ object NemotronModelManager {
     fun validateModelDirectory(modelDir: File): NemotronModel? {
         if (!modelDir.isDirectory) return null
 
-        // Check all required files exist (ONNX files verified via .size sidecar)
-        val missingFiles = REQUIRED_FILES.filter { requiredFile ->
+        // Single pass: validate completeness and accumulate size
+        var totalSize = 0L
+        for (requiredFile in REQUIRED_FILES) {
             val file = File(modelDir, requiredFile)
-            if (file.name.endsWith(".onnx") || file.name.endsWith(".onnx.data"))
-                !ResumeDownloadHelper.isFileComplete(file)
-            else !file.exists()
-        }
-
-        if (missingFiles.isNotEmpty()) {
-            Log.d(TAG, "Model directory ${modelDir.name} missing files: ${missingFiles.joinToString()}")
-            return null
-        }
-
-        // Calculate total model size
-        val totalSize = REQUIRED_FILES.sumOf { requiredFile ->
-            File(modelDir, requiredFile).length()
+            val complete = if (requiresSidecarCheck(file.name))
+                ResumeDownloadHelper.isFileComplete(file)
+            else file.exists()
+            if (!complete) {
+                Log.d(TAG, "Model directory ${modelDir.name} missing/incomplete: $requiredFile")
+                return null
+            }
+            totalSize += file.length()
         }
 
         return NemotronModel(
             name = modelDir.name,
             path = modelDir.absolutePath,
-            sizeBytes = totalSize,
-            isValid = true
+            sizeBytes = totalSize
         )
     }
 
     /**
      * Checks if a valid Nemotron model exists at the given path.
      */
-    fun isValidModelPath(path: String): Boolean {
-        val dir = File(path)
-        if (!dir.exists() || !dir.isDirectory) return false
+    fun isValidModelPath(path: String): Boolean =
+        isValidModelDir(File(path))
 
+    /**
+     * Gets model info for display purposes.
+     */
+    fun getModelInfo(modelPath: String): NemotronModel? =
+        validateModelDirectory(File(modelPath))
+
+    /**
+     * Checks whether a directory contains all required model files.
+     */
+    private fun isValidModelDir(dir: File): Boolean {
+        if (!dir.exists() || !dir.isDirectory) return false
         return REQUIRED_FILES.all { requiredFile ->
             val file = File(dir, requiredFile)
-            if (file.name.endsWith(".onnx") || file.name.endsWith(".onnx.data"))
+            if (requiresSidecarCheck(file.name))
                 ResumeDownloadHelper.isFileComplete(file)
             else file.exists()
         }
     }
 
-    /**
-     * Gets model info for display purposes.
-     */
-    fun getModelInfo(context: Context, modelPath: String): NemotronModel? {
-        val dir = File(modelPath)
-        return validateModelDirectory(dir)
-    }
+    /** ONNX files are downloaded via resumable HTTP and verified via .size sidecar. */
+    private fun requiresSidecarCheck(fileName: String): Boolean =
+        fileName.endsWith(".onnx") || fileName.endsWith(".onnx.data")
 
     /**
      * Deletes a model directory and all its contents.
@@ -150,8 +152,7 @@ object NemotronModelManager {
 data class NemotronModel(
     val name: String,
     val path: String,
-    val sizeBytes: Long,
-    val isValid: Boolean
+    val sizeBytes: Long
 ) {
     val sizeFormatted: String
         get() = com.antivocale.app.util.formatFileSize(sizeBytes)
