@@ -21,12 +21,13 @@ object NemotronModelManager {
     // Model directory name in app storage
     const val NEMOTRON_MODEL_DIR = "nemotron"
 
-    // Required model files for Nemotron streaming model
+    // Required model files for Nemotron streaming model (sherpa-onnx format)
     val REQUIRED_FILES = listOf(
         "encoder.onnx",
         "encoder.onnx.data",
-        "decoder_joint.onnx",
-        "tokenizer.model"
+        "decoder.onnx",
+        "joiner.onnx",
+        "tokens.txt"
     )
 
     /**

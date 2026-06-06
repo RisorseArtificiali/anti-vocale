@@ -16,13 +16,13 @@ import java.io.File
  */
 object NemotronDownloader {
 
-    private const val MODEL_DIR_NAME = "nemotron-3.5-asr-streaming-0.6b"
-    private const val ESTIMATED_SIZE_MB = 2474L  // ~2.4 GB total
+    private const val MODEL_DIR_NAME = "nemotron-3.5-asr-streaming-0.6b-sherpa"
+    private const val ESTIMATED_SIZE_MB = 2593L  // ~2.5 GB total (sherpa-onnx format)
 
     private val config = SherpaOnnxModelConfig(
         tag = "NemotronDownloader",
         modelDirNames = mapOf(Unit to MODEL_DIR_NAME),
-        hfRepoNames = mapOf(Unit to "pantinor/nemotron-3.5-asr-streaming-0.6b-onnx"),
+        hfRepoNames = mapOf(Unit to "pantinor/nemotron-3.5-asr-streaming-0.6b-sherpa"),
         hfFileNames = mapOf(
             Unit to NemotronModelManager.REQUIRED_FILES
         ),
