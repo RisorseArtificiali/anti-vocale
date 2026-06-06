@@ -95,10 +95,10 @@
 
     <!-- Parakeet model -->
     <string name="parakeet_title">Parakeet TDT</string>
-    <string name="parakeet_description">~464MB • 25 languages • Fast • Recommended</string>
+    <string name="parakeet_description">~862MB • 25 languages • Fast • Recommended</string>
     <string name="parakeet_download">Download Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Download Parakeet TDT?</string>
-    <string name="parakeet_download_confirm_message">This will download ~464MB. Parakeet is faster but less accurate than Gemma for transcription.</string>
+    <string name="parakeet_download_confirm_message">This will download ~862MB. Parakeet is faster but less accurate than Gemma for transcription.</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>
@@ -465,7 +465,7 @@
     <string name="speed_comparison_distil_it_quality">Best (Italian)</string>
     <string name="speed_comparison_distil_it_note">Best Italian</string>
     <string name="speed_comparison_parakeet_name">Parakeet TDT</string>
-    <string name="speed_comparison_parakeet_size">~464MB</string>
+    <string name="speed_comparison_parakeet_size">~862MB</string>
     <string name="speed_comparison_parakeet_speed">~17x</string>
     <string name="speed_comparison_parakeet_quality">Very Good</string>
     <string name="speed_comparison_parakeet_note">Recommended</string>

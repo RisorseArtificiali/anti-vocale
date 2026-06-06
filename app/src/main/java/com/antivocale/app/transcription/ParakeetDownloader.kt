@@ -16,12 +16,13 @@ import java.io.File
  */
 object ParakeetDownloader {
 
-    private const val MODEL_DIR_NAME = "parakeet-tdt-0.6b-v3-int8"
-    private const val ESTIMATED_SIZE_MB = 464L
+    private const val MODEL_DIR_NAME = "parakeet-tdt-0.6b-v3-smoothquant"
+    private const val ESTIMATED_SIZE_MB = 862L
 
     private val config = SherpaOnnxModelConfig(
         tag = "ParakeetDownloader",
         modelDirNames = mapOf(Unit to MODEL_DIR_NAME),
+        hfRepoNames = mapOf(Unit to "pantinor/parakeet-tdt-0.6b-v3-smoothquant"),
         hfFileNames = mapOf(
             Unit to ParakeetModelManager.REQUIRED_FILES
         ),

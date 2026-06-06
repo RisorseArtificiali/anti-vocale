@@ -18,7 +18,7 @@ import javax.inject.Singleton
  * Key features:
  * - Uses ONNX Runtime (separate from LiteRT-LM's TFLite)
  * - Supports 25 European languages with automatic detection (Parakeet TDT)
- * - ~464MB model size vs ~3.3GB for Gemma 3n
+ * - ~862MB model size vs ~3.3GB for Gemma 3n
  * - 2.4-2.8x faster transcription
  *
  * Decoding: Uses greedy_search instead of modified_beam_search because

@@ -95,10 +95,10 @@
 
     <!-- Parakeet model -->
     <string name="parakeet_title">Parakeet TDT</string>
-    <string name="parakeet_description">~464MB • 25 lingue • Veloce • Consigliato</string>
+    <string name="parakeet_description">~862MB • 25 lingue • Veloce • Consigliato</string>
     <string name="parakeet_download">Scarica Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Scaricare Parakeet TDT?</string>
-    <string name="parakeet_download_confirm_message">Verranno scaricati ~464MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
+    <string name="parakeet_download_confirm_message">Verranno scaricati ~862MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>
@@ -449,7 +449,7 @@
     <string name="speed_comparison_distil_it_quality">Migliore (Italiano)</string>
     <string name="speed_comparison_distil_it_note">Miglior Italiano</string>
     <string name="speed_comparison_parakeet_name">Parakeet TDT</string>
-    <string name="speed_comparison_parakeet_size">~464MB</string>
+    <string name="speed_comparison_parakeet_size">~862MB</string>
     <string name="speed_comparison_parakeet_speed">~17x</string>
     <string name="speed_comparison_parakeet_quality">Molto Buona</string>
     <string name="speed_comparison_parakeet_note">Consigliato</string>
