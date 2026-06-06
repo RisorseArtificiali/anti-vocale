@@ -220,7 +220,6 @@ object WhisperModelManager {
             path = modelDir.absolutePath,
             sizeBytes = totalSize,
             variant = variant,
-            isValid = true,
             encoderPath = encoderFile?.absolutePath,
             decoderPath = decoderFile?.absolutePath,
             tokensPath = tokensFile.absolutePath
@@ -304,7 +303,6 @@ data class WhisperModel(
     val path: String,
     val sizeBytes: Long,
     val variant: WhisperModelManager.Variant?,
-    val isValid: Boolean,
     // Resolved file paths (populated when validated from directory)
     val encoderPath: String? = null,
     val decoderPath: String? = null,

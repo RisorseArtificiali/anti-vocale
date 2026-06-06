@@ -83,7 +83,6 @@ object Qwen3AsrModelManager {
             path = modelDir.absolutePath,
             sizeBytes = totalSize,
             variant = variant,
-            isValid = true,
             convFrontendPath = convFrontendFile.absolutePath,
             encoderPath = encoderFile.absolutePath,
             decoderPath = decoderFile.absolutePath,
@@ -124,7 +123,6 @@ data class Qwen3AsrModel(
     val path: String,
     val sizeBytes: Long,
     val variant: Qwen3AsrModelManager.Variant?,
-    val isValid: Boolean,
     /** Resolved file paths — always non-null when created via validateModelDirectory(). */
     val convFrontendPath: String = "",
     val encoderPath: String = "",

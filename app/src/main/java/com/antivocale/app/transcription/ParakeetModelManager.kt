@@ -89,8 +89,7 @@ object ParakeetModelManager {
         return ParakeetModel(
             name = modelDir.name,
             path = modelDir.absolutePath,
-            sizeBytes = totalSize,
-            isValid = true
+            sizeBytes = totalSize
         )
     }
 
@@ -147,8 +146,7 @@ object ParakeetModelManager {
 data class ParakeetModel(
     val name: String,
     val path: String,
-    val sizeBytes: Long,
-    val isValid: Boolean
+    val sizeBytes: Long
 ) {
     val sizeFormatted: String
         get() = com.antivocale.app.util.formatFileSize(sizeBytes)
