@@ -115,7 +115,13 @@ class TranscriptionOrchestrator @Inject constructor(
 
             result.fold(
                 onSuccess = { transcriptionResult ->
-                    logSuccess(taskId, transcriptionResult.text, duration)
+                    logSuccess(
+                        taskId,
+                        transcriptionResult.text,
+                        duration,
+                        transcriptionResult.isPartial,
+                        transcriptionResult.failedChunkCount
+                    )
                     listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
                         confidence = transcriptionResult.confidence,
                         detectedLanguage = transcriptionResult.detectedLanguage,
@@ -178,6 +184,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 SherpaOnnxBackend.BACKEND_ID -> loadSherpaOnnxBackend(context)
                 WhisperBackend.BACKEND_ID -> loadWhisperBackend(context)
                 Qwen3AsrBackend.BACKEND_ID -> loadQwen3AsrBackend(context)
+                OmnilingualAsrBackend.BACKEND_ID -> loadOmnilingualAsrBackend(context)
                 "gemma4_gguf" -> loadGgufBackend(context)
                 else -> loadLlmBackend(context)
             }
@@ -259,6 +266,13 @@ class TranscriptionOrchestrator @Inject constructor(
         backendId = Qwen3AsrBackend.BACKEND_ID,
         modelPathFlow = preferencesManager.qwen3AsrModelPath,
         label = "Qwen3-ASR",
+        context = context
+    )
+
+    private suspend fun loadOmnilingualAsrBackend(context: Context) = loadSherpaOnnxModel(
+        backendId = OmnilingualAsrBackend.BACKEND_ID,
+        modelPathFlow = preferencesManager.omnilingualAsrModelPath,
+        label = "Omnilingual ASR",
         context = context
     )
 
@@ -961,10 +975,17 @@ class TranscriptionOrchestrator @Inject constructor(
         )
     }
 
-    private suspend fun logSuccess(taskId: String, result: String, durationMs: Long) {
+    private suspend fun logSuccess(
+        taskId: String,
+        result: String,
+        durationMs: Long,
+        isPartial: Boolean = false,
+        failedChunkCount: Int = 0
+    ) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
-            status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs
+            status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs,
+            isPartial = isPartial, failedChunkCount = failedChunkCount
         ).toEntity())
         preferencesManager.clearPartialTranscriptionState()
         lastPartialSaveMs = 0L
@@ -1028,6 +1049,7 @@ class TranscriptionOrchestrator @Inject constructor(
         when (backendId) {
             WhisperBackend.BACKEND_ID -> preferencesManager.whisperModelPath.first()
             Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first()
+            OmnilingualAsrBackend.BACKEND_ID -> preferencesManager.omnilingualAsrModelPath.first()
             SherpaOnnxBackend.BACKEND_ID -> preferencesManager.parakeetModelPath.first()
             "gemma4_gguf" -> preferencesManager.ggufModelPath.first()
             else -> preferencesManager.modelPath.first()
@@ -1047,6 +1069,15 @@ class TranscriptionOrchestrator @Inject constructor(
                     .replace("-int8", "")
                     .replace("-", " ")
                     .replaceFirstChar { it.uppercase() }
+            }
+            OmnilingualAsrBackend.BACKEND_ID -> {
+                dirName.removePrefix("sherpa-onnx-omnilingual-asr-1600-languages-")
+                    .replace("-int8", "")
+                    .replace("-ctc-v2", "")
+                    .replace("-2026-02-05", "")
+                    .replace("-", " ")
+                    .replaceFirstChar { it.uppercase() }
+                    .ifBlank { fallbackName ?: "Omnilingual ASR" }
             }
             else -> fallbackName ?: backendId
         }

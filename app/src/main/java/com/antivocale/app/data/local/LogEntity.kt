@@ -21,7 +21,11 @@ data class LogEntity(
     val durationMs: Long = 0,
     val filePath: String? = null,
     val audioDurationSeconds: Double = 0.0,
-    val sourcePackageName: String? = null
+    val sourcePackageName: String? = null,
+    /** True when transcription completed but one or more audio chunks were skipped (e.g. low-RAM OOM). */
+    val isPartial: Boolean = false,
+    /** Number of audio chunks that failed (only meaningful when isPartial == true). */
+    val failedChunkCount: Int = 0
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -36,7 +40,9 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     durationMs = durationMs,
     filePath = filePath,
     audioDurationSeconds = audioDurationSeconds,
-    sourcePackageName = sourcePackageName
+    sourcePackageName = sourcePackageName,
+    isPartial = isPartial,
+    failedChunkCount = failedChunkCount
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -51,5 +57,7 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     durationMs = durationMs,
     filePath = filePath,
     audioDurationSeconds = audioDurationSeconds,
-    sourcePackageName = sourcePackageName
+    sourcePackageName = sourcePackageName,
+    isPartial = isPartial,
+    failedChunkCount = failedChunkCount
 )

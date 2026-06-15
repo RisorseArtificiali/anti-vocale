@@ -620,6 +620,38 @@ internal fun indexOfTaskIdInGroups(groups: List<LogGroup>, taskId: String): Int 
     return -1
 }
 
+/**
+ * Inline warning shown in the expanded view when a transcription completed but one or
+ * more audio chunks were skipped (e.g. low-RAM OOM). Mirrors the "transcription
+ * interrupted" banner language: errorContainer surface + Warning icon.
+ */
+@Composable
+private fun PartialTranscriptionBanner(failedChunkCount: Int) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = MaterialTheme.shapes.small
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.Warning,
+                contentDescription = null,
+                modifier = Modifier.size(16.dp),
+                tint = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.transcription_partial, failedChunkCount),
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogEntryItem(
@@ -673,17 +705,23 @@ fun LogEntryItem(
                 // Right: Status icon + Relative time
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = when (log.status) {
-                            LogEntry.Status.SUCCESS -> Icons.Default.CheckCircle
-                            LogEntry.Status.ERROR -> Icons.Default.Error
-                            LogEntry.Status.PENDING -> Icons.Default.HourglassEmpty
+                        imageVector = when {
+                            log.status == LogEntry.Status.SUCCESS && log.isPartial -> Icons.Default.Warning
+                            log.status == LogEntry.Status.SUCCESS -> Icons.Default.CheckCircle
+                            log.status == LogEntry.Status.ERROR -> Icons.Default.Error
+                            log.status == LogEntry.Status.PENDING -> Icons.Default.HourglassEmpty
+                            else -> Icons.Default.CheckCircle
                         },
-                        contentDescription = null,
+                        contentDescription = if (log.status == LogEntry.Status.SUCCESS && log.isPartial) {
+                            stringResource(R.string.transcription_partial_chip)
+                        } else null,
                         modifier = Modifier.size(14.dp),
-                        tint = when (log.status) {
-                            LogEntry.Status.SUCCESS -> MaterialTheme.colorScheme.primary
-                            LogEntry.Status.ERROR -> MaterialTheme.colorScheme.error
-                            LogEntry.Status.PENDING -> MaterialTheme.colorScheme.secondary
+                        tint = when {
+                            log.status == LogEntry.Status.SUCCESS && log.isPartial -> MaterialTheme.colorScheme.error
+                            log.status == LogEntry.Status.SUCCESS -> MaterialTheme.colorScheme.primary
+                            log.status == LogEntry.Status.ERROR -> MaterialTheme.colorScheme.error
+                            log.status == LogEntry.Status.PENDING -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.primary
                         }
                     )
                     Spacer(modifier = Modifier.width(4.dp))
@@ -751,6 +789,10 @@ fun LogEntryItem(
                 // Full transcription result
                 when (log.status) {
                     LogEntry.Status.SUCCESS -> {
+                        if (log.isPartial) {
+                            PartialTranscriptionBanner(failedChunkCount = log.failedChunkCount)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
                         Text(
                             text = stringResource(R.string.logs_result_label),
                             style = MaterialTheme.typography.labelSmall,

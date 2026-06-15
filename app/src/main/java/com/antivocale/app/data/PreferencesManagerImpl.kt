@@ -32,6 +32,7 @@ class PreferencesManagerImpl(
         private val PARAKEET_MODEL_PATH = stringPreferencesKey("parakeet_model_path")
         private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
         private val QWEN3_ASR_MODEL_PATH = stringPreferencesKey("qwen3_asr_model_path")
+        private val OMNILINGUAL_ASR_MODEL_PATH = stringPreferencesKey("omnilingual_asr_model_path")
         private val GGUF_MODEL_PATH = stringPreferencesKey("gguf_model_path")
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
@@ -60,6 +61,7 @@ class PreferencesManagerImpl(
         val parakeetModelPath: String? = null,
         val whisperModelPath: String? = null,
         val qwen3AsrModelPath: String? = null,
+        val omnilingualAsrModelPath: String? = null,
         val ggufModelPath: String? = null,
         val autoCopyEnabled: Boolean = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         val vadEnabled: Boolean = PreferencesManager.DEFAULT_VAD_ENABLED,
@@ -85,6 +87,7 @@ class PreferencesManagerImpl(
         parakeetModelPath = this[PARAKEET_MODEL_PATH],
         whisperModelPath = this[WHISPER_MODEL_PATH],
         qwen3AsrModelPath = this[QWEN3_ASR_MODEL_PATH],
+        omnilingualAsrModelPath = this[OMNILINGUAL_ASR_MODEL_PATH],
         ggufModelPath = this[GGUF_MODEL_PATH],
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         vadEnabled = this[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED,
@@ -210,6 +213,23 @@ class PreferencesManagerImpl(
             preferences.remove(QWEN3_ASR_MODEL_PATH)
         }
         cache.updateAndGet { it.copy(qwen3AsrModelPath = null) }
+    }
+
+    override val omnilingualAsrModelPath: Flow<String?> = context.dataStore.data.map { it[OMNILINGUAL_ASR_MODEL_PATH] }
+        .onStart { emit(cache.get().omnilingualAsrModelPath) }
+
+    override suspend fun saveOmnilingualAsrModelPath(path: String) {
+        context.dataStore.edit { preferences ->
+            preferences[OMNILINGUAL_ASR_MODEL_PATH] = path
+        }
+        cache.updateAndGet { it.copy(omnilingualAsrModelPath = path) }
+    }
+
+    override suspend fun clearOmnilingualAsrModelPath() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(OMNILINGUAL_ASR_MODEL_PATH)
+        }
+        cache.updateAndGet { it.copy(omnilingualAsrModelPath = null) }
     }
 
     override val ggufModelPath: Flow<String?> = context.dataStore.data.map { it[GGUF_MODEL_PATH] }

@@ -17,6 +17,7 @@ import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
+import com.antivocale.app.transcription.OmnilingualAsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.WhisperBackend
@@ -44,7 +45,9 @@ data class LogEntry(
     val durationMs: Long = 0,
     val filePath: String? = null,
     val audioDurationSeconds: Double = 0.0,
-    val sourcePackageName: String? = null
+    val sourcePackageName: String? = null,
+    val isPartial: Boolean = false,
+    val failedChunkCount: Int = 0
 ) {
     enum class Type { TEXT, AUDIO }
     enum class Status { PENDING, SUCCESS, ERROR }
@@ -142,12 +145,20 @@ class LogsViewModel @Inject constructor(
         )
     }
 
-    fun logSuccess(taskId: String, result: String, durationMs: Long) {
+    fun logSuccess(
+        taskId: String,
+        result: String,
+        durationMs: Long,
+        isPartial: Boolean = false,
+        failedChunkCount: Int = 0
+    ) {
         updateLog(taskId) { log ->
             log.copy(
                 status = LogEntry.Status.SUCCESS,
                 result = result,
-                durationMs = durationMs
+                durationMs = durationMs,
+                isPartial = isPartial,
+                failedChunkCount = failedChunkCount
             )
         }
     }
@@ -255,6 +266,7 @@ class LogsViewModel @Inject constructor(
             WhisperBackend.BACKEND_ID to preferencesManager.whisperModelPath.first(),
             SherpaOnnxBackend.BACKEND_ID to preferencesManager.parakeetModelPath.first(),
             Qwen3AsrBackend.BACKEND_ID to preferencesManager.qwen3AsrModelPath.first(),
+            OmnilingualAsrBackend.BACKEND_ID to preferencesManager.omnilingualAsrModelPath.first(),
             LlmTranscriptionBackend.BACKEND_ID to preferencesManager.modelPath.first()
         )
 

@@ -129,6 +129,17 @@
     <string name="qwen3_asr_downloaded">%1$s scaricato</string>
     <string name="qwen3_asr_deleted">%1$s eliminato</string>
 
+    <string name="omnilingual_asr_title">Omnilingual ASR (1600+ lingue)</string>
+    <string name="omnilingual_asr_description">1600+ lingue • Qualità inferiore (CTC, senza punteggiatura)</string>
+    <string name="omnilingual_asr_300m_title">Omnilingual ASR 300M</string>
+    <string name="omnilingual_asr_300m_description">~235MB • 1600+ lingue • Qualità inferiore, senza punteggiatura/maiuscole</string>
+    <string name="omnilingual_asr_download_confirm_title">Scaricare %1$s?</string>
+    <string name="omnilingual_asr_download_confirm_message">Verranno scaricati ~%1$dMB. Omnilingual ASR copre 1600+ lingue ma con qualità inferiore (senza punteggiatura o maiuscole). Ideale per lingue esotiche non coperte dagli altri modelli.</string>
+    <string name="omnilingual_asr_download">Scarica Omnilingual ASR</string>
+    <string name="omnilingual_asr_delete_message">Eliminare il modello Omnilingual ASR?</string>
+    <string name="omnilingual_asr_downloaded">%1$s scaricato</string>
+    <string name="omnilingual_asr_deleted">%1$s eliminato</string>
+
     <!-- Download status -->
     <string name="download_status_downloading">Download in corso…</string>
     <string name="download_status_extracting">Estrazione di %1$s…</string>
@@ -159,6 +170,8 @@
     <string name="copied_to_clipboard">Copiato negli appunti</string>
     <string name="audio_received_for_transcription">Audio ricevuto per la trascrizione</string>
     <string name="transcription_complete">Trascrizione completata</string>
+    <string name="transcription_partial">Trascrizione incompleta (%1$d frammenti non riusciti)</string>
+    <string name="transcription_partial_chip">Incompleta</string>
     <string name="transcription_failed">Trascrizione fallita</string>
     <string name="copy">Copia</string>
     <string name="share">Condividi</string>

@@ -25,6 +25,9 @@ import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.transcription.WhisperModelManager
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.Qwen3AsrModelManager
+import com.antivocale.app.transcription.OmnilingualAsrBackend
+import com.antivocale.app.transcription.OmnilingualAsrDownloader
+import com.antivocale.app.transcription.OmnilingualAsrModelManager
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -146,6 +149,21 @@ class ModelViewModel @Inject constructor(
     }
 
     /**
+     * Omnilingual ASR download UI state — uses per-variant maps for download tracking.
+     */
+    data class OmnilingualAsrUiState(
+        val selectedVariant: OmnilingualAsrModelManager.Variant? = null,
+        val downloadedVariants: Set<OmnilingualAsrModelManager.Variant> = emptySet(),
+        val variantDownloadStates: Map<OmnilingualAsrModelManager.Variant, VariantDownloadState> = emptyMap(),
+        val modelPath: String? = null,
+        val showDownloadDialog: Boolean = false,
+        val showDeleteDialog: Boolean = false,
+        val variantToDelete: OmnilingualAsrModelManager.Variant? = null
+    ) {
+        val isAnyDownloading: Boolean get() = variantDownloadStates.values.any { it.isDownloading }
+    }
+
+    /**
      * GGUF download UI state — uses String-based variant keys since GGUF classes are disabled.
      * GGUF: change String back to Gemma4GgufModelManager.GgufVariant when re-enabling
      */
@@ -190,6 +208,10 @@ class ModelViewModel @Inject constructor(
     private val _qwen3AsrState = MutableStateFlow(Qwen3AsrUiState())
     val qwen3AsrState: StateFlow<Qwen3AsrUiState> = _qwen3AsrState.asStateFlow()
 
+    // Omnilingual ASR state - must be declared before init block
+    private val _omnilingualAsrState = MutableStateFlow(OmnilingualAsrUiState())
+    val omnilingualAsrState: StateFlow<OmnilingualAsrUiState> = _omnilingualAsrState.asStateFlow()
+
     // GGUF state - must be declared before init block
     private val _ggufState = MutableStateFlow(GgufUiState())
     val ggufState: StateFlow<GgufUiState> = _ggufState.asStateFlow()
@@ -221,6 +243,7 @@ class ModelViewModel @Inject constructor(
                     ExtractionService.ModelType.PARAKEET -> handleServiceProgressParakeet(progress)
                     ExtractionService.ModelType.WHISPER -> handleServiceProgressWhisper(progress)
                     ExtractionService.ModelType.QWEN3_ASR -> handleServiceProgressQwen3Asr(progress)
+                    ExtractionService.ModelType.OMNILINGUAL_ASR -> handleServiceProgressOmnilingualAsr(progress)
                     // GGUF: disabled
                     ExtractionService.ModelType.GEMMA4_GGUF -> { /* no-op */ }
                     ExtractionService.ModelType.GEMMA -> handleServiceProgressGemma(progress)
@@ -239,6 +262,8 @@ class ModelViewModel @Inject constructor(
         refreshWhisperState()
         // Check for Qwen3-ASR model
         refreshQwen3AsrState()
+        // Check for Omnilingual ASR model
+        refreshOmnilingualAsrState()
         // GGUF: disabled — refreshGgufState() commented out
         // Detect partial downloads
         detectPartialDownloads()
@@ -427,6 +452,59 @@ class ModelViewModel @Inject constructor(
             onCancelled = {
                 if (variant != null) {
                     _qwen3AsrState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = null)
+                        })
+                    }
+                }
+                detectPartialDownloads()
+            }
+        )
+    }
+
+    private fun handleServiceProgressOmnilingualAsr(progress: ExtractionService.ExtractionProgress) {
+        val variant = OmnilingualAsrModelManager.Variant.entries
+            .find { it.name.lowercase() == progress.variant }
+
+        handleServiceProgress(
+            state = progress.downloadState,
+            updateFlow = { state, prog ->
+                if (variant != null) {
+                    _omnilingualAsrState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(downloadState = state, downloadProgress = prog ?: downloadProgress)
+                        })
+                    }
+                }
+            },
+            onError = { msg, _ ->
+                if (variant != null) {
+                    _omnilingualAsrState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = msg)
+                        })
+                    }
+                }
+                detectPartialDownloads()
+            },
+            onComplete = { file ->
+                _omnilingualAsrState.update {
+                    it.copy(
+                        modelPath = file.absolutePath,
+                        downloadedVariants = if (variant != null) it.downloadedVariants + variant else it.downloadedVariants,
+                        variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
+                    )
+                }
+                shareTargetManager.onModelDownloaded()
+                if (variant != null) {
+                    if (_uiState.value.modelName.isBlank()) useOmnilingualAsrModel(variant)
+                    val displayName = ctx.getString(variant.titleResId)
+                    viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.omnilingual_asr_downloaded, displayName))) }
+                }
+            },
+            onCancelled = {
+                if (variant != null) {
+                    _omnilingualAsrState.update {
                         it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
                             copy(isDownloading = false, errorMessage = null)
                         })
@@ -647,6 +725,24 @@ class ModelViewModel @Inject constructor(
                 }
             }
 
+            // Check Omnilingual ASR variants
+            val activeOmnilingualDownloads = _omnilingualAsrState.value.variantDownloadStates
+                .filter { it.value.isDownloading }.keys
+            val omnilingualPartials = mutableMapOf<OmnilingualAsrModelManager.Variant, DownloadState.PartiallyDownloaded>()
+            for (variant in OmnilingualAsrModelManager.Variant.entries) {
+                if (!OmnilingualAsrDownloader.isModelDownloaded(context, variant) && variant !in activeOmnilingualDownloads) {
+                    val partial = OmnilingualAsrDownloader.detectPartialDownload(context, variant)
+                    if (partial != null) {
+                        omnilingualPartials[variant] = partial
+                    }
+                }
+            }
+            if (omnilingualPartials.isNotEmpty()) {
+                _omnilingualAsrState.update {
+                    it.copy(variantDownloadStates = it.variantDownloadStates.mergePartials(omnilingualPartials))
+                }
+            }
+
             // GGUF: disabled — partial download detection skipped entirely
         }
     }
@@ -706,6 +802,23 @@ class ModelViewModel @Inject constructor(
                         } ?: qwen3Path.substringAfterLast("/")
                         _uiState.update { it.copy(
                             modelPath = qwen3Path,
+                            modelName = modelName,
+                            statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
+                        )}
+                    }
+                }
+                OmnilingualAsrBackend.BACKEND_ID -> {
+                    // Load Omnilingual ASR model path
+                    val omnilingualPath = preferencesManager.omnilingualAsrModelPath.first()
+                    if (!omnilingualPath.isNullOrBlank()) {
+                        val modelDir = File(omnilingualPath)
+                        val isValid = modelDir.exists() && modelDir.isDirectory
+                        val model = OmnilingualAsrModelManager.validateModelDirectory(modelDir)
+                        val modelName = model?.variant?.let { v ->
+                            ctx.getString(v.titleResId)
+                        } ?: omnilingualPath.substringAfterLast("/")
+                        _uiState.update { it.copy(
+                            modelPath = omnilingualPath,
                             modelName = modelName,
                             statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
                         )}
@@ -1625,6 +1738,146 @@ class ModelViewModel @Inject constructor(
                 }
                 val displayName = context.getString(variant.titleResId)
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.qwen3_asr_deleted, displayName)))
+            }
+        }
+    }
+
+    // ==================== Omnilingual ASR Model Download ====================
+
+    /**
+     * Refreshes the Omnilingual ASR model state.
+     */
+    fun refreshOmnilingualAsrState() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = ctx
+            val downloadedVariants = OmnilingualAsrModelManager.Variant.entries
+                .filter { OmnilingualAsrDownloader.isModelDownloaded(context, it) }
+                .toSet()
+            _omnilingualAsrState.update { it.copy(downloadedVariants = downloadedVariants) }
+        }
+    }
+
+    // ==================== Omnilingual ASR Confirmation Dialogs ====================
+
+    fun showOmnilingualAsrDownloadDialog(variant: OmnilingualAsrModelManager.Variant) {
+        _omnilingualAsrState.update { it.copy(showDownloadDialog = true, selectedVariant = variant) }
+    }
+
+    fun dismissOmnilingualAsrDownloadDialog() {
+        _omnilingualAsrState.update { it.copy(showDownloadDialog = false) }
+    }
+
+    fun confirmOmnilingualAsrDownload() {
+        val variant = _omnilingualAsrState.value.selectedVariant ?: return
+        startOmnilingualAsrDownload(variant)
+    }
+
+    fun showOmnilingualAsrDeleteDialog(variant: OmnilingualAsrModelManager.Variant) {
+        _omnilingualAsrState.update { it.copy(showDeleteDialog = true, variantToDelete = variant) }
+    }
+
+    fun dismissOmnilingualAsrDeleteDialog() {
+        _omnilingualAsrState.update { it.copy(showDeleteDialog = false, variantToDelete = null) }
+    }
+
+    fun confirmOmnilingualAsrDelete() {
+        val variant = _omnilingualAsrState.value.variantToDelete ?: return
+        _omnilingualAsrState.update { it.copy(showDeleteDialog = false) }
+        deleteOmnilingualAsrModel(variant)
+    }
+
+    // ==================== Omnilingual ASR Download Methods ====================
+
+    fun startOmnilingualAsrDownload(variant: OmnilingualAsrModelManager.Variant) {
+        _omnilingualAsrState.update {
+            it.copy(
+                showDownloadDialog = false,
+                selectedVariant = variant,
+                variantDownloadStates = it.variantDownloadStates + (variant to VariantDownloadState(
+                    downloadState = DownloadState.Connecting(""),
+                    downloadProgress = 0f,
+                    isDownloading = true,
+                    errorMessage = null,
+                    partialDownload = null
+                ))
+            )
+        }
+        val context = ctx
+        val intent = Intent(context, ExtractionService::class.java).apply {
+            putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.OMNILINGUAL_ASR.key)
+            putExtra(ExtractionService.EXTRA_VARIANT, variantKey(variant))
+        }
+        ContextCompat.startForegroundService(context, intent)
+    }
+
+    fun cancelOmnilingualAsrDownload(variant: OmnilingualAsrModelManager.Variant) = cancelVariantDownload(
+        variant,
+        cancelAction = { OmnilingualAsrDownloader.cancel(variant) },
+        detectPartial = { ctx, v -> OmnilingualAsrDownloader.detectPartialDownload(ctx, v) },
+        getCurrentStates = { _omnilingualAsrState.value.variantDownloadStates },
+        applyUpdatedStates = { states -> _omnilingualAsrState.update { it.copy(variantDownloadStates = states) } },
+        modelType = ExtractionService.ModelType.OMNILINGUAL_ASR,
+        variantKey = variantKey(variant)
+    )
+
+    fun resumeOmnilingualAsrDownload(variant: OmnilingualAsrModelManager.Variant) {
+        _omnilingualAsrState.update { it.copy(
+            variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                copy(partialDownload = null)
+            }
+        ) }
+        startOmnilingualAsrDownload(variant)
+    }
+
+    fun clearOmnilingualAsrPartialDownload(variant: OmnilingualAsrModelManager.Variant) {
+        viewModelScope.launch(Dispatchers.IO) {
+            OmnilingualAsrDownloader.clearPartialDownload(ctx, variant)
+            _omnilingualAsrState.update {
+                it.copy(variantDownloadStates = it.variantDownloadStates - variant)
+            }
+        }
+    }
+
+    fun useOmnilingualAsrModel(variant: OmnilingualAsrModelManager.Variant) {
+        viewModelScope.launch {
+            val context = ctx
+            val modelPath = OmnilingualAsrDownloader.getModelPath(context, variant)
+            if (modelPath != null) {
+                preferencesManager.saveOmnilingualAsrModelPath(modelPath)
+                preferencesManager.saveTranscriptionBackend(OmnilingualAsrBackend.BACKEND_ID)
+
+                val displayName = context.getString(variant.titleResId)
+                val message = context.getString(R.string.model_selected_message, displayName)
+                _uiState.update {
+                    it.copy(
+                        modelName = displayName,
+                        status = ModelStatus.UNLOADED,
+                        statusMessage = message
+                    )
+                }
+
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
+                llmManager.resetKeepAliveTimer()
+            }
+        }
+    }
+
+    fun deleteOmnilingualAsrModel(variant: OmnilingualAsrModelManager.Variant) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = ctx
+            val success = OmnilingualAsrDownloader.deleteModel(context, variant)
+            if (success) {
+                _omnilingualAsrState.update {
+                    it.copy(downloadedVariants = _omnilingualAsrState.value.downloadedVariants - variant)
+                }
+                val savedPath = preferencesManager.omnilingualAsrModelPath.first()
+                if (savedPath != null && savedPath.contains(OmnilingualAsrDownloader.getModelDirName(variant))) {
+                    preferencesManager.clearOmnilingualAsrModelPath()
+                    _uiState.update { it.copy(modelPath = "", modelName = "") }
+                    shareTargetManager.onModelDeleted(OmnilingualAsrBackend.BACKEND_ID)
+                }
+                val displayName = context.getString(variant.titleResId)
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.omnilingual_asr_deleted, displayName)))
             }
         }
     }

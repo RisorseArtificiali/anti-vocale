@@ -13,6 +13,7 @@ import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.transcription.ParakeetDownloader
+import com.antivocale.app.transcription.OmnilingualAsrDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.WhisperDownloader
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
@@ -75,6 +76,7 @@ class ExtractionService : Service() {
         PARAKEET("parakeet"),
         WHISPER("whisper"),
         QWEN3_ASR("qwen3-asr"),
+        OMNILINGUAL_ASR("omnilingual-asr"),
         GEMMA("gemma"),
         GEMMA4_GGUF("gemma4-gguf");
 
@@ -119,6 +121,10 @@ class ExtractionService : Service() {
             ModelType.QWEN3_ASR -> {
                 val qv = Qwen3Variant.fromString(variant)
                 qv?.let { getString(it.titleResId) } ?: "Qwen3-ASR"
+            }
+            ModelType.OMNILINGUAL_ASR -> {
+                val ov = OmnilingualVariant.fromString(variant)
+                ov?.let { getString(it.titleResId) } ?: "Omnilingual ASR"
             }
             ModelType.GEMMA -> GemmaVariant.fromString(variant).displayName
             // GGUF: disabled
@@ -253,6 +259,25 @@ class ExtractionService : Service() {
                         }
                     )
                 }
+                ModelType.OMNILINGUAL_ASR -> {
+                    val omnilingualVariant = OmnilingualVariant.fromString(variant)
+                        ?: run {
+                            _progressState.tryEmit(ExtractionProgress(
+                                ModelType.OMNILINGUAL_ASR, variant,
+                                DownloadState.Error("Unknown variant: $variant")
+                            ))
+                            return
+                        }
+                    OmnilingualAsrDownloader.downloadModel(
+                        context = applicationContext,
+                        variant = omnilingualVariant,
+                        onProgress = {},
+                        onStateChange = { state ->
+                            _progressState.tryEmit(ExtractionProgress(ModelType.OMNILINGUAL_ASR, variant, downloadState = state))
+                            updateNotificationFromState(key, state)
+                        }
+                    )
+                }
                 ModelType.GEMMA -> {
                     val gemmaVariant = GemmaVariant.fromString(variant)
                     ModelDownloader.downloadModel(
@@ -324,6 +349,13 @@ class ExtractionService : Service() {
                     Qwen3Variant.fromString(variant)?.let { Qwen3AsrDownloader.cancel(it) }
                 } else {
                     Qwen3AsrDownloader.cancel()
+                }
+            }
+            ModelType.OMNILINGUAL_ASR -> {
+                if (variant != null) {
+                    OmnilingualVariant.fromString(variant)?.let { OmnilingualAsrDownloader.cancel(it) }
+                } else {
+                    OmnilingualAsrDownloader.cancel()
                 }
             }
             ModelType.GEMMA -> {
@@ -494,6 +526,16 @@ class ExtractionService : Service() {
         fun fromString(name: String?): com.antivocale.app.transcription.Qwen3AsrModelManager.Variant? {
             return when (name) {
                 "qwen3_asr_0_6b" -> com.antivocale.app.transcription.Qwen3AsrModelManager.Variant.QWEN3_ASR_0_6B
+                else -> null
+            }
+        }
+    }
+
+    /** Resolves a string variant name to an Omnilingual ASR [OmnilingualAsrModelManager.Variant]. */
+    private object OmnilingualVariant {
+        fun fromString(name: String?): com.antivocale.app.transcription.OmnilingualAsrModelManager.Variant? {
+            return when (name) {
+                "omnilingual_asr_300m" -> com.antivocale.app.transcription.OmnilingualAsrModelManager.Variant.OMNILINGUAL_ASR_300M
                 else -> null
             }
         }
