@@ -113,7 +113,10 @@ class ExtractionService : Service() {
     /** Resolves a human-readable model name for the notification. */
     private fun resolveDisplayName(modelType: ModelType, variant: String?): String {
         return when (modelType) {
-            ModelType.PARAKEET -> getString(R.string.parakeet_title)
+            ModelType.PARAKEET -> {
+                val pv = ParakeetVariant.fromString(variant)
+                pv?.let { getString(it.titleResId) } ?: getString(R.string.parakeet_title)
+            }
             ModelType.WHISPER -> {
                 val wv = WhisperVariant.fromString(variant)
                 wv?.let { getString(it.titleResId) } ?: "Whisper"
@@ -212,11 +215,20 @@ class ExtractionService : Service() {
         try {
             when (modelType) {
                 ModelType.PARAKEET -> {
+                    val parakeetVariant = ParakeetVariant.fromString(variant)
+                        ?: run {
+                            _progressState.tryEmit(ExtractionProgress(
+                                ModelType.PARAKEET, variant,
+                                DownloadState.Error("Unknown variant: $variant")
+                            ))
+                            return
+                        }
                     ParakeetDownloader.downloadModel(
                         context = applicationContext,
+                        variant = parakeetVariant,
                         onProgress = {},
                         onStateChange = { state ->
-                            _progressState.tryEmit(ExtractionProgress(ModelType.PARAKEET, downloadState = state))
+                            _progressState.tryEmit(ExtractionProgress(ModelType.PARAKEET, variant, downloadState = state))
                             updateNotificationFromState(key, state)
                         }
                     )
@@ -336,7 +348,13 @@ class ExtractionService : Service() {
     /** Cancels the underlying downloader for a given model type and optional variant. */
     private fun cancelDownloaderFor(type: ModelType, variant: String? = null) {
         when (type) {
-            ModelType.PARAKEET -> ParakeetDownloader.cancel()
+            ModelType.PARAKEET -> {
+                if (variant != null) {
+                    ParakeetVariant.fromString(variant)?.let { ParakeetDownloader.cancel(it) }
+                } else {
+                    ParakeetDownloader.cancel()
+                }
+            }
             ModelType.WHISPER -> {
                 if (variant != null) {
                     WhisperVariant.fromString(variant)?.let { WhisperDownloader.cancel(it) }
@@ -526,6 +544,17 @@ class ExtractionService : Service() {
         fun fromString(name: String?): com.antivocale.app.transcription.Qwen3AsrModelManager.Variant? {
             return when (name) {
                 "qwen3_asr_0_6b" -> com.antivocale.app.transcription.Qwen3AsrModelManager.Variant.QWEN3_ASR_0_6B
+                else -> null
+            }
+        }
+    }
+
+    /** Resolves a string variant name to a Parakeet [ParakeetModelManager.Variant]. */
+    private object ParakeetVariant {
+        fun fromString(name: String?): com.antivocale.app.transcription.ParakeetModelManager.Variant? {
+            return when (name) {
+                "smoothquant" -> com.antivocale.app.transcription.ParakeetModelManager.Variant.SMOOTHQUANT
+                "stock_int8" -> com.antivocale.app.transcription.ParakeetModelManager.Variant.STOCK_INT8
                 else -> null
             }
         }

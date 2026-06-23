@@ -89,19 +89,24 @@ class ModelViewModel @Inject constructor(
     }
 
     /**
-     * Parakeet download UI state
+     * Parakeet download UI state — uses per-variant maps like Qwen3-ASR / Omnilingual ASR.
+     *
+     * Note: Parakeet has NO user-facing variant selector. The active model is auto-resolved
+     * at transcription time via [ParakeetModelManager.resolveActiveModelPath] (prefer
+     * SmoothQuant, fall back to Stock int8). Both variants are still independently
+     * downloadable / deletable from the UI.
      */
     data class ParakeetUiState(
-        val isDownloading: Boolean = false,
-        val downloadProgress: Float = 0f,
-        val downloadState: DownloadState = DownloadState.Idle,
+        val selectedVariant: ParakeetModelManager.Variant? = null,
+        val downloadedVariants: Set<ParakeetModelManager.Variant> = emptySet(),
+        val variantDownloadStates: Map<ParakeetModelManager.Variant, VariantDownloadState> = emptyMap(),
         val modelPath: String? = null,
-        val errorMessage: String? = null,
-        // Confirmation dialogs
         val showDownloadDialog: Boolean = false,
         val showDeleteDialog: Boolean = false,
-        val partialDownload: DownloadState.PartiallyDownloaded? = null
-    )
+        val variantToDelete: ParakeetModelManager.Variant? = null
+    ) {
+        val isAnyDownloading: Boolean get() = variantDownloadStates.values.any { it.isDownloading }
+    }
 
     /**
      * Per-variant download state — isolates progress, errors, and downloading
@@ -332,23 +337,57 @@ class ModelViewModel @Inject constructor(
     }
 
     private fun handleServiceProgressParakeet(progress: ExtractionService.ExtractionProgress) {
+        val variant = ParakeetModelManager.Variant.entries
+            .find { it.name.lowercase() == progress.variant }
+
         handleServiceProgress(
             state = progress.downloadState,
-            updateFlow = { state, prog -> _parakeetState.update { it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress) } },
+            updateFlow = { state, prog ->
+                if (variant != null) {
+                    _parakeetState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(downloadState = state, downloadProgress = prog ?: downloadProgress)
+                        })
+                    }
+                }
+            },
             onError = { msg, _ ->
-                _parakeetState.update { it.copy(isDownloading = false, errorMessage = msg) }
+                if (variant != null) {
+                    _parakeetState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = msg)
+                        })
+                    }
+                }
+                detectPartialDownloads()
             },
             onComplete = { file ->
-                _parakeetState.update { it.copy(isDownloading = false, modelPath = file.absolutePath, partialDownload = null) }
-                viewModelScope.launch {
-                    preferencesManager.saveParakeetModelPath(file.absolutePath)
-                    shareTargetManager.onModelDownloaded()
-                    if (_uiState.value.modelName.isBlank()) useParakeetModel()
+                _parakeetState.update {
+                    it.copy(
+                        modelPath = file.absolutePath,
+                        downloadedVariants = if (variant != null) it.downloadedVariants + variant else it.downloadedVariants,
+                        variantDownloadStates = it.variantDownloadStates.removeVariant(variant)
+                    )
                 }
-                viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.parakeet_downloaded))) }
+                shareTargetManager.onModelDownloaded()
+                if (variant != null) {
+                    // Persist the freshly downloaded variant as the saved preference; auto-fallback
+                    // will still prefer SmoothQuant at transcription time regardless of what's saved.
+                    viewModelScope.launch {
+                        preferencesManager.saveParakeetModelPath(file.absolutePath)
+                    }
+                    if (_uiState.value.modelName.isBlank()) useParakeetModel()
+                    viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.parakeet_downloaded))) }
+                }
             },
             onCancelled = {
-                _parakeetState.update { it.copy(isDownloading = false) }
+                if (variant != null) {
+                    _parakeetState.update {
+                        it.copy(variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                            copy(isDownloading = false, errorMessage = null)
+                        })
+                    }
+                }
                 detectPartialDownloads()
             }
         )
@@ -663,12 +702,21 @@ class ModelViewModel @Inject constructor(
                 }
             }
 
-            // Check Parakeet (skip if actively downloading — in-flight files
-            // would look like a partial download to the detector)
-            if (!_parakeetState.value.isDownloading && !ParakeetDownloader.isModelDownloaded(context)) {
-                val partial = ParakeetDownloader.detectPartialDownload(context)
+            // Check Parakeet variants
+            val activeParakeetDownloads = _parakeetState.value.variantDownloadStates
+                .filter { it.value.isDownloading }.keys
+            val parakeetPartials = mutableMapOf<ParakeetModelManager.Variant, DownloadState.PartiallyDownloaded>()
+            for (variant in ParakeetModelManager.Variant.entries) {
+                if (!ParakeetDownloader.isModelDownloaded(context, variant) && variant !in activeParakeetDownloads) {
+                    val partial = ParakeetDownloader.detectPartialDownload(context, variant)
+                    if (partial != null) {
+                        parakeetPartials[variant] = partial
+                    }
+                }
+            }
+            if (parakeetPartials.isNotEmpty()) {
                 _parakeetState.update {
-                    it.copy(partialDownload = partial)
+                    it.copy(variantDownloadStates = it.variantDownloadStates.mergePartials(parakeetPartials))
                 }
             }
 
@@ -1225,161 +1273,156 @@ class ModelViewModel @Inject constructor(
     // ==================== Parakeet Model Download ====================
 
     /**
-     * Refreshes the Parakeet model state.
+     * Refreshes the Parakeet model state. Discovers downloaded variants and resolves
+     * the auto-fallback active model path (prefer SmoothQuant, else Stock int8).
      */
     fun refreshParakeetState() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             val context = ctx
-            val isDownloaded = ParakeetDownloader.isModelDownloaded(context)
-            val modelPath = if (isDownloaded) ParakeetDownloader.getModelPath(context) else null
-
-            _parakeetState.update { it.copy(
-                modelPath = modelPath
-            )}
+            val downloadedVariants = ParakeetModelManager.Variant.entries
+                .filter { ParakeetDownloader.isModelDownloaded(context, it) }
+                .toSet()
+            val activePath = ParakeetModelManager.resolveActiveModelPath(context)
+            _parakeetState.update {
+                it.copy(
+                    downloadedVariants = downloadedVariants,
+                    modelPath = activePath
+                )
+            }
         }
     }
 
     // ==================== Parakeet Confirmation Dialogs ====================
 
-    /**
-     * Shows the Parakeet download confirmation dialog.
-     */
-    fun showParakeetDownloadDialog() {
-        _parakeetState.update { it.copy(showDownloadDialog = true) }
+    fun showParakeetDownloadDialog(variant: ParakeetModelManager.Variant) {
+        _parakeetState.update { it.copy(showDownloadDialog = true, selectedVariant = variant) }
     }
 
-    /**
-     * Dismisses the Parakeet download confirmation dialog.
-     */
     fun dismissParakeetDownloadDialog() {
         _parakeetState.update { it.copy(showDownloadDialog = false) }
     }
 
-    /**
-     * Confirms and starts the Parakeet download.
-     */
     fun confirmParakeetDownload() {
-        startParakeetDownload(dismissDialog = true)
+        val variant = _parakeetState.value.selectedVariant ?: return
+        startParakeetDownload(variant)
     }
 
-    /**
-     * Shows the Parakeet delete confirmation dialog.
-     */
-    fun showParakeetDeleteDialog() {
-        _parakeetState.update { it.copy(showDeleteDialog = true) }
+    fun showParakeetDeleteDialog(variant: ParakeetModelManager.Variant) {
+        _parakeetState.update { it.copy(showDeleteDialog = true, variantToDelete = variant) }
     }
 
-    /**
-     * Dismisses the Parakeet delete confirmation dialog.
-     */
     fun dismissParakeetDeleteDialog() {
-        _parakeetState.update { it.copy(showDeleteDialog = false) }
+        _parakeetState.update { it.copy(showDeleteDialog = false, variantToDelete = null) }
     }
 
-    /**
-     * Confirms and deletes the Parakeet model.
-     */
     fun confirmParakeetDelete() {
+        val variant = _parakeetState.value.variantToDelete ?: return
         _parakeetState.update { it.copy(showDeleteDialog = false) }
-        deleteParakeetModel()
+        deleteParakeetModel(variant)
     }
 
-    /**
-     * Starts downloading the Parakeet model via [ExtractionService].
-     */
-    fun startParakeetDownload(
-        dismissDialog: Boolean = false,
-        initialState: DownloadState = DownloadState.Connecting("")
-    ) {
-        _parakeetState.update { it.copy(
-            showDownloadDialog = if (dismissDialog) false else it.showDownloadDialog,
-            isDownloading = true,
-            downloadProgress = 0f,
-            downloadState = initialState,
-            errorMessage = null,
-            partialDownload = null
-        )}
+    // ==================== Parakeet Download Methods ====================
 
+    fun startParakeetDownload(variant: ParakeetModelManager.Variant) {
+        _parakeetState.update {
+            it.copy(
+                showDownloadDialog = false,
+                selectedVariant = variant,
+                variantDownloadStates = it.variantDownloadStates + (variant to VariantDownloadState(
+                    downloadState = DownloadState.Connecting(""),
+                    downloadProgress = 0f,
+                    isDownloading = true,
+                    errorMessage = null,
+                    partialDownload = null
+                ))
+            )
+        }
         val context = ctx
         val intent = Intent(context, ExtractionService::class.java).apply {
             putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.PARAKEET.key)
+            putExtra(ExtractionService.EXTRA_VARIANT, variantKey(variant))
         }
         ContextCompat.startForegroundService(context, intent)
     }
 
-    /**
-     * Resumes a partial Parakeet download.
-     */
-    fun resumeParakeetDownload() {
-        _parakeetState.update { it.copy(partialDownload = null) }
-        startParakeetDownload()
+    fun cancelParakeetDownload(variant: ParakeetModelManager.Variant) = cancelVariantDownload(
+        variant,
+        cancelAction = { ParakeetDownloader.cancel(variant) },
+        detectPartial = { ctx, v -> ParakeetDownloader.detectPartialDownload(ctx, v) },
+        getCurrentStates = { _parakeetState.value.variantDownloadStates },
+        applyUpdatedStates = { states -> _parakeetState.update { it.copy(variantDownloadStates = states) } },
+        modelType = ExtractionService.ModelType.PARAKEET,
+        variantKey = variantKey(variant)
+    )
+
+    fun resumeParakeetDownload(variant: ParakeetModelManager.Variant) {
+        _parakeetState.update { it.copy(
+            variantDownloadStates = it.variantDownloadStates.updateVariant(variant) {
+                copy(partialDownload = null)
+            }
+        ) }
+        startParakeetDownload(variant)
     }
 
-    /**
-     * Clears a partial Parakeet download (tar file only).
-     * The model directory is preserved — use [clearOrphanedParakeetFiles] to remove it.
-     */
-    fun clearParakeetPartialDownload() {
-        viewModelScope.launch {
-            ParakeetDownloader.clearPartialDownload(ctx)
-            _parakeetState.update { it.copy(
-                isDownloading = false,
-                downloadState = DownloadState.Idle,
-                downloadProgress = 0f,
-                partialDownload = null
-            )}
-            detectPartialDownloads()
+    fun clearParakeetPartialDownload(variant: ParakeetModelManager.Variant) {
+        viewModelScope.launch(Dispatchers.IO) {
+            ParakeetDownloader.clearPartialDownload(ctx, variant)
+            _parakeetState.update {
+                it.copy(variantDownloadStates = it.variantDownloadStates - variant)
+            }
         }
     }
 
     /**
-     * Cancels the Parakeet download.
-     */
-    fun cancelParakeetDownload() {
-        ParakeetDownloader.cancel()
-        _parakeetState.update { it.copy(
-            isDownloading = false,
-            downloadState = DownloadState.Cancelled("User cancelled"),
-            errorMessage = null
-        )}
-        stopExtractionService(ExtractionService.ModelType.PARAKEET)
-        detectPartialDownloads()
-    }
-
-    /**
      * Uses the Parakeet model (switches backend to sherpa-onnx).
+     *
+     * The active variant is auto-resolved via [ParakeetModelManager.resolveActiveModelPath]
+     * (prefer SmoothQuant, else Stock int8). There is no user variant selector for Parakeet.
      */
     fun useParakeetModel() {
         viewModelScope.launch {
-            val modelPath = _parakeetState.value.modelPath
+            val context = ctx
+            val modelPath = ParakeetModelManager.resolveActiveModelPath(context)
+                ?: _parakeetState.value.modelPath
             if (modelPath != null) {
-                // Save Parakeet model path and switch backend preference
+                // Save resolved Parakeet path and switch backend preference
                 preferencesManager.saveParakeetModelPath(modelPath)
                 preferencesManager.saveTranscriptionBackend(SherpaOnnxBackend.BACKEND_ID)
 
                 val message = ctx.getString(R.string.model_selected_message, ctx.getString(R.string.parakeet_name))
                 _uiState.update { it.copy(
+                    modelPath = modelPath,
                     modelName = ctx.getString(R.string.parakeet_name),
                     status = ModelStatus.UNLOADED,
                     statusMessage = message
                 )}
 
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
+                llmManager.resetKeepAliveTimer()
             }
         }
     }
 
-    /**
-     * Deletes the Parakeet model.
-     */
-    fun deleteParakeetModel() {
-        viewModelScope.launch {
+    fun deleteParakeetModel(variant: ParakeetModelManager.Variant) {
+        viewModelScope.launch(Dispatchers.IO) {
             val context = ctx
-            val success = ParakeetDownloader.deleteModel(context)
+            val success = ParakeetDownloader.deleteModel(context, variant)
             if (success) {
-                preferencesManager.saveParakeetModelPath("")
-                _parakeetState.update { it.copy(modelPath = null) }
-                shareTargetManager.onModelDeleted(SherpaOnnxBackend.BACKEND_ID)
+                _parakeetState.update {
+                    it.copy(downloadedVariants = _parakeetState.value.downloadedVariants - variant)
+                }
+                // Re-resolve the active path; if the deleted variant was the saved one, clear it.
+                val activePath = ParakeetModelManager.resolveActiveModelPath(context)
+                val savedPath = preferencesManager.parakeetModelPath.first()
+                if (savedPath != null && savedPath.contains(ParakeetDownloader.getModelDirName(variant))) {
+                    if (activePath != null) {
+                        preferencesManager.saveParakeetModelPath(activePath)
+                    } else {
+                        preferencesManager.saveParakeetModelPath("")
+                        shareTargetManager.onModelDeleted(SherpaOnnxBackend.BACKEND_ID)
+                    }
+                }
+                _parakeetState.update { it.copy(modelPath = activePath) }
                 _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.parakeet_deleted)))
             }
         }

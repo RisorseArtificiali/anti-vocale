@@ -98,7 +98,11 @@
     <string name="parakeet_description">~862MB • 25 lingue • Veloce • Consigliato</string>
     <string name="parakeet_download">Scarica Parakeet TDT</string>
     <string name="parakeet_download_confirm_title">Scaricare Parakeet TDT?</string>
-    <string name="parakeet_download_confirm_message">Verranno scaricati ~862MB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
+    <string name="parakeet_download_confirm_message">Verranno scaricati ~%1$dMB. Parakeet è più veloce ma meno preciso di Gemma per la trascrizione.</string>
+    <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
+    <string name="parakeet_smoothquant_description">~862MB • 25 lingue • Consigliato</string>
+    <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
+    <string name="parakeet_stock_description">~464MB • 25 lingue • Alternativa più leggera</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>

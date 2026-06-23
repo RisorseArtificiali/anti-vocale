@@ -225,6 +225,21 @@ class TranscriptionOrchestrator @Inject constructor(
         if (modelPath.isNullOrBlank()) {
             return Result.failure(IllegalStateException("No $label model configured. Download or select a model in Settings."))
         }
+        return configureSherpaBackend(backendId, modelPath, label, language, context)
+    }
+
+    /**
+     * Shared core for sherpa-onnx backends: validate the model dir, resolve the inference
+     * provider, and activate the backend. Called by [loadSherpaOnnxModel] (flow-sourced —
+     * Whisper/Qwen3/Omnilingual) and [loadSherpaOnnxBackend] (Parakeet auto-fallback).
+     */
+    private suspend fun configureSherpaBackend(
+        backendId: String,
+        modelPath: String,
+        label: String,
+        language: String = "",
+        context: Context
+    ): Result<Unit> {
         val modelDir = File(modelPath)
         if (!modelDir.exists() || !modelDir.isDirectory) {
             return Result.failure(IllegalStateException("$label model directory not found: $modelPath"))
@@ -245,12 +260,22 @@ class TranscriptionOrchestrator @Inject constructor(
         )
     }
 
-    private suspend fun loadSherpaOnnxBackend(context: Context) = loadSherpaOnnxModel(
-        backendId = SherpaOnnxBackend.BACKEND_ID,
-        modelPathFlow = preferencesManager.parakeetModelPath,
-        label = "Parakeet",
-        context = context
-    )
+    private suspend fun loadSherpaOnnxBackend(context: Context): Result<Unit> {
+        // Parakeet uses auto-fallback: prefer SmoothQuant, else Stock int8, else saved pref.
+        val savedPath = preferencesManager.parakeetModelPath.first()
+        val resolvedPath = ParakeetModelManager.resolveActiveModelPath(context, fallbackPath = savedPath)
+            ?: return Result.failure(IllegalStateException("No Parakeet model configured. Download or select a model in Settings."))
+        // Persist the resolved path so the rest of the app (UI, benchmark) sees a valid path.
+        if (resolvedPath != savedPath) {
+            preferencesManager.saveParakeetModelPath(resolvedPath)
+        }
+        return configureSherpaBackend(
+            backendId = SherpaOnnxBackend.BACKEND_ID,
+            modelPath = resolvedPath,
+            label = "Parakeet",
+            context = context
+        )
+    }
 
     private suspend fun loadWhisperBackend(context: Context) = loadSherpaOnnxModel(
         backendId = WhisperBackend.BACKEND_ID,

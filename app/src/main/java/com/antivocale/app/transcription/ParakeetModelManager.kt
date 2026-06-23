@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
+import com.antivocale.app.R
 import com.antivocale.app.data.download.ResumeDownloadHelper
 import java.io.File
 
@@ -13,6 +14,14 @@ import java.io.File
  * - decoder.int8.onnx
  * - joiner.int8.onnx
  * - tokens.txt
+ *
+ * Two variants are supported:
+ * - [Variant.SMOOTHQUANT] — recommended, SmoothQuant-quantized (pantinor namespace)
+ * - [Variant.STOCK_INT8] — lighter fallback, stock int8 (csukuangfj namespace)
+ *
+ * Both variants ship identical file names and use the same sherpa transducer config.
+ * Unlike Qwen3-ASR, the user does NOT pick an active variant: [resolveActiveModelPath]
+ * auto-selects the best available one at transcription time (prefer SmoothQuant).
  */
 object ParakeetModelManager {
 
@@ -21,13 +30,36 @@ object ParakeetModelManager {
     // Model directory name in app storage
     const val PARAKEET_MODEL_DIR = "parakeet-tdt"
 
-    // Required model files for Parakeet TDT (transducer model)
+    // Required model files for Parakeet TDT (transducer model) — identical for both variants.
     val REQUIRED_FILES = listOf(
         "encoder.int8.onnx",
         "decoder.int8.onnx",
         "joiner.int8.onnx",
         "tokens.txt"
     )
+
+    enum class Variant(
+        override val titleResId: Int,
+        override val descriptionResId: Int,
+        override val dirName: String,
+        override val estimatedSizeMB: Long,
+        override val supportedLanguageCodes: Set<String> = emptySet()
+    ) : ModelVariant {
+        SMOOTHQUANT(
+            titleResId = R.string.parakeet_smoothquant_title,
+            descriptionResId = R.string.parakeet_smoothquant_description,
+            dirName = "parakeet-tdt-0.6b-v3-smoothquant",
+            estimatedSizeMB = 862,
+            supportedLanguageCodes = Language.PARAKEET
+        ),
+        STOCK_INT8(
+            titleResId = R.string.parakeet_stock_title,
+            descriptionResId = R.string.parakeet_stock_description,
+            dirName = "parakeet-tdt-0.6b-v3-int8",
+            estimatedSizeMB = 464,
+            supportedLanguageCodes = Language.PARAKEET
+        )
+    }
 
     /**
      * Gets the directory where Parakeet models are stored.
@@ -86,11 +118,25 @@ object ParakeetModelManager {
             File(modelDir, requiredFile).length()
         }
 
+        val variant = detectVariant(modelDir.name)
         return ParakeetModel(
             name = modelDir.name,
             path = modelDir.absolutePath,
-            sizeBytes = totalSize
+            sizeBytes = totalSize,
+            variant = variant
         )
+    }
+
+    /**
+     * Infers the variant from a model directory name, or null if unrecognized.
+     */
+    fun detectVariant(dirName: String): Variant? {
+        val name = dirName.lowercase()
+        return when {
+            name.contains("smoothquant") -> Variant.SMOOTHQUANT
+            name.contains("int8") -> Variant.STOCK_INT8
+            else -> null
+        }
     }
 
     /**
@@ -138,6 +184,30 @@ object ParakeetModelManager {
     fun getTotalModelsSize(context: Context): Long {
         return discoverModels(context).sumOf { it.sizeBytes }
     }
+
+    /**
+     * Resolves the best-available Parakeet model directory path using auto-fallback.
+     *
+     * Preference order:
+     * 1. [Variant.SMOOTHQUANT] if its directory validates.
+     * 2. [Variant.STOCK_INT8] if its directory validates.
+     * 3. The saved preference [fallbackPath] if it validates.
+     *
+     * This is the Parakeet-specific behavior: unlike Qwen3-ASR (user-selected variant),
+     * Parakeet silently prefers SmoothQuant and falls back to Stock int8 at transcription
+     * / backend-load time. Returns null if no usable model is found.
+     */
+    fun resolveActiveModelPath(context: Context, fallbackPath: String? = null): String? {
+        val storageDir = getModelStorageDir(context)
+        // Preference order = Variant declaration order (SMOOTHQUANT, then STOCK_INT8).
+        // Reuses validateModelDirectory() as the single source of truth for "is this a complete model".
+        for (variant in Variant.entries) {
+            val dir = File(storageDir, variant.dirName)
+            if (validateModelDirectory(dir) != null) return dir.absolutePath
+        }
+        if (fallbackPath != null && isValidModelPath(fallbackPath)) return fallbackPath
+        return null
+    }
 }
 
 /**
@@ -146,7 +216,8 @@ object ParakeetModelManager {
 data class ParakeetModel(
     val name: String,
     val path: String,
-    val sizeBytes: Long
+    val sizeBytes: Long,
+    val variant: ParakeetModelManager.Variant? = null
 ) {
     val sizeFormatted: String
         get() = com.antivocale.app.util.formatFileSize(sizeBytes)

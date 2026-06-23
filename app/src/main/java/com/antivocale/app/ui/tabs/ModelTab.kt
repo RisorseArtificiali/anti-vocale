@@ -49,6 +49,8 @@ import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.OmnilingualAsrBackend
 import com.antivocale.app.transcription.OmnilingualAsrDownloader
 import com.antivocale.app.transcription.OmnilingualAsrModelManager
+import com.antivocale.app.transcription.ParakeetDownloader
+import com.antivocale.app.transcription.ParakeetModelManager
 import com.antivocale.app.transcription.Language
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
@@ -69,11 +71,12 @@ import com.antivocale.app.ui.components.ModelInfoOverlay
 import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 
+/** Generic Parakeet info used for the section-level info overlay. */
 private val ParakeetVariant = object : ModelVariant {
     override val titleResId = R.string.parakeet_title
     override val descriptionResId = R.string.parakeet_description
     override val dirName = "parakeet-tdt"
-    override val estimatedSizeMB = 827L
+    override val estimatedSizeMB = 862L
     override val supportedLanguageCodes = Language.PARAKEET
 }
 
@@ -201,6 +204,9 @@ fun ModelTab(
     val showParakeet = remember(filterLanguageCode) {
         filterLanguageCode == null || filterLanguageCode in Language.PARAKEET
     }
+    val visibleParakeetVariants = remember(filterLanguageCode) {
+        filterVariants(ParakeetModelManager.Variant.entries, filterLanguageCode) { it.supportedLanguageCodes }
+    }
     val visibleGemmaVariants = remember(filterLanguageCode) {
         filterVariants(ModelDownloader.ModelVariant.entries, filterLanguageCode) { it.supportedLanguageCodes }
     }
@@ -256,9 +262,13 @@ fun ModelTab(
 
     // Parakeet download confirmation dialog
     if (parakeetState.showDownloadDialog) {
+        val variant = parakeetState.selectedVariant
         DownloadConfirmationDialog(
             title = stringResource(R.string.parakeet_download_confirm_title),
-            message = stringResource(R.string.parakeet_download_confirm_message),
+            message = stringResource(
+                R.string.parakeet_download_confirm_message,
+                variant?.estimatedSizeMB?.toInt() ?: 862
+            ),
             onConfirm = { viewModel.confirmParakeetDownload() },
             onDismiss = { viewModel.dismissParakeetDownloadDialog() }
         )
@@ -266,10 +276,11 @@ fun ModelTab(
 
     // Parakeet delete confirmation dialog
     if (parakeetState.showDeleteDialog) {
-        val parakeetName = stringResource(R.string.parakeet_name)
-        val isParakeetActive = uiState.modelName == parakeetName
+        val variant = parakeetState.variantToDelete
+        val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: stringResource(R.string.parakeet_name)
+        val isParakeetActive = uiState.modelName == stringResource(R.string.parakeet_name)
         DeleteConfirmationDialog(
-            modelName = parakeetName,
+            modelName = variantDisplayName,
             isTranscribing = isTranscribing,
             isActiveModel = isParakeetActive,
             onConfirm = { viewModel.confirmParakeetDelete() },
@@ -529,14 +540,14 @@ fun ModelTab(
         //     onInfoClick = { modelInfoVariant = it }
         // )
 
-        // Parakeet TDT section - fast multilingual ASR backend
-        if (showParakeet) {
+        // Parakeet TDT section - fast multilingual ASR backend (auto-fallback: SmoothQuant → Stock int8)
+        if (visibleParakeetVariants.isNotEmpty()) {
             ParakeetDownloadSection(
                 viewModel = viewModel,
                 activeModelName = uiState.modelName,
-                context = context,
                 guardedModelSwitch = guardedSwitch,
-                onInfoClick = { modelInfoVariant = ParakeetVariant }
+                visibleVariants = visibleParakeetVariants,
+                onInfoClick = { modelInfoVariant = it }
             )
         }
 
@@ -1062,24 +1073,33 @@ private fun OmnilingualAsrDownloadSection(
 
 
 // ==================== Parakeet Download Section ====================
-@OptIn(ExperimentalLayoutApi::class)
+
+/**
+ * Section for downloading Parakeet TDT models (sherpa-onnx backend).
+ *
+ * Two variants: SmoothQuant (recommended) and Stock int8 (lighter fallback).
+ * Both are independently downloadable. The active model is auto-resolved at
+ * transcription time (prefer SmoothQuant → Stock int8); there is no user-facing
+ * variant selector. Mirrors [Qwen3AsrDownloadSection].
+ */
 @Composable
 private fun ParakeetDownloadSection(
     viewModel: ModelViewModel,
     activeModelName: String,
-    context: Context,
-    guardedModelSwitch: (() -> Unit) -> Unit,
+    guardedModelSwitch: (() -> Unit) -> Unit = {},
+    visibleVariants: List<ParakeetModelManager.Variant> = ParakeetModelManager.Variant.entries,
     onInfoClick: (ModelVariant) -> Unit = {}
 ) {
+    val context = LocalContext.current
     val parakeetState by viewModel.parakeetState.collectAsState()
     val parakeetName = stringResource(R.string.parakeet_name)
-    val isActive = activeModelName == parakeetName
+    val isParakeetBackendActive = activeModelName == parakeetName
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = when {
-                parakeetState.isDownloading -> MaterialTheme.colorScheme.secondaryContainer
+                parakeetState.isAnyDownloading -> MaterialTheme.colorScheme.secondaryContainer
                 else -> MaterialTheme.colorScheme.surfaceVariant
             }
         )
@@ -1091,59 +1111,27 @@ private fun ParakeetDownloadSection(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         imageVector = when {
-                            parakeetState.modelPath != null -> Icons.Default.CheckCircle
-                            parakeetState.isDownloading -> Icons.Default.CloudDownload
+                            parakeetState.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
+                            parakeetState.isAnyDownloading -> Icons.Default.CloudDownload
                             else -> Icons.Default.GraphicEq
                         },
                         contentDescription = null,
                         tint = when {
-                            parakeetState.modelPath != null -> MaterialTheme.colorScheme.primary
-                            parakeetState.isDownloading -> MaterialTheme.colorScheme.secondary
+                            parakeetState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
+                            parakeetState.isAnyDownloading -> MaterialTheme.colorScheme.secondary
                             else -> MaterialTheme.colorScheme.onSurfaceVariant
                         },
                         modifier = Modifier.size(24.dp)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
-                        FlowRow(
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.parakeet_title),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            if (isActive) {
-                                Surface(
-                                    color = MaterialTheme.colorScheme.primary,
-                                    shape = MaterialTheme.shapes.small
-                                ) {
-                                    Text(
-                                        text = stringResource(R.string.active_badge),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onPrimary,
-                                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                    )
-                                }
-                            }
-                            Surface(
-                                color = MaterialTheme.colorScheme.tertiary,
-                                shape = MaterialTheme.shapes.small
-                            ) {
-                                Text(
-                                    text = stringResource(R.string.recommended),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onTertiary,
-                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                )
-                            }
-                        }
+                        Text(
+                            text = stringResource(R.string.parakeet_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
                         Text(
                             text = stringResource(R.string.parakeet_description),
                             style = MaterialTheme.typography.bodySmall,
@@ -1156,111 +1144,47 @@ private fun ParakeetDownloadSection(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Inner card wrapping download content
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    // Download progress
-                    if (parakeetState.isDownloading) {
-                        DownloadProgressView(parakeetState.downloadState, parakeetState.downloadProgress, showExtractingFileSize = true)
-                    }
-
-                    // Error message
-                    parakeetState.errorMessage?.let { error ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = error,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-
-                    // Partial download
-                    parakeetState.partialDownload?.let { partial ->
-                        Spacer(modifier = Modifier.height(8.dp))
-                        PartialDownloadSection(
-                            partial = partial,
-                            onResumeClick = { viewModel.resumeParakeetDownload() },
-                            onClearClick = { viewModel.clearParakeetPartialDownload() }
-                        )
-                    }
-
-                    // Action buttons
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
-                    ) {
-                        when {
-                            parakeetState.isDownloading -> {
-                                OutlinedButton(
-                                    onClick = { viewModel.cancelParakeetDownload() },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(Icons.Default.Close, contentDescription = null)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        if (parakeetState.downloadState is DownloadState.Extracting)
-                                            stringResource(R.string.cancel_extract)
-                                        else
-                                            stringResource(R.string.cancel_download)
-                                    )
-                                }
-                            }
-                            parakeetState.modelPath != null -> {
-                                if (!isActive) {
-                                    Button(
-                                        onClick = { guardedModelSwitch { viewModel.useParakeetModel() } },
-                                        colors = ButtonDefaults.buttonColors(
-                                            containerColor = MaterialTheme.colorScheme.primary
-                                        )
-                                    ) {
-                                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
-                                    }
-                                }
-                                OutlinedButton(onClick = {
-                                    val path = parakeetState.modelPath
-                                    if (path != null) {
-                                        viewModel.startBenchmark(
-                                            SherpaOnnxBackend.BACKEND_ID,
-                                            path,
-                                            parakeetName
-                                        )
-                                    }
-                                }) {
-                                    Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.benchmark_button))
-                                }
-                                // Delete button
-                                OutlinedButton(
-                                    onClick = { viewModel.showParakeetDeleteDialog() },
-                                    colors = ButtonDefaults.outlinedButtonColors(
-                                        contentColor = MaterialTheme.colorScheme.error
-                                    )
-                                ) {
-                                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
-                                }
-                            }
-                            parakeetState.partialDownload != null -> {
-                                // PartialDownloadSection above already shows Resume/Clear buttons
-                            }
-                            else -> {
-                                Button(
-                                    onClick = { viewModel.showParakeetDownloadDialog() },
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Icon(Icons.Default.Download, contentDescription = null)
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(stringResource(R.string.download))
-                                }
-                            }
+            // Model variant cards
+            visibleVariants.forEach { variant ->
+                val variantState = parakeetState.variantDownloadStates[variant]
+                ModelVariantCard(
+                    state = ModelVariantCardState(
+                        variant = variant,
+                        // The whole Parakeet backend resolves to one active model; mark the
+                        // card active only if Parakeet is the active backend AND this variant's
+                        // directory is the auto-resolved one.
+                        isActive = isParakeetBackendActive && parakeetState.modelPath?.endsWith(variant.dirName) == true,
+                        downloadProgress = variantState?.downloadProgress ?: 0f,
+                        downloadState = variantState?.downloadState ?: DownloadState.Idle,
+                        errorMessage = variantState?.errorMessage,
+                        partialDownload = variantState?.partialDownload,
+                        buttonState = when {
+                            variantState?.isDownloading == true -> DownloadButtonState.Downloading
+                            parakeetState.downloadedVariants.contains(variant) -> DownloadButtonState.Downloaded
+                            variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
+                            else -> DownloadButtonState.Idle
                         }
-                    }
-                }
+                    ),
+                    downloadButtonTextResId = R.string.download,
+                    onDownloadClick = { viewModel.showParakeetDownloadDialog(variant) },
+                    onCancelClick = { viewModel.cancelParakeetDownload(variant) },
+                    onResumeClick = { viewModel.resumeParakeetDownload(variant) },
+                    onClearPartialClick = { viewModel.clearParakeetPartialDownload(variant) },
+                    onUseClick = { guardedModelSwitch { viewModel.useParakeetModel() } },
+                    onDeleteClick = { viewModel.showParakeetDeleteDialog(variant) },
+                    onBenchmarkClick = {
+                        val path = ParakeetDownloader.getModelPath(context, variant)
+                        if (path != null) {
+                            viewModel.startBenchmark(
+                                SherpaOnnxBackend.BACKEND_ID,
+                                path,
+                                context.getString(variant.titleResId)
+                            )
+                        }
+                    },
+                    onInfoClick = { onInfoClick(variant) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
             }
         }
     }
