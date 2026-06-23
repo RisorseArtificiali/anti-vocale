@@ -124,6 +124,15 @@ object WhisperModelManager {
     }
 
     /**
+     * The set of currently-known Whisper variant directory names.
+     *
+     * Used by [cleanOrphanedModelDirs] to identify stranded old-variant directories
+     * that are safe to reclaim. A directory whose name is in this set is never deleted.
+     */
+    val validModelDirNames: Set<String>
+        get() = Variant.entries.map { it.dirName }.toSet()
+
+    /**
      * Gets the directory where Whisper models are stored.
      */
     fun getModelStorageDir(context: Context): File {

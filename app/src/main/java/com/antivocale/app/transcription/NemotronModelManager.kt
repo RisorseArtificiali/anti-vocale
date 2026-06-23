@@ -30,6 +30,17 @@ object NemotronModelManager {
     )
 
     /**
+     * The set of currently-known Nemotron variant directory names.
+     *
+     * Nemotron is single-variant, so this has exactly one entry sourced from
+     * [NemotronDownloader.modelDirName]. Used by [cleanOrphanedModelDirs] to identify
+     * stranded old-format directories (e.g. the fp32 `*-sherpa` dir left by the
+     * fp32 → int8 pivot). A directory whose name is in this set is never deleted.
+     */
+    val validModelDirNames: Set<String>
+        get() = setOf(NemotronDownloader.modelDirName)
+
+    /**
      * Gets the directory where Nemotron models are stored.
      */
     fun getModelStorageDir(context: Context): File {

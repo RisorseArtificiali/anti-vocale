@@ -43,6 +43,15 @@ object Qwen3AsrModelManager {
         )
     }
 
+    /**
+     * The set of currently-known Qwen3-ASR variant directory names.
+     *
+     * Used by [cleanOrphanedModelDirs] to identify stranded old-variant directories
+     * that are safe to reclaim. A directory whose name is in this set is never deleted.
+     */
+    val validModelDirNames: Set<String>
+        get() = Variant.entries.map { it.dirName }.toSet()
+
     fun getModelStorageDir(context: Context): File = File(context.filesDir, QWEN3_ASR_MODEL_DIR)
 
     fun discoverModels(context: Context): List<Qwen3AsrModel> {

@@ -16,6 +16,13 @@ import java.io.File
  */
 object NemotronDownloader {
 
+    /**
+     * The directory name used for the current Nemotron variant. Read-only exposure so
+     * [NemotronModelManager.validModelDirNames] can feed [cleanOrphanedModelDirs].
+     * Changing this is a format pivot; the previous value becomes an orphaned dir.
+     */
+    val modelDirName: String get() = MODEL_DIR_NAME
+
     private const val MODEL_DIR_NAME = "nemotron-3.5-asr-streaming-0.6b-1120ms-int8"
     private const val ESTIMATED_SIZE_MB = 640L  // ~640 MB total (int8, 1120ms chunk)
 

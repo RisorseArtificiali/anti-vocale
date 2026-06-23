@@ -13,6 +13,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.NemotronDownloader
+import com.antivocale.app.transcription.NemotronModelManager
 import com.antivocale.app.transcription.NemotronStreamingBackend
 import com.antivocale.app.R
 import com.antivocale.app.data.download.DownloadState
@@ -271,6 +272,50 @@ class ModelViewModel @Inject constructor(
         // GGUF: disabled — refreshGgufState() commented out
         // Detect partial downloads
         detectPartialDownloads()
+        // Reclaim disk space from stranded old-version model directories left by
+        // format/variant pivots (e.g. fp32 Nemotron dir superseded by int8). Safe because
+        // it is name-based: only deletes subdirs whose name is NOT a current variant.
+        cleanOrphanedModelDirs()
+    }
+
+    /**
+     * Sweeps each backend's model storage directory and deletes subdirectories whose name
+     * is not a currently-known variant dir-name. Runs once at startup, off the main thread.
+     * See [com.antivocale.app.transcription.cleanOrphanedModelDirs] for the safety contract.
+     */
+    private fun cleanOrphanedModelDirs() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = ctx
+
+            val parakeetReclaimed = com.antivocale.app.transcription.cleanOrphanedModelDirs(
+                ParakeetModelManager.getModelStorageDir(context),
+                ParakeetModelManager.validModelDirNames
+            )
+            val whisperReclaimed = com.antivocale.app.transcription.cleanOrphanedModelDirs(
+                WhisperModelManager.getModelStorageDir(context),
+                WhisperModelManager.validModelDirNames
+            )
+            val qwen3Reclaimed = com.antivocale.app.transcription.cleanOrphanedModelDirs(
+                Qwen3AsrModelManager.getModelStorageDir(context),
+                Qwen3AsrModelManager.validModelDirNames
+            )
+            val nemotronReclaimed = com.antivocale.app.transcription.cleanOrphanedModelDirs(
+                NemotronModelManager.getModelStorageDir(context),
+                NemotronModelManager.validModelDirNames
+            )
+
+            val total = parakeetReclaimed + whisperReclaimed + qwen3Reclaimed + nemotronReclaimed
+            if (total > 0L) {
+                Log.i(
+                    TAG,
+                    "Reclaimed ${com.antivocale.app.util.formatFileSize(total)} of orphaned model dirs " +
+                        "(parakeet=${com.antivocale.app.util.formatFileSize(parakeetReclaimed)}, " +
+                        "whisper=${com.antivocale.app.util.formatFileSize(whisperReclaimed)}, " +
+                        "qwen3=${com.antivocale.app.util.formatFileSize(qwen3Reclaimed)}, " +
+                        "nemotron=${com.antivocale.app.util.formatFileSize(nemotronReclaimed)})"
+                )
+            }
+        }
     }
 
     // ==================== Service progress handlers ====================

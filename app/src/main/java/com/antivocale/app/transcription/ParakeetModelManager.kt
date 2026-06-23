@@ -62,6 +62,15 @@ object ParakeetModelManager {
     }
 
     /**
+     * The set of currently-known Parakeet variant directory names.
+     *
+     * Used by [cleanOrphanedModelDirs] to identify stranded old-variant directories
+     * that are safe to reclaim. A directory whose name is in this set is never deleted.
+     */
+    val validModelDirNames: Set<String>
+        get() = Variant.entries.map { it.dirName }.toSet()
+
+    /**
      * Gets the directory where Parakeet models are stored.
      */
     fun getModelStorageDir(context: Context): File {
