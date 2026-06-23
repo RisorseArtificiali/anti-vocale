@@ -24,9 +24,9 @@ import javax.inject.Singleton
  * is signaled, a final [OnlineRecognizer.decode] is issued, and the text is read
  * from [OnlineRecognizer.getResult].
  *
- * Default language / multilingual auto-detect: the model's ONNX surgery baked a
- * default prompt, so no per-language `prompt_index` mapping is implemented yet
- * (documented follow-up).
+ * Language: the model runs in multilingual auto-detect (no explicit language passed).
+ * sherpa v1.13.3's per-stream language API is a separate feature (NOT the createStream
+ * hotwords arg); wiring per-language selection is a documented follow-up.
  */
 @Singleton
 class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
@@ -129,6 +129,7 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
             ?: return Result.failure(IllegalStateException("Backend not initialized"))
 
         return withContext(Dispatchers.IO) {
+            var stream: OnlineStream? = null
             try {
                 Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
 
@@ -138,7 +139,7 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
                 // non-empty value (e.g. "auto") triggers contextual biasing, which sherpa aborts on
                 // (exit 255). Empty = no biasing. Nemotron multilingual language selection is a
                 // separate v1.13.3 API (TODO follow-up); the model defaults to auto-detect here.
-                val stream = rec.createStream("")
+                stream = rec.createStream("")
                 stream.acceptWaveform(samples, sampleRate)
 
                 // Decode loop: drain the recognizer's internal buffer for this stream.
@@ -154,8 +155,6 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
 
                 val result = rec.getResult(stream)
                 val transcription = result.text
-
-                stream.release()
 
                 Log.d(TAG, "Transcription complete: '${transcription.take(100)}...' (${transcription.length} chars)")
 
@@ -175,6 +174,10 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
             } catch (e: Exception) {
                 Log.e(TAG, "Transcription failed", e)
                 Result.failure(e)
+            } finally {
+                // Release the native OnlineStream on EVERY path (happy, exception, blank-result)
+                // so the JNI handle is freed deterministically, not left to GC finalization.
+                stream?.release()
             }
         }
     }
