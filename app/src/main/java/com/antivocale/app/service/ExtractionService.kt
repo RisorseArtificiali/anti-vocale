@@ -12,6 +12,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.data.HuggingFaceTokenManager
+import com.antivocale.app.transcription.NemotronDownloader
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.WhisperDownloader
@@ -75,6 +76,7 @@ class ExtractionService : Service() {
         PARAKEET("parakeet"),
         WHISPER("whisper"),
         QWEN3_ASR("qwen3-asr"),
+        NEMOTRON("nemotron"),
         GEMMA("gemma"),
         GEMMA4_GGUF("gemma4-gguf");
 
@@ -123,6 +125,7 @@ class ExtractionService : Service() {
                 val qv = Qwen3Variant.fromString(variant)
                 qv?.let { getString(it.titleResId) } ?: "Qwen3-ASR"
             }
+            ModelType.NEMOTRON -> getString(R.string.nemotron_name)
             ModelType.GEMMA -> GemmaVariant.fromString(variant).displayName
             // GGUF: disabled
             // ModelType.GEMMA4_GGUF -> { val gv = GgufVariant.fromString(variant); gv?.let { getString(it.titleResId) } ?: "Gemma 4 GGUF" }
@@ -265,6 +268,16 @@ class ExtractionService : Service() {
                         }
                     )
                 }
+                ModelType.NEMOTRON -> {
+                    NemotronDownloader.downloadModel(
+                        context = applicationContext,
+                        onProgress = {},
+                        onStateChange = { state ->
+                            _progressState.tryEmit(ExtractionProgress(ModelType.NEMOTRON, variant, downloadState = state))
+                            updateNotificationFromState(key, state)
+                        }
+                    )
+                }
                 ModelType.GEMMA -> {
                     val gemmaVariant = GemmaVariant.fromString(variant)
                     ModelDownloader.downloadModel(
@@ -350,6 +363,9 @@ class ExtractionService : Service() {
                 } else {
                     ModelDownloader.cancel()
                 }
+            }
+            ModelType.NEMOTRON -> {
+                NemotronDownloader.cancel()
             }
             // GGUF: disabled
             ModelType.GEMMA4_GGUF -> { /* no-op: GGUF downloader not available */ }

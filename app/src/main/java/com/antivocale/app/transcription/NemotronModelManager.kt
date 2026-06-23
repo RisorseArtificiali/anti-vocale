@@ -8,11 +8,10 @@ import java.io.File
 /**
  * Manages Nemotron streaming ASR model discovery and validation.
  *
- * Nemotron models are stored in app-specific storage and contain:
- * - encoder.onnx
- * - encoder.onnx.data
- * - decoder.onnx
- * - joiner.onnx
+ * Nemotron models are stored in app-specific storage (int8 format) and contain:
+ * - encoder.int8.onnx
+ * - decoder.int8.onnx
+ * - joiner.int8.onnx
  * - tokens.txt
  */
 object NemotronModelManager {
@@ -22,12 +21,11 @@ object NemotronModelManager {
     // Model directory name in app storage
     const val NEMOTRON_MODEL_DIR = "nemotron"
 
-    // Required model files for Nemotron streaming model (sherpa-onnx format)
+    // Required model files for Nemotron streaming model (int8 sherpa-onnx format)
     val REQUIRED_FILES = listOf(
-        "encoder.onnx",
-        "encoder.onnx.data",
-        "decoder.onnx",
-        "joiner.onnx",
+        "encoder.int8.onnx",
+        "decoder.int8.onnx",
+        "joiner.int8.onnx",
         "tokens.txt"
     )
 

@@ -32,6 +32,7 @@ class PreferencesManagerImpl(
         private val PARAKEET_MODEL_PATH = stringPreferencesKey("parakeet_model_path")
         private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
         private val QWEN3_ASR_MODEL_PATH = stringPreferencesKey("qwen3_asr_model_path")
+        private val NEMOTRON_MODEL_PATH = stringPreferencesKey("nemotron_model_path")
         private val GGUF_MODEL_PATH = stringPreferencesKey("gguf_model_path")
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
@@ -60,6 +61,7 @@ class PreferencesManagerImpl(
         val parakeetModelPath: String? = null,
         val whisperModelPath: String? = null,
         val qwen3AsrModelPath: String? = null,
+        val nemotronModelPath: String? = null,
         val ggufModelPath: String? = null,
         val autoCopyEnabled: Boolean = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         val vadEnabled: Boolean = PreferencesManager.DEFAULT_VAD_ENABLED,
@@ -85,6 +87,7 @@ class PreferencesManagerImpl(
         parakeetModelPath = this[PARAKEET_MODEL_PATH],
         whisperModelPath = this[WHISPER_MODEL_PATH],
         qwen3AsrModelPath = this[QWEN3_ASR_MODEL_PATH],
+        nemotronModelPath = this[NEMOTRON_MODEL_PATH],
         ggufModelPath = this[GGUF_MODEL_PATH],
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         vadEnabled = this[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED,
@@ -210,6 +213,23 @@ class PreferencesManagerImpl(
             preferences.remove(QWEN3_ASR_MODEL_PATH)
         }
         cache.updateAndGet { it.copy(qwen3AsrModelPath = null) }
+    }
+
+    override val nemotronModelPath: Flow<String?> = context.dataStore.data.map { it[NEMOTRON_MODEL_PATH] }
+        .onStart { emit(cache.get().nemotronModelPath) }
+
+    override suspend fun saveNemotronModelPath(path: String) {
+        context.dataStore.edit { preferences ->
+            preferences[NEMOTRON_MODEL_PATH] = path
+        }
+        cache.updateAndGet { it.copy(nemotronModelPath = path) }
+    }
+
+    override suspend fun clearNemotronModelPath() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(NEMOTRON_MODEL_PATH)
+        }
+        cache.updateAndGet { it.copy(nemotronModelPath = null) }
     }
 
     override val ggufModelPath: Flow<String?> = context.dataStore.data.map { it[GGUF_MODEL_PATH] }

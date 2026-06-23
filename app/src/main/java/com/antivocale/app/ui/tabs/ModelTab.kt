@@ -46,6 +46,9 @@ import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.Qwen3AsrModelManager
+import com.antivocale.app.transcription.NemotronDownloader
+import com.antivocale.app.transcription.NemotronModelVariant
+import com.antivocale.app.transcription.NemotronStreamingBackend
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.ParakeetModelManager
 import com.antivocale.app.transcription.Language
@@ -132,6 +135,7 @@ fun ModelTab(
     val parakeetState by viewModel.parakeetState.collectAsState()
     val whisperState by viewModel.whisperState.collectAsState()
     val qwen3AsrState by viewModel.qwen3AsrState.collectAsState()
+    val nemotronState by viewModel.nemotronState.collectAsState()
     val ggufState by viewModel.ggufState.collectAsState()
 
     // Transcription active state — used to warn about destructive operations
@@ -345,6 +349,28 @@ fun ModelTab(
         )
     }
 
+    // Nemotron download confirmation dialog
+    if (nemotronState.showDownloadDialog) {
+        DownloadConfirmationDialog(
+            title = stringResource(R.string.nemotron_download_confirm_title, stringResource(R.string.nemotron_name)),
+            message = stringResource(R.string.nemotron_download_confirm_message, NemotronModelVariant.estimatedSizeMB.toInt()),
+            onConfirm = { viewModel.confirmNemotronDownload() },
+            onDismiss = { viewModel.dismissNemotronDownloadDialog() }
+        )
+    }
+
+    // Nemotron delete confirmation dialog
+    if (nemotronState.showDeleteDialog) {
+        val nemotronDisplayName = stringResource(R.string.nemotron_name)
+        DeleteConfirmationDialog(
+            modelName = nemotronDisplayName,
+            isTranscribing = isTranscribing,
+            isActiveModel = uiState.modelName == nemotronDisplayName,
+            onConfirm = { viewModel.confirmNemotronDelete() },
+            onDismiss = { viewModel.dismissNemotronDeleteDialog() }
+        )
+    }
+
     // GGUF: disabled — download/delete dialogs commented out (GgufVariant type unavailable)
     // if (ggufState.showDownloadDialog) { ... viewModel.confirmGgufDownload() ... }
     // if (ggufState.showDeleteDialog) { ... viewModel.confirmGgufDelete() ... }
@@ -486,6 +512,14 @@ fun ModelTab(
                 onInfoClick = { modelInfoVariant = it }
             )
         }
+
+        // Nemotron 3.5 section - streaming transducer ASR backend (single-variant)
+        NemotronDownloadSection(
+            viewModel = viewModel,
+            activeModelName = uiState.modelName,
+            guardedModelSwitch = guardedSwitch,
+            onInfoClick = { modelInfoVariant = NemotronModelVariant }
+        )
 
         // GGUF section - on-device LLM text generation via llama.cpp
         // Hidden: llama-bro 1.2.3 does not yet support the Gemma 4 GGUF architecture.
@@ -796,6 +830,112 @@ private fun Qwen3AsrDownloadSection(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
             }
+        }
+    }
+}
+
+
+// ==================== Nemotron Download Section ====================
+
+/**
+ * Section for downloading the Nemotron 3.5 streaming model (sherpa-onnx Online backend).
+ * Single-variant — renders one [ModelVariantCard] bound to [NemotronModelVariant].
+ */
+@Composable
+private fun NemotronDownloadSection(
+    viewModel: ModelViewModel,
+    activeModelName: String,
+    guardedModelSwitch: (() -> Unit) -> Unit = {},
+    onInfoClick: (ModelVariant) -> Unit = {}
+) {
+    val context = LocalContext.current
+    val nemotronState by viewModel.nemotronState.collectAsState()
+    val variant = NemotronModelVariant
+    val isDownloaded = nemotronState.modelPath != null
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                nemotronState.isDownloading -> MaterialTheme.colorScheme.secondaryContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = when {
+                            isDownloaded -> Icons.Default.CheckCircle
+                            nemotronState.isDownloading -> Icons.Default.CloudDownload
+                            else -> Icons.Default.GraphicEq
+                        },
+                        contentDescription = null,
+                        tint = when {
+                            isDownloaded -> MaterialTheme.colorScheme.primary
+                            nemotronState.isDownloading -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.nemotron_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = stringResource(R.string.nemotron_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ModelVariantCard(
+                state = ModelVariantCardState(
+                    variant = variant,
+                    isActive = activeModelName == stringResource(R.string.nemotron_name),
+                    downloadProgress = nemotronState.downloadProgress,
+                    downloadState = nemotronState.downloadState,
+                    errorMessage = nemotronState.errorMessage,
+                    partialDownload = nemotronState.partialDownload,
+                    buttonState = when {
+                        nemotronState.isDownloading -> DownloadButtonState.Downloading
+                        isDownloaded -> DownloadButtonState.Downloaded
+                        nemotronState.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
+                        else -> DownloadButtonState.Idle
+                    }
+                ),
+                downloadButtonTextResId = R.string.nemotron_download,
+                onDownloadClick = { viewModel.showNemotronDownloadDialog() },
+                onCancelClick = { viewModel.cancelNemotronDownload() },
+                onResumeClick = { viewModel.resumeNemotronDownload() },
+                onClearPartialClick = { viewModel.clearNemotronPartialDownload() },
+                onUseClick = { guardedModelSwitch { viewModel.useNemotronModel() } },
+                onDeleteClick = { viewModel.showNemotronDeleteDialog() },
+                onBenchmarkClick = {
+                    val path = NemotronDownloader.getModelPath(context)
+                    if (path != null) {
+                        viewModel.startBenchmark(
+                            NemotronStreamingBackend.BACKEND_ID,
+                            path,
+                            context.getString(R.string.nemotron_name)
+                        )
+                    }
+                },
+                onInfoClick = { onInfoClick(variant) }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

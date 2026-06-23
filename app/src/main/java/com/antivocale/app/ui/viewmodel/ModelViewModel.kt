@@ -12,6 +12,8 @@ import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.transcription.LlmTranscriptionBackend
+import com.antivocale.app.transcription.NemotronDownloader
+import com.antivocale.app.transcription.NemotronStreamingBackend
 import com.antivocale.app.R
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.manager.LlmManager
@@ -151,6 +153,21 @@ class ModelViewModel @Inject constructor(
     }
 
     /**
+     * Nemotron download UI state — single-variant (NemotronDownloader is `Unit`-keyed),
+     * so a single download slot is tracked instead of a per-variant map.
+     */
+    data class NemotronUiState(
+        val isDownloading: Boolean = false,
+        val downloadProgress: Float = 0f,
+        val downloadState: DownloadState = DownloadState.Idle,
+        val modelPath: String? = null,
+        val errorMessage: String? = null,
+        val partialDownload: DownloadState.PartiallyDownloaded? = null,
+        val showDownloadDialog: Boolean = false,
+        val showDeleteDialog: Boolean = false
+    )
+
+    /**
      * GGUF download UI state — uses String-based variant keys since GGUF classes are disabled.
      * GGUF: change String back to Gemma4GgufModelManager.GgufVariant when re-enabling
      */
@@ -195,6 +212,10 @@ class ModelViewModel @Inject constructor(
     private val _qwen3AsrState = MutableStateFlow(Qwen3AsrUiState())
     val qwen3AsrState: StateFlow<Qwen3AsrUiState> = _qwen3AsrState.asStateFlow()
 
+    // Nemotron state - must be declared before init block
+    private val _nemotronState = MutableStateFlow(NemotronUiState())
+    val nemotronState: StateFlow<NemotronUiState> = _nemotronState.asStateFlow()
+
     // GGUF state - must be declared before init block
     private val _ggufState = MutableStateFlow(GgufUiState())
     val ggufState: StateFlow<GgufUiState> = _ggufState.asStateFlow()
@@ -226,6 +247,7 @@ class ModelViewModel @Inject constructor(
                     ExtractionService.ModelType.PARAKEET -> handleServiceProgressParakeet(progress)
                     ExtractionService.ModelType.WHISPER -> handleServiceProgressWhisper(progress)
                     ExtractionService.ModelType.QWEN3_ASR -> handleServiceProgressQwen3Asr(progress)
+                    ExtractionService.ModelType.NEMOTRON -> handleServiceProgressNemotron(progress)
                     // GGUF: disabled
                     ExtractionService.ModelType.GEMMA4_GGUF -> { /* no-op */ }
                     ExtractionService.ModelType.GEMMA -> handleServiceProgressGemma(progress)
@@ -244,6 +266,8 @@ class ModelViewModel @Inject constructor(
         refreshWhisperState()
         // Check for Qwen3-ASR model
         refreshQwen3AsrState()
+        // Check for Nemotron model
+        refreshNemotronState()
         // GGUF: disabled — refreshGgufState() commented out
         // Detect partial downloads
         detectPartialDownloads()
@@ -476,6 +500,43 @@ class ModelViewModel @Inject constructor(
         )
     }
 
+    private fun handleServiceProgressNemotron(progress: ExtractionService.ExtractionProgress) {
+        handleServiceProgress(
+            state = progress.downloadState,
+            updateFlow = { state, prog ->
+                _nemotronState.update {
+                    it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress)
+                }
+            },
+            onError = { msg, _ ->
+                _nemotronState.update { it.copy(isDownloading = false, errorMessage = msg) }
+                detectPartialDownloads()
+            },
+            onComplete = { file ->
+                _nemotronState.update {
+                    it.copy(
+                        modelPath = file.absolutePath,
+                        isDownloading = false,
+                        downloadProgress = 1f,
+                        downloadState = DownloadState.Idle
+                    )
+                }
+                shareTargetManager.onModelDownloaded()
+                viewModelScope.launch {
+                    preferencesManager.saveNemotronModelPath(file.absolutePath)
+                }
+                if (_uiState.value.modelName.isBlank()) useNemotronModel()
+                viewModelScope.launch {
+                    _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.nemotron_downloaded, ctx.getString(R.string.nemotron_name))))
+                }
+            },
+            onCancelled = {
+                _nemotronState.update { it.copy(isDownloading = false, errorMessage = null) }
+                detectPartialDownloads()
+            }
+        )
+    }
+
     private fun handleServiceProgressGemma(progress: ExtractionService.ExtractionProgress) {
         val variant = ModelDownloader.ModelVariant.entries
             .find { it.name.lowercase() == progress.variant }
@@ -696,6 +757,14 @@ class ModelViewModel @Inject constructor(
             }
 
             // GGUF: disabled — partial download detection skipped entirely
+
+            // Check Nemotron (single-variant) — only when not actively downloading
+            if (!_nemotronState.value.isDownloading && NemotronDownloader.getModelPath(context) == null) {
+                val nemotronPartial = NemotronDownloader.detectPartialDownload(context)
+                if (nemotronPartial != null) {
+                    _nemotronState.update { it.copy(partialDownload = nemotronPartial) }
+                }
+            }
         }
     }
 
@@ -754,6 +823,20 @@ class ModelViewModel @Inject constructor(
                         } ?: qwen3Path.substringAfterLast("/")
                         _uiState.update { it.copy(
                             modelPath = qwen3Path,
+                            modelName = modelName,
+                            statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
+                        )}
+                    }
+                }
+                NemotronStreamingBackend.BACKEND_ID -> {
+                    // Load Nemotron model path
+                    val nemotronPath = preferencesManager.nemotronModelPath.first()
+                    if (!nemotronPath.isNullOrBlank()) {
+                        val modelDir = File(nemotronPath)
+                        val isValid = modelDir.exists() && modelDir.isDirectory
+                        val modelName = ctx.getString(R.string.nemotron_name)
+                        _uiState.update { it.copy(
+                            modelPath = nemotronPath,
                             modelName = modelName,
                             statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
                         )}
@@ -1672,6 +1755,131 @@ class ModelViewModel @Inject constructor(
         }
     }
 
+    // ==================== Nemotron Model Download ====================
+
+    /**
+     * Refreshes the Nemotron model state. Single-variant: checks whether the model
+     * is downloaded and resolves its path.
+     */
+    fun refreshNemotronState() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = ctx
+            val path = NemotronDownloader.getModelPath(context)
+            _nemotronState.update { it.copy(modelPath = path) }
+        }
+    }
+
+    // ==================== Nemotron Confirmation Dialogs ====================
+
+    fun showNemotronDownloadDialog() {
+        _nemotronState.update { it.copy(showDownloadDialog = true) }
+    }
+
+    fun dismissNemotronDownloadDialog() {
+        _nemotronState.update { it.copy(showDownloadDialog = false) }
+    }
+
+    fun confirmNemotronDownload() {
+        startNemotronDownload()
+    }
+
+    fun showNemotronDeleteDialog() {
+        _nemotronState.update { it.copy(showDeleteDialog = true) }
+    }
+
+    fun dismissNemotronDeleteDialog() {
+        _nemotronState.update { it.copy(showDeleteDialog = false) }
+    }
+
+    fun confirmNemotronDelete() {
+        _nemotronState.update { it.copy(showDeleteDialog = false) }
+        deleteNemotronModel()
+    }
+
+    // ==================== Nemotron Download Methods ====================
+
+    fun startNemotronDownload() {
+        _nemotronState.update {
+            it.copy(
+                showDownloadDialog = false,
+                isDownloading = true,
+                downloadProgress = 0f,
+                downloadState = DownloadState.Connecting(""),
+                errorMessage = null,
+                partialDownload = null
+            )
+        }
+        val context = ctx
+        val intent = Intent(context, ExtractionService::class.java).apply {
+            putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.NEMOTRON.key)
+        }
+        ContextCompat.startForegroundService(context, intent)
+    }
+
+    fun cancelNemotronDownload() {
+        NemotronDownloader.cancel()
+        stopExtractionService(ExtractionService.ModelType.NEMOTRON, null)
+        viewModelScope.launch(Dispatchers.IO) {
+            val partial = NemotronDownloader.detectPartialDownload(ctx)
+            _nemotronState.update {
+                it.copy(isDownloading = false, partialDownload = partial)
+            }
+        }
+    }
+
+    fun resumeNemotronDownload() {
+        _nemotronState.update { it.copy(partialDownload = null) }
+        startNemotronDownload()
+    }
+
+    fun clearNemotronPartialDownload() {
+        viewModelScope.launch(Dispatchers.IO) {
+            NemotronDownloader.clearPartialDownload(ctx)
+            _nemotronState.update { it.copy(partialDownload = null) }
+        }
+    }
+
+    fun useNemotronModel() {
+        viewModelScope.launch {
+            val context = ctx
+            val modelPath = NemotronDownloader.getModelPath(context) ?: _nemotronState.value.modelPath
+            if (modelPath != null) {
+                preferencesManager.saveNemotronModelPath(modelPath)
+                preferencesManager.saveTranscriptionBackend(NemotronStreamingBackend.BACKEND_ID)
+
+                val displayName = context.getString(R.string.nemotron_name)
+                val message = context.getString(R.string.model_selected_message, displayName)
+                _uiState.update {
+                    it.copy(
+                        modelName = displayName,
+                        status = ModelStatus.UNLOADED,
+                        statusMessage = message
+                    )
+                }
+
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
+                llmManager.resetKeepAliveTimer()
+            }
+        }
+    }
+
+    fun deleteNemotronModel() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = ctx
+            val success = NemotronDownloader.deleteModel(context)
+            if (success) {
+                val savedPath = preferencesManager.nemotronModelPath.first()
+                if (savedPath != null) {
+                    preferencesManager.clearNemotronModelPath()
+                    _uiState.update { it.copy(modelPath = "", modelName = "") }
+                    shareTargetManager.onModelDeleted(NemotronStreamingBackend.BACKEND_ID)
+                }
+                _nemotronState.update { it.copy(modelPath = null) }
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.nemotron_deleted, context.getString(R.string.nemotron_name))))
+            }
+        }
+    }
+
     // ==================== GGUF: DISABLED ====================
     // Move files from app/src/gguf-disabled/ back to main and uncomment to re-enable
     /* GGUF disabled
@@ -1884,7 +2092,7 @@ class ModelViewModel @Inject constructor(
                         provider = resolvedProvider
                     )
                 }
-                SherpaOnnxBackend.BACKEND_ID, Qwen3AsrBackend.BACKEND_ID -> BackendConfig.SherpaOnnxConfig(
+                SherpaOnnxBackend.BACKEND_ID, Qwen3AsrBackend.BACKEND_ID, NemotronStreamingBackend.BACKEND_ID -> BackendConfig.SherpaOnnxConfig(
                     modelDir = modelPath,
                     numThreads = threadCount,
                     provider = resolvedProvider

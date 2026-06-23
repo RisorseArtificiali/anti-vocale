@@ -184,6 +184,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 SherpaOnnxBackend.BACKEND_ID -> loadSherpaOnnxBackend(context)
                 WhisperBackend.BACKEND_ID -> loadWhisperBackend(context)
                 Qwen3AsrBackend.BACKEND_ID -> loadQwen3AsrBackend(context)
+                NemotronStreamingBackend.BACKEND_ID -> loadNemotronBackend(context)
                 "gemma4_gguf" -> loadGgufBackend(context)
                 else -> loadLlmBackend(context)
             }
@@ -292,6 +293,19 @@ class TranscriptionOrchestrator @Inject constructor(
         label = "Qwen3-ASR",
         context = context
     )
+
+    private suspend fun loadNemotronBackend(context: Context): Result<Unit> {
+        val modelPath = preferencesManager.nemotronModelPath.first()
+        if (modelPath.isNullOrBlank()) {
+            return Result.failure(IllegalStateException("No Nemotron model configured. Download or select a model in Settings."))
+        }
+        return configureSherpaBackend(
+            backendId = NemotronStreamingBackend.BACKEND_ID,
+            modelPath = modelPath,
+            label = "Nemotron",
+            context = context
+        )
+    }
 
     // GGUF: disabled — move files from gguf-disabled/ to re-enable the body below
     private suspend fun loadGgufBackend(context: Context): Result<Unit> {
@@ -1067,6 +1081,7 @@ class TranscriptionOrchestrator @Inject constructor(
             WhisperBackend.BACKEND_ID -> preferencesManager.whisperModelPath.first()
             Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first()
             SherpaOnnxBackend.BACKEND_ID -> preferencesManager.parakeetModelPath.first()
+            NemotronStreamingBackend.BACKEND_ID -> preferencesManager.nemotronModelPath.first()
             "gemma4_gguf" -> preferencesManager.ggufModelPath.first()
             else -> preferencesManager.modelPath.first()
         } ?: ""

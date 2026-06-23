@@ -16,13 +16,17 @@ import java.io.File
  */
 object NemotronDownloader {
 
-    private const val MODEL_DIR_NAME = "nemotron-3.5-asr-streaming-0.6b-sherpa"
-    private const val ESTIMATED_SIZE_MB = 2593L  // ~2.5 GB total (sherpa-onnx format)
+    private const val MODEL_DIR_NAME = "nemotron-3.5-asr-streaming-0.6b-1120ms-int8"
+    private const val ESTIMATED_SIZE_MB = 640L  // ~640 MB total (int8, 1120ms chunk)
 
     private val config = SherpaOnnxModelConfig(
         tag = "NemotronDownloader",
         modelDirNames = mapOf(Unit to MODEL_DIR_NAME),
-        hfRepoNames = mapOf(Unit to "pantinor/nemotron-3.5-asr-streaming-0.6b-sherpa"),
+        // csukuangfj2's sherpa-native int8 export (1120ms chunk). The previous fp32 pantinor model
+        // had a malformed decoder (dangling `prednet_lengths` output — ORT refused to load it).
+        // This int8 export is well-formed (validated: onnxruntime loads decoder/joiner cleanly)
+        // and ~4x smaller. Produced by csukuangfj (sherpa maintainer).
+        hfRepoNames = mapOf(Unit to "csukuangfj2/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-1120ms-int8-2026-06-11"),
         hfFileNames = mapOf(
             Unit to NemotronModelManager.REQUIRED_FILES
         ),

@@ -133,6 +133,17 @@
     <string name="qwen3_asr_downloaded">%1$s downloaded successfully</string>
     <string name="qwen3_asr_deleted">%1$s deleted</string>
 
+    <!-- Nemotron 3.5 streaming model -->
+    <string name="nemotron_name">Nemotron 3.5</string>
+    <string name="nemotron_title">Nemotron 3.5 (streaming)</string>
+    <string name="nemotron_description">Streaming transducer • Experimental Italian quality</string>
+    <string name="nemotron_download_confirm_title">Download %1$s?</string>
+    <string name="nemotron_download_confirm_message">This will download ~%1$dMB. Nemotron 3.5 is a streaming multilingual ASR model.</string>
+    <string name="nemotron_download">Download Nemotron</string>
+    <string name="nemotron_delete_message">Delete Nemotron 3.5 model?</string>
+    <string name="nemotron_downloaded">%1$s downloaded successfully</string>
+    <string name="nemotron_deleted">%1$s deleted</string>
+
     <!-- Download status -->
     <string name="download_status_downloading">Downloading…</string>
     <string name="download_status_extracting">Extracting %1$s…</string>
