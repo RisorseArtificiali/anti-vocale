@@ -184,7 +184,6 @@ class TranscriptionOrchestrator @Inject constructor(
                 SherpaOnnxBackend.BACKEND_ID -> loadSherpaOnnxBackend(context)
                 WhisperBackend.BACKEND_ID -> loadWhisperBackend(context)
                 Qwen3AsrBackend.BACKEND_ID -> loadQwen3AsrBackend(context)
-                OmnilingualAsrBackend.BACKEND_ID -> loadOmnilingualAsrBackend(context)
                 "gemma4_gguf" -> loadGgufBackend(context)
                 else -> loadLlmBackend(context)
             }
@@ -231,7 +230,7 @@ class TranscriptionOrchestrator @Inject constructor(
     /**
      * Shared core for sherpa-onnx backends: validate the model dir, resolve the inference
      * provider, and activate the backend. Called by [loadSherpaOnnxModel] (flow-sourced —
-     * Whisper/Qwen3/Omnilingual) and [loadSherpaOnnxBackend] (Parakeet auto-fallback).
+     * Whisper/Qwen3) and [loadSherpaOnnxBackend] (Parakeet auto-fallback).
      */
     private suspend fun configureSherpaBackend(
         backendId: String,
@@ -291,13 +290,6 @@ class TranscriptionOrchestrator @Inject constructor(
         backendId = Qwen3AsrBackend.BACKEND_ID,
         modelPathFlow = preferencesManager.qwen3AsrModelPath,
         label = "Qwen3-ASR",
-        context = context
-    )
-
-    private suspend fun loadOmnilingualAsrBackend(context: Context) = loadSherpaOnnxModel(
-        backendId = OmnilingualAsrBackend.BACKEND_ID,
-        modelPathFlow = preferencesManager.omnilingualAsrModelPath,
-        label = "Omnilingual ASR",
         context = context
     )
 
@@ -1074,7 +1066,6 @@ class TranscriptionOrchestrator @Inject constructor(
         when (backendId) {
             WhisperBackend.BACKEND_ID -> preferencesManager.whisperModelPath.first()
             Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first()
-            OmnilingualAsrBackend.BACKEND_ID -> preferencesManager.omnilingualAsrModelPath.first()
             SherpaOnnxBackend.BACKEND_ID -> preferencesManager.parakeetModelPath.first()
             "gemma4_gguf" -> preferencesManager.ggufModelPath.first()
             else -> preferencesManager.modelPath.first()
@@ -1094,15 +1085,6 @@ class TranscriptionOrchestrator @Inject constructor(
                     .replace("-int8", "")
                     .replace("-", " ")
                     .replaceFirstChar { it.uppercase() }
-            }
-            OmnilingualAsrBackend.BACKEND_ID -> {
-                dirName.removePrefix("sherpa-onnx-omnilingual-asr-1600-languages-")
-                    .replace("-int8", "")
-                    .replace("-ctc-v2", "")
-                    .replace("-2026-02-05", "")
-                    .replace("-", " ")
-                    .replaceFirstChar { it.uppercase() }
-                    .ifBlank { fallbackName ?: "Omnilingual ASR" }
             }
             else -> fallbackName ?: backendId
         }

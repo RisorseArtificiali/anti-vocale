@@ -46,9 +46,6 @@ import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.WhisperDownloader
 import com.antivocale.app.transcription.Qwen3AsrDownloader
 import com.antivocale.app.transcription.Qwen3AsrModelManager
-import com.antivocale.app.transcription.OmnilingualAsrBackend
-import com.antivocale.app.transcription.OmnilingualAsrDownloader
-import com.antivocale.app.transcription.OmnilingualAsrModelManager
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.ParakeetModelManager
 import com.antivocale.app.transcription.Language
@@ -135,7 +132,6 @@ fun ModelTab(
     val parakeetState by viewModel.parakeetState.collectAsState()
     val whisperState by viewModel.whisperState.collectAsState()
     val qwen3AsrState by viewModel.qwen3AsrState.collectAsState()
-    val omnilingualAsrState by viewModel.omnilingualAsrState.collectAsState()
     val ggufState by viewModel.ggufState.collectAsState()
 
     // Transcription active state — used to warn about destructive operations
@@ -199,8 +195,6 @@ fun ModelTab(
     val visibleQwen3AsrVariants = remember(filterLanguageCode) {
         filterVariants(Qwen3AsrModelManager.Variant.entries, filterLanguageCode) { it.supportedLanguageCodes }
     }
-    // Omnilingual ASR has no enumerated language set (1600+ langs) — always visible when no language filter is active.
-    val visibleOmnilingualAsrVariants = if (filterLanguageCode == null) OmnilingualAsrModelManager.Variant.entries else emptyList()
     val showParakeet = remember(filterLanguageCode) {
         filterLanguageCode == null || filterLanguageCode in Language.PARAKEET
     }
@@ -351,31 +345,6 @@ fun ModelTab(
         )
     }
 
-    // Omnilingual ASR download confirmation dialog
-    if (omnilingualAsrState.showDownloadDialog) {
-        val variant = omnilingualAsrState.selectedVariant
-        DownloadConfirmationDialog(
-            title = stringResource(R.string.omnilingual_asr_download_confirm_title, variant?.let { stringResource(it.titleResId) } ?: "Omnilingual ASR"),
-            message = stringResource(R.string.omnilingual_asr_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 235),
-            onConfirm = { viewModel.confirmOmnilingualAsrDownload() },
-            onDismiss = { viewModel.dismissOmnilingualAsrDownloadDialog() }
-        )
-    }
-
-    // Omnilingual ASR delete confirmation dialog
-    if (omnilingualAsrState.showDeleteDialog) {
-        val variant = omnilingualAsrState.variantToDelete
-        val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: "Omnilingual ASR"
-        val isOmnilingualModelActive = uiState.modelName == variantDisplayName
-        DeleteConfirmationDialog(
-            modelName = variantDisplayName,
-            isTranscribing = isTranscribing,
-            isActiveModel = isOmnilingualModelActive,
-            onConfirm = { viewModel.confirmOmnilingualAsrDelete() },
-            onDismiss = { viewModel.dismissOmnilingualAsrDeleteDialog() }
-        )
-    }
-
     // GGUF: disabled — download/delete dialogs commented out (GgufVariant type unavailable)
     // if (ggufState.showDownloadDialog) { ... viewModel.confirmGgufDownload() ... }
     // if (ggufState.showDeleteDialog) { ... viewModel.confirmGgufDelete() ... }
@@ -514,17 +483,6 @@ fun ModelTab(
                 activeModelName = uiState.modelName,
                 guardedModelSwitch = guardedSwitch,
                 visibleVariants = visibleQwen3AsrVariants,
-                onInfoClick = { modelInfoVariant = it }
-            )
-        }
-
-        // Omnilingual ASR section - 1600+ language CTC backend (lower quality, exotic language coverage)
-        if (visibleOmnilingualAsrVariants.isNotEmpty()) {
-            OmnilingualAsrDownloadSection(
-                viewModel = viewModel,
-                activeModelName = uiState.modelName,
-                guardedModelSwitch = guardedSwitch,
-                visibleVariants = visibleOmnilingualAsrVariants,
                 onInfoClick = { modelInfoVariant = it }
             )
         }
@@ -829,116 +787,6 @@ private fun Qwen3AsrDownloadSection(
                         if (path != null) {
                             viewModel.startBenchmark(
                                 Qwen3AsrBackend.BACKEND_ID,
-                                path,
-                                context.getString(variant.titleResId)
-                            )
-                        }
-                    },
-                    onInfoClick = { onInfoClick(variant) }
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-        }
-    }
-}
-
-
-// ==================== Omnilingual ASR Download Section ====================
-
-/**
- * Section for downloading Omnilingual ASR (CTC) model — 1600+ languages via sherpa-onnx.
- * Lower quality than transducer models (no punctuation/casing), positioned for exotic
- * language coverage. Mirrors [Qwen3AsrDownloadSection].
- */
-@Composable
-private fun OmnilingualAsrDownloadSection(
-    viewModel: ModelViewModel,
-    activeModelName: String,
-    guardedModelSwitch: (() -> Unit) -> Unit = {},
-    visibleVariants: List<OmnilingualAsrModelManager.Variant> = OmnilingualAsrModelManager.Variant.entries,
-    onInfoClick: (ModelVariant) -> Unit = {}
-) {
-    val context = LocalContext.current
-    val omnilingualAsrState by viewModel.omnilingualAsrState.collectAsState()
-
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = when {
-                omnilingualAsrState.isAnyDownloading -> MaterialTheme.colorScheme.secondaryContainer
-                else -> MaterialTheme.colorScheme.surfaceVariant
-            }
-        )
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = when {
-                            omnilingualAsrState.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
-                            omnilingualAsrState.isAnyDownloading -> Icons.Default.CloudDownload
-                            else -> Icons.Default.Language
-                        },
-                        contentDescription = null,
-                        tint = when {
-                            omnilingualAsrState.downloadedVariants.isNotEmpty() -> MaterialTheme.colorScheme.primary
-                            omnilingualAsrState.isAnyDownloading -> MaterialTheme.colorScheme.secondary
-                            else -> MaterialTheme.colorScheme.onSurfaceVariant
-                        },
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = stringResource(R.string.omnilingual_asr_title),
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                        Text(
-                            text = stringResource(R.string.omnilingual_asr_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // Model variant cards
-            visibleVariants.forEach { variant ->
-                val variantState = omnilingualAsrState.variantDownloadStates[variant]
-                ModelVariantCard(
-                    state = ModelVariantCardState(
-                        variant = variant,
-                        isActive = activeModelName == stringResource(variant.titleResId),
-                        downloadProgress = variantState?.downloadProgress ?: 0f,
-                        downloadState = variantState?.downloadState ?: DownloadState.Idle,
-                        errorMessage = variantState?.errorMessage,
-                        partialDownload = variantState?.partialDownload,
-                        buttonState = when {
-                            variantState?.isDownloading == true -> DownloadButtonState.Downloading
-                            omnilingualAsrState.downloadedVariants.contains(variant) -> DownloadButtonState.Downloaded
-                            variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
-                            else -> DownloadButtonState.Idle
-                        }
-                    ),
-                    downloadButtonTextResId = R.string.download,
-                    onDownloadClick = { viewModel.showOmnilingualAsrDownloadDialog(variant) },
-                    onCancelClick = { viewModel.cancelOmnilingualAsrDownload(variant) },
-                    onResumeClick = { viewModel.resumeOmnilingualAsrDownload(variant) },
-                    onClearPartialClick = { viewModel.clearOmnilingualAsrPartialDownload(variant) },
-                    onUseClick = { guardedModelSwitch { viewModel.useOmnilingualAsrModel(variant) } },
-                    onDeleteClick = { viewModel.showOmnilingualAsrDeleteDialog(variant) },
-                    onBenchmarkClick = {
-                        val path = OmnilingualAsrDownloader.getModelPath(context, variant)
-                        if (path != null) {
-                            viewModel.startBenchmark(
-                                OmnilingualAsrBackend.BACKEND_ID,
                                 path,
                                 context.getString(variant.titleResId)
                             )

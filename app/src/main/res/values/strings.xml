@@ -133,17 +133,6 @@
     <string name="qwen3_asr_downloaded">%1$s downloaded successfully</string>
     <string name="qwen3_asr_deleted">%1$s deleted</string>
 
-    <string name="omnilingual_asr_title">Omnilingual ASR (1600+ languages)</string>
-    <string name="omnilingual_asr_description">1600+ languages • Lower quality (CTC, no punctuation)</string>
-    <string name="omnilingual_asr_300m_title">Omnilingual ASR 300M</string>
-    <string name="omnilingual_asr_300m_description">~235MB • 1600+ languages • Lower quality, no punctuation/casing</string>
-    <string name="omnilingual_asr_download_confirm_title">Download %1$s?</string>
-    <string name="omnilingual_asr_download_confirm_message">This will download ~%1$dMB. Omnilingual ASR covers 1600+ languages but with lower quality (no punctuation or casing). Best for exotic languages not covered by other models.</string>
-    <string name="omnilingual_asr_download">Download Omnilingual ASR</string>
-    <string name="omnilingual_asr_delete_message">Delete Omnilingual ASR model?</string>
-    <string name="omnilingual_asr_downloaded">%1$s downloaded successfully</string>
-    <string name="omnilingual_asr_deleted">%1$s deleted</string>
-
     <!-- Download status -->
     <string name="download_status_downloading">Downloading…</string>
     <string name="download_status_extracting">Extracting %1$s…</string>

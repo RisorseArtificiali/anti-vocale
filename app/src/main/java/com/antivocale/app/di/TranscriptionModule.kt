@@ -2,7 +2,6 @@ package com.antivocale.app.di
 
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.transcription.LlmTranscriptionBackend
-import com.antivocale.app.transcription.OmnilingualAsrBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackend
@@ -39,11 +38,6 @@ class TranscriptionModule {
         @IntoSet
         @Singleton
         fun provideQwen3AsrBackend(): TranscriptionBackend = Qwen3AsrBackend()
-
-        @Provides
-        @IntoSet
-        @Singleton
-        fun provideOmnilingualAsrBackend(): TranscriptionBackend = OmnilingualAsrBackend()
 
         // GGUF: re-enable by moving files from gguf-disabled/ and adding back:
         // @Binds abstract fun bindGgufInferenceEngine(impl: LlamaBroEngine): GgufInferenceEngine

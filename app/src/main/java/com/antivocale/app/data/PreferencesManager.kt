@@ -11,7 +11,6 @@ interface PreferencesManager {
     val parakeetModelPath: Flow<String?>
     val whisperModelPath: Flow<String?>
     val qwen3AsrModelPath: Flow<String?>
-    val omnilingualAsrModelPath: Flow<String?>
     val ggufModelPath: Flow<String?>
     val autoCopyEnabled: Flow<Boolean>
     val vadEnabled: Flow<Boolean>
@@ -37,8 +36,6 @@ interface PreferencesManager {
     suspend fun clearWhisperModelPath()
     suspend fun saveQwen3AsrModelPath(path: String)
     suspend fun clearQwen3AsrModelPath()
-    suspend fun saveOmnilingualAsrModelPath(path: String)
-    suspend fun clearOmnilingualAsrModelPath()
 
     suspend fun saveGgufModelPath(path: String)
     suspend fun clearGgufModelPath()

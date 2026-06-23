@@ -17,7 +17,6 @@ import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
-import com.antivocale.app.transcription.OmnilingualAsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.WhisperBackend
@@ -266,7 +265,6 @@ class LogsViewModel @Inject constructor(
             WhisperBackend.BACKEND_ID to preferencesManager.whisperModelPath.first(),
             SherpaOnnxBackend.BACKEND_ID to preferencesManager.parakeetModelPath.first(),
             Qwen3AsrBackend.BACKEND_ID to preferencesManager.qwen3AsrModelPath.first(),
-            OmnilingualAsrBackend.BACKEND_ID to preferencesManager.omnilingualAsrModelPath.first(),
             LlmTranscriptionBackend.BACKEND_ID to preferencesManager.modelPath.first()
         )
 
