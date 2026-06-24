@@ -17,6 +17,7 @@ import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
+import com.antivocale.app.transcription.NemotronStreamingBackend
 import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.util.SharedAudioHandler
 
@@ -35,12 +36,14 @@ class ShareReceiverActivity : Activity() {
         private const val ALIAS_WHISPER = "com.antivocale.app.ShareWhisper"
         private const val ALIAS_QWEN3 = "com.antivocale.app.ShareQwen3"
         private const val ALIAS_GEMMA = "com.antivocale.app.ShareGemma"
+        private const val ALIAS_NEMOTRON = "com.antivocale.app.ShareNemotron"
 
         internal fun backendIdForAlias(aliasClassName: String): String? = when (aliasClassName) {
             ALIAS_PARAKEET -> SherpaOnnxBackend.BACKEND_ID
             ALIAS_WHISPER -> WhisperBackend.BACKEND_ID
             ALIAS_QWEN3 -> Qwen3AsrBackend.BACKEND_ID
             ALIAS_GEMMA -> LlmTranscriptionBackend.BACKEND_ID
+            ALIAS_NEMOTRON -> NemotronStreamingBackend.BACKEND_ID
             else -> null
         }
     }

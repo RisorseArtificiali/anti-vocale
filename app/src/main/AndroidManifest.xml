@@ -207,6 +207,27 @@
             </intent-filter>
         </activity-alias>
 
+        <activity-alias
+            android:name=".ShareNemotron"
+            android:targetActivity=".receiver.ShareReceiverActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:label="@string/share_target_nemotron"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="audio/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/ogg" />
+            </intent-filter>
+        </activity-alias>
+
         <!-- Transparent trampoline for Tasker: brings app to foreground so InferenceService
              can be started legally on Android 12+. Finishes immediately, never visible. -->
         <activity

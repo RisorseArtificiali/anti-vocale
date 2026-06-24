@@ -727,6 +727,7 @@
     <string name="share_target_whisper">Anti-Vocale (Whisper)</string>
     <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
     <string name="share_target_gemma">Anti-Vocale (Gemma)</string>
+    <string name="share_target_nemotron">Anti-Vocale (Nemotron)</string>
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Share Targets</string>

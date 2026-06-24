@@ -7,6 +7,7 @@ import android.util.Log
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
+import com.antivocale.app.transcription.NemotronStreamingBackend
 import com.antivocale.app.transcription.WhisperBackend
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -27,7 +28,8 @@ class ShareTargetManager(
             ShareTarget("com.antivocale.app.ShareParakeet", SherpaOnnxBackend.BACKEND_ID),
             ShareTarget("com.antivocale.app.ShareWhisper", WhisperBackend.BACKEND_ID),
             ShareTarget("com.antivocale.app.ShareQwen3", Qwen3AsrBackend.BACKEND_ID),
-            ShareTarget("com.antivocale.app.ShareGemma", LlmTranscriptionBackend.BACKEND_ID)
+            ShareTarget("com.antivocale.app.ShareGemma", LlmTranscriptionBackend.BACKEND_ID),
+            ShareTarget("com.antivocale.app.ShareNemotron", NemotronStreamingBackend.BACKEND_ID)
         )
     }
 
@@ -37,6 +39,7 @@ class ShareTargetManager(
             WhisperBackend.BACKEND_ID -> preferencesManager.whisperModelPath.first() != null
             Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first() != null
             LlmTranscriptionBackend.BACKEND_ID -> preferencesManager.modelPath.first() != null
+            NemotronStreamingBackend.BACKEND_ID -> preferencesManager.nemotronModelPath.first() != null
             else -> false
         }
     }

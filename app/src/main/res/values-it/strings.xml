@@ -659,6 +659,7 @@
     <string name="share_target_whisper">Anti-Vocale (Whisper)</string>
     <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
     <string name="share_target_gemma">Anti-Vocale (Gemma)</string>
+    <string name="share_target_nemotron">Anti-Vocale (Nemotron)</string>
     <string name="share_targets_title">Destinazioni di condivisione</string>
     <string name="share_targets_description">Mostra ogni modello scaricato come opzione separata nella scheda di condivisione di Android. Il modello viene usato temporaneamente per la singola trascrizione.</string>
     <string name="advanced_sharing_toggle">Mostra modelli nella scheda di condivisione</string>
