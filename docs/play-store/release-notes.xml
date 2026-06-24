@@ -1,4 +1,12 @@
 <en-US>
+What's new in 1.6.0:
+
+• New Nemotron 3.5 streaming backend — transcription text appears progressively in real time
+• Parakeet: better quality on long audio via SmoothQuant int8, with automatic fallback to the stock model
+• Per-stream language selection for Nemotron transcriptions
+• Obsolete model folders are cleaned up automatically
+• Updated inference libraries for performance and stability
+
 What's new in 1.5.4:
 
 • Upgraded sherpa-onnx to v1.13.2 for improved ONNX inference
@@ -105,6 +113,14 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.6.0:
+
+• Nuovo backend streaming Nemotron 3.5 — il testo della trascrizione appare progressivamente in tempo reale
+• Parakeet: qualità migliorata su audio lunghi grazie a SmoothQuant int8, con fallback automatico al modello stock
+• Selezione della lingua per stream per le trascrizioni Nemotron
+• Le cartelle obsolete dei modelli vengono rimosse automaticamente
+• Aggiornate le librerie di inferenza per prestazioni e stabilità
+
 Novità della versione 1.5.4:
 
 • Aggiornato sherpa-onnx a v1.13.2 per inferenza ONNX migliorata
