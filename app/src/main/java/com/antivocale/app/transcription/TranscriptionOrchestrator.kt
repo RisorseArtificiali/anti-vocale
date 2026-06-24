@@ -303,6 +303,14 @@ class TranscriptionOrchestrator @Inject constructor(
             backendId = NemotronStreamingBackend.BACKEND_ID,
             modelPath = modelPath,
             label = "Nemotron",
+            // AC #3: Nemotron multilingual conditions on a language-ID prompt per stream via
+            // OnlineStream.setOption("language", ...). "auto" = auto-detect; otherwise a code (it/en/...).
+            language = preferencesManager.transcriptionLanguage.first().let { lang ->
+                when {
+                    lang.isBlank() || lang == "system" -> "auto"
+                    else -> lang
+                }
+            },
             context = context
         )
     }

@@ -47,6 +47,8 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
     private var recognizer: OnlineRecognizer? = null
     private var modelDir: String? = null
     private var isInitialized = false
+    /** Per-stream language for Nemotron multilingual ("auto" or a code like "it"/"en"). AC #3. */
+    private var language: String = "auto"
 
     override suspend fun initialize(context: Context, config: BackendConfig): Result<Unit> {
         val sherpaConfig = config as? BackendConfig.SherpaOnnxConfig
@@ -108,6 +110,7 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
                 recognizer = OnlineRecognizer(config = recognizerConfig)
 
                 modelDir = modelDirectory
+                language = sherpaConfig.language.ifBlank { "auto" }
                 isInitialized = true
 
                 Log.i(TAG, "Nemotron streaming backend initialized successfully")
@@ -137,9 +140,12 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
                 // decoder, signal end-of-input, do a final decode, then read the result.
                 // createStream(String) arg is HOTWORDS/contextual biasing, NOT language — passing a
                 // non-empty value (e.g. "auto") triggers contextual biasing, which sherpa aborts on
-                // (exit 255). Empty = no biasing. Nemotron multilingual language selection is a
-                // separate v1.13.3 API (TODO follow-up); the model defaults to auto-detect here.
+                // (exit 255). Empty = no biasing; language is set via setOption below.
                 stream = rec.createStream("")
+                // AC #3: condition the multilingual model on the user's language ("auto" = auto-detect,
+                // else a specific code). This is OnlineStream.setOption — distinct from createStream's
+                // hotwords arg; passing a language via createStream triggers contextual biasing (exit 255).
+                stream.setOption("language", language)
                 stream.acceptWaveform(samples, sampleRate)
 
                 // Decode loop: drain the recognizer's internal buffer for this stream.
@@ -198,6 +204,7 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
         recognizer?.release()
         recognizer = null
         modelDir = null
+        language = "auto"
         isInitialized = false
     }
 

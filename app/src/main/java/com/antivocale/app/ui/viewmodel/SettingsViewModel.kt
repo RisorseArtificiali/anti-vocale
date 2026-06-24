@@ -23,6 +23,7 @@ import com.antivocale.app.transcription.Qwen3AsrModelManager
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.SherpaOnnxBackend
+import com.antivocale.app.transcription.NemotronStreamingBackend
 import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.ui.theme.ThemeType
@@ -652,6 +653,18 @@ class SettingsViewModel @Inject constructor(
                             Qwen3AsrModelManager.detectVariant(modelDir.name)?.let { v ->
                                 getApplication<Application>().getString(v.titleResId)
                             } ?: path.substringAfterLast("/")
+                        } else null
+                        _uiState.update { it.copy(
+                            currentModelPath = path,
+                            currentModelName = modelName
+                        )}
+                    }
+                }
+                NemotronStreamingBackend.BACKEND_ID -> {
+                    // Show Nemotron streaming model
+                    preferencesManager.nemotronModelPath.collect { path ->
+                        val modelName = if (!path.isNullOrBlank()) {
+                            getApplication<Application>().getString(R.string.nemotron_name)
                         } else null
                         _uiState.update { it.copy(
                             currentModelPath = path,
