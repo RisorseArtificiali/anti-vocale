@@ -13,7 +13,7 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 ## Features
 
 - **Fully offline** - All processing happens on-device, no data leaves your phone
-- **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, or Qwen3-ASR models
+- **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, Qwen3-ASR, or Nemotron 3.5 (streaming) models
 - **Share integration** - Share audio from any messaging app to transcribe
 - **Model-specific share targets** - Pick a specific model directly from the Android share sheet
 - **Re-transcribe** - Retry any transcription with a different model from the log
@@ -87,7 +87,8 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 
 | Model | Size | Languages | Notes |
 |-------|------|-----------|-------|
-| **Parakeet TDT 0.6B v3** | ~464MB | 25 European | Best speed/quality ratio, recommended default |
+| **Parakeet TDT SmoothQuant** | ~862MB | 25 European | Best quality on long audio, recommended default |
+| **Parakeet TDT Stock int8** | ~464MB | 25 European | Lighter fallback, best speed/size ratio |
 | **Qwen3-ASR 0.6B** | ~938MB | 52 | 52 languages, poor Italian accuracy |
 
 ### Italian ASR Benchmark
@@ -105,6 +106,7 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 
 | Model | Size | Languages | Notes |
 |-------|------|-----------|-------|
+| **Nemotron 3.5** | ~640MB | 40+ | Cache-aware streaming transducer, auto-detect + native punctuation/casing |
 | **Qwen3-ASR 0.6B** | ~938MB | 52 | Streaming-capable, poor Italian accuracy |
 
 ## Getting Started
@@ -151,6 +153,7 @@ TranscriptionOrchestrator
     |--- SherpaOnnxBackend (Parakeet TDT)
     |--- WhisperBackend (Whisper models)
     |--- Qwen3AsrBackend (Qwen3-ASR)
+    |--- NemotronStreamingBackend (Nemotron 3.5, OnlineRecognizer)
     |--- LlmTranscriptionBackend (Gemma via LiteRT-LM)
     |
     v

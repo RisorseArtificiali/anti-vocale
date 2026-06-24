@@ -12,7 +12,7 @@ Android application written in Kotlin for transcribing voice messages locally on
 - Git protocol: SSH
 - **adb path:** `~/Android/Sdk/platform-tools/adb`
 - **Build & install on device:** `./scripts/install.sh` (ALWAYS use this — never `./gradlew installDebug`)
-- **Device:** Realme RMX3853 (Android 16, connects via wireless debugging at `telefonopaolo:35685`)
+- **Device:** Realme RMX3853 (Android 16, wireless debugging at `telefonopaolo:<port>` — port rotates on reboot/Wi-Fi change; user provides the current port each session)
 
 @import docs/BUILD.md
 
@@ -23,13 +23,33 @@ Android application written in Kotlin for transcribing voice messages locally on
 ## Project Structure
 
 - `app/src/main/java/com/antivocale/app/` — Main source
-  - `transcription/` — Transcription backends (Whisper/sherpa-onnx, LiteRT-LM)
+  - `transcription/` — Transcription backends + model managers:
+    - `SherpaOnnxBackend` (Parakeet TDT — SmoothQuant recommended + Stock int8 fallback, via OfflineRecognizer)
+    - `WhisperBackend` (Whisper Distil-IT/Small/Turbo/Medium, via OfflineRecognizer)
+    - `Qwen3AsrBackend` (Qwen3-ASR 0.6B, via OfflineRecognizer)
+    - `NemotronStreamingBackend` (Nemotron 3.5 multilingual, via OnlineRecognizer — the only streaming backend)
+    - `LlmTranscriptionBackend` (Gemma via LiteRT-LM)
+    - Each backend has a `*ModelManager` (discovery/validation) + `*Downloader` (HF download). `OrphanedModelDirCleaner` reclaims stranded old-version dirs at startup.
   - `ui/` — Compose UI screens and view models
-  - `receiver/` — Broadcast receivers (Tasker integration)
-  - `model/` — Model management and configuration
+  - `receiver/` — Broadcast receivers + share-target aliases (ShareReceiverActivity)
+  - `data/` — Preferences, ShareTargetManager, download infrastructure
 - `app/libs/` — Prebuilt AARs (sherpa-onnx, tracked via Git LFS)
 - `docs/` — Build guides, research notes, scout reports
 - `scripts/` — Build/install helpers (`install.sh`)
+
+## Architecture Gotchas
+
+**Adding a transcription backend → update ALL dispatch sites.** The app has N parallel backend-id mappings. Missing one causes a silent UI bug that compiles clean. When adding/changing a backend, `grep -rE "BACKEND_ID|when.*[Bb]ackend" app/src/main` and confirm EVERY hit. Known sites:
+- `ModelViewModel` (loadSavedModelPath, modelPathForBackend, benchmark config)
+- `SettingsViewModel.loadCurrentModel` (Settings active-model display — separate state from ModelViewModel)
+- `TranscriptionOrchestrator` (when(preferredBackendId) + loadXxxBackend)
+- `ExtractionService` (ModelType enum + download/cancel/displayName dispatch)
+- `TranscriptionModule` (Hilt @IntoSet DI registration)
+- `ShareTargetManager` (TARGETS list + hasModel) + `ShareReceiverActivity` (ALIAS const + backendIdForAlias)
+- `AndroidManifest.xml` (share-target activity-alias) + strings (share_target_*)
+- `PreferencesManager(Impl)` (xxxModelPath flow + save/clear)
+
+Root smell: two parallel model-state systems (`ModelViewModel.modelName/modelPath` vs `SettingsViewModel.currentModelName/currentModelPath`).
 
 ## Skills
 
