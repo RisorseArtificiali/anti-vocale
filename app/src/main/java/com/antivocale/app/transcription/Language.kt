@@ -120,4 +120,15 @@ object Language {
         "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz", "vi", "wo",
         "xh", "yi", "yo", "zh", "zu",
     )
+
+    /** Nemotron 3.5 streaming multilingual — languages the model conditions on
+     *  (derived from its ONNX prompt_dictionary; see docs/sherpa-onnx-multilingual-validation.ipynb).
+     *  Restricted to languages that have localized display names in [FILTER_ENTRIES]. */
+    val NEMOTRON: Set<String> = setOf(
+        "en", "es", "zh", "hi", "ar", "fr", "de", "ja", "ru", "pt",
+        "ko", "it", "nl", "pl", "tr", "uk", "ro", "el", "cs", "hu",
+        "sv", "da", "fi", "no", "sk", "hr", "bg", "lt", "th", "vi",
+        "id", "ms", "bn", "ur", "fa", "ta", "sw", "af", "et", "lv",
+        "sl", "he", "az", "ka", "uz",
+    )
 }

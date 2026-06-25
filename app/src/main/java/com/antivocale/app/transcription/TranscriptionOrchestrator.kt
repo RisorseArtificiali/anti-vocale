@@ -439,14 +439,23 @@ class TranscriptionOrchestrator @Inject constructor(
         // Resolve prompt: request → settings → fallback
         val resolvedPrompt = resolvePrompt(prompt)
 
-        // Fast path: single chunk
+        // Fast path: single chunk. Uses the streaming variant so streaming backends
+        // (e.g. Nemotron) can emit progressive partials; non-streaming backends ignore
+        // the callback via the default implementation in TranscriptionBackend.
         if (chunkCount == 1) {
             val t0 = System.currentTimeMillis()
-            val result = backend.transcribeAudio(
+            val result = backend.transcribeAudioStreaming(
                 prompt = resolvedPrompt,
                 samples = preprocessingResult.chunks.first(),
                 sampleRate = preprocessingResult.sampleRate
-            )
+            ) { partial ->
+                updateInterimResult(taskId, partial)
+                listener.onInterimResult(
+                    contentText = partial,
+                    bigText = partial,
+                    subText = ""
+                )
+            }
             val inferMs = System.currentTimeMillis() - t0
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
             return when {

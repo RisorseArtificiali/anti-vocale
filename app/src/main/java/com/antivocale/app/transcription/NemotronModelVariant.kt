@@ -14,5 +14,5 @@ object NemotronModelVariant : ModelVariant {
     override val descriptionResId: Int = R.string.nemotron_description
     override val dirName: String = NemotronModelManager.NEMOTRON_MODEL_DIR
     override val estimatedSizeMB: Long = 640L  // int8 (~640MB) — keep in sync with NemotronDownloader.ESTIMATED_SIZE_MB
-    override val supportedLanguageCodes: Set<String> = emptySet()
+    override val supportedLanguageCodes: Set<String> = Language.NEMOTRON
 }

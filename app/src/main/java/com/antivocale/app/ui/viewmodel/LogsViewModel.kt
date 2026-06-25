@@ -16,6 +16,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.LlmTranscriptionBackend
+import com.antivocale.app.transcription.NemotronStreamingBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -265,7 +266,8 @@ class LogsViewModel @Inject constructor(
             WhisperBackend.BACKEND_ID to preferencesManager.whisperModelPath.first(),
             SherpaOnnxBackend.BACKEND_ID to preferencesManager.parakeetModelPath.first(),
             Qwen3AsrBackend.BACKEND_ID to preferencesManager.qwen3AsrModelPath.first(),
-            LlmTranscriptionBackend.BACKEND_ID to preferencesManager.modelPath.first()
+            LlmTranscriptionBackend.BACKEND_ID to preferencesManager.modelPath.first(),
+            NemotronStreamingBackend.BACKEND_ID to preferencesManager.nemotronModelPath.first()
         )
 
         return backends

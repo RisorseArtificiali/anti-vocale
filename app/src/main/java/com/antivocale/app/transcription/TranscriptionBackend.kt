@@ -53,6 +53,22 @@ interface TranscriptionBackend {
     suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<TranscriptionResult>
 
     /**
+     * Streaming variant of [transcribeAudio] that emits partial hypotheses via [onPartial]
+     * as the audio is decoded, enabling progressive/real-time display.
+     *
+     * The default implementation ignores [onPartial] and delegates to [transcribeAudio];
+     * backends backed by a streaming recognizer (e.g. Nemotron's OnlineRecognizer) override
+     * this to surface progressive text. The final returned result must be equivalent to
+     * [transcribeAudio]'s output for the same input.
+     */
+    suspend fun transcribeAudioStreaming(
+        samples: FloatArray,
+        sampleRate: Int,
+        prompt: String,
+        onPartial: suspend (String) -> Unit
+    ): Result<TranscriptionResult> = transcribeAudio(samples, sampleRate, prompt)
+
+    /**
      * Generates text from a prompt.
      */
     suspend fun generateText(prompt: String): Result<String>

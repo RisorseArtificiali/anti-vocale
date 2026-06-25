@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
 import com.antivocale.app.data.download.DownloadState
@@ -140,7 +141,10 @@ fun ModelVariantCard(
                         ) {
                             Text(
                                 text = stringResource(state.variant.titleResId),
-                                style = MaterialTheme.typography.titleSmall
+                                style = MaterialTheme.typography.titleSmall,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f, fill = false)
                             )
                             extraBadges?.invoke()
                             if (state.isActive) {
@@ -152,6 +156,7 @@ fun ModelVariantCard(
                                         text = stringResource(R.string.active_badge),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = MaterialTheme.colorScheme.onPrimary,
+                                        maxLines = 1,
                                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
                                     )
                                 }

@@ -127,7 +127,15 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
         }
     }
 
-    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<TranscriptionResult> {
+    override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String): Result<TranscriptionResult> =
+        transcribeAudioStreaming(samples, sampleRate, prompt) { /* batch interface: no progressive partials */ }
+
+    override suspend fun transcribeAudioStreaming(
+        samples: FloatArray,
+        sampleRate: Int,
+        prompt: String,
+        onPartial: suspend (String) -> Unit
+    ): Result<TranscriptionResult> {
         val rec = recognizer
             ?: return Result.failure(IllegalStateException("Backend not initialized"))
 
@@ -136,8 +144,9 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
             try {
                 Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
 
-                // Batch-via-online: create a stream, feed the whole clip, drain the
-                // decoder, signal end-of-input, do a final decode, then read the result.
+                // Feed the whole clip up front (identical to batch-via-online, so the final
+                // result is unchanged), then emit the recognizer's growing hypothesis after
+                // each decode() pass for progressive display.
                 // createStream(String) arg is HOTWORDS/contextual biasing, NOT language — passing a
                 // non-empty value (e.g. "auto") triggers contextual biasing, which sherpa aborts on
                 // (exit 255). Empty = no biasing; language is set via setOption below.
@@ -148,9 +157,16 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
                 stream.setOption("language", language)
                 stream.acceptWaveform(samples, sampleRate)
 
-                // Decode loop: drain the recognizer's internal buffer for this stream.
+                // Decode loop: drain the recognizer's internal buffer, emitting the growing
+                // hypothesis after each pass so the UI can render text progressively.
+                var lastEmitted = ""
                 while (rec.isReady(stream)) {
                     rec.decode(stream)
+                    val partial = rec.getResult(stream).text
+                    if (partial.isNotBlank() && partial != lastEmitted) {
+                        onPartial(partial)
+                        lastEmitted = partial
+                    }
                 }
 
                 stream.inputFinished()
@@ -161,6 +177,11 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
 
                 val result = rec.getResult(stream)
                 val transcription = result.text
+                // Emit the final hypothesis so the UI shows the complete text (may differ from
+                // the last partial if the end-of-input decode produced trailing tokens).
+                if (transcription.isNotBlank() && transcription != lastEmitted) {
+                    onPartial(transcription)
+                }
 
                 Log.d(TAG, "Transcription complete: '${transcription.take(100)}...' (${transcription.length} chars)")
 
