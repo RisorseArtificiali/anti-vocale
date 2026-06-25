@@ -120,6 +120,19 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/ogg" />
             </intent-filter>
+            <!-- Video files: treated as an audio container only (audio track extracted;
+                 no visual analysis). video/* covers mp4/mkv/webm/mov/3gpp; application/mp4
+                 catches the common application/* misclassification by some senders. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/mp4" />
+            </intent-filter>
         </activity>
 
         <!-- Share target aliases: each appears as a separate option in the Android share sheet -->
@@ -142,6 +155,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/ogg" />
             </intent-filter>
+            <!-- Video files: audio container only (audio track extracted, no visual analysis). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/mp4" />
+            </intent-filter>
         </activity-alias>
 
         <activity-alias
@@ -162,6 +186,17 @@
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/ogg" />
+            </intent-filter>
+            <!-- Video files: audio container only (audio track extracted, no visual analysis). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/mp4" />
             </intent-filter>
         </activity-alias>
 
@@ -184,6 +219,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/ogg" />
             </intent-filter>
+            <!-- Video files: audio container only (audio track extracted, no visual analysis). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/mp4" />
+            </intent-filter>
         </activity-alias>
 
         <activity-alias
@@ -205,6 +251,17 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/ogg" />
             </intent-filter>
+            <!-- Video files: audio container only (audio track extracted, no visual analysis). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/mp4" />
+            </intent-filter>
         </activity-alias>
 
         <activity-alias
@@ -225,6 +282,17 @@
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/ogg" />
+            </intent-filter>
+            <!-- Video files: audio container only (audio track extracted, no visual analysis). -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="video/*" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/mp4" />
             </intent-filter>
         </activity-alias>
 

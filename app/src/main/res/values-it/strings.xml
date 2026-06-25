@@ -83,6 +83,7 @@
     <string name="logs_search_no_results">Nessuna trascrizione trovata</string>
     <string name="logs_search_no_results_hint">Prova un termine di ricerca diverso</string>
     <string name="voice_message_duration">messaggio vocale</string>
+    <string name="source_was_video">Origine: file video</string>
     <string name="processed_in">Elaborato in %1$s</string>
     <string name="today">Oggi</string>
     <string name="yesterday">Ieri</string>

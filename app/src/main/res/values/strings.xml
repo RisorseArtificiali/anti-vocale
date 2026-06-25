@@ -83,6 +83,7 @@
     <string name="logs_search_no_results">No matching transcriptions</string>
     <string name="logs_search_no_results_hint">Try a different search term</string>
     <string name="voice_message_duration">voice message</string>
+    <string name="source_was_video">Source: video file</string>
     <string name="processed_in">Processed in %1$s</string>
     <string name="today">Today</string>
     <string name="yesterday">Yesterday</string>

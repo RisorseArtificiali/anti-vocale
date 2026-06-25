@@ -18,10 +18,25 @@ object SharedAudioHandler {
 
     const val TAG = "SharedAudioHandler"
 
-    // Supported audio extensions
+    /** Video containers accepted as audio input (audio track extracted, no visual analysis).
+     *  Public so the Logs tab can mark entries whose source was a video file. */
+    val VIDEO_EXTENSIONS = setOf("mp4", "m4v", "mkv", "webm", "mov", "3g2")
+
+    /** True if [path] is a video container — the audio track is extracted from it
+     *  at decode time. Used by the Logs tab to badge video-sourced transcriptions. */
+    fun isVideoFile(path: String?): Boolean {
+        val ext = path?.substringAfterLast('.')?.lowercase() ?: return false
+        return ext in VIDEO_EXTENSIONS
+    }
+
+    // Supported extensions. Audio containers plus video containers — video is
+    // treated purely as an audio source: AudioPreprocessor.extractAudioTrack()
+    // selects the audio track and ignores video/subtitle tracks, so a video file
+    // flows through the same decode path as audio once accepted here.
     private val SUPPORTED_EXTENSIONS = setOf(
+        // Audio
         "mp3", "m4a", "ogg", "oga", "wav", "aac", "3gp", "flac", "opus", "amr"
-    )
+    ) + VIDEO_EXTENSIONS
 
     // Directory name for shared audio files
     private const val SHARED_AUDIO_DIR = "shared_audio"
@@ -102,8 +117,11 @@ object SharedAudioHandler {
                 return ext.lowercase()
             }
 
-            // Fallback: manual mapping for common audio types
+            // Fallback: manual mapping for common audio and video container types.
+            // Covers MIME types that MimeTypeMap does not resolve and the
+            // application/* misclassification some senders apply to video shares.
             val manualExt = when (baseMimeType.lowercase()) {
+                // Audio
                 "audio/mpeg", "audio/mp3" -> "mp3"
                 "audio/mp4", "audio/m4a" -> "m4a"
                 "audio/ogg", "application/ogg" -> "ogg"
@@ -113,6 +131,16 @@ object SharedAudioHandler {
                 "audio/3gpp" -> "3gp"
                 "audio/amr" -> "amr"
                 "audio/opus" -> "opus"
+                // Video (audio container only). Keep in sync with VIDEO_EXTENSIONS above.
+                "video/mp4" -> "mp4"
+                "video/m4v" -> "m4v"
+                "video/x-matroska", "application/x-matroska" -> "mkv"
+                "video/webm" -> "webm"
+                "video/quicktime" -> "mov"
+                "video/3gpp2" -> "3g2"
+                // Some senders tag .mp4 shares as application/mp4; without this the
+                // file resolves to null and is rejected despite valid bytes.
+                "application/mp4" -> "mp4"
                 else -> null
             }
             if (!manualExt.isNullOrBlank()) {

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import com.antivocale.app.MainActivity
 import com.antivocale.app.R
 import com.antivocale.app.util.AppInfoUtils
+import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.data.PreferencesManager
 import androidx.compose.animation.Crossfade
 import com.antivocale.app.ui.components.SkeletonTranscriptionCard
@@ -699,6 +700,15 @@ fun LogEntryItem(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        if (SharedAudioHandler.isVideoFile(log.filePath)) {
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Icon(
+                                imageVector = Icons.Default.Videocam,
+                                contentDescription = stringResource(R.string.source_was_video),
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
 
