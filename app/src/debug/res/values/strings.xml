@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug-only overrides: distinguish the debug app from the marketplace build
+     in the launcher and the share sheet (two "Anti-Vocale" entries would be
+     ambiguous when testing share intents). -->
+<resources>
+    <string name="app_name">Anti-Vocale (Debug)</string>
+</resources>

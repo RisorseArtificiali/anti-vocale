@@ -61,6 +61,9 @@ android {
         }
         debug {
             isMinifyEnabled = false
+            // Suffix the applicationId so a debug APK installs ALONGSIDE the release /
+            // Play Store build (different package) instead of conflicting on signature.
+            applicationIdSuffix = ".debug"
         }
     }
 
