@@ -1,4 +1,11 @@
 <en-US>
+What's new in 1.6.1:
+
+• Nemotron now streams transcription text progressively as it decodes
+• Nemotron now appears in the "retry with another model" picker
+• Fixed the "Active" badge wrapping its last letter in the model card
+• Nemotron info now lists supported languages instead of "unknown"
+
 What's new in 1.6.0:
 
 • New Nemotron 3.5 streaming backend — transcription text appears progressively in real time
@@ -113,6 +120,13 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.6.1:
+
+• Nemotron ora mostra il testo progressivamente durante la decodifica
+• Nemotron ora appare nel selettore "riprova con un altro modello"
+• Corretto il badge "Attivo" che mandava a capo l'ultima lettera nella scheda del modello
+• Le info di Nemotron ora elencano le lingue supportate invece di "sconosciuto"
+
 Novità della versione 1.6.0:
 
 • Nuovo backend streaming Nemotron 3.5 — il testo della trascrizione appare progressivamente in tempo reale
