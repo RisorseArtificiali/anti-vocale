@@ -48,6 +48,7 @@ class TaskerRequestReceiver : BroadcastReceiver() {
         const val EXTRA_PROMPT = "prompt"
         const val EXTRA_FILE_PATH = "file_path"
         const val EXTRA_TASK_ID = "task_id"
+        const val EXTRA_SUBTITLE_TRACK_INDEX = "subtitle_track_index"
 
         // Reply extras
         const val EXTRA_STATUS = "status"

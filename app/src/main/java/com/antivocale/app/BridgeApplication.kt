@@ -1,19 +1,33 @@
 package com.antivocale.app
 
 import android.app.Application
+import androidx.work.Configuration
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.LocaleManager
+import androidx.hilt.work.HiltWorkerFactory
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
 @HiltAndroidApp
-class BridgeApplication : Application() {
+class BridgeApplication : Application(), Configuration.Provider {
 
     @Inject lateinit var preferencesManager: PreferencesManager
     @Inject lateinit var shareTargetManager: ShareTargetManager
+    @Inject lateinit var workerFactory: HiltWorkerFactory
+
+    /**
+     * Provides the Hilt-aware [androidx.work.WorkManager] configuration so that
+     * `@HiltWorker`-annotated Workers (e.g. SubtitleChoiceTimeoutWorker) get their
+     * dependencies injected. The manifest disables WorkManager's default
+     * initializer so this factory wins.
+     */
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
 
     companion object {
         private const val PREFS_NAME = "localai_migration_prefs"

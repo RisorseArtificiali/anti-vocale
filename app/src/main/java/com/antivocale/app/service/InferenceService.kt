@@ -32,6 +32,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
@@ -78,6 +79,7 @@ class InferenceService : Service(), TranscriptionListener {
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
     private val requestQueue = ConcurrentLinkedQueue<PendingRequest>()
+    private val inFlightTaskIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
     private var currentProcessingJob: Job? = null
     private var transcriptionStartTime: Long = 0
     private val pendingCount = AtomicInteger(0)
@@ -91,7 +93,8 @@ class InferenceService : Service(), TranscriptionListener {
         val startTime: Long = System.currentTimeMillis(),
         val source: String? = null,
         val sourcePackage: String? = null,
-        val backendOverride: String? = null
+        val backendOverride: String? = null,
+        val trackIndex: Int = -1
     )
 
     // ---- Android Lifecycle ----
@@ -123,8 +126,19 @@ class InferenceService : Service(), TranscriptionListener {
             filePath = filePath,
             source = intent?.getStringExtra(EXTRA_SOURCE),
             sourcePackage = intent?.getStringExtra(EXTRA_SOURCE_PACKAGE),
-            backendOverride = intent?.getStringExtra(EXTRA_BACKEND_OVERRIDE)
+            backendOverride = intent?.getStringExtra(EXTRA_BACKEND_OVERRIDE),
+            trackIndex = intent?.getIntExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, -1) ?: -1
         )
+
+        // Dedup by taskId: drop a duplicate before it enters the queue. This covers both the
+        // queued case (a request with the same taskId is waiting) and the in-flight case (a
+        // request with the same taskId is currently being processed). `inFlightTaskIds.add`
+        // returns false when the id is already present — atomic against the drain loop's remove.
+        if (!inFlightTaskIds.add(request.taskId)) {
+            Log.w(TAG, "Duplicate taskId dropped (already queued or processing): ${request.taskId}")
+            processQueue()
+            return START_NOT_STICKY
+        }
 
         requestQueue.add(request)
         val queueSize = pendingCount.incrementAndGet()
@@ -165,31 +179,38 @@ class InferenceService : Service(), TranscriptionListener {
                     pendingCount.decrementAndGet()
                     currentIndex++
 
-                    // Show queue-aware initial notification
-                    val initialText = if (totalInBatch > 1) {
-                        getString(R.string.processing_queue_item, currentIndex, totalInBatch)
-                    } else {
-                        getString(R.string.processing_request, request.requestType)
+                    try {
+                        // Show queue-aware initial notification
+                        val initialText = if (totalInBatch > 1) {
+                            getString(R.string.processing_queue_item, currentIndex, totalInBatch)
+                        } else {
+                            getString(R.string.processing_request, request.requestType)
+                        }
+                        updateNotification(initialText)
+
+                        transcriptionStartTime = System.currentTimeMillis()
+
+                        orchestrator.processRequest(
+                            taskId = request.taskId,
+                            requestType = request.requestType,
+                            prompt = request.prompt,
+                            filePath = request.filePath,
+                            source = request.source,
+                            sourcePackage = request.sourcePackage,
+                            backendOverride = request.backendOverride,
+                            trackIndex = request.trackIndex,
+                            queuePosition = currentIndex,
+                            queueTotal = totalInBatch,
+                            context = applicationContext,
+                            cacheDir = cacheDir,
+                            listener = this@InferenceService,
+                            coroutineScope = this
+                        )
+                    } finally {
+                        // Always release the taskId so a future request with the same id is
+                        // accepted. Runs on success, error, and cancellation.
+                        inFlightTaskIds.remove(request.taskId)
                     }
-                    updateNotification(initialText)
-
-                    transcriptionStartTime = System.currentTimeMillis()
-
-                    orchestrator.processRequest(
-                        taskId = request.taskId,
-                        requestType = request.requestType,
-                        prompt = request.prompt,
-                        filePath = request.filePath,
-                        source = request.source,
-                        sourcePackage = request.sourcePackage,
-                        backendOverride = request.backendOverride,
-                        queuePosition = currentIndex,
-                        queueTotal = totalInBatch,
-                        context = applicationContext,
-                        cacheDir = cacheDir,
-                        listener = this@InferenceService,
-                        coroutineScope = this
-                    )
                 }
             } catch (e: CancellationException) {
                 Log.i(TAG, "Processing cancelled by user")

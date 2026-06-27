@@ -323,6 +323,8 @@
                 <action android:name="com.antivocale.app.COPY_TRANSCRIPTION" />
                 <action android:name="com.antivocale.app.SHARE_TRANSCRIPTION" />
                 <action android:name="com.antivocale.app.SHARE_BACK" />
+                <action android:name="com.antivocale.app.USE_SUBTITLES" />
+                <action android:name="com.antivocale.app.TRANSCRIBE_AUDIO" />
             </intent-filter>
         </receiver>
 
@@ -372,6 +374,19 @@
                 android:name="autoStoreLocales"
                 android:value="true" />
         </service>
+
+        <!-- Disable WorkManager's default initializer so the HiltWorkerFactory provided by
+             BridgeApplication.Configuration.Provider wins. Required for @HiltWorker DI. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            android:exported="false"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.work.WorkManagerInitializer"
+                android:value="androidx.startup"
+                tools:node="remove" />
+        </provider>
 
     </application>
 

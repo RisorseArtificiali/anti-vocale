@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
+import com.antivocale.app.R
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.audio.AudioPreprocessor.StreamEvent
@@ -63,6 +64,7 @@ class TranscriptionOrchestrator @Inject constructor(
         source: String?,
         sourcePackage: String?,
         backendOverride: String? = null,
+        trackIndex: Int = -1,
         queuePosition: Int,
         queueTotal: Int,
         context: Context,
@@ -75,7 +77,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // Log request start
         logRequest(
             taskId = taskId,
-            type = if (requestType == "audio") LogEntry.Type.AUDIO else LogEntry.Type.TEXT,
+            type = if (requestType == "audio" || requestType == "subtitles") LogEntry.Type.AUDIO else LogEntry.Type.TEXT,
             prompt = prompt,
             filePath = filePath,
             sourcePackageName = sourcePackage
@@ -84,6 +86,34 @@ class TranscriptionOrchestrator @Inject constructor(
         val startTime = System.currentTimeMillis()
 
         try {
+            // Subtitle mode: extract embedded text subtitles WITHOUT loading any model. On
+            // extraction failure (null/blank), fall back to the normal audio/ASR path below
+            // rather than reporting an error. This branch must run BEFORE ensureBackendLoaded
+            // so a missing model never blocks a subtitle hit.
+            if (requestType == "subtitles") {
+                val subtitleResult = processSubtitleRequest(
+                    taskId = taskId,
+                    filePath = filePath,
+                    trackIndex = trackIndex,
+                    source = source,
+                    sourcePackage = sourcePackage,
+                    isShareRequest = isShareRequest,
+                    startTime = startTime,
+                    context = context,
+                    cacheDir = cacheDir,
+                    listener = listener,
+                    coroutineScope = coroutineScope,
+                    queuePosition = queuePosition,
+                    queueTotal = queueTotal,
+                    prompt = prompt,
+                    backendOverride = backendOverride
+                )
+                // Non-null result = the subtitle path resolved the request (success OR a
+                // fallback-driven error already reported to the listener). Null = extraction
+                // yielded nothing and the caller should run ASR — handled below.
+                if (subtitleResult != null) return subtitleResult
+            }
+
             // Ensure the correct backend is loaded
             val loadResult = ensureBackendLoaded(context, backendOverride)
             if (loadResult.isFailure) {
@@ -158,6 +188,72 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             }
         }
+    }
+
+    // ---- Subtitle Extraction ----
+
+    /**
+     * Handles `requestType == "subtitles"`: extract embedded subtitle text without loading
+     * any ASR model, and fall back to the normal ASR path when extraction yields nothing.
+     *
+     * @return `Result.success(text)` when subtitle text was produced and reported to
+     *         [listener]; `Result.failure(...)` when the fallback ASR path itself failed
+     *         (already reported to [listener]); `null` to signal the caller to run the
+     *         normal ASR path (extraction returned null/blank). The `null` sentinel keeps
+     *         the fallback's listener.onSuccess/onError calls in ONE place (the caller's
+     *         result.fold) instead of duplicating them here.
+     */
+    private suspend fun processSubtitleRequest(
+        taskId: String,
+        filePath: String?,
+        trackIndex: Int,
+        source: String?,
+        sourcePackage: String?,
+        isShareRequest: Boolean,
+        startTime: Long,
+        context: Context,
+        cacheDir: File,
+        listener: TranscriptionListener,
+        coroutineScope: CoroutineScope,
+        queuePosition: Int,
+        queueTotal: Int,
+        prompt: String,
+        backendOverride: String?
+    ): Result<String>? {
+        if (filePath.isNullOrEmpty() || trackIndex < 0) {
+            Log.w(TAG, "subtitle request missing filePath or trackIndex (filePath=$filePath, trackIndex=$trackIndex) — falling back to ASR")
+            listener.onStatusUpdate(context.getString(R.string.subtitle_fallback_status))
+            return null
+        }
+
+        val text = try {
+            SubtitleExtractor.extractToText(filePath, trackIndex)
+        } catch (e: Exception) {
+            Log.w(TAG, "Subtitle extraction threw — falling back to ASR", e)
+            null
+        }
+
+        if (text.isNullOrBlank()) {
+            Log.w(TAG, "subtitle extraction null/blank for trackIndex=$trackIndex — falling back to ASR")
+            listener.onStatusUpdate(context.getString(R.string.subtitle_fallback_status))
+            return null
+        }
+
+        // Extraction succeeded: report exactly as the audio success path does, then return.
+        val duration = System.currentTimeMillis() - startTime
+        logSuccess(taskId, text, duration, isPartial = false, failedChunkCount = 0)
+        listener.onSuccess(
+            taskId,
+            text,
+            isShareRequest,
+            sourcePackage,
+            duration,
+            confidence = null,
+            detectedLanguage = null,
+            isPartial = false,
+            failedChunkCount = 0
+        )
+        return Result.success(text)
     }
 
     // ---- Backend Loading ----
