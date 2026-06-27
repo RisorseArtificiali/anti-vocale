@@ -297,6 +297,20 @@ fun ModelTab(
         )
     }
 
+    // Gemma "update available" confirmation dialog (re-download a stale artifact, e.g. a
+    // pre-2026-05-05 copy without the MTP drafter). Only reachable while the
+    // MTP_SPECULATIVE_DECODING_ENABLED build flag is on (see ModelDownloadSection).
+    if (downloadUiState.modelToUpdate != null) {
+        val variant = downloadUiState.modelToUpdate
+        DownloadConfirmationDialog(
+            title = stringResource(R.string.gemma_update_confirm_title, variant?.displayName ?: "Gemma"),
+            message = stringResource(R.string.gemma_update_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 0),
+            confirmButtonText = stringResource(R.string.model_update_button),
+            onConfirm = { viewModel.confirmUpdateModel() },
+            onDismiss = { viewModel.dismissUpdateDialog() }
+        )
+    }
+
     // Whisper download confirmation dialog
     if (whisperState.showDownloadDialog) {
         val variant = whisperState.selectedVariant
@@ -676,6 +690,7 @@ private fun ModelDownloadSection(
                         partialDownload = variantState?.partialDownload,
                         buttonState = when {
                             variantState?.isDownloading == true -> DownloadButtonState.Downloading
+                            downloadState.staleModels.contains(variant) -> DownloadButtonState.UpdateAvailable
                             downloadState.downloadedModels.contains(variant) -> DownloadButtonState.Downloaded
                             variantState?.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
                             else -> DownloadButtonState.Idle
@@ -687,6 +702,7 @@ private fun ModelDownloadSection(
                     onResumeClick = { viewModel.resumeDownload(variant) },
                     onClearPartialClick = { viewModel.clearPartialDownload(variant) },
                     onUseClick = { guardedModelSwitch { viewModel.useDownloadedModel(variant) } },
+                    onUpdateClick = { viewModel.showUpdateDialog(variant) },
                     onDeleteClick = { viewModel.showDeleteDialog(variant) },
                     onInfoClick = { onInfoClick(variant) }
                 )

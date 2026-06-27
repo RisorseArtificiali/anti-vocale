@@ -38,6 +38,9 @@ object ModelDownloader {
     private const val CONNECT_TIMEOUT_MS = 30_000
     private const val READ_TIMEOUT_MS = 60_000
     private const val TMP_FILE_EXT = ".tmp"
+    private const val VERSION_MARKER_EXT = ".version"
+    /** Installed-version sentinel when no marker sidecar exists (a pre-versioning download). */
+    private const val VERSION_UNKNOWN = 0
 
     /**
      * Available model variants.
@@ -53,7 +56,14 @@ object ModelDownloader {
         override val supportedLanguageCodes: Set<String> = emptySet(),
         val expectedSha256: String? = null,
         override val titleResId: Int,
-        override val dirName: String
+        override val dirName: String,
+        /**
+         * Monotonically-increasing artifact version. Bumped when the upstream `.litertlm`
+         * file content changes meaningfully (1 → 2 when the MTP drafter was bundled in on
+         * 2026-05-05). [isModelUpdateAvailable] uses it to detect stale cached copies.
+         * Variants left at 1 are never considered stale (no content change to migrate).
+         */
+        val modelVersion: Int = 1
     ) : com.antivocale.app.transcription.ModelVariant {
         GEMMA_4_E2B(
             displayName = "Gemma 4 E2B",
@@ -64,7 +74,9 @@ object ModelDownloader {
             supportsAudio = true,
             supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA,
             titleResId = R.string.model_title_gemma_4_e2b,
-            dirName = "gemma-4-e2b"
+            dirName = "gemma-4-e2b",
+            // v2 = monolithic .litertlm refreshed 2026-05-05 to bundle the MTP drafter.
+            modelVersion = 2
         ),
         GEMMA_4_E4B(
             displayName = "Gemma 4 E4B",
@@ -75,7 +87,9 @@ object ModelDownloader {
             supportsAudio = true,
             supportedLanguageCodes = com.antivocale.app.transcription.Language.GEMMA,
             titleResId = R.string.model_title_gemma_4_e4b,
-            dirName = "gemma-4-e4b"
+            dirName = "gemma-4-e4b",
+            // v2 = monolithic .litertlm refreshed 2026-05-05 to bundle the MTP drafter.
+            modelVersion = 2
         ),
         GEMMA_3N_E2B(
             displayName = "Gemma 3n E2B",
@@ -123,6 +137,31 @@ object ModelDownloader {
     private fun getDownloadUrl(variant: ModelVariant): String {
         return "https://huggingface.co/${variant.huggingFaceRepo}/resolve/main/${variant.fileName}"
     }
+
+    // ---- Artifact version stamp (sidecar marker) --------------------------------
+    // HF lets authors replace a file's bytes under the same `/resolve/main/<name>` path,
+    // so caching by filename alone is unsound. We record the artifact version in a
+    // `<fileName>.version` sidecar at download time; a variant whose required
+    // [ModelVariant.modelVersion] exceeds the recorded one is "stale" and eligible for a
+    // user-prompted re-download. These helpers are pure (File-based) so they can be
+    // unit-tested without Android.
+
+    internal fun versionMarkerFile(modelsDir: File, variant: ModelVariant): File =
+        File(modelsDir, "${variant.fileName}$VERSION_MARKER_EXT")
+
+    internal fun readInstalledVersion(modelsDir: File, variant: ModelVariant): Int {
+        val marker = versionMarkerFile(modelsDir, variant)
+        if (!marker.exists()) return VERSION_UNKNOWN
+        return marker.readText().trim().toIntOrNull() ?: VERSION_UNKNOWN
+    }
+
+    internal fun writeVersionMarker(modelsDir: File, variant: ModelVariant) {
+        versionMarkerFile(modelsDir, variant).writeText(variant.modelVersion.toString())
+    }
+
+    /** Removes the version sidecar; true if a marker existed and was deleted. */
+    internal fun deleteVersionMarker(modelsDir: File, variant: ModelVariant): Boolean =
+        versionMarkerFile(modelsDir, variant).delete()
 
     /**
      * Checks whether the model URL is publicly accessible (no auth needed).
@@ -257,6 +296,19 @@ object ModelDownloader {
                     return@withContext Result.failure(Exception(errorMsg))
                 }
             }
+            // Stamp the artifact version so future required-version bumps can detect
+            // this cached copy as stale and prompt for a re-download. If the marker write
+            // fails (disk full, permissions), delete the file rather than leave a
+            // marker-less copy that would loop the "update available" prompt forever.
+            try {
+                writeVersionMarker(targetFile.parentFile!!, variant)
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to write version marker for ${variant.fileName}; deleting", e)
+                targetFile.delete()
+                val errorMsg = "Could not finalize ${targetFile.name}: version metadata write failed."
+                onStateChange(DownloadState.Error(errorMsg))
+                return@withContext Result.failure(Exception(errorMsg))
+            }
             onStateChange(DownloadState.Complete(targetFile))
         }
 
@@ -345,11 +397,35 @@ object ModelDownloader {
     }
 
     /**
+     * Returns true when a model file is present but predates the current required
+     * [ModelVariant.modelVersion] — i.e. a cached copy whose upstream `.litertlm` was
+     * replaced (for Gemma 4 E2B/E4B: the 2026-05-05 MTP-drafter refresh).
+     *
+     * Variants with `modelVersion <= 1` are never stale (no content migration). Gating the
+     * actual prompt on `BuildConfig.MTP_SPECULATIVE_DECODING_ENABLED` is the caller's job
+     * (see `ModelTab`) — this only answers "is the on-disk file outdated?".
+     */
+    fun isModelUpdateAvailable(context: Context, variant: ModelVariant): Boolean =
+        isModelUpdateAvailable(File(context.filesDir, "models"), variant)
+
+    /**
+     * Core stale predicate, independent of Android [Context] (unit-testable with a temp dir).
+     * True when the model file is present but its recorded version is older than the variant's
+     * required [ModelVariant.modelVersion]. Variants with `modelVersion <= 1` are never stale.
+     */
+    internal fun isModelUpdateAvailable(modelsDir: File, variant: ModelVariant): Boolean {
+        if (!File(modelsDir, variant.fileName).exists()) return false
+        if (variant.modelVersion <= 1) return false
+        return readInstalledVersion(modelsDir, variant) < variant.modelVersion
+    }
+
+    /**
      * Deletes a downloaded model to free up storage.
      */
     fun deleteModel(context: Context, variant: ModelVariant = ModelVariant.GEMMA_4_E2B): Boolean {
-        val file = File(context.filesDir, "models/${variant.fileName}")
-        val tempFile = File(context.filesDir, "models/${variant.fileName}.tmp")
+        val modelsDir = File(context.filesDir, "models")
+        val file = File(modelsDir, variant.fileName)
+        val tempFile = File(modelsDir, "${variant.fileName}$TMP_FILE_EXT")
 
         var deleted = false
         if (file.exists()) {
@@ -357,6 +433,9 @@ object ModelDownloader {
         }
         if (tempFile.exists()) {
             deleted = tempFile.delete() || deleted
+        }
+        if (deleteVersionMarker(modelsDir, variant)) {
+            deleted = true
         }
 
         Log.i(TAG, "Model deleted: ${variant.fileName}, success=$deleted")

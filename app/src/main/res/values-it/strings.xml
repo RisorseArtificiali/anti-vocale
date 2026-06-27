@@ -213,6 +213,9 @@
     <string name="model_selected_message">%1$s selezionato</string>
     <string name="delete">Elimina</string>
     <string name="download">Scarica</string>
+    <string name="model_update_button">Aggiorna</string>
+    <string name="gemma_update_confirm_title">Aggiorna %1$s</string>
+    <string name="gemma_update_confirm_message">È disponibile una versione più veloce con decodifica speculativa. Scaricarla di nuovo (~%1$d MB)?</string>
     <string name="view">Visualizza</string>
 
     <!-- Model Tab - Info labels -->

@@ -215,6 +215,9 @@
     <string name="model_selected_message">%1$s selected</string>
     <string name="delete">Delete</string>
     <string name="download">Download</string>
+    <string name="model_update_button">Update</string>
+    <string name="gemma_update_confirm_title">Update %1$s</string>
+    <string name="gemma_update_confirm_message">A faster version with speculative decoding is available. Re-download (~%1$d MB)?</string>
     <string name="view">View</string>
 
     <!-- Model Tab - Info labels -->

@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.HuggingFaceTokenManager
+import com.antivocale.app.BuildConfig
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
@@ -81,8 +82,10 @@ class ModelViewModel @Inject constructor(
         val variantDownloadStates: Map<ModelDownloader.ModelVariant, VariantDownloadState> = emptyMap(),
         val downloadError: ModelDownloader.DownloadError? = null,
         val downloadedModels: Set<ModelDownloader.ModelVariant> = emptySet(),
+        val staleModels: Set<ModelDownloader.ModelVariant> = emptySet(),
         val hasToken: Boolean = false,
         val modelToDelete: ModelDownloader.ModelVariant? = null,
+        val modelToUpdate: ModelDownloader.ModelVariant? = null,
         val showDownloadDialog: Boolean = false
     ) {
         val isAnyDownloading: Boolean get() = variantDownloadStates.values.any { it.isDownloading }
@@ -1099,7 +1102,16 @@ class ModelViewModel @Inject constructor(
                 }
                 .toSet()
 
-            _downloadUiState.update { it.copy(downloadedModels = downloaded) }
+            // Stale (update-available) variants are computed here, not in the Composable,
+            // so per-recomposition file I/O stays out of the UI. Gated on the build flag so
+            // there's zero stat/readText cost while speculative decoding is disabled.
+            val stale = if (BuildConfig.MTP_SPECULATIVE_DECODING_ENABLED) {
+                downloaded.filter { ModelDownloader.isModelUpdateAvailable(ctx, it) }.toSet()
+            } else {
+                emptySet()
+            }
+
+            _downloadUiState.update { it.copy(downloadedModels = downloaded, staleModels = stale) }
         }
     }
 
@@ -1283,6 +1295,41 @@ class ModelViewModel @Inject constructor(
         val variant = _downloadUiState.value.selectedVariant ?: return
         _downloadUiState.update { it.copy(showDownloadDialog = false) }
         startDownload(variant)
+    }
+
+    // ==================== Gemma Model Update (re-download stale artifact) =========
+
+    /**
+     * Shows the "update available" confirmation dialog for a stale Gemma variant — its
+     * on-disk artifact predates [ModelDownloader.ModelVariant.modelVersion] (e.g. a
+     * pre-2026-05-05 copy lacking the MTP drafter). Surfacing the prompt is additionally
+     * gated on `BuildConfig.MTP_SPECULATIVE_DECODING_ENABLED` in the UI (ModelTab).
+     */
+    fun showUpdateDialog(variant: ModelDownloader.ModelVariant) {
+        _downloadUiState.update { it.copy(modelToUpdate = variant) }
+    }
+
+    fun dismissUpdateDialog() {
+        _downloadUiState.update { it.copy(modelToUpdate = null) }
+    }
+
+    /**
+     * Confirms the update: deletes the stale cached file (and its version marker) WITHOUT
+     * clearing the active-model preference, then re-downloads. The same `models/<fileName>`
+     * path is repopulated on completion, so an active selection survives the refresh.
+     *
+     * Accepted transient: between delete and re-download completion the active-model path
+     * briefly points at a missing file, so transcription fired in that window would fail to
+     * load. This is a brief, user-initiated window; the UI shows the normal download spinner.
+     */
+    fun confirmUpdateModel() {
+        val variant = _downloadUiState.value.modelToUpdate ?: return
+        _downloadUiState.update { it.copy(modelToUpdate = null) }
+        viewModelScope.launch {
+            ModelDownloader.deleteModel(ctx, variant)
+            refreshDownloadedModels()
+            startDownload(variant)
+        }
     }
 
     // ==================== Parakeet Model Download ====================

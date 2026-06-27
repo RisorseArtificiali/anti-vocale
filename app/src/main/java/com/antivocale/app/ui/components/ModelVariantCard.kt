@@ -39,6 +39,9 @@ sealed interface DownloadButtonState {
 
     /** Whisper-specific: show Clear (orphaned files) button. */
     data object Orphaned : DownloadButtonState
+
+    /** Downloaded but a newer artifact version exists: show Use + Update + Delete. */
+    data object UpdateAvailable : DownloadButtonState
 }
 
 // ==================== Card State ====================
@@ -95,6 +98,7 @@ fun ModelVariantCard(
     onClearPartialClick: () -> Unit = {},
     onExtraActionClick: () -> Unit = {},
     onUseClick: () -> Unit = {},
+    onUpdateClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
     onBenchmarkClick: (() -> Unit)? = null,
     onInfoClick: (() -> Unit)? = null
@@ -266,6 +270,36 @@ fun ModelVariantCard(
                             Icon(Icons.Default.DeleteSweep, contentDescription = null)
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(stringResource(R.string.download_clear_partial))
+                        }
+                    }
+                    is DownloadButtonState.UpdateAvailable -> {
+                        if (!state.isActive) {
+                            Button(
+                                onClick = onUseClick,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = MaterialTheme.colorScheme.primary
+                                )
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
+                            }
+                        }
+                        OutlinedButton(
+                            onClick = onUpdateClick,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.primary
+                            )
+                        ) {
+                            Icon(Icons.Default.Update, contentDescription = null)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.model_update_button))
+                        }
+                        OutlinedButton(
+                            onClick = onDeleteClick,
+                            colors = ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
+                        ) {
+                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
                         }
                     }
                     is DownloadButtonState.Idle -> {

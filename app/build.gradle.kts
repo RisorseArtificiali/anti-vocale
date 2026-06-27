@@ -36,6 +36,13 @@ android {
 
         // AppAuth redirect scheme for HuggingFace OAuth
         manifestPlaceholders["appAuthRedirectScheme"] = "com.antivocale.app"
+
+        // Speculative-decoding (MTP) "model update available" prompt gate.
+        // Off until the LiteRT-LM runtime can actually engage the Gemma MTP drafter
+        // (TASK-221 bumps litertlm-android to 0.13.1+ and flips this to true). The
+        // version-stamp plumbing in ModelDownloader ships now (TASK-236); this flag
+        // only controls whether the re-download prompt is surfaced to users.
+        buildConfigField("boolean", "MTP_SPECULATIVE_DECODING_ENABLED", "false")
     }
 
     signingConfigs {
