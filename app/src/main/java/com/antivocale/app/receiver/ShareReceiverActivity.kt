@@ -172,22 +172,21 @@ class ShareReceiverActivity : Activity() {
         @Suppress("DEPRECATION")
         val uri = intent.getParcelableExtra(Intent.EXTRA_STREAM) as? Uri
 
-        // If still null, try extracting from content URI authority
+        // If still null, resolve the content URI's authority to its OWNING PACKAGE via
+        // PackageManager. The authority (e.g. "com.google.android.apps.nbu.files.provider")
+        // is the FileProvider authority, NOT the package — resolveContentProvider() returns
+        // the actual app package (e.g. "com.google.android.apps.nbu.files"), which then maps
+        // to the human label ("Files") via AppInfoUtils.getAppName() at display time.
         if (sourcePackage == null && uri != null && uri.scheme == "content") {
             val authority = uri.authority
             if (authority != null) {
-                // Common patterns: com.whatsapp.provider.media, org.telegram.messenger
-                // Extract package from authority (e.g., "com.whatsapp.provider.media" -> "com.whatsapp")
-                val detectedFromUri = when {
-                    authority.startsWith("com.whatsapp") -> "com.whatsapp"
-                    authority.startsWith("org.telegram") -> "org.telegram.messenger"
-                    authority.startsWith("org.thoughtcrime.securesms") -> "org.thoughtcrime.securesms"
-                    // If authority is already a package name
-                    authority.matches(Regex("^[a-z][a-z0-9_]*(\\.[a-z][a-z0-9_]*)+$")) -> authority
-                    else -> null
+                val resolved = try {
+                    packageManager.resolveContentProvider(authority, 0)?.packageName
+                } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
+                    null
                 }
-                if (detectedFromUri != null) {
-                    sourcePackage = detectedFromUri
+                if (resolved != null) {
+                    sourcePackage = resolved
                     Log.i(TAG, "Detected source app from URI authority: $sourcePackage (authority: $authority)")
                 }
             }

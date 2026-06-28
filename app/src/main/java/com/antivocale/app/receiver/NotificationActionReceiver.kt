@@ -58,6 +58,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
         val taskId = intent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)
         if (taskId != null) {
             WorkManager.getInstance(context).cancelUniqueWork("subtitle-choice-$taskId")
+            // Cancel the "Subtitles found" choice notification so it doesn't linger after the
+            // user picked an action (its id is derived from taskId, same as ShareReceiverActivity posts).
+            androidx.core.app.NotificationManagerCompat.from(context)
+                .cancel(ShareReceiverActivity.choiceNotificationId(taskId))
         }
 
         val serviceIntent = Intent(context, InferenceService::class.java).apply {

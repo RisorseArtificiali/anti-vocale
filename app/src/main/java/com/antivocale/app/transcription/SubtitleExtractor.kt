@@ -70,6 +70,9 @@ object SubtitleExtractor {
             for (i in 0 until extractor.trackCount) {
                 val format = extractor.getTrackFormat(i)
                 val mime = format.getString(MediaFormat.KEY_MIME)
+                // Log every track's MIME so on-device findings can extend TEXT_SUBTITLE_MIME_HINTS
+                // (e.g. a container that reports a subtitle track with a MIME we don't yet match).
+                android.util.Log.d("SubtitleExtractor", "probe track $i mime=$mime matches=${isTextSubtitleMime(mime)}")
                 if (isTextSubtitleMime(mime)) {
                     val language = format.getString(MediaFormat.KEY_LANGUAGE)
                     tracks.add(SubtitleTrack(i, language, mime!!))
@@ -105,18 +108,35 @@ object SubtitleExtractor {
 
             val buffer = java.nio.ByteBuffer.allocate(BUFFER_BYTES)
             val output = java.io.ByteArrayOutputStream()
+            // 3GPP TX3G (mov_text) samples are [uint16 textLength][textLength bytes UTF-8 text]
+            // followed by optional style/modifier boxes — NOT newline-separated like SRT. Parse
+            // each sample's length-prefixed text instead of concatenating raw bytes (which leaks
+            // the length + style bytes into the output — the stray *,=,7 the user saw were the
+            // per-cue text-length low bytes). Subrip/WebVTT are plain text per sample → append
+            // raw and let stripTimestampsAndMarkup handle the line-based cleanup.
+            val isTx3g = mime.equals("text/3gpp-tt", ignoreCase = true)
             while (true) {
                 val size = extractor.readSampleData(buffer, 0)
                 if (size < 0) break // end of stream
                 val chunk = ByteArray(size)
                 buffer.get(chunk)
-                output.write(chunk)
+                if (isTx3g) {
+                    tx3gSampleText(chunk)?.takeIf { it.isNotBlank() }?.let { text ->
+                        if (output.size() > 0) output.write(' '.code) // space-join cues
+                        output.write(text.toByteArray(Charsets.UTF_8))
+                    }
+                } else {
+                    output.write(chunk)
+                }
                 buffer.clear()
                 if (!extractor.advance()) break
             }
 
             val rawText = output.toByteArray().toString(Charsets.UTF_8)
             val plain = stripTimestampsAndMarkup(rawText, mime).trim()
+            // Log size/MIME only — never the body (subtitle text can be private; Log.d survives R8
+            // into release logcat without an -assumenosideeffects rule).
+            android.util.Log.d("SubtitleExtractor", "extracted subtitle ($mime): ${plain.length} chars")
             if (plain.isEmpty()) null else plain
         } catch (@Suppress("TooGenericExceptionCaught") e: Exception) {
             // Flaky format, I/O failure, or malformed sample data: signal failure so the
@@ -125,6 +145,18 @@ object SubtitleExtractor {
         } finally {
             extractor.release()
         }
+    }
+
+    /**
+     * Extract the text portion of a 3GPP TX3G (mov_text) sample. Each sample is:
+     *   [uint16 big-endian textLength][textLength bytes UTF-8 text][optional style/modifier boxes]
+     * Returns only the text (trailing style boxes are ignored), or null if the sample is malformed.
+     */
+    private fun tx3gSampleText(sample: ByteArray): String? {
+        if (sample.size < 2) return null
+        val textLen = ((sample[0].toInt() and 0xff) shl 8) or (sample[1].toInt() and 0xff)
+        if (textLen <= 0 || textLen > sample.size - 2) return null
+        return String(sample, 2, textLen, Charsets.UTF_8)
     }
 
     /** Per-sample read buffer for [extractToText]. Subtitle samples are small text payloads. */
