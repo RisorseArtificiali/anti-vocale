@@ -102,6 +102,10 @@ android {
     }
 }
 
+ksp {
+    arg("room.schemaLocation", "$projectDir/schemas")
+}
+
 dependencies {
     // Firebase (BoM manages all Firebase library versions)
     implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
