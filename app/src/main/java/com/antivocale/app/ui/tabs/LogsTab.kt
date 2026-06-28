@@ -232,223 +232,260 @@ fun LogsTab(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
         snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { _ ->
-        val interruptedText by viewModel.interruptedTranscription.collectAsState()
+        Column(modifier = Modifier.fillMaxSize()) {
+            val interruptedText by viewModel.interruptedTranscription.collectAsState()
 
-        if (interruptedText != null) {
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp),
-                color = MaterialTheme.colorScheme.errorContainer,
-                shape = MaterialTheme.shapes.small
-            ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+            if (interruptedText != null) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = MaterialTheme.shapes.small
                 ) {
-                    Icon(
-                        Icons.Default.Warning,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.transcription_interrupted_title),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Text(
-                            text = interruptedText!!.take(200),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
-                            maxLines = 3
-                        )
-                    }
-                    TextButton(onClick = { viewModel.dismissInterruptedTranscription() }) {
-                        Text(stringResource(R.string.action_dismiss))
-                    }
-                }
-            }
-        }
-
-        if (logs.isEmpty()) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.History,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(R.string.logs_empty),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = stringResource(R.string.logs_empty_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                }
-            }
-        } else if (filteredLogs.isEmpty()) {
-            // Search yielded no results
-            Box(
-                modifier = Modifier
-                    .fillMaxSize(),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Icon(
-                        Icons.Default.SearchOff,
-                        contentDescription = null,
-                        modifier = Modifier.size(64.dp),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = stringResource(R.string.logs_search_no_results),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = stringResource(R.string.logs_search_no_results_hint),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                    )
-                }
-            }
-        } else {
-            val listState = rememberLazyListState()
-            val listScope = rememberCoroutineScope()
-
-            fun collapseAndScrollTo(taskId: String, groups: List<LogGroup>) {
-                expandedTaskIds = expandedTaskIds - taskId
-                val idx = indexOfTaskIdInGroups(groups, taskId)
-                if (idx >= 0) listScope.launch { listState.animateScrollToItem(idx) }
-            }
-
-            // Scroll to and expand the highlighted entry
-            LaunchedEffect(highlightTaskId) {
-                val taskId = highlightTaskId ?: return@LaunchedEffect
-                // Clear active search so entry is visible
-                if (searchQuery.isNotEmpty()) {
-                    viewModel.clearSearch()
-                    // Wait for clearSearch to propagate to filteredLogs
-                    viewModel.filteredLogs.first()
-                }
-                expandedTaskIds = expandedTaskIds + taskId
-                val flatIndex = if (groupByConversation) {
-                    val freshConversation = groupLogsByConversation(filteredLogs, context)
-                    val entry = filteredLogs.find { it.taskId == taskId }
-                    val groupKey = entry?.sourcePackageName ?: "__unknown__"
-                    expandedConversationGroups = expandedConversationGroups + groupKey
-                    indexOfTaskIdInGroups(freshConversation, taskId)
-                } else {
-                    val freshGrouped = groupLogsByDate(filteredLogs, context)
-                    indexOfTaskIdInGroups(freshGrouped, taskId)
-                }
-                if (flatIndex >= 0) {
-                    listState.animateScrollToItem(flatIndex)
-                }
-                viewModel.clearHighlight()
-            }
-
-            LazyColumn(
-                state = listState,
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(
-                    bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-                )
-            ) {
-                item(key = "header") {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(MaterialTheme.colorScheme.surface)
+                    Row(
+                        modifier = Modifier.padding(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .padding(horizontal = 16.dp, vertical = 4.dp)
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Icon(
+                            Icons.Default.Warning,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = stringResource(R.string.logs_recent_requests, logs.size),
-                                style = MaterialTheme.typography.titleSmall
+                                text = stringResource(R.string.transcription_interrupted_title),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onErrorContainer
                             )
-                            TextButton(
-                                onClick = { showClearDialog = true },
-                                enabled = logs.isNotEmpty()
-                            ) {
-                                Icon(
-                                    Icons.Default.DeleteSweep,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(stringResource(R.string.logs_clear))
-                            }
+                            Text(
+                                text = interruptedText!!.take(200),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
+                                maxLines = 3
+                            )
                         }
+                        TextButton(onClick = { viewModel.dismissInterruptedTranscription() }) {
+                            Text(stringResource(R.string.action_dismiss))
+                        }
+                    }
+                }
+            }
 
-                        OutlinedTextField(
-                            value = searchQuery,
-                            onValueChange = { viewModel.onSearchQueryChanged(it) },
+            if (logs.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.History,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.logs_empty),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(R.string.logs_empty_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            } else if (filteredLogs.isEmpty()) {
+                // Search yielded no results
+                Box(
+                    modifier = Modifier
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Icon(
+                            Icons.Default.SearchOff,
+                            contentDescription = null,
+                            modifier = Modifier.size(64.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = stringResource(R.string.logs_search_no_results),
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = stringResource(R.string.logs_search_no_results_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+                }
+            } else {
+                val listState = rememberLazyListState()
+                val listScope = rememberCoroutineScope()
+
+                fun collapseAndScrollTo(taskId: String, groups: List<LogGroup>) {
+                    expandedTaskIds = expandedTaskIds - taskId
+                    val idx = indexOfTaskIdInGroups(groups, taskId)
+                    if (idx >= 0) listScope.launch { listState.animateScrollToItem(idx) }
+                }
+
+                // Scroll to and expand the highlighted entry
+                LaunchedEffect(highlightTaskId) {
+                    val taskId = highlightTaskId ?: return@LaunchedEffect
+                    // Clear active search so entry is visible
+                    if (searchQuery.isNotEmpty()) {
+                        viewModel.clearSearch()
+                        // Wait for clearSearch to propagate to filteredLogs
+                        viewModel.filteredLogs.first()
+                    }
+                    expandedTaskIds = expandedTaskIds + taskId
+                    val flatIndex = if (groupByConversation) {
+                        val freshConversation = groupLogsByConversation(filteredLogs, context)
+                        val entry = filteredLogs.find { it.taskId == taskId }
+                        val groupKey = entry?.sourcePackageName ?: "__unknown__"
+                        expandedConversationGroups = expandedConversationGroups + groupKey
+                        indexOfTaskIdInGroups(freshConversation, taskId)
+                    } else {
+                        val freshGrouped = groupLogsByDate(filteredLogs, context)
+                        indexOfTaskIdInGroups(freshGrouped, taskId)
+                    }
+                    if (flatIndex >= 0) {
+                        listState.animateScrollToItem(flatIndex)
+                    }
+                    viewModel.clearHighlight()
+                }
+
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.weight(1f),
+                    contentPadding = PaddingValues(
+                        bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                    )
+                ) {
+                    item(key = "header") {
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(horizontal = 16.dp),
-                            placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
-                            leadingIcon = {
-                                Icon(Icons.Default.Search, contentDescription = null)
-                            },
-                            trailingIcon = {
-                                if (searchQuery.isNotEmpty()) {
-                                    IconButton(onClick = { viewModel.clearSearch() }) {
-                                        Icon(Icons.Default.Clear, contentDescription = null)
-                                    }
+                                .background(MaterialTheme.colorScheme.surface)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(R.string.logs_recent_requests, logs.size),
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                                TextButton(
+                                    onClick = { showClearDialog = true },
+                                    enabled = logs.isNotEmpty()
+                                ) {
+                                    Icon(
+                                        Icons.Default.DeleteSweep,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(stringResource(R.string.logs_clear))
                                 }
-                            },
-                            singleLine = true
-                        )
-                    }
-                }
-                item(key = "vad_advisory") {
-                    VadAdvisoryCard(
-                        visible = showVadAdvisory,
-                        onDismiss = { viewModel.dismissVadAdvisory() },
-                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
-                    )
-                }
-                if (groupByConversation && conversationGroups.isNotEmpty()) {
-                    conversationGroups.forEach { group ->
-                        val groupKey = group.packageName ?: "__unknown__"
-                        val isGroupExpanded = groupKey in expandedConversationGroups
-                        item(key = "conv_$groupKey") {
-                            ConversationGroupHeader(
-                                appName = group.appName,
-                                count = group.logs.size,
-                                lastTimestamp = group.logs.first().timestamp,
-                                expanded = isGroupExpanded,
-                                onToggle = {
-                                    expandedConversationGroups = if (isGroupExpanded) {
-                                        expandedConversationGroups - groupKey
-                                    } else {
-                                        expandedConversationGroups + groupKey
+                            }
+
+                            OutlinedTextField(
+                                value = searchQuery,
+                                onValueChange = { viewModel.onSearchQueryChanged(it) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 16.dp),
+                                placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
+                                leadingIcon = {
+                                    Icon(Icons.Default.Search, contentDescription = null)
+                                },
+                                trailingIcon = {
+                                    if (searchQuery.isNotEmpty()) {
+                                        IconButton(onClick = { viewModel.clearSearch() }) {
+                                            Icon(Icons.Default.Clear, contentDescription = null)
+                                        }
                                     }
-                                }
+                                },
+                                singleLine = true
                             )
                         }
-                        if (isGroupExpanded) {
-                            items(group.logs, key = { it.id }) { log ->
+                    }
+                    item(key = "vad_advisory") {
+                        VadAdvisoryCard(
+                            visible = showVadAdvisory,
+                            onDismiss = { viewModel.dismissVadAdvisory() },
+                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                        )
+                    }
+                    if (groupByConversation && conversationGroups.isNotEmpty()) {
+                        conversationGroups.forEach { group ->
+                            val groupKey = group.packageName ?: "__unknown__"
+                            val isGroupExpanded = groupKey in expandedConversationGroups
+                            item(key = "conv_$groupKey") {
+                                ConversationGroupHeader(
+                                    appName = group.appName,
+                                    count = group.logs.size,
+                                    lastTimestamp = group.logs.first().timestamp,
+                                    expanded = isGroupExpanded,
+                                    onToggle = {
+                                        expandedConversationGroups = if (isGroupExpanded) {
+                                            expandedConversationGroups - groupKey
+                                        } else {
+                                            expandedConversationGroups + groupKey
+                                        }
+                                    }
+                                )
+                            }
+                            if (isGroupExpanded) {
+                                items(group.logs, key = { it.id }) { log ->
+                                    LogEntryWithSwipe(
+                                        log = log,
+                                        searchQuery = searchQuery,
+                                        isExpanded = log.taskId in expandedTaskIds,
+                                        swipeActionMode = swipeActionMode,
+                                        revealedLogId = revealedLogId,
+                                        onRevealedLogIdChange = { revealedLogId = it },
+                                        onExpandChange = { expanded ->
+                                            expandedTaskIds = if (expanded) {
+                                                expandedTaskIds + log.taskId
+                                            } else {
+                                                expandedTaskIds - log.taskId
+                                            }
+                                        },
+                                        onSwipeCollapse = { collapseAndScrollTo(log.taskId, conversationGroups) },
+                                        onDeleted = { entry -> recentlyDeletedEntry = entry },
+                                        onDeleteLog = { id -> viewModel.deleteLog(id) },
+                                        viewModel = viewModel,
+                                        onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null
+                                    )
+                                    HorizontalDivider(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                                    )
+                                }
+                            }
+                        }
+                    } else {
+                        groupedLogs.forEach { (dateLabel, dateLogs) ->
+                            // Date group header
+                            item(key = "header_$dateLabel") {
+                                DateGroupHeader(label = dateLabel, count = dateLogs.size)
+                            }
+
+                            // Logs for this date
+                            items(dateLogs, key = { it.id }) { log ->
                                 LogEntryWithSwipe(
                                     log = log,
                                     searchQuery = searchQuery,
@@ -463,7 +500,7 @@ fun LogsTab(
                                             expandedTaskIds - log.taskId
                                         }
                                     },
-                                    onSwipeCollapse = { collapseAndScrollTo(log.taskId, conversationGroups) },
+                                    onSwipeCollapse = { collapseAndScrollTo(log.taskId, groupedLogs) },
                                     onDeleted = { entry -> recentlyDeletedEntry = entry },
                                     onDeleteLog = { id -> viewModel.deleteLog(id) },
                                     viewModel = viewModel,
@@ -474,41 +511,6 @@ fun LogsTab(
                                     color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
                                 )
                             }
-                        }
-                    }
-                } else {
-                    groupedLogs.forEach { (dateLabel, dateLogs) ->
-                        // Date group header
-                        item(key = "header_$dateLabel") {
-                            DateGroupHeader(label = dateLabel, count = dateLogs.size)
-                        }
-
-                        // Logs for this date
-                        items(dateLogs, key = { it.id }) { log ->
-                            LogEntryWithSwipe(
-                                log = log,
-                                searchQuery = searchQuery,
-                                isExpanded = log.taskId in expandedTaskIds,
-                                swipeActionMode = swipeActionMode,
-                                revealedLogId = revealedLogId,
-                                onRevealedLogIdChange = { revealedLogId = it },
-                                onExpandChange = { expanded ->
-                                    expandedTaskIds = if (expanded) {
-                                        expandedTaskIds + log.taskId
-                                    } else {
-                                        expandedTaskIds - log.taskId
-                                    }
-                                },
-                                onSwipeCollapse = { collapseAndScrollTo(log.taskId, groupedLogs) },
-                                onDeleted = { entry -> recentlyDeletedEntry = entry },
-                                onDeleteLog = { id -> viewModel.deleteLog(id) },
-                                viewModel = viewModel,
-                                onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null
-                            )
-                            HorizontalDivider(
-                                modifier = Modifier.padding(horizontal = 16.dp),
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                            )
                         }
                     }
                 }
