@@ -40,6 +40,13 @@ open class LlmManager @Inject constructor() {
     companion object {
         private const val TAG = "LlmManager"
         private const val MAX_TOKENS = 2048
+
+        // Single source of truth for the LiteRT-LM conversation/sampler config, shared by the
+        // initial conversation (initializeLiteRT) and the per-request swap (generateFromAudioLiteRT).
+        // Hoisted so text-chat and audio paths cannot drift apart.
+        private val DEFAULT_CONVERSATION_CONFIG = ConversationConfig(
+            samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8)
+        )
     }
 
     // Reactive state for UI observation
@@ -199,14 +206,7 @@ open class LlmManager @Inject constructor() {
 
             Log.i(TAG, "Creating conversation...")
             // Create default conversation
-            val conversationConfig = ConversationConfig(
-                samplerConfig = SamplerConfig(
-                    topK = 40,
-                    topP = 0.95,
-                    temperature = 0.8
-                )
-            )
-            litertConversation = litertEngine!!.createConversation(conversationConfig)
+            litertConversation = litertEngine!!.createConversation(DEFAULT_CONVERSATION_CONFIG)
 
             currentBackend = Backend.LITERT_LM
             modelPath = path
@@ -369,33 +369,51 @@ open class LlmManager @Inject constructor() {
     }
 
     /**
+     * Closes a [Conversation] idempotently.
+     *
+     * LiteRT-LM's `Conversation.close()` is NOT idempotent upstream — calling it on an
+     * already-closed instance throws `IllegalStateException: Conversation is closed already`.
+     * During error recovery a double-close can happen, so swallow that exception here
+     * (logged at WARN since it is expected during recovery, not a real error).
+     */
+    private fun closeConversationSafe(conversation: Conversation?) {
+        if (conversation == null) return
+        try {
+            conversation.close()
+        } catch (e: IllegalStateException) {
+            Log.w(TAG, "Conversation already closed, ignoring: ${e.message}")
+        }
+    }
+
+    /**
      * Generates text from audio using LiteRT-LM backend.
-     * Temporarily replaces the main conversation to avoid context accumulation,
-     * then restores it after processing. This is critical for multi-chunk processing.
+     *
+     * LiteRT-LM permits only ONE live [Conversation] at a time, so this method closes the
+     * main conversation, processes audio in a FRESH conversation, and then ALWAYS restores
+     * a valid main conversation in a `finally` block — on success, exception, AND native
+     * error paths. This robustness is critical for multi-chunk processing: a failure on one
+     * chunk must never leave `litertConversation` pointing at a stale/closed instance,
+     * otherwise subsequent chunks (and orchestrator retries) cascade into total failure.
      */
     private suspend fun generateFromAudioLiteRT(prompt: String, audioData: ByteArray): Result<String> {
-        return try {
-            val engine = litertEngine
-                ?: return Result.failure(IllegalStateException("LiteRT engine not available"))
+        val engine = litertEngine
+            ?: return Result.failure(IllegalStateException("LiteRT engine not available"))
 
-            // Save the existing conversation reference
-            val originalConversation = litertConversation
+        // Close the main session via the safe helper and NULL the field immediately so it
+        // never holds a stale/closed reference. LiteRT only supports ONE session at a time.
+        closeConversationSafe(litertConversation)
+        litertConversation = null
 
+        // Config shared with initializeLiteRT (see DEFAULT_CONVERSATION_CONFIG).
+        val conversationConfig = DEFAULT_CONVERSATION_CONFIG
+
+        var freshConversation: Conversation? = null
+        var outcome: Result<String> = Result.failure(IllegalStateException("Audio processing did not complete"))
+        var caughtNativeError = false
+
+        try {
             Log.d(TAG, "Creating fresh conversation for audio (temporarily replacing main session)...")
-
-            // Delete the existing session to create a fresh one
-            // LiteRT only supports ONE session at a time
-            originalConversation?.close()
-
-            // Create a FRESH conversation for this single request
-            val conversationConfig = ConversationConfig(
-                samplerConfig = SamplerConfig(
-                    topK = 40,
-                    topP = 0.95,
-                    temperature = 0.8
-                )
-            )
-            val freshConversation = engine.createConversation(conversationConfig)
+            freshConversation = engine.createConversation(conversationConfig)
 
             Log.d(TAG, "Processing audio in fresh conversation...")
             Log.d(TAG, "Audio data size: ${audioData.size} bytes")
@@ -417,33 +435,44 @@ open class LlmManager @Inject constructor() {
 
             val result = response.toString()
             Log.d(TAG, "Fresh conversation audio processing complete: ${result.length} chars")
-
-            // Close the fresh conversation and recreate the main one for text chat
-            freshConversation.close()
-            litertConversation = engine.createConversation(conversationConfig)
-            Log.d(TAG, "Restored main conversation for text chat")
-
-            Result.success(result)
-
+            outcome = Result.success(result)
         } catch (e: Exception) {
             Log.e(TAG, "LiteRT audio processing failed", e)
-            // Try to restore conversation on error
-            try {
-                litertConversation?.close()
-                litertConversation = litertEngine?.createConversation(
-                    ConversationConfig(
-                        samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8)
-                    )
-                )
-            } catch (restoreError: Exception) {
-                Log.e(TAG, "Failed to restore conversation after error", restoreError)
-            }
-            Result.failure(e)
+            outcome = Result.failure(e)
         } catch (e: Error) {
-            // Catch native errors (SIGSEGV, etc.)
+            // Catch native errors (SIGSEGV, etc.) — preserve the original as the cause.
+            caughtNativeError = true
             Log.e(TAG, "LiteRT native error", e)
-            Result.failure(IllegalStateException("Native error during audio processing: ${e.message}"))
+            outcome = Result.failure(IllegalStateException("Native error during audio processing: ${e.message}", e))
+        } finally {
+            // ALWAYS release the fresh conversation (safe helper swallows double-close).
+            closeConversationSafe(freshConversation)
+            freshConversation = null
+            if (caughtNativeError) {
+                // After a native Error the engine/runtime may be corrupt — do NOT re-enter
+                // native here (createConversation), or a second crash could escape `finally`
+                // (its inner catch is Exception-only) and suppress the captured `outcome`.
+                // litertConversation is already null (set at entry), so the next caller sees a
+                // clean "not available" rather than risking another native crash.
+                Log.w(TAG, "Skipping main-conversation restore after native error (engine may be unstable)")
+            } else {
+                // Recreate a valid main conversation so the next chunk/retry starts from a
+                // valid state on BOTH success and ordinary-exception paths.
+                try {
+                    litertConversation = engine.createConversation(conversationConfig)
+                    Log.d(TAG, "Restored main conversation for text chat")
+                } catch (restoreError: Exception) {
+                    // Broad catch is intentional: this runs in `finally` and must never mask the
+                    // real `outcome` already captured above, nor throw out of finally. Engine may
+                    // be in a bad state — leave the field null so callers see the real failure
+                    // rather than a stale closed conversation on the next call.
+                    Log.e(TAG, "Failed to restore conversation after audio processing", restoreError)
+                    litertConversation = null
+                }
+            }
         }
+
+        return outcome
     }
 
     /**
@@ -478,8 +507,8 @@ open class LlmManager @Inject constructor() {
 
         cancelKeepAliveTimer()
 
-        // Close LiteRT resources
-        litertConversation?.close()
+        // Close LiteRT resources (use safe helper — never throws on double-close)
+        closeConversationSafe(litertConversation)
         litertConversation = null
         litertEngine?.close()
         litertEngine = null
@@ -526,7 +555,7 @@ open class LlmManager @Inject constructor() {
     }
 
     private fun performAutoUnload() {
-        litertConversation?.close()
+        closeConversationSafe(litertConversation)
         litertConversation = null
         litertEngine?.close()
         litertEngine = null
