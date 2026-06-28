@@ -44,6 +44,10 @@
 # Keep transcription backend classes (registered dynamically via map)
 -keep class com.antivocale.app.transcription.** { *; }
 
+# Keep WorkManager workers (instantiated by class name via WorkManager/Hilt at runtime,
+# so R8's static tracer can't see them) — e.g. SubtitleChoiceTimeoutWorker (TASK-228.9)
+-keep class com.antivocale.app.work.** { *; }
+
 # Preserve @Keep annotations that native libraries rely on
 -keep @androidx.annotation.Keep class * { *; }
 -keepclassmembers class * { @androidx.annotation.Keep *; }
