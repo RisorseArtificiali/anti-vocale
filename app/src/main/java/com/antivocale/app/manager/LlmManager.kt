@@ -59,7 +59,10 @@ open class LlmManager @Inject constructor() {
     private var litertEngine: Engine? = null
     private var litertConversation: Conversation? = null
 
-    // MediaPipe fallback (text only)
+    // MediaPipe fallback (text only). MediaPipe's LlmInference is deprecated upstream
+    // (GenAI is in maintenance mode, superseded by LiteRT-LM), but retained as a text-only
+    // fallback for when LiteRT-LM init fails. Removing the fallback is a separate decision.
+    @Suppress("DEPRECATION")
     private var mediapipeInference: com.google.mediapipe.tasks.genai.llminference.LlmInference? = null
 
     // Common state
@@ -233,6 +236,7 @@ open class LlmManager @Inject constructor() {
     /**
      * Initializes MediaPipe backend (fallback).
      */
+    @Suppress("DEPRECATION") // MediaPipe LlmInference deprecated upstream; fallback retained (see mediapipeInference)
     private fun initializeMediaPipe(context: Context, path: String): Result<Unit> {
         return try {
             Log.i(TAG, "Initializing MediaPipe backend...")
