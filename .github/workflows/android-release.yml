@@ -57,6 +57,11 @@ jobs:
             https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.3/sherpa-onnx-1.13.3.aar
 
       - name: Build Debug APK
+        id: debug-apk
+        # Best-effort: the debug sideloading APK must not gate the production
+        # Release AAB / Play publish. processDebugGoogleServices can fail here because
+        # the debug applicationId (com.antivocale.app.debug) isn't in google-services.json.
+        continue-on-error: true
         run: ./gradlew assembleDebug
 
       - name: Build Release AAB
@@ -81,6 +86,7 @@ jobs:
             --output-dir whats-new
 
       - name: Upload Debug APK artifact
+        if: steps.debug-apk.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
@@ -105,7 +111,7 @@ jobs:
           path: whats-new/
 
       - name: Attach APK to GitHub Release
-        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
+        if: steps.debug-apk.outcome == 'success' && (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''))
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || '' }}
