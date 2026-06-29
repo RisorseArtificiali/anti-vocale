@@ -85,7 +85,14 @@ class TranscriptionNotificationListener(
         // No-op: the worker runs a single ASR request with its own foreground notification.
     }
 
-    override fun onInterimResult(contentText: String, bigText: String, subText: String) {
+    override fun onInterimResult(
+        contentText: String,
+        bigText: String,
+        subText: String,
+        chunkIndex: Int,
+        chunkText: String?,
+        totalChunks: Int
+    ) {
         // No-op: interim progressive results are not surfaced by the fallback worker.
     }
 

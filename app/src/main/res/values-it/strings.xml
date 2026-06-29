@@ -233,6 +233,13 @@
     <string name="dialog_delete_message">Questo rimuoverà permanentemente \'%1$s\' dal tuo dispositivo. Potrai scaricarlo nuovamente in seguito.</string>
     <string name="action_delete">Elimina</string>
     <string name="action_cancel">Annulla</string>
+    <!-- Navigazione segmenti nella notifica in corso (TASK-242) -->
+    <string name="chunk_nav_prev">◀</string>
+    <string name="chunk_nav_next">▶</string>
+    <string name="chunk_nav_live">Recente</string>
+    <string name="chunk_nav_pinned_subtext">Segmento %1$d di %2$d · recente %3$d di %2$d</string>
+    <string name="chunk_nav_live_subtext">In diretta · segmento %1$d di %2$d</string>
+    <string name="chunk_nav_empty">Nessun testo per questo segmento</string>
 
     <!-- Impostazioni - Titoli Sezioni -->
     <string name="settings_section_transcription">Trascrizione</string>

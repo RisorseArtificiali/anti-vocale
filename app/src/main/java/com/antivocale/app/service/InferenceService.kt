@@ -62,6 +62,9 @@ class InferenceService : Service(), TranscriptionListener {
 
         private const val RC_LAUNCH_DEFAULT = 0
         private const val RC_LAUNCH_MODEL_TAB = 1
+        private const val RC_NAV_PREV = 10
+        private const val RC_NAV_NEXT = 11
+        private const val RC_NAV_LIVE = 12
 
         const val EXTRA_SOURCE = "source"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
@@ -73,6 +76,14 @@ class InferenceService : Service(), TranscriptionListener {
 
         const val ACTION_CANCEL = "com.antivocale.app.CANCEL_TRANSCRIPTION"
 
+        // Chunk navigation actions for the in-progress notification (TASK-242).
+        // Target the service directly — navigation is stateful (mutates the live cursor the
+        // producer also writes to), unlike the stateless copy/share actions in
+        // NotificationActionReceiver. Mirrors how ACTION_CANCEL is wired.
+        const val ACTION_NAV_PREV = "com.antivocale.app.NAV_CHUNK_PREV"
+        const val ACTION_NAV_NEXT = "com.antivocale.app.NAV_CHUNK_NEXT"
+        const val ACTION_NAV_LIVE = "com.antivocale.app.NAV_CHUNK_LIVE"
+
         private val _isTranscribing = MutableStateFlow(false)
         val isTranscribing: kotlinx.coroutines.flow.StateFlow<Boolean> = _isTranscribing.asStateFlow()
     }
@@ -81,9 +92,22 @@ class InferenceService : Service(), TranscriptionListener {
     private val requestQueue = ConcurrentLinkedQueue<PendingRequest>()
     private val inFlightTaskIds: MutableSet<String> = ConcurrentHashMap.newKeySet()
     private var currentProcessingJob: Job? = null
-    private var transcriptionStartTime: Long = 0
+    @Volatile private var transcriptionStartTime: Long = 0
     private val pendingCount = AtomicInteger(0)
     private val resultNotificationCounter = AtomicInteger(RESULT_NOTIFICATION_ID)
+
+    // ---- Chunk navigation state (TASK-242) ----
+    // Null outside a multi-chunk progressive job; created on the first interim chunk result
+    // and cleared when the next job starts. Single-chunk jobs never create one (nav is a no-op).
+    @Volatile private var chunkNavState: ChunkNavState? = null
+    // Latest progress tick cached so renderChunkNavNotification() can refresh ETA/queue subtext
+    // without wiping the user's pinned chunk view on a progress-bar update.
+    @Volatile private var latestEtaText = ""
+    @Volatile private var latestDurationSeconds = 0
+    @Volatile private var latestQueuedCount = 0
+    // Signature of the last rendered nav notification; when unchanged we skip the rebuild+notify
+    // to avoid re-posting on every 200ms progress tick while the viewed chunk is stable.
+    @Volatile private var lastNavSignature: String? = null
 
     data class PendingRequest(
         val taskId: String,
@@ -111,6 +135,14 @@ class InferenceService : Service(), TranscriptionListener {
 
         if (intent?.action == ACTION_CANCEL) {
             handleCancelRequest()
+            return START_NOT_STICKY
+        }
+
+        // Chunk navigation: mutate the live cursor and re-post. The service is already
+        // foreground for the active job, so this delivers a command rather than starting work.
+        val navAction = intent?.action
+        if (navAction == ACTION_NAV_PREV || navAction == ACTION_NAV_NEXT || navAction == ACTION_NAV_LIVE) {
+            handleChunkNavAction(navAction)
             return START_NOT_STICKY
         }
 
@@ -189,6 +221,12 @@ class InferenceService : Service(), TranscriptionListener {
                         updateNotification(initialText)
 
                         transcriptionStartTime = System.currentTimeMillis()
+                        // Reset chunk-nav state for the new job (TASK-242).
+                        chunkNavState = null
+                        latestEtaText = ""
+                        latestDurationSeconds = 0
+                        latestQueuedCount = 0
+                        lastNavSignature = null
 
                         orchestrator.processRequest(
                             taskId = request.taskId,
@@ -252,18 +290,143 @@ class InferenceService : Service(), TranscriptionListener {
         startTimeMillis: Long,
         queuedCount: Int
     ) {
-        updateNotificationWithSmoothProgress(
-            contentText, progressPercent, etaText, durationSeconds, startTimeMillis, pendingCount.get()
-        )
+        latestEtaText = etaText
+        latestDurationSeconds = durationSeconds
+        latestQueuedCount = queuedCount
+        // If chunk navigation is active, preserve the (possibly pinned) chunk view and only
+        // refresh the progress subtext — do not overwrite it with a progress-bar notification.
+        val state = chunkNavState
+        if (state != null && state.hasAnyChunk) {
+            renderChunkNavNotification()
+        } else {
+            updateNotificationWithSmoothProgress(
+                contentText, progressPercent, etaText, durationSeconds, startTimeMillis, pendingCount.get()
+            )
+        }
     }
 
-    override fun onInterimResult(contentText: String, bigText: String, subText: String) {
-        updateNotification(
-            contentText = contentText,
-            bigText = bigText,
-            subText = subText,
-            startTimeMillis = transcriptionStartTime
+    override fun onInterimResult(
+        contentText: String,
+        bigText: String,
+        subText: String,
+        chunkIndex: Int,
+        chunkText: String?,
+        totalChunks: Int
+    ) {
+        // Multi-chunk progressive job: maintain nav state and render the chunk view.
+        if (totalChunks >= 2 && chunkIndex >= 0 && chunkText != null) {
+            // takeIf guards against a stale state if the per-job reset didn't fire.
+            val active = chunkNavState?.takeIf { it.totalChunks == totalChunks }
+                ?: ChunkNavState(totalChunks).also { chunkNavState = it }
+            active.onChunkCompleted(chunkIndex, chunkText)
+            renderChunkNavNotification()
+        } else {
+            // Single-chunk / non-chunk interim: legacy behavior, no navigation.
+            updateNotification(
+                contentText = contentText,
+                bigText = bigText,
+                subText = subText,
+                startTimeMillis = transcriptionStartTime
+            )
+        }
+    }
+
+    private fun handleChunkNavAction(action: String) {
+        val state = chunkNavState ?: return
+        when (action) {
+            ACTION_NAV_PREV -> state.prev()
+            ACTION_NAV_NEXT -> state.next()
+            ACTION_NAV_LIVE -> state.jumpToLive()
+        }
+        renderChunkNavNotification()
+    }
+
+    private fun formatTimingText(etaText: String, durationSeconds: Int): String = when {
+        etaText.isNotEmpty() -> etaText
+        durationSeconds > 0 -> formatDuration(durationSeconds)
+        else -> ""
+    }
+
+    /** Joins non-empty parts with " · "; null when all parts are empty. */
+    private fun joinSubText(vararg parts: String): String? =
+        parts.filter { it.isNotEmpty() }.joinToString(" · ").takeIf { it.isNotEmpty() }
+
+    /**
+     * Renders the in-progress notification from [chunkNavState]: shows the viewed chunk's text
+     * (pinned or live), a chunks-completed progress bar, prev/next/jump-to-live actions with
+     * progressive disclosure, and Cancel always last (so it is the one elided when collapsed
+     * while navigating — still reachable by expanding or swiping). Per TASK-242.
+     */
+    private fun renderChunkNavNotification() {
+        val state = chunkNavState ?: return
+        // One atomic snapshot so action visibility, displayed text, and progress bar cannot
+        // disagree when chunk completions (IO) and button taps (main) race.
+        val snap = state.snapshot()
+        if (snap.liveIndex < 0) return
+
+        val total = snap.totalChunks
+        val live = snap.liveIndex
+        val viewIndex = snap.viewIndex
+        val pinned = snap.pinned
+        val chunkText = snap.text?.takeIf { it.isNotBlank() }
+            ?: getString(R.string.chunk_nav_empty)
+
+        val navSub = if (pinned) {
+            getString(R.string.chunk_nav_pinned_subtext, viewIndex + 1, total, live + 1)
+        } else {
+            getString(R.string.chunk_nav_live_subtext, live + 1, total)
+        }
+        val timingText = formatTimingText(latestEtaText, latestDurationSeconds)
+        val queueText = if (latestQueuedCount > 0) getString(R.string.queued_count, latestQueuedCount) else ""
+        // Skip the rebuild + notify when nothing visible changed (e.g. successive 200ms progress
+        // ticks while pinned and the ETA string is unchanged). chunkText is included so a retried
+        // chunk's improved text refreshes even while pinned on it.
+        val signature = "$viewIndex|$pinned|$live|$queueText|$timingText|$chunkText"
+        if (signature == lastNavSignature) return
+        lastNavSignature = signature
+        val subText = joinSubText(navSub, queueText, timingText) ?: navSub
+
+        val builder = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(chunkText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(chunkText))
+            .setSmallIcon(android.R.drawable.ic_menu_manage)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(true)
+            .setSilent(true)
+            .setSubText(subText)
+            .setProgress(total, live + 1, false)
+
+        if (transcriptionStartTime > 0) {
+            builder.setWhen(transcriptionStartTime)
+            builder.setUsesChronometer(true)
+        }
+
+        // Cancel is added FIRST so it stays a fixed anchor — it never moves; only the nav
+        // buttons appear and disappear to its right.
+        builder.addAction(
+            android.R.drawable.ic_menu_close_clear_cancel,
+            getString(R.string.action_cancel),
+            cancelPendingIntent
         )
+        if (viewIndex > 0) {
+            builder.addAction(
+                android.R.drawable.ic_media_previous,
+                getString(R.string.chunk_nav_prev),
+                navPrevPendingIntent
+            )
+        }
+        if (pinned && viewIndex < live) {
+            builder.addAction(
+                android.R.drawable.ic_media_next,
+                getString(R.string.chunk_nav_next),
+                navNextPendingIntent
+            )
+        }
+        // 'Jump to live' is deliberately not its own button: collapsed notifications cap at 3
+        // actions, and pressing ▶ until the tail already clears the pin (returns to live).
+
+        notificationManager.notify(NOTIFICATION_ID, builder.build())
     }
 
     override fun onSuccess(
@@ -458,20 +621,8 @@ class InferenceService : Service(), TranscriptionListener {
         }
 
         val queueText = if (queuedCount > 0) getString(R.string.queued_count, queuedCount) else ""
-        val timingText = when {
-            etaText.isNotEmpty() -> etaText
-            durationSeconds > 0 -> formatDuration(durationSeconds)
-            else -> ""
-        }
-        val subText = when {
-            queueText.isNotEmpty() && timingText.isNotEmpty() -> "$queueText · $timingText"
-            queueText.isNotEmpty() -> queueText
-            timingText.isNotEmpty() -> timingText
-            else -> null
-        }
-        if (subText != null) {
-            builder.setSubText(subText)
-        }
+        val timingText = formatTimingText(etaText, durationSeconds)
+        joinSubText(queueText, timingText)?.let { builder.setSubText(it) }
 
         notificationManager.notify(NOTIFICATION_ID, builder.build())
     }
@@ -720,4 +871,15 @@ class InferenceService : Service(), TranscriptionListener {
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
     }
+
+    private fun navPendingIntent(action: String, requestCode: Int) = android.app.PendingIntent.getService(
+        this,
+        requestCode,
+        Intent(this, InferenceService::class.java).apply { this.action = action },
+        android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+    )
+
+    private val navPrevPendingIntent by lazy { navPendingIntent(ACTION_NAV_PREV, RC_NAV_PREV) }
+    private val navNextPendingIntent by lazy { navPendingIntent(ACTION_NAV_NEXT, RC_NAV_NEXT) }
+    private val navLivePendingIntent by lazy { navPendingIntent(ACTION_NAV_LIVE, RC_NAV_LIVE) }
 }

@@ -24,8 +24,25 @@ interface TranscriptionListener {
         queuedCount: Int
     )
 
-    /** Interim transcription result from progressive/VAD mode */
-    fun onInterimResult(contentText: String, bigText: String, subText: String)
+    /**
+     * Interim transcription result from progressive/VAD/pipeline mode.
+     *
+     * Chunk metadata (TASK-242) lets the listener offer prev/next navigation through
+     * completed chunks on the in-progress notification. Defaults preserve the
+     * "no chunk context" case (e.g. a single streaming partial).
+     *
+     * - [chunkIndex]: 0-based index of the chunk that just completed (-1 if not chunk-based).
+     * - [chunkText]: that chunk's own text (null if not chunk-based).
+     * - [totalChunks]: total chunk count for this job (0 if not chunk-based / unknown).
+     */
+    fun onInterimResult(
+        contentText: String,
+        bigText: String,
+        subText: String,
+        chunkIndex: Int = -1,
+        chunkText: String? = null,
+        totalChunks: Int = 0
+    )
 
     /** Transcription completed successfully */
     fun onSuccess(

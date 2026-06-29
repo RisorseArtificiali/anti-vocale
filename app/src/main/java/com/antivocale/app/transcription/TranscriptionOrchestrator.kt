@@ -549,7 +549,10 @@ class TranscriptionOrchestrator @Inject constructor(
                 listener.onInterimResult(
                     contentText = partial,
                     bigText = partial,
-                    subText = ""
+                    subText = "",
+                    chunkIndex = 0,
+                    chunkText = partial,
+                    totalChunks = 1
                 )
             }
             val inferMs = System.currentTimeMillis() - t0
@@ -637,7 +640,10 @@ class TranscriptionOrchestrator @Inject constructor(
                         listener.onInterimResult(
                             contentText = trimmed,
                             bigText = trimmed,
-                            subText = "Segment $segNumber/$chunkCount"
+                            subText = "Segment $segNumber/$chunkCount",
+                            chunkIndex = i,
+                            chunkText = trimmed,
+                            totalChunks = chunkCount
                         )
                     }
                     minConfidence = aggregateConfidence(minConfidence, tr.confidence)
@@ -758,7 +764,10 @@ class TranscriptionOrchestrator @Inject constructor(
                                 listener.onInterimResult(
                                     contentText = trimmed,
                                     bigText = trimmed,
-                                    subText = "Chunk ${index + 1}/$chunkCount"
+                                    subText = "Chunk ${index + 1}/$chunkCount",
+                                    chunkIndex = index,
+                                    chunkText = trimmed,
+                                    totalChunks = chunkCount
                                 )
                             }
                         }
@@ -883,7 +892,10 @@ class TranscriptionOrchestrator @Inject constructor(
                                         listener.onInterimResult(
                                             contentText = trimmed,
                                             bigText = trimmed,
-                                            subText = "Chunk ${chunk.chunkIndex + 1}/$expectedChunkCount"
+                                            subText = "Chunk ${chunk.chunkIndex + 1}/$expectedChunkCount",
+                                            chunkIndex = chunk.chunkIndex,
+                                            chunkText = trimmed,
+                                            totalChunks = expectedChunkCount
                                         )
                                     }
                                 }
@@ -905,7 +917,10 @@ class TranscriptionOrchestrator @Inject constructor(
                                                 listener.onInterimResult(
                                                     contentText = trimmed,
                                                     bigText = trimmed,
-                                                    subText = "Chunk ${chunk.chunkIndex + 1}/$expectedChunkCount (retry)"
+                                                    subText = "Chunk ${chunk.chunkIndex + 1}/$expectedChunkCount (retry)",
+                                                    chunkIndex = chunk.chunkIndex,
+                                                    chunkText = trimmed,
+                                                    totalChunks = expectedChunkCount
                                                 )
                                             }
                                         }

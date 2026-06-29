@@ -235,6 +235,13 @@
     <string name="dialog_delete_message">This will permanently remove \'%1$s\' from your device. You can download it again later.</string>
     <string name="action_delete">Delete</string>
     <string name="action_cancel">Cancel</string>
+    <!-- Chunk navigation in the in-progress notification (TASK-242) -->
+    <string name="chunk_nav_prev">◀</string>
+    <string name="chunk_nav_next">▶</string>
+    <string name="chunk_nav_live">Latest</string>
+    <string name="chunk_nav_pinned_subtext">Chunk %1$d of %2$d · live %3$d of %2$d</string>
+    <string name="chunk_nav_live_subtext">Live · chunk %1$d of %2$d</string>
+    <string name="chunk_nav_empty">No text for this chunk</string>
 
     <!-- Settings Tab - Section Titles -->
     <string name="settings_section_transcription">Transcription</string>
