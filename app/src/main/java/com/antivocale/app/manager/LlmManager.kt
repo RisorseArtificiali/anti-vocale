@@ -9,7 +9,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -298,9 +297,7 @@ open class LlmManager @Inject constructor() {
             val response = StringBuilder()
 
             conversation.sendMessageAsync(Contents.of(Content.Text(prompt)))
-                .catch { e ->
-                    Log.e(TAG, "LiteRT streaming error", e)
-                }
+                // No .catch: let mid-stream errors propagate to the outer catch (no silent partial success).
                 .collect { message ->
                     response.append(message.toString())
                 }
@@ -426,9 +423,8 @@ open class LlmManager @Inject constructor() {
                     Content.Text(prompt)
                 )
             )
-                .catch { e ->
-                    Log.e(TAG, "LiteRT audio streaming error", e)
-                }
+                // No .catch on the flow: let a mid-stream error propagate to the outer catch
+                // so a truncated transcript is reported as failure, not silent partial success.
                 .collect { message ->
                     response.append(message.toString())
                 }
