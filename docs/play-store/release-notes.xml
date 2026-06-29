@@ -1,4 +1,12 @@
 <en-US>
+What's new in 1.7.0:
+
+• Detect and extract embedded subtitles from video files before transcribing (closes #9)
+• Accept video files as transcription input (the audio track is transcribed)
+• Navigate completed chunks from the in-progress notification while a long transcription runs
+• Hardened Gemma/LiteRT on multi-chunk audio; fixed a release-only WorkManager crash
+• LiteRT-LM 0.12.0 → 0.13.1 (MTP runtime support); stale .litertlm models prompt re-download
+
 What's new in 1.6.1:
 
 • Nemotron now streams transcription text progressively as it decodes
@@ -120,6 +128,14 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.7.0:
+
+• Rileva ed estrai i sottotitoli integrati dai file video prima di trascrivere (chiude #9)
+• Accetta file video come input di trascrizione (viene trascritta la traccia audio)
+• Naviga i segmenti completati dalla notifica in corso durante una trascrizione lunga
+• Rinforzato Gemma/LiteRT su audio multi-segmento; corretto un crash di WorkManager solo in release
+• LiteRT-LM 0.12.0 → 0.13.1 (supporto runtime MTP); i modelli .litertlm obsoleti propongono il re-download
+
 Novità della versione 1.6.1:
 
 • Nemotron ora mostra il testo progressivamente durante la decodifica

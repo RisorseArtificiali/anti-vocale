@@ -1,13 +1,13 @@
 <en-US>
-    🔄 Re-transcribe - Retry any transcription with a different model from the log
-    🔀 Model-specific sharing - Pick Parakeet, Whisper, Qwen3, or Gemma directly from the share sheet
-    📊 Confidence indicator - See detected language and low-confidence warnings in notifications
-    ⚙️ Reorganized settings - Grouped into Transcription, Appearance, and Advanced sections
+    🎬 Subtitles from video - Detect and extract embedded subtitles before transcribing
+    🎥 Video input - Transcribe the audio track of video files
+    🔎 Browse chunks - Navigate completed chunks while a long transcription runs (from the notification)
+    🛠 Stability - Hardened Gemma/LiteRT on multi-chunk audio; fixed a release-only crash
 </en-US>
 
 <it-IT>
-    🔄 Ri-trascrizione - Riprova qualsiasi trascrizione con un modello diverso dal registro
-    🔀 Condivisione per modello - Scegli Parakeet, Whisper, Qwen3 o Gemma direttamente dal foglio di condivisione
-    📊 Indicatore di confidenza - Visualizza la lingua rilevata e avvisi di bassa confidenza nelle notifiche
-    ⚙️ Impostazioni riorganizzate - Raggruppate in sezioni Trascrizione, Aspetto e Avanzate
+    🎬 Sottotitoli dai video - Rileva ed estrai i sottotitoli integrati prima di trascrivere
+    🎥 Input video - Trascrivi la traccia audio dei file video
+    🔎 Sfoglia i segmenti - Naviga i segmenti completati durante una trascrizione lunga (dalla notifica)
+    🛠 Stabilità - Rinforzato Gemma/LiteRT su audio multi-segmento; corretto un crash in release
 </it-IT>
