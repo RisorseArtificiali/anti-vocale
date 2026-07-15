@@ -1,0 +1,23 @@
+# PII PROTECTION — real voice messages are other people's private speech.
+# These must NEVER be committed. Verify with `git status` before any commit.
+
+# Audio clips (the actual voice messages)
+clips/
+
+# Manual transcripts (verbatim speech content)
+transcripts/
+
+# Populated manifest (may contain speaker/source metadata)
+manifest.csv
+
+# Downloaded / symlinked model weights (large, re-downloadable)
+models/
+
+# Generated reports (may contain transcript text)
+results/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

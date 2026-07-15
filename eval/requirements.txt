@@ -1,0 +1,12 @@
+# Anti-Vocale eval harness — desktop Python deps.
+# Pinned to match the shipped sherpa-onnx AAR version so recognition params line up.
+sherpa-onnx==1.13.3
+
+# Audio decode + resample to 16 kHz mono (any ffmpeg format: opus/m4a/mp3/wav).
+# Requires ffmpeg on PATH for opus/m4a: `sudo dnf install ffmpeg` / `brew install ffmpeg`.
+librosa>=0.10,<0.12
+soundfile>=0.12
+
+# WER/CER use the script's built-in unit-cost Levenshtein (no jiwer needed).
+
+numpy>=1.24

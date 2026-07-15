@@ -1,0 +1,8 @@
+clip_id,source,duration_s,speaker_tag,condition,notes
+vm001,whatsapp-export,14.2,S1,quiet,short clip
+vm002,whatsapp-export,47.8,S2,noisy_car,medium noisy
+vm003,telegram-export,93.1,S3,hands_free,long clip — watch for loops
+# Copy this file to manifest.csv and fill in. manifest.csv is gitignored (PII).
+# clip_id MUST match the audio basename in clips/ and the transcript basename in transcripts/.
+# Columns are freeform metadata; run_baseline.py does not require this file —
+# it discovers pairs purely from clips/<id>.<ext> + transcripts/<id>.txt.
