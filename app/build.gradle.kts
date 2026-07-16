@@ -152,7 +152,9 @@ dependencies {
     // AppAuth for OAuth authentication (HuggingFace)
     implementation("net.openid:appauth:0.11.1")
 
-    // sherpa-onnx v1.13.3 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR)
+    // sherpa-onnx v1.13.4 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR, Nemotron).
+    // v1.13.4: ORT 1.27.0; ASR postproc fixes (#3709 space-before-punct, #3711 leading-space);
+    // Qwen3 homophone replacer (#3729). Stock prebuilt AAR (all 4 ABIs).
     implementation(files("libs/sherpa-onnx.aar"))
 
     // GGUF/llama-bro: disabled until llama-bro supports Gemma 4 architecture
