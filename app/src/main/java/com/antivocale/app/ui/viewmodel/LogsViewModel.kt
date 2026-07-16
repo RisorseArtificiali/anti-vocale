@@ -53,6 +53,15 @@ data class LogEntry(
     enum class Status { PENDING, SUCCESS, ERROR }
 }
 
+/**
+ * A partial-transcription state younger than this is treated as an IN-FLIGHT transcription
+ * (progressive transcription re-saves it roughly every 5s), so the "was interrupted" recovery
+ * dialog is suppressed to avoid a false alarm while a transcription is actively running (issue #11).
+ * State older than this means the transcription stopped progressing (process likely died
+ * mid-transcription) → a genuine interruption worth offering to recover.
+ */
+private const val RECOVERY_STALE_THRESHOLD_MS = 15_000L
+
 @HiltViewModel
 class LogsViewModel @Inject constructor(
     private val transcriptionBackendManager: TranscriptionBackendManager,
@@ -89,8 +98,18 @@ class LogsViewModel @Inject constructor(
         viewModelScope.launch {
             val text = preferencesManager.partialTranscriptionText.first()
             if (text != null) {
-                _interruptedTranscription.value = text
-                preferencesManager.clearPartialTranscriptionState()
+                // Gate on staleness (issue #11): a fresh partial state means a transcription is
+                // still in flight (it re-saves every ~5s), not interrupted — raising the "was
+                // interrupted" dialog here was a false positive on the happy path. Only treat it
+                // as a genuine interruption when no save has happened for a while.
+                val timestamp = preferencesManager.partialTranscriptionTimestamp.first()
+                val ageMs = timestamp?.let { System.currentTimeMillis() - it } ?: Long.MAX_VALUE
+                if (ageMs >= RECOVERY_STALE_THRESHOLD_MS) {
+                    _interruptedTranscription.value = text
+                    preferencesManager.clearPartialTranscriptionState()
+                }
+                // else: fresh → leave the state; logSuccess/logError clears it on completion,
+                // or a later init re-evaluates it as stale.
             }
         }
     }
