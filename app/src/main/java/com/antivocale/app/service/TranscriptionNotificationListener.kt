@@ -132,25 +132,26 @@ class TranscriptionNotificationListener(
     // ---- Auto-Copy (ported from InferenceService to keep the service untouched) ----
 
     private suspend fun autoCopyIfEnabled(transcriptionText: String, sourcePackage: String?) {
-        val autoCopyEnabled = if (sourcePackage != null) {
+        // Effective auto-copy = global toggle OR per-app preference (issue #13). Mirrors
+        // InferenceService.autoCopyIfEnabled — keep the two paths in sync.
+        val globalAutoCopy = preferencesManager.autoCopyEnabled.first()
+        val perAppAutoCopy = sourcePackage?.let { pkg ->
             try {
-                perAppPreferencesManager.getCurrentPreferences(sourcePackage).autoCopy
+                perAppPreferencesManager.getCurrentPreferences(pkg).autoCopy
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to get per-app preferences for $sourcePackage, using global", e)
-                preferencesManager.autoCopyEnabled.first()
+                Log.w(TAG, "Failed to get per-app preferences for $pkg", e)
+                false
             }
-        } else {
-            preferencesManager.autoCopyEnabled.first()
-        }
+        } ?: false
 
-        if (autoCopyEnabled) {
+        if (globalAutoCopy || perAppAutoCopy) {
             val clipboardManager = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText(
                 appContext.getString(R.string.clipboard_label_transcription),
                 transcriptionText
             )
             clipboardManager.setPrimaryClip(clip)
-            Log.i(TAG, "Auto-copied transcription (${transcriptionText.length} chars), source=$sourcePackage")
+            Log.i(TAG, "Auto-copied transcription (${transcriptionText.length} chars), source=$sourcePackage, global=$globalAutoCopy, perApp=$perAppAutoCopy")
             Handler(Looper.getMainLooper()).post {
                 com.antivocale.app.util.ToastCompat.show(appContext, R.string.copied_to_clipboard)
             }

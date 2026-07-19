@@ -487,23 +487,25 @@ class InferenceService : Service(), TranscriptionListener {
     // ---- Auto-Copy ----
 
     private suspend fun autoCopyIfEnabled(transcriptionText: String, sourcePackage: String?) {
-        val autoCopyEnabled = if (sourcePackage != null) {
+        // Effective auto-copy = global toggle OR per-app preference (issue #13). The global
+        // "Auto-Copy Transcription" toggle is the master enable; per-app preferences add their
+        // own defaults/overrides on top. Previously the per-app value shadowed the global for
+        // app-shared audio, so enabling the global toggle had no effect except for WhatsApp.
+        val globalAutoCopy = preferencesManager.autoCopyEnabled.first()
+        val perAppAutoCopy = sourcePackage?.let { pkg ->
             try {
-                val prefs = perAppPreferencesManager.getCurrentPreferences(sourcePackage)
-                prefs.autoCopy
+                perAppPreferencesManager.getCurrentPreferences(pkg).autoCopy
             } catch (e: Exception) {
-                Log.w(TAG, "Failed to get per-app preferences for $sourcePackage, using global", e)
-                preferencesManager.autoCopyEnabled.first()
+                Log.w(TAG, "Failed to get per-app preferences for $pkg", e)
+                false
             }
-        } else {
-            preferencesManager.autoCopyEnabled.first()
-        }
+        } ?: false
 
-        if (autoCopyEnabled) {
+        if (globalAutoCopy || perAppAutoCopy) {
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText(getString(R.string.clipboard_label_transcription), transcriptionText)
             clipboardManager.setPrimaryClip(clip)
-            Log.i(TAG, "Auto-copied transcription to clipboard (${transcriptionText.length} chars), source=$sourcePackage")
+            Log.i(TAG, "Auto-copied transcription to clipboard (${transcriptionText.length} chars), source=$sourcePackage, global=$globalAutoCopy, perApp=$perAppAutoCopy")
 
             Handler(Looper.getMainLooper()).post {
                 com.antivocale.app.util.ToastCompat.show(
