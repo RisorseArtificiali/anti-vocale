@@ -34,6 +34,9 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
     companion object {
         const val BACKEND_ID = "nemotron-streaming"
         private const val TAG = "NemotronStreamingBackend"
+        // Trailing silence appended so the 1120ms-chunk streaming encoder has a complete final
+        // chunk to flush trailing tokens. Without it, clips ending mid-chunk truncate the tail.
+        private const val TAIL_PADDING_SECONDS = 1.5
     }
 
     override val id: String = BACKEND_ID
@@ -155,7 +158,13 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
                 // else a specific code). This is OnlineStream.setOption — distinct from createStream's
                 // hotwords arg; passing a language via createStream triggers contextual biasing (exit 255).
                 stream.setOption("language", language)
-                stream.acceptWaveform(samples, sampleRate)
+                // Tail padding (TASK-296): feed a zero-padded copy to the recognizer so the
+                // streaming encoder gets a complete final chunk to flush trailing tokens. Keep the
+                // original samples length for the confidence/duration calc below.
+                val tailPadSamples = (TAIL_PADDING_SECONDS * sampleRate).toInt()
+                val recognizerInput =
+                    if (tailPadSamples > 0) samples.copyOf(samples.size + tailPadSamples) else samples
+                stream.acceptWaveform(recognizerInput, sampleRate)
 
                 // Decode loop: drain the recognizer's internal buffer, emitting the growing
                 // hypothesis after each pass so the UI can render text progressively.
@@ -170,8 +179,10 @@ class NemotronStreamingBackend @Inject constructor() : TranscriptionBackend {
                 }
 
                 stream.inputFinished()
-                // Final decode to flush any trailing hypotheses after end-of-input.
-                if (rec.isReady(stream)) {
+                // Drain trailing hypotheses after end-of-input. A streaming transducer can hold
+                // several final tokens until EOF; a single decode pass may not flush them all,
+                // which truncated the transcript's tail (TASK-296). Loop until nothing remains.
+                while (rec.isReady(stream)) {
                     rec.decode(stream)
                 }
 
