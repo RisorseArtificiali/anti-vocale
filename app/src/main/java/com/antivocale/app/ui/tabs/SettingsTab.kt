@@ -4,8 +4,11 @@ import android.app.Activity
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.documentfile.provider.DocumentFile
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
@@ -63,6 +66,7 @@ fun SettingsTab(
     val uiState by viewModel.uiState.collectAsState()
     val currentTimeout by viewModel.keepAliveTimeout.collectAsState()
     val autoCopyEnabled by viewModel.autoCopyEnabled.collectAsState()
+    val outputFolderUri by viewModel.outputFolderUri.collectAsState()
     val vadEnabled by viewModel.vadEnabled.collectAsState()
     val progressiveEnabled by viewModel.progressiveTranscription.collectAsState()
     val threadCount by viewModel.threadCount.collectAsState()
@@ -93,6 +97,23 @@ fun SettingsTab(
         contract = ActivityResultContracts.StartActivityForResult()
     ) { result ->
         viewModel.handleOAuthResult(result.data)
+    }
+
+    // SAF folder picker for transcript auto-save (issue #14)
+    val outputFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                Log.w("SettingsTab", "Failed to take persistable URI permission", e)
+            }
+            viewModel.saveOutputFolderUri(uri.toString())
+        }
     }
 
     // Load models on first composition
@@ -331,6 +352,13 @@ fun SettingsTab(
                 onCheckedChange = { enabled ->
                     viewModel.saveAutoCopyEnabled(enabled)
                 }
+            )
+
+            // Output Folder auto-save Setting (issue #14)
+            OutputFolderSettingCard(
+                outputFolderUri = outputFolderUri,
+                onChoose = { outputFolderLauncher.launch(null) },
+                onClear = { viewModel.saveOutputFolderUri(null) }
             )
 
             // VAD Silence Stripping Setting
@@ -1331,4 +1359,80 @@ fun SettingsTab(
         Spacer(modifier = Modifier.height(32.dp))
     }
     } // End of if-else for showPerAppSettings
+}
+
+/**
+ * Setting card for the transcript auto-save folder (issue #14). Mirrors [ToggleSettingCard]'s
+ * layout (icon + title + description in a Card) but swaps the switch for either a
+ * "Choose folder" button (no folder selected) or the selected folder name + "Clear" button.
+ *
+ * Enable = a folder is chosen; clearing the folder disables auto-save. No separate toggle.
+ */
+@Composable
+private fun OutputFolderSettingCard(
+    outputFolderUri: String?,
+    onChoose: () -> Unit,
+    onClear: () -> Unit
+) {
+    val context = LocalContext.current
+    val displayName = remember(outputFolderUri) {
+        outputFolderUri?.let { uriStr ->
+            runCatching {
+                val uri = Uri.parse(uriStr)
+                DocumentFile.fromTreeUri(context, uri)?.name ?: uri.lastPathSegment ?: uriStr
+            }.getOrNull() ?: uriStr
+        }
+    }
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Folder,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.output_folder_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.output_folder_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                if (displayName != null) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = displayName,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            if (outputFolderUri != null) {
+                TextButton(onClick = onClear) {
+                    Text(stringResource(R.string.output_folder_clear))
+                }
+            } else {
+                Button(onClick = onChoose) {
+                    Text(stringResource(R.string.output_folder_choose))
+                }
+            }
+        }
+    }
 }

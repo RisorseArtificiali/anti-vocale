@@ -14,6 +14,7 @@ interface PreferencesManager {
     val nemotronModelPath: Flow<String?>
     val ggufModelPath: Flow<String?>
     val autoCopyEnabled: Flow<Boolean>
+    val outputFolderUri: Flow<String?>
     val vadEnabled: Flow<Boolean>
     val vadAdvisoryDismissed: Flow<Boolean>
     val progressiveTranscription: Flow<Boolean>
@@ -44,6 +45,7 @@ interface PreferencesManager {
     suspend fun saveGgufModelPath(path: String)
     suspend fun clearGgufModelPath()
     suspend fun saveAutoCopyEnabled(enabled: Boolean)
+    suspend fun saveOutputFolderUri(uri: String?)
     suspend fun saveVadEnabled(enabled: Boolean)
     suspend fun saveVadAdvisoryDismissed(dismissed: Boolean)
     suspend fun saveProgressiveTranscription(enabled: Boolean)

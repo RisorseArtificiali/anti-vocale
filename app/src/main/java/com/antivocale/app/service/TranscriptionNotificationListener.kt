@@ -7,6 +7,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
@@ -20,9 +21,12 @@ import com.antivocale.app.receiver.NotificationActionReceiver
 import com.antivocale.app.transcription.Language
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.AppNotificationChannel
+import com.antivocale.app.util.TranscriptFileSaver
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -112,6 +116,7 @@ class TranscriptionNotificationListener(
         if (isShareRequest) {
             coroutineScope.launch {
                 autoCopyIfEnabled(resultText, sourcePackage)
+                saveTranscriptToFileIfEnabled(resultText, sourcePackage)
                 showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount)
             }
         }
@@ -155,6 +160,19 @@ class TranscriptionNotificationListener(
             Handler(Looper.getMainLooper()).post {
                 com.antivocale.app.util.ToastCompat.show(appContext, R.string.copied_to_clipboard)
             }
+        }
+    }
+
+    // ---- Auto-save to folder (issue #14, mirrors InferenceService) ----
+
+    private suspend fun saveTranscriptToFileIfEnabled(text: String, sourcePackage: String?) {
+        val treeUriStr = preferencesManager.outputFolderUri.first() ?: return
+        val treeUri = Uri.parse(treeUriStr)
+        val name = withContext(Dispatchers.IO) {
+            TranscriptFileSaver.save(appContext, treeUri, text, sourcePackage)
+        }
+        if (name != null) {
+            Log.i(TAG, "Saved transcript to output folder: $name")
         }
     }
 

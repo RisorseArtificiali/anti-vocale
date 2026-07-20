@@ -8,6 +8,7 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.os.IBinder
 import android.os.Handler
 import android.os.Looper
@@ -27,6 +28,7 @@ import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.transcription.Language
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.CrashReporter
+import com.antivocale.app.util.TranscriptFileSaver
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -444,6 +446,7 @@ class InferenceService : Service(), TranscriptionListener {
         if (isShareRequest) {
             serviceScope.launch {
                 autoCopyIfEnabled(resultText, sourcePackage)
+                saveTranscriptToFileIfEnabled(resultText, sourcePackage)
                 showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount)
             }
         }
@@ -513,6 +516,19 @@ class InferenceService : Service(), TranscriptionListener {
                     R.string.copied_to_clipboard
                 )
             }
+        }
+    }
+
+    // ---- Auto-save to folder (issue #14) ----
+
+    private suspend fun saveTranscriptToFileIfEnabled(text: String, sourcePackage: String?) {
+        val treeUriStr = preferencesManager.outputFolderUri.first() ?: return
+        val treeUri = Uri.parse(treeUriStr)
+        val name = withContext(Dispatchers.IO) {
+            TranscriptFileSaver.save(this@InferenceService, treeUri, text, sourcePackage)
+        }
+        if (name != null) {
+            Log.i(TAG, "Saved transcript to output folder: $name")
         }
     }
 

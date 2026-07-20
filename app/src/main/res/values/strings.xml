@@ -328,6 +328,12 @@
     <string name="auto_copy_title">Auto-Copy Transcription</string>
     <string name="auto_copy_description">Automatically copy transcription results to clipboard. You can still manually copy from the notification.</string>
 
+    <!-- Settings Tab - Output Folder -->
+    <string name="output_folder_title">Save transcripts to folder</string>
+    <string name="output_folder_description">Automatically save each transcription as a .txt to a folder you choose (e.g. a Drive or Syncthing folder).</string>
+    <string name="output_folder_choose">Choose folder</string>
+    <string name="output_folder_clear">Clear folder</string>
+
     <!-- Settings Tab - VAD -->
     <string name="vad_title">Strip Silence (VAD)</string>
     <string name="vad_description">Remove silent portions from voice messages before transcription. Reduces processing time and improves accuracy.</string>

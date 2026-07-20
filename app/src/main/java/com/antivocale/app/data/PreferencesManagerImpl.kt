@@ -35,6 +35,7 @@ class PreferencesManagerImpl(
         private val NEMOTRON_MODEL_PATH = stringPreferencesKey("nemotron_model_path")
         private val GGUF_MODEL_PATH = stringPreferencesKey("gguf_model_path")
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
+        private val OUTPUT_FOLDER_URI = stringPreferencesKey("output_folder_uri")
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
         private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
@@ -64,6 +65,7 @@ class PreferencesManagerImpl(
         val nemotronModelPath: String? = null,
         val ggufModelPath: String? = null,
         val autoCopyEnabled: Boolean = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
+        val outputFolderUri: String? = null,
         val vadEnabled: Boolean = PreferencesManager.DEFAULT_VAD_ENABLED,
         val progressiveTranscription: Boolean = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         val defaultPrompt: String = PreferencesManager.DEFAULT_PROMPT_VALUE,
@@ -90,6 +92,7 @@ class PreferencesManagerImpl(
         nemotronModelPath = this[NEMOTRON_MODEL_PATH],
         ggufModelPath = this[GGUF_MODEL_PATH],
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
+        outputFolderUri = this[OUTPUT_FOLDER_URI],
         vadEnabled = this[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED,
         progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         defaultPrompt = this[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE,
@@ -257,6 +260,20 @@ class PreferencesManagerImpl(
             preferences[AUTO_COPY_ENABLED] = enabled
         }
         cache.updateAndGet { it.copy(autoCopyEnabled = enabled) }
+    }
+
+    override val outputFolderUri: Flow<String?> = context.dataStore.data.map { it[OUTPUT_FOLDER_URI] }
+        .onStart { emit(cache.get().outputFolderUri) }
+
+    override suspend fun saveOutputFolderUri(uri: String?) {
+        context.dataStore.edit { preferences ->
+            if (uri == null) {
+                preferences.remove(OUTPUT_FOLDER_URI)
+            } else {
+                preferences[OUTPUT_FOLDER_URI] = uri
+            }
+        }
+        cache.updateAndGet { it.copy(outputFolderUri = uri) }
     }
 
     override val vadEnabled: Flow<Boolean> = context.dataStore.data.map { it[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED }

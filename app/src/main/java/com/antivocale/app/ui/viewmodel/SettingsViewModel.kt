@@ -113,6 +113,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED
         )
 
+    // Output folder for auto-saving transcripts as .txt (issue #14). null = disabled.
+    val outputFolderUri: StateFlow<String?> = preferencesManager.outputFolderUri
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
     // VAD silence stripping preference
     val vadEnabled: StateFlow<Boolean> = preferencesManager.vadEnabled
         .stateIn(
@@ -334,6 +342,15 @@ class SettingsViewModel @Inject constructor(
     fun saveAutoCopyEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveAutoCopyEnabled(enabled)
+        }
+    }
+
+    /**
+     * Sets the output folder URI for transcript auto-save. Pass null to clear (disables).
+     */
+    fun saveOutputFolderUri(uri: String?) {
+        viewModelScope.launch {
+            preferencesManager.saveOutputFolderUri(uri)
         }
     }
 
