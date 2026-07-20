@@ -1,4 +1,12 @@
 <en-US>
+What's new in 1.8.0:
+
+• New: Save transcripts to a folder — auto-save every transcription as a .txt to a folder of your choice (Drive, Syncthing, Dropbox, anything). Great for building your own archive or sync pipeline
+• Fixed: the global Auto-Copy toggle now works for all apps, not just WhatsApp (#13)
+• Fixed: the "transcription was interrupted" dialog no longer appears on normal completion (#11)
+• Fixed: Nemotron no longer cuts off the end of short messages
+• Updated inference engine (sherpa-onnx 1.13.4) with cleaner transcript output formatting
+
 What's new in 1.7.0:
 
 • Detect and extract embedded subtitles from video files before transcribing (closes #9)
@@ -128,6 +136,14 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.8.0:
+
+• Novità: Salva le trascrizioni in una cartella — salvataggio automatico di ogni trascrizione come .txt in una cartella a tua scelta (Drive, Syncthing, Dropbox, qualsiasi cosa). Utile per creare il tuo archivio o pipeline di sincronizzazione
+• Risolto: l'interruttore globale Copia automatica ora funziona per tutte le app, non solo WhatsApp (#13)
+• Risolto: il dialogo "trascrizione interrotta" non appare più al completamento normale (#11)
+• Risolto: Nemotron non tronca più la fine dei messaggi brevi
+• Aggiornato il motore di inferenza (sherpa-onnx 1.13.4) con formattazione più pulita dell'output
+
 Novità della versione 1.7.0:
 
 • Rileva ed estrai i sottotitoli integrati dai file video prima di trascrivere (chiude #9)
