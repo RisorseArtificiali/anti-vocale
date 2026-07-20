@@ -54,7 +54,7 @@ jobs:
         run: |
           mkdir -p app/libs
           curl -L -o app/libs/sherpa-onnx.aar \
-            https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.3/sherpa-onnx-1.13.3.aar
+            https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.3/sherpa-onnx-1.13.4.aar
 
       - name: Build Debug APK
         id: debug-apk
