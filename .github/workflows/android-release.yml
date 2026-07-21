@@ -56,13 +56,20 @@ jobs:
           curl -L -o app/libs/sherpa-onnx.aar \
             https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-1.13.4.aar
 
-      - name: Build Debug APK
+      - name: Build playStore Debug APK
         id: debug-apk
         # Best-effort: the debug sideloading APK must not gate the production
-        # Release AAB / Play publish. processDebugGoogleServices can fail here because
+        # Release AAB / Play publish. processPlayStoreDebugGoogleServices can fail here because
         # the debug applicationId (com.antivocale.app.debug) isn't in google-services.json.
         continue-on-error: true
-        run: ./gradlew assembleDebug
+        run: ./gradlew assemblePlayStoreDebug
+
+      - name: Build fdroid Release APK
+        id: fdroid-apk
+        # Firebase-free APK for F-Droid / IzzyOnDroid / GitHub Releases.
+        # No google-services.json or keystore needed (unsigned for F-Droid re-signing).
+        continue-on-error: true
+        run: ./gradlew assembleFdroidRelease
 
       - name: Build Release AAB
         if: >-
@@ -72,7 +79,7 @@ jobs:
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
           echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
           sed -i 's|storeFile=.*|storeFile=release.keystore|' keystore.properties
-          ./gradlew bundleRelease
+          ./gradlew bundlePlayStoreRelease
 
       - name: Extract release notes
         if: >-
@@ -85,12 +92,19 @@ jobs:
             --fallback "$RELEASE_BODY" \
             --output-dir whats-new
 
-      - name: Upload Debug APK artifact
+      - name: Upload playStore Debug APK artifact
         if: steps.debug-apk.outcome == 'success'
         uses: actions/upload-artifact@v4
         with:
-          name: app-debug
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: app-playStore-debug
+          path: app/build/outputs/apk/playStore/debug/app-playStore-debug.apk
+
+      - name: Upload fdroid Release APK artifact
+        if: steps.fdroid-apk.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-fdroid-release
+          path: app/build/outputs/apk/fdroid/release/app-fdroid-release-unsigned.apk
 
       - name: Upload Release AAB artifact
         if: >-
@@ -99,7 +113,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
-          path: app/build/outputs/bundle/release/app-release.aab
+          path: app/build/outputs/bundle/playStoreRelease/app-play-store-release.aab
 
       - name: Upload release notes artifact
         if: >-
@@ -110,12 +124,15 @@ jobs:
           name: release-notes
           path: whats-new/
 
-      - name: Attach APK to GitHub Release
-        if: steps.debug-apk.outcome == 'success' && (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''))
+      - name: Attach APKs to GitHub Release
+        if: >-
+          (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''))
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || '' }}
-          files: app/build/outputs/apk/debug/app-debug.apk
+          files: |
+            app/build/outputs/apk/playStore/debug/app-playStore-debug.apk
+            app/build/outputs/apk/fdroid/release/app-fdroid-release-unsigned.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -145,7 +162,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.antivocale.app
-          releaseFiles: app-release.aab
+          releaseFiles: app-play-store-release.aab
           track: ${{ github.event.inputs.play-store-track || 'internal' }}
           status: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.draft-release == 'true') && 'draft' || 'completed' }}
           whatsNewDirectory: whats-new

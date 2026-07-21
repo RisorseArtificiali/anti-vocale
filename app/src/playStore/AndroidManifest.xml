@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <application>
+
+        <!-- Prevent Firebase ComponentDiscoveryService from being started as a foreground service.
+             It's only needed for meta-data component discovery at build time, not at runtime.
+             Without this, Android can crash the app with ForegroundServiceDidNotStartInTimeException.
+             playStore-only: the fdroid flavor has no Firebase SDK on its classpath. -->
+        <service
+            android:name="com.google.firebase.components.ComponentDiscoveryService"
+            android:enabled="false"
+            android:exported="false"
+            tools:node="replace" />
+
+    </application>
+
+</manifest>
