@@ -28,8 +28,6 @@ Description: |
   transcripts to a folder, video file transcription, progressive display, per-app
   notification preferences, Tasker integration.
 
-RequiresAndroid: 8.0+
-
 RepoType: git
 Repo: https://github.com/RisorseArtificiali/anti-vocale
 
