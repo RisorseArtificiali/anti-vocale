@@ -39,6 +39,7 @@ Builds:
       - fdroid
     scanignore:
       - build.gradle.kts
+      - app/libs/sherpa-onnx.aar
     prebuild: |
       sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
       mkdir -p libs
