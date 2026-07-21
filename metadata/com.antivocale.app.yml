@@ -30,10 +30,6 @@ Description: |
 RepoType: git
 Repo: https://github.com/RisorseArtificiali/anti-vocale
 
-ScanIgnoreMode: true
-ScanIgnore:
-  - app/build.gradle.kts
-
 Builds:
   - versionName: 1.8.0
     versionCode: 24
