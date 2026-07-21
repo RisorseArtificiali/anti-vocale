@@ -1,0 +1,38 @@
+Anti-Vocale trascrive i messaggi vocali da WhatsApp, Telegram, Signal e altre app di messaggistica direttamente sul tuo dispositivo Android. Tutto l'elaborazione avviene on-device — l'audio non lascia mai il telefono.
+
+Nessuna connessione internet, nessun cloud, nessun account, nessun tracciamento. I modelli AI girano localmente tramite ONNX Runtime.
+
+SCEGLI IL TUO MODELLO
+
+Più backend ASR intercambiabili, ognuno con caratteristiche diverse:
+- Parakeet TDT: Multilingua veloce, 25 lingue europee
+- Whisper Distil Italiano: Migliore qualità italiana, ottimizzato per messaggi vocali
+- Whisper Turbo: 99 lingue, bilanciato velocità/qualità
+- Whisper Small: Compatto, 99 lingue
+- Qwen3-ASR: Compatto, 52 lingue
+- Nemotron 3.5 streaming: Visualizzazione progressiva del testo in tempo reale
+- Gemma 4 E2B/E4B: AI multimodale, 140+ lingue
+
+CARATTERISTICHE
+
+- Condividi messaggi vocali da qualsiasi app tramite la condivisione Android
+- Copia automatica della trascrizione negli appunti (incolla direttamente in chat)
+- Salvataggio automatico delle trascrizioni in una cartella a scelta (Drive, Syncthing, Dropbox)
+- Trascrizione di file video (estrae la traccia audio)
+- Visualizzazione progressiva — il testo appare in tempo reale durante la decodifica
+- Preferenze di notifica per-app (copia automatica, condivisione rapida)
+- Registro trascrizioni con ricerca e azioni swipe
+- Rimozione del silenzio ed elaborazione parallela dei chunk per velocità
+- Integrazione con Tasker per l'automazione
+
+PRIVACY
+
+Nessuna rete, nessun account, nessuna raccolta dati, nessuna pubblicità. L'audio non lascia mai il telefono. I modelli si scaricano una volta da HuggingFace; scegline uno e sei pronto.
+
+OPEN SOURCE
+
+Licenza Apache 2.0. Codice sorgente: https://github.com/RisorseArtificiali/anti-vocale
+
+REQUISITI
+
+Android 8.0+ | 4GB+ RAM consigliati | 350MB-940MB di spazio per modello

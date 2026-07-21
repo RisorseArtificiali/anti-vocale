@@ -1,0 +1,5 @@
+New: Save transcripts to a folder — auto-save every transcription as a .txt to a folder of your choice (Drive, Syncthing, Dropbox)
+Fixed: global Auto-Copy toggle now works for all apps, not just WhatsApp
+Fixed: false "transcription interrupted" dialog no longer appears on normal completion
+Fixed: Nemotron no longer cuts off the end of short messages
+Updated inference engine (sherpa-onnx 1.13.4) with cleaner transcript output

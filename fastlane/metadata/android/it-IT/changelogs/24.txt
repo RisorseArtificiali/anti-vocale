@@ -1,0 +1,5 @@
+Novità: Salva le trascrizioni in una cartella — salvataggio automatico come .txt in una cartella a tua scelta (Drive, Syncthing, Dropbox)
+Risolto: l'interruttore Copia automatica ora funziona per tutte le app, non solo WhatsApp
+Risolto: il dialogo "trascrizione interrotta" non appare più al completamento normale
+Risolto: Nemotron non tronca più la fine dei messaggi brevi
+Aggiornato il motore di inferenza (sherpa-onnx 1.13.4) con output più pulito
