@@ -3,8 +3,6 @@ plugins {
     id("org.jetbrains.kotlin.android")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
     id("com.google.dagger.hilt.android")
 }
 
@@ -56,9 +54,23 @@ android {
         }
     }
 
+    flavorDimensions += "store"
+    productFlavors {
+        create("playStore") {
+            dimension = "store"
+        }
+        create("fdroid") {
+            dimension = "store"
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
+            // Only apply the release signing config when keystore.properties exists
+            // (Play Store CI). Without it, the APK is unsigned — correct for F-Droid.
+            if (keystoreProperties["storeFile"] != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -107,10 +119,10 @@ ksp {
 }
 
 dependencies {
-    // Firebase (BoM manages all Firebase library versions)
-    implementation(platform("com.google.firebase:firebase-bom:34.0.0"))
-    implementation("com.google.firebase:firebase-crashlytics")
-    implementation("com.google.firebase:firebase-analytics")
+    // Firebase Crashlytics + Analytics — playStore flavor only (F-Droid build is Firebase-free)
+    "playStoreImplementation"(platform("com.google.firebase:firebase-bom:34.0.0"))
+    "playStoreImplementation"("com.google.firebase:firebase-crashlytics")
+    "playStoreImplementation"("com.google.firebase:firebase-analytics")
 
     // LiteRT-LM for multimodal inference (text + audio). v0.13.1 adds MTP speculative-
     // decoding runtime support (TASK-221); pairs with the version-stamp prompt in TASK-236.
@@ -205,4 +217,13 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     androidTestImplementation(platform("androidx.compose:compose-bom:2025.01.00"))
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+}
+
+// Apply Firebase plugins only for playStore builds (and IDE syncs, which run no
+// assemble/bundle task). The fdroid flavor builds without google-services.json.
+val buildingFdroidOnly = gradle.startParameter.taskNames.any { it.contains("Fdroid", true) } &&
+    !gradle.startParameter.taskNames.any { it.contains("PlayStore", true) }
+if (!buildingFdroidOnly) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
 }
