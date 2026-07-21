@@ -30,6 +30,14 @@ Description: |
 RepoType: git
 Repo: https://github.com/RisorseArtificiali/anti-vocale
 
+# Firebase references in build.gradle.kts are scoped to the playStore flavor only
+# (playStoreImplementation + conditional plugin application). The fdroid flavor
+# excludes them entirely. The scanner does a raw text scan and can't parse Gradle
+# flavor logic, so these entries are safe to ignore.
+ScanIgnoreMode: true
+ScanIgnore:
+  - app/build.gradle.kts
+
 Builds:
   - versionName: 1.8.0
     versionCode: 24
