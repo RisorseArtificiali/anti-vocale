@@ -31,9 +31,9 @@ RepoType: git
 Repo: https://github.com/RisorseArtificiali/anti-vocale
 
 Builds:
-  - versionName: 1.8.0
-    versionCode: 24
-    commit: v1.8.0
+  - versionName: 1.8.1
+    versionCode: 25
+    commit: v1.8.1
     subdir: app
     gradle:
       - fdroid
@@ -47,5 +47,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.8.0
-CurrentVersionCode: 24
+CurrentVersion: 1.8.1
+CurrentVersionCode: 25
