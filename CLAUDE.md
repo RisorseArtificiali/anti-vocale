@@ -33,11 +33,24 @@ Android application written in Kotlin for transcribing voice messages locally on
   - `ui/` — Compose UI screens and view models
   - `receiver/` — Broadcast receivers + share-target aliases (ShareReceiverActivity)
   - `data/` — Preferences, ShareTargetManager, download infrastructure
+  - `util/` — `CrashReporter` (flavor-split), `TranscriptFileSaver` (SAF auto-save), `AppNotificationChannel`, etc.
+- `app/src/playStore/` — playStore-flavor source set: `CrashReporter` (Firebase-backed), `AndroidManifest.xml` (Firebase service suppression)
+- `app/src/fdroid/` — fdroid-flavor source set: `CrashReporter` (logcat-only no-op). Firebase-free build for F-Droid.
 - `app/libs/` — Prebuilt AARs (sherpa-onnx, tracked via Git LFS)
 - `docs/` — Build guides, research notes, scout reports
 - `scripts/` — Build/install helpers (`install.sh`)
+- `eval/` — Desktop eval harness (`run_baseline.py`: WER/CER/loops via sherpa-onnx Python; `smoke_nemotron.py`: model validation). Uses `eval/.venv` with sherpa-onnx 1.13.3 Python.
+- `fastlane/` — Store listing metadata (en-US + it-IT) for F-Droid
+- `metadata/` — F-Droid build recipe (`com.antivocale.app.yml`)
 
 ## Architecture Gotchas
+
+**Build flavors: playStore vs fdroid.** Two product flavors (`flavorDimensions += "store"`):
+- `playStore` — includes Firebase Crashlytics + Analytics (scoped via `"playStoreImplementation"`). Firebase plugins applied conditionally based on `gradle.startParameter.taskNames` containing "Fdroid".
+- `fdroid` — Firebase-free. `CrashReporter` is a logcat-only no-op. No `google-services.json` needed.
+- Same `applicationId` (`com.antivocale.app`) for both — users can switch stores.
+- Build commands: `./gradlew assemblePlayStoreDebug`, `./gradlew assembleFdroidRelease`, etc.
+- `./gradlew assembleDebug` is ambiguous (must specify a flavor).
 
 **Adding a transcription backend → update ALL dispatch sites.** The app has N parallel backend-id mappings. Missing one causes a silent UI bug that compiles clean. When adding/changing a backend, `grep -rE "BACKEND_ID|when.*[Bb]ackend" app/src/main` and confirm EVERY hit. Known sites:
 - `ModelViewModel` (loadSavedModelPath, modelPathForBackend, benchmark config)
@@ -64,7 +77,7 @@ Whenever integrating a new model, native library, JNI bridge, or supporting a ne
    ```proguard
    -keep class com.antivocale.app.<new_package>.** { *; }
    ```
-3. **Build a release APK** (`./gradlew assembleRelease`) and test on a real device — debug builds don't apply R8, so JNI crashes only surface in release.
+3. **Build a release APK** (`./gradlew assemblePlayStoreRelease` or `assembleFdroidRelease`) and test on a real device — debug builds don't apply R8, so JNI crashes only surface in release.
 4. **Key symptom**: model or native component works in debug but crashes immediately in release → almost always an R8 stripping issue.
 
 **Context**: The distil-large-v3 Whisper model crashed on the v1.1.1 Play Store release because R8 stripped Kotlin metadata and transcription backend classes needed for JNI reflection. The fix was adding keep rules for `*Annotation*/InnerClasses/Signature`, `com.antivocale.app.transcription.**`, and `@androidx.annotation.Keep`.

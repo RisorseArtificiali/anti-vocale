@@ -32,6 +32,8 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 - **Picture-in-Picture** - See live transcription in a floating window while using other apps
 - **Multilingual UI** - App interface fully translated in English and Italian
 - **Auto-copy** - Optionally copy transcription to clipboard automatically
+- **Save to folder** - Auto-save transcripts as .txt to a folder of your choice (Drive, Syncthing, Dropbox, etc.)
+- **Video file support** - Transcribe audio from video files; extract embedded subtitles
 - **Tasker/automation support** - Trigger transcription via broadcast intents
 
 ## Screenshots
@@ -109,6 +111,15 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 | **Nemotron 3.5** | ~640MB | 40+ | Cache-aware streaming transducer, auto-detect + native punctuation/casing |
 | **Qwen3-ASR 0.6B** | ~938MB | 52 | Streaming-capable, poor Italian accuracy |
 
+### Build Flavors
+
+| Flavor | Firebase | Use case |
+|--------|----------|----------|
+| **playStore** | Crashlytics + Analytics | Google Play distribution |
+| **fdroid** | None | F-Droid / FOSS distribution |
+
+Both flavors share the same `applicationId` and feature set. The only difference is crash reporting (Firebase vs logcat-only).
+
 ## Getting Started
 
 ### Prerequisites
@@ -119,10 +130,16 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 
 ### Install
 
-Download the latest APK from [Releases](../../releases) or build from source:
+**Play Store:** [Get it on Google Play](https://play.google.com/store/apps/details?id=com.antivocale.app)
+
+**F-Droid:** Coming soon (inclusion request submitted)
+
+**GitHub Releases:** Download the APK from [Releases](../../releases)
+
+Or build from source:
 
 ```bash
-./gradlew installDebug
+./scripts/install.sh
 ```
 
 See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions.
@@ -130,7 +147,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions.
 ### First Use
 
 1. Open Anti-Vocale and go to the **Model** tab
-2. Download a model (Whisper Small recommended for first-time setup)
+2. Download a model (Parakeet TDT recommended — fast multilingual, good quality/size ratio)
 3. Go back to your messaging app, long-press a voice message, and share it to Anti-Vocale
 4. The transcription appears in a notification with Copy and Share actions
 

@@ -13,7 +13,7 @@ This document describes the verified steps to build the Anti-Vocale app with Lit
 ## Quick Start (One-Liner Build)
 
 ```bash
-source ~/.sdkman/bin/sdkman-init.sh && sdk use java 21.0.7-tem && export PATH="$HOME/Android/Sdk/platform-tools:$PATH" && ./gradlew assembleDebug
+source ~/.sdkman/bin/sdkman-init.sh && sdk use java 21.0.11-tem && export PATH="$HOME/Android/Sdk/platform-tools:$PATH" && ./gradlew assembleDebug
 ```
 
 ## Environment Setup
@@ -26,10 +26,10 @@ curl -s "https://get.sdkman.io" | bash
 source ~/.sdkman/bin/sdkman-init.sh
 
 # Install JDK 21
-sdk install java 21.0.7-tem
+sdk install java 21.0.11-tem
 
 # Activate
-sdk use java 21.0.7-tem
+sdk use java 21.0.11-tem
 
 # Add adb to PATH (required for install/deploy)
 export PATH="$HOME/Android/Sdk/platform-tools:$PATH"
@@ -51,7 +51,7 @@ sdk use java 17.0.12-tem && ./gradlew assembleDebug  # ❌ FAILS - LiteRT-LM req
 
 **Do this instead:**
 ```bash
-sdk use java 21.0.7-tem && ./gradlew assembleDebug   # ✅ WORKS
+sdk use java 21.0.11-tem && ./gradlew assembleDebug   # ✅ WORKS
 ```
 
 **Why:** LiteRT-LM v0.10.0+ ships Java 21 bytecode (class file version 65.0). Compiling with JDK 17 produces `invalid source release: 21`.
