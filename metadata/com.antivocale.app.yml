@@ -38,9 +38,11 @@ Builds:
     gradle:
       - fdroid
     scanignore:
+      - build.gradle.kts
       - app/build.gradle.kts
     prebuild: |
       sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
+      sed -E -i "s|../build.gradle.kts|../../build.gradle.kts|" build.gradle.kts || true
       mkdir -p libs
       curl -L -o libs/sherpa-onnx.aar \
         https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-1.13.4.aar
