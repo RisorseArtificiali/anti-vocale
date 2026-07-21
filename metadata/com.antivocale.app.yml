@@ -42,6 +42,7 @@ Builds:
       - app/libs/sherpa-onnx.aar
     prebuild: |
       sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts
+      sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" ../build.gradle.kts
       mkdir -p libs
       curl -L -o libs/sherpa-onnx.aar \
         https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-1.13.4.aar
