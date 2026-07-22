@@ -31,6 +31,20 @@ RepoType: git
 Repo: https://github.com/RisorseArtificiali/anti-vocale
 
 Builds:
+  - versionName: 1.8.2
+    versionCode: 28
+    commit: v1.8.2
+    subdir: app
+    gradle:
+      - fdroid
+    scanignore:
+      - app/libs/sherpa-onnx.aar
+    prebuild: |
+      sed -E -i "/(crashlytics|com\.google\.firebase|com\.google\.gms)/d" build.gradle.kts ../build.gradle.kts
+      mkdir -p libs
+      curl -L -o libs/sherpa-onnx.aar \
+        https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.4/sherpa-onnx-1.13.4.aar
+
   - versionName: 1.8.1
     versionCode: 25
     commit: v1.8.1
@@ -47,5 +61,5 @@ Builds:
 
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: 1.8.1
-CurrentVersionCode: 25
+CurrentVersion: 1.8.2
+CurrentVersionCode: 28
