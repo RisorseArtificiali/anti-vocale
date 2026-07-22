@@ -1,4 +1,9 @@
 <en-US>
+What's new in 1.8.2:
+
+• Removed unused ad-tracking permissions (AD_ID, ad-services attribution) that Firebase Analytics injected — the app's permission list now genuinely matches its "no tracking, no ads" promise
+• Privacy: dropped Firebase Analytics entirely; crash reporting (Crashlytics) is unaffected
+
 What's new in 1.8.0:
 
 • New: Save transcripts to a folder — auto-save every transcription as a .txt to a folder of your choice (Drive, Syncthing, Dropbox, anything). Great for building your own archive or sync pipeline
@@ -136,6 +141,11 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.8.2:
+
+• Rimossi permessi inutilizzati di tracciamento pubblicitario (AD_ID, ad-services attribution) iniettati da Firebase Analytics — la lista dei permessi dell'app ora corrisponde realmente alla promessa "nessun tracciamento, nessuna pubblicità"
+• Privacy: rimosso interamente Firebase Analytics; la segnalazione dei crash (Crashlytics) non ne risente
+
 Novità della versione 1.8.0:
 
 • Novità: Salva le trascrizioni in una cartella — salvataggio automatico di ogni trascrizione come .txt in una cartella a tua scelta (Drive, Syncthing, Dropbox, qualsiasi cosa). Utile per creare il tuo archivio o pipeline di sincronizzazione

@@ -24,8 +24,8 @@ android {
         applicationId = "com.antivocale.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 25
-        versionName = "1.8.1"
+        versionCode = 26
+        versionName = "1.8.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -119,10 +119,13 @@ ksp {
 }
 
 dependencies {
-    // Firebase Crashlytics + Analytics — playStore flavor only (F-Droid build is Firebase-free)
+    // Firebase Crashlytics only — playStore flavor (F-Droid build is Firebase-free).
+    // firebase-analytics deliberately omitted: it transitively pulls play-services-measurement
+    // + ads-adservices, which inject AD_ID / ACCESS_ADSERVICES_* permissions that contradict the
+    // app's "no tracking, no ads" promise. Crashlytics needs none of those. Install/country stats
+    // come from the Play Console, not Firebase, so Analytics is unused here.
     "playStoreImplementation"(platform("com.google.firebase:firebase-bom:34.0.0"))
     "playStoreImplementation"("com.google.firebase:firebase-crashlytics")
-    "playStoreImplementation"("com.google.firebase:firebase-analytics")
 
     // LiteRT-LM for multimodal inference (text + audio). v0.13.1 adds MTP speculative-
     // decoding runtime support (TASK-221); pairs with the version-stamp prompt in TASK-236.
