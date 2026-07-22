@@ -1,4 +1,8 @@
 <en-US>
+What's new in 1.8.3:
+
+• Maintenance: the sherpa-onnx speech engine is now built from source for F-Droid, and the bundled library is no longer shipped as a committed binary
+
 What's new in 1.8.2:
 
 • Removed unused ad-tracking permissions (AD_ID, ad-services attribution) that Firebase Analytics injected — the app's permission list now genuinely matches its "no tracking, no ads" promise
@@ -141,6 +145,10 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.8.3:
+
+• Manutenzione: il motore di riconoscimento vocale sherpa-onnx è ora compilato da sorgente per F-Droid e la libreria non viene più distribuita come binario precompilato
+
 Novità della versione 1.8.2:
 
 • Rimossi permessi inutilizzati di tracciamento pubblicitario (AD_ID, ad-services attribution) iniettati da Firebase Analytics — la lista dei permessi dell'app ora corrisponde realmente alla promessa "nessun tracciamento, nessuna pubblicità"
