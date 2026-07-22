@@ -146,7 +146,7 @@ jobs:
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.antivocale.app
-          releaseFiles: app-play-store-release.aab
+          releaseFiles: app-playStore-release.aab
           track: ${{ github.event.inputs.play-store-track || 'internal' }}
           status: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.draft-release == 'true') && 'draft' || 'completed' }}
           whatsNewDirectory: whats-new
