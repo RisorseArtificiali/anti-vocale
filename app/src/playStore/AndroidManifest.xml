@@ -4,15 +4,19 @@
 
     <application>
 
-        <!-- Prevent Firebase ComponentDiscoveryService from being started as a foreground service.
-             It's only needed for meta-data component discovery at build time, not at runtime.
-             Without this, Android can crash the app with ForegroundServiceDidNotStartInTimeException.
-             playStore-only: the fdroid flavor has no Firebase SDK on its classpath. -->
+        <!-- Firebase component discovery: each Firebase library (crashlytics, common,
+             installations, etc.) attaches its registrar class name as a <meta-data> child of
+             ComponentDiscoveryService. At runtime ComponentDiscovery reads these via
+             PackageManager.getServiceInfo(...).metaData — it does NOT start the service.
+             PREVIOUSLY this used tools:node="replace" + enabled="false" to avoid a suspected
+             ForegroundServiceDidNotStartInTimeException, but that DROPPED all the registrar
+             children, so discovery found zero registrars and Crashlytics never initialized.
+             tools:node="merge" preserves the children while keeping the service non-exported.
+             The service is plain (no foregroundServiceType) and is never started at runtime. -->
         <service
             android:name="com.google.firebase.components.ComponentDiscoveryService"
-            android:enabled="false"
             android:exported="false"
-            tools:node="replace" />
+            tools:node="merge" />
 
     </application>
 

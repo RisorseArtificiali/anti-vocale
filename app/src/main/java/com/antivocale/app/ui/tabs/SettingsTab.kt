@@ -12,8 +12,6 @@ import androidx.documentfile.provider.DocumentFile
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -56,7 +54,7 @@ import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsTab(
     onNavigateToModelTab: () -> Unit = {}
@@ -389,13 +387,7 @@ fun SettingsTab(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .combinedClickable(
-                        onClick = { showPromptSettings = true },
-                        onLongClick = {
-                            // TEMP Crashlytics verification — remove before tagging a release.
-                            throw RuntimeException("Crashlytics verification crash")
-                        }
-                    ),
+                    .clickable { showPromptSettings = true },
                 shape = MaterialTheme.shapes.medium
             ) {
                 Row(
