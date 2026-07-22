@@ -97,7 +97,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release-aab
-          path: app/build/outputs/bundle/playStoreRelease/app-play-store-release.aab
+          path: app/build/outputs/bundle/playStoreRelease/app-playStore-release.aab
+          if-no-files-found: error
 
       - name: Upload release notes artifact
         if: >-
