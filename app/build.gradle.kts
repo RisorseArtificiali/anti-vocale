@@ -23,7 +23,7 @@ android {
     defaultConfig {
         applicationId = "com.antivocale.app"
         minSdk = 26
-        targetSdk = 35
+        targetSdk = 36
         versionCode = 25
         versionName = "1.8.1"
 
