@@ -192,13 +192,13 @@ jobs:
       - name: Build app via fdroid build (reproducible, from source)
         working-directory: fdroiddata
         env:
-          PATH: /opt/fdroidserver:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
           PYTHONPATH: /opt/fdroidserver:/opt/fdroidserver/examples
           PYTHONUNBUFFERED: "true"
           serverwebroot: /tmp
         run: |
           set -ex
           . /etc/profile.d/bsenv.sh || true
+          export PATH="/opt/fdroidserver:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH"
           fdroid build com.antivocale.app:29 --no-tarball
 
       - name: Sign the reference APK with the release key
