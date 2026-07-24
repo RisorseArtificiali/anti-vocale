@@ -150,3 +150,75 @@ jobs:
           track: ${{ github.event.inputs.play-store-track || 'internal' }}
           status: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.draft-release == 'true') && 'draft' || 'completed' }}
           whatsNewDirectory: whats-new
+
+  # Produces the byte-reproducible reference APK for F-Droid's Binaries check.
+  # Built inside F-Droid's own buildserver image (same toolchain/NDK as F-Droid CI),
+  # proven reproducible: two independent F-Droid CI runs of this recipe yielded
+  # byte-identical unsigned APKs. The output is signed with the project release
+  # key and uploaded to the GitHub release as the Binaries reference APK.
+  # Manual trigger only (run once per release after tagging).
+  reproducible-fdroid:
+    name: Build reproducible F-Droid reference APK
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    container:
+      image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
+      options: --user root
+    env:
+      ANDROID_HOME: /opt/android-sdk
+
+    steps:
+      - name: Clone fdroiddata (recipe + srclib, from the GitLab fork)
+        run: |
+          git clone --depth 1 --branch anti-vocale-1.8.2 \
+            https://gitlab.com/paoloantinori/fdroid-data.git fdroiddata
+
+      - name: Install fdroidserver and NDK r27c
+        run: |
+          set -ex
+          source /etc/profile.d/bsenv.sh || true
+          export fdroidserver=/opt/fdroidserver
+          rm -rf $fdroidserver && mkdir $fdroidserver
+          curl --silent https://gitlab.com/fdroid/fdroidserver/-/archive/master/fdroidserver-master.tar.gz | \
+            tar -xz --directory=$fdroidserver --strip-components=1
+          echo "$fdroidserver" >> "$GITHUB_PATH"
+          # F-Droid's image ships without an NDK; install r27c (the recipe's ndk:) where fdroid looks.
+          yes | sdkmanager "ndk;27.2.12479018" || true
+          fdroid --version
+
+      - name: Build app via fdroid build (reproducible, from source)
+        working-directory: fdroiddata
+        run: |
+          set -ex
+          source /etc/profile.d/bsenv.sh || true
+          export serverwebroot=/tmp
+          fdroid build com.antivocale.app:29 --no-tarball
+
+      - name: Sign the reference APK with the release key
+        run: |
+          set -ex
+          UNSIGNED=fdroiddata/unsigned/com.antivocale.app_29.apk
+          OUT=app-fdroid-release.apk
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
+          echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
+          # keystore.properties is storePassword=.../keyPassword=.../keyAlias=... ; extract values.
+          STORE_PASS=$(grep '^storePassword=' keystore.properties | cut -d= -f2-)
+          KEY_PASS=$(grep '^keyPassword=' keystore.properties | cut -d= -f2-)
+          ALIAS=$(grep '^keyAlias=' keystore.properties | cut -d= -f2-)
+          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)
+          "${BUILD_TOOLS}apksigner" sign \
+            --ks release.keystore \
+            --ks-key-alias "$ALIAS" \
+            --ks-pass "pass:$STORE_PASS" \
+            --key-pass "pass:$KEY_PASS" \
+            --in "$UNSIGNED" --out "$OUT"
+          "${BUILD_TOOLS}apksigner" verify --print-certs "$OUT" | grep SHA-256
+
+      - name: Attach signed reference APK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          files: app-fdroid-release.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
