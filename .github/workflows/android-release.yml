@@ -187,6 +187,8 @@ jobs:
           export serverwebroot=/tmp
           # F-Droid's image ships without an NDK; install r27c (the recipe's ndk:) where fdroid looks.
           yes | sdkmanager "ndk;27.2.12479018" || true
+          # The recipe's sudo: deps (wget etc.) don't auto-install when running as root; install them.
+          apt-get update -qq && apt-get install -y --no-install-recommends wget build-essential cmake g++ zip unzip
           fdroid --version || true
 
       - name: Build app via fdroid build (reproducible, from source)
