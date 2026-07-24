@@ -176,21 +176,23 @@ jobs:
       - name: Install fdroidserver and NDK r27c
         run: |
           set -ex
-          source /etc/profile.d/bsenv.sh || true
+          . /etc/profile.d/bsenv.sh || true
           export fdroidserver=/opt/fdroidserver
           rm -rf $fdroidserver && mkdir $fdroidserver
           curl --silent https://gitlab.com/fdroid/fdroidserver/-/archive/master/fdroidserver-master.tar.gz | \
             tar -xz --directory=$fdroidserver --strip-components=1
-          echo "$fdroidserver" >> "$GITHUB_PATH"
+          export PATH="$fdroidserver:$PATH"
           # F-Droid's image ships without an NDK; install r27c (the recipe's ndk:) where fdroid looks.
           yes | sdkmanager "ndk;27.2.12479018" || true
           fdroid --version
 
       - name: Build app via fdroid build (reproducible, from source)
         working-directory: fdroiddata
+        env:
+          PATH: /opt/fdroidserver:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
         run: |
           set -ex
-          source /etc/profile.d/bsenv.sh || true
+          . /etc/profile.d/bsenv.sh || true
           export serverwebroot=/tmp
           fdroid build com.antivocale.app:29 --no-tarball
 
