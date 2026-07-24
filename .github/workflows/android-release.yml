@@ -204,22 +204,21 @@ jobs:
       - name: Sign the reference APK with the release key
         run: |
           set -ex
-          UNSIGNED=fdroiddata/unsigned/com.antivocale.app_29.apk
-          OUT=app-fdroid-release.apk
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > release.keystore
           echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
-          # keystore.properties is storePassword=.../keyPassword=.../keyAlias=... ; extract values.
           STORE_PASS=$(grep '^storePassword=' keystore.properties | cut -d= -f2-)
           KEY_PASS=$(grep '^keyPassword=' keystore.properties | cut -d= -f2-)
           ALIAS=$(grep '^keyAlias=' keystore.properties | cut -d= -f2-)
-          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/*/ | sort -V | tail -1)
-          "${BUILD_TOOLS}apksigner" sign \
+          # fdroid writes the unsigned APK relative to the fdroiddata working dir; find it robustly.
+          UNSIGNED=$(find . -name "com.antivocale.app_29.apk" -path "*/unsigned/*" | head -1)
+          test -n "$UNSIGNED"
+          apksigner sign \
             --ks release.keystore \
             --ks-key-alias "$ALIAS" \
             --ks-pass "pass:$STORE_PASS" \
             --key-pass "pass:$KEY_PASS" \
-            --in "$UNSIGNED" --out "$OUT"
-          "${BUILD_TOOLS}apksigner" verify --print-certs "$OUT" | grep SHA-256
+            --in "$UNSIGNED" --out app-fdroid-release.apk
+          apksigner verify --print-certs app-fdroid-release.apk | grep SHA-256
 
       - name: Attach signed reference APK to GitHub Release
         uses: softprops/action-gh-release@v2
