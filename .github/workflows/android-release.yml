@@ -182,18 +182,23 @@ jobs:
           curl --silent https://gitlab.com/fdroid/fdroidserver/-/archive/master/fdroidserver-master.tar.gz | \
             tar -xz --directory=$fdroidserver --strip-components=1
           export PATH="$fdroidserver:$PATH"
+          export PYTHONPATH="$fdroidserver:$fdroidserver/examples"
+          export PYTHONUNBUFFERED=true
+          export serverwebroot=/tmp
           # F-Droid's image ships without an NDK; install r27c (the recipe's ndk:) where fdroid looks.
           yes | sdkmanager "ndk;27.2.12479018" || true
-          fdroid --version
+          fdroid --version || true
 
       - name: Build app via fdroid build (reproducible, from source)
         working-directory: fdroiddata
         env:
           PATH: /opt/fdroidserver:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH
+          PYTHONPATH: /opt/fdroidserver:/opt/fdroidserver/examples
+          PYTHONUNBUFFERED: "true"
+          serverwebroot: /tmp
         run: |
           set -ex
           . /etc/profile.d/bsenv.sh || true
-          export serverwebroot=/tmp
           fdroid build com.antivocale.app:29 --no-tarball
 
       - name: Sign the reference APK with the release key
