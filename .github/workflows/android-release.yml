@@ -220,8 +220,8 @@ jobs:
           STORE_PASS=$(grep '^storePassword=' keystore.properties | cut -d= -f2-)
           KEY_PASS=$(grep '^keyPassword=' keystore.properties | cut -d= -f2-)
           ALIAS=$(grep '^keyAlias=' keystore.properties | cut -d= -f2-)
-          # fdroid writes the unsigned APK relative to the fdroiddata working dir; find it robustly.
-          UNSIGNED=$(find . -name "com.antivocale.app_29.apk" -path "*/unsigned/*" | head -1)
+          # fdroid build leaves the APK in the gradle output dir (fdroid publish would move it to unsigned/).
+          UNSIGNED=$(find . -path "*/apk/fdroid/release/*.apk" | head -1)
           test -n "$UNSIGNED"
           apksigner sign \
             --ks release.keystore \
