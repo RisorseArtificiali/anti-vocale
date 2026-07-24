@@ -200,6 +200,15 @@ jobs:
           . /etc/profile.d/bsenv.sh || true
           export PATH="/opt/fdroidserver:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH"
           fdroid build com.antivocale.app:29 --no-tarball
+      - name: Debug - locate built APK
+        if: always()
+        run: |
+          echo "=== all APKs under the workspace ==="
+          find "$GITHUB_WORKSPACE" -name "*.apk" 2>/dev/null || true
+          echo "=== fdroiddata tree (unsigned/tmp/repo) ==="
+          ls -la fdroiddata/unsigned fdroiddata/tmp fdroiddata/repo 2>/dev/null || true
+          echo "=== full fdroiddata dir listing ==="
+          ls -la fdroiddata 2>/dev/null || true
 
       - name: Sign the reference APK with the release key
         run: |
