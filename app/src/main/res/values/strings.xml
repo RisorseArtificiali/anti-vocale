@@ -145,6 +145,17 @@
     <string name="nemotron_downloaded">%1$s downloaded successfully</string>
     <string name="nemotron_deleted">%1$s deleted</string>
 
+    <!-- GigaAM v3 model -->
+    <string name="gigaam_title">GigaAM v3</string>
+    <string name="gigaam_description">Russian ASR • ~326MB • Sber (MIT)</string>
+    <string name="gigaam_name">GigaAM v3</string>
+    <string name="gigaam_download_confirm_title">Download GigaAM v3?</string>
+    <string name="gigaam_download_confirm_message">This will download ~%1$dMB. GigaAM v3 is a Russian-only ASR model from Sber with strong Russian accuracy.</string>
+    <string name="gigaam_download">Download GigaAM</string>
+    <string name="gigaam_delete_message">Delete GigaAM v3 model?</string>
+    <string name="gigaam_downloaded">%1$s downloaded successfully</string>
+    <string name="gigaam_deleted">%1$s deleted</string>
+
     <!-- Download status -->
     <string name="download_status_downloading">Downloading…</string>
     <string name="download_status_extracting">Extracting %1$s…</string>
@@ -738,6 +749,8 @@
     <string name="model_info_notes_qwen3">Broadest language coverage. Note: truncates audio longer than 30 seconds. ARM64 devices only.</string>
     <string name="model_info_best_for_parakeet">Fastest transcription (17.6x faster than Whisper, 5.4%% WER)</string>
     <string name="model_info_notes_parakeet">No audio length limit. VAD not needed. Best for users who prioritize speed.</string>
+    <string name="model_info_best_for_gigaam">Best Russian accuracy on-device</string>
+    <string name="model_info_notes_gigaam">Russian only. Native punctuation and capitalization.</string>
     <string name="model_info_best_for_gemma">Multimodal LLM for text + audio tasks</string>
     <string name="model_info_notes_gemma">Not optimized for pure ASR. Use for advanced features like audio understanding combined with text generation.</string>
     <string name="model_info_benchmark_wer">Word Error Rate (Italian): %.1f%%</string>
@@ -753,6 +766,7 @@
     <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
     <string name="share_target_gemma">Anti-Vocale (Gemma)</string>
     <string name="share_target_nemotron">Anti-Vocale (Nemotron)</string>
+    <string name="share_target_gigaam">Anti-Vocale (GigaAM)</string>
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Share Targets</string>

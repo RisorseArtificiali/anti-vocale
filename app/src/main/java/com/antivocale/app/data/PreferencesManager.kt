@@ -12,6 +12,7 @@ interface PreferencesManager {
     val whisperModelPath: Flow<String?>
     val qwen3AsrModelPath: Flow<String?>
     val nemotronModelPath: Flow<String?>
+    val gigaamModelPath: Flow<String?>
     val ggufModelPath: Flow<String?>
     val autoCopyEnabled: Flow<Boolean>
     val outputFolderUri: Flow<String?>
@@ -41,6 +42,9 @@ interface PreferencesManager {
 
     suspend fun saveNemotronModelPath(path: String)
     suspend fun clearNemotronModelPath()
+
+    suspend fun saveGigaAmModelPath(path: String)
+    suspend fun clearGigaAmModelPath()
 
     suspend fun saveGgufModelPath(path: String)
     suspend fun clearGgufModelPath()

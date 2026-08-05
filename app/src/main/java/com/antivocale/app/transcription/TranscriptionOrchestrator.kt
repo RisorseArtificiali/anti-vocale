@@ -305,6 +305,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 WhisperBackend.BACKEND_ID -> loadWhisperBackend(context)
                 Qwen3AsrBackend.BACKEND_ID -> loadQwen3AsrBackend(context)
                 NemotronStreamingBackend.BACKEND_ID -> loadNemotronBackend(context)
+                GigaAmBackend.BACKEND_ID -> loadGigaAmBackend(context)
                 "gemma4_gguf" -> loadGgufBackend(context)
                 else -> loadLlmBackend(context)
             }
@@ -431,6 +432,19 @@ class TranscriptionOrchestrator @Inject constructor(
                     else -> lang
                 }
             },
+            context = context
+        )
+    }
+
+    private suspend fun loadGigaAmBackend(context: Context): Result<Unit> {
+        val modelPath = preferencesManager.gigaamModelPath.first()
+        if (modelPath.isNullOrBlank()) {
+            return Result.failure(TranscriptionException.NotInitialized())
+        }
+        return configureSherpaBackend(
+            backendId = GigaAmBackend.BACKEND_ID,
+            modelPath = modelPath,
+            label = "GigaAM",
             context = context
         )
     }
@@ -1234,6 +1248,7 @@ class TranscriptionOrchestrator @Inject constructor(
             Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first()
             SherpaOnnxBackend.BACKEND_ID -> preferencesManager.parakeetModelPath.first()
             NemotronStreamingBackend.BACKEND_ID -> preferencesManager.nemotronModelPath.first()
+            GigaAmBackend.BACKEND_ID -> preferencesManager.gigaamModelPath.first()
             "gemma4_gguf" -> preferencesManager.ggufModelPath.first()
             else -> preferencesManager.modelPath.first()
         } ?: ""

@@ -46,6 +46,9 @@ import com.antivocale.app.transcription.Qwen3AsrModelManager
 import com.antivocale.app.transcription.NemotronDownloader
 import com.antivocale.app.transcription.NemotronModelVariant
 import com.antivocale.app.transcription.NemotronStreamingBackend
+import com.antivocale.app.transcription.GigaAmBackend
+import com.antivocale.app.transcription.GigaAmDownloader
+import com.antivocale.app.transcription.GigaAmModelVariant
 import com.antivocale.app.transcription.ParakeetDownloader
 import com.antivocale.app.transcription.ParakeetModelManager
 import com.antivocale.app.transcription.Language
@@ -105,6 +108,7 @@ fun ModelTab(
     val whisperState by viewModel.whisperState.collectAsState()
     val qwen3AsrState by viewModel.qwen3AsrState.collectAsState()
     val nemotronState by viewModel.nemotronState.collectAsState()
+    val gigaAmState by viewModel.gigaAmState.collectAsState()
     val ggufState by viewModel.ggufState.collectAsState()
 
     // Transcription active state — used to warn about destructive operations
@@ -148,6 +152,9 @@ fun ModelTab(
     }
     val visibleQwen3AsrVariants = remember(filterLanguageCode) {
         filterVariants(Qwen3AsrModelManager.Variant.entries, filterLanguageCode) { it.supportedLanguageCodes }
+    }
+    val showGigaAm = remember(filterLanguageCode) {
+        filterLanguageCode == null || filterLanguageCode in Language.GIGAAM
     }
     val showParakeet = remember(filterLanguageCode) {
         filterLanguageCode == null || filterLanguageCode in Language.PARAKEET
@@ -335,6 +342,28 @@ fun ModelTab(
         )
     }
 
+    // GigaAM download confirmation dialog
+    if (gigaAmState.showDownloadDialog) {
+        DownloadConfirmationDialog(
+            title = stringResource(R.string.gigaam_download_confirm_title),
+            message = stringResource(R.string.gigaam_download_confirm_message, GigaAmModelVariant.estimatedSizeMB.toInt()),
+            onConfirm = { viewModel.confirmGigaAmDownload() },
+            onDismiss = { viewModel.dismissGigaAmDownloadDialog() }
+        )
+    }
+
+    // GigaAM delete confirmation dialog
+    if (gigaAmState.showDeleteDialog) {
+        val gigaamDisplayName = stringResource(R.string.gigaam_name)
+        DeleteConfirmationDialog(
+            modelName = gigaamDisplayName,
+            isTranscribing = isTranscribing,
+            isActiveModel = uiState.modelName == gigaamDisplayName,
+            onConfirm = { viewModel.confirmGigaAmDelete() },
+            onDismiss = { viewModel.dismissGigaAmDeleteDialog() }
+        )
+    }
+
     // GGUF: disabled — download/delete dialogs commented out (GgufVariant type unavailable)
     // if (ggufState.showDownloadDialog) { ... viewModel.confirmGgufDownload() ... }
     // if (ggufState.showDeleteDialog) { ... viewModel.confirmGgufDelete() ... }
@@ -484,6 +513,16 @@ fun ModelTab(
             guardedModelSwitch = guardedSwitch,
             onInfoClick = { modelInfoVariant = NemotronModelVariant }
         )
+
+        // GigaAM v3 section - Russian ASR backend (single-variant)
+        if (showGigaAm) {
+            GigaAmDownloadSection(
+                viewModel = viewModel,
+                activeModelName = uiState.modelName,
+                guardedModelSwitch = guardedSwitch,
+                onInfoClick = { modelInfoVariant = GigaAmModelVariant }
+            )
+        }
 
         // GGUF section - on-device LLM text generation via llama.cpp
         // Hidden: llama-bro 1.2.3 does not yet support the Gemma 4 GGUF architecture.
@@ -893,6 +932,112 @@ private fun NemotronDownloadSection(
                             NemotronStreamingBackend.BACKEND_ID,
                             path,
                             context.getString(R.string.nemotron_name)
+                        )
+                    }
+                },
+                onInfoClick = { onInfoClick(variant) }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+        }
+    }
+}
+
+
+// ==================== GigaAM Download Section ====================
+
+/**
+ * Section for downloading the GigaAM v3 model (sherpa-onnx nemo_transducer backend).
+ * Single-variant — renders one [ModelVariantCard] bound to [GigaAmModelVariant].
+ */
+@Composable
+private fun GigaAmDownloadSection(
+    viewModel: ModelViewModel,
+    activeModelName: String,
+    guardedModelSwitch: (() -> Unit) -> Unit = {},
+    onInfoClick: (ModelVariant) -> Unit = {}
+) {
+    val context = LocalContext.current
+    val gigaAmState by viewModel.gigaAmState.collectAsState()
+    val variant = GigaAmModelVariant
+    val isDownloaded = gigaAmState.modelPath != null
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = when {
+                gigaAmState.isDownloading -> MaterialTheme.colorScheme.secondaryContainer
+                else -> MaterialTheme.colorScheme.surfaceVariant
+            }
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        imageVector = when {
+                            isDownloaded -> Icons.Default.CheckCircle
+                            gigaAmState.isDownloading -> Icons.Default.CloudDownload
+                            else -> Icons.Default.GraphicEq
+                        },
+                        contentDescription = null,
+                        tint = when {
+                            isDownloaded -> MaterialTheme.colorScheme.primary
+                            gigaAmState.isDownloading -> MaterialTheme.colorScheme.secondary
+                            else -> MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.gigaam_title),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Text(
+                            text = stringResource(R.string.gigaam_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            ModelVariantCard(
+                state = ModelVariantCardState(
+                    variant = variant,
+                    isActive = activeModelName == stringResource(R.string.gigaam_name),
+                    downloadProgress = gigaAmState.downloadProgress,
+                    downloadState = gigaAmState.downloadState,
+                    errorMessage = gigaAmState.errorMessage,
+                    partialDownload = gigaAmState.partialDownload,
+                    buttonState = when {
+                        gigaAmState.isDownloading -> DownloadButtonState.Downloading
+                        isDownloaded -> DownloadButtonState.Downloaded
+                        gigaAmState.partialDownload != null -> DownloadButtonState.PartiallyDownloaded
+                        else -> DownloadButtonState.Idle
+                    }
+                ),
+                downloadButtonTextResId = R.string.gigaam_download,
+                onDownloadClick = { viewModel.showGigaAmDownloadDialog() },
+                onCancelClick = { viewModel.cancelGigaAmDownload() },
+                onResumeClick = { viewModel.resumeGigaAmDownload() },
+                onClearPartialClick = { viewModel.clearGigaAmPartialDownload() },
+                onUseClick = { guardedModelSwitch { viewModel.useGigaAmModel() } },
+                onDeleteClick = { viewModel.showGigaAmDeleteDialog() },
+                onBenchmarkClick = {
+                    val path = GigaAmDownloader.getModelPath(context)
+                    if (path != null) {
+                        viewModel.startBenchmark(
+                            GigaAmBackend.BACKEND_ID,
+                            path,
+                            context.getString(R.string.gigaam_name)
                         )
                     }
                 },

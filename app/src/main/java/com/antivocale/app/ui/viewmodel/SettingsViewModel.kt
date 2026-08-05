@@ -23,6 +23,7 @@ import com.antivocale.app.transcription.Qwen3AsrModelManager
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.SherpaOnnxBackend
+import com.antivocale.app.transcription.GigaAmBackend
 import com.antivocale.app.transcription.NemotronStreamingBackend
 import com.antivocale.app.transcription.WhisperBackend
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -682,6 +683,18 @@ class SettingsViewModel @Inject constructor(
                     preferencesManager.nemotronModelPath.collect { path ->
                         val modelName = if (!path.isNullOrBlank()) {
                             getApplication<Application>().getString(R.string.nemotron_name)
+                        } else null
+                        _uiState.update { it.copy(
+                            currentModelPath = path,
+                            currentModelName = modelName
+                        )}
+                    }
+                }
+                GigaAmBackend.BACKEND_ID -> {
+                    // Show GigaAM model
+                    preferencesManager.gigaamModelPath.collect { path ->
+                        val modelName = if (!path.isNullOrBlank()) {
+                            getApplication<Application>().getString(R.string.gigaam_name)
                         } else null
                         _uiState.update { it.copy(
                             currentModelPath = path,

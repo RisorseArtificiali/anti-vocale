@@ -13,6 +13,9 @@ import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.transcription.LlmTranscriptionBackend
+import com.antivocale.app.transcription.GigaAmBackend
+import com.antivocale.app.transcription.GigaAmDownloader
+import com.antivocale.app.transcription.GigaAmModelManager
 import com.antivocale.app.transcription.NemotronDownloader
 import com.antivocale.app.transcription.NemotronModelManager
 import com.antivocale.app.transcription.NemotronStreamingBackend
@@ -172,6 +175,21 @@ class ModelViewModel @Inject constructor(
     )
 
     /**
+     * GigaAM v3 download UI state — single-variant (GigaAmDownloader is `Unit`-keyed),
+     * so a single download slot is tracked instead of a per-variant map. Mirrors [NemotronUiState].
+     */
+    data class GigaAmUiState(
+        val isDownloading: Boolean = false,
+        val downloadProgress: Float = 0f,
+        val downloadState: DownloadState = DownloadState.Idle,
+        val modelPath: String? = null,
+        val errorMessage: String? = null,
+        val partialDownload: DownloadState.PartiallyDownloaded? = null,
+        val showDownloadDialog: Boolean = false,
+        val showDeleteDialog: Boolean = false
+    )
+
+    /**
      * GGUF download UI state — uses String-based variant keys since GGUF classes are disabled.
      * GGUF: change String back to Gemma4GgufModelManager.GgufVariant when re-enabling
      */
@@ -220,6 +238,10 @@ class ModelViewModel @Inject constructor(
     private val _nemotronState = MutableStateFlow(NemotronUiState())
     val nemotronState: StateFlow<NemotronUiState> = _nemotronState.asStateFlow()
 
+    // GigaAM state - must be declared before init block
+    private val _gigaAmState = MutableStateFlow(GigaAmUiState())
+    val gigaAmState: StateFlow<GigaAmUiState> = _gigaAmState.asStateFlow()
+
     // GGUF state - must be declared before init block
     private val _ggufState = MutableStateFlow(GgufUiState())
     val ggufState: StateFlow<GgufUiState> = _ggufState.asStateFlow()
@@ -252,6 +274,7 @@ class ModelViewModel @Inject constructor(
                     ExtractionService.ModelType.WHISPER -> handleServiceProgressWhisper(progress)
                     ExtractionService.ModelType.QWEN3_ASR -> handleServiceProgressQwen3Asr(progress)
                     ExtractionService.ModelType.NEMOTRON -> handleServiceProgressNemotron(progress)
+                    ExtractionService.ModelType.GIGAAM -> handleServiceProgressGigaAm(progress)
                     // GGUF: disabled
                     ExtractionService.ModelType.GEMMA4_GGUF -> { /* no-op */ }
                     ExtractionService.ModelType.GEMMA -> handleServiceProgressGemma(progress)
@@ -272,6 +295,8 @@ class ModelViewModel @Inject constructor(
         refreshQwen3AsrState()
         // Check for Nemotron model
         refreshNemotronState()
+        // Check for GigaAM model
+        refreshGigaAmState()
         // GGUF: disabled — refreshGgufState() commented out
         // Detect partial downloads
         detectPartialDownloads()
@@ -306,8 +331,12 @@ class ModelViewModel @Inject constructor(
                 NemotronModelManager.getModelStorageDir(context),
                 NemotronModelManager.validModelDirNames
             )
+            val gigaamReclaimed = com.antivocale.app.transcription.cleanOrphanedModelDirs(
+                GigaAmModelManager.getModelStorageDir(context),
+                GigaAmModelManager.validModelDirNames
+            )
 
-            val total = parakeetReclaimed + whisperReclaimed + qwen3Reclaimed + nemotronReclaimed
+            val total = parakeetReclaimed + whisperReclaimed + qwen3Reclaimed + nemotronReclaimed + gigaamReclaimed
             if (total > 0L) {
                 Log.i(
                     TAG,
@@ -315,7 +344,8 @@ class ModelViewModel @Inject constructor(
                         "(parakeet=${com.antivocale.app.util.formatFileSize(parakeetReclaimed)}, " +
                         "whisper=${com.antivocale.app.util.formatFileSize(whisperReclaimed)}, " +
                         "qwen3=${com.antivocale.app.util.formatFileSize(qwen3Reclaimed)}, " +
-                        "nemotron=${com.antivocale.app.util.formatFileSize(nemotronReclaimed)})"
+                        "nemotron=${com.antivocale.app.util.formatFileSize(nemotronReclaimed)}, " +
+                        "gigaam=${com.antivocale.app.util.formatFileSize(gigaamReclaimed)})"
                 )
             }
         }
@@ -585,6 +615,43 @@ class ModelViewModel @Inject constructor(
         )
     }
 
+    private fun handleServiceProgressGigaAm(progress: ExtractionService.ExtractionProgress) {
+        handleServiceProgress(
+            state = progress.downloadState,
+            updateFlow = { state, prog ->
+                _gigaAmState.update {
+                    it.copy(downloadState = state, downloadProgress = prog ?: it.downloadProgress)
+                }
+            },
+            onError = { msg, _ ->
+                _gigaAmState.update { it.copy(isDownloading = false, errorMessage = msg) }
+                detectPartialDownloads()
+            },
+            onComplete = { file ->
+                _gigaAmState.update {
+                    it.copy(
+                        modelPath = file.absolutePath,
+                        isDownloading = false,
+                        downloadProgress = 1f,
+                        downloadState = DownloadState.Idle
+                    )
+                }
+                shareTargetManager.onModelDownloaded()
+                viewModelScope.launch {
+                    preferencesManager.saveGigaAmModelPath(file.absolutePath)
+                }
+                if (_uiState.value.modelName.isBlank()) useGigaAmModel()
+                viewModelScope.launch {
+                    _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.gigaam_downloaded, ctx.getString(R.string.gigaam_name))))
+                }
+            },
+            onCancelled = {
+                _gigaAmState.update { it.copy(isDownloading = false, errorMessage = null) }
+                detectPartialDownloads()
+            }
+        )
+    }
+
     private fun handleServiceProgressGemma(progress: ExtractionService.ExtractionProgress) {
         val variant = ModelDownloader.ModelVariant.entries
             .find { it.name.lowercase() == progress.variant }
@@ -813,6 +880,13 @@ class ModelViewModel @Inject constructor(
                     _nemotronState.update { it.copy(partialDownload = nemotronPartial) }
                 }
             }
+            // Check GigaAM (single-variant) — only when not actively downloading
+            if (!_gigaAmState.value.isDownloading && GigaAmDownloader.getModelPath(context) == null) {
+                val gigaamPartial = GigaAmDownloader.detectPartialDownload(context)
+                if (gigaamPartial != null) {
+                    _gigaAmState.update { it.copy(partialDownload = gigaamPartial) }
+                }
+            }
         }
     }
 
@@ -888,6 +962,22 @@ class ModelViewModel @Inject constructor(
                             modelName = modelName,
                             statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
                         )}
+                    }
+                }
+                GigaAmBackend.BACKEND_ID -> {
+                    // Load GigaAM model path
+                    val gigaamPath = preferencesManager.gigaamModelPath.first()
+                    if (!gigaamPath.isNullOrBlank()) {
+                        val modelDir = File(gigaamPath)
+                        val isValid = modelDir.exists() && modelDir.isDirectory
+                        val modelName = ctx.getString(R.string.gigaam_name)
+                        _uiState.update { st ->
+                            st.copy(
+                                modelPath = gigaamPath,
+                                modelName = modelName,
+                                statusMessage = if (isValid) ctx.getString(R.string.backend_model_ready, modelName) else ctx.getString(R.string.backend_model_not_found, modelName)
+                            )
+                        }
                     }
                 }
                 "gemma4_gguf" -> {
@@ -1972,6 +2062,131 @@ class ModelViewModel @Inject constructor(
         }
     }
 
+    // ==================== GigaAM Model Download ====================
+
+    /**
+     * Refreshes the GigaAM model state. Single-variant: checks whether the model
+     * is downloaded and resolves its path.
+     */
+    fun refreshGigaAmState() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = ctx
+            val path = GigaAmDownloader.getModelPath(context)
+            _gigaAmState.update { it.copy(modelPath = path) }
+        }
+    }
+
+    // ==================== GigaAM Confirmation Dialogs ====================
+
+    fun showGigaAmDownloadDialog() {
+        _gigaAmState.update { it.copy(showDownloadDialog = true) }
+    }
+
+    fun dismissGigaAmDownloadDialog() {
+        _gigaAmState.update { it.copy(showDownloadDialog = false) }
+    }
+
+    fun confirmGigaAmDownload() {
+        startGigaAmDownload()
+    }
+
+    fun showGigaAmDeleteDialog() {
+        _gigaAmState.update { it.copy(showDeleteDialog = true) }
+    }
+
+    fun dismissGigaAmDeleteDialog() {
+        _gigaAmState.update { it.copy(showDeleteDialog = false) }
+    }
+
+    fun confirmGigaAmDelete() {
+        _gigaAmState.update { it.copy(showDeleteDialog = false) }
+        deleteGigaAmModel()
+    }
+
+    // ==================== GigaAM Download Methods ====================
+
+    fun startGigaAmDownload() {
+        _gigaAmState.update {
+            it.copy(
+                showDownloadDialog = false,
+                isDownloading = true,
+                downloadProgress = 0f,
+                downloadState = DownloadState.Connecting(""),
+                errorMessage = null,
+                partialDownload = null
+            )
+        }
+        val context = ctx
+        val intent = Intent(context, ExtractionService::class.java).apply {
+            putExtra(ExtractionService.EXTRA_MODEL_TYPE, ExtractionService.ModelType.GIGAAM.key)
+        }
+        ContextCompat.startForegroundService(context, intent)
+    }
+
+    fun cancelGigaAmDownload() {
+        GigaAmDownloader.cancel()
+        stopExtractionService(ExtractionService.ModelType.GIGAAM, null)
+        viewModelScope.launch(Dispatchers.IO) {
+            val partial = GigaAmDownloader.detectPartialDownload(ctx)
+            _gigaAmState.update {
+                it.copy(isDownloading = false, partialDownload = partial)
+            }
+        }
+    }
+
+    fun resumeGigaAmDownload() {
+        _gigaAmState.update { it.copy(partialDownload = null) }
+        startGigaAmDownload()
+    }
+
+    fun clearGigaAmPartialDownload() {
+        viewModelScope.launch(Dispatchers.IO) {
+            GigaAmDownloader.clearPartialDownload(ctx)
+            _gigaAmState.update { it.copy(partialDownload = null) }
+        }
+    }
+
+    fun useGigaAmModel() {
+        viewModelScope.launch {
+            val context = ctx
+            val modelPath = GigaAmDownloader.getModelPath(context) ?: _gigaAmState.value.modelPath
+            if (modelPath != null) {
+                preferencesManager.saveGigaAmModelPath(modelPath)
+                preferencesManager.saveTranscriptionBackend(GigaAmBackend.BACKEND_ID)
+
+                val displayName = context.getString(R.string.gigaam_name)
+                val message = context.getString(R.string.model_selected_message, displayName)
+                _uiState.update {
+                    it.copy(
+                        modelName = displayName,
+                        status = ModelStatus.UNLOADED,
+                        statusMessage = message
+                    )
+                }
+
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(message))
+                llmManager.resetKeepAliveTimer()
+            }
+        }
+    }
+
+    fun deleteGigaAmModel() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val context = ctx
+            val success = GigaAmDownloader.deleteModel(context)
+            if (success) {
+                val savedPath = preferencesManager.gigaamModelPath.first()
+                if (savedPath != null) {
+                    preferencesManager.clearGigaAmModelPath()
+                    _uiState.update { it.copy(modelPath = "", modelName = "") }
+                    shareTargetManager.onModelDeleted(GigaAmBackend.BACKEND_ID)
+                }
+                _gigaAmState.update { it.copy(modelPath = null) }
+                _snackbarEvent.tryEmit(SnackbarEvent.Message(context.getString(R.string.gigaam_deleted, context.getString(R.string.gigaam_name))))
+            }
+        }
+    }
+
     // ==================== GGUF: DISABLED ====================
     // Move files from app/src/gguf-disabled/ back to main and uncomment to re-enable
     /* GGUF disabled
@@ -2184,7 +2399,7 @@ class ModelViewModel @Inject constructor(
                         provider = resolvedProvider
                     )
                 }
-                SherpaOnnxBackend.BACKEND_ID, Qwen3AsrBackend.BACKEND_ID, NemotronStreamingBackend.BACKEND_ID -> BackendConfig.SherpaOnnxConfig(
+                SherpaOnnxBackend.BACKEND_ID, Qwen3AsrBackend.BACKEND_ID, NemotronStreamingBackend.BACKEND_ID, GigaAmBackend.BACKEND_ID -> BackendConfig.SherpaOnnxConfig(
                     modelDir = modelPath,
                     numThreads = threadCount,
                     provider = resolvedProvider

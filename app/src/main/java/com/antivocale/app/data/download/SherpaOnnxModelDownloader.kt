@@ -167,8 +167,11 @@ class SherpaOnnxModelDownloader<V>(
 
                             Log.i(config.tag, "Downloading: $fileName")
 
+                            val url = config.urlBuilder?.invoke(variant, fileName)
+                                ?: hfFileUrl(config.hfRepoNames[variant] ?: "pantinor/$modelDirName", fileName)
+
                             val downloadConfig = DownloadConfig(
-                                url = hfFileUrl(config.hfRepoNames[variant] ?: "pantinor/$modelDirName", fileName),
+                                url = url,
                                 tempFile = targetFile,
                                 targetFile = targetFile,
                                 estimatedSizeBytes = 0L,
@@ -317,5 +320,11 @@ data class SherpaOnnxModelConfig<V>(
     val ensureParentDirs: Boolean = false,
     val expectedSha256: Map<V, Map<String, String>> = emptyMap(),
     /** Full "owner/repo" overrides for variants that don't live under the default "pantinor/" namespace. */
-    val hfRepoNames: Map<V, String> = emptyMap()
+    val hfRepoNames: Map<V, String> = emptyMap(),
+    /**
+     * Optional per-variant URL builder for models NOT hosted on HuggingFace (e.g. GitHub
+     * release assets). When non-null it takes precedence over the HuggingFace URL derived
+     * from [hfRepoNames] / [hfFileNames].
+     */
+    val urlBuilder: ((variant: V, fileName: String) -> String)? = null
 )

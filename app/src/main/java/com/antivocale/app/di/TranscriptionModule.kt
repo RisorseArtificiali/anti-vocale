@@ -1,6 +1,7 @@
 package com.antivocale.app.di
 
 import com.antivocale.app.manager.LlmManager
+import com.antivocale.app.transcription.GigaAmBackend
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.NemotronStreamingBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
@@ -39,6 +40,11 @@ class TranscriptionModule {
         @IntoSet
         @Singleton
         fun provideQwen3AsrBackend(): TranscriptionBackend = Qwen3AsrBackend()
+
+        @Provides
+        @IntoSet
+        @Singleton
+        fun provideGigaAmBackend(): TranscriptionBackend = GigaAmBackend()
 
         @Provides
         @IntoSet

@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import com.antivocale.app.transcription.GigaAmBackend
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
@@ -29,7 +30,8 @@ class ShareTargetManager(
             ShareTarget("com.antivocale.app.ShareWhisper", WhisperBackend.BACKEND_ID),
             ShareTarget("com.antivocale.app.ShareQwen3", Qwen3AsrBackend.BACKEND_ID),
             ShareTarget("com.antivocale.app.ShareGemma", LlmTranscriptionBackend.BACKEND_ID),
-            ShareTarget("com.antivocale.app.ShareNemotron", NemotronStreamingBackend.BACKEND_ID)
+            ShareTarget("com.antivocale.app.ShareNemotron", NemotronStreamingBackend.BACKEND_ID),
+            ShareTarget("com.antivocale.app.ShareGigaam", GigaAmBackend.BACKEND_ID)
         )
     }
 
@@ -40,6 +42,7 @@ class ShareTargetManager(
             Qwen3AsrBackend.BACKEND_ID -> preferencesManager.qwen3AsrModelPath.first() != null
             LlmTranscriptionBackend.BACKEND_ID -> preferencesManager.modelPath.first() != null
             NemotronStreamingBackend.BACKEND_ID -> preferencesManager.nemotronModelPath.first() != null
+            GigaAmBackend.BACKEND_ID -> preferencesManager.gigaamModelPath.first() != null
             else -> false
         }
     }

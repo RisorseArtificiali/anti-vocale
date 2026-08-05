@@ -111,6 +111,20 @@ object ModelInfoProvider {
                 performanceNotes = R.string.model_info_notes_parakeet
             ))
 
+            put("gigaam-v3", ModelInfo(
+                architectureType = ArchitectureType.TRANSDUCER,
+                maxAudioDuration = null,
+                recommendedThreads = 4..6,
+                quantizationLevel = "INT8",
+                isArm64Only = true,
+                supportsProgressiveTranscription = false,
+                vadRecommended = false,
+                benchmarkWer = null,
+                relativeSpeed = null,
+                bestFor = R.string.model_info_best_for_gigaam,
+                performanceNotes = R.string.model_info_notes_gigaam
+            ))
+
             put("gemma-4-gguf-q4km", ModelInfo(
                 architectureType = ArchitectureType.LLM,
                 maxAudioDuration = null,

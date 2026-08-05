@@ -22,6 +22,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.receiver.ChooserBroadcastReceiver
 import com.antivocale.app.service.InferenceService
+import com.antivocale.app.transcription.GigaAmBackend
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.Qwen3AsrBackend
 import com.antivocale.app.transcription.SherpaOnnxBackend
@@ -79,6 +80,7 @@ class ShareReceiverActivity : Activity() {
         private const val ALIAS_QWEN3 = "com.antivocale.app.ShareQwen3"
         private const val ALIAS_GEMMA = "com.antivocale.app.ShareGemma"
         private const val ALIAS_NEMOTRON = "com.antivocale.app.ShareNemotron"
+        private const val ALIAS_GIGAAM = "com.antivocale.app.ShareGigaam"
 
         // The choice prompt auto-resolves to ASR after this delay if the user does nothing.
         // Keeps a shared video from silently hanging when the notification is ignored.
@@ -95,6 +97,7 @@ class ShareReceiverActivity : Activity() {
             ALIAS_QWEN3 -> Qwen3AsrBackend.BACKEND_ID
             ALIAS_GEMMA -> LlmTranscriptionBackend.BACKEND_ID
             ALIAS_NEMOTRON -> NemotronStreamingBackend.BACKEND_ID
+            ALIAS_GIGAAM -> GigaAmBackend.BACKEND_ID
             else -> null
         }
     }

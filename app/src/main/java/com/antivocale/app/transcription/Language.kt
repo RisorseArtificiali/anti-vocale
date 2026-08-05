@@ -106,6 +106,9 @@ object Language {
         "no", "sk", "sl", "et", "lv",
     )
 
+    /** GigaAM v3: Russian only (E2E RNNT, Sber). */
+    val GIGAAM: Set<String> = setOf("ru")
+
     /** Gemma models: broad multilingual (140+ languages). */
     val GEMMA: Set<String> = setOf(
         "af", "am", "ar", "as", "az", "be", "bg", "bn", "bs", "ca",

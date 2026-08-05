@@ -145,6 +145,17 @@
     <string name="nemotron_downloaded">%1$s scaricato</string>
     <string name="nemotron_deleted">%1$s eliminato</string>
 
+    <!-- GigaAM v3 -->
+    <string name="gigaam_title">GigaAM v3</string>
+    <string name="gigaam_description">ASR russo • ~326MB • Sber (MIT)</string>
+    <string name="gigaam_name">GigaAM v3</string>
+    <string name="gigaam_download_confirm_title">Scaricare GigaAM v3?</string>
+    <string name="gigaam_download_confirm_message">Verranno scaricati ~%1$dMB. GigaAM v3 è un modello ASR solo-russo di Sber con ottima accuratezza sul russo.</string>
+    <string name="gigaam_download">Scarica GigaAM</string>
+    <string name="gigaam_delete_message">Eliminare il modello GigaAM v3?</string>
+    <string name="gigaam_downloaded">%1$s scaricato</string>
+    <string name="gigaam_deleted">%1$s eliminato</string>
+
     <!-- Download status -->
     <string name="download_status_downloading">Download in corso…</string>
     <string name="download_status_extracting">Estrazione di %1$s…</string>
@@ -664,6 +675,8 @@
     <string name="model_info_notes_qwen3">Copertura linguistica più ampia. Nota: tronca audio oltre i 30 secondi. Solo dispositivi ARM64.</string>
     <string name="model_info_best_for_parakeet">Trascrizione più veloce (17,6x più veloce di Whisper, 5,4%% WER)</string>
     <string name="model_info_notes_parakeet">Nessun limite di durata audio. VAD non necessario. Ideale per chi priorità alla velocità.</string>
+    <string name="model_info_best_for_gigaam">Migliore accuratezza sul russo on-device</string>
+    <string name="model_info_notes_gigaam">Solo russo. Punteggiatura e maiuscole native.</string>
     <string name="model_info_best_for_gemma">LLM multimodale per compiti testo + audio</string>
     <string name="model_info_notes_gemma">Non ottimizzato per ASR puro. Usare per funzionalità avanzate come comprensione audio combinata con generazione testo.</string>
     <string name="model_info_benchmark_wer">Tasso di errore parole (italiano): %.1f%%</string>
@@ -679,6 +692,7 @@
     <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
     <string name="share_target_gemma">Anti-Vocale (Gemma)</string>
     <string name="share_target_nemotron">Anti-Vocale (Nemotron)</string>
+    <string name="share_target_gigaam">Anti-Vocale (GigaAM)</string>
     <string name="share_targets_title">Destinazioni di condivisione</string>
     <string name="share_targets_description">Mostra ogni modello scaricato come opzione separata nella scheda di condivisione di Android. Il modello viene usato temporaneamente per la singola trascrizione.</string>
     <string name="advanced_sharing_toggle">Mostra modelli nella scheda di condivisione</string>

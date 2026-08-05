@@ -33,6 +33,7 @@ class PreferencesManagerImpl(
         private val WHISPER_MODEL_PATH = stringPreferencesKey("whisper_model_path")
         private val QWEN3_ASR_MODEL_PATH = stringPreferencesKey("qwen3_asr_model_path")
         private val NEMOTRON_MODEL_PATH = stringPreferencesKey("nemotron_model_path")
+        private val GIGAAM_MODEL_PATH = stringPreferencesKey("gigaam_model_path")
         private val GGUF_MODEL_PATH = stringPreferencesKey("gguf_model_path")
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
         private val OUTPUT_FOLDER_URI = stringPreferencesKey("output_folder_uri")
@@ -63,6 +64,7 @@ class PreferencesManagerImpl(
         val whisperModelPath: String? = null,
         val qwen3AsrModelPath: String? = null,
         val nemotronModelPath: String? = null,
+        val gigaamModelPath: String? = null,
         val ggufModelPath: String? = null,
         val autoCopyEnabled: Boolean = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         val outputFolderUri: String? = null,
@@ -90,6 +92,7 @@ class PreferencesManagerImpl(
         whisperModelPath = this[WHISPER_MODEL_PATH],
         qwen3AsrModelPath = this[QWEN3_ASR_MODEL_PATH],
         nemotronModelPath = this[NEMOTRON_MODEL_PATH],
+        gigaamModelPath = this[GIGAAM_MODEL_PATH],
         ggufModelPath = this[GGUF_MODEL_PATH],
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         outputFolderUri = this[OUTPUT_FOLDER_URI],
@@ -237,6 +240,23 @@ class PreferencesManagerImpl(
 
     override val ggufModelPath: Flow<String?> = context.dataStore.data.map { it[GGUF_MODEL_PATH] }
         .onStart { emit(cache.get().ggufModelPath) }
+
+    override val gigaamModelPath: Flow<String?> = context.dataStore.data.map { it[GIGAAM_MODEL_PATH] }
+        .onStart { emit(cache.get().gigaamModelPath) }
+
+    override suspend fun saveGigaAmModelPath(path: String) {
+        context.dataStore.edit { preferences ->
+            preferences[GIGAAM_MODEL_PATH] = path
+        }
+        cache.updateAndGet { it.copy(gigaamModelPath = path) }
+    }
+
+    override suspend fun clearGigaAmModelPath() {
+        context.dataStore.edit { preferences ->
+            preferences.remove(GIGAAM_MODEL_PATH)
+        }
+        cache.updateAndGet { it.copy(gigaamModelPath = null) }
+    }
 
     override suspend fun saveGgufModelPath(path: String) {
         context.dataStore.edit { preferences ->
