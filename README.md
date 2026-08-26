@@ -25,6 +25,7 @@ Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), trans
 
 - **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, Qwen3-ASR, GigaAM v3, Nemotron 3.5 (streaming), or import your own
 - **Custom model import** - Bring any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice) from a folder or HuggingFace URL, no app update needed ([docs](docs/external-models.md))
+- **Full user manual** - Getting started, choosing a model, troubleshooting and FAQ, in 8 languages ([user guide](docs/user-guide/))
 - **Any audio length** - Long inputs are automatically split and stitched: no model's internal limit is user-facing (see the [FAQ](FAQ.md))
 - **Declared limits before download** - Each model card states its audio-length capability up front, so big downloads are informed choices
 - **Model benchmarking** - Compare real-world transcription speed between models on your own device
