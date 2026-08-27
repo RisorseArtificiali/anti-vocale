@@ -25,16 +25,10 @@
       "size": 816730
     },
     {
-      "name": "decoder.fp32.onnx",
-      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-swiss-german-sherpa/resolve/main/decoder.fp32.onnx",
-      "sha256": "27da0cb4477adda80610557dde03959bebfba9ed5333a97adc23a29450ca2947",
-      "size": 1014308
-    },
-    {
-      "name": "decoder.fp32.onnx.weights",
-      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-swiss-german-sherpa/resolve/main/decoder.fp32.onnx.weights",
-      "sha256": "1848540c7ababd55a50131adabbf8ab23e392ab2f2ac132622e583e626846f1b",
-      "size": 635187200
+      "name": "decoder.pc-int8.onnx",
+      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-swiss-german-sherpa/resolve/main/decoder.pc-int8.onnx",
+      "sha256": "8994b6bd19a23706b547e99d2a25727c85790ec10ef14c090e2bc375216ed7ac",
+      "size": 361352573
     }
   ]
 }
