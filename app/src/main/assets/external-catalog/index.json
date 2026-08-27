@@ -40,6 +40,14 @@
       ],
       "family": "WHISPER",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/swiss-german.json"
+    },
+    {
+      "name": "Whisper v3 Turbo German int8 (sherpa, primeline fine-tune)",
+      "languages": [
+        "de"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/german-whisper.json"
     }
   ]
 }

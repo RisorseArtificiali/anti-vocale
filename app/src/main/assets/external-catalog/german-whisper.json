@@ -1,0 +1,32 @@
+{
+  "name": "Whisper Large v3 Turbo German (sherpa int8)",
+  "family": "WHISPER",
+  "modelType": "",
+  "languages": [
+    "de"
+  ],
+  "options": {
+    "whisper.language": "de",
+    "whisper.task": "transcribe"
+  },
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-german-sherpa/resolve/main/encoder.int8.onnx",
+      "sha256": "feb4ae3d7fb3f9e42fe6d11f29485665d524eaf401aded94f018996742fa3251",
+      "size": 673900344
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-german-sherpa/resolve/main/tokens.txt",
+      "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+      "size": 816730
+    },
+    {
+      "name": "decoder.pc-int8.onnx",
+      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-german-sherpa/resolve/main/decoder.pc-int8.onnx",
+      "sha256": "218dd5abe925c0220cf8a11a727b921d267a9f825e3299997c94ffea17a64d73",
+      "size": 361352573
+    }
+  ]
+}
