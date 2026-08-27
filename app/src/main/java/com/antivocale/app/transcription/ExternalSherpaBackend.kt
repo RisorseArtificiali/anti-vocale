@@ -44,12 +44,26 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     @Volatile private var configuredId: String = PLACEHOLDER_ID
     override val id: String get() = configuredId
 
+    @Volatile private var configuredFamily: com.antivocale.app.data.ModelFamily? = null
+
+    /** Test seam: sets the configured family without the full native init path. */
+    @androidx.annotation.VisibleForTesting
+    fun configureForTest(record: ExternalModelRecord) {
+        configuredFamily = record.family
+    }
+
     override val displayName: String get() = "External model"
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = false
 
-    // Single-pass like Parakeet/GigaAM: realistic v2a imports are offline transducers.
-    override val maxChunkDurationSeconds: Int? = null
+    // Family-dependent (TASK-402, adrium's 30s truncation): sherpa's whisper
+    // DecodeStream hard-caps a single decode at 30 seconds ("we process only the
+    // first 30 seconds and discard the remaining data"), so external WHISPER
+    // models must chunk like the built-in one. Transducer/CTC/SenseVoice are
+    // encoder-only and genuinely handle any length in one pass (single-pass like
+    // Parakeet/GigaAM, the original v2a assumption).
+    override val maxChunkDurationSeconds: Int?
+        get() = if (configuredFamily == com.antivocale.app.data.ModelFamily.WHISPER) 30 else null
 
     // @Volatile: a concurrent transcribeAudio on another thread must not read a stale
     // null recognizer after initialize completes (the unload-during-transcription window
@@ -146,6 +160,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                     onlineRecognizer = OnlineRecognizer(config = onlineConfig)
                     modelDir = record.dir
                     configuredId = record.backendId
+                    configuredFamily = record.family
                     isInitialized = true
                     keepAlive.start()
                     Log.i(TAG, "External backend initialized (streaming): $configuredId")
@@ -163,6 +178,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                 recognizer = OfflineRecognizer(config = recognizerConfig)
                 modelDir = record.dir
                 configuredId = record.backendId
+                configuredFamily = record.family
                 isInitialized = true
                 keepAlive.start()
 
@@ -286,6 +302,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
         modelDir = null
         isInitialized = false
         configuredId = PLACEHOLDER_ID
+        configuredFamily = null
         onAutoUnloadCallback.get()?.invoke()
     }
 

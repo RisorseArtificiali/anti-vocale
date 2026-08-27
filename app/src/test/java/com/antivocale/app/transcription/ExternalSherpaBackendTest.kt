@@ -6,6 +6,8 @@ import com.antivocale.app.data.ModelFamily
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -99,6 +101,37 @@ class ExternalSherpaBackendTest {
 
     private fun config(record: ExternalModelRecord) =
         BackendConfig.ExternalConfig(record, numThreads = 4, provider = "cpu")
+
+
+    @Test
+    fun `whisper family reports 30s chunking others report single-pass (TASK-402)`() {
+        // sherpa's whisper DecodeStream caps a single decode at 30s; the backend
+        // must chunk external whisper imports exactly like the built-in one. The
+        // getter derives from the family stored at initialize time; this test
+        // pins the family matrix through the seam, the initialize wiring is
+        // device-verified (both set sites sit next to configuredId).
+        val dir = tmp.newFolder("fam")
+        dir.resolve(SherpaBackend.CANONICAL_ENCODER).writeText("x")
+        dir.resolve(SherpaBackend.CANONICAL_TOKENS).writeText("x")
+        dir.resolve(SherpaBackend.CANONICAL_DECODER).writeText("x")
+
+        // pre-configure state: single-pass (no family yet)
+        assertNull(backend.maxChunkDurationSeconds)
+
+        // whisper record configures the family -> 30
+        backend.configureForTest(record(dir, ModelFamily.WHISPER, ""))
+        assertEquals(30, backend.maxChunkDurationSeconds)
+
+        // transducer -> null (any length in one pass)
+        backend.configureForTest(record(dir, ModelFamily.TRANSDUCER, "nemo_transducer"))
+        assertNull(backend.maxChunkDurationSeconds)
+
+        // ctc and sensevoice -> null
+        backend.configureForTest(record(dir, ModelFamily.CTC, "nemo_ctc"))
+        assertNull(backend.maxChunkDurationSeconds)
+        backend.configureForTest(record(dir, ModelFamily.SENSE_VOICE, ""))
+        assertNull(backend.maxChunkDurationSeconds)
+    }
 
     private fun record(dir: java.io.File, family: ModelFamily, modelType: String) = ExternalModelRecord(
         id = "abc123def456",

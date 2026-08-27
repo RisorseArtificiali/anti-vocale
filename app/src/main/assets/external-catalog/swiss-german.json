@@ -2,26 +2,39 @@
   "name": "Whisper Large v3 Turbo Swiss German (sherpa int8)",
   "family": "WHISPER",
   "modelType": "",
-  "languages": ["de", "de-CH", "gsw"],
-  "options": {"whisper.language": "de", "whisper.task": "transcribe"},
+  "languages": [
+    "de",
+    "de-CH",
+    "gsw"
+  ],
+  "options": {
+    "whisper.language": "de",
+    "whisper.task": "transcribe"
+  },
   "files": [
     {
       "name": "encoder.int8.onnx",
       "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-swiss-german-sherpa/resolve/main/encoder.int8.onnx",
-      "sha256": "0cc40b7f9ebea54048159ed56a736bbfb5301766bd4b9d87bf2f5b193c7f928e",
+      "sha256": "2895dc0ffe94c8f43c54450510ac4d79139ce0b472b716645261e4bd2f41c421",
       "size": 673900343
-    },
-    {
-      "name": "decoder.int8.onnx",
-      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-swiss-german-sherpa/resolve/main/decoder.int8.onnx",
-      "sha256": "59f742c259601462c79e736e874d1d4f59a137db0f42808a4e58ab6c3c4d432a",
-      "size": 361070805
     },
     {
       "name": "tokens.txt",
       "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-swiss-german-sherpa/resolve/main/tokens.txt",
       "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
       "size": 816730
+    },
+    {
+      "name": "decoder.fp32.onnx",
+      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-swiss-german-sherpa/resolve/main/decoder.fp32.onnx",
+      "sha256": "27da0cb4477adda80610557dde03959bebfba9ed5333a97adc23a29450ca2947",
+      "size": 1014308
+    },
+    {
+      "name": "decoder.fp32.onnx.weights",
+      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-swiss-german-sherpa/resolve/main/decoder.fp32.onnx.weights",
+      "sha256": "1848540c7ababd55a50131adabbf8ab23e392ab2f2ac132622e583e626846f1b",
+      "size": 635187200
     }
   ]
 }
