@@ -61,3 +61,9 @@ In the **Logs** tab: each entry shows "Processed in Xs" under the transcript, al
 ### How do I delete or manage log entries?
 
 Swipe an entry to delete it. A standard long-press context menu is being added alongside the gesture ([#52](https://github.com/RisorseArtificiali/anti-vocale/issues/52)), with options like delete, re-transcribe, and copy.
+
+## The project
+
+### Will this app become obsolete once Android ships its own on-device transcription?
+
+Most likely, eventually, yes. If the operating system transcribed every voice message natively, in every language, inside every app, a third-party tool for the same job would lose its reason to exist, and that would be a good outcome. Until then there is plenty of gap left to fill: built-in transcription is still language-limited (WhatsApp's, for example, supports a fixed shortlist, four languages on Android, and a longer list on iPhone that depends on the iOS version), OS features do not let you pick a model or load a community fine-tune for your language, and several messengers ship nothing at all.

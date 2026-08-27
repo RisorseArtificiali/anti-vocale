@@ -128,4 +128,16 @@ class ExternalCatalogTest {
         assertEquals(arabic, byCode)
         assertEquals(ModelFamily.WHISPER, arabic[0].family)
     }
+
+    @Test
+    fun `every catalog index entry is listed in the model catalog doc`() {
+        // Sync contract: adding an index entry requires its exact name to
+        // appear in docs/model-catalog.md, so the user-facing model list
+        // cannot drift from the catalog the app serves.
+        val text = java.io.File("src/main/assets/external-catalog/index.json").readText()
+        val doc = java.io.File("../docs/model-catalog.md").readText()
+        ExternalCatalog.parseIndex(text).forEach {
+            assertTrue("docs/model-catalog.md community table is missing ${it.name}", doc.contains(it.name))
+        }
+    }
 }

@@ -14,6 +14,20 @@ Android app for transcribing voice messages locally on-device, with no internet 
 
 Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), transcribes them using on-device ASR models, and delivers the result via notification with one-tap copy and share-back actions.
 
+## Why this app exists
+
+The big messengers transcribe voice messages only partially, or not at all:
+
+- **WhatsApp on Android** officially transcribes just English, Portuguese, Spanish, and Russian. Italian is supported on iPhone but is not supported on Android.
+- **Telegram** runs transcription on its own servers and reserves it for paid Premium subscribers; free accounts get at most a small weekly trial quota that Telegram itself can dial down to nothing.
+- **Signal** ships no voice transcription at all.
+
+Anti-Vocale closes that gap with a different trade-off. It runs entirely on your phone, so audio never leaves the device, whatever chat it came from. It works with every messaging app through the standard Android share sheet, not just one platform. It is free. And it transcribes any language the installed models cover, including community fine-tunes imported from the model catalog, so coverage is not decided by a platform vendor.
+
+## Model catalog
+
+Everything the app can transcribe with, on one page: bundled models with sizes, languages, speed notes, and the community imports, each linked back to the original model it comes from. See [docs/model-catalog.md](docs/model-catalog.md).
+
 ## Features
 
 ### Privacy & offline first
@@ -196,7 +210,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions.
 ### First Use
 
 1. Open Anti-Vocale and go to the **Model** tab
-2. Download a model (Parakeet TDT recommended — fast multilingual, good quality/size ratio)
+2. Download a model (Parakeet TDT recommended: fast multilingual, good quality/size ratio)
 3. Go back to your messaging app, long-press a voice message, and share it to Anti-Vocale
 4. The transcription appears in a notification with Copy and Share actions
 
