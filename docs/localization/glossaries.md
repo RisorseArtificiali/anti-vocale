@@ -119,7 +119,7 @@ Verified against AOSP Settings values-ru.
 | Error | `status_error` | Ошибка | [ANDROID] | universal |
 | Loading... | `status_loading` | Загрузка... | [ANDROID] | platform convention |
 | Model | `model_tab` | Модель | [FALLBACK: MS/Apple] | standard |
-| Transcription | `settings_section_transcription` | Транскрипция | [ANDROID] | CONFLICT: AOSP/Google use "Транскрипция" for ASR output; "расшифровка" is common human usage. Pick "Транскрипция". Flag for reviewer. |
+| Transcription | `settings_section_transcription` | Распознавание | [SUPERSEDED by PR #66] | Original pick was "Транскрипция" (AOSP-canonical), first replaced by "расшифровка" on 2026-08-20 per issue #36 (commit 562a179), then by Dum4G's RU rework in PR #66 (2026-08-25): the anglicism was dropped; the PROCESS is always "распознавание" (statuses, services, settings), and the RESULT is context-specific ("текст" for actions, "результат" for the clipboard label, "записи" for history items). Full reasoning in Dum4G's [strings style guide](https://gist.github.com/Dum4G/32157ff0a733881d63b8b312c7936584). |
 | Notification | `notification_channel_*` | Уведомление / Уведомления | [ANDROID] | AOSP notification_* |
 | Language | `language_title` | Язык | [ANDROID] | AOSP language_picker_title "Языки" |
 | Open app | `notification_no_model_action` | Открыть приложение | [FALLBACK: MS/Apple] | standard |

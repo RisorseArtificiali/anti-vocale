@@ -12,16 +12,16 @@ These are the strings a native speaker should double-check; the rest of the ~750
 - `example_prompt_translate_it`: intentionally left in Italian; it is an example prompt sent to the model for Italian output
 - `per_app_settings_quick_share_back_title`: proper German would be "Zurückteilen"; kept literal "Schnell-Zurückteilen"? final choice below
 - `performance_stats_fastest_badge`: plural-shaped; reads odd at 1 sample
-- `lang_filter_label`: lang_* kept in native form per glossary note; values-it instead translates them (convention conflict, reviewer to decide)
+- `lang_filter_label`: RESOLVED 2026-08-25, obsoleted by the PR #66 ICU switch: the lang_* name strings no longer exist (names come from the platform), and the label itself is translated chrome ("Nach Sprache filtern").
 - `conversation_group_unknown`: plural-shaped
 
 ## RU (5 items)
 
 - `backend_model_ready`: gender agreement assumes модель (feminine); for masculine model names this reads wrong. Consider "%1$s: готово".
-- `settings_section_transcription`: "Транскрипция" chosen over "расшифровка" per AOSP-canonical glossary; flag for reviewer.
-- `example_prompt_transcribe`: prompts are sent to the LLM; used the imperative "ты"-style wording typical for LLM prompts. Review for tone.
+- `settings_section_transcription`: RESOLVED by PR #66 (2026-08-25): neither glossary candidate survived; Dum4G's RU rework dropped the anglicism and uses "распознавание" for the process (see glossaries.md, superseded row, and the [style guide](https://gist.github.com/Dum4G/32157ff0a733881d63b8b312c7936584)).
+- `example_prompt_transcribe`: prompts are sent to the LLM; used the imperative "ты"-style wording typical for LLM prompts. Review for tone. (Reworded in PR #66 to the распознавание-family verb; tone flag still open.)
 - `performance_stats_samples_count`: "замер" chosen for "sample" (measurement); "образец" is the literal alternative.
-- `lang_filter_label`: lang_* names kept in native form per glossary (values-it convention).
+- `lang_filter_label`: RESOLVED 2026-08-25, same as the DE item: lang_* names removed by the ICU switch, label is translated chrome.
 
 ## HI (10 items, from the translation agent's report; not embedded as XML comments)
 
