@@ -96,6 +96,15 @@ private fun pickNonTransducerPlan(files: List<String>): Map<String, String>? {
 sealed interface ModelFamilySupport {
     val family: ModelFamily
 
+    /**
+     * Mel-band count the recognizer's FeatureConfig must carry. Every family
+     * ships 80 except CANARY (128: the encoder's feat_dim metadata; feeding 80
+     * bands either fails the native load or decodes garbage). Single definition
+     * so the importer docs and the engine config cannot drift.
+     */
+    val featureDim: Int
+        get() = 80
+
     /** Canonical file names every import of this family must produce. */
     fun requiredRoles(): List<String>
 
@@ -517,6 +526,8 @@ object SenseVoiceSupport : ModelFamilySupport {
  */
 object CanarySupport : ModelFamilySupport {
     override val family: ModelFamily = ModelFamily.CANARY
+
+    override val featureDim: Int = 128
 
     override fun requiredRoles(): List<String> = listOf(
         SherpaBackend.CANONICAL_ENCODER,

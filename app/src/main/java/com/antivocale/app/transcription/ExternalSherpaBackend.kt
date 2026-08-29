@@ -182,7 +182,10 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
 
                 val recognizerConfig = OfflineRecognizerConfig(
                     modelConfig = modelConfig,
-                    featConfig = FeatureConfig(sampleRate = 16000, featureDim = 80),
+                    // Family-defined mel bands: canary needs 128, every other
+                    // family 80 (TASK-408; a wrong dim fails the native load or
+                    // decodes garbage).
+                    featConfig = FeatureConfig(sampleRate = 16000, featureDim = support.featureDim),
                     decodingMethod = "greedy_search"
                 )
 

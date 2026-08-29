@@ -34,6 +34,18 @@ class ModelFamilySupportTest {
     // ---- Shared family/modelType rules (single definition: defaultModelType/isValidModelType) ----
 
     @Test
+    fun `featureDim is 128 for canary and 80 for every other family`() {
+        // The recognizer's FeatureConfig derives from this: canary's encoder
+        // expects 128 mel bands (feat_dim metadata); feeding the historical 80
+        // fails the native load or decodes garbage (TASK-408 research pass).
+        assertEquals(128, CanarySupport.featureDim)
+        assertEquals(80, TransducerSupport.featureDim)
+        assertEquals(80, WhisperSupport.featureDim)
+        assertEquals(80, CtcSupport.featureDim)
+        assertEquals(80, SenseVoiceSupport.featureDim)
+    }
+
+    @Test
     fun `defaultModelType maps every family, CTC to null`() {
         assertEquals("nemo_transducer", ModelFamilySupport.defaultModelType(ModelFamily.TRANSDUCER))
         assertEquals("", ModelFamilySupport.defaultModelType(ModelFamily.WHISPER))
