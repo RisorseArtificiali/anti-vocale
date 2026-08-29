@@ -38,7 +38,7 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 ### Models
 
 - **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, Qwen3-ASR, GigaAM v3, Nemotron 3.5 (streaming), or import your own
-- **Custom model import** - Bring any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice) from a folder or HuggingFace URL, no app update needed ([docs](docs/external-models.md))
+- **Custom model import** - Bring any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice) from a folder or HuggingFace URL, no app update needed; one-tap validated entries live in the community catalog, and only models matching a supported family's layout import ([docs](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise))
 - **Full user manual** - Getting started, choosing a model, troubleshooting and FAQ, in 8 languages ([user guide](docs/user-guide/))
 - **Any audio length** - Long inputs are automatically split and stitched: no model's internal limit is user-facing (see the [FAQ](FAQ.md))
 - **Declared limits before download** - Each model card states its audio-length capability up front, so big downloads are informed choices

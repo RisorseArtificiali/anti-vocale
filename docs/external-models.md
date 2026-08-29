@@ -2,6 +2,18 @@
 
 Anti-Vocale supports importing user-provided sherpa-onnx models alongside the built-in backends. Four model families are supported: Transducer, Whisper, CTC, and SenseVoice. This document describes the import formats and how to share models with other users.
 
+## What import is for, and what it does not promise
+
+The import feature exists to decouple app releases from model releases: a new, validated model can reach every user as a one-tap catalog entry without waiting for an app update. The community catalog (Model tab > Advanced > Import from URL opens the catalog picker) is the list of models we have actually validated; [the model catalog page](model-catalog.md) mirrors it with sizes and links to the original models.
+
+That an import dialog exists does not mean every model on HuggingFace will work. A model is importable only if it matches one of the supported families below: the expected file layout per architecture, and the ONNX metadata sherpa-onnx reads to configure its engine. A model with a different shape is rejected at import time with an error, and that is by design: a clean refusal here is better than a native crash at transcription time. For example, a NeMo encoder-decoder export that ships encoder + decoder + tokens with no joiner does not fit the Transducer family (which requires the joiner), and does not fit Whisper either (different metadata), so the import says no.
+
+So the flow, in practice:
+
+- **Catalog entries** are validated: they install with one tap, their integrity is pinned by SHA-256, and they are the recommended path for everyone.
+- **A URL or folder import** of a model that happens to match a family can work, but you are the tester: nothing guarantees the export was sane. If an import lands broken, delete its entry and import again; a fresh import adds a new entry rather than replacing the old one.
+- **A model that fits no family**, or a new architecture worth supporting, needs work on our side first (a compatible sherpa-onnx export, validation on device, then a catalog entry). If you want a specific model supported, open an issue: that is how the catalog grows.
+
 ## Model families
 
 The family selector above the import buttons picks the architecture; expected files, the record's `modelType`, and family options per family:
