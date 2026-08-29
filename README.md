@@ -1,17 +1,11 @@
 <p align="center">
-  <a href="https://f-droid.org/packages/com.antivocale.app/">
-    <img alt="Get it on F-Droid" src="https://f-droid.org/badge/get-it-on.png" width="240"/>
-  </a>
+  <a href="https://f-droid.org/packages/com.antivocale.app/"><img alt="Get it on F-Droid" src="https://f-droid.org/badge/get-it-on.png" width="240"/></a>
   &nbsp;
-  <a href="https://play.google.com/store/apps/details?id=com.antivocale.app">
-    <img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="240"/>
-  </a>
+  <a href="https://play.google.com/store/apps/details?id=com.antivocale.app"><img alt="Get it on Google Play" src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" width="240"/></a>
 </p>
 
 <p align="center">
-  <a href="#how-this-project-is-built">
-    <img alt="AI-assisted, human-owned development" src="docs/badges/ai-assisted.svg"/>
-  </a>
+  <a href="#how-this-project-is-built"><img alt="AI-assisted, human-owned development" src="docs/badges/ai-assisted.svg"/></a>
 </p>
 
 # Anti-Vocale
