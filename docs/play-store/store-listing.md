@@ -11,7 +11,7 @@ Anti-Vocale transcribes voice messages from WhatsApp, Telegram, and other messag
 
 BUILT-IN MODELS
 
-- Parakeet TDT (recommended): fast, 25 European languages. Two variants: high-quality (862MB) or compact (464MB)
+- Parakeet TDT (recommended): fast, 25 European languages. Two variants: high-quality (862MB) or compact (640MB)
 - Whisper Turbo: 99 languages, balanced speed and quality
 - Whisper Distil Italian: best Italian quality, tuned for voice messages
 - Whisper Medium / Small: more accuracy or smaller download
@@ -67,7 +67,7 @@ Anti-Vocale trascrive i messaggi vocali di WhatsApp, Telegram e altre app di mes
 
 MODELLI INCLUSI
 
-- Parakeet TDT (consigliato): veloce, 25 lingue europee. Due varianti: alta qualità (862MB) o compatta (464MB)
+- Parakeet TDT (consigliato): veloce, 25 lingue europee. Due varianti: alta qualità (862MB) o compatta (640MB)
 - Whisper Turbo: 99 lingue, buon equilibrio velocità/qualità
 - Whisper Distil Italian: la migliore qualità in italiano, ottimizzato per vocali
 - Whisper Medium / Small: più accuratezza o download più leggero
@@ -162,7 +162,7 @@ Android 8.0+ | 4 GB+ RAM empfohlen | 350 MB–4,5 GB Speicherplatz
 
 **MODELLGRÖSSEN**
 
-Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~464 MB | Qwen3-ASR ~938 MB
+Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~640 MB | Qwen3-ASR ~938 MB
 
 ---
 
@@ -221,7 +221,7 @@ Android 8.0+ | 4 Go+ de RAM recommandés | 350 Mo à 4,5 Go de stockage
 
 **TAILLE DES MODÈLES**
 
-Whisper Turbo ~988 Mo | Whisper Medium ~903 Mo | Whisper Small ~358 Mo | Distil Italian ~939 Mo | Gemma 4 E2B 2,6 Go | Gemma 4 E4B 3,7 Go | Gemma 3n E2B 3,3 Go | Gemma 3n E4B 4,2 Go | Parakeet TDT ~464 Mo | Qwen3-ASR ~938 Mo
+Whisper Turbo ~988 Mo | Whisper Medium ~903 Mo | Whisper Small ~358 Mo | Distil Italian ~939 Mo | Gemma 4 E2B 2,6 Go | Gemma 4 E4B 3,7 Go | Gemma 3n E2B 3,3 Go | Gemma 3n E4B 4,2 Go | Parakeet TDT ~640 Mo | Qwen3-ASR ~938 Mo
 
 ---
 
@@ -280,7 +280,7 @@ Android 8.0+ | 4 GB+ de RAM recomendados | 350 MB–4,5 GB de almacenamiento
 
 **TAMAÑOS DE MODELOS**
 
-Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~464 MB | Qwen3-ASR ~938 MB
+Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~640 MB | Qwen3-ASR ~938 MB
 
 ---
 
@@ -339,7 +339,7 @@ Android 8.0+ | 4 GB+ de RAM recomendados | 350 MB–4,5 GB de armazenamento
 
 **TAMANHOS DOS MODELOS**
 
-Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~464 MB | Qwen3-ASR ~938 MB
+Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~640 MB | Qwen3-ASR ~938 MB
 
 ---
 
@@ -398,7 +398,7 @@ Android 8.0+ | メモリ4GB以上推奨 | ストレージ350MB〜4.5GB
 
 **モデルサイズ**
 
-Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 4 E2B 2.6GB | Gemma 4 E4B 3.7GB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~464MB | Qwen3-ASR ~938MB
+Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 4 E2B 2.6GB | Gemma 4 E4B 3.7GB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~640MB | Qwen3-ASR ~938MB
 
 ---
 
@@ -457,7 +457,7 @@ Android 8.0+ | RAM 4GB 이상 권장 | 저장 공간 350MB~4.5GB
 
 **모델 크기**
 
-Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 4 E2B 2.6GB | Gemma 4 E4B 3.7GB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~464MB | Qwen3-ASR ~938MB
+Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 4 E2B 2.6GB | Gemma 4 E4B 3.7GB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~640MB | Qwen3-ASR ~938MB
 
 ---
 
@@ -516,7 +516,7 @@ Android 8.0+ | 建议内存4GB以上 | 存储空间350MB至4.5GB
 
 **模型大小**
 
-Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 4 E2B 2.6GB | Gemma 4 E4B 3.7GB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~464MB | Qwen3-ASR ~938MB
+Whisper Turbo ~988MB | Whisper Medium ~903MB | Whisper Small ~358MB | Distil Italian ~939MB | Gemma 4 E2B 2.6GB | Gemma 4 E4B 3.7GB | Gemma 3n E2B 3.3GB | Gemma 3n E4B 4.2GB | Parakeet TDT ~640MB | Qwen3-ASR ~938MB
 
 ---
 
@@ -575,7 +575,7 @@ Android 8.0+ | 4 ГБ+ ОЗУ рекомендуется | 350 МБ–4,5 ГБ �
 
 **РАЗМЕРЫ МОДЕЛЕЙ**
 
-Whisper Turbo ~988 МБ | Whisper Medium ~903 МБ | Whisper Small ~358 МБ | Distil Italian ~939 МБ | Gemma 4 E2B 2,6 ГБ | Gemma 4 E4B 3,7 ГБ | Gemma 3n E2B 3,3 ГБ | Gemma 3n E4B 4,2 ГБ | Parakeet TDT ~464 МБ | Qwen3-ASR ~938 МБ
+Whisper Turbo ~988 МБ | Whisper Medium ~903 МБ | Whisper Small ~358 МБ | Distil Italian ~939 МБ | Gemma 4 E2B 2,6 ГБ | Gemma 4 E4B 3,7 ГБ | Gemma 3n E2B 3,3 ГБ | Gemma 3n E4B 4,2 ГБ | Parakeet TDT ~640 МБ | Qwen3-ASR ~938 МБ
 
 ---
 
@@ -634,7 +634,7 @@ Android 8.0+ | 4 GB+ RAM aanbevolen | 350 MB–4,5 GB opslagruimte
 
 **MODELGROOTTES**
 
-Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~464 MB | Qwen3-ASR ~938 MB
+Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~640 MB | Qwen3-ASR ~938 MB
 
 ---
 
@@ -693,7 +693,7 @@ Android 8.0+ | 4 GB+ RAM zalecane | 350 MB–4,5 GB pamięci
 
 **ROZMIARY MODELI**
 
-Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~464 MB | Qwen3-ASR ~938 MB
+Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~640 MB | Qwen3-ASR ~938 MB
 
 ---
 
@@ -752,7 +752,7 @@ Android 8.0+ | 4 GB+ RAM önerilir | 350 MB–4,5 GB depolama
 
 **MODEL BOYUTLARI**
 
-Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~464 MB | Qwen3-ASR ~938 MB
+Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2,6 GB | Gemma 4 E4B 3,7 GB | Gemma 3n E2B 3,3 GB | Gemma 3n E4B 4,2 GB | Parakeet TDT ~640 MB | Qwen3-ASR ~938 MB
 
 ---
 
@@ -811,7 +811,7 @@ Android 8.0+ | 4 غيغابايت+ RAM موصى به | 350 ميغابايت–4.
 
 **أحجام النماذج**
 
-Whisper Turbo ~988 ميغابايت | Whisper Medium ~903 ميغابايت | Whisper Small ~358 ميغابايت | Distil Italian ~939 ميغابايت | Gemma 4 E2B 2.6 غيغابايت | Gemma 4 E4B 3.7 غيغابايت | Gemma 3n E2B 3.3 غيغابايت | Gemma 3n E4B 4.2 غيغابايت | Parakeet TDT ~464 ميغابايت | Qwen3-ASR ~938 ميغابايت
+Whisper Turbo ~988 ميغابايت | Whisper Medium ~903 ميغابايت | Whisper Small ~358 ميغابايت | Distil Italian ~939 ميغابايت | Gemma 4 E2B 2.6 غيغابايت | Gemma 4 E4B 3.7 غيغابايت | Gemma 3n E2B 3.3 غيغابايت | Gemma 3n E4B 4.2 غيغابايت | Parakeet TDT ~640 ميغابايت | Qwen3-ASR ~938 ميغابايت
 
 ---
 
@@ -870,7 +870,7 @@ Android 8.0+ | 4 GB+ RAM अनुशंसित | 350 MB–4.5 GB स्टो
 
 **मॉडल आकार**
 
-Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2.6 GB | Gemma 4 E4B 3.7 GB | Gemma 3n E2B 3.3 GB | Gemma 3n E4B 4.2 GB | Parakeet TDT ~464 MB | Qwen3-ASR ~938 MB
+Whisper Turbo ~988 MB | Whisper Medium ~903 MB | Whisper Small ~358 MB | Distil Italian ~939 MB | Gemma 4 E2B 2.6 GB | Gemma 4 E4B 3.7 GB | Gemma 3n E2B 3.3 GB | Gemma 3n E4B 4.2 GB | Parakeet TDT ~640 MB | Qwen3-ASR ~938 MB
 
 ---
 

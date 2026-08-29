@@ -121,7 +121,7 @@
     <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
     <string name="parakeet_smoothquant_description">~862MB • 25 dil • Önerilen</string>
     <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
-    <string name="parakeet_stock_description">~464MB • 25 dil • Daha hafif yedek</string>
+    <string name="parakeet_stock_description">~640MB • 25 dil • Daha hafif yedek</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>
@@ -579,7 +579,7 @@
     <string name="speed_comparison_distil_it_quality">En İyi İtalyanca</string>
     <string name="speed_comparison_distil_it_note">En İyi İtalyanca</string>
     <string name="speed_comparison_parakeet_name">Parakeet TDT</string>
-    <string name="speed_comparison_parakeet_size">~464MB</string>
+    <string name="speed_comparison_parakeet_size">~640MB</string>
     <string name="speed_comparison_parakeet_speed">~17x</string>
     <string name="speed_comparison_parakeet_quality">Çok İyi</string>
     <string name="speed_comparison_parakeet_note">Önerilen</string>

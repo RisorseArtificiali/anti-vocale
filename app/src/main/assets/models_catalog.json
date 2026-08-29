@@ -33,7 +33,7 @@
           "title": { "resourceKey": "parakeet_stock_title" },
           "description": { "resourceKey": "parakeet_stock_description" },
           "dirName": "parakeet-tdt-0.6b-v3-int8",
-          "estimatedSizeMB": 464,
+          "estimatedSizeMB": 640,
           "source": { "kind": "huggingface", "repo": "csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8" },
           "files": ["encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"]
         }

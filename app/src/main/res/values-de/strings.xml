@@ -110,7 +110,7 @@
     <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
     <string name="parakeet_smoothquant_description">~862 MB • 25 Sprachen • Empfohlen</string>
     <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
-    <string name="parakeet_stock_description">~464 MB • 25 Sprachen • Leichterer Fallback</string>
+    <string name="parakeet_stock_description">~640 MB • 25 Sprachen • Leichterer Fallback</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>
@@ -558,7 +558,7 @@
     <string name="speed_comparison_distil_it_quality">Bestes Italienisch</string>
     <string name="speed_comparison_distil_it_note">Bestes Italienisch</string>
     <string name="speed_comparison_parakeet_name">Parakeet TDT</string>
-    <string name="speed_comparison_parakeet_size">~464MB</string>
+    <string name="speed_comparison_parakeet_size">~640MB</string>
     <string name="speed_comparison_parakeet_speed">~17x</string>
     <string name="speed_comparison_parakeet_quality">Sehr gut</string>
     <string name="speed_comparison_parakeet_note">Empfohlen</string>

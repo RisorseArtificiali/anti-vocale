@@ -12,7 +12,7 @@ Speed context for everything below: measured by us on an Italian voice-message t
 
 Transducer (NVIDIA NeMo, TDT decoding). The app default: the best speed/accuracy balance we have measured, about 18x faster than the Distil-Italian model at 5.4% vs 4.3% word error rate on our Italian set.
 
-- Variants: int8 (464 MB), SmoothQuant (862 MB)
+- Variants: int8 (640 MB), SmoothQuant (862 MB)
 - Languages: 25 European, including Italian, German, French, Spanish, English, Russian, and the Nordics, Baltics, and most of Central Europe
 - Audio limit: 400 s per segment (a hard cap in NVIDIA's checkpoint), split automatically for longer input
 - Original model: [nvidia/parakeet-tdt-0.6b-v3](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3)
@@ -35,7 +35,7 @@ Four sizes of the classic. Whisper Turbo is the strong multilingual all-rounder 
 
 ### Qwen3-ASR 0.6B
 
-Encoder-decoder, 52 languages and dialects per the model card, int8 export.
+Encoder-decoder, int8 export. Per the model card its 52 entries are 30 languages plus 22 Chinese dialects, not 52 independent languages.
 
 - Size: 938 MB; audio limit 30 s per segment, split automatically
 - Original model: [Qwen/Qwen3-ASR-0.6B](https://huggingface.co/Qwen/Qwen3-ASR-0.6B)
@@ -44,7 +44,7 @@ Encoder-decoder, 52 languages and dialects per the model card, int8 export.
 
 ### Nemotron 3.5 ASR (streaming)
 
-The only streaming model: it shows partial results while audio is still being processed. 40 language-locales per NVIDIA's card (32 transcribe out of the box), online decoder, 1120 ms chunking, int8.
+The only streaming model: it shows partial results while audio is still being processed. Online decoder, 1120 ms chunking, int8. It lists 40 language-locales per NVIDIA's card, and the tiers matter: 19 transcription-ready, 13 broad-coverage, 8 adaptation-ready that need fine-tuning before they transcribe (32 work out of the box).
 
 - Size: 640 MB; no fixed audio cap (it streams)
 - Original model: [nvidia/nemotron-3.5-asr-streaming-0.6b](https://huggingface.co/nvidia/nemotron-3.5-asr-streaming-0.6b)

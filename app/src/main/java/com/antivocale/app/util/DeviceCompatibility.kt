@@ -23,7 +23,7 @@ object DeviceCompatibility {
     // blocked real users: a 4GB-nominal Moto G(10) reports totalMem ~3.6GB and
     // saw the "not enough memory" wall, while a Redmi Note 12 with 3.3GB free
     // ran the app habitually. The global floor is now a sanity check (1.5GB:
-    // below this even Parakeet int8 at ~464MB plus OS pressure is unsafe);
+    // below this even Parakeet int8 at ~640MB plus OS pressure is unsafe);
     // heavier models are gated per-model at selection time via [hasRamForModel].
     private const val MIN_RAM_BYTES = 1_500L * 1024 * 1024
 
@@ -31,7 +31,7 @@ object DeviceCompatibility {
      *  factor covers ONNX arena + inference buffers + system headroom. */
     private const val RAM_HEADROOM_FACTOR = 2.5
 
-    /** Floor for the smallest realistic model (Parakeet int8 464MB * 2.5 = ~1.2GB). */
+    /** Floor for the smallest realistic model (Parakeet int8 640MB * 2.5 = 1.6GB). */
     private const val MIN_MODEL_BUDGET_MB = 1_200L
 
     sealed class CheckResult {

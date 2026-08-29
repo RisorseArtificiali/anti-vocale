@@ -21,7 +21,7 @@ Manuale aggiornato alla versione 1.11.
 
 1. Installa Anti-Vocale dal tuo store (Google Play o F-Droid) o da un APK rilasciato su GitHub.
 2. Apri l'app una volta. Nella scheda **Modelli** trovi i modelli integrati disponibili per il download.
-3. Scarica un modello. Per la maggior parte delle persone la prima scelta consigliata è **Parakeet TDT (stock int8, 464 MB)**: veloce, leggero e copre 25 lingue europee.
+3. Scarica un modello. Per la maggior parte delle persone la prima scelta consigliata è **Parakeet TDT (stock int8, 640 MB)**: veloce, leggero e copre 25 lingue europee.
 4. Per trascrivere, condividi un messaggio vocale da una qualsiasi app di messaggistica (WhatsApp, Telegram, Signal e altre) verso Anti-Vocale. Compare una notifica durante l'elaborazione, poi una seconda notifica con il testo.
 5. Tocca la notifica del risultato per copiare, condividere o rimandare il testo nella chat da cui proviene il vocale.
 
@@ -33,7 +33,7 @@ I modelli differiscono per dimensione, velocità, copertura linguistica e precis
 
 | Modello | Dimensione | Lingue | Note |
 |---|---|---|---|
-| Parakeet TDT stock int8 | 464 MB | 25 europee | Veloce e leggero; la scelta predefinita |
+| Parakeet TDT stock int8 | 640 MB | 25 europee | Veloce e leggero; la scelta predefinita |
 | Parakeet TDT SmoothQuant | 862 MB | 25 europee | Più preciso, più pesante; richiede più RAM |
 | Whisper Turbo | 988 MB | 101 | Miglior equilibrio nella famiglia Whisper |
 | Whisper Medium | 903 MB | 101 | Più lento di Turbo, non migliore per la maggior parte degli audio |

@@ -26,14 +26,23 @@ class DeviceCompatibilityTest {
 
     @Test
     fun `smallest model passes on a 2GB-nominal device`() {
-        // Parakeet int8 464MB * 2.5 = 1160 -> floor 1200; device 1.8GB
-        assertTrue(DeviceCompatibility.hasRamForModel(contextWithRam(1_800), 464))
+        // Parakeet int8 640MB (real on-disk size, TASK-407) * 2.5 = 1600 -> floor 1600; device 1.8GB
+        assertTrue(DeviceCompatibility.hasRamForModel(contextWithRam(1_800), 640))
     }
 
     @Test
-    fun `floor blocks the smallest model on a 1GB device`() {
-        // 1.2GB budget > 0.9GB totalMem
-        assertFalse(DeviceCompatibility.hasRamForModel(contextWithRam(900), 464))
+    fun `smallest model blocked on a 1GB device`() {
+        // 640 * 2.5 = 1600 (above the 1200 floor) > 0.9GB totalMem
+        assertFalse(DeviceCompatibility.hasRamForModel(contextWithRam(900), 640))
+    }
+
+    @Test
+    fun `tiny models get the minimum budget floor, not size times the factor`() {
+        // 400 * 2.5 = 1000 < MIN_MODEL_BUDGET_MB 1200: the floor binds. This branch
+        // lost its coverage when the Parakeet test input moved to the real 640MB
+        // (TASK-407); a synthetic small size keeps the max() floor exercised.
+        assertTrue(DeviceCompatibility.hasRamForModel(contextWithRam(1_300), 400))
+        assertFalse(DeviceCompatibility.hasRamForModel(contextWithRam(1_100), 400))
     }
 
     @Test
