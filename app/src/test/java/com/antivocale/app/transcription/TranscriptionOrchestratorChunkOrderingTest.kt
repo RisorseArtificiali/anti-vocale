@@ -13,8 +13,8 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * TASK-391: the parallel chunk path (VAD-segmented, progressive off) runs with
- * MAX_CONCURRENT_CHUNKS = 2. The fake backend blocks the FIRST chunk until the
+ * TASK-391: the parallel chunk path (VAD-segmented, progressive off) with the
+ * in-flight limit raised to 2. The fake backend blocks the FIRST chunk until the
  * second has completed, so completion order is [2, 1] by construction; the
  * results assembly must still join in CHUNK order and the accounting must stay
  * exact. Deterministic without injection (stand-in clause of the guide): the
@@ -76,6 +76,10 @@ class TranscriptionOrchestratorChunkOrderingTest : TranscriptionOrchestratorTest
 
     @Test
     fun `out-of-order completion still joins in chunk order`() = kotlinx.coroutines.runBlocking {
+        // Production runs chunks serially (TASK-406: peak memory multiplies per in-flight
+        // chunk), which makes out-of-order completion impossible; the join-by-index
+        // property this test guards only exists above 1 permit, so raise it here.
+        orchestrator.maxConcurrentChunks = 2
         stubTwoVadChunks()
         backend.forceOutOfOrder = true
 

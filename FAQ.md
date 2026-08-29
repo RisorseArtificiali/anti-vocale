@@ -12,12 +12,12 @@ There is no app-level limit. Each model has its own **per-segment** limit, and t
 |---|---|---|
 | Whisper | 30 s | chunked by the app, any length |
 | Qwen3-ASR | 30 s | chunked by the app, any length |
-| Parakeet TDT | 6:40 (400 s, NVIDIA hard cap) | chunked by the app ([#50](https://github.com/RisorseArtificiali/anti-vocale/issues/50)) |
+| Parakeet TDT | 1:00 app-side chunking (the model's own hard cap is 6:40) | chunked by the app ([#50](https://github.com/RisorseArtificiali/anti-vocale/issues/50)), chunk length sized to free RAM ([#44](https://github.com/RisorseArtificiali/anti-vocale/issues/44)) |
 | Gemma (LLM) | 30 s | currently one segment |
 | Nemotron 3.5 (streaming) | no known limit (streams) | n/a |
 | GigaAM v3 | no known limit | n/a |
 
-The Parakeet limit is not arbitrary: the model's attention has a hard 5000-frame cap baked into NVIDIA's checkpoint, and 5000 frames at 12.5 frames/s is exactly 400 seconds. Inputs beyond it fail natively ([#44](https://github.com/RisorseArtificiali/anti-vocale/issues/44)); the app-side chunking that removes this limitation is tracked in [#50](https://github.com/RisorseArtificiali/anti-vocale/issues/50).
+The Parakeet limit is not arbitrary: the model's attention has a hard 5000-frame cap baked into NVIDIA's checkpoint, and 5000 frames at 12.5 frames/s is exactly 400 seconds. Inputs beyond it fail natively; the app-side chunking that removes this limitation landed in [#50](https://github.com/RisorseArtificiali/anti-vocale/issues/50). Since [#44](https://github.com/RisorseArtificiali/anti-vocale/issues/44) the app chunks Parakeet at 1 minute rather than just under the native cap: attention memory grows with the square of the chunk length, and a single 6-minute pass peaks at over 5GB of RAM, enough to starve an 8GB phone. The chunk length also tightens automatically on devices with little free memory.
 
 Every "any length" in the table above means *the app does the splitting for you in software*: no model itself handles arbitrary length in one pass. The two "no known limit" rows are models with no measured cap and no app-side splitting.
 

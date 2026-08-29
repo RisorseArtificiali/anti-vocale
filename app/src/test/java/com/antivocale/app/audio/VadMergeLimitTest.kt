@@ -6,8 +6,9 @@ import org.junit.Test
 /**
  * GH #50: the VAD segment-merge limit used to be hardcoded 28s (Whisper's
  * window). With model-dependent chunk durations it must derive from the model's
- * per-segment limit minus a small margin, so a 380s-chunk model merges speech
- * into large segments instead of Whisper-sized ones.
+ * per-segment limit minus a small margin, so a 60s-chunk model (Parakeet's
+ * TASK-406 cap; the RAM policy can tighten it further) merges speech into
+ * large segments instead of Whisper-sized ones.
  */
 class VadMergeLimitTest {
 
@@ -18,7 +19,7 @@ class VadMergeLimitTest {
 
     @Test
     fun `parakeet-scale limits merge proportionally under the cap`() {
-        assertEquals(378, AudioPreprocessor.vadMergeLimitSeconds(380))
+        assertEquals(58, AudioPreprocessor.vadMergeLimitSeconds(60))
     }
 
     @Test

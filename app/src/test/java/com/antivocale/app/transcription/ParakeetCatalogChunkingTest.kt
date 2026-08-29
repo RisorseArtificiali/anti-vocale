@@ -32,10 +32,14 @@ class ParakeetCatalogChunkingTest {
         val chunkSeconds = parakeet.flags.chunkDurationSeconds
 
         assertTrue("parakeet must enable chunking", chunkSeconds > 0)
-        // 12.5 fps * 5000 positions = 400s hard cap; stay safely under it
+        // 12.5 fps * 5000 positions = 400s hard cap; stay safely under it.
+        // TASK-406 tightened the default well below that (attention peak is O(T^2):
+        // the former 380s cap peaked at 5.2GiB; 120s chunks still 2.8GiB; 60s measured
+        // 1.8GiB end-to-end). The exact value is pinned in BundledModelCatalogTest;
+        // here we keep the native-cap invariant.
         assertTrue(
             "chunk size $chunkSeconds must stay under the 400s cap with margin",
-            chunkSeconds in 300..390,
+            chunkSeconds in 30..390,
         )
     }
 

@@ -71,7 +71,9 @@ class TranscriptionBackendContractsTest {
         // the app must chunk below it so long inputs never reach the native failure.
         val chunkSeconds = parakeet().maxChunkDurationSeconds
         assertNotNull(chunkSeconds)
-        assertTrue(chunkSeconds in 300..390)
+        // TASK-406: default 60 (memory budget; see ParakeetCatalogChunkingTest),
+        // tightened per device at runtime by TranscriptionMemoryPolicy.
+        assertTrue(chunkSeconds in 30..390)
     }
 
     // --- SherpaBackend (Whisper) ---

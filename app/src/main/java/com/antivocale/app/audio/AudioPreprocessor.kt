@@ -39,8 +39,8 @@ class AudioPreprocessor @Inject constructor() {
         /**
          * VAD segments are merged up to the model's per-segment limit minus a 2s
          * margin (GH #50): 30s-limit models keep the historical 28s window, a
-         * 380s-limit model merges speech into large segments instead of many
-         * Whisper-sized ones.
+         * 60s-limit model (Parakeet since TASK-406) merges speech into large
+         * segments instead of many Whisper-sized ones.
          */
         internal fun vadMergeLimitSeconds(maxChunkDurationSeconds: Int?): Int =
             ((maxChunkDurationSeconds ?: 30) - 2).coerceAtLeast(1)

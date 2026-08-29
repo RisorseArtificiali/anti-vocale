@@ -86,6 +86,10 @@ class BundledModelCatalogTest {
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), parakeet.flags.metaKeys)
         assertEquals("parakeet-tdt-0.6b-v3-smoothquant", parakeet.defaultVariant.dirName)
         assertEquals(862L, parakeet.defaultVariant.estimatedSizeMB)
+        // TASK-406: 380s single-pass peaked at 5.2GiB and 120s chunks still peaked at
+        // 2.8GiB across sequential decodes; 60s chunks measured 1.8GiB end-to-end.
+        // TranscriptionMemoryPolicy additionally tightens per device below this.
+        assertEquals(60, parakeet.flags.chunkDurationSeconds)
 
         val qwen3 = byId.getValue("qwen3-asr")
         assertTrue(qwen3.flags.ensureParentDirs)

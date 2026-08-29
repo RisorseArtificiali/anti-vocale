@@ -48,7 +48,12 @@ class TranscriptionOrchestrator @Inject constructor(
 ) {
     companion object {
         private const val TAG = "TranscriptionOrchestrator"
-        private const val MAX_CONCURRENT_CHUNKS = 2
+        // TASK-406: each in-flight chunk carries its own attention activations, so peak
+        // memory multiplies by the permit count. Measured (desktop, 6-min file, 60s
+        // chunks): 2 permits cut wall-clock ~14% (28.6s vs 33.1s) for +23% peak
+        // (2337 vs 1894 MiB); serial is the safe ceiling on low-RAM phones, which is
+        // the trade we take (d6a49e0 had measured the 2-permit wall-clock win).
+        private const val MAX_CONCURRENT_CHUNKS = 1
         private const val PARTIAL_SAVE_INTERVAL_MS = 5000L
         private const val MB = 1024L * 1024L
         // Headroom over the on-disk model size: absorbs sherpa inference buffers and reclaimable-cache
@@ -104,7 +109,13 @@ class TranscriptionOrchestrator @Inject constructor(
      */
     internal var throttleClock: () -> Long = System::currentTimeMillis
 
-    private val chunkSemaphore = Semaphore(MAX_CONCURRENT_CHUNKS)
+    /**
+     * In-flight chunk limit. Production keeps the serial TASK-406 default; the
+     * lazy semaphore reads this so the out-of-order join test can exercise
+     * permits > 1 without a Dagger-provided constructor parameter.
+     */
+    internal var maxConcurrentChunks: Int = MAX_CONCURRENT_CHUNKS
+    private val chunkSemaphore by lazy { Semaphore(maxConcurrentChunks) }
 
     /**
      * Processes a single transcription request.
@@ -445,12 +456,19 @@ class TranscriptionOrchestrator @Inject constructor(
 
     private fun availableMemoryBytes(context: Context): Long {
         val info = ActivityManager.MemoryInfo()
-        val am = context.getSystemService(ActivityManager::class.java)
+        // String overload + safe cast: unit-test Context fakes return generic objects from
+        // getSystemService, and the class-based overload's implicit checkcast crashes them.
+        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
         am?.getMemoryInfo(info)
         return info.availMem
     }
 
     private fun formatMb(bytes: Long): String = "${bytes / MB}MB"
+
+    /** On-disk footprint of a model path: a single file (Gemma .litertlm) or a directory tree. */
+    private fun modelSizeBytes(path: File): Long =
+        if (path.isFile) path.length()
+        else path.walkTopDown().filter { it.isFile }.sumOf { it.length() }
 
     /**
      * Shared pre-flight + preference resolution + backend activation body.
@@ -645,7 +663,23 @@ class TranscriptionOrchestrator @Inject constructor(
         val promptPlan = ChunkPromptPolicy.plan(backend.id, resolvedPrompt)
 
         // Use streaming pipeline for multi-chunk non-VAD scenarios
-        val maxChunkDuration = backend.maxChunkDurationSeconds
+        // TASK-406: the catalog cap is tightened to what free RAM can hold (attention
+        // peak grows with the square of chunk length; both chunk paths below resolve
+        // their sizes from this value).
+        val maxChunkDuration = backend.maxChunkDurationSeconds?.let { cap ->
+            // avail first: the model-size walk is skipped when memory is unreadable,
+            // preserving the TASK-314 rule that the filesystem is not touched when
+            // the measurement is unavailable.
+            val availBytes = availableMemoryBytes(context)
+            val modelSize = if (availBytes <= 0) 0L
+                else modelPathForBackend(backend.id).takeIf { it.isNotBlank() }
+                    ?.let { modelSizeBytes(File(it)) } ?: 0L
+            val effective = TranscriptionMemoryPolicy.effectiveChunkSeconds(availBytes, modelSize, cap)
+            if (effective != cap) {
+                Log.i(TAG, "Chunk cap tightened ${cap}s -> ${effective}s for ${backend.id} (RAM-derived)")
+            }
+            effective
+        }
         val usePipeline = !vadEnabled && maxChunkDuration != null
 
         val totalStartMs = System.currentTimeMillis()
@@ -671,7 +705,11 @@ class TranscriptionOrchestrator @Inject constructor(
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = filePath,
                 cacheDir = cacheDir,
-                maxChunkDurationSeconds = backend.maxChunkDurationSeconds,
+                // Tightened cap here too: the VAD merge limit derives from it
+                // (GH #50 "derived from the same limit"), and external models
+                // with large catalog caps need the RAM protection in VAD mode
+                // as much as the pipeline path does.
+                maxChunkDurationSeconds = maxChunkDuration,
                 context = context,
                 enableVad = vadEnabled,
                 vadNumThreads = threadCount,
@@ -885,7 +923,7 @@ class TranscriptionOrchestrator @Inject constructor(
         val chunkConfidences = arrayOfNulls<Float>(chunkCount)
         val chunkLanguages = arrayOfNulls<String>(chunkCount)
 
-        Log.i(TAG, "Processing $chunkCount chunks with up to $MAX_CONCURRENT_CHUNKS concurrent transcriptions")
+        Log.i(TAG, "Processing $chunkCount chunks with up to $maxConcurrentChunks concurrent transcriptions")
 
         val backendId = backend.id
         val modelPath = modelPathForBackend(backendId)
@@ -896,7 +934,7 @@ class TranscriptionOrchestrator @Inject constructor(
             if (it.hasEstimate) (it.msPerSecondOfAudio * chunkDurationSeconds).toLong() else null
         }
         val estimatedTotalMs = estimatedChunkDurationMs?.let { est ->
-            val batches = ceilDiv(chunkCount, MAX_CONCURRENT_CHUNKS).toLong()
+            val batches = ceilDiv(chunkCount, maxConcurrentChunks).toLong()
             batches * est
         }
 
@@ -1196,7 +1234,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 val completed = completedChunks.get()
 
                 // Feedback loop: detect batch completions and measure actual throughput
-                val completedBatches = completed / MAX_CONCURRENT_CHUNKS
+                val completedBatches = completed / maxConcurrentChunks
                 if (completedBatches > lastBatchCompletedCount) {
                     val prevBatchElapsed = lastBatchElapsedMs
                     measuredAvgBatchMs = if (prevBatchElapsed != null) {
@@ -1209,7 +1247,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
                     if (!firstBatchRecorded && backendId.isNotEmpty()) {
                         firstBatchRecorded = true
-                        val batchAudioSeconds = chunkDurationSeconds * MAX_CONCURRENT_CHUNKS
+                        val batchAudioSeconds = chunkDurationSeconds * maxConcurrentChunks
                         val batchMs = measuredAvgBatchMs!!
                         launch {
                             try {
@@ -1230,7 +1268,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 val hardPercent = completed * 100 / totalChunks
 
                 val adaptiveEtaMs: Long? = if (measuredAvgBatchMs != null) {
-                    val remainingBatches = ceilDiv(totalChunks - completed, MAX_CONCURRENT_CHUNKS).toLong()
+                    val remainingBatches = ceilDiv(totalChunks - completed, maxConcurrentChunks).toLong()
                     remainingBatches * measuredAvgBatchMs
                 } else if (estimatedTotalMs != null) {
                     maxOf(0L, estimatedTotalMs - elapsedMs)

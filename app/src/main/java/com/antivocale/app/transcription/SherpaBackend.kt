@@ -738,10 +738,12 @@ class SherpaBackend(
  * written to: callers rely on it staying all zeros.
  */
 internal class TailSilenceBuffer {
-    // @Volatile: transcribeAudio runs with MAX_CONCURRENT_CHUNKS = 2 on the same
-    // backend instance; the lazy slots must be visible across those coroutines.
-    // Contents are never written after allocation (all zeros), so a rare duplicate
-    // allocation during a race is harmless; this just makes the cache airtight.
+    // @Volatile: transcribeAudio may run on more than one coroutine when the
+    // orchestrator's in-flight chunk limit exceeds 1 (serial in production since
+    // TASK-406, but the limit is a test seam); the lazy slots must be visible
+    // across coroutines. Contents are never written after allocation (all zeros),
+    // so a rare duplicate allocation during a race is harmless; this just makes
+    // the cache airtight.
     @Volatile private var oneSecond: FloatArray? = null
     @Volatile private var other: Pair<Int, FloatArray>? = null
 

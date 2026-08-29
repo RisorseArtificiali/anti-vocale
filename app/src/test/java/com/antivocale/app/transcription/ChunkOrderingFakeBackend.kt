@@ -8,8 +8,9 @@ import java.util.concurrent.CountDownLatch
  * forced deterministically with latches (the guide's stand-in clause: injecting
  * into test-owned code adds nothing over explicit coordination): the FIRST chunk
  * to enter transcribeAudio blocks until the SECOND has fully completed, so with
- * MAX_CONCURRENT_CHUNKS = 2 completion order is guaranteed [2, 1] and the
- * orchestrator's results assembly must still join in chunk order.
+ * the in-flight limit raised to 2 (production is serial, TASK-406; the ordering
+ * test raises the orchestrator seam) completion order is guaranteed [2, 1] and
+ * the orchestrator's results assembly must still join in chunk order.
  */
 class ChunkOrderingFakeBackend : TranscriptionBackend {
 

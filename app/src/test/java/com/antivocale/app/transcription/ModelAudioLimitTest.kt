@@ -24,8 +24,8 @@ class ModelAudioLimitTest {
 
     @Test
     fun `chunked models are any-length`() {
-        // Parakeet (380s chunks under its 400s attention cap)
-        assertEquals(AudioLimit.ChunkedAnyLength, audioLimit(null, 380))
+        // Parakeet (60s chunks since TASK-406; the model's own attention cap is 400s)
+        assertEquals(AudioLimit.ChunkedAnyLength, audioLimit(null, 60))
     }
 
     @Test
