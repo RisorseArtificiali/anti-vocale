@@ -644,13 +644,11 @@ class TranscriptionOrchestrator @Inject constructor(
             ))
         }
 
-        // Read settings
-        val vadEnabled = preferencesManager.vadEnabled.first() ||
-            // TASK-370: the LLM audio encoder is far more boundary-sensitive than
-            // the ASR decoders (measured: mid-word 30s cuts garble Gemma chunks);
-            // VAD-aligned segmentation is forced for the llm backend regardless
-            // of the user toggle.
-            backend.id == LlmTranscriptionBackend.BACKEND_ID
+        // Read settings. TASK-370 forced VAD-aligned segmentation for the llm
+        // backend (mid-word cuts garble Gemma chunks); TASK-408 moved the flag
+        // onto the backend interface and canary sets it too (mid-speech cuts
+        // make half its chunks decode empty, measured on desktop).
+        val vadEnabled = preferencesManager.vadEnabled.first() || backend.requiresVadAlignedChunking
         val threadCount = preferencesManager.threadCount.first()
         val providerPref = preferencesManager.inferenceProvider.first()
         val resolvedProvider = InferenceProvider.resolve(providerPref)

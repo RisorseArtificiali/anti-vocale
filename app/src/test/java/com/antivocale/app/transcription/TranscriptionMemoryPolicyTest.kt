@@ -26,6 +26,12 @@ class TranscriptionMemoryPolicyTest {
         assertEquals(120, TranscriptionMemoryPolicy.effectiveChunkSeconds(6L * 1024 * MiB, 864 * MiB, 120))
         // The shipped Parakeet cap (60) keeps the same shape at its own value.
         assertEquals(60, TranscriptionMemoryPolicy.effectiveChunkSeconds(6L * 1024 * MiB, 864 * MiB, 60))
+        // TASK-408 canary caps at 10s, BELOW the 30s floor: roomy and starved
+        // devices alike must clamp to the family cap (the pre-fix code threw
+        // IllegalArgumentException from coerceIn(30, 10) on every request, and
+        // returned a degenerate 30s on starved devices).
+        assertEquals(10, TranscriptionMemoryPolicy.effectiveChunkSeconds(6L * 1024 * MiB, 200 * MiB, 10))
+        assertEquals(10, TranscriptionMemoryPolicy.effectiveChunkSeconds(1L * 1024 * MiB, 200 * MiB, 10))
     }
 
     @Test

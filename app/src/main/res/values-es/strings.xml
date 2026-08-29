@@ -703,7 +703,9 @@
     <string name="external_family_ctc">CTC</string>
     <string name="external_family_ctc_help">Espera archivos encoder + tokens</string>
     <string name="external_family_sense_voice">SenseVoice</string>
+    <string name="external_family_canary">Canary (NeMo Flash)</string>
     <string name="external_family_sense_voice_help">Espera archivos model + tokens</string>
+    <string name="external_family_canary_help">Espera archivos encoder + decoder + tokens; solo en/es/de/fr; requiere fragmentación alineada con silencios (VAD se activa automáticamente)</string>
     <string name="external_option_itn">Normalización inversa de texto</string>
     <string name="external_ctc_subtype">Subtipo CTC</string>
     <string name="external_ctc_subtype_nemo">NeMo CTC</string>

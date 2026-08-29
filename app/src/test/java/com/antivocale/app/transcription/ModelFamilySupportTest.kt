@@ -8,6 +8,8 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.fail
 import org.junit.Test
 
 /**
@@ -36,6 +38,7 @@ class ModelFamilySupportTest {
         assertEquals("nemo_transducer", ModelFamilySupport.defaultModelType(ModelFamily.TRANSDUCER))
         assertEquals("", ModelFamilySupport.defaultModelType(ModelFamily.WHISPER))
         assertEquals("", ModelFamilySupport.defaultModelType(ModelFamily.SENSE_VOICE))
+        assertEquals("", ModelFamilySupport.defaultModelType(ModelFamily.CANARY))
         assertNull(ModelFamilySupport.defaultModelType(ModelFamily.CTC))
     }
 
@@ -55,6 +58,58 @@ class ModelFamilySupportTest {
         assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.WHISPER, "whisper"))
         assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.SENSE_VOICE, ""))
         assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.SENSE_VOICE, "sense_voice"))
+        assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.CANARY, ""))
+        assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.CANARY, "nemo_transducer"))
+    }
+
+    // ---- TASK-408: CanarySupport ----
+
+    @Test
+    fun `canary plan maps encoder decoder tokens and ignores a bystander joiner`() {
+        val plan = CanarySupport.buildCopyPlan(
+            listOf("encoder.int8.onnx", "decoder.int8.onnx", "tokens.txt"))
+        assertEquals(
+            mapOf(
+                "encoder.int8.onnx" to "encoder.int8.onnx",
+                "decoder.int8.onnx" to "decoder.int8.onnx",
+                "tokens.txt" to "tokens.txt",
+            ),
+            plan,
+        )
+        // a joiner elsewhere in the folder never entered canary role matching (the
+        // whisper semantics: a parent directory holding several models is legal);
+        // family mismatches are caught by the model_type VALUE check instead.
+        val multiModelFolder = CanarySupport.buildCopyPlan(
+            listOf("encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"))
+        assertNotNull(multiModelFolder)
+        assertEquals("tokens.txt", multiModelFolder!!["tokens.txt"])
+    }
+
+    @Test
+    fun `canary metadata validation accepts only EncDecMultiTaskModel`() {
+        // null (missing key) stays with the key-presence chain; the canary value passes
+        CanarySupport.validateImportedModel("EncDecMultiTaskModel")
+        CanarySupport.validateImportedModel(null)
+        try {
+            CanarySupport.validateImportedModel("whisper")
+            fail("a whisper encoder must not pass canary validation")
+        } catch (e: IllegalArgumentException) {
+        }
+    }
+
+    @Test
+    fun `canary model config conditions the recognizer on the chosen language`() {
+        val record = this.record(ModelFamily.CANARY, languages = listOf("de"))
+        val config = CanarySupport.buildModelConfig(record, numThreads = 4, provider = "cpu")
+        assertEquals("de", config.canary.srcLang)
+        assertEquals("de", config.canary.tgtLang)
+        assertEquals("canary", config.modelType)
+        // no languages, no option: the sherpa default en
+        val bare = record.copy(languages = emptyList())
+        assertEquals("en", CanarySupport.buildModelConfig(bare, 4, "cpu").canary.srcLang)
+        // the import-time option wins over the record languages
+        val opted = record.copy(options = mapOf(ModelFamilySupport.OPTION_CANARY_LANGUAGE to "fr"))
+        assertEquals("fr", CanarySupport.buildModelConfig(opted, 4, "cpu").canary.srcLang)
     }
 
     // ---- Task 4: TransducerSupport (behavior moved verbatim from the importer) ----

@@ -131,6 +131,15 @@ class ExternalSherpaBackendTest {
         assertNull(backend.maxChunkDurationSeconds)
         backend.configureForTest(record(dir, ModelFamily.SENSE_VOICE, ""))
         assertNull(backend.maxChunkDurationSeconds)
+
+        // canary (TASK-408) -> 10: past ~10s the decode is superlinear and
+        // degenerate, and it alone also demands VAD-aligned cuts.
+        backend.configureForTest(record(dir, ModelFamily.CANARY, ""))
+        assertEquals(10, backend.maxChunkDurationSeconds)
+        assertTrue(backend.requiresVadAlignedChunking)
+        // every other family keeps the plain-chunking contract
+        backend.configureForTest(record(dir, ModelFamily.WHISPER, ""))
+        assertFalse(backend.requiresVadAlignedChunking)
     }
 
     private fun record(dir: java.io.File, family: ModelFamily, modelType: String) = ExternalModelRecord(

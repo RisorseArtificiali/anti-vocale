@@ -118,8 +118,9 @@ class ExternalModelImporter(
     /**
      * Family-aware modelType resolution via the shared table
      * ([ModelFamilySupport.defaultModelType]): TRANSDUCER defaults to
-     * "nemo_transducer", WHISPER/SENSE_VOICE to "", and CTC has no safe default
-     * (it selects the sherpa config subtype) so it must be passed explicitly.
+     * "nemo_transducer", WHISPER/SENSE_VOICE/CANARY to "", and CTC has no safe
+     * default (it selects the sherpa config subtype) so it must be passed
+     * explicitly.
      */
     private fun resolveModelType(modelType: String?, family: ModelFamily): String =
         modelType ?: ModelFamilySupport.defaultModelType(family)

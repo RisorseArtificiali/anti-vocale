@@ -1009,12 +1009,84 @@ internal data class ExternalImportUiState(
             }
             put(ModelFamilySupport.OPTION_SENSEVOICE_ITN, sensevoiceItn.toString())
         }
+        // Canary has no auto-detect: the chosen language conditions the recognizer
+        // itself (srcLang = tgtLang), so a blank choice falls through to "en" at
+        // config time rather than staying empty here.
+        ModelFamily.CANARY ->
+            if (decodeLanguage.isBlank()) emptyMap()
+            else mapOf(ModelFamilySupport.OPTION_CANARY_LANGUAGE to decodeLanguage.trim())
         else -> emptyMap()
     }
 
     /** The decode language doubles as the record's language tags. */
     fun languageCodes(): List<String> =
         if (decodeLanguage.isBlank()) emptyList() else listOf(decodeLanguage.trim())
+
+    /**
+     * Family switch that never carries an incompatible language into Canary.
+     * The recognizer is conditioned on canary.language and sherpa silently
+     * substitutes "en" for unknown codes, so a value picked under another
+     * family (e.g. "it" for a whisper import) must not survive the switch as a
+     * plausible-looking but silently-wrong conditioning (review finding,
+     * TASK-408); it is blanked, which falls back to the displayed "en" default.
+     */
+    fun withFamily(newFamily: ModelFamily): ExternalImportUiState {
+        if (newFamily == family) return this
+        return if (newFamily == ModelFamily.CANARY && decodeLanguage !in CANARY_LANGUAGES) {
+            copy(family = newFamily, decodeLanguage = "")
+        } else {
+            copy(family = newFamily)
+        }
+    }
+
+    companion object {
+        val CANARY_LANGUAGES = listOf("en", "es", "de", "fr")
+    }
+}
+
+/**
+ * TASK-408: the canary family's fixed language set. Unlike whisper/sensevoice,
+ * canary has no auto-detect: the chosen language conditions the recognizer at
+ * build time (srcLang = tgtLang), so the dropdown offers exactly the languages
+ * the 180M Flash export covers, defaulting to en (the value
+ * [ExternalImportUiState.options] omits when blank).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun CanaryLanguageDropdown(
+    selected: String,
+    onSelect: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val languages = ExternalImportUiState.CANARY_LANGUAGES
+    var expanded by remember { mutableStateOf(false) }
+    ExposedDropdownMenuBox(
+        expanded = expanded,
+        onExpandedChange = { expanded = it },
+        modifier = modifier,
+    ) {
+        OutlinedTextField(
+            // endonyms everywhere (PR #66 policy): the field shows the native
+            // name of the selected code, defaulting to English's.
+            value = LanguageNames.nativeLanguageName(selected.ifBlank { "en" }),
+            onValueChange = {},
+            readOnly = true,
+            label = { Text(stringResource(R.string.external_decode_language)) },
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            modifier = Modifier.fillMaxWidth().menuAnchor()
+        )
+        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            languages.forEach { lang ->
+                DropdownMenuItem(
+                    text = { Text(LanguageNames.nativeLanguageName(lang)) },
+                    onClick = {
+                        onSelect(lang)
+                        expanded = false
+                    }
+                )
+            }
+        }
+    }
 }
 
 /**
@@ -1094,6 +1166,7 @@ private fun ExternalModelsSection(
             Triple(ModelFamily.WHISPER, R.string.external_family_whisper, R.string.external_family_whisper_help),
             Triple(ModelFamily.CTC, R.string.external_family_ctc, R.string.external_family_ctc_help),
             Triple(ModelFamily.SENSE_VOICE, R.string.external_family_sense_voice, R.string.external_family_sense_voice_help),
+            Triple(ModelFamily.CANARY, R.string.external_family_canary, R.string.external_family_canary_help),
         )
     }
 
@@ -1152,7 +1225,7 @@ private fun ExternalModelsSection(
                                 }
                             },
                             onClick = {
-                                onSelectionChange(selection.copy(family = value))
+                                onSelectionChange(selection.withFamily(value))
                                 dropdownExpanded = false
                             }
                         )
@@ -1162,6 +1235,11 @@ private fun ExternalModelsSection(
 
             // Conditional options panel below the selector.
             when (selection.family) {
+                ModelFamily.CANARY -> CanaryLanguageDropdown(
+                    selected = selection.decodeLanguage,
+                    onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                )
                 ModelFamily.WHISPER -> LanguageEndonymDropdown(
                     selected = selection.decodeLanguage,
                     onSelect = { onSelectionChange(selection.copy(decodeLanguage = it)) },

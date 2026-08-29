@@ -48,13 +48,18 @@ object TranscriptionMemoryPolicy {
      */
     fun effectiveChunkSeconds(availableBytes: Long, modelSizeBytes: Long, catalogCapSeconds: Int): Int {
         if (availableBytes <= 0 || modelSizeBytes <= 0) return catalogCapSeconds
+        // The floor can never exceed the catalog cap: families below the 30s
+        // floor exist (canary caps at 10s, TASK-408) and coerceIn(min, max)
+        // throws when min > max; a starved device must clamp to the family's
+        // own cap, not to 30s of degenerate decode.
+        val floor = minOf(MIN_CHUNK_SECONDS, catalogCapSeconds)
         val availableMiB = availableBytes / (1024.0 * 1024.0)
         val modelMiB = modelSizeBytes / (1024.0 * 1024.0)
         val budgetMiB = availableMiB - HEADROOM_MIB
         val baselineMiB = modelMiB + OVERHEAD_MIB
-        if (budgetMiB <= baselineMiB) return MIN_CHUNK_SECONDS
+        if (budgetMiB <= baselineMiB) return floor
         val seconds = floor(sqrt((budgetMiB - baselineMiB) / K_MIB_PER_S2) / STEP_SECONDS) * STEP_SECONDS
-        return seconds.toInt().coerceIn(MIN_CHUNK_SECONDS, catalogCapSeconds)
+        return seconds.toInt().coerceIn(floor, catalogCapSeconds)
     }
 
     /** Peak-RSS prediction for the calibration test; same constants as the cap. */

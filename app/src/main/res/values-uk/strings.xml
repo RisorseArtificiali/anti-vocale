@@ -854,7 +854,9 @@
     <string name="external_family_ctc">CTC</string>
     <string name="external_family_ctc_help">Очікує файли енкодер + tokens</string>
     <string name="external_family_sense_voice">SenseVoice</string>
+    <string name="external_family_canary">Canary (NeMo Flash)</string>
     <string name="external_family_sense_voice_help">Очікує файли model + tokens</string>
+    <string name="external_family_canary_help">Очікує файли encoder + decoder + tokens; лише en/es/de/fr; потребує розрізання по тиші (VAD вмикається автоматично)</string>
     <string name="external_option_itn">Зворотна нормалізація тексту</string>
     <string name="external_ctc_subtype">Підтип CTC</string>
     <string name="external_ctc_subtype_nemo">NeMo CTC</string>

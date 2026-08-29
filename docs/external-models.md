@@ -1,6 +1,6 @@
 # External Models
 
-Anti-Vocale supports importing user-provided sherpa-onnx models alongside the built-in backends. Four model families are supported: Transducer, Whisper, CTC, and SenseVoice. This document describes the import formats and how to share models with other users.
+Anti-Vocale supports importing user-provided sherpa-onnx models alongside the built-in backends. Five model families are supported: Transducer, Whisper, CTC, SenseVoice, and Canary. This document describes the import formats and how to share models with other users.
 
 ## What import is for, and what it does not promise
 
@@ -25,6 +25,7 @@ The family selector above the import buttons picks the architecture; expected fi
 | Whisper | `encoder` + `decoder` + tokens | `""` | `whisper.language` (optional; blank = auto, falls back to the record's first language) |
 | CTC | `encoder` + tokens | `nemo_ctc` or `zipformer_ctc` (explicit, no default) | none |
 | SenseVoice | `model` + tokens | `""` | `sensevoice.language` (optional), `sensevoice.itn` (`true`/`false`) |
+| Canary (NeMo Flash) | `encoder` + `decoder` + tokens | `""` | `canary.language` (one of `en`, `es`, `de`, `fr`; conditions the recognizer itself: there is no auto-detection) |
 
 Exact file names don't matter; roles are matched by keyword (CTC prefers `ctc`-hinted candidates, Transducer prefers `rnnt`-hinted tokens). A joiner/joint file in the candidate pool is rejected for Whisper and CTC as a transducer signature, so a wrong family fails at import time instead of crashing at transcription.
 
@@ -101,8 +102,8 @@ A single-model manifest with integrity pins. This is how third parties share a m
 | Field | Required | Description |
 |---|---|---|
 | `name` | yes | Display name shown in the Model tab |
-| `family` | no (default `TRANSDUCER`) | one of `TRANSDUCER`, `WHISPER`, `CTC`, `SENSE_VOICE`; unknown values are rejected |
-| `modelType` | no (family-aware default) | `nemo_transducer` for TRANSDUCER without the field, `""` for WHISPER/SENSE_VOICE; CTC requires `nemo_ctc` or `zipformer_ctc` |
+| `family` | no (default `TRANSDUCER`) | one of `TRANSDUCER`, `WHISPER`, `CTC`, `SENSE_VOICE`, `CANARY`; unknown values are rejected |
+| `modelType` | no (family-aware default) | `nemo_transducer` for TRANSDUCER without the field, `""` for WHISPER/SENSE_VOICE/CANARY; CTC requires `nemo_ctc` or `zipformer_ctc` |
 | `languages` | yes for new entries (`family` present) | normalized ISO codes (`["ar"]`); doubles as the Whisper default language |
 | `options` | no | flat map of family options (`{"whisper.language": "ar"}`) |
 | `streaming` | no (default `false`) | `true` for streaming zipformer transducers (decoded via the online recognizer, whole-clip batch); `TRANSDUCER` family only, rejected otherwise |
@@ -221,7 +222,7 @@ structurally loadable.
 
 ## Family selector
 
-The dropdown above the import buttons sets the model family (see the table above). Below it, a conditional options panel: Whisper gets an optional language field, SenseVoice an optional language plus an inverse-text-normalization switch, CTC a subtype selector (`nemo_ctc` / `zipformer_ctc`). The languages field applies to all families.
+The dropdown above the import buttons sets the model family (see the table above). Below it, a conditional options panel: Whisper gets an optional language field, SenseVoice an optional language plus an inverse-text-normalization switch, CTC a subtype selector (`nemo_ctc` / `zipformer_ctc`), Canary a fixed four-language field (en/es/de/fr, defaulting to en). The languages field applies to all families.
 
 The URL import dialog also offers autocomplete suggestions from a small bundled catalog (searchable by name or language code, e.g. "ar" or "arabic"); tapping a suggestion fills the URL and the family.
 

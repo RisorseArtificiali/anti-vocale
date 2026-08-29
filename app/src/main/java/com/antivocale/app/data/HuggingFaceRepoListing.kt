@@ -180,7 +180,7 @@ object ExternalModelEntryJson {
             throw IllegalArgumentException(
                 "$family family has invalid modelType: $modelType (valid values depend on the family; " +
                     "CTC takes nemo_ctc or zipformer_ctc, TRANSDUCER takes nemo_transducer, " +
-                    "conformer_transducer, or empty, WHISPER/SENSE_VOICE take empty)")
+                    "conformer_transducer, or empty, WHISPER/SENSE_VOICE/CANARY take empty)")
         }
 
         return Entry(

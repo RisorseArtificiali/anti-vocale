@@ -4,7 +4,7 @@ import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 
-enum class ModelFamily { TRANSDUCER, WHISPER, CTC, SENSE_VOICE }
+enum class ModelFamily { TRANSDUCER, WHISPER, CTC, SENSE_VOICE, CANARY }
 
 enum class ExternalModelSource { LOCAL, URL, CATALOG }
 
@@ -50,9 +50,9 @@ data class ExternalModelRecord(
     val backendId: String get() = BACKEND_ID_PREFIX + id
 
     /**
-     * Human-facing type label for cards. WHISPER and SENSE_VOICE records carry a
-     * blank modelType by design; the label falls back to the family name so a
-     * whisper import is never shown as "zipformer".
+     * Human-facing type label for cards. WHISPER, SENSE_VOICE and CANARY records
+     * carry a blank modelType by design; the label falls back to the family name
+     * so a whisper import is never shown as "zipformer".
      */
     val typeLabel: String get() = modelType.ifBlank { family.name.lowercase() }
 

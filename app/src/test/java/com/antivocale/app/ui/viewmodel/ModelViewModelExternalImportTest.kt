@@ -25,6 +25,7 @@ import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -237,6 +238,23 @@ class ModelViewModelExternalImportTest {
         }
         assertEquals(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND, fakePrefs._transcriptionBackend.value)
         dir.deleteRecursively()
+    }
+
+    @Test
+    fun `selecting a canary model enables VAD, other families leave the toggle alone (TASK-408)`() = runTest {
+        // canary decodes empty on mid-speech chunk cuts, so silence-aligned
+        // segmentation is part of the selection: the preference flips on,
+        // visibly in Settings rather than as a silent override.
+        viewModel.useExternalModel(sampleRecord().copy(family = ModelFamily.CANARY))
+        runCurrent()
+        assertTrue(fakePrefs._vadEnabled.value)
+
+        // switching to a non-canary model must NOT flip it back off (the user
+        // stays in control of disabling it)
+        fakePrefs._vadEnabled.value = true
+        viewModel.useExternalModel(sampleRecord().copy(id = "whisp", family = ModelFamily.WHISPER))
+        runCurrent()
+        assertTrue(fakePrefs._vadEnabled.value)
     }
 
     /** runExternalImport launches on Dispatchers.IO (a real dispatcher in JVM tests):

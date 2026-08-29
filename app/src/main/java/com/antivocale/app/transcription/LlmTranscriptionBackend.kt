@@ -27,6 +27,12 @@ class LlmTranscriptionBackend @Inject constructor(
 
     override val id: String = BACKEND_ID
     override val maxChunkDurationSeconds: Int = AUDIO_CHUNK_SECONDS
+
+    // TASK-370: the audio encoder is far more boundary-sensitive than the ASR
+    // decoders (mid-word 30s cuts garble Gemma chunks); VAD-aligned segmentation
+    // is forced regardless of the user toggle.
+    override val requiresVadAlignedChunking: Boolean = true
+
     override val displayName: String = "Gemma (LiteRT-LM)"
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = true

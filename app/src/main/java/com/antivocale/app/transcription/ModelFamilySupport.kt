@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ModelFamily
+import com.k2fsa.sherpa.onnx.OfflineCanaryModelConfig
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineNemoEncDecCtcModelConfig
 import com.k2fsa.sherpa.onnx.OfflineSenseVoiceModelConfig
@@ -22,7 +23,7 @@ private fun isTransducerHinted(name: String) =
     name.contains("rnnt", ignoreCase = true) || isJoinerLike(name)
 
 /**
- * Shared tokens-role selection ladder, single definition for all four supports:
+ * Shared tokens-role selection ladder, single definition for all family supports:
  * exact "tokens.txt" (and exact "vocab.txt" when [exactVocab]), then the first
  * .txt tokens-like file satisfying [prefer], then the first avoiding [avoid],
  * then any tokens-like .txt. Null when no candidate exists. [prefer] and [avoid]
@@ -46,6 +47,41 @@ private fun pickTokens(
 /** Family-mismatch discriminator message shared by the non-transducer families. */
 private const val TRANSDUCER_MISMATCH =
     "candidate set looks like a transducer; pick the TRANSDUCER family"
+
+/**
+ * Encoder + decoder + tokens copy plan shared by the whisper and canary families
+ * (same non-transducer file set; single definition so the two cannot drift):
+ * role selection prefers non-transducer-hinted candidates, so a mixed folder
+ * picks the right files deterministically regardless of listing order, and a
+ * role whose only keyword matches are transducer-hinted files rejects the folder
+ * as a bare transducer set (the model_type metadata check cannot: NeMo
+ * transducer encoders also carry model_type as a KEY, key-presence not value).
+ * Tokens prefer non-hinted candidates so listing order cannot hand the role to
+ * the transducer vocab.
+ */
+private fun pickNonTransducerPlan(files: List<String>): Map<String, String>? {
+    val onnxCandidates = files.filter { it.endsWith(".onnx") }
+    fun findByRole(vararg keywords: String): String? =
+        onnxCandidates.firstOrNull { f -> !isTransducerHinted(f) && keywords.any { f.contains(it, ignoreCase = true) } }
+    fun findTransducerHinted(vararg keywords: String): String? =
+        onnxCandidates.firstOrNull { f -> keywords.any { f.contains(it, ignoreCase = true) } }
+    val encoder = findByRole("encoder")
+        ?: findTransducerHinted("encoder")?.let { throw IllegalArgumentException(TRANSDUCER_MISMATCH) }
+        ?: return null
+    val decoder = findByRole("decoder")
+        ?: findTransducerHinted("decoder")?.let { throw IllegalArgumentException(TRANSDUCER_MISMATCH) }
+        ?: return null
+    val tokens = pickTokens(
+        files,
+        exactVocab = false,
+        avoid = ::isTransducerHinted,
+    ) ?: return null
+    return linkedMapOf(
+        SherpaBackend.CANONICAL_ENCODER to encoder,
+        SherpaBackend.CANONICAL_DECODER to decoder,
+        SherpaBackend.CANONICAL_TOKENS to tokens,
+    )
+}
 
 /**
  * The family support table (spec: multi-family external models): per-family copy
@@ -105,6 +141,7 @@ sealed interface ModelFamilySupport {
         const val OPTION_WHISPER_TASK = "whisper.task"
         const val OPTION_SENSEVOICE_LANGUAGE = "sensevoice.language"
         const val OPTION_SENSEVOICE_ITN = "sensevoice.itn"
+        const val OPTION_CANARY_LANGUAGE = "canary.language"
 
         /**
          * The family's default record modelType when the caller passes none: null means
@@ -113,7 +150,7 @@ sealed interface ModelFamilySupport {
          */
         fun defaultModelType(family: ModelFamily): String? = when (family) {
             ModelFamily.TRANSDUCER -> "nemo_transducer"
-            ModelFamily.WHISPER, ModelFamily.SENSE_VOICE -> ""
+            ModelFamily.WHISPER, ModelFamily.SENSE_VOICE, ModelFamily.CANARY -> ""
             ModelFamily.CTC -> null
         }
 
@@ -122,7 +159,7 @@ sealed interface ModelFamilySupport {
             ModelFamily.TRANSDUCER ->
                 modelType.isEmpty() || modelType == "nemo_transducer" || modelType == "conformer_transducer"
             ModelFamily.CTC -> modelType == "nemo_ctc" || modelType == "zipformer_ctc"
-            ModelFamily.WHISPER, ModelFamily.SENSE_VOICE -> modelType.isEmpty()
+            ModelFamily.WHISPER, ModelFamily.SENSE_VOICE, ModelFamily.CANARY -> modelType.isEmpty()
         }
 
         fun forFamily(family: ModelFamily): ModelFamilySupport = when (family) {
@@ -130,6 +167,7 @@ sealed interface ModelFamilySupport {
             ModelFamily.WHISPER -> WhisperSupport
             ModelFamily.CTC -> CtcSupport
             ModelFamily.SENSE_VOICE -> SenseVoiceSupport
+            ModelFamily.CANARY -> CanarySupport
         }
     }
 }
@@ -233,37 +271,7 @@ object WhisperSupport : ModelFamilySupport {
         SherpaBackend.CANONICAL_TOKENS,
     )
 
-    override fun buildCopyPlan(files: List<String>): Map<String, String>? {
-        val onnxCandidates = files.filter { it.endsWith(".onnx") }
-        // Role selection prefers non-transducer-hinted candidates, so a mixed
-        // folder deterministically picks the whisper files regardless of listing
-        // order. When only hinted candidates match a keyword, the folder holds a
-        // bare transducer set: the model_type metadata check cannot catch that
-        // (NeMo transducer encoders also carry model_type; the check is
-        // key-presence, not value), so the copy plan itself must reject it.
-        fun findByRole(vararg keywords: String): String? =
-            onnxCandidates.firstOrNull { f -> !isTransducerHinted(f) && keywords.any { f.contains(it, ignoreCase = true) } }
-        fun findTransducerHinted(vararg keywords: String): String? =
-            onnxCandidates.firstOrNull { f -> keywords.any { f.contains(it, ignoreCase = true) } }
-        val encoder = findByRole("encoder")
-            ?: findTransducerHinted("encoder")?.let { throw IllegalArgumentException(TRANSDUCER_MISMATCH) }
-            ?: return null
-        val decoder = findByRole("decoder")
-            ?: findTransducerHinted("decoder")?.let { throw IllegalArgumentException(TRANSDUCER_MISMATCH) }
-            ?: return null
-        // Tokens: exact name first, then keyword match preferring non-hinted
-        // candidates so listing order cannot hand the role to the transducer vocab.
-        val tokens = pickTokens(
-            files,
-            exactVocab = false,
-            avoid = ::isTransducerHinted,
-        ) ?: return null
-        return linkedMapOf(
-            SherpaBackend.CANONICAL_ENCODER to encoder,
-            SherpaBackend.CANONICAL_DECODER to decoder,
-            SherpaBackend.CANONICAL_TOKENS to tokens,
-        )
-    }
+    override fun buildCopyPlan(files: List<String>): Map<String, String>? = pickNonTransducerPlan(files)
 
     override fun metadataFileRole(): String = SherpaBackend.CANONICAL_ENCODER
 
@@ -473,6 +481,82 @@ object SenseVoiceSupport : ModelFamilySupport {
             ),
             tokens = "${record.dir}/${SherpaBackend.CANONICAL_TOKENS}",
             modelType = "sense_voice",
+            numThreads = numThreads,
+            debug = false,
+            provider = provider,
+        )
+    }
+}
+
+/**
+ * Canary family (TASK-408): NeMo's EncDecMultiTaskModel exports, e.g. NVIDIA's
+ * Canary 180M Flash (en/es/de/fr, ~207 MB int8: the lower-end tier the catalog
+ * was missing).
+ *
+ * Expected file set: encoder + decoder .onnx plus a tokens .txt; the same shape
+ * as Whisper, discriminated by the encoder's model_type VALUE
+ * ("EncDecMultiTaskModel") rather than by structure. A joiner/joint .onnx is
+ * rejected as a transducer signature like Whisper does.
+ *
+ * Language conditioning: the recognizer is BUILT with one srcLang/tgtLang pair
+ * (sherpa performs no auto-detection for canary), so the working language is
+ * chosen at import time: [options]["canary.language"], falling back to
+ * [languages][0], then "en". srcLang == tgtLang (transcription, not
+ * translation; the sherpa canary config fills both from the same value).
+ *
+ * Chunking: canary decodes degenerate beyond ~10s and, unlike whisper, emits
+ * EMPTY transcripts for chunks that start mid-speech (measured on desktop:
+ * fixed 8s cuts lose half the content; silence-aligned cuts are perfect; the
+ * full measurement table is docs/research/canary-chunking-2026-08-29.md).
+ * [ExternalSherpaBackend] therefore caps the family at 10s AND the family sets
+ * [TranscriptionBackend.requiresVadAlignedChunking] so the orchestrator routes
+ * it through VAD segmentation regardless of the user toggle; selecting a canary
+ * model also flips the VAD preference on (visible in Settings).
+ *
+ * Record modelType: ignored; OfflineModelConfig.modelType = "canary".
+ */
+object CanarySupport : ModelFamilySupport {
+    override val family: ModelFamily = ModelFamily.CANARY
+
+    override fun requiredRoles(): List<String> = listOf(
+        SherpaBackend.CANONICAL_ENCODER,
+        SherpaBackend.CANONICAL_DECODER,
+        SherpaBackend.CANONICAL_TOKENS,
+    )
+
+    override fun buildCopyPlan(files: List<String>): Map<String, String>? = pickNonTransducerPlan(files)
+
+    override fun metadataFileRole(): String = SherpaBackend.CANONICAL_ENCODER
+
+    override fun metadataKeys(modelType: String): List<String> = listOf("model_type")
+
+    override fun valueMetadataKey(): String = "model_type"
+
+    override fun validateImportedModel(metadataValue: String?) {
+        // Value-aware discriminator, mirroring Whisper's: the canary export's
+        // encoder carries model_type="EncDecMultiTaskModel"; a whisper or
+        // transducer encoder under the CANARY family is a family mismatch.
+        if (metadataValue != null && metadataValue != "EncDecMultiTaskModel") {
+            throw IllegalArgumentException(
+                "model_type metadata is \"$metadataValue\": not a canary (EncDecMultiTaskModel) encoder; " +
+                    "pick the TRANSDUCER or WHISPER family for those exports")
+        }
+    }
+
+    override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig {
+        val language = record.options[ModelFamilySupport.OPTION_CANARY_LANGUAGE]
+            ?: record.languages.firstOrNull()
+            ?: "en"
+        return OfflineModelConfig(
+            canary = OfflineCanaryModelConfig(
+                encoder = "${record.dir}/${SherpaBackend.CANONICAL_ENCODER}",
+                decoder = "${record.dir}/${SherpaBackend.CANONICAL_DECODER}",
+                srcLang = language,
+                tgtLang = language,
+                usePnc = true,
+            ),
+            tokens = "${record.dir}/${SherpaBackend.CANONICAL_TOKENS}",
+            modelType = "canary",
             numThreads = numThreads,
             debug = false,
             provider = provider,

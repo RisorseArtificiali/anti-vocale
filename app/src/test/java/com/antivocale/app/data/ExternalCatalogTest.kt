@@ -121,7 +121,9 @@ class ExternalCatalogTest {
         // arabic + russian-small + spanish streaming + german streaming (TASK-366/368)
         // + swiss german whisper (TASK-397, Flurin17 re-export)
         // + german whisper (TASK-404, primeline re-export)
-        assertEquals(6, entries.size)
+        // + canary flash per language en/de/es/fr (TASK-408; "NeMo Flash" naming
+        // avoids the "ar" substring this by-code assertion depends on)
+        assertEquals(10, entries.size)
         val arabic = ExternalCatalog.filter(entries, "arabic")
         assertEquals(1, arabic.size)
         val byCode = ExternalCatalog.filter(entries, "ar")

@@ -38,6 +38,9 @@ class TranscriptionOrchestratorLlmChunkPromptTest : TranscriptionOrchestratorTes
         override val supportsAudio = true
         override val supportsText = true
         override val maxChunkDurationSeconds: Int = 30
+        // TASK-408 moved TASK-370's forced-VAD flag from an orchestrator id check
+        // onto the backend interface; the fake mirrors the production override.
+        override val requiresVadAlignedChunking: Boolean = true
         override suspend fun transcribeAudio(samples: FloatArray, sampleRate: Int, prompt: String) =
             Result.success(TranscriptionResult(text = "chunk-${chunkPrompts.size + 1}"))
                 .also { chunkPrompts.add(prompt) }

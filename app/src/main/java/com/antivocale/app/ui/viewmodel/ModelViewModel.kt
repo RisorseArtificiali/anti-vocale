@@ -1564,6 +1564,14 @@ class ModelViewModel @Inject constructor(
 
     private suspend fun activateExternalModel(record: ExternalModelRecord) {
         preferencesManager.saveTranscriptionBackend(record.backendId)
+        // TASK-408: canary decodes empty on chunks cut mid-speech, so VAD-aligned
+        // segmentation is part of the deal: flip the preference on at selection
+        // time (visible in Settings) rather than overriding it silently. The
+        // orchestrator also routes canary through VAD regardless (share aliases
+        // and Tasker overrides never pass through here).
+        if (record.family == ModelFamily.CANARY && !preferencesManager.vadEnabled.first()) {
+            preferencesManager.saveVadEnabled(true)
+        }
         val message = ctx.getString(R.string.model_selected_message, record.displayName)
         _uiState.update {
             it.copy(

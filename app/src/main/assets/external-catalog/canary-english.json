@@ -1,0 +1,31 @@
+{
+  "name": "NeMo Flash 180M (English)",
+  "family": "CANARY",
+  "modelType": "",
+  "languages": [
+    "en"
+  ],
+  "options": {
+    "canary.language": "en"
+  },
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-canary-180m-flash-en-es-de-fr-int8/resolve/main/encoder.int8.onnx",
+      "sha256": "7a75b4e2a5857a6dcc0819503bbe3fad66943db4a3ccf21d3f27c633667d303f",
+      "size": 132678643
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-canary-180m-flash-en-es-de-fr-int8/resolve/main/decoder.int8.onnx",
+      "sha256": "e41a2ab9c0c2fe81a1e8ade5a45fb02a74bc4db7d1f91b89a54a25e2cf79cba2",
+      "size": 74437848
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/csukuangfj/sherpa-onnx-nemo-canary-180m-flash-en-es-de-fr-int8/resolve/main/tokens.txt",
+      "sha256": "2dae6fc7815f9640645e0c765522b278ee0cef49b482d91f6913e334628d3e77",
+      "size": 53555
+    }
+  ]
+}

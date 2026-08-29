@@ -48,6 +48,38 @@
       ],
       "family": "WHISPER",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/german-whisper.json"
+    },
+    {
+      "name": "NeMo Flash 180M (English)",
+      "languages": [
+        "en"
+      ],
+      "family": "CANARY",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-english.json"
+    },
+    {
+      "name": "NeMo Flash 180M (German)",
+      "languages": [
+        "de"
+      ],
+      "family": "CANARY",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-german.json"
+    },
+    {
+      "name": "NeMo Flash 180M (Spanish)",
+      "languages": [
+        "es"
+      ],
+      "family": "CANARY",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-spanish.json"
+    },
+    {
+      "name": "NeMo Flash 180M (French)",
+      "languages": [
+        "fr"
+      ],
+      "family": "CANARY",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-french.json"
     }
   ]
 }

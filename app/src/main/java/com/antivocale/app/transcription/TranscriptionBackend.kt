@@ -41,6 +41,16 @@ interface TranscriptionBackend {
         get() = 30  // Default: 30 seconds (safe for most backends)
 
     /**
+     * True when this backend's decoder degrades on chunks cut at arbitrary
+     * positions and needs VAD-aligned (silence-boundary) segmentation instead of
+     * fixed-length pipeline cuts, REGARDLESS of the user's VAD toggle. TASK-370
+     * (Gemma audio encoder) and the canary external family (TASK-408, measured:
+     * mid-speech cuts make half the chunks decode empty) set this.
+     */
+    val requiresVadAlignedChunking: Boolean
+        get() = false
+
+    /**
      * Initializes the backend with the given configuration.
      */
     suspend fun initialize(context: Context, config: BackendConfig): Result<Unit>

@@ -3,6 +3,7 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.data.ExternalModelRecord
+import com.antivocale.app.data.ModelFamily
 import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
 import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
@@ -44,7 +45,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     @Volatile private var configuredId: String = PLACEHOLDER_ID
     override val id: String get() = configuredId
 
-    @Volatile private var configuredFamily: com.antivocale.app.data.ModelFamily? = null
+    @Volatile private var configuredFamily: ModelFamily? = null
 
     /** Test seam: sets the configured family without the full native init path. */
     @androidx.annotation.VisibleForTesting
@@ -59,11 +60,21 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     // Family-dependent (TASK-402, adrium's 30s truncation): sherpa's whisper
     // DecodeStream hard-caps a single decode at 30 seconds ("we process only the
     // first 30 seconds and discard the remaining data"), so external WHISPER
-    // models must chunk like the built-in one. Transducer/CTC/SenseVoice are
-    // encoder-only and genuinely handle any length in one pass (single-pass like
+    // models must chunk like the built-in one. CANARY (TASK-408) degrades past
+    // ~10s (superlinear decode plus repetition), so it chunks shorter AND forces
+    // VAD-aligned cuts via requiresVadAlignedChunking: fixed-position cuts make
+    // half its chunks decode empty. Transducer/CTC/SenseVoice are encoder-only
+    // and genuinely handle any length in one pass (single-pass like
     // Parakeet/GigaAM, the original v2a assumption).
     override val maxChunkDurationSeconds: Int?
-        get() = if (configuredFamily == com.antivocale.app.data.ModelFamily.WHISPER) 30 else null
+        get() = when (configuredFamily) {
+            ModelFamily.WHISPER -> 30
+            ModelFamily.CANARY -> 10
+            else -> null
+        }
+
+    override val requiresVadAlignedChunking: Boolean
+        get() = configuredFamily == ModelFamily.CANARY
 
     // @Volatile: a concurrent transcribeAudio on another thread must not read a stale
     // null recognizer after initialize completes (the unload-during-transcription window
@@ -133,7 +144,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
             // TASK-368: streaming records build the OnlineRecognizer instead. The
             // family restriction was already enforced at import (entry-JSON choke
             // point); this is the defensive second gate before the native load.
-            if (record.streaming && record.family != com.antivocale.app.data.ModelFamily.TRANSDUCER) {
+            if (record.streaming && record.family != ModelFamily.TRANSDUCER) {
                 return@withContext Result.failure(TranscriptionException.ModelLoadError(
                     "streaming is only supported for TRANSDUCER imports (${record.backendId})"))
             }
