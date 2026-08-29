@@ -113,9 +113,13 @@ Thumbs.db
 *.local
 *.zip
 
-# Claude Code
-.claude/
+# Claude Code (skills/ is public: the community-model-conversion skill is the
+# documented DIY path for catalog exporters, linked from docs and CONTRIBUTING)
+.claude/*
 !.claude/settings.json
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/community-model-conversion/
 
 # Development tooling
 .serena/

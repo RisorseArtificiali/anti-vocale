@@ -8,6 +8,10 @@
   </a>
 </p>
 
+<p align="center">
+  <img alt="AI-assisted, human-owned development" src="https://img.shields.io/badge/built_AI--assisted%2C_human--owned-blue"/>
+</p>
+
 # Anti-Vocale
 
 Android app for transcribing voice messages locally on-device, with no internet required.
@@ -23,6 +27,14 @@ The big messengers transcribe voice messages only partially, or not at all:
 - **Signal** ships no voice transcription at all.
 
 Anti-Vocale closes that gap with a different trade-off. It runs entirely on your phone, so audio never leaves the device, whatever chat it came from. It works with every messaging app through the standard Android share sheet, not just one platform. It is free. And it transcribes any language the installed models cover, including community fine-tunes imported from the model catalog, so coverage is not decided by a platform vendor.
+
+## How this project is built
+
+Anti-Vocale is developed with heavy AI assistance and human ownership: a coding agent executes, the maintainer designs, reviews, and owns every change, and one human signs every release. The badge above says it plainly: AI-assisted, human-owned.
+
+This is a deliberate choice, not a shortcut. The compatibility space this app lives in is a matrix of devices, inference backends, models, and per-language quality, and it is too vast to validate the way a narrower domain could. Published WER numbers almost never match real-phone experience: they are typically measured on full-precision models running on desktops, before quantization and before vendor-specific Android quirks. That complexity is exactly why the project is only sustainable with heavy AI-assisted development plus feedback from the community on real devices.
+
+What keeps that honest is the verification bar: every code change passes the automated test suite, and behavior changes are verified on a real device before release; the measurements and device logs behind the fixes are public in the issues. Much of the day-to-day development happens over chat from a phone, sometimes while walking down the street: decisions land where life happens, and the verification pipeline is what makes that safe. If you want to contribute, [CONTRIBUTING.md](CONTRIBUTING.md) says what we ask of AI-assisted contributions.
 
 ## Model catalog
 

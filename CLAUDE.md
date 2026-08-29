@@ -10,6 +10,7 @@ Android application written in Kotlin for transcribing voice messages locally on
 ## Development
 - Default branch: `main`
 - Git protocol: SSH
+- **Commit provenance:** every commit message carries an `Assisted-by: Claude <noreply@anthropic.com>` trailer (maintainer decision 2026-08-29, alongside the AI-assisted disclosure in README/CONTRIBUTING). Append it to every commit this agent creates.
 - **adb path:** `~/Android/Sdk/platform-tools/adb`
 - **Build & install on device:** `./scripts/install.sh` (ALWAYS use this — never `./gradlew installDebug`)
 - **Device:** Realme RMX3853 (Android 16, wireless debugging, paired once and persistently connected). It shows up in `adb devices` automatically, with a long mDNS serial like `adb-b51d20e6-XDR829 (2)._adb-tls-connect._tcp`. Do NOT run `adb disconnect` (it breaks the existing connection and `adb connect ip:port` will not re-establish it on a stale/rotated port). To target it, pass the serial to `-s` exactly as `adb devices` prints it; you can capture it with `D=$(adb devices | sed -n 's/^\(.*_adb-tls-connect\._tcp\)[[:space:]]*device$/\1/p')` and then `adb -s "$D" ...` (the serial contains spaces: an awk `$1` capture truncates it and adb reports "device not found"). The IP port (e.g. 192.168.20.174:40079) rotates and is irrelevant for commands. If the device ever drops off entirely, the user re-enables wireless debugging on the phone; otherwise no user input is needed.

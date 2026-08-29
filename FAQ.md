@@ -64,6 +64,10 @@ Swipe an entry to delete it. A standard long-press context menu is being added a
 
 ## The project
 
+### Is this app built with AI?
+
+Yes, and openly. A coding agent executes most of the day-to-day development; the maintainer designs, reviews, and owns every change, and signs every release. The reason is practical: the app's quality surface is a matrix of phones, inference backends, models, and languages, far too vast to validate the way a narrower product could, and published accuracy numbers rarely match real phones because they are measured on desktop machines with full-precision models, before quantization. Heavy AI assistance plus feedback from people on real devices is the only sustainable way to cover that matrix. What protects you is the bar every change must pass: the automated test suite, and verification on a real device before release for anything that changes behavior; the measurements behind the fixes are public in the issues.
+
 ### Will this app become obsolete once Android ships its own on-device transcription?
 
 Most likely, eventually, yes. If the operating system transcribed every voice message natively, in every language, inside every app, a third-party tool for the same job would lose its reason to exist, and that would be a good outcome. Until then there is plenty of gap left to fill: built-in transcription is still language-limited (WhatsApp's, for example, supports a fixed shortlist, four languages on Android, and a longer list on iPhone that depends on the iOS version), OS features do not let you pick a model or load a community fine-tune for your language, and several messengers ship nothing at all.
