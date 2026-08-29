@@ -292,7 +292,7 @@
     <string name="settings_section_transcription">Transkription</string>
     <string name="settings_section_appearance">Erscheinungsbild</string>
     <string name="settings_section_advanced">Erweitert</string>
-    <string name="settings_section_feedback">Feedback &amp; Über</string>
+    <string name="settings_section_feedback">Feedback und Informationen</string>
     <string name="settings_feedback_send_title">Feedback senden / Problem melden</string>
     <string name="settings_feedback_send_description">Öffnet deine E-Mail-App mit den vorausgefüllten Details</string>
     <string name="settings_feedback_translation_title">Falsche Übersetzung melden</string>
@@ -360,7 +360,7 @@
     <string name="get_token">Token abrufen</string>
     <string name="retry">Erneut versuchen</string>
     <string name="validating">Wird überprüft…</string>
-    <string name="validate_and_save">Überprüfen &amp; Speichern</string>
+    <string name="validate_and_save">Überprüfen und speichern</string>
     <string name="validating_token">Token wird überprüft…</string>
 
     <!-- Settings Tab - Timeout -->
@@ -421,7 +421,7 @@
     <string name="prompt_applied">Prompt angewendet</string>
 
     <!-- Settings Tab - Preload Info -->
-    <string name="preload_title">Automatisches Laden &amp; Vorabladen</string>
+    <string name="preload_title">Automatisches Laden und Vorabladen</string>
     <string name="preload_description">Das Modell wird automatisch geladen, wenn eine Anfrage eingeht und sich das Modell nicht im Speicher befindet. Du kannst das Modell auch explizit vorab laden:</string>
     <string name="via_tasker">Über Tasker:</string>
     <string name="via_adb">Über ADB:</string>
@@ -474,7 +474,7 @@
     <string name="per_app_settings_sound_silent">Stumm</string>
     <string name="per_app_settings_sound_chime">Glockenspiel</string>
     <string name="per_app_settings_sound_bell">Glocke</string>
-    <string name="per_app_settings_quick_share_back_title">Schnell-Zurückteilen</string>
+    <string name="per_app_settings_quick_share_back_title">Schnelle Antwort</string>
     <string name="per_app_settings_quick_share_back_description">Mit einem Tipp Transkriptionen an diese App zurücksenden</string>
 
     <!-- Per-App Reset -->
@@ -497,7 +497,7 @@
     <string name="vad_advisory_dismiss">Verstanden</string>
 
     <!-- Share Back -->
-    <string name="share_back">Zurückteilen</string>
+    <string name="share_back">Schnelle Antwort</string>
     <string name="send_to_app">An %1$s senden</string>
 
     <!-- Notification Channels -->
@@ -526,6 +526,11 @@
 
     <!-- Dismiss -->
     <string name="dismiss">Ausblenden</string>
+
+    <!-- Freeze-rescue prompt -->
+    <string name="freeze_detected_title">Erkennung vom System angehalten</string>
+    <string name="freeze_detected_text">Das System hat die App während der Erkennung eingefroren. Tippe auf „Zulassen“, damit sie im Hintergrund zu Ende laufen kann und die unterbrochene Erkennung von selbst fortgesetzt wird.</string>
+    <string name="freeze_allow_action">Zulassen</string>
 
     <!-- Download completion messages -->
     <string name="parakeet_downloaded">Parakeet-Modell erfolgreich heruntergeladen</string>
@@ -616,10 +621,10 @@
     <string name="swipe_action_description">Aktion beim Wischen eines Eintrags nach links wählen</string>
     <string name="swipe_action_reveal">Aktionen anzeigen</string>
     <string name="swipe_action_immediate_delete">Sofort löschen</string>
-    <string name="swipe_action_copy_description">Transkription kopieren</string>
-    <string name="swipe_action_share_description">Transkription teilen</string>
+    <string name="swipe_action_copy_description">Text kopieren</string>
+    <string name="swipe_action_share_description">Text teilen</string>
     <string name="swipe_action_delete_description">Eintrag löschen</string>
-    <string name="swipe_action_copied">Transkription kopiert</string>
+    <string name="swipe_action_copied">Text kopiert</string>
 
     <!-- Content descriptions (accessibility) -->
     <string name="back">Zurück</string>
@@ -636,7 +641,7 @@
     <string name="error_no_model_configured">Kein %1$s-Modell konfiguriert. Öffne die App, um ein Modell herunterzuladen.</string>
     <string name="loading_model">%1$s-Modell wird geladen…</string>
     <string name="preprocessing_audio">Audio wird vorverarbeitet…</string>
-    <string name="clipboard_label_transcription">Transkription</string>
+    <string name="clipboard_label_transcription">Ergebnis</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">Prompt-Einstellungen öffnen</string>
@@ -647,7 +652,7 @@
     <string name="model_unknown">Unbekannt</string>
 
     <!-- Picture-in-Picture -->
-    <string name="pip_transcribing">Transscribiert…</string>
+    <string name="pip_transcribing">Wird transkribiert…</string>
     <string name="pip_waiting">Wartet auf Transkription…</string>
     <string name="pip_enter_button">PiP</string>
     <string name="pip_enter_description">Im Bild-in-Bild-Fenster anzeigen</string>
@@ -755,7 +760,7 @@
     <string name="model_info_close">Schließen</string>
 
     <!-- Skeleton loading -->
-    <string name="skeleton_loading_content_description">Transkription wird geladen</string>
+    <string name="skeleton_loading_content_description">Text wird geladen</string>
 
     <!-- Share target profiles (appear as separate entries in Android share sheet) -->
     <string name="share_target_parakeet">Anti-Vocale (Parakeet)</string>
@@ -828,9 +833,9 @@
 
     <!-- Re-transcribe -->
     <string name="retranscribe">Erneut versuchen</string>
-    <string name="retranscribe_title">Erneut transskribieren mit…</string>
+    <string name="retranscribe_title">Erneut transkribieren mit…</string>
     <string name="retranscribe_subtitle">Wähle ein Modell, um dieses Audio erneut zu transskribieren</string>
-    <string name="retranscribe_confirm">Transskribieren</string>
+    <string name="retranscribe_confirm">Transkribieren</string>
     <string name="retranscribe_no_models">Keine Audio-Modelle konfiguriert. Lade zuerst ein Modell im Tab \"Modell\" herunter.</string>
     <string name="retranscribe_file_not_found">Audiodatei nicht mehr verfügbar</string>
     <string name="retranscribe_active_badge">Aktiv</string>
@@ -839,10 +844,10 @@
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Untertitel gefunden</string>
-    <string name="subtitles_found_text">Eingebettete Untertitel (%1$s) verwenden oder das Audio transskribieren?</string>
+    <string name="subtitles_found_text">Eingebettete Untertitel (%1$s) verwenden oder das Audio transkribieren?</string>
     <string name="subtitles_language_unknown">unbekannt</string>
     <string name="action_use_subtitles">Untertitel verwenden</string>
-    <string name="action_transcribe_audio">Audio transskribieren</string>
+    <string name="action_transcribe_audio">Audio transkribieren</string>
     <string name="subtitle_fallback_status">Untertitel konnten nicht extrahiert werden, Audio wird transskribiert</string>
     <string name="subtitle_choice_notification_text">Warte auf deine Auswahl…</string>
     <plurals name="logs_entries_deleted">
@@ -880,7 +885,7 @@
     <string name="logs_status_error">Fehler</string>
     <string name="logs_status_processing">Verarbeitung</string>
     <string name="logs_model_label">Modell: %1$s</string>
-    <string name="model_limit_chunked">Beliebige Länge: längere Audios werden automatisch aufgeteilt</string>
+    <string name="model_limit_chunked">Ohne Limit: längere Audios werden automatisch aufgeteilt</string>
     <string name="show_task_details_title">Taskdetails anzeigen</string>
     <string name="show_task_details_description">Zeigt die Task-ID in den Einträgen. Nützlich beim Kontakt zum Support; standardmäßig aus.</string>
 
@@ -894,7 +899,7 @@
     <string name="litertlm_pick_file">Modelldatei auswählen</string>
     <string name="litertlm_no_models">Keine .litertlm-Datei in diesem Repository gefunden</string>
     <!-- TASK-374: per-transcription feedback -->
-    <string name="feedback_report_transcription">Transkription melden</string>
+    <string name="feedback_report_transcription">Fehler im Text melden</string>
     <string name="feedback_label_task">Aufgabe</string>
     <string name="feedback_label_model">Modell</string>
     <string name="feedback_label_duration">Audiolänge</string>

@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.IBinder
 import android.os.Handler
 import android.os.Looper
+import android.os.PowerManager
 import android.util.Log
 import android.widget.Toast
 import androidx.core.app.NotificationCompat
@@ -58,6 +59,19 @@ class InferenceService : Service(), TranscriptionListener {
         const val NOTIFICATION_ID = 1001
         const val RESULT_NOTIFICATION_ID = 1002
 
+        /** Freeze-rescue prompt (OEM freezer suspends mid-inference without exemption). */
+        const val FREEZE_RESCUE_NOTIFICATION_ID = 1003
+        private const val RC_BATTERY_ALLOW = 20
+
+        /**
+         * The heartbeat ticks every [HEARTBEAT_INTERVAL_MS]; a tick arriving this much late
+         * means the coroutine did not execute for 2+ intervals = the whole process was
+         * suspended by the OS freezer between ticks (no app-side code runs while frozen,
+         * so the gap is only observable AFTER unfreeze).
+         */
+        private const val HEARTBEAT_INTERVAL_MS = 5_000L
+        private const val FREEZE_GAP_MS = 15_000L
+
         private const val RC_LAUNCH_DEFAULT = 0
         private const val RC_LAUNCH_MODEL_TAB = 1
         private const val RC_NAV_PREV = 10
@@ -93,6 +107,20 @@ class InferenceService : Service(), TranscriptionListener {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
 
     /**
+     * Keeps the CPU awake while a batch is actively transcribing (share-flow
+     * background inference stalls on deep-idle otherwise). Held from the drain
+     * loop's start to its finally; released again in onDestroy as a belt.
+     */
+    private val transcriptionWakeLock by lazy { TranscriptionWakeLock(this) }
+
+    /**
+     * TEMP diag experiment: silent media stream held for the batch so OEM freezer
+     * logic classifies us as a playing-media app and skips the freeze. See
+     * [SilentAudioKeepalive].
+     */
+    private val silentKeepalive by lazy { SilentAudioKeepalive(TAG) }
+
+    /**
      * In-flight result-notification jobs (onSuccess's auto-copy + save + notify
      * coroutine). processQueue() awaits these before tearing the service down;
      * see onSuccess for the race this closes.
@@ -106,6 +134,8 @@ class InferenceService : Service(), TranscriptionListener {
     /** Child job running the current task's processRequest; per-task cancel target. */
     @Volatile private var currentTaskJob: Job? = null
     @Volatile private var transcriptionStartTime: Long = 0
+    /** One freeze-rescue prompt per batch (the notification re-fires next batch otherwise). */
+    @Volatile private var freezeRescueNotified = false
     private val pendingCount = AtomicInteger(0)
     private val resultNotificationFactory: ResultNotificationFactory by lazy { ResultNotificationFactory(this) }
 
@@ -164,9 +194,21 @@ class InferenceService : Service(), TranscriptionListener {
             return START_NOT_STICKY
         }
 
+        // Two-argument form ON PURPOSE: it forwards the manifest-declared
+        // foregroundServiceType verbatim. The ServiceCompat/type-parameter variant
+        // crashes with InvalidForegroundServiceTypeException on ColorOS/API-36 when
+        // the manifest declares the dual type set (see the manifest note).
         startForeground(NOTIFICATION_ID, createNotification(getString(R.string.processing_audio)))
 
         val filePath = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
+
+        com.antivocale.app.util.DiagTrace.mark(
+            "svc-startForeground",
+            "taskId=${intent?.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)} type=" +
+                "${intent?.getStringExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE)} source=" +
+                "${intent?.getStringExtra(EXTRA_SOURCE)} backendOverride=" +
+                "${intent?.getStringExtra(EXTRA_BACKEND_OVERRIDE)} filePath=$filePath"
+        )
 
         val request = PendingRequest(
             taskId = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)
@@ -221,6 +263,10 @@ class InferenceService : Service(), TranscriptionListener {
     override fun onDestroy() {
         super.onDestroy()
         serviceScope.cancel()
+        // Belt: the drain loop's finally normally releases, but a scope teardown that
+        // lands before the coroutine reaches it must not leak the lock.
+        transcriptionWakeLock.release()
+        silentKeepalive.stop()
         Log.i(TAG, "Service destroyed")
     }
 
@@ -234,8 +280,53 @@ class InferenceService : Service(), TranscriptionListener {
             }
 
             _isTranscribing.value = true
+            // Deep-idle CPU suspension mid-inference is the share-flow hang: take the
+            // lock for the whole batch (each task start refreshes the safety deadline).
+            transcriptionWakeLock.acquire()
+            // TEMP diag: look like a media app to the OEM freezer.
+            silentKeepalive.start()
+            Log.i(TAG, "Wake lock acquired (held=${transcriptionWakeLock.isHeld}), keepalive=${silentKeepalive.isPlaying}")
+            com.antivocale.app.util.DiagTrace.beginBatch("batch of ${pendingCount.get()} queued")
             val totalInBatch = pendingCount.get()
             var currentIndex = 0
+
+            // Diagnostic heartbeat: proves whether THIS process is still executing at
+            // all while backgrounded. Heartbeats stopping mid-batch = OS freeze/kill;
+            // heartbeats continuing with a stuck stage = a genuinely blocked call.
+            // wall advancing while cpu stays flat = threads suspended/throttled.
+            // Freeze detector: a 5s tick arriving >15s late is conclusive evidence the
+            // process was suspended between ticks (nothing app-side runs while frozen,
+            // so the gap only becomes observable after the OS unfreezes us — e.g. when
+            // the user returns). Surface a one-tap rescue prompt then.
+            freezeRescueNotified = false
+            var lastTickWall = System.currentTimeMillis()
+            var lastTickCpu = android.os.Process.getElapsedCpuTime()
+            val heartbeatJob = launch {
+                while (true) {
+                    delay(HEARTBEAT_INTERVAL_MS)
+                    val nowWall = System.currentTimeMillis()
+                    val nowCpu = android.os.Process.getElapsedCpuTime()
+                    val gapMs = nowWall - lastTickWall
+                    val cpuDeltaMs = nowCpu - lastTickCpu
+                    lastTickWall = nowWall
+                    lastTickCpu = nowCpu
+                    if (gapMs > FREEZE_GAP_MS) {
+                        com.antivocale.app.util.DiagTrace.mark(
+                            "freeze-detected",
+                            "tickGap=${gapMs}ms cpuDuringGap=${cpuDeltaMs}ms"
+                        )
+                        if (!freezeRescueNotified) {
+                            freezeRescueNotified = true
+                            showFreezeRescueNotification()
+                        }
+                    }
+                    com.antivocale.app.util.DiagTrace.heartbeat(
+                        taskId = currentTaskId,
+                        queued = pendingCount.get(),
+                        extra = "wakelock=${transcriptionWakeLock.isHeld} threads=${Thread.activeCount()}"
+                    )
+                }
+            }
 
             try {
                 while (requestQueue.isNotEmpty()) {
@@ -243,6 +334,11 @@ class InferenceService : Service(), TranscriptionListener {
                     pendingCount.decrementAndGet()
                     currentIndex++
                     currentTaskId = request.taskId
+                    com.antivocale.app.util.DiagTrace.mark(
+                        "request-start",
+                        "task=${request.taskId} type=${request.requestType} src=${request.source} " +
+                            "backendOverride=${request.backendOverride} filePath=${request.filePath}"
+                    )
 
                     try {
                         // Show queue-aware initial notification
@@ -293,6 +389,10 @@ class InferenceService : Service(), TranscriptionListener {
                         currentTaskJob = taskJob
                         taskJob.join()
                         currentTaskJob = null
+                        com.antivocale.app.util.DiagTrace.mark(
+                            "request-done",
+                            "task=${request.taskId} wall=${System.currentTimeMillis() - transcriptionStartTime}ms"
+                        )
                     } finally {
                         // Belt for the case where we never launched (notification etc.)
                         inFlightTaskIds.remove(request.taskId)
@@ -302,21 +402,30 @@ class InferenceService : Service(), TranscriptionListener {
                 // Batch cancel (ACTION_CANCEL) or scope teardown: per-task cancels
                 // never reach here anymore, they only cancel the child task job.
                 Log.i(TAG, "Processing cancelled by user")
+                com.antivocale.app.util.DiagTrace.mark("batch-cancelled")
                 failQueuedLogs("Cancelled")
                 requestQueue.clear()
                 pendingCount.set(0)
             } finally {
+                heartbeatJob.cancel()
+                silentKeepalive.stop()
                 currentTaskId = null
                 currentTaskJob = null
                 _isTranscribing.value = false
+                // Runs on EVERY exit path (normal, batch cancel, scope teardown):
+                // release() is idempotent and the lock is non-reference-counted.
+                transcriptionWakeLock.release()
+                Log.i(TAG, "Wake lock released (held=${transcriptionWakeLock.isHeld})")
             }
 
             // Wait for any pending result-notification jobs before teardown:
             // stopSelf -> onDestroy cancels serviceScope, which would kill a
             // not-yet-run notification coroutine (the TASK-336 race).
             val pending = synchronized(pendingResultNotifications) { pendingResultNotifications.toList() }
+            com.antivocale.app.util.DiagTrace.mark("awaiting-result-notifications", "pending=${pending.size}")
             pending.forEach { it.join() }
 
+            com.antivocale.app.util.DiagTrace.endBatch()
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
         }
@@ -544,6 +653,10 @@ class InferenceService : Service(), TranscriptionListener {
         isPartial: Boolean,
         failedChunkCount: Int
     ) {
+        com.antivocale.app.util.DiagTrace.mark(
+            "listener-onSuccess",
+            "task=$taskId share=$isShareRequest chars=${resultText.length} partial=$isPartial failedChunks=$failedChunkCount"
+        )
         sendSuccessReply(taskId, resultText)
         if (isShareRequest) {
             // Track the notification job: processQueue()'s finally must NOT stopSelf
@@ -572,6 +685,10 @@ class InferenceService : Service(), TranscriptionListener {
         isNoModelError: Boolean,
         durationMs: Long
     ) {
+        com.antivocale.app.util.DiagTrace.mark(
+            "listener-onError",
+            "task=$taskId code=$errorCode msg=$errorMessage noModel=$isNoModelError share=$isShareRequest"
+        )
         sendErrorReply(taskId, errorCode, errorMessage)
         // TASK-307: in-app failures get the same notification as share failures.
         // The Logs row records the error either way, but a user actively waiting on
@@ -821,6 +938,7 @@ class InferenceService : Service(), TranscriptionListener {
         )
         val notification = resultNotificationFactory.build(spec, prefs)
         notificationManager.notify(id, notification)
+        com.antivocale.app.util.DiagTrace.mark("result-notification-posted", "id=$id task=$taskId")
         Log.i(TAG, "Showed result notification (${transcriptionText.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction} (id=$id)")
     }
 
@@ -837,6 +955,46 @@ class InferenceService : Service(), TranscriptionListener {
         val id = ResultNotificationFactory.nextNotificationId()
         notificationManager.notify(id, notification)
         Log.i(TAG, "Showed error notification: $errorMessage (id=$id)")
+    }
+
+    /**
+     * Posted once per batch when the heartbeat proves the OS suspended the process
+     * mid-transcription (OEM freezer; happens with no battery-optimization exemption).
+     * The tap opens the standard battery-exemption dialog; the tap itself unfreezes
+     * the process, so the interrupted transcription resumes on its own while the
+     * dialog is up — nothing is lost and no restart is needed.
+     */
+    private fun showFreezeRescueNotification() {
+        val powerManager = getSystemService(PowerManager::class.java)
+        if (powerManager?.isIgnoringBatteryOptimizations(packageName) == true) {
+            Log.i(TAG, "Freeze detected but app is already battery-exempt; skipping rescue prompt")
+            return
+        }
+        val allowIntent = Intent(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+            data = Uri.parse("package:$packageName")
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+        val allowPi = android.app.PendingIntent.getActivity(
+            this, RC_BATTERY_ALLOW, allowIntent,
+            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
+        )
+        val text = getString(R.string.freeze_detected_text)
+        val notification = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
+            .setContentTitle(getString(R.string.freeze_detected_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(allowPi)
+            .addAction(
+                android.R.drawable.ic_menu_manage,
+                getString(R.string.freeze_allow_action),
+                allowPi
+            )
+            .setAutoCancel(true)
+            .build()
+        notificationManager.notify(FREEZE_RESCUE_NOTIFICATION_ID, notification)
+        Log.i(TAG, "Posted freeze-rescue notification")
     }
 
     private fun showNoModelNotification() {

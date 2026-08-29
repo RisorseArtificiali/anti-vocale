@@ -133,7 +133,9 @@ class TranscriptionOrchestrator @Inject constructor(
         val isShareRequest = source == "share"
 
         // Log request start
+        com.antivocale.app.util.DiagTrace.mark("orch-markProcessing-db", "task=$taskId")
         markProcessing(taskId)
+        com.antivocale.app.util.DiagTrace.mark("orch-request-begin", "task=$taskId type=$requestType share=$isShareRequest trackIndex=$trackIndex")
 
         val startTime = System.currentTimeMillis()
 
@@ -167,7 +169,12 @@ class TranscriptionOrchestrator @Inject constructor(
             }
 
             // Ensure the correct backend is loaded
+            com.antivocale.app.util.DiagTrace.mark("orch-ensureBackend-begin", "backendOverride=$backendOverride")
             val loadResult = ensureBackendLoaded(context, backendOverride)
+            com.antivocale.app.util.DiagTrace.mark(
+                "orch-ensureBackend-done",
+                if (loadResult.isSuccess) "ok" else "FAILED: ${loadResult.exceptionOrNull()?.message}"
+            )
             if (loadResult.isFailure) {
                 val error = loadResult.exceptionOrNull()!!
                 val userMsg = userFacingErrorMessage(context, error)
@@ -195,19 +202,26 @@ class TranscriptionOrchestrator @Inject constructor(
             }
 
             val result = when (requestType) {
-                "audio" -> processAudioRequest(
-                    taskId = taskId,
-                    filePath = filePath,
-                    prompt = prompt,
-                    queuePosition = queuePosition,
-                    queueTotal = queueTotal,
-                    context = context,
-                    cacheDir = cacheDir,
-                    listener = listener,
-                    coroutineScope = coroutineScope
-                )
+                "audio" -> {
+                    com.antivocale.app.util.DiagTrace.mark("orch-audio-begin", "task=$taskId")
+                    processAudioRequest(
+                        taskId = taskId,
+                        filePath = filePath,
+                        prompt = prompt,
+                        queuePosition = queuePosition,
+                        queueTotal = queueTotal,
+                        context = context,
+                        cacheDir = cacheDir,
+                        listener = listener,
+                        coroutineScope = coroutineScope
+                    )
+                }
                 else -> processTextRequest(prompt)
             }
+            com.antivocale.app.util.DiagTrace.mark(
+                "orch-request-result",
+                if (result.isSuccess) "task=$taskId SUCCESS chars=${result.getOrNull()?.text?.length}" else "task=$taskId FAILURE: ${result.exceptionOrNull()?.message}"
+            )
 
             val duration = System.currentTimeMillis() - startTime
 
@@ -351,10 +365,16 @@ class TranscriptionOrchestrator @Inject constructor(
 
         if (!hasBackend || !backendReady || backendMismatch) {
             Log.i(TAG, "Backend needs (re)load (hasBackend=$hasBackend, ready=$backendReady, active=$activeBackendId, preferred=$preferredBackendId)")
+            com.antivocale.app.util.DiagTrace.mark(
+                "orch-backend-reload-needed",
+                "has=$hasBackend ready=$backendReady active=$activeBackendId preferred=$preferredBackendId"
+            )
 
             if (hasBackend) {
                 Log.i(TAG, "Unloading previous backend: $activeBackendId")
+                com.antivocale.app.util.DiagTrace.mark("orch-unload-prev-begin", "backend=$activeBackendId")
                 backendManager.unloadActiveBackend()
+                com.antivocale.app.util.DiagTrace.mark("orch-unload-prev-done")
             }
 
             // Sherpa-onnx consolidation: the load dispatch keys on the registry
@@ -381,6 +401,7 @@ class TranscriptionOrchestrator @Inject constructor(
             loadResult.fold(
                 onSuccess = {
                     Log.i(TAG, "Backend auto-loaded successfully: $preferredBackendId")
+                    com.antivocale.app.util.DiagTrace.mark("orch-backend-loaded", "backend=$preferredBackendId")
                     val timeout = preferencesManager.keepAliveTimeout.first()
                     backendManager.setKeepAliveTimeout(timeout)
                 },
@@ -477,6 +498,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // coarse predictor (lmkd uses PSI + oom_score_adj, not a literal MemAvailable comparison);
         // the headroom absorbs inference overhead and reclaimable-cache noise.
         if (!preferencesManager.forceModelLoad.first()) {
+            com.antivocale.app.util.DiagTrace.mark("orch-mem-preflight-begin", "backend=$backendId")
             val availBytes = availableMemoryBytes(context)
             // Fail open if we could not read available memory (e.g. no ActivityManager service in
             // a test/local context): blocking on an unknown value would regress those contexts and
@@ -486,6 +508,10 @@ class TranscriptionOrchestrator @Inject constructor(
             if (availBytes > 0) {
                 val modelSizeBytes = modelDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
                 val requiredBytes = modelSizeBytes + MEMORY_HEADROOM_BYTES
+                com.antivocale.app.util.DiagTrace.mark(
+                    "orch-mem-preflight-measured",
+                    "avail=${availBytes / MB}MB model=${modelSizeBytes / MB}MB required=${requiredBytes / MB}MB"
+                )
                 if (availBytes < requiredBytes) {
                     Log.w(TAG, "Blocking $label load: avail=${availBytes / MB}MB < required=${requiredBytes / MB}MB (model=${modelSizeBytes / MB}MB + headroom=${MEMORY_HEADROOM_BYTES / MB}MB)")
                     return Result.failure(TranscriptionException.InsufficientMemory(
@@ -499,11 +525,20 @@ class TranscriptionOrchestrator @Inject constructor(
         val resolvedProvider = InferenceProvider.resolve(providerPref)
         val threadCount = preferencesManager.threadCount.first()
         Log.i(TAG, "Inference provider: pref=$providerPref resolved=$resolvedProvider")
-        return backendManager.setActiveBackend(
+        com.antivocale.app.util.DiagTrace.mark(
+            "orch-setActiveBackend-begin",
+            "backend=$backendId provider=$resolvedProvider threads=$threadCount"
+        )
+        val activation = backendManager.setActiveBackend(
             backendId = backendId,
             context = context,
             config = configBlock(threadCount, resolvedProvider),
         )
+        com.antivocale.app.util.DiagTrace.mark(
+            "orch-setActiveBackend-done",
+            if (activation.isSuccess) "ok" else "FAILED: ${activation.exceptionOrNull()?.message}"
+        )
+        return activation
     }
 
     /**
@@ -649,8 +684,13 @@ class TranscriptionOrchestrator @Inject constructor(
         val usePipeline = !vadEnabled && maxChunkDuration != null
 
         val totalStartMs = System.currentTimeMillis()
+        com.antivocale.app.util.DiagTrace.mark(
+            "orch-route",
+            "task=$taskId backend=${backend.id} vad=$vadEnabled pipeline=$usePipeline maxChunk=$maxChunkDuration progressive=$progressiveEnabled"
+        )
 
         if (usePipeline) {
+            com.antivocale.app.util.DiagTrace.mark("orch-pipeline-begin", "task=$taskId")
             return applyFinalGenerativePass(
                 backend, promptPlan.finalPass,
                 processPipelinedAudio(
@@ -667,6 +707,7 @@ class TranscriptionOrchestrator @Inject constructor(
         }
 
         val preprocessStartMs = System.currentTimeMillis()
+        com.antivocale.app.util.DiagTrace.mark("orch-preprocess-begin", "task=$taskId path=$filePath vad=$vadEnabled")
         val preprocessingResult = try {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = filePath,
@@ -678,10 +719,16 @@ class TranscriptionOrchestrator @Inject constructor(
                 vadProvider = resolvedProvider
             )
         } catch (e: PreprocessingError) {
+            com.antivocale.app.util.DiagTrace.mark("orch-preprocess-ERROR", "task=$taskId ${e.message}")
             return Result.failure(e)
         } catch (e: Exception) {
+            com.antivocale.app.util.DiagTrace.mark("orch-preprocess-ERROR", "task=$taskId ${e.message}")
             return Result.failure(IllegalStateException("Audio preprocessing failed: ${e.message}"))
         }
+        com.antivocale.app.util.DiagTrace.mark(
+            "orch-preprocess-done",
+            "task=$taskId chunks=${preprocessingResult.chunkCount} dur=${preprocessingResult.totalDurationSeconds}s sr=${preprocessingResult.sampleRate} vadSeg=${preprocessingResult.isVadSegmented}"
+        )
 
         val chunkCount = preprocessingResult.chunkCount
         val audioDurationSeconds = preprocessingResult.totalDurationSeconds.toInt()
@@ -698,6 +745,10 @@ class TranscriptionOrchestrator @Inject constructor(
         // the callback via the default implementation in TranscriptionBackend.
         if (chunkCount == 1) {
             val t0 = System.currentTimeMillis()
+            com.antivocale.app.util.DiagTrace.mark(
+                "orch-infer-begin",
+                "task=$taskId chunk=1/1 samples=${preprocessingResult.chunks.first().size} backend=${backend.id}"
+            )
             val result = backend.transcribeAudioStreaming(
                 prompt = resolvedPrompt,
                 samples = preprocessingResult.chunks.first(),
@@ -714,6 +765,10 @@ class TranscriptionOrchestrator @Inject constructor(
                 )
             }
             val inferMs = System.currentTimeMillis() - t0
+            com.antivocale.app.util.DiagTrace.mark(
+                if (result.isSuccess) "orch-infer-done" else "orch-infer-ERROR",
+                "task=$taskId chunk=1/1 ${inferMs}ms ${if (result.isSuccess) "chars=${result.getOrNull()?.text?.length}" else "err=${result.exceptionOrNull()?.message}"}"
+            )
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
             return when {
                 result.isSuccess -> {
@@ -816,7 +871,16 @@ class TranscriptionOrchestrator @Inject constructor(
                 listener.onStatusUpdate("Transcribing segment 1…")
             }
 
+            val tSeg = System.currentTimeMillis()
+            com.antivocale.app.util.DiagTrace.mark(
+                "orch-infer-begin",
+                "task=$taskId seg=$segNumber/$chunkCount samples=${chunks[i].size}"
+            )
             val segResult = backend.transcribeAudio(samples = chunks[i], sampleRate = sampleRate, prompt = prompt)
+            com.antivocale.app.util.DiagTrace.mark(
+                if (segResult.isSuccess) "orch-infer-done" else "orch-infer-ERROR",
+                "task=$taskId seg=$segNumber/$chunkCount ${System.currentTimeMillis() - tSeg}ms"
+            )
             segResult.fold(
                 onSuccess = { tr ->
                     if (tr.text.isNotBlank()) {
@@ -924,9 +988,18 @@ class TranscriptionOrchestrator @Inject constructor(
             val deferredResults = chunks.mapIndexed { index, chunk ->
                 async {
                     chunkSemaphore.acquire()
+                    val tChunk = System.currentTimeMillis()
+                    com.antivocale.app.util.DiagTrace.mark(
+                        "orch-infer-begin",
+                        "task=$taskId chunk=${index + 1}/$chunkCount samples=${chunk.size}"
+                    )
                     try {
                         val chunkResult = backend.transcribeAudio(samples = chunk, sampleRate = sampleRate, prompt = prompt)
                         completedChunks.incrementAndGet()
+                        com.antivocale.app.util.DiagTrace.mark(
+                            if (chunkResult.isSuccess) "orch-infer-done" else "orch-infer-ERROR",
+                            "task=$taskId chunk=${index + 1}/$chunkCount ${System.currentTimeMillis() - tChunk}ms"
+                        )
                         chunkResult
                     } finally {
                         chunkSemaphore.release()
@@ -1064,10 +1137,19 @@ class TranscriptionOrchestrator @Inject constructor(
                         }
                         Log.d(TAG, "Pipeline: transcribing chunk ${chunk.chunkIndex} (${chunk.samples.size} samples)")
 
+                        val tChunk = System.currentTimeMillis()
+                        com.antivocale.app.util.DiagTrace.mark(
+                            "orch-infer-begin",
+                            "task=$taskId pipe-chunk=${chunk.chunkIndex + 1}/$expectedChunkCount samples=${chunk.samples.size}"
+                        )
                         val chunkResult = backend.transcribeAudio(
                             samples = chunk.samples,
                             sampleRate = chunk.sampleRate,
                             prompt = resolvedPrompt
+                        )
+                        com.antivocale.app.util.DiagTrace.mark(
+                            if (chunkResult.isSuccess) "orch-infer-done" else "orch-infer-ERROR",
+                            "task=$taskId pipe-chunk=${chunk.chunkIndex + 1}/$expectedChunkCount ${System.currentTimeMillis() - tChunk}ms"
                         )
                         chunkResult.fold(
                             onSuccess = { tr ->

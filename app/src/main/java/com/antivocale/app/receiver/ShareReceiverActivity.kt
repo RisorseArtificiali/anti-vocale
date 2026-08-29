@@ -101,6 +101,10 @@ class ShareReceiverActivity : Activity() {
         // to a SENTINEL here; the instance flow replaces it with a concrete external:<id>.
         internal const val EXTERNAL_FAMILY_BACKEND_ID = "external"
 
+        /** TEMP diag experiment prefs: one-shot battery prompt bookkeeping. */
+        private const val DIAG_PREFS = "antivocale_diag_prefs"
+        private const val KEY_BATTERY_PROMPT_ASKED = "battery_prompt_asked"
+
         internal fun backendIdForAlias(aliasClassName: String, registry: BackendRegistry): String? =
             if (aliasClassName == com.antivocale.app.data.ShareTargetManager.EXTERNAL_FAMILY_ALIAS) EXTERNAL_FAMILY_BACKEND_ID
             else registry.byShareAlias(aliasClassName)?.backendId
@@ -255,6 +259,10 @@ class ShareReceiverActivity : Activity() {
         }
 
         Log.i(TAG, "Copied to: $localPath")
+        com.antivocale.app.util.DiagTrace.mark(
+            "share-copy-done",
+            "path=$localPath source=$sourcePackage size=${java.io.File(localPath).length()}B"
+        )
 
         // Start service with file path and detected package
         val taskId = "share_${System.currentTimeMillis()}"
@@ -345,6 +353,13 @@ class ShareReceiverActivity : Activity() {
         // ---- Default ASR path ----
         val serviceIntent = buildServiceIntent(taskId, localPath, requestType = "audio", trackIndex = -1, backendOverride = backendOverride)
 
+        // TEMP diag experiment: this ColorOS-class ROM freezes the process mid-inference
+        // when the app is not battery-exempt, silently stalling the share flow. The share
+        // moment is the one guaranteed-foreground interaction we get — ask ONCE here.
+        // Users who decline still get the freeze-rescue notification later.
+        maybeAskBatteryExemption()
+
+        com.antivocale.app.util.DiagTrace.mark("share-dispatch", "taskId=$taskId backendOverride=$backendOverride")
         startForegroundService(serviceIntent)
         Log.i(TAG, "Started InferenceService for taskId: $taskId, source: $sourcePackage")
 
@@ -499,6 +514,28 @@ class ShareReceiverActivity : Activity() {
             request
         )
         Log.i(TAG, "Enqueued subtitle choice timeout worker (${SUBTITLE_CHOICE_TIMEOUT_MINUTES} min) for taskId: $taskId")
+    }
+
+    /**
+     * One-shot system battery-exemption prompt at share time (see the call site).
+     * "Asked" is persisted so a user who declines is not nagged on every share;
+     * the InferenceService freeze-rescue notification remains their second chance.
+     */
+    private fun maybeAskBatteryExemption() {
+        val powerManager = getSystemService(android.os.PowerManager::class.java)
+        if (powerManager?.isIgnoringBatteryOptimizations(packageName) == true) return
+        val prefs = getSharedPreferences(DIAG_PREFS, MODE_PRIVATE)
+        if (prefs.getBoolean(KEY_BATTERY_PROMPT_ASKED, false)) return
+        prefs.edit().putBoolean(KEY_BATTERY_PROMPT_ASKED, true).apply()
+        runCatching {
+            startActivity(
+                android.content.Intent(
+                    android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                    Uri.parse("package:$packageName")
+                )
+            )
+            Log.i(TAG, "Showed one-shot battery-exemption dialog")
+        }.onFailure { Log.w(TAG, "Battery-exemption dialog failed", it) }
     }
 
     private fun cleanup() {

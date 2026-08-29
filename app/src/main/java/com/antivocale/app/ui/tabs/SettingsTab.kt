@@ -772,11 +772,20 @@ fun SettingsTab(
             initiallyExpanded = false
         ) {
             // TASK-336: offer the battery-optimization exemption after a detected
-            // background kill (OEM killed the FGS; the sweep recorded the interruption)
+            // background kill (OEM killed the FGS; the sweep recorded the interruption).
+            // Also offered whenever the app is NOT exempt: the freezer suspends
+            // mid-transcription silently (freeze leaves rows SUCCESS, so the kill sweep
+            // never counts them) — the exemption is the only reliable fix.
             val backgroundKills by viewModel.backgroundKills.collectAsState()
             LaunchedEffect(Unit) { viewModel.refreshBackgroundKills() }
-            if (backgroundKills > 0) {
-                val context = LocalContext.current
+            val context = LocalContext.current
+            val batteryExempt = remember(backgroundKills) {
+                runCatching {
+                    context.getSystemService(android.os.PowerManager::class.java)
+                        ?.isIgnoringBatteryOptimizations(context.packageName)
+                }.getOrNull()
+            }
+            if (backgroundKills > 0 || batteryExempt == false) {
                 Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Row(verticalAlignment = Alignment.CenterVertically) {

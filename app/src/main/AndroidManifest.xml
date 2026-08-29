@@ -9,6 +9,16 @@
     <!-- Foreground service for inference -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <!-- mediaProcessing FGS type (API 35+): platform-classified background media
+         processing; on ColorOS-class ROMs the process is treated as actively working.
+         Paired with the silent-audio keepalive (SilentAudioKeepalive). -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PROCESSING" />
+
+    <!-- Partial wake lock for the duration of active transcription: without it the CPU
+         can enter deep idle mid-inference once the app is backgrounded, stalling the
+         share-flow result until the user re-opens the app (ColorOS-class freeze,
+         confirmed on RMX3853; battery-exemption alone is not guaranteed). -->
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <!-- Package visibility (Android 11+): see every app that can share audio with us,
          so AppInfoUtils can resolve real app labels for the Logs grouping even after
@@ -434,12 +444,18 @@
             android:enabled="true"
             android:exported="false" />
 
-        <!-- Foreground service for inference processing -->
+        <!-- Foreground service for inference processing.
+             NOTE: this MUST stay a SINGLE type. Declaring "specialUse|mediaProcessing"
+             makes ColorOS/API-36 PackageManager resolve the declared set to none and
+             startForeground() throws InvalidForegroundServiceTypeException ("type
+             none") even when the requested type is a declared one (verified on-device
+             2026-08-25). The two-argument startForeground() below passes these
+             manifest-declared types through unchanged. -->
         <service
             android:name=".service.InferenceService"
             android:enabled="true"
             android:exported="false"
-            android:foregroundServiceType="specialUse">
+            android:foregroundServiceType="mediaProcessing">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="ai_inference" />

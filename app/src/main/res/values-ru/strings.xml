@@ -540,6 +540,11 @@
     <string name="notification_no_model_message">Откройте приложение и скачайте модель</string>
     <string name="notification_no_model_action">Открыть приложение</string>
 
+    <!-- Freeze-rescue prompt -->
+    <string name="freeze_detected_title">Распознавание приостановлено системой</string>
+    <string name="freeze_detected_text">Система заморозила приложение во время распознавания. Нажмите «Разрешить», чтобы оно доработало в фоне, и прерванное распознавание продолжится само.</string>
+    <string name="freeze_allow_action">Разрешить</string>
+
     <!-- Tasker fallback notification -->
     <string name="notification_channel_tasker_fallback">Автоматизация Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Нажмите, чтобы начать распознавание при запуске из фонового режима</string>

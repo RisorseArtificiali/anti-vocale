@@ -410,7 +410,7 @@
     <string name="per_app_settings_sound_silent">Silencio</string>
     <string name="per_app_settings_sound_chime">Campa</string>
     <string name="per_app_settings_sound_bell">Campana</string>
-    <string name="per_app_settings_quick_share_back_title">Devolver rápido</string>
+    <string name="per_app_settings_quick_share_back_title">Respuesta rápida</string>
     <string name="per_app_settings_quick_share_back_description">Un toque para devolver transcripciones a esta app</string>
     <string name="per_app_settings_reset_all">Restablecer todo</string>
     <string name="per_app_settings_reset_all_confirm_title">¿Restablecer todos los ajustes?</string>
@@ -425,7 +425,7 @@
     <string name="vad_advisory_title">El VAD no es necesario con Parakeet</string>
     <string name="vad_advisory_description">Con Parakeet, quitar silencios solo añade tiempo de procesamiento. Puedes desactivarlo en Ajustes.</string>
     <string name="vad_advisory_dismiss">Entendido</string>
-    <string name="share_back">Compartir de vuelta</string>
+    <string name="share_back">Respuesta rápida</string>
     <string name="send_to_app">Enviar a %1$s</string>
     <string name="notification_channel_extraction">Descarga de modelo</string>
     <string name="notification_channel_extraction_description">Descarga y extrae modelos ML en segundo plano</string>
@@ -446,6 +446,11 @@
     <string name="notification_channel_tasker_fallback_description">Toca para iniciar la transcripción cuando se activa en segundo plano</string>
     <string name="tasker_fallback_notification_text">Toca para iniciar la transcripción</string>
     <string name="dismiss">Descartar</string>
+
+    <!-- Freeze-rescue prompt -->
+    <string name="freeze_detected_title">Reconocimiento suspendido por el sistema</string>
+    <string name="freeze_detected_text">El sistema congeló la app durante el reconocimiento. Toca «Permitir» para que termine en segundo plano y el reconocimiento interrumpido continúe solo.</string>
+    <string name="freeze_allow_action">Permitir</string>
     <string name="parakeet_downloaded">Modelo Parakeet descargado</string>
     <string name="whisper_downloaded">%1$s descargado</string>
     <string name="parakeet_deleted">Modelo Parakeet eliminado</string>
@@ -528,10 +533,10 @@
     <string name="swipe_action_description">Elige la acción al deslizar una entrada hacia la izquierda</string>
     <string name="swipe_action_reveal">Mostrar acciones</string>
     <string name="swipe_action_immediate_delete">Eliminar directamente</string>
-    <string name="swipe_action_copy_description">Copiar transcripción</string>
-    <string name="swipe_action_share_description">Compartir transcripción</string>
+    <string name="swipe_action_copy_description">Copiar texto</string>
+    <string name="swipe_action_share_description">Compartir texto</string>
     <string name="swipe_action_delete_description">Eliminar entrada</string>
-    <string name="swipe_action_copied">Transcripción copiada</string>
+    <string name="swipe_action_copied">Texto copiado</string>
     <string name="back">Atrás</string>
     <string name="add_app">Añadir aplicación</string>
     <string name="view_settings">Ver ajustes</string>
@@ -544,7 +549,7 @@
     <string name="error_no_model_configured">No hay modelo %1$s configurado. Abre la app para descargar un modelo.</string>
     <string name="loading_model">Cargando modelo %1$s…</string>
     <string name="preprocessing_audio">Preprocesando audio…</string>
-    <string name="clipboard_label_transcription">Transcripción</string>
+    <string name="clipboard_label_transcription">Resultado</string>
     <string name="open_prompt_settings">Abrir ajustes de prompt</string>
     <string name="open_per_app_settings">Abrir ajustes por aplicación</string>
     <string name="open_performance_stats">Abrir estadísticas de rendimiento</string>
@@ -655,7 +660,7 @@
     <string name="model_info_benchmark_wer">Tasa de error de palabras (italiano): %.1f%%</string>
     <string name="model_info_relative_speed">Velocidad: %s</string>
     <string name="model_info_close">Cerrar</string>
-    <string name="skeleton_loading_content_description">Cargando transcripción</string>
+    <string name="skeleton_loading_content_description">Cargando texto</string>
     <string name="share_target_parakeet">Anti-Vocale (Parakeet)</string>
     <string name="share_target_whisper">Anti-Vocale (Whisper)</string>
     <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
@@ -760,7 +765,7 @@
     <string name="litertlm_pick_file">Elegir archivo de modelo</string>
     <string name="litertlm_no_models">No se encontró ningún archivo .litertlm en este repositorio</string>
     <!-- TASK-374: per-transcription feedback -->
-    <string name="feedback_report_transcription">Informar de transcripción</string>
+    <string name="feedback_report_transcription">Informar de un error en el texto</string>
     <string name="feedback_label_task">Tarea</string>
     <string name="feedback_label_model">Modelo</string>
     <string name="feedback_label_duration">Duración de audio</string>

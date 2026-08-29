@@ -473,7 +473,7 @@
     <string name="per_app_settings_sound_silent">मौन</string>
     <string name="per_app_settings_sound_chime">छनक</string>
     <string name="per_app_settings_sound_bell">घंटी</string>
-    <string name="per_app_settings_quick_share_back_title">तुरंत वापस शेयर करें</string>
+    <string name="per_app_settings_quick_share_back_title">त्वरित उत्तर</string>
     <string name="per_app_settings_quick_share_back_description">एक टैप में ट्रांसक्रिप्शन इस ऐप को वापस भेजें</string>
 
     <!-- Per-App Reset -->
@@ -496,7 +496,7 @@
     <string name="vad_advisory_dismiss">समझ गया</string>
 
     <!-- Share Back -->
-    <string name="share_back">वापस शेयर करें</string>
+    <string name="share_back">त्वरित उत्तर</string>
     <string name="send_to_app">%1$s को भेजें</string>
 
     <!-- Notification Channels -->
@@ -525,6 +525,11 @@
 
     <!-- Dismiss -->
     <string name="dismiss">खारिज करें</string>
+
+    <!-- Freeze-rescue prompt -->
+    <string name="freeze_detected_title">सिस्टम द्वारा ट्रांसक्रिप्शन निलंबित किया गया</string>
+    <string name="freeze_detected_text">सिस्टम ने पहचान के दौरान ऐप को फ्रीज़ कर दिया। “अनुमति दें” पर टैप करें, ताकि ऐप बैकग्राउंड में पूरा हो सके और बाधित ट्रांसक्रिप्शन अपने आप फिर से शुरू हो जाए।</string>
+    <string name="freeze_allow_action">अनुमति दें</string>
 
     <!-- Download completion messages -->
     <string name="parakeet_downloaded">Parakeet मॉडल सफलतापूर्वक डाउनलोड हुआ</string>
@@ -615,10 +620,10 @@
     <string name="swipe_action_description">एंट्री को बाएं स्वाइप करने पर एक्शन चुनें</string>
     <string name="swipe_action_reveal">कार्रवाइयां दिखाएं</string>
     <string name="swipe_action_immediate_delete">तुरंत मिटाएं</string>
-    <string name="swipe_action_copy_description">ट्रांसक्रिप्शन कॉपी करें</string>
-    <string name="swipe_action_share_description">ट्रांसक्रिप्शन शेयर करें</string>
+    <string name="swipe_action_copy_description">टेक्स्ट कॉपी करें</string>
+    <string name="swipe_action_share_description">टेक्स्ट शेयर करें</string>
     <string name="swipe_action_delete_description">लॉग मिटाएं</string>
-    <string name="swipe_action_copied">ट्रांसक्रिप्शन कॉपी हुआ</string>
+    <string name="swipe_action_copied">टेक्स्ट कॉपी हुआ</string>
 
     <!-- Content descriptions (accessibility) -->
     <string name="back">वापस</string>
@@ -635,7 +640,7 @@
     <string name="error_no_model_configured">कोई %1$s मॉडल सेट नहीं है। मॉडल डाउनलोड करने के लिए ऐप खोलें।</string>
     <string name="loading_model">%1$s मॉडल लोड हो रहा है…</string>
     <string name="preprocessing_audio">ऑडियो प्रीप्रोसेस हो रहा है…</string>
-    <string name="clipboard_label_transcription">ट्रांसक्रिप्शन</string>
+    <string name="clipboard_label_transcription">परिणाम</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">प्रॉम्प्ट सेटिंग खोलें</string>
@@ -754,7 +759,7 @@
     <string name="model_info_close">बंद करें</string>
 
     <!-- Skeleton loading -->
-    <string name="skeleton_loading_content_description">ट्रांसक्रिप्शन लोड हो रहा है</string>
+    <string name="skeleton_loading_content_description">टेक्स्ट लोड हो रहा है</string>
 
     <!-- Share target profiles (appear as separate entries in Android share sheet) -->
     <string name="share_target_parakeet">Anti-Vocale (Parakeet)</string>
@@ -893,7 +898,7 @@
     <string name="litertlm_pick_file">मॉडल फ़ाइल चुनें</string>
     <string name="litertlm_no_models">इस रिपॉज़िटरी में कोई .litertlm फ़ाइल नहीं मिली</string>
     <!-- TASK-374: per-transcription feedback -->
-    <string name="feedback_report_transcription">ट्रांस्क्रिप्शन रिपोर्ट करें</string>
+    <string name="feedback_report_transcription">टेक्स्ट में त्रुटि की रिपोर्ट करें</string>
     <string name="feedback_label_task">कार्य</string>
     <string name="feedback_label_model">मॉडल</string>
     <string name="feedback_label_duration">ऑडियो अवधि</string>

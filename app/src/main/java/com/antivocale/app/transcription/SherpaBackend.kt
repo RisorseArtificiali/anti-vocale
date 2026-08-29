@@ -410,7 +410,12 @@ class SherpaBackend(
             // models carry no vocab_size metadata, so the catalog skips the scan for it.
             if (!entry.flags.skipMetadataCheck) {
                 val encoderFile = File(dir, roles.encoder)
+                com.antivocale.app.util.DiagTrace.mark(
+                    "sherpa-metadata-scan-begin",
+                    "${entry.id} encoder=${roles.encoder}"
+                )
                 val missingMeta = missingOnnxMetadata(encoderFile, requiredMetadataKeys(entry))
+                com.antivocale.app.util.DiagTrace.mark("sherpa-metadata-scan-done", "${entry.id} missing=$missingMeta")
                 if (missingMeta.isNotEmpty()) {
                     Log.e(TAG, "Encoder missing required ONNX metadata: $missingMeta")
                     return@withContext Result.failure(TranscriptionException.ModelLoadError(
@@ -421,11 +426,20 @@ class SherpaBackend(
             }
 
             try {
+                com.antivocale.app.util.DiagTrace.mark(
+                    "sherpa-native-create-begin",
+                    "${entry.id} ${if (entry.isStreaming) "online" else "offline"} provider=${sherpaConfig.provider} threads=${sherpaConfig.numThreads}"
+                )
+                val tCreate = System.currentTimeMillis()
                 if (entry.isStreaming) {
                     initOnline(dir, sherpaConfig, entry, variant, roles)
                 } else {
                     initOffline(dir, sherpaConfig, entry, variant, roles)
                 }
+                com.antivocale.app.util.DiagTrace.mark(
+                    "sherpa-native-create-done",
+                    "${entry.id} ${System.currentTimeMillis() - tCreate}ms"
+                )
                 modelDir = modelDirectory
                 language = sherpaConfig.language.ifBlank { "auto" }
                 isInitialized = true
@@ -570,6 +584,8 @@ class SherpaBackend(
             var stream: OfflineStream? = null
             try {
                 Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
+                com.antivocale.app.util.DiagTrace.mark("sherpa-offline-begin", "${entry.id} samples=${samples.size} sr=$sampleRate")
+                val tDecode = System.currentTimeMillis()
 
                 stream = rec.createStream()
                 stream.acceptWaveform(samples, sampleRate)
@@ -581,13 +597,20 @@ class SherpaBackend(
                 if (tailPad > 0) {
                     stream.acceptWaveform(tailSilence.get((sampleRate * tailPad).toInt()), sampleRate)
                 }
+                com.antivocale.app.util.DiagTrace.mark("sherpa-decode-begin", "${entry.id}")
                 rec.decode(stream)
+                val decodeMs = System.currentTimeMillis() - tDecode
+                com.antivocale.app.util.DiagTrace.mark("sherpa-decode-done", "${entry.id} ${decodeMs}ms")
 
                 val result = rec.getResult(stream)
                 val transcription = result.text
                 val detectedLang = result.lang.ifBlank { null }
 
                 Log.d(TAG, "Transcription complete: '${transcription.take(100)}...' (${transcription.length} chars)")
+                com.antivocale.app.util.DiagTrace.mark(
+                    "sherpa-offline-done",
+                    "${entry.id} total=${System.currentTimeMillis() - tDecode}ms chars=${transcription.length}"
+                )
 
                 if (transcription.isBlank()) {
                     Result.failure(TranscriptionException.NoTranscriptionProduced())
@@ -631,6 +654,9 @@ class SherpaBackend(
             var stream: OnlineStream? = null
             try {
                 Log.d(TAG, "Transcribing audio: ${samples.size} samples at ${sampleRate}Hz")
+                com.antivocale.app.util.DiagTrace.mark("sherpa-stream-begin", "${entry.id} samples=${samples.size} sr=$sampleRate")
+                val tStream = System.currentTimeMillis()
+                var decodePasses = 0
 
                 // createStream(String) arg is HOTWORDS/contextual biasing, NOT language — passing a
                 // non-empty value triggers contextual biasing, which sherpa aborts on (exit 255).
@@ -652,18 +678,21 @@ class SherpaBackend(
                 var lastEmitted = ""
                 while (rec.isReady(stream)) {
                     rec.decode(stream)
+                    decodePasses++
                     val partial = rec.getResult(stream).text
                     if (partial.isNotBlank() && partial != lastEmitted) {
                         onPartial(partial)
                         lastEmitted = partial
                     }
                 }
+                com.antivocale.app.util.DiagTrace.mark("sherpa-stream-drained", "${entry.id} passes=$decodePasses")
 
                 stream.inputFinished()
                 // Drain trailing hypotheses after end-of-input (a streaming transducer can hold
                 // several final tokens until EOF; a single decode pass may not flush them all).
                 while (rec.isReady(stream)) {
                     rec.decode(stream)
+                    decodePasses++
                 }
 
                 val result = rec.getResult(stream)
@@ -673,6 +702,10 @@ class SherpaBackend(
                 }
 
                 Log.d(TAG, "Transcription complete: '${transcription.take(100)}...' (${transcription.length} chars)")
+                com.antivocale.app.util.DiagTrace.mark(
+                    "sherpa-stream-done",
+                    "${entry.id} total=${System.currentTimeMillis() - tStream}ms passes=$decodePasses chars=${transcription.length}"
+                )
 
                 if (transcription.isBlank()) {
                     Result.failure(TranscriptionException.NoTranscriptionProduced())

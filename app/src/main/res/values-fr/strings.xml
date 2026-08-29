@@ -256,7 +256,7 @@
     <string name="settings_section_transcription">Transcription</string>
     <string name="settings_section_appearance">Apparence</string>
     <string name="settings_section_advanced">Avancé</string>
-    <string name="settings_section_feedback">Commentaires &amp; À propos</string>
+    <string name="settings_section_feedback">Commentaires et à propos</string>
     <string name="settings_feedback_send_title">Envoyer un commentaire / Signaler un problème</string>
     <string name="settings_feedback_send_description">Ouvre votre application de messagerie avec les détails pré-remplis</string>
     <string name="settings_feedback_translation_title">Signaler une erreur de traduction</string>
@@ -316,7 +316,7 @@
     <string name="get_token">Obtenir un jeton</string>
     <string name="retry">Réessayer</string>
     <string name="validating">Validation…</string>
-    <string name="validate_and_save">Valider &amp; enregistrer</string>
+    <string name="validate_and_save">Valider et enregistrer</string>
     <string name="validating_token">Validation du jeton…</string>
     <string name="auto_unload_timeout">Déchargement automatique</string>
     <string name="timeout_description">Le modèle est déchargé après une période d\'inactivité et revient à la prochaine utilisation.</string>
@@ -327,7 +327,7 @@
         <item quantity="other">%1$d minutes</item>
     </plurals>
     <string name="thread_count_title">Threads d\'inférence</string>
-    <string name="thread_count_description">Nombre de threads CPU pour la transcription. Des valeurs plus élevées accélèrent le traitement mais augmentent la charge.</string>
+    <string name="thread_count_description">Nombre de threads CPU pour la transcription. Des valeurs plus élevées accélèrent le traitement et augmentent la charge.</string>
     <string name="thread_count_auto">%1$d (détecté automatiquement)</string>
     <string name="thread_count_value">%1$d</string>
     <string name="inference_provider_title">Fournisseur d\'inférence</string>
@@ -365,7 +365,7 @@
     <string name="example_prompt_translate_it">Trascrivi e traduci questo audio in italiano.</string>
     <string name="example_prompt_notes">Transcris cet audio et mets-le en forme en notes à puces.</string>
     <string name="prompt_applied">Invite appliquée</string>
-    <string name="preload_title">Chargement automatique &amp; préchargement</string>
+    <string name="preload_title">Chargement automatique et préchargement</string>
     <string name="preload_description">Le modèle se charge automatiquement quand une requête arrive et qu\'il n\'est pas en mémoire. Vous pouvez aussi le précharger explicitement :</string>
     <string name="via_tasker">Via Tasker :</string>
     <string name="via_adb">Via ADB :</string>
@@ -410,7 +410,7 @@
     <string name="per_app_settings_sound_silent">Silencieux</string>
     <string name="per_app_settings_sound_chime">Carillon</string>
     <string name="per_app_settings_sound_bell">Cloche</string>
-    <string name="per_app_settings_quick_share_back_title">Renvoi rapide</string>
+    <string name="per_app_settings_quick_share_back_title">Réponse rapide</string>
     <string name="per_app_settings_quick_share_back_description">Un appui pour renvoyer les transcriptions à cette application</string>
     <string name="per_app_settings_reset_all">Tout réinitialiser</string>
     <string name="per_app_settings_reset_all_confirm_title">Réinitialiser tous les paramètres ?</string>
@@ -425,7 +425,7 @@
     <string name="vad_advisory_title">Le VAD n\'est pas nécessaire avec Parakeet</string>
     <string name="vad_advisory_description">Avec Parakeet, la suppression des silences ne fait qu\'allonger le traitement. Vous pouvez la désactiver dans Paramètres.</string>
     <string name="vad_advisory_dismiss">Compris</string>
-    <string name="share_back">Renvoyer</string>
+    <string name="share_back">Réponse rapide</string>
     <string name="send_to_app">Envoyer à %1$s</string>
     <string name="notification_channel_extraction">Téléchargement de modèle</string>
     <string name="notification_channel_extraction_description">Télécharge et extrait les modèles ML en arrière-plan</string>
@@ -446,6 +446,11 @@
     <string name="notification_channel_tasker_fallback_description">Appuyez pour lancer la transcription quand elle est déclenchée en arrière-plan</string>
     <string name="tasker_fallback_notification_text">Appuyez pour lancer la transcription</string>
     <string name="dismiss">Fermer</string>
+
+    <!-- Freeze-rescue prompt -->
+    <string name="freeze_detected_title">Reconnaissance suspendue par le système</string>
+    <string name="freeze_detected_text">Le système a gelé l\'application pendant la reconnaissance. Appuyez sur « Autoriser » pour qu\'elle s\'achève en arrière-plan et que la reconnaissance interrompue reprenne d\'elle-même.</string>
+    <string name="freeze_allow_action">Autoriser</string>
     <string name="parakeet_downloaded">Modèle Parakeet téléchargé</string>
     <string name="whisper_downloaded">%1$s téléchargé</string>
     <string name="parakeet_deleted">Modèle Parakeet supprimé</string>
@@ -528,10 +533,10 @@
     <string name="swipe_action_description">Choisissez l\'action lors du balayage d\'une entrée vers la gauche</string>
     <string name="swipe_action_reveal">Révéler les actions</string>
     <string name="swipe_action_immediate_delete">Suppression immédiate</string>
-    <string name="swipe_action_copy_description">Copier la transcription</string>
-    <string name="swipe_action_share_description">Partager la transcription</string>
+    <string name="swipe_action_copy_description">Copier le texte</string>
+    <string name="swipe_action_share_description">Partager le texte</string>
     <string name="swipe_action_delete_description">Supprimer l\'entrée</string>
-    <string name="swipe_action_copied">Transcription copiée</string>
+    <string name="swipe_action_copied">Texte copié</string>
     <string name="back">Retour</string>
     <string name="add_app">Ajouter une application</string>
     <string name="view_settings">Voir les paramètres</string>
@@ -544,7 +549,7 @@
     <string name="error_no_model_configured">Aucun modèle %1$s configuré. Ouvrez l\'application pour télécharger un modèle.</string>
     <string name="loading_model">Chargement du modèle %1$s…</string>
     <string name="preprocessing_audio">Prétraitement de l\'audio…</string>
-    <string name="clipboard_label_transcription">Transcription</string>
+    <string name="clipboard_label_transcription">Résultat</string>
     <string name="open_prompt_settings">Ouvrir les paramètres d\'invite</string>
     <string name="open_per_app_settings">Ouvrir les paramètres par application</string>
     <string name="open_performance_stats">Ouvrir les statistiques de performance</string>
@@ -655,7 +660,7 @@
     <string name="model_info_benchmark_wer">Taux d\'erreur de mots (italien) : %.1f%%</string>
     <string name="model_info_relative_speed">Vitesse : %s</string>
     <string name="model_info_close">Fermer</string>
-    <string name="skeleton_loading_content_description">Chargement de la transcription</string>
+    <string name="skeleton_loading_content_description">Chargement du texte</string>
     <string name="share_target_parakeet">Anti-Vocale (Parakeet)</string>
     <string name="share_target_whisper">Anti-Vocale (Whisper)</string>
     <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
@@ -746,7 +751,7 @@
     <string name="logs_status_error">Erreur</string>
     <string name="logs_status_processing">Traitement</string>
     <string name="logs_model_label">Modèle : %1$s</string>
-    <string name="model_limit_chunked">Durée illimitée : les audios longs sont découpés automatiquement</string>
+    <string name="model_limit_chunked">Sans limite : les audios longs sont découpés automatiquement</string>
     <string name="show_task_details_title">Afficher les détails de la tâche</string>
     <string name="show_task_details_description">Affiche l\'ID de tâche dans les entrées. Utile pour contacter le support ; désactivé par défaut.</string>
 
@@ -760,7 +765,7 @@
     <string name="litertlm_pick_file">Choisir le fichier du modèle</string>
     <string name="litertlm_no_models">Aucun fichier .litertlm trouvé dans ce dépôt</string>
     <!-- TASK-374: per-transcription feedback -->
-    <string name="feedback_report_transcription">Signaler la transcription</string>
+    <string name="feedback_report_transcription">Signaler une erreur dans le texte</string>
     <string name="feedback_label_task">Tâche</string>
     <string name="feedback_label_model">Modèle</string>
     <string name="feedback_label_duration">Durée audio</string>

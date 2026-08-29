@@ -141,7 +141,12 @@ class AudioPreprocessor @Inject constructor() {
         if (enableVad && context != null) {
             try {
                 val floatSamples = audioData.samples
+                com.antivocale.app.util.DiagTrace.mark("preproc-vad-begin", "samples=${floatSamples.size}")
                 val vadResult = VadProcessor.detectSpeech(context, floatSamples, vadNumThreads, vadProvider)
+                com.antivocale.app.util.DiagTrace.mark(
+                    "preproc-vad-done",
+                    "segments=${vadResult.segmentCount} speech=${vadResult.totalSpeechDurationSeconds}s"
+                )
                 // Local reference-copy so the raw VAD output can be dropped (cleared)
                 // as soon as the merged output exists, freeing it while the caller
                 // proceeds (TASK-340 Fix 3).
@@ -434,9 +439,11 @@ class AudioPreprocessor @Inject constructor() {
      */
     private fun extractToMonoFloat(inputPath: String): MonoAudioData {
         val extractor = MediaExtractor()
+        com.antivocale.app.util.DiagTrace.mark("preproc-extract-begin", "path=$inputPath")
 
         try {
             extractor.setDataSource(inputPath)
+            com.antivocale.app.util.DiagTrace.mark("preproc-datasource-set")
 
             val audioTrackIndex = findAudioTrack(extractor)
             val inputFormat = extractor.getTrackFormat(audioTrackIndex)
@@ -447,12 +454,14 @@ class AudioPreprocessor @Inject constructor() {
             val mime = inputFormat.getString(MediaFormat.KEY_MIME)!!
 
             Log.d(TAG, "Input: $mime, ${inputSampleRate}Hz, $inputChannels channels")
+            com.antivocale.app.util.DiagTrace.mark("preproc-track-selected", "mime=$mime sr=$inputSampleRate ch=$inputChannels")
 
             val decoder = MediaCodec.createDecoderByType(mime)
             val sampleChunks = mutableListOf<FloatArray>()
             try {
                 decoder.configure(inputFormat, null, null, 0)
                 decoder.start()
+                com.antivocale.app.util.DiagTrace.mark("preproc-decoder-started")
 
                 val bufferInfo = MediaCodec.BufferInfo()
                 var inputEOS = false
@@ -499,6 +508,7 @@ class AudioPreprocessor @Inject constructor() {
                         Log.d(TAG, "Output format changed: ${decoder.outputFormat}")
                     }
                 }
+                com.antivocale.app.util.DiagTrace.mark("preproc-decode-eos", "outputChunks=${sampleChunks.size}")
             } finally {
                 try { decoder.stop() } catch (_: Exception) {}
                 decoder.release()
@@ -512,6 +522,10 @@ class AudioPreprocessor @Inject constructor() {
             sampleChunks.clear()
 
             Log.d(TAG, "Extracted ${finalSamples.size} mono float samples at ${finalRate}Hz")
+            com.antivocale.app.util.DiagTrace.mark(
+                "preproc-extract-done",
+                "samples=${finalSamples.size} rate=${finalRate}Hz"
+            )
             return MonoAudioData(samples = finalSamples, sampleRate = finalRate)
 
         } catch (e: PreprocessingError) {
