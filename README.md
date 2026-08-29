@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="#how-this-project-is-built">
-    <img alt="AI-assisted, human-owned development" src="https://img.shields.io/badge/built_AI--assisted%2C_human--owned-blue"/>
+    <img alt="AI-assisted, human-owned development" src="docs/badges/ai-assisted.svg"/>
   </a>
 </p>
 
