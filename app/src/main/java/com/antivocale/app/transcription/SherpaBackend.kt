@@ -69,17 +69,20 @@ class SherpaBackend(
         /**
          * Metadata keys a transducer encoder must carry for [modelType], shared by the
          * external-model importer (import-time validation) and the external engine
-         * (load-time validation) so the two cannot drift: vocab_size always; the nemo
+         * (load-time validation) so the two cannot drift: vocab_size for every family
+         * except qwen3_asr, whose loader and export carry no encoder metadata; the nemo
          * loader's subsampling_factor + model_type only for the nemo family (a zipformer
          * import with modelType "" does not carry them and must not be rejected for
          * their absence).
          */
-        fun requiredTransducerMetadataKeys(modelType: String): List<String> =
-            if (modelType == "nemo_transducer") {
-                listOf("vocab_size", "subsampling_factor", "model_type")
-            } else {
-                listOf("vocab_size")
-            }
+        fun requiredTransducerMetadataKeys(modelType: String): List<String> = when (modelType) {
+            "nemo_transducer" -> listOf("vocab_size", "subsampling_factor", "model_type")
+            // GH #68: the qwen3 loader reads no encoder metadata (vocab lives in the
+            // tokenizer dir) and the published export carries none, so any required
+            // key would reject a loadable model.
+            "qwen3_asr" -> emptyList()
+            else -> listOf("vocab_size")
+        }
 
         /**
          * Metadata keys a built-in catalog entry's encoder must carry: the entry's

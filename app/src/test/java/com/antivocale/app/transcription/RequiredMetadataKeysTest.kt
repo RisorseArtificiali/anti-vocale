@@ -35,14 +35,18 @@ class RequiredMetadataKeysTest {
             listOf("vocab_size"),
             SherpaBackend.requiredMetadataKeys(entry(modelType = "whisper")),
         )
-        assertEquals(
-            listOf("vocab_size"),
-            SherpaBackend.requiredMetadataKeys(entry(modelType = "qwen3_asr")),
-        )
         // Nemotron online uses an empty modelType.
         assertEquals(
             listOf("vocab_size"),
             SherpaBackend.requiredMetadataKeys(entry(modelType = "")),
+        )
+    }
+
+    @Test
+    fun `qwen3 asr requires no encoder metadata (GH #68)`() {
+        assertEquals(
+            emptyList<String>(),
+            SherpaBackend.requiredMetadataKeys(entry(modelType = "qwen3_asr")),
         )
     }
 
@@ -68,7 +72,9 @@ class RequiredMetadataKeysTest {
             "gigaam" to listOf("vocab_size", "subsampling_factor", "model_type"),
             // Online transducer: flags carry only vocab_size (nemo keys would reject it).
             "nemotron-streaming" to listOf("vocab_size"),
-            "qwen3-asr" to listOf("vocab_size"),
+            // GH #68: no encoder metadata required (the export has none; the loader
+            // reads none).
+            "qwen3-asr" to emptyList(),
         )
         expect.forEach { (id, keys) ->
             val entry = requireNotNull(catalog.firstOrNull { it.id == id }) { "catalog missing $id" }
