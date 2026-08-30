@@ -15,11 +15,6 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.math.abs
-import kotlin.math.max
-import kotlin.math.PI
-import kotlin.math.sin
-import kotlin.math.sqrt
 
 /**
  * Handles audio preprocessing for Gemma multimodal models (via LiteRT-LM).
@@ -449,6 +444,13 @@ class AudioPreprocessor @Inject constructor() {
             Log.d(TAG, "Input: $mime, ${inputSampleRate}Hz, $inputChannels channels")
 
             val decoder = MediaCodec.createDecoderByType(mime)
+            // TASK-416: resample per decode chunk through the streaming resampler so
+            // the input-rate signal is never held whole (the old collect-then-merge
+            // held chunks + merged copy, ~230MB for a 10-minute 48kHz file: the
+            // Crashlytics Java-heap OOM class). sampleChunks collect 16kHz output.
+            val streamResampler =
+                if (inputSampleRate != TARGET_SAMPLE_RATE)
+                    SincStreamResampler(inputSampleRate.toDouble() / TARGET_SAMPLE_RATE) else null
             val sampleChunks = mutableListOf<FloatArray>()
             try {
                 decoder.configure(inputFormat, null, null, 0)
@@ -487,7 +489,8 @@ class AudioPreprocessor @Inject constructor() {
 
                         if (outputBuffer != null && bufferInfo.size > 0) {
                             val chunk = decodeChunkToMonoFloat(outputBuffer, bufferInfo, inputChannels)
-                            sampleChunks.add(chunk)
+                            val targetRateChunk = streamResampler?.process(chunk) ?: chunk
+                            if (targetRateChunk.isNotEmpty()) sampleChunks.add(targetRateChunk)
                         }
 
                         decoder.releaseOutputBuffer(outputBufferIndex, false)
@@ -504,11 +507,14 @@ class AudioPreprocessor @Inject constructor() {
                 decoder.release()
             }
 
-            // Merge + resample in a helper scope so the input-rate chunk list and the
-            // merged input-rate buffer become unreachable as soon as the 16kHz result
-            // exists (TASK-340 Fix 1a): a 5-min 48kHz clip otherwise holds ~2-3
-            // simultaneous copies (~135MB) in the 256MB heap through chunk processing.
-            val (finalSamples, finalRate) = mergeAndResample(sampleChunks, inputSampleRate)
+            // Flush the resampler tail (outputs whose window crossed EOS), then merge.
+            val tailChunk = streamResampler?.flush()
+            if (tailChunk != null && tailChunk.isNotEmpty()) sampleChunks.add(tailChunk)
+            // Chunks arrive at TARGET rate (streaming resample above): the merge is
+            // a plain concatenation (mergeAndResample's target-rate branch); its
+            // peak is 2x the FINAL size, not 2x the input-rate signal (TASK-416;
+            // the collect-then-merge double-buffer of TASK-340 Fix 1a is superseded).
+            val (finalSamples, finalRate) = mergeAndResample(sampleChunks, TARGET_SAMPLE_RATE)
             sampleChunks.clear()
 
             Log.d(TAG, "Extracted ${finalSamples.size} mono float samples at ${finalRate}Hz")
@@ -529,6 +535,9 @@ class AudioPreprocessor @Inject constructor() {
      * the chunk list and the merged input-rate buffer are dropped (clear + reassign to an
      * empty array) before returning, so they are collectable while the caller proceeds
      * to chunk processing (TASK-340 Fix 1a).
+     *
+     * Since TASK-416 the production caller feeds already-resampled 16kHz chunks, so the
+     * resampling branch below is exercised only by its pinning tests.
      */
     internal fun mergeAndResample(chunks: MutableList<FloatArray>, inputSampleRate: Int): Pair<FloatArray, Int> {
         var list = chunks
@@ -656,7 +665,8 @@ class AudioPreprocessor @Inject constructor() {
      * leaves in the 4-8kHz band where ASR models are most sensitive.
      *
      * Coefficients are precomputed into a polyphase table so the inner loop is pure
-     * multiply-accumulate with no transcendental function calls.
+     * multiply-accumulate with no transcendental function calls. The table comes from
+     * [SincResamplerTable], the single definition shared with the streaming resampler.
      *
      * Performance-critical: without pre-resampling, high-rate input (e.g. 48kHz OGG)
      * passes ratio× more samples to sherpa-onnx — on-device benchmarking showed ~2x
@@ -667,37 +677,16 @@ class AudioPreprocessor @Inject constructor() {
         if (outputSize == 0) return FloatArray(0)
         val output = FloatArray(outputSize)
 
-        val cutoff = if (ratio > 1.0) 1.0 / ratio else 1.0
-        val numTaps = 16
+        val numTaps = SincResamplerTable.NUM_TAPS
         val halfTaps = numTaps / 2
-        val kaiserBeta = 5.0
-        val besselDenom = besselI0(kaiserBeta)
-
-        // Polyphase table: PHASES rows × numTaps columns.
-        // Each row holds the precomputed sinc×kaiser weights for one fractional position.
-        val phases = 64
-        val table = DoubleArray(phases * numTaps)
-        for (p in 0 until phases) {
-            val frac = p.toDouble() / phases
-            for (k in 0 until numTaps) {
-                val x = (k - halfTaps).toDouble() - frac
-                val sincVal = if (abs(x) < 1e-10) {
-                    cutoff
-                } else {
-                    cutoff * sin(PI * cutoff * x) / (PI * cutoff * x)
-                }
-                val windowPos = x / halfTaps
-                val kaiserArg = kaiserBeta * sqrt(max(0.0, 1.0 - windowPos * windowPos))
-                table[p * numTaps + k] = sincVal * besselI0(kaiserArg) / besselDenom
-            }
-        }
+        val table = SincResamplerTable.build(ratio)
 
         // Inner loop: table lookup + multiply-accumulate only.
         for (i in 0 until outputSize) {
             val srcPos = i * ratio
             val center = srcPos.toInt()
             val frac = srcPos - center
-            val phase = (frac * phases).toInt().coerceIn(0, phases - 1)
+            val phase = (frac * SincResamplerTable.PHASES).toInt().coerceIn(0, SincResamplerTable.PHASES - 1)
             val coeffs = phase * numTaps
 
             var sum = 0.0
@@ -713,17 +702,12 @@ class AudioPreprocessor @Inject constructor() {
         return output
     }
 
-    /** Modified Bessel function I₀(x) via Taylor series. Used during polyphase table construction. */
-    private fun besselI0(x: Double): Double {
-        var sum = 1.0
-        var term = 1.0
-        for (k in 1 until 25) {
-            term *= (x / (2.0 * k)) * (x / (2.0 * k))
-            sum += term
-            if (term < 1e-12) break
-        }
-        return sum
-    }
+    /**
+     * Modified Bessel function I₀(x). Delegates to the single definition in
+     * [SincResamplerTable]; kept as a method because SincResamplerTest accesses
+     * it by name via reflection.
+     */
+    private fun besselI0(x: Double): Double = SincResamplerTable.besselI0(x)
 
     /**
      * Chunks float audio data into segments of specified duration.
