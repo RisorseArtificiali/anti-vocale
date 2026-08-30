@@ -99,6 +99,21 @@ class SincStreamResamplerTest {
     }
 
     @Test
+    fun `ratios above halfTaps never overtake the flush total (176k4 and 192k sources)`() {
+        // Review finding on the first cut: for ratio > 8, emitCovered could emit the
+        // output at index floor(totalIn/ratio) whose window still ended inside the
+        // input, making flush() allocate a negative tail. Lengths chosen to hit the
+        // crashing remainders (5-7 for 11.025, 9-11 for 12.0).
+        for ((ratio, length) in listOf(11.025 to 10_005, 11.025 to 10_006, 12.0 to 10_009, 12.0 to 10_010)) {
+            val input = randomSignal(length, seed = 17)
+            val expected = resampleWhole(input, ratio)
+            val got = resampleStreaming(input, ratio, generateSequence { 1024 }.iterator())
+            assertEquals("size (ratio=$ratio len=$length)", expected.size.toLong(), got.size.toLong())
+            assertTrue("samples differ (ratio=$ratio len=$length)", expected.contentEquals(got))
+        }
+    }
+
+    @Test
     fun `process emits nothing until the window is fully covered`() {
         val r = SincStreamResampler(3.0)
         assertEquals(0, r.process(FloatArray(8)).size)      // window needs 16 samples

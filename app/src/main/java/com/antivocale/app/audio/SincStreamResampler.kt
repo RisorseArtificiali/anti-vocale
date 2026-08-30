@@ -78,8 +78,15 @@ internal class SincStreamResampler(private val ratio: Double) {
 
     /** Emits every not-yet-emitted output whose window end is inside the input. */
     private fun emitCovered(): FloatArray {
+        // Same total as flush(): the whole-buffer resampler emits exactly
+        // floor(totalIn / ratio) outputs, and for ratio > halfTaps (sources above
+        // 128kHz) output `total`'s window can still end inside the input. Without
+        // this cap, process() would emit it and flush() would then allocate a
+        // negative-length tail (review finding on the first cut, proven at ratio
+        // 11.025 and 12.0 with specific remainders).
+        val total = (totalIn / ratio).toInt()
         var count = 0
-        while (windowEnd(nextOut + count) < totalIn) count++
+        while (nextOut + count < total && windowEnd(nextOut + count) < totalIn) count++
         val out = FloatArray(count)
         for (j in 0 until count) {
             out[j] = emit(nextOut)
