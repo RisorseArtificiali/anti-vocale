@@ -342,7 +342,12 @@ jobs:
     # previous tag, so the recipe guard below fails LOUDLY with remediation text
     # instead of the old behavior where this job was silently skipped and the
     # release shipped unsigned-only (GitHub issue #27).
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'release'
+    # A dispatch carrying play-store-track is a PUBLISH-ONLY run: the signed APKs
+    # already exist on the release, and re-running this ~70-minute sherpa source
+    # build for a Play upload is pure waste (TASK-414, flagged during v1.11.0).
+    if: >-
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track == '')
     container:
       image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
       options: --user root
