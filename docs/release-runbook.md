@@ -11,7 +11,7 @@ proof required before it is considered done.
 - Working tree on `main`, clean or with only intended changes committed.
 - `keystore.properties` present locally (release signing key).
 - GitLab token at `~/.config/gl-token` (F-Droid MR polling; Pipeline:Read + MR read).
-- F-Droid data fork checked out at `~/data/repo/personal/fdroid-data`, branch `anti-vocale-1.8.2`.
+- F-Droid data fork checked out at `~/data/repo/personal/fdroid-data`, on the current recipe branch (`anti-vocale-1.10.0` as of v1.11.0; check `git branch --show-current` there).
 
 ## The two stores, and what must stay in sync
 
@@ -45,14 +45,9 @@ expected versionCodes in their filenames.
 Three audiences, three artifacts (learned shipping v1.11.0):
 1. **Play what's-new**: all sections of `docs/play-store/release-notes.xml` FIRST, then `scripts/extract-release-notes.py --output-dir /tmp/whatsnew` (enforces <=490 chars per locale; uk-UA is NOT supported by the console form, keep it out). The publish workflow reads the XML; forgetting to add the version ships the PREVIOUS notes. If notes are edited after publishing, paste manually in the console (re-publishing creates a new release).
 2. **GitHub release body**: two sections, "For everyone" (user-facing bullets, measurements) and "For developers" (families, policies, docs pointers, closed-issue list). Diff vs the PREVIOUS TAG, not the rc.
-3. **Fastlane changelogs** (`fastlane/metadata/android/<locale>/changelogs/<code>.txt`): F-Droid new-version notes.
+3. **Fastlane changelogs** (`fastlane/metadata/android/<locale>/changelogs/<code>.txt`): F-Droid new-version notes, one file per locale directory that exists, named after the **base** versionCode.
 
-- `docs/play-store/release-notes.xml`: prepend the new version block in both
-  `<en-US>` and `<it-IT>`.
-- `fastlane/metadata/android/{en-US,it-IT}/changelogs/<versionCode>.txt`: one file
-  per locale, named after the **base** versionCode (Play Store convention).
-
-Proof: both files exist and reference the correct versionCode.
+Proof: the XML contains the new version in every locale section; the extractor runs green; the changelog files exist and reference the correct versionCode.
 
 ## Step 3. Commit, tag, push
 
@@ -114,7 +109,7 @@ Then push:
 ```bash
 git add metadata/com.antivocale.app.yml
 git commit -m "Update to vX.Y.Z (versionCode ABC/ABD/ABF): <summary>"
-git push origin anti-vocale-1.8.2
+git push origin anti-vocale-1.10.0   # the current recipe branch (see Prerequisites)
 ```
 
 ## Step 5. Build reference APKs (reproducible F-Droid)
