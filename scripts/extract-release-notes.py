@@ -18,7 +18,10 @@ import re
 import sys
 from pathlib import Path
 
-MAX_LENGTH = 500
+# Play's documented limit is 500, but the console form rejected a note that
+# measured exactly 500 (it appears to count the trailing newline): ship with
+# headroom instead of at the boundary (v1.11.0 fr-FR, 2026-08-30).
+MAX_LENGTH = 490
 
 
 def parse_locale_sections(xml: str) -> dict[str, str]:
