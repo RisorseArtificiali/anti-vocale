@@ -63,7 +63,10 @@ class ModelViewModelExternalImportTest {
     )
 
     /** Records every call and returns a valid record; the latch lets the test wait
-     *  for the real Dispatchers.IO coroutine runExternalImport launches. */
+     *  for the real Dispatchers.IO coroutine runExternalImport launches. The latch
+     *  counts down at the END of each import method, after every state capture:
+     *  counting at entry (as this class once did) let the assertion race the IO
+     *  coroutine's appends and flake IndexOutOfBoundsException on slow runners. */
     private class RecordingImporter(val latch: CountDownLatch) : ExternalModelImportOperations {
         val calls = mutableListOf<ImportCall>()
         var treeUri: Uri? = null
@@ -72,7 +75,6 @@ class ModelViewModelExternalImportTest {
         private fun record(url: String?, modelType: String?, family: ModelFamily,
                            options: Map<String, String>, languages: List<String>) {
             calls.add(ImportCall(url, modelType, family, options, languages))
-            latch.countDown()
         }
 
         override suspend fun importFromTreeUri(
@@ -81,6 +83,7 @@ class ModelViewModelExternalImportTest {
         ): ExternalModelRecord {
             this.treeUri = treeUri
             record(null, modelType, family, options, languages)
+            latch.countDown()
             return sampleRecord()
         }
 
@@ -98,6 +101,7 @@ class ModelViewModelExternalImportTest {
             statesAtCallbacks += stateAtCallback?.invoke() ?: ModelViewModel.ExternalImportState.Idle
             onProgress(1, 2, "tokens.txt", 50L, 50L)
             statesAtCallbacks += stateAtCallback?.invoke() ?: ModelViewModel.ExternalImportState.Idle
+            latch.countDown()
             return sampleRecord()
         }
     }
