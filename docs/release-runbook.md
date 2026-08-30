@@ -42,6 +42,11 @@ expected versionCodes in their filenames.
 
 ## Step 2. Release notes + changelogs
 
+Three audiences, three artifacts (learned shipping v1.11.0):
+1. **Play what's-new**: all sections of `docs/play-store/release-notes.xml` FIRST, then `scripts/extract-release-notes.py --output-dir /tmp/whatsnew` (enforces <=490 chars per locale; uk-UA is NOT supported by the console form, keep it out). The publish workflow reads the XML; forgetting to add the version ships the PREVIOUS notes. If notes are edited after publishing, paste manually in the console (re-publishing creates a new release).
+2. **GitHub release body**: two sections, "For everyone" (user-facing bullets, measurements) and "For developers" (families, policies, docs pointers, closed-issue list). Diff vs the PREVIOUS TAG, not the rc.
+3. **Fastlane changelogs** (`fastlane/metadata/android/<locale>/changelogs/<code>.txt`): F-Droid new-version notes.
+
 - `docs/play-store/release-notes.xml`: prepend the new version block in both
   `<en-US>` and `<it-IT>`.
 - `fastlane/metadata/android/{en-US,it-IT}/changelogs/<versionCode>.txt`: one file
