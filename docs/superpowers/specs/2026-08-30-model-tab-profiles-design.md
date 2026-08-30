@@ -25,7 +25,7 @@ Additive key `"profiles"` in the index:
     "language": "de",
     "intro": "Für Deutsch optimierte Auswahl: ...",
     "sections": [
-      { "title": "Empfohlen", "entries": ["Whisper Large v3 Turbo German (sherpa int8)"], "badge": "Empfohlen für Deutsch" },
+      { "title": "Empfohlen", "entries": ["Whisper v3 Turbo German int8 (sherpa, primeline fine-tune)"], "badge": "Empfohlen für Deutsch" },
       { "title": "Kompakt",   "entries": ["NeMo Flash 180M (German)", "Kroko Community Zipformer German (streaming, CC-BY-SA 4.0, Banafo / kroko.ai)"] },
       { "title": "Dialekte",  "entries": ["Whisper v3 Turbo Swiss German int8 (sherpa, Flurin17 fine-tune)"] },
       { "title": "Mehrsprachig", "entries": ["sherpa-onnx", "whisper"] }
