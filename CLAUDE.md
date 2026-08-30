@@ -64,7 +64,7 @@ Android application written in Kotlin for transcribing voice messages locally on
 
 ## External-Models Platform (v2a)
 
-User-imported sherpa-onnx models (Transducer / Whisper / CTC / SenseVoice families) as first-class backends. Key components:
+User-imported sherpa-onnx models (Transducer / Whisper / CTC / SenseVoice / Canary families) as first-class backends. Per-family invariants that bite: chunk caps are family-declared (Whisper 30s, Canary 10s) and tightened at request time by `TranscriptionMemoryPolicy` (RAM-derived; floor = min(30, cap); fail-open on unreadable memory); `TranscriptionBackend.requiresVadAlignedChunking` forces VAD-aligned segmentation regardless of the user toggle (Canary, and Gemma since TASK-370); `ModelFamilySupport.featureDim` is per-family mel bands (80 default, 128 Canary: a wrong count fails the native load or decodes garbage, GH #68-adjacent lesson). Key components:
 - `ExternalModelStore` (`data/`): JSON-serialized records in one DataStore key; single source of truth
 - `ExternalModelRecordsProvider`: StateFlow seam for the registry's synchronous `backends` getter
 - `BackendRegistry`: composes static descriptors + dynamic external descriptors (`external:<id>` prefix)
@@ -98,7 +98,7 @@ Never encode priority, milestone, or issue links in labels (dedicated fields exi
 
 ## GitHub issue triage
 
-External issue reports get answered on GitHub; anything we commit to goes into a tracking issue first, then a Backlog task. Recent tracker state: #50 (Parakeet long-audio chunking, model hard cap 400s), #51 (Queued/Processing split in Logs tab), #52 (long-press context menu). FAQ.md at the root mirrors the public answers; keep it in sync when these land.
+External issue reports get answered on GitHub; anything we commit to goes into a tracking issue first, then a Backlog task. Live threads (2026-08-30): #69 (SenseVoice + Omnilingual catalog candidates), #70 (curated Model-tab profiles, community input). FAQ.md at the root mirrors the public answers; keep it in sync when these land.
 
 ## Release Checklist: New Models / Native Libraries / Architectures
 

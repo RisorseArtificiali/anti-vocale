@@ -159,7 +159,7 @@ Long transcripts are split into pages you can read without leaving the notificat
 
 ### Custom Models (ONNX Sherpa)
 
-Import any sherpa-onnx transducer model from a local folder or HuggingFace URL. The app handles role-based file matching (encoder/decoder/joiner/tokens), SHA-256 verification, and architecture selection. See the [import reference](docs/external-models.md) for supported formats and the catalog-entry JSON schema.
+Import any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Canary) from a local folder or HuggingFace URL, or take the recommended route: the community catalog offers validated models as a one-tap import, per language. The app handles role-based file matching, SHA-256 verification, and architecture selection. See the [import reference](docs/external-models.md) for supported formats, the catalog-entry JSON schema, and [what import can and cannot do](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise).
 
 ### Italian ASR Benchmark
 
@@ -234,12 +234,12 @@ ShareReceiverActivity / ShareTargetManager (model-specific aliases)
 InferenceService (Foreground Service)
     |
     v
-AudioPreprocessor (16kHz mono WAV, 30s chunks)
+AudioPreprocessor (16kHz mono WAV; chunk size per model family + free RAM)
     |
     v
 TranscriptionOrchestrator
     |--- SherpaBackend (one engine; bundled catalog entries: Parakeet TDT, Whisper, Qwen3-ASR, GigaAM v3, Nemotron 3.5 streaming)
-    |--- ExternalSherpaBackend (user-imported models: Transducer/Whisper/CTC/SenseVoice)
+    |--- ExternalSherpaBackend (user-imported models: Transducer/Whisper/CTC/SenseVoice/Canary)
     |--- LlmTranscriptionBackend (Gemma via LiteRT-LM)
     |
     v
