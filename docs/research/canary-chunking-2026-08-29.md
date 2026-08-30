@@ -35,3 +35,16 @@ Aligned chunks also decode fast: 15.5s wall for the full 58s file (~3.7x realtim
 ## 3. Language conditioning
 
 `src_lang`/`tgt_lang` are constructor parameters (en/es/de/fr; no auto-detection): the recognizer is built per language. Verified: en wav decodes the JFK quote exactly; de wav decodes "Alles hat ein Ende, nur die Wurst hat zwei." exactly. This is why the catalog ships one entry per language and the import dialog's canary panel is a fixed four-language dropdown.
+
+## 4. Quality: FLEURS WER across the four languages (2026-08-30)
+
+10 validation clips per language, the same eval/smallclass material the small-class models were measured on (desktop, int8 export, greedy):
+
+| Language | Canary 180M Flash int8 | Same-clip baselines (small streaming tier) |
+|---|---|---|
+| English | 9.7% | (none on these clips) |
+| Spanish | 5.1% | bookbot zipformer-es: 100% (broken IPA output) |
+| German | 3.7% | whisper-tiny-de: load OK, not scored |
+| French | 10.1% | kroko streaming zipformer-fr: 22.5% |
+
+Caveats: clean read speech, not voice-message conditions; 10 clips per language is a spot check, not a benchmark campaign. Even so the placement is clear: far above the current small streaming tier and in the same league as the big models on its languages, at ~4x realtime warm on desktop. Raw details: /tmp/canary_fleurs.json (session artifact).
