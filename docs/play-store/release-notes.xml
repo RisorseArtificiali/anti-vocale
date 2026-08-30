@@ -1,4 +1,12 @@
 <en-US>
+What's new in 1.11.0:
+
+• Any audio length with any model: long recordings are split and stitched automatically
+• Visible queue: items appear instantly, cancellable; each entry shows the model and duration
+• Community catalog, one-tap imports in many languages, plus the new Canary tier (en/de/es/fr) for lighter phones
+• Native language names; integrity-checked downloads
+• Fixed: Qwen3-ASR failing to load
+
 What's new in 1.10.0:
 
 • Import your own models: custom transcription models from a folder or link (Transducer, Whisper fine-tunes, CTC, SenseVoice), verified and each with its own share target
@@ -182,6 +190,14 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.11.0:
+
+• Audio di qualsiasi lunghezza con qualsiasi modello: le registrazioni lunghe vengono divise e ricucite automaticamente
+• Coda visibile: elementi immediati e annullabili; ogni voce mostra modello e durata
+• Catalogo community, import con un tocco in molte lingue, più il nuovo tier Canary (en/de/es/fr) per telefoni leggeri
+• Lingue nei nomi nativi; download con verifica di integrità
+• Corretto: Qwen3-ASR non si caricava
+
 Novità della versione 1.10.0:
 
 • Modelli personali: importa modelli di trascrizione custom da cartella o link (Transducer, Whisper, CTC, SenseVoice), verificati e con condivisione dedicata
@@ -363,3 +379,102 @@ Novità dalla versione 1.0.3:
 • ETA di progresso basato su calibrazione e statistiche di prestazione
 • Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)
 </it-IT>
+
+<de-DE>
+Neuigkeiten in Version 1.11.0:
+
+• Audio beliebiger Länge mit jedem Modell: lange Aufnahmen werden automatisch geteilt und zusammengefügt
+• Sichtbare Warteschlange: Einträge sofort da, abbrechbar; jeder Eintrag zeigt Modell und Dauer
+• Community-Katalog, Import mit einem Tipp in vielen Sprachen, plus die neue Canary-Stufe (EN/DE/ES/FR) für leichtere Handys
+• Sprachen in einheimischen Namen; Downloads mit Integritätsprüfung
+• Behoben: Qwen3-ASR lud nicht
+
+</de-DE>
+
+<es-ES>
+Novedades de la versión 1.11.0:
+
+• Audio de cualquier duración con cualquier modelo: las grabaciones largas se dividen y unen automáticamente
+• Cola visible: elementos al instante y anulables; cada entrada muestra modelo y duración
+• Catálogo comunitario, importación con un toque en muchos idiomas, más el nuevo nivel Canary (en/de/es/fr) para móviles ligeros
+• Idiomas con nombres nativos; descargas con verificación de integridad
+• Corregido: Qwen3-ASR no cargaba
+
+</es-ES>
+
+<fr-FR>
+Nouveautés de la version 1.11.0 :
+
+• Audio de n'importe quelle durée avec tout modèle : les enregistrements longs sont découpés et recousus automatiquement
+• File visible : éléments instantanés et annulables ; chaque entrée indique modèle et durée
+• Catalogue communautaire, importation en un geste dans de nombreuses langues, plus le niveau Canary (en/de/es/fr) pour téléphones légers
+• Langues en noms natifs ; téléchargements avec vérification d'intégrité
+• Corrigé : Qwen3-ASR ne se chargeait pas
+
+</fr-FR>
+
+<pt-BR>
+Novidades da versão 1.11.0:
+
+• Áudio de qualquer duração com qualquer modelo: gravações longas são divididas e costuradas automaticamente
+• Fila visível: itens instantâneos e canceláveis; cada entrada mostra modelo e duração
+• Catálogo da comunidade, importação com um toque em vários idiomas, e o novo nível Canary (en/de/es/fr) para celulares leves
+• Idiomas com nomes nativos; downloads com verificação de integridade
+• Corrigido: o Qwen3-ASR não carregava
+
+</pt-BR>
+
+<ru-RU>
+Что нового в версии 1.11.0:
+
+• Аудио любой длины с любой моделью: длинные записи автоматически разбиваются и сшиваются
+• Видимая очередь: элементы мгновенно, можно отменить; каждая запись показывает модель и время
+• Каталог сообщества, импорт одним касанием на многих языках, плюс уровень Canary (en/de/es/fr) для лёгких телефонов
+• Языки на родных названиях; загрузки с проверкой целостности
+• Исправлено: Qwen3-ASR не загружался
+
+</ru-RU>
+
+<tr-TR>
+Sürüm 1.11.0'daki yenilikler:
+
+• Her modelle her uzunlukta ses: uzun kayıtlar otomatik bölünüp birleştirilir
+• Görünür kuyruk: ögeler anında, iptal edilebilir; her kayıt modeli ve süreyi gösterir
+• Topluluk kataloğu, birçok dilde tek dokunuşla içe aktarma, ayrıca hafif telefonlar için Canary kademesi (en/de/es/fr)
+• Diller ana adlarıyla; bütünlük denetimli indirmeler
+• Düzeltildi: Qwen3-ASR açılmıyordu
+
+</tr-TR>
+
+<pl-PL>
+Nowości w wersji 1.11.0:
+
+• Dowolna długość nagrania z dowolnym modelem: długie nagrania są automatycznie dzielone i łączone
+• Widoczna kolejka: elementy natychmiast, można anulować; każdy wpis pokazuje model i czas
+• Katalog społeczności, import jednym dotknięciem w wielu językach, plus poziom Canary (en/de/es/fr) dla lżejszych telefonów
+• Języki w rodzimych nazwach; pobieranie ze sprawdzaniem integralności
+• Naprawiono: Qwen3-ASR się nie ładował
+
+</pl-PL>
+
+<uk-UA>
+Новинки версії 1.11.0:
+
+• Аудіо будь-якої тривалості з будь-якою моделлю: довгі записи автоматично розбиваються і зшиваються
+• Видима черга: елементи миттєво, можна скасувати; кожен запис показує модель і час
+• Каталог спільноти, імпорт одним дотиком багатьма мовами, плюс рівень Canary (en/de/es/fr) для легших телефонів
+• Мови рідними назвами; завантаження з перевіркою цілісності
+• Виправлено: Qwen3-ASR не завантажувався
+
+</uk-UA>
+
+<hi-IN>
+संस्करण 1.11.0 में नया क्या है:
+
+• किसी भी मॉडल के साथ किसी भी लंबाई का ऑडियो: लंबी रिकॉर्डिंग अपने आप बाँटी और जोड़ी जाती हैं
+• दिखती कतार: आइटम तुरंत, रद्द कर सकते हैं; हर प्रविष्टि मॉडल और अवधि बताती है
+• समुदाय कैटलॉग, कई भाषाओं में एक टैप इंपोर्ट, साथ ही हल्के फ़ोन के लिए Canary स्तर (en/de/es/fr)
+• भाषाएँ मूल नामों में; अखंडता-जाँच वाले डाउनलोड
+• ठीक: Qwen3-ASR लोड नहीं होता था
+
+</hi-IN>

@@ -32,8 +32,14 @@ def parse_locale_sections(xml: str) -> dict[str, str]:
 
 def extract_latest_version(notes: str) -> str:
     """Extract only the first (latest) version section from multi-version notes."""
+    # Headings must stay in sync with the locale blocks in release-notes.xml;
+    # a heading the regex does not know makes the whole locale's history ship
+    # as one blob (found when the 9 new locales of 1.11.0 were added).
     version_heading = re.compile(
-        r"^(?:What's new in|Novità della versione|Novità dalla versione)\s",
+        r"^(?:What's new in|Novità della versione|Novità dalla versione|"
+        r"Neuigkeiten in Version|Novedades de la versión|Nouveautés de la version|"
+        r"Novidades da versão|Что нового в версии|Sürüm \S+ yenilikler|"
+        r"Nowości w wersji|Новинки версії|संस्करण \S+ नया क्या है)\s",
         re.MULTILINE,
     )
     headings = list(version_heading.finditer(notes))
