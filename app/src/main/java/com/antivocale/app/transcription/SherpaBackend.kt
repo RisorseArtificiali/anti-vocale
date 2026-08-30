@@ -110,6 +110,7 @@ class SherpaBackend(
             requiredKeys: List<String>,
             maxScanBytes: Long = ONNX_METADATA_SCAN_LIMIT
         ): List<String> {
+            if (requiredKeys.isEmpty()) return emptyList()
             // Treat unreadable as "all metadata missing" so the caller shows a clear
             // ModelLoadError instead of letting an IOException propagate uncaught.
             val data = readTail(file, maxScanBytes) ?: return requiredKeys
