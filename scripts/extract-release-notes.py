@@ -35,6 +35,9 @@ def parse_locale_sections(xml: str) -> dict[str, str]:
 
 def extract_latest_version(notes: str) -> str:
     """Extract only the first (latest) version section from multi-version notes."""
+    # NOTE: no uk-UA section on purpose: Play Console's release-notes form does
+    # not support Ukrainian (rejected in the v1.11.0 edit, 2026-08-30); the app
+    # itself and F-Droid/fastlane metadata remain localized in Ukrainian.
     # Headings must stay in sync with the locale blocks in release-notes.xml;
     # a heading the regex does not know makes the whole locale's history ship
     # as one blob (found when the 9 new locales of 1.11.0 were added).
