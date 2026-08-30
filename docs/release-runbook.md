@@ -68,8 +68,23 @@ before the reference build runs, or the reference gets built from the wrong
 
 ```bash
 cd ~/data/repo/personal/fdroid-data
-# edit metadata/com.antivocale.app.yml: versionName, versionCode (per-ABI),
-# commit SHA (the tag target), CurrentVersion/CurrentVersionCode.
+# Generate the three per-ABI blocks with the repo script (NEVER hand-append:
+# the 2026-08-30 hand edit landed the blocks inside VercodeOperation's list
+# and cost three failed reference builds):
+cd ~/data/repo/personal/anti-vocale
+python3 scripts/new-fdroid-version.py \
+  --recipe ~/data/repo/personal/fdroid-data/metadata/com.antivocale.app.yml --write
+cd - && git diff metadata/com.antivocale.app.yml   # review the generated blocks
+```
+
+**THEN the mirror (the step the workflow actually reads):** the reproducible
+job clones the GitHub mirror `paoloantinori/fdroid-data-mirror`, branch
+`av1100-slim`, NOT this fork. Pushing only the fork fails the recipe-commit
+guard (2026-08-30, twice). Copy the same file there:
+
+```bash
+cp metadata/com.antivocale.app.yml /path/to/fdroid-data-mirror-checkout/
+cd /path/to/fdroid-data-mirror-checkout && git add -A && git commit && git push origin av1100-slim
 ```
 
 Run `/simplify` and `/code-review high` on the diff before pushing. Check:

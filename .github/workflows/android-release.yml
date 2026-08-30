@@ -375,11 +375,12 @@ jobs:
           . /etc/profile.d/bsenv.sh || true
           export fdroidserver=/opt/fdroidserver
           rm -rf $fdroidserver && mkdir $fdroidserver
-          # Pinned to the exact master commit that built v1.10.0 reproducibly
-          # (2026-08-19 run). Unpinned master broke on 2026-08-30: fdroid build
-          # died at startup with `rsync: mkdir "/tmp/repo/status" failed` (a
-          # newer fdroidserver feature assuming a repo dir the buildserver
-          # container does not create). Re-pin deliberately, with the reason.
+          # Pinned to the exact master commit that built v1.10.0 reproducibly:
+          # an unpinned master is an undeclared variable in a reproducibility
+          # pipeline. (Note for log readers: the `rsync: mkdir /tmp/repo/status
+          # failed` line further down is chronic, NON-fatal noise present in
+          # every successful build too; it was misread as a breakage once,
+          # 2026-08-30. The real failures that day were recipe-side.)
           curl --silent https://gitlab.com/fdroid/fdroidserver/-/archive/6af4c4216e43d0fcb29e33919cd0fe8fef7e7400/fdroidserver-6af4c4216e43d0fcb29e33919cd0fe8fef7e7400.tar.gz | \
             tar -xz --directory=$fdroidserver --strip-components=1
           export PATH="$fdroidserver:$PATH"
