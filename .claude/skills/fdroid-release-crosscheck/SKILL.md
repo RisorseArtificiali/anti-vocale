@@ -14,15 +14,17 @@ only by manual cross-check).
 ## The procedure (in order)
 
 1. **Generate, never hand-edit**: `python3 scripts/new-fdroid-version.py --recipe <fdroid-data>/metadata/com.antivocale.app.yml --write` (refuses duplicate keys, refuses versionCode reuse, reads version + peeled tag from origin).
-2. **Update the srclib pin in the NEW blocks** if `.sherpa-version` changed
-   since the previous release (the generator clones the old pin; this is the
-   one field it cannot know). Historical blocks stay as-built.
+2. **Cross-check BEFORE pushing anywhere**: `SKIP_BINARY_URLS=1 scripts/check-fdroid-release.sh`
+   from the repo root must print ALL CHECKS PASSED (the generator now syncs the
+   srclib pin from `.sherpa-version` automatically; historical blocks stay as-built).
+   SKIP_BINARY_URLS=1 because on a fresh release the signed assets do not exist yet.
 3. **Push BOTH recipe copies**: the GitLab fork branch (what an MR would use)
    AND the GitHub mirror `paoloantinori/fdroid-data-mirror` branch `av1100-slim`
    (what the reproducible-fdroid job actually clones; pushing only the fork
    fails the recipe-commit guard).
-4. **Run the cross-check**: `scripts/check-fdroid-release.sh` from the repo
-   root. It verifies: srclib pin == `.sherpa-version` (issue #38), AAR script
+4. **Full cross-check post-build, pre-bot-MR**: `scripts/check-fdroid-release.sh`
+   (no env var: now including the `binary:` URL resolvability). It verifies:
+   srclib pin in ALL THREE blocks == `.sherpa-version` (issue #38), AAR script
    version == `.sherpa-version`, recipe commit == peeled tag, vercodes ==
    base*10+{1,2,4}, CurrentVersionCode == arm64, all three `binary:` URLs
    resolve 200, YAML parses with no duplicate top-level keys.

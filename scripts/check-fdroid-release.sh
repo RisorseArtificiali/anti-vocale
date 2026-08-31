@@ -40,14 +40,16 @@ PIN_EXPECTED=$(grep -oE '[0-9a-f]{40}' .sherpa-version || true)
 [ -n "$PIN_EXPECTED" ] || fail ".sherpa-version has no srclib commit"
 BLOCK_START=$(grep -n "versionName: $VERSION" "$RECIPE" | head -1 | cut -d: -f1)
 [ -n "$BLOCK_START" ] || fail "recipe has no block for $VERSION (generate it first: scripts/new-fdroid-version.py)"
-NEXT_BLOCK=$(grep -n "^  - versionName:" "$RECIPE" | awk -F: -v s="$BLOCK_START" '$1 > s' | head -1 | cut -d: -f1)
-BLOCK_END=${NEXT_BLOCK:-$(wc -l < "$RECIPE")}
-# the version's TRIO spans from the first to the last of its blocks
+# the version's TRIO spans from the first to the last of its blocks; +40 lines
+# covers one block's pitch (38 measured) without reaching the fixed-offset
+# fields of anything greppable outside the trio
 LAST_SAME=$(grep -n "versionName: $VERSION" "$RECIPE" | tail -1 | cut -d: -f1)
 BLOCK_END=$((LAST_SAME + 40))
-PIN_BLOCK=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -oE 'sherpa_onnx@[0-9a-f]{40}' | head -1 | cut -d@ -f2)
-[ "$PIN_BLOCK" = "$PIN_EXPECTED" ] || fail "srclib pin mismatch: recipe block pins ${PIN_BLOCK:-none}, .sherpa-version expects $PIN_EXPECTED (issue #38)"
-echo "== srclib pin OK: ${PIN_BLOCK:0:12} (matches .sherpa-version)"
+PIN_COUNT=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -cE 'sherpa_onnx@[0-9a-f]{40}')
+[ "$PIN_COUNT" = "3" ] || fail "expected 3 srclib pins in the $VERSION trio, found $PIN_COUNT"
+BAD_PIN=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -oE 'sherpa_onnx@[0-9a-f]{40}' | cut -d@ -f2 | grep -v "^$PIN_EXPECTED$" | head -1 || true)
+[ -z "$BAD_PIN" ] || fail "srclib pin mismatch in the $VERSION trio: ${BAD_PIN:0:12}, .sherpa-version expects ${PIN_EXPECTED:0:12} (issue #38)"
+echo "== srclib pin OK: all $PIN_COUNT blocks pin ${PIN_EXPECTED:0:12} (matches .sherpa-version)"
 
 # 3b. the pin must be the sherpa release the AAR script fetches
 SHERPA_VER=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' .sherpa-version | head -1)
@@ -56,8 +58,8 @@ echo "== sherpa $SHERPA_VER / AAR script $AAR_VER"
 [ "v$AAR_VER" = "$SHERPA_VER" ] || fail "fetch-sherpa-aar.sh ($AAR_VER) != .sherpa-version ($SHERPA_VER)"
 
 # 4. recipe commit must equal the tag commit
-COMMIT_BLOCK=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -m1 -oE 'commit: [0-9a-f]{40}' | awk '{print $2}')
-[ "$COMMIT_BLOCK" = "$TAG_COMMIT" ] || fail "recipe block commit $COMMIT_BLOCK != tag commit $TAG_COMMIT"
+BAD_COMMIT=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -oE 'commit: [0-9a-f]{40}' | awk '{print $2}' | grep -v "^$TAG_COMMIT$" | head -1 || true)
+[ -z "$BAD_COMMIT" ] || fail "recipe commit mismatch in the $VERSION trio: $BAD_COMMIT != tag commit $TAG_COMMIT"
 echo "== recipe commit OK"
 
 # 5. vercodes must be base*10+{1,2,4} and CurrentVersionCode = arm64
@@ -70,13 +72,20 @@ CVC=$(grep -m1 'CurrentVersionCode:' "$RECIPE" | awk '{print $2}')
 [ "$CVC" = "$((BASE * 10 + 2))" ] || fail "CurrentVersionCode $CVC != arm64 code $((BASE * 10 + 2))"
 echo "== vercodes OK ($((BASE*10+1))/$((BASE*10+2))/$((BASE*10+4)), CurrentVersionCode arm64)"
 
-# 6. binary URLs must resolve (before any recipe push lands)
+# 6. binary URLs must resolve. Skippable pre-dispatch (SKIP_BINARY_URLS=1):
+# on a fresh release the assets exist only AFTER the reference build, so the
+# pre-push run of this checker must not demand them (the full green board is
+# the post-build, pre-bot-MR gate).
+if [ "${SKIP_BINARY_URLS:-0}" = "1" ]; then
+  echo "== binary URLs SKIPPED (pre-dispatch run)"
+else
 for ABI in armeabi-v7a arm64-v8a x86_64; do
   ASSET_URL="https://github.com/$REPO/releases/download/$TAG/app-fdroid-$ABI-release.apk"
   STATUS=$(curl -sIL -o /dev/null -w '%{http_code}' --max-time 20 "$ASSET_URL" || echo 000)
   [ "$STATUS" = "200" ] || fail "binary URL not resolving ($STATUS): $ASSET_URL"
 done
 echo "== binary URLs OK (all 200)"
+fi
 
 # 7. YAML parses with no duplicate top-level keys
 python3 - "$RECIPE" <<'PYEOF'

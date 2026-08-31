@@ -18,7 +18,8 @@ What it does:
   1. reads versionName + versionCode from app/build.gradle.kts,
   2. peels the matching tag from origin to get the source commit,
   3. finds the newest version's three blocks in the recipe (by max versionCode),
-  4. copies them with the new versionName/versionCodes (base*10+1/2/4) and commit,
+  4. copies them with the new versionName/versionCodes (base*10+1/2/4), commit,
+     and the sherpa_onnx srclib pin synced from .sherpa-version (issue #38),
   5. inserts them after the last existing build block (BEFORE the top-level tail),
   6. updates CurrentVersion/CurrentVersionCode,
   7. validates: single occurrence of every top-level key, exactly three new
@@ -119,8 +120,12 @@ def main() -> None:
     # The generator clones the previous blocks verbatim, and the checkupdates bot
     # does the same, so a stale sherpa pin propagates silently (2026-08-31: 1.13.4
     # shipped into the 1.11.0 blocks while the app built 1.13.5). Sync it here.
-    pin = Path(".sherpa-version").read_text() if Path(".sherpa-version").exists() else ""
-    pin_match = re.search(r"[0-9a-f]{40}", pin)
+    pin_text = Path(".sherpa-version").read_text() if Path(".sherpa-version").exists() else ""
+    pin_match = re.search(r"[0-9a-f]{40}", pin_text)
+    # A missing/unparseable .sherpa-version must FAIL, not silently clone the
+    # stale pin (the 2026-08-31 incident was exactly a silently cloned stale pin).
+    if pin_match is None:
+        fail(".sherpa-version missing or has no 40-hex srclib commit; it is a release requirement (issue #38)")
     new_blocks = []
     for code, block in newest_blocks:
         nb = re.sub(r"versionName: \S+", f"versionName: {version}", block, count=1)

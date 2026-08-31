@@ -77,6 +77,16 @@ python3 scripts/new-fdroid-version.py \
 cd - && git diff metadata/com.antivocale.app.yml   # review the generated blocks
 ```
 
+**Cross-check BEFORE pushing anywhere (TASK-420):** run
+`SKIP_BINARY_URLS=1 scripts/check-fdroid-release.sh` from the repo root and require
+ALL CHECKS PASSED. It pins the invariants that drifted silently on 2026-08-31
+(stale sherpa srclib pin cloned from the old blocks: 1.13.4 in the recipe vs
+1.13.5 in the app; issue #38). SKIP_BINARY_URLS=1 because on a fresh release the
+signed assets only exist after step 5's dispatch; the FULL checker (URLs included,
+no env var) is the post-build, pre-bot-MR gate. If the pin check fails, the
+generator should already have synced it: a failure means the recipe was edited by
+hand, fix the blocks and re-run.
+
 **THEN the mirror (the step the workflow actually reads):** the reproducible
 job clones the GitHub mirror `paoloantinori/fdroid-data-mirror`, branch
 `av1100-slim`, NOT this fork. Pushing only the fork fails the recipe-commit
@@ -86,12 +96,6 @@ guard (2026-08-30, twice). Copy the same file there:
 cp metadata/com.antivocale.app.yml /path/to/fdroid-data-mirror-checkout/
 cd /path/to/fdroid-data-mirror-checkout && git add -A && git commit && git push origin av1100-slim
 ```
-
-**Cross-check BEFORE pushing (TASK-420):** `scripts/check-fdroid-release.sh` must
-print ALL CHECKS PASSED. It pins the seven invariants that drifted silently on
-2026-08-31 (stale sherpa srclib pin cloned by the bot: 1.13.4 in the recipe vs
-1.13.5 in the app; issue #38). If it fails on the srclib pin, update the NEW
-blocks' `sherpa_onnx@` to `.sherpa-version`'s commit and push both copies again.
 
 Run `/simplify` and `/code-review high` on the diff before pushing. Check:
 - Three versionName/versionCode blocks; the commit SHA matches the tag.
