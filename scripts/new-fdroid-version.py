@@ -30,6 +30,7 @@ Prints the diff summary; applies nothing until --write is passed.
 import argparse
 import re
 import subprocess
+from pathlib import Path
 
 REPO = "https://github.com/RisorseArtificiali/anti-vocale"
 
@@ -114,11 +115,19 @@ def main() -> None:
     if reused:
         fail(f"versionCodes {reused} already exist in the recipe (wrong --base-code? "
              f"the next free base is {max(code for code, _ in blocks) // 10 + 1})")
+    # srclib pin: the app repo's .sherpa-version is the source of truth (issue #38).
+    # The generator clones the previous blocks verbatim, and the checkupdates bot
+    # does the same, so a stale sherpa pin propagates silently (2026-08-31: 1.13.4
+    # shipped into the 1.11.0 blocks while the app built 1.13.5). Sync it here.
+    pin = Path(".sherpa-version").read_text() if Path(".sherpa-version").exists() else ""
+    pin_match = re.search(r"[0-9a-f]{40}", pin)
     new_blocks = []
     for code, block in newest_blocks:
         nb = re.sub(r"versionName: \S+", f"versionName: {version}", block, count=1)
         nb = re.sub(r"versionCode: \d+", f"versionCode: {base * 10 + code % 10}", nb, count=1)
         nb = re.sub(r"commit: [0-9a-f]{40}", f"commit: {commit}", nb)
+        if pin_match:
+            nb = re.sub(r"sherpa_onnx@[0-9a-f]{40}", f"sherpa_onnx@{pin_match.group(0)}", nb)
         new_blocks.append(nb)
 
     # One canonical blank line between blocks: re-joining with a separator line
