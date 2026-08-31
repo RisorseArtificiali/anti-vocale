@@ -26,7 +26,7 @@ only by manual cross-check).
    (no env var: now including the `binary:` URL resolvability). It verifies:
    srclib pin in ALL THREE blocks == `.sherpa-version` (issue #38), AAR script
    version == `.sherpa-version`, recipe commit == peeled tag, vercodes ==
-   base*10+{1,2,4}, CurrentVersionCode == arm64, all three `binary:` URLs
+   base*10+{1,2,4}, CurrentVersionCode == max (base*10+4), all three `binary:` URLs
    resolve 200, YAML parses with no duplicate top-level keys.
 5. **Only then dispatch** `gh workflow run android-release.yml -f tag=vX.Y.Z`.
    If signed APKs already exist on the release from an earlier (wrong-pin)

@@ -394,15 +394,48 @@ jobs:
           export serverwebroot=/tmp
           # F-Droid's image ships without an NDK, and in this container fdroidserver
           # cannot download one itself (its runners do; ours errors out immediately
-          # with "Android NDK version 'r27c' could not be found!"). Preinstall the
-          # EXACT version the recipe's `ndk: r27c` maps to (27.2.12479018), so fdroid
-          # finds a matching NDK instead of silently falling back to whatever else is
-          # present. The previous preinstall (27.0.12077973) built every native lib
+          # with "Android NDK version 'r28c' could not be found!"). Preinstall the
+          # EXACT sdkmanager version of EVERY `ndk:` pin the recipe declares, so
+          # fdroid finds a matching NDK instead of silently falling back to whatever
+          # else is present. Pins are derived from the recipe: on 2026-08-31 the
+          # 1.11.0 blocks moved to r28c while this step preinstalled only r27c, and
+          # the reference build died ~40 min in, after the srclib compile. An
+          # unmapped pin fails at setup, in seconds. A wrong-but-present version
+          # (the previous preinstall, 27.0.12077973) built every native lib
           # with a different toolchain than the fdroiddata builds we must byte-match:
           # that is the 371/372/374 reproducibility failure on MR !46215 (their job
           # log: 'Set up NDK r27c (27.2.12479018)'; ours: 'Set up NDK r27').
           chown -R vagrant:vagrant /opt/android-sdk
-          yes | sdkmanager "ndk;27.2.12479018" || true
+
+          # Guard: recipe must exist and have NDK pins (C1: silent loop on missing file)
+          RECIPE=/home/vagrant/metadata/com.antivocale.app.yml
+          [ -f "$RECIPE" ] || { echo "::error::recipe not found at $RECIPE (clone/copy step failed)"; exit 1; }
+          NDK_PINS=$(grep -E '^[[:space:]]+ndk: ' "$RECIPE" | awk '{print $2}' | sort -u)
+          [ -n "$NDK_PINS" ] || { echo "::error::no ndk: pins found in $RECIPE"; exit 1; }
+
+          NDK_MAP="r27c=27.2.12479018 r28c=28.2.13676358"
+          UNMAPPED=""
+          PACKAGES=""
+          for PIN in $NDK_PINS; do
+            EXACT=""
+            for M in $NDK_MAP; do if [ "${M%%=*}" = "$PIN" ]; then EXACT="${M#*=}"; fi; done
+            if [ -z "$EXACT" ]; then
+              echo "::error::recipe pins ndk '$PIN' but NDK_MAP in this step lacks it. Add '${PIN}=<sdkmanager-version>' to NDK_MAP above (see developer.android.com/ndk/downloads for the mapping)."
+              UNMAPPED=1
+            else
+              PACKAGES="$PACKAGES ndk;${EXACT}"
+            fi
+          done
+          [ -n "$UNMAPPED" ] && exit 1
+
+          # Batch install: sdkmanager accepts multiple packages in one call (efficiency fix)
+          yes | sdkmanager $PACKAGES
+          # Verify each NDK actually installed (C2: || true masked real failures)
+          for PIN in $NDK_PINS; do
+            EXACT=""
+            for M in $NDK_MAP; do if [ "${M%%=*}" = "$PIN" ]; then EXACT="${M#*=}"; fi; done
+            [ -d "/opt/android-sdk/ndk/${EXACT}" ] || { echo "::error::ndk;${EXACT} did not install (directory not found)"; exit 1; }
+          done
           # The recipe's sudo: deps (wget etc.) don't auto-install when running as root; install them.
           apt-get update -qq && apt-get install -y --no-install-recommends wget build-essential cmake g++ zip unzip
           fdroid --version || true

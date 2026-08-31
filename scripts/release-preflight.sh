@@ -16,7 +16,7 @@
 #  3. fastlane changelogs/<base>.txt exist for en-US and it-IT, within 500 chars.
 #  4. app/libs/sherpa-onnx.aar version equals scripts/fetch-sherpa-aar.sh version.
 #  5. Fork recipe (anti-vocale-1.8.2): newest Builds entry commit == tag commit,
-#     its versionCodes == base*10+{1,2,4}, CurrentVersionCode == base*10+2.
+#     its versionCodes == base*10+{1,2,4}, CurrentVersionCode == base*10+4.
 #  6. Fork recipe sherpa srclib pin == the k2-fsa/sherpa-onnx tag commit that
 #     matches the AAR version (a stale pin ships the F-Droid build with native
 #     bugs the GitHub build already fixed).
@@ -105,8 +105,8 @@ if [ "$OFFLINE" -eq 0 ] && [ -n "$TAG" ]; then
     [ "$newest_codes" = "$expected_codes" ] && ok "recipe vercodes: $newest_codes" \
       || fail "recipe newest vercodes '$newest_codes' != expected '$expected_codes'"
     cvc=$(awk '/^CurrentVersionCode:/{print $2}' "$recipe")
-    [ "$cvc" = "$((base*10+2))" ] && ok "CurrentVersionCode $cvc == arm64 anchor" \
-      || fail "CurrentVersionCode is $cvc, expected $((base*10+2))"
+    [ "$cvc" = "$((base*10+4))" ] && ok "CurrentVersionCode $cvc == max (base*10+4)" \
+      || fail "CurrentVersionCode is $cvc, expected $((base*10+4))"
     pin=$(awk '/^[[:space:]]+- sherpa_onnx@/{print $2}' "$recipe" | tail -1 | sed 's/sherpa_onnx@//')
     [ -n "$pin" ] || fail "could not read sherpa_onnx srclib pin from the recipe"
     if [ -n "$aar_ver" ] && [ -n "$pin" ]; then

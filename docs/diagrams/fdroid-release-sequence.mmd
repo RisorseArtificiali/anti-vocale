@@ -1,0 +1,49 @@
+sequenceDiagram
+    participant Dev as Developer
+    participant GH as GitHub<br/>(Actions)
+    participant GL as GitLab<br/>(F-Droid CI)
+    participant Rel as GitHub<br/>Release v1.11.0
+
+    Note over Dev,Rel: STEP 1: Release Preparation (Synchronous)
+
+    Dev->>Rel: 1. Tag & Push commit
+    Dev->>GH: 2. Update fdroid-data recipe<br/>(binary: URLs)
+
+    Note over GH,GL: STEP 2: Reference Build (40-50 min, Asynchronous)
+
+    Dev->>GH: 3. Dispatch workflow<br/>android-release.yml
+    activate GH
+    GH->>GH: Job "Build":<br/>Build unsigned APKs (~5 min)
+    GH->>Rel: 4. Upload -unsigned.apk
+    Note right of Rel: ✅ app-fdroid-*-release-unsigned.apk<br/>EXIST NOW
+
+    GH->>GH: Job "reproducible":<br/>Build sherpa-onnx (35-45 min)
+    Note right of GH: ⏳ SLOW STEP: compiling C++<br/>for 3 ABIs from source
+
+    Note over Dev,GL: STEP 3: F-Droid CI Starts (Parallel!)
+
+    Dev->>GL: 5. Push recipe to fork<br/>(triggers pipeline IMMEDIATELY)
+    activate GL
+    GL->>GL: Pipeline starts
+
+    Note over GL: ❌ CRITICAL RACE CONDITION HERE
+
+    GL->>GL: 6. fdroid build job starts
+    GL->>Rel: 7. GET binary: URLs<br/>(app-fdroid-*-release.apk)
+    Rel-->>GL: 8. ❌ 404 Not Found<br/>(NOT YET CREATED!)
+
+    Note right of GL: ❌ BUILD FAILS<br/>exit code 1
+
+    Note over GH: STEP 4: GitHub Still Building...
+
+    GH->>GH: 9. sherpa-onnx completes
+    GH->>GH: 10. Sign APKs (apksigner)
+    GH->>Rel: 11. Upload signed APKs
+    Note right of Rel: ✅ app-fdroid-*-release.apk<br/>CREATED NOW (too late!)
+
+    GL->>GL: 12. Pipeline marked FAILED<br/>(no retry scheduled)
+
+    Note over Dev,Rel: OUTCOME: Failure due to timing
+
+    deactivate GH
+    deactivate GL

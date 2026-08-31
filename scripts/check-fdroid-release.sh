@@ -62,15 +62,38 @@ BAD_COMMIT=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -oE 'commit:
 [ -z "$BAD_COMMIT" ] || fail "recipe commit mismatch in the $VERSION trio: $BAD_COMMIT != tag commit $TAG_COMMIT"
 echo "== recipe commit OK"
 
-# 5. vercodes must be base*10+{1,2,4} and CurrentVersionCode = arm64
+# 5. vercodes must be base*10+{1,2,4} and CurrentVersionCode = MAX (x86_64 code;
+# fdroiddata convention: master has always carried the highest, e.g. 374 for 1.10.0;
+# licaon-corrected on MR 47391 after our runbook wrongly anchored arm64)
 for ABI in 1 2 4; do
   EXPECTED=$((BASE * 10 + ABI))
   sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -q "versionCode: $EXPECTED" \
     || fail "recipe block missing versionCode $EXPECTED (expected base*10+$ABI)"
 done
 CVC=$(grep -m1 'CurrentVersionCode:' "$RECIPE" | awk '{print $2}')
-[ "$CVC" = "$((BASE * 10 + 2))" ] || fail "CurrentVersionCode $CVC != arm64 code $((BASE * 10 + 2))"
-echo "== vercodes OK ($((BASE*10+1))/$((BASE*10+2))/$((BASE*10+4)), CurrentVersionCode arm64)"
+[ "$CVC" = "$((BASE * 10 + 4))" ] || fail "CurrentVersionCode $CVC != max code $((BASE * 10 + 4))"
+echo "== vercodes OK ($((BASE*10+1))/$((BASE*10+2))/$((BASE*10+4)), CurrentVersionCode max)"
+
+# 5b. every NDK pin in the recipe must be preinstallable by the reference
+# workflow (2026-08-31: the 1.11.0 trio moved to ndk r28c while the workflow
+# preinstalled only r27c; fdroidserver cannot download NDKs in that container
+# and the reference build died ~40 min in, after the srclib compile).
+# The check reads the workflow from origin/main, NOT the working tree: the
+# dispatch executes origin/main, so a local-only NDK_MAP change must fail
+# here ("push the workflow first"), not green-light an unpushed mapping.
+WORKFLOW_LOCAL=".github/workflows/android-release.yml"
+[ -f "$WORKFLOW_LOCAL" ] || fail "workflow not found at $WORKFLOW_LOCAL (run from the app repo root)"
+WORKFLOW_REMOTE=$(git show origin/main:.github/workflows/android-release.yml 2>/dev/null || true)
+if [ -z "$WORKFLOW_REMOTE" ]; then
+  fail "cannot read .github/workflows/android-release.yml from origin/main (no remote branch?)"
+fi
+RECIPE_NDK_PINS=$(grep -E '^[[:space:]]+ndk: ' "$RECIPE" | awk '{print $2}' | sort -u || true)
+[ -n "$RECIPE_NDK_PINS" ] || fail "no ndk pins found in the recipe"
+for PIN in $RECIPE_NDK_PINS; do
+  echo "$WORKFLOW_REMOTE" | grep -q "NDK_MAP=.*${PIN}=" \
+    || fail "recipe pins ndk $PIN but origin/main's NDK_MAP has no exact version for it (add '$PIN=<sdkmanager version>' to the NDK preinstall step and PUSH the workflow before dispatching)"
+done
+echo "== ndk pins OK: ${RECIPE_NDK_PINS} all mapped in origin/main's workflow"
 
 # 6. binary URLs must resolve. Skippable pre-dispatch (SKIP_BINARY_URLS=1):
 # on a fresh release the assets exist only AFTER the reference build, so the

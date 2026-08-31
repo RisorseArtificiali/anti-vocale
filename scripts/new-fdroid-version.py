@@ -141,7 +141,7 @@ def main() -> None:
     body = "\n\n".join(canonical) + "\n\n"
     # tail: bump CurrentVersion/CurrentVersionCode, preserving everything else once
     new_tail = re.sub(r"CurrentVersion: \S+", f"CurrentVersion: {version}", tail, count=1)
-    new_tail = re.sub(r"CurrentVersionCode: \d+", f"CurrentVersionCode: {base * 10 + 2}", new_tail, count=1)
+    new_tail = re.sub(r"CurrentVersionCode: \d+", f"CurrentVersionCode: {base * 10 + 4}", new_tail, count=1)
     out = header + body + "\n" + new_tail
 
     # --- validation (the duplicate-key class this script exists to prevent) ---
@@ -164,7 +164,7 @@ def main() -> None:
         fail("source commit not injected")
 
     print(f"OK: {version} blocks {expected_codes} -> commit {commit[:12]}")
-    print(f"    build blocks: {len(blocks)} -> {len(blocks) + 3}; CurrentVersionCode -> {base * 10 + 2}")
+    print(f"    build blocks: {len(blocks)} -> {len(blocks) + 3}; CurrentVersionCode -> {base * 10 + 4}")
     if args.write:
         open(args.recipe, "w").write(out)
         print(f"    written to {args.recipe}")

@@ -61,10 +61,12 @@ Proof: `git ls-remote --tags origin | grep vX.Y.Z` shows the tag at the commit S
 
 ## Step 4. Update the F-Droid recipe (BEFORE building references)
 
-The `reproducible-fdroid` job reads the recipe **from the fork** and builds
-whatever `commit:` it points to. Therefore the recipe MUST be pushed to the fork
-before the reference build runs, or the reference gets built from the wrong
-(previous) commit and the reproducibility check fails on a whole-APK diff.
+The `reproducible-fdroid` job clones the recipe **from the mirror**
+(`paoloantinori/fdroid-data-mirror`, branch `av1100-slim`) and builds whatever
+`commit:` it points to. Therefore the MIRROR must be pushed before the
+reference build runs. The FORK push comes later, after Step 6's gate: the fork
+push is what triggers the fdroiddata pipeline, and that pipeline must not
+start until the signed reference APKs exist (the 2026-08-31 race).
 
 ```bash
 cd ~/data/repo/personal/fdroid-data
@@ -100,7 +102,7 @@ cd /path/to/fdroid-data-mirror-checkout && git add -A && git commit && git push 
 Run `/simplify` and `/code-review high` on the diff before pushing. Check:
 - Three versionName/versionCode blocks; the commit SHA matches the tag.
 - `binary:` is a multi-line block (trailing space after the key, URL on next line).
-- `CurrentVersion` / `CurrentVersionCode` updated (CurrentVersionCode = arm64 code).
+- `CurrentVersion` / `CurrentVersionCode` updated (CurrentVersionCode = the MAX per-ABI code).
 - No stale `fix-pg-map-id` or other postbuild experiments left over.
 
 **VersionCode consistency check (mandatory).** The app derives per-ABI codes as
@@ -111,15 +113,16 @@ ABI. Verify before every push:
 ```bash
 base=$(grep -m1 'versionCode = ' app/build.gradle.kts | grep -oE '[0-9]+')
 echo "armeabi-v7a=$((base*10+1)) arm64-v8a=$((base*10+2)) x86_64=$((base*10+4))"
-# CurrentVersionCode must == base*10+2 (arm64 anchor).
+# CurrentVersionCode must == base*10+4 (the MAX/x86_64 code; fdroiddata convention, licaon-corrected on MR 47391).
 ```
 
-Then push:
+Then commit (do NOT push the fork yet; Step 6 gates the push):
 
 ```bash
 git add metadata/com.antivocale.app.yml
 git commit -m "Update to vX.Y.Z (versionCode ABC/ABD/ABF): <summary>"
-git push origin anti-vocale-1.10.0   # the current recipe branch (see Prerequisites)
+# NO fork push here: the fork push triggers the fdroiddata pipeline, which
+# 404s until the signed reference APKs exist. Push after Step 6's gate.
 ```
 
 ## Step 5. Build reference APKs (reproducible F-Droid)
@@ -166,9 +169,25 @@ done
 
 Proof: all three return HTTP 200 (after redirect).
 
+One command covers this plus two more gates:
+`scripts/verify-github-workflow-before-recipe-push.sh vX.Y.Z` also requires
+the reproducible job to have SUCCEEDED (not just finished) and the fork and
+mirror recipes to be identical. It exists because on 2026-08-31 the recipe was
+pushed while the reference build was still running, and the fdroiddata
+pipeline failed on 404 binary URLs; run it before every recipe push, after
+Step 5 completes.
+
+**Only after the gate passes, push the fork** (this is what triggers the
+fdroiddata pipeline; until now the signed APKs were not there yet):
+
+```bash
+cd ~/data/repo/personal/fdroid-data
+git push origin anti-vocale-1.10.0   # the current recipe branch (see Prerequisites)
+```
+
 ## Step 7. Verify F-Droid reproducibility pipeline
 
-The recipe push (Step 4) triggered the F-Droid CI pipeline on MR `!43599`. But
+The fork push (Step 6) triggered the F-Droid CI pipeline on MR `!43599`. But
 that pipeline only has valid references to compare against once Step 5 uploads
 them, so re-check it after the reference build completes. Poll until the
 reproducibility check passes:
@@ -216,7 +235,11 @@ the sherpa AAR on disk matching the fetch-script version and upstream size;
 the fork recipe's newest Builds entry pointing at the tag commit with the
 right vercodes and CurrentVersionCode; and, critically, the recipe's sherpa
 srclib pin matching the sherpa tag of the AAR version (a stale pin builds the
-F-Droid APK with a different native stack than every other artifact).
+F-Droid APK with a different native stack than every other artifact). Since
+2026-08-31 it also verifies every recipe `ndk:` pin has an exact-version entry
+in the reference workflow's NDK preinstall map (that day the 1.11.0 blocks
+moved to r28c while the workflow preinstalled only r27c: fdroidserver cannot
+download NDKs in that container, and the reference build died ~40 min in).
 
 ## Dispatch semantics and hard rules (v1.10.0 + 1.10.0-final lessons)
 
