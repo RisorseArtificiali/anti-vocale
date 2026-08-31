@@ -89,16 +89,6 @@ no env var) is the post-build, pre-bot-MR gate. If the pin check fails, the
 generator should already have synced it: a failure means the recipe was edited by
 hand, fix the blocks and re-run.
 
-**THEN the mirror (the step the workflow actually reads):** the reproducible
-job clones the GitHub mirror `paoloantinori/fdroid-data-mirror`, branch
-`av1100-slim`, NOT this fork. Pushing only the fork fails the recipe-commit
-guard (2026-08-30, twice). Copy the same file there:
-
-```bash
-cp metadata/com.antivocale.app.yml /path/to/fdroid-data-mirror-checkout/
-cd /path/to/fdroid-data-mirror-checkout && git add -A && git commit && git push origin av1100-slim
-```
-
 Run `/simplify` and `/code-review high` on the diff before pushing. Check:
 - Three versionName/versionCode blocks; the commit SHA matches the tag.
 - `binary:` is a multi-line block (trailing space after the key, URL on next line).
@@ -125,23 +115,48 @@ git commit -m "Update to vX.Y.Z (versionCode ABC/ABD/ABF): <summary>"
 # 404s until the signed reference APKs exist. Push after Step 6's gate.
 ```
 
+**THEN the mirror (the step the workflow actually reads):** the reproducible
+job clones the GitHub mirror `paoloantinori/fdroid-data-mirror`, branch
+`av1100-slim`, NOT this fork. Pushing only the fork fails the recipe-commit
+guard (2026-08-30, twice). The sync requires the COMMIT above (it stamps the
+mirror commit with the fork SHA that must contain the synced content):
+
+```bash
+cd ~/data/repo/personal/anti-vocale
+scripts/sync-fdroid-mirror.sh
+# cp + commit + push of the recipe to the mirror (branch av1100-slim). Fails
+# loudly on an uncommitted fork recipe, a diverged checkout, or a mirror not
+# on av1100-slim; verifies the remote branch matches before declaring sync.
+# DRY_RUN=1 prints the actions instead (pulls and diff still run).
+```
+
 ## Step 5. Build reference APKs (reproducible F-Droid)
 
-Now dispatch the workflow. The job clones the fork (which now points at the
-correct commit), builds, signs, and uploads.
+Now dispatch the workflow. The job clones the mirror recipe (which now points
+at the correct commit), builds, signs, and uploads.
 
 ```
 gh workflow run android-release.yml -f tag=vX.Y.Z
+```
+
+One command chains the whole pre-build half: gate A (the SKIP_BINARY_URLS=1
+checker), the mirror sync above, the stale-asset cleanup below, and this
+dispatch:
+
+```
+scripts/release-fdroid-references.sh prepare vX.Y.Z
 ```
 
 A built-in guard step fails the job fast if the recipe's `commit:` does not match
 the peeled commit of the dispatched tag, so a stale-recipe reference cannot ship
 silently.
 
-**Stale-asset rule:** if a reference build ran before with a wrong recipe (wrong
-srclib pin, wrong commit), DELETE the six `app-fdroid-*` release assets (signed +
-unsigned) before re-dispatching: the workflow's uploads are the `binary:` targets,
-and leaving wrong-sherpa binaries attached ships them to every F-Droid user.
+**Stale-asset rule:** before ANY re-dispatch of the same tag, DELETE the
+canonical `app-fdroid-*` release assets (signed + unsigned): the workflow's
+uploads are the `binary:` targets, and whatever is attached when the recipe
+pushes is what F-Droid ships. The script cannot tell a "right" prior asset
+from a wrong one, so the cleanup is unconditional; `prepare` does it
+automatically (pattern-matched against the live asset list).
 
 Two jobs:
 1. `Build` assembles the unsigned APKs and uploads them with `-unsigned` suffix.
@@ -185,18 +200,24 @@ cd ~/data/repo/personal/fdroid-data
 git push origin anti-vocale-1.10.0   # the current recipe branch (see Prerequisites)
 ```
 
+One command chains the whole post-build half: this gate, the fork push (only
+if local recipe commits are pending), and the Step 7 pipeline status:
+
+```
+scripts/release-fdroid-references.sh finalize vX.Y.Z
+```
+
 ## Step 7. Verify F-Droid reproducibility pipeline
 
-The fork push (Step 6) triggered the F-Droid CI pipeline on MR `!43599`. But
-that pipeline only has valid references to compare against once Step 5 uploads
-them, so re-check it after the reference build completes. Poll until the
-reproducibility check passes:
+The fork push (Step 6) triggered the fdroiddata pipeline in the fork project.
+Poll it by recipe branch AND the fork SHA you pushed (a branch-only poll on
+the long-lived recipe branch would return the PREVIOUS release's pipeline;
+the `!43599` endpoint this step used until 2026-08-31 kept answering with a
+merged 1.8.2-era green). `finalize` does this exact poll:
 
 ```bash
-TOKEN=$(cat ~/.config/gl-token)
-curl -s --header "PRIVATE-TOKEN: $TOKEN" \
-  "https://gitlab.com/api/v4/projects/fdroid%2Ffdroiddata/merge_requests/43599/pipelines?per_page=1" \
-  | python3 -c "import sys,json; print(json.load(sys.stdin)[0]['status'])"
+scripts/release-fdroid-references.sh finalize vX.Y.Z
+# manual equivalent: GitLab API pipelines?ref=<recipe branch>&sha=<fork SHA>
 ```
 
 Proof: GitLab pipeline `success`; the build is marked "verified reproducible".

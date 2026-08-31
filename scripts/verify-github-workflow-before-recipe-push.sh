@@ -35,7 +35,8 @@ REPO="RisorseArtificiali/anti-vocale"
 if [ -n "${1:-}" ]; then
   TAG="$1"
 else
-  TAG="v$(grep '^CurrentVersion: ' "$FORK_CHECKOUT/metadata/com.antivocale.app.yml" | awk '{print $2}')"
+  TAG="v$(grep '^CurrentVersion: ' "$FORK_CHECKOUT/metadata/com.antivocale.app.yml" 2>/dev/null | awk '{print $2}' || true)"
+  [ -n "${TAG#v}" ] || fail "cannot read CurrentVersion from the fork recipe; pass the tag explicitly"
 fi
 
 fail() { echo -e "${RED}❌ $*${NC}"; exit 1; }
@@ -50,23 +51,18 @@ echo ""
 # ---------------------------------------------------------------------------
 echo "Step 1: GitHub workflow status..."
 
-# workflow_dispatch runs of android-release.yml, newest first. The displayTitle
-# is the generic "Android CI/CD", so we cannot filter by tag: use the newest
-# dispatched run and let the recipe-commit guard below catch a wrong tag.
-RUN_ID=$(gh run list --workflow=android-release.yml \
-  --event workflow_dispatch --status completed \
-  --json databaseId,createdAt \
-  --jq 'sort_by(.createdAt) | reverse | .[0].databaseId' 2>/dev/null || true)
+# One listing serves both the in-progress check and the reference-run pick.
+# NOTE: gh's --status is a single-valued flag (repeating it is last-wins),
+# so fetch unfiltered runs and select statuses client-side.
+RUNS_JSON=$(gh run list --workflow=android-release.yml \
+  --event workflow_dispatch --limit 20 \
+  --json databaseId,status,conclusion,createdAt 2>/dev/null || true)
 
 # A run may still be in progress or queued: look for that FIRST, because a
 # completed older run would otherwise mask it (2026-08-31: guard read the
 # previous release's green run while the new one was still building).
-# NOTE: gh's --status is a single-valued flag (repeating it is last-wins),
-# so fetch unfiltered runs and select the non-terminal statuses client-side.
-IN_PROGRESS_ID=$(gh run list --workflow=android-release.yml \
-  --event workflow_dispatch --limit 20 \
-  --json databaseId,status \
-  --jq '[.[] | select(.status == "in_progress" or .status == "queued")][0].databaseId // empty' 2>/dev/null || true)
+IN_PROGRESS_ID=$(echo "$RUNS_JSON" | jq -r \
+  '[.[] | select(.status == "in_progress" or .status == "queued")][0].databaseId // empty')
 
 if [ -n "$IN_PROGRESS_ID" ]; then
   warn "Workflow run ${IN_PROGRESS_ID} is STILL IN PROGRESS"
@@ -75,28 +71,31 @@ if [ -n "$IN_PROGRESS_ID" ]; then
   fail "Do not push the recipe until the workflow completes."
 fi
 
+# Reference run = the newest completed dispatch whose reproducible job RAN.
+# A Play-only dispatch (play-store-track) skips that job: binding to the
+# newest completed run unconditionally would fail this gate on a "skipped"
+# conclusion with a wrong diagnosis, and re-running finalize never clears it.
+RUN_ID=""
+REPROD_CONCLUSION=""
+for CAND in $(echo "$RUNS_JSON" | jq -r \
+  '[.[] | select(.status == "completed")] | sort_by(.createdAt) | reverse | .[0:5][].databaseId'); do
+  CAND_CONCLUSION=$(gh run view "$CAND" --json jobs 2>/dev/null \
+    | jq -r '[.jobs[] | select(.name | contains("reproducible"))][0].conclusion // empty')
+  if [ -n "$CAND_CONCLUSION" ] && [ "$CAND_CONCLUSION" != "skipped" ]; then
+    RUN_ID="$CAND"
+    REPROD_CONCLUSION="$CAND_CONCLUSION"
+    break
+  fi
+done
+
 if [ -z "$RUN_ID" ]; then
-  echo "   No completed dispatch run found."
+  echo "   No completed dispatch run with a reproducible job found."
   echo "   Dispatch first: gh workflow run android-release.yml -f tag=${TAG}"
   fail "No reference build exists for the recipe to point at."
 fi
 
-echo "   Latest completed run: ${RUN_ID}"
-RUN_STATUS=$(mktemp) || fail "mktemp failed"
-trap 'rm -f "$RUN_STATUS"' EXIT
-gh run view "$RUN_ID" --json status,conclusion,jobs > "$RUN_STATUS"
-
-# Check the reproducible job specifically
-REPROD_CONCLUSION=$(jq -r '.jobs[]
-  | select(.name | contains("reproducible"))
-  | .conclusion // "missing"' "$RUN_STATUS")
-
-if [ -z "$REPROD_CONCLUSION" ]; then
-  fail "No *reproducible* job found in run ${RUN_ID}. Jobs: $(jq -r '.jobs[].name' "$RUN_STATUS" | tr '\n' ' ')"
-fi
-
 if [ "$REPROD_CONCLUSION" != "success" ]; then
-  echo "   Reproducible job conclusion: ${REPROD_CONCLUSION}"
+  echo "   Reference run ${RUN_ID}: reproducible job conclusion: ${REPROD_CONCLUSION}"
   echo "   Logs: gh run view ${RUN_ID} --log"
   fail "Reference build did not succeed; the binary: URLs would 404."
 fi
@@ -136,22 +135,29 @@ if [ ! -d "$MIRROR_CHECKOUT" ]; then
   fail "Set MIRROR_CHECKOUT or clone the mirror before pushing."
 fi
 
+# The diff below compares WORKING TREES, but the fork push (and the pipeline
+# it triggers) operate on COMMITS: a dirty fork tree would pass while the
+# push ships the older committed recipe. Gate that here so the manual path
+# is protected too, not just the orchestrator.
+if [ -n "$(git -C "$FORK_CHECKOUT" status --porcelain -- metadata/com.antivocale.app.yml)" ]; then
+  fail "fork recipe has UNCOMMITTED changes; commit first (this gate certifies what the push will send)"
+fi
+
 if ! diff -q "$FORK_CHECKOUT/metadata/com.antivocale.app.yml" \
              "$MIRROR_CHECKOUT/metadata/com.antivocale.app.yml" >/dev/null; then
   echo "   Fork and mirror recipes DIFFER:"
   diff "$FORK_CHECKOUT/metadata/com.antivocale.app.yml" \
        "$MIRROR_CHECKOUT/metadata/com.antivocale.app.yml" | head -20 || true
-  fail "Sync the mirror first (runbook Step 4): cp + commit + push av1100-slim."
+  fail "Sync the mirror first: scripts/sync-fdroid-mirror.sh (from the app repo)."
 fi
-ok "Fork and mirror recipes are identical"
+ok "Fork and mirror recipes are identical (fork tree clean)"
 
 echo ""
 ok "ALL CHECKS PASSED; safe to push the recipe"
 echo ""
 echo "Next steps:"
+echo "  one command: scripts/release-fdroid-references.sh finalize ${TAG}"
+echo "    (runs this gate, pushes the fork if pending, polls the pipeline)"
 CURRENT_BRANCH=$(git -C "$FORK_CHECKOUT" branch --show-current)
-echo "  cd ${FORK_CHECKOUT}"
-echo "  git add metadata/com.antivocale.app.yml"
-echo "  git commit -m 'Update to ${TAG}'"
-echo "  git push origin ${CURRENT_BRANCH}"
+echo "  manual fork push: git -C ${FORK_CHECKOUT} push origin ${CURRENT_BRANCH}"
 exit 0

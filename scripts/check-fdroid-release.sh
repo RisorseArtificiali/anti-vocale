@@ -38,14 +38,16 @@ echo "== tag $TAG -> $TAG_COMMIT"
 # 3. srclib pin must match .sherpa-version (issue #38 rule)
 PIN_EXPECTED=$(grep -oE '[0-9a-f]{40}' .sherpa-version || true)
 [ -n "$PIN_EXPECTED" ] || fail ".sherpa-version has no srclib commit"
-BLOCK_START=$(grep -n "versionName: $VERSION" "$RECIPE" | head -1 | cut -d: -f1)
+# anchored (\$): a substring match would let a prerelease block poison the
+# window (1.10.0-beta.2 matched a check for 1.10.0 and failed the trio count)
+BLOCK_START=$(grep -n "versionName: $VERSION\$" "$RECIPE" | head -1 | cut -d: -f1 || true)
 [ -n "$BLOCK_START" ] || fail "recipe has no block for $VERSION (generate it first: scripts/new-fdroid-version.py)"
 # the version's TRIO spans from the first to the last of its blocks; +40 lines
 # covers one block's pitch (38 measured) without reaching the fixed-offset
 # fields of anything greppable outside the trio
-LAST_SAME=$(grep -n "versionName: $VERSION" "$RECIPE" | tail -1 | cut -d: -f1)
+LAST_SAME=$(grep -n "versionName: $VERSION\$" "$RECIPE" | tail -1 | cut -d: -f1 || true)
 BLOCK_END=$((LAST_SAME + 40))
-PIN_COUNT=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -cE 'sherpa_onnx@[0-9a-f]{40}')
+PIN_COUNT=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -cE 'sherpa_onnx@[0-9a-f]{40}' || true)
 [ "$PIN_COUNT" = "3" ] || fail "expected 3 srclib pins in the $VERSION trio, found $PIN_COUNT"
 BAD_PIN=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -oE 'sherpa_onnx@[0-9a-f]{40}' | cut -d@ -f2 | grep -v "^$PIN_EXPECTED$" | head -1 || true)
 [ -z "$BAD_PIN" ] || fail "srclib pin mismatch in the $VERSION trio: ${BAD_PIN:0:12}, .sherpa-version expects ${PIN_EXPECTED:0:12} (issue #38)"
@@ -70,7 +72,7 @@ for ABI in 1 2 4; do
   sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -q "versionCode: $EXPECTED" \
     || fail "recipe block missing versionCode $EXPECTED (expected base*10+$ABI)"
 done
-CVC=$(grep -m1 'CurrentVersionCode:' "$RECIPE" | awk '{print $2}')
+CVC=$(grep -m1 'CurrentVersionCode:' "$RECIPE" | awk '{print $2}' || true)
 [ "$CVC" = "$((BASE * 10 + 4))" ] || fail "CurrentVersionCode $CVC != max code $((BASE * 10 + 4))"
 echo "== vercodes OK ($((BASE*10+1))/$((BASE*10+2))/$((BASE*10+4)), CurrentVersionCode max)"
 
