@@ -87,6 +87,12 @@ cp metadata/com.antivocale.app.yml /path/to/fdroid-data-mirror-checkout/
 cd /path/to/fdroid-data-mirror-checkout && git add -A && git commit && git push origin av1100-slim
 ```
 
+**Cross-check BEFORE pushing (TASK-420):** `scripts/check-fdroid-release.sh` must
+print ALL CHECKS PASSED. It pins the seven invariants that drifted silently on
+2026-08-31 (stale sherpa srclib pin cloned by the bot: 1.13.4 in the recipe vs
+1.13.5 in the app; issue #38). If it fails on the srclib pin, update the NEW
+blocks' `sherpa_onnx@` to `.sherpa-version`'s commit and push both copies again.
+
 Run `/simplify` and `/code-review high` on the diff before pushing. Check:
 - Three versionName/versionCode blocks; the commit SHA matches the tag.
 - `binary:` is a multi-line block (trailing space after the key, URL on next line).
@@ -124,6 +130,11 @@ gh workflow run android-release.yml -f tag=vX.Y.Z
 A built-in guard step fails the job fast if the recipe's `commit:` does not match
 the peeled commit of the dispatched tag, so a stale-recipe reference cannot ship
 silently.
+
+**Stale-asset rule:** if a reference build ran before with a wrong recipe (wrong
+srclib pin, wrong commit), DELETE the six `app-fdroid-*` release assets (signed +
+unsigned) before re-dispatching: the workflow's uploads are the `binary:` targets,
+and leaving wrong-sherpa binaries attached ships them to every F-Droid user.
 
 Two jobs:
 1. `Build` assembles the unsigned APKs and uploads them with `-unsigned` suffix.
