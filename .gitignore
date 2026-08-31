@@ -120,6 +120,7 @@ Thumbs.db
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/community-model-conversion/
+!.claude/skills/fdroid-release-crosscheck/
 
 # Development tooling
 .serena/
