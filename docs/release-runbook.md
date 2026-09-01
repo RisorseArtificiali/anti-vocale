@@ -70,6 +70,15 @@ start until the signed reference APKs exist (the 2026-08-31 race).
 
 ```bash
 cd ~/data/repo/personal/fdroid-data
+# FIRST sync the recipe branch from upstream master (research 2026-09-01:
+# fdroiddata accepts per-app or per-version branch names, but the MR diffs
+# against master, and master keeps moving via rewritemeta and bot merges; a
+# branch left at the previous merge shows reversions in the MR diff. The
+# recipe file itself is normally identical to master right after a merge, so
+# the reset discards nothing):
+git fetch upstream master
+git diff HEAD upstream/master -- metadata/com.antivocale.app.yml   # expect empty
+git reset --hard upstream/master
 # Generate the three per-ABI blocks with the repo script (NEVER hand-append:
 # the 2026-08-30 hand edit landed the blocks inside VercodeOperation's list
 # and cost three failed reference builds):
