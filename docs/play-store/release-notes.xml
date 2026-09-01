@@ -1,4 +1,10 @@
 <en-US>
+What's new in 1.11.1:
+
+• Fixed: crashes when transcribing long, high-quality recordings on low-memory phones
+• Community catalog: Canary entries renamed to NVIDIA's official Canary Flash names
+• From 1.11.0: any audio length with any model; visible, cancellable queue showing model and duration; community catalog with many languages and the Canary tier for lighter phones; native language names; integrity-checked downloads; fixed Qwen3-ASR failing to load
+
 What's new in 1.11.0:
 
 • Any audio length with any model: long recordings are split and stitched automatically
@@ -190,6 +196,12 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.11.1:
+
+• Corretto: crash durante la trascrizione di registrazioni lunghe o in alta qualità su telefoni con poca memoria
+• Catalogo community: voci Canary rinominate con i nomi ufficiali NVIDIA Canary Flash
+• Dalla 1.11.0: audio di qualsiasi durata con qualsiasi modello; coda visibile e annullabile; catalogo community e tier Canary per telefoni leggeri; nomi nativi delle lingue; download con verifica di integrità; corretto Qwen3-ASR che non si caricava
+
 Novità della versione 1.11.0:
 
 • Audio di qualsiasi lunghezza con qualsiasi modello: le registrazioni lunghe vengono divise e ricucite automaticamente
@@ -381,6 +393,12 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.11.1:
+
+• Behoben: Abstürze bei der Transkription langer, hochwertiger Aufnahmen auf Geräten mit wenig Speicher
+• Community-Katalog: Canary-Einträge tragen jetzt NVIDIAs offizielle Canary-Flash-Namen
+• Aus 1.11.0: jede Audiolänge mit jedem Modell; sichtbare, abbrechbare Warteschlange mit Modell und Dauer; Community-Katalog in vielen Sprachen plus Canary-Stufe für leichte Geräte; native Sprachnamen; Downloads mit Integritätsprüfung; Qwen3-ASR-Ladefehler behoben
+
 Neuigkeiten in Version 1.11.0:
 
 • Audio beliebiger Länge mit jedem Modell: lange Aufnahmen werden automatisch geteilt und zusammengefügt
@@ -392,6 +410,12 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>
+Novedades de la versión 1.11.1:
+
+• Corregido: fallos al transcribir grabaciones largas o de alta calidad en móviles con poca memoria
+• Catálogo comunitario: entradas Canary renombradas a los nombres oficiales Canary Flash de NVIDIA
+• De 1.11.0: audio de cualquier duración con cualquier modelo; cola visible y cancelable; catálogo comunitario y nivel Canary para móviles ligeros; nombres de idiomas nativos; descargas verificadas; corregido Qwen3-ASR que no cargaba
+
 Novedades de la versión 1.11.0:
 
 • Audio de cualquier duración con cualquier modelo: las grabaciones largas se dividen y unen automáticamente
@@ -403,6 +427,12 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.11.1 :
+
+• Corrigé : plantages lors de la transcription d'enregistrements longs ou haute qualité sur téléphones à faible mémoire
+• Catalogue communautaire : entrées Canary renommées aux noms officiels de NVIDIA
+• Depuis 1.11.0 : audio de toute durée avec tout modèle ; file visible et annulable ; catalogue communautaire et niveau Canary pour téléphones légers ; noms de langues natifs ; téléchargements vérifiés ; corrigé Qwen3-ASR qui ne se chargeait pas
+
 Nouveautés de la version 1.11.0 :
 
 • Audio de toute durée avec tout modèle : les enregistrements longs sont découpés et recousus automatiquement
@@ -414,6 +444,12 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>
+Novidades da versão 1.11.1:
+
+• Corrigido: travamentos ao transcrever gravações longas ou de alta qualidade em celulares com pouca memória
+• Catálogo da comunidade: entradas Canary renomeadas para os nomes oficiais Canary Flash da NVIDIA
+• Da 1.11.0: áudio de qualquer duração com qualquer modelo; fila visível e cancelável; catálogo da comunidade e o nível Canary para celulares leves; nomes de idiomas nativos; downloads verificados; corrigido Qwen3-ASR que não carregava
+
 Novidades da versão 1.11.0:
 
 • Áudio de qualquer duração com qualquer modelo: gravações longas são divididas e costuradas automaticamente
@@ -425,6 +461,12 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>
+Что нового в версии 1.11.1:
+
+• Исправлено: сбои при расшифровке длинных или качественных записей на телефонах с малым объёмом памяти
+• Каталог сообщества: модели Canary переименованы в официальные названия NVIDIA Canary Flash
+• Из 1.11.0: аудио любой длины с любой моделью; видимая очередь с отменой; каталог сообщества на многих языках и уровень Canary для лёгких телефонов; названия языков на самих языках; проверка целостности загрузок; исправлена загрузка Qwen3-ASR
+
 Что нового в версии 1.11.0:
 
 • Аудио любой длины с любой моделью: длинные записи автоматически разбиваются и сшиваются
@@ -436,6 +478,12 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>
+Sürüm 1.11.1'deki yenilikler:
+
+• Düzeltildi: düşük bellekli telefonlarda uzun kayıtların yazıya aktarılmasında çökmeler
+• Canary girdileri NVIDIA'nın resmî Canary Flash adlarını aldı
+• 1.11.0'dan: her ses her modelle her uzunlukta; görünür, iptal edilebilir kuyruk; birçok dilde topluluk kataloğu ve hafif telefonlar için Canary kademesi; Qwen3-ASR düzeltmesi
+
 Sürüm 1.11.0'daki yenilikler:
 
 • Her modelle her uzunlukta ses: uzun kayıtlar otomatik bölünüp birleştirilir
@@ -447,6 +495,12 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.11.1:
+
+• Naprawiono: awarie przy transkrypcji długich, wysokojakościowych nagrań na telefonach z małą pamięcią
+• Katalog społeczności: wpisy Canary przemianowane na oficjalne nazwy NVIDIA Canary Flash
+• Z 1.11.0: dowolna długość audio z dowolnym modelem; widoczna, anulowalna kolejka; katalog społeczności w wielu językach i poziom Canary dla lżejszych telefonów; natywne nazwy języków; pobieranie z kontrolą integralności; naprawione ładowanie Qwen3-ASR
+
 Nowości w wersji 1.11.0:
 
 • Dowolna długość nagrania z dowolnym modelem: długie nagrania są automatycznie dzielone i łączone
@@ -458,6 +512,12 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>
+संस्करण 1.11.1 में नया क्या है:
+
+• सुधार: कम मेमोरी वाले फ़ोन पर लंबी रिकॉर्डिंग ट्रांसक्रिप्ट करते समय क्रैश
+• Canary प्रविष्टियाँ अब NVIDIA के आधिकारिक Canary Flash नामों पर
+• 1.11.0 से: कोई भी मॉडल, कोई भी लंबाई; दिखने वाली कतार; कई भाषाओं में कैटलॉग और हल्के फ़ोन के लिए Canary स्तर; Qwen3-ASR सुधार
+
 संस्करण 1.11.0 में नया क्या है:
 
 • किसी भी मॉडल के साथ किसी भी लंबाई का ऑडियो: लंबी रिकॉर्डिंग अपने आप बाँटी और जोड़ी जाती हैं
