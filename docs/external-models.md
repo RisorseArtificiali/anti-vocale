@@ -25,7 +25,7 @@ The family selector above the import buttons picks the architecture; expected fi
 | Whisper | `encoder` + `decoder` + tokens | `""` | `whisper.language` (optional; blank = auto, falls back to the record's first language) |
 | CTC | `encoder` + tokens | `nemo_ctc` or `zipformer_ctc` (explicit, no default) | none |
 | SenseVoice | `model` + tokens | `""` | `sensevoice.language` (optional), `sensevoice.itn` (`true`/`false`) |
-| Canary (NeMo Flash) | `encoder` + `decoder` + tokens | `""` | `canary.language` (one of `en`, `es`, `de`, `fr`; conditions the recognizer itself: there is no auto-detection) |
+| Canary (NeMo) | `encoder` + `decoder` + tokens | `""` | `canary.language` (one of `en`, `es`, `de`, `fr`; conditions the recognizer itself: there is no auto-detection) |
 
 Exact file names don't matter; roles are matched by keyword (CTC prefers `ctc`-hinted candidates, Transducer prefers `rnnt`-hinted tokens). A joiner/joint file in the candidate pool is rejected for Whisper and CTC as a transducer signature, so a wrong family fails at import time instead of crashing at transcription.
 

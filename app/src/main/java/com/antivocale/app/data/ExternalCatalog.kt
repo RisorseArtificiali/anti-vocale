@@ -5,15 +5,16 @@ import org.json.JSONObject
 /**
  * The bundled external-model catalog index (TASK-331 Task 13): a minimal list of
  * curated models (name, languages, family, entry-JSON URL) shipped as an asset at
- * assets/external-catalog/index.json. The URL import dialog uses it as an
- * autocomplete assist (search by language or name), NOT as a catalog browser;
- * tapping a suggestion fills the URL field and the family.
+ * assets/external-catalog/index.json. The import-from-catalog dialog browses it
+ * by language; the query matcher below is its text-search surface and the
+ * unit-test surface.
  *
  * The matcher and parsing are pure so both are unit-testable without Robolectric.
  */
 object ExternalCatalog {
 
     private val WHITESPACE = Regex("\\s+")
+    private val NON_WORD = Regex("[^\\p{L}\\p{N}]+")
 
     data class CatalogEntry(
         val name: String,
@@ -25,15 +26,18 @@ object ExternalCatalog {
     /**
      * True when every whitespace-separated query token matches the entry: against
      * any language code (equal or prefix, case-insensitive, so "pt" finds "pt-BR")
-     * or as a substring of the display name ("arabic" and "ar" both find an entry
-     * named "... Arabic ..." with language "ar"). A blank query matches everything.
+     * or as a prefix of a whole word of the display name ("arabic" finds
+     * "... Arabic ...", "whis" finds "Whisper"; "ar" finds Arabic only via its
+     * language code and never via the "ar" inside "Canary"). A blank query
+     * matches everything.
      */
     fun matchesQuery(name: String, languages: List<String>, query: String): Boolean {
         val tokens = query.trim().split(WHITESPACE).filter { it.isNotEmpty() }
         if (tokens.isEmpty()) return true
+        val words = name.split(NON_WORD).filter { it.isNotEmpty() }
         return tokens.all { token ->
             languages.any { it.equals(token, ignoreCase = true) || it.startsWith(token, ignoreCase = true) } ||
-                name.contains(token, ignoreCase = true)
+                words.any { it.startsWith(token, ignoreCase = true) }
         }
     }
 

@@ -804,7 +804,7 @@
     <string name="external_family_ctc">CTC</string>
     <string name="external_family_ctc_help">एनकोडर + टोकन फ़ाइलें चाहिए</string>
     <string name="external_family_sense_voice">SenseVoice</string>
-    <string name="external_family_canary">Canary (NeMo Flash)</string>
+    <string name="external_family_canary">Canary (NeMo)</string>
     <string name="external_family_sense_voice_help">मॉडल + टोकन फ़ाइलें चाहिए</string>
     <string name="external_family_canary_help">encoder + decoder + tokens फ़ाइलें चाहिए; केवल en/es/de/fr; मौन-संरेखित खंडीकरण आवश्यक (VAD स्वतः चालू होता है)</string>
     <string name="external_option_itn">इनवर्स टेक्स्ट नॉर्मलाइज़ेशन</string>

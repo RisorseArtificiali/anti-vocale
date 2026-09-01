@@ -814,7 +814,7 @@
     <string name="external_family_ctc">CTC</string>
     <string name="external_family_ctc_help">Richiede file encoder + tokens</string>
     <string name="external_family_sense_voice">SenseVoice</string>
-    <string name="external_family_canary">Canary (NeMo Flash)</string>
+    <string name="external_family_canary">Canary (NeMo)</string>
     <string name="external_family_sense_voice_help">Richiede file model + tokens</string>
     <string name="external_family_canary_help">Richiede file encoder + decoder + tokens; solo en/es/de/fr; richiede chunking allineato ai silenzi (VAD attivato automaticamente)</string>
     <string name="external_option_itn">Normalizzazione inversa del testo</string>

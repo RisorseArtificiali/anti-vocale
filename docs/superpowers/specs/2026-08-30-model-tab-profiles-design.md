@@ -4,7 +4,7 @@ Date: 2026-08-30. Status: approved design, pending backlog decomposition (no imp
 
 ## Problem
 
-The Model tab presents one static, universally identical organization. The primary slots reflect an Italian-market tilt (Distil Italian's badge, Parakeet's recommended default); a German user's strongest options (German Whisper fine-tune, NeMo Flash de, Kroko DE) are buried in the Advanced import flow. Meanwhile the project ships two catalog sources: the bundled static catalog and the runtime-fetchable, user-overridable community index (TASK-401). The declared reality is the variance/complexity matrix (device x backend x model x language, README "How this project is built"): any curation must be data-driven and evolvable, not a hardcoded device or country taxonomy.
+The Model tab presents one static, universally identical organization. The primary slots reflect an Italian-market tilt (Distil Italian's badge, Parakeet's recommended default); a German user's strongest options (German Whisper fine-tune, Canary Flash de, Kroko DE) are buried in the Advanced import flow. Meanwhile the project ships two catalog sources: the bundled static catalog and the runtime-fetchable, user-overridable community index (TASK-401). The declared reality is the variance/complexity matrix (device x backend x model x language, README "How this project is built"): any curation must be data-driven and evolvable, not a hardcoded device or country taxonomy.
 
 ## Decision summary
 
@@ -26,7 +26,7 @@ Additive key `"profiles"` in the index:
     "intro": "Für Deutsch optimierte Auswahl: ...",
     "sections": [
       { "title": "Empfohlen", "entries": ["Whisper v3 Turbo German int8 (sherpa, primeline fine-tune)"], "badge": "Empfohlen für Deutsch" },
-      { "title": "Kompakt",   "entries": ["NeMo Flash 180M (German)", "Kroko Community Zipformer German (streaming, CC-BY-SA 4.0, Banafo / kroko.ai)"] },
+      { "title": "Kompakt",   "entries": ["Canary Flash 180M (German)", "Kroko Community Zipformer German (streaming, CC-BY-SA 4.0, Banafo / kroko.ai)"] },
       { "title": "Dialekte",  "entries": ["Whisper v3 Turbo Swiss German int8 (sherpa, Flurin17 fine-tune)"] },
       { "title": "Mehrsprachig", "entries": ["sherpa-onnx", "whisper"] }
     ]
@@ -86,7 +86,7 @@ Free extension: importing (overriding to) a community index that carries profile
 
 We curate two official profiles (id/name per the worked example above; the example's `entries` strings are the REAL current index names and bundled ids):
 
-- **Deutsch**: Empfohlen = German Whisper (community); Kompakt = NeMo Flash German + Kroko DE (community); Dialekte = Swiss German (community); Mehrsprachig = Parakeet (`sherpa-onnx`) + Whisper (`whisper`).
+- **Deutsch**: Empfohlen = German Whisper (community); Kompakt = Canary Flash German + Kroko DE (community); Dialekte = Swiss German (community); Mehrsprachig = Parakeet (`sherpa-onnx`) + Whisper (`whisper`).
 - **Italiano**: Empfohlen = `whisper` (the Distil Italian variant lives in that card with its badge); Mehrsprachig = `sherpa-onnx`. Gemma is OUT of reach for v1 references (it has no bundled catalog id; it renders through `ModelDownloader.ModelVariant`, a pipeline catalog profiles do not touch) and is excluded from launch content; a future `gemma:<variant>` reference kind is a possible extension, not v1.
 
 ## Deliberately out of scope (v1)

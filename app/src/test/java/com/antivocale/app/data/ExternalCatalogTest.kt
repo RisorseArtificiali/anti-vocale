@@ -28,6 +28,20 @@ class ExternalCatalogTest {
     }
 
     @Test
+    fun `name tokens match whole words or their prefixes, never inner substrings`() {
+        // "ar" sits inside "Canary" but is not a word or word prefix there; it
+        // must not surface Canary names when the user is filtering by language.
+        assertFalse(ExternalCatalog.matchesQuery("Canary Flash 180M (German)", listOf("de"), "ar"))
+        // "ry" and "ca" are inner substrings of "Canary" as well
+        assertFalse(ExternalCatalog.matchesQuery("Canary Flash 180M (German)", listOf("de"), "ry"))
+        // word prefixes do match, at any token length
+        assertTrue(ExternalCatalog.matchesQuery("Canary Flash 180M (German)", listOf("de"), "can"))
+        assertTrue(ExternalCatalog.matchesQuery("Canary Flash 180M (German)", listOf("de"), "german"))
+        // short words of a name stay searchable ("v3" in three catalog names)
+        assertTrue(ExternalCatalog.matchesQuery("Whisper v3 Turbo German", listOf("de"), "v3"))
+    }
+
+    @Test
     fun `multi-token query requires every token to match`() {
         assertTrue(ExternalCatalog.matchesQuery("Whisper Arabic", listOf("ar"), "whisper ar"))
         assertFalse(ExternalCatalog.matchesQuery("Whisper Arabic", listOf("ar"), "whisper ru"))
@@ -121,14 +135,20 @@ class ExternalCatalogTest {
         // arabic + russian-small + spanish streaming + german streaming (TASK-366/368)
         // + swiss german whisper (TASK-397, Flurin17 re-export)
         // + german whisper (TASK-404, primeline re-export)
-        // + canary flash per language en/de/es/fr (TASK-408; "NeMo Flash" naming
-        // avoids the "ar" substring this by-code assertion depends on)
+        // + canary flash per language en/de/es/fr (TASK-408, renamed from
+        // "NeMo Flash" to NVIDIA's canonical family naming)
         assertEquals(10, entries.size)
         val arabic = ExternalCatalog.filter(entries, "arabic")
         assertEquals(1, arabic.size)
         val byCode = ExternalCatalog.filter(entries, "ar")
         assertEquals(arabic, byCode)
         assertEquals(ModelFamily.WHISPER, arabic[0].family)
+        // "ry" is an inner substring of "Canary": word matching keeps it silent
+        assertTrue(ExternalCatalog.filter(entries, "ry").isEmpty())
+        // a real name word still finds the four flash entries...
+        assertEquals(4, ExternalCatalog.filter(entries, "canary").size)
+        // ...and the "de" code surfaces every German-capable entry via languages
+        assertEquals(4, ExternalCatalog.filter(entries, "de").size)
     }
 
     @Test

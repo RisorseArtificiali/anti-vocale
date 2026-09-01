@@ -838,7 +838,7 @@
     <string name="external_family_ctc">CTC</string>
     <string name="external_family_ctc_help">Kodlayıcı + token dosyaları bekler</string>
     <string name="external_family_sense_voice">SenseVoice</string>
-    <string name="external_family_canary">Canary (NeMo Flash)</string>
+    <string name="external_family_canary">Canary (NeMo)</string>
     <string name="external_family_sense_voice_help">Model + token dosyaları bekler</string>
     <string name="external_family_canary_help">encoder + decoder + tokens dosyaları bekler; yalnızca en/es/de/fr; sessizliğe hizalı parçalama gerektirir (VAD otomatik açılır)</string>
     <string name="external_option_itn">Ters metin normalleştirme</string>
