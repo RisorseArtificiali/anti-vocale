@@ -53,11 +53,11 @@ ok "version $vname (base code $base)"
 [ "$base" = "$fallback" ] && ok "per-ABI fallback literal matches base ($fallback)" \
   || fail "per-ABI fallback literal is $fallback, base is $base: a fresh sync resolves wrong codes"
 
-# --- 2. Play release notes within 500 chars (extractor is fail-loud) --------
+# --- 2. Play release notes within the extractor cap (fail-loud, 490) ----------
 if python3 "$REPO_DIR/scripts/extract-release-notes.py" --output-dir /tmp/preflight-whatsnew >/dev/null 2>/tmp/preflight-notes.err; then
   for loc in en-US it-IT; do
     f="/tmp/preflight-whatsnew/whatsnew-$loc"
-    [ -f "$f" ] && ok "notes $loc: $(python3 -c "print(len(open('$f').read()))") chars (<=500)" \
+    [ -f "$f" ] && ok "notes $loc: $(python3 -c "print(len(open('$f').read()))") chars (<=490)" \
       || fail "notes $loc: file missing"
   done
 else

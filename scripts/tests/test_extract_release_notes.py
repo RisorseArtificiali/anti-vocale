@@ -102,6 +102,31 @@ class TestExtractLatestVersion(unittest.TestCase):
         self.assertIn("1.4.0", result)
         self.assertNotIn("1.3.1", result)
 
+    def test_turkish_full_sentence_heading_recognized(self):
+        # tr-TR ends the heading sentence with a colon ("... yenilikler:");
+        # the shared tail must tolerate it or the locale's whole history ships
+        # as one blob (masked through 1.11.0 by single-section locales).
+        notes = (
+            "Sürüm 1.4.0'deki yenilikler:\n\n- A\n\n"
+            "Sürüm 1.3.1'daki yenilikler:\n\n- B"
+        )
+        result = mod.extract_latest_version(notes)
+        self.assertIn("1.4.0", result)
+        self.assertNotIn("1.3.1", result)
+        self.assertNotIn("- B", result)
+
+    def test_hindi_heading_with_mem_token_recognized(self):
+        # hi-IN carries a "में" between the version and the rest of the phrase;
+        # the pattern must include it (missing through 1.11.0).
+        notes = (
+            "संस्करण 1.4.0 में नया क्या है:\n\n- A\n\n"
+            "संस्करण 1.3.1 में नया क्या है:\n\n- B"
+        )
+        result = mod.extract_latest_version(notes)
+        self.assertIn("1.4.0", result)
+        self.assertNotIn("1.3.1", result)
+        self.assertNotIn("- B", result)
+
     def test_returns_input_if_no_heading(self):
         notes = "- Just some notes"
         result = mod.extract_latest_version(notes)
@@ -126,12 +151,15 @@ class TestTruncate(unittest.TestCase):
         text = "x" * 600
         with self.assertRaises(ValueError) as ctx:
             mod.truncate(text)
-        self.assertIn("500", str(ctx.exception))
+        self.assertIn("490", str(ctx.exception))
 
-    def test_exact_500_unchanged(self):
-        text = "x" * 500
+    def test_exact_limit_unchanged(self):
+        # The cap carries headroom below Play's 500 (the console form rejected a
+        # note that measured exactly 500; v1.11.0 fr-FR, 2026-08-30).
+        text = "x" * mod.MAX_LENGTH
         result = mod.truncate(text)
-        self.assertEqual(len(result), 500)
+        self.assertEqual(len(result), mod.MAX_LENGTH)
+        self.assertEqual(mod.MAX_LENGTH, 490)
 
 
 class TestExtractNotes(unittest.TestCase):

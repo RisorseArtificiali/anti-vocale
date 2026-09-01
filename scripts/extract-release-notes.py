@@ -40,12 +40,16 @@ def extract_latest_version(notes: str) -> str:
     # itself and F-Droid/fastlane metadata remain localized in Ukrainian.
     # Headings must stay in sync with the locale blocks in release-notes.xml;
     # a heading the regex does not know makes the whole locale's history ship
-    # as one blob (found when the 9 new locales of 1.11.0 were added).
+    # as one blob (found when the 9 new locales of 1.11.0 were added; tr-TR and
+    # hi-IN still slipped through because full-sentence headings end with a
+    # colon and the Hindi one carries a "में" the pattern lacked; single-section
+    # locales masked both until 1.11.1 added a second section). The shared tail
+    # tolerates the colon so future full-sentence headings cannot reintroduce it.
     version_heading = re.compile(
         r"^(?:What's new in|Novità della versione|Novità dalla versione|"
         r"Neuigkeiten in Version|Novedades de la versión|Nouveautés de la version|"
         r"Novidades da versão|Что нового в версии|Sürüm \S+ yenilikler|"
-        r"Nowości w wersji|Новинки версії|संस्करण \S+ नया क्या है)\s",
+        r"Nowości w wersji|Новинки версії|संस्करण \S+ में नया क्या है):?\s",
         re.MULTILINE,
     )
     headings = list(version_heading.finditer(notes))

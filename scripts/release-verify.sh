@@ -26,7 +26,7 @@ gh run list --repo "$REPO" --limit 3 --json databaseId,event,status,conclusion,d
 
 echo
 echo "Manual Play Console checklist (only you can do these):"
-echo "  [ ] What's new: paste the <=500-char texts from docs/play-store/release-notes.xml"
+echo "  [ ] What's new: paste the <=490-char texts from docs/play-store/release-notes.xml"
 echo "      (latest version section, both locales) if the upload predates a notes fix"
 echo "  [ ] Advertising ID declaration (Policy > App content): answer NO (we ship no"
 echo "      AD_ID permission by design; the console warning about zeroed IDs is expected)"
