@@ -24,7 +24,12 @@ set -uo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 FORK_DIR="${FORK_DATA_DIR:-$HOME/data/repo/personal/fdroid-data}"
-FORK_BRANCH="anti-vocale-1.8.2"
+# The recipe branch is whatever the fork checkout is on (the runbook
+# Prerequisites mandate that); the literal here went stale after the branch
+# moved off anti-vocale-1.8.2 and silently aimed these checks at a dead
+# branch (found exercising the v1.11.1 preflight). Same convention as
+# release-fdroid-references.sh and verify-github-workflow-before-recipe-push.sh.
+FORK_BRANCH="$(git -C "$FORK_DIR" branch --show-current 2>/dev/null)"
 RECIPE_REL="metadata/com.antivocale.app.yml"
 OFFLINE=0
 TAG=""
