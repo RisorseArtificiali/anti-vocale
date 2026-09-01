@@ -11,7 +11,7 @@
 #   2. The "reproducible" job succeeded (it reads the MIRROR recipe)
 #   3. All three signed APKs (app-fdroid-<abi>-release.apk) exist in the release
 #   4. The mirror recipe matches the fork recipe (drift = stale builds)
-#   5. origin's Builds adds nothing the local recipe lacks (the finalize
+#   5. origin's recipe adds nothing the local recipe lacks (the finalize
 #      force-push discards nothing)
 #
 # Usage: ./scripts/verify-github-workflow-before-recipe-push.sh [TAG]
@@ -168,10 +168,15 @@ git -C "$FORK_CHECKOUT" fetch -q origin
 # origin holding recipe lines this checkout lacks means the push would discard
 # them (!47391-style maintainer edits on our branch).
 FILTER_AWK='/^CurrentVersion(Code)?:/{next} 1'
-if diff -u \
-     <(git -C "$FORK_CHECKOUT" show "HEAD:metadata/com.antivocale.app.yml" | awk "$FILTER_AWK") \
-     <(git -C "$FORK_CHECKOUT" show "origin/$CURRENT_BRANCH:metadata/com.antivocale.app.yml" 2>/dev/null | awk "$FILTER_AWK") \
-   | grep -qE '^\+[^+]'; then
+# capture, then grep: under pipefail the old `diff | grep -q` form could
+# NEVER fire (a real origin-side difference makes diff exit 1 and pipefail
+# surfaces that regardless of grep's match: the guard was dead code and a
+# maintainer edit would have sailed through). Capturing reads to EOF, so
+# only the grep verdict decides.
+ORIGIN_EXTRA="$(diff -u \
+  <(git -C "$FORK_CHECKOUT" show "HEAD:metadata/com.antivocale.app.yml" | awk "$FILTER_AWK") \
+  <(git -C "$FORK_CHECKOUT" show "origin/$CURRENT_BRANCH:metadata/com.antivocale.app.yml" 2>/dev/null | awk "$FILTER_AWK"))" || true
+if grep -qE '^\+[^+]' <<<"$ORIGIN_EXTRA"; then
   fail "origin/$CURRENT_BRANCH's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py"
 fi
 ok "origin's recipe adds nothing this checkout lacks"

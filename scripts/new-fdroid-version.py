@@ -135,14 +135,19 @@ def main() -> None:
             nb = re.sub(r"sherpa_onnx@[0-9a-f]{40}", f"sherpa_onnx@{pin_match.group(0)}", nb)
         new_blocks.append(nb)
 
-    # One canonical blank line between blocks: re-joining with a separator line
-    # per block would add an extra blank line at every junction on every run.
+    # One canonical blank line between blocks AND before the tail: body already
+    # ends with "\n\n" (one blank line), so the tail joins with NO extra "\n".
+    # The extra newline here made the fork CI's `fdroid rewritemeta` job red on
+    # 1.11.1 (double blank at the block->tail junction, the one spot the join
+    # did not cover; earlier releases' blobs record no such artifact, and the
+    # 1.11.0 red was the NDK pin). Canonical form = upstream master's, one
+    # blank line; check-fdroid-release.sh rejects consecutive blanks outright.
     canonical = [block.rstrip("\n") for _, block in blocks] + [nb.rstrip("\n") for nb in new_blocks]
     body = "\n\n".join(canonical) + "\n\n"
     # tail: bump CurrentVersion/CurrentVersionCode, preserving everything else once
     new_tail = re.sub(r"CurrentVersion: \S+", f"CurrentVersion: {version}", tail, count=1)
     new_tail = re.sub(r"CurrentVersionCode: \d+", f"CurrentVersionCode: {base * 10 + 4}", new_tail, count=1)
-    out = header + body + "\n" + new_tail
+    out = header + body + new_tail
 
     # --- validation (the duplicate-key class this script exists to prevent) ---
     top_keys = re.findall(r"^(\S[^:\n]*):", out, re.M)

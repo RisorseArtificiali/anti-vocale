@@ -69,10 +69,15 @@ FORK_BRANCH="$(git -C "$FORK_CHECKOUT" branch --show-current)"
 [ -n "$FORK_BRANCH" ] || fail "fork checkout is on a detached HEAD; check out the recipe branch first"
 git -C "$FORK_CHECKOUT" fetch -q origin
 FILTER_AWK='/^CurrentVersion(Code)?:/{next} 1'
-if diff -u \
-     <(git -C "$FORK_CHECKOUT" show "HEAD:$RECIPE_REL" | awk "$FILTER_AWK") \
-     <(git -C "$FORK_CHECKOUT" show "origin/$FORK_BRANCH:$RECIPE_REL" 2>/dev/null | awk "$FILTER_AWK") \
-   | grep -qE '^\+[^+]'; then
+# capture, then grep: under pipefail the old `diff | grep -q` form could
+# NEVER fire (a real origin-side difference makes diff exit 1 and pipefail
+# surfaces that regardless of grep's match: the guard was dead code and a
+# maintainer edit would have sailed through). Capturing reads to EOF, so
+# only the grep verdict decides.
+ORIGIN_EXTRA="$(diff -u \
+  <(git -C "$FORK_CHECKOUT" show "HEAD:$RECIPE_REL" | awk "$FILTER_AWK") \
+  <(git -C "$FORK_CHECKOUT" show "origin/$FORK_BRANCH:$RECIPE_REL" 2>/dev/null | awk "$FILTER_AWK"))" || true
+if grep -qE '^\+[^+]' <<<"$ORIGIN_EXTRA"; then
   fail "origin/$FORK_BRANCH's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py; the finalize push would discard it"
 fi
 echo "== fork branch $FORK_BRANCH: recipe at or past origin's (remote written only at finalize)"

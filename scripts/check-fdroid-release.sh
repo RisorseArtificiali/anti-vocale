@@ -47,9 +47,14 @@ BLOCK_START=$(grep -n "versionName: $VERSION\$" "$RECIPE" | head -1 | cut -d: -f
 # fields of anything greppable outside the trio
 LAST_SAME=$(grep -n "versionName: $VERSION\$" "$RECIPE" | tail -1 | cut -d: -f1 || true)
 BLOCK_END=$((LAST_SAME + 40))
-PIN_COUNT=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -cE 'sherpa_onnx@[0-9a-f]{40}' || true)
+# Capture the trio ONCE and grep the variable below: piping sed straight into
+# `grep -q` is a pipefail trap (grep -q exits on first match, sed then dies of
+# SIGPIPE 141 and the pipeline reports failure even when the grep MATCHED; the
+# flaky "missing versionCode" failures of 2026-09-01 were exactly this race).
+TRIO="$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE")"
+PIN_COUNT=$(grep -cE 'sherpa_onnx@[0-9a-f]{40}' <<<"$TRIO" || true)
 [ "$PIN_COUNT" = "3" ] || fail "expected 3 srclib pins in the $VERSION trio, found $PIN_COUNT"
-BAD_PIN=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -oE 'sherpa_onnx@[0-9a-f]{40}' | cut -d@ -f2 | grep -v "^$PIN_EXPECTED$" | head -1 || true)
+BAD_PIN=$(grep -oE 'sherpa_onnx@[0-9a-f]{40}' <<<"$TRIO" | cut -d@ -f2 | grep -v "^$PIN_EXPECTED$" | head -1 || true)
 [ -z "$BAD_PIN" ] || fail "srclib pin mismatch in the $VERSION trio: ${BAD_PIN:0:12}, .sherpa-version expects ${PIN_EXPECTED:0:12} (issue #38)"
 echo "== srclib pin OK: all $PIN_COUNT blocks pin ${PIN_EXPECTED:0:12} (matches .sherpa-version)"
 
@@ -60,7 +65,7 @@ echo "== sherpa $SHERPA_VER / AAR script $AAR_VER"
 [ "v$AAR_VER" = "$SHERPA_VER" ] || fail "fetch-sherpa-aar.sh ($AAR_VER) != .sherpa-version ($SHERPA_VER)"
 
 # 4. recipe commit must equal the tag commit
-BAD_COMMIT=$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -oE 'commit: [0-9a-f]{40}' | awk '{print $2}' | grep -v "^$TAG_COMMIT$" | head -1 || true)
+BAD_COMMIT=$(grep -oE 'commit: [0-9a-f]{40}' <<<"$TRIO" | awk '{print $2}' | grep -v "^$TAG_COMMIT$" | head -1 || true)
 [ -z "$BAD_COMMIT" ] || fail "recipe commit mismatch in the $VERSION trio: $BAD_COMMIT != tag commit $TAG_COMMIT"
 echo "== recipe commit OK"
 
@@ -69,7 +74,7 @@ echo "== recipe commit OK"
 # licaon-corrected on MR 47391 after our runbook wrongly anchored arm64)
 for ABI in 1 2 4; do
   EXPECTED=$((BASE * 10 + ABI))
-  sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE" | grep -q "versionCode: $EXPECTED" \
+  grep -q "versionCode: $EXPECTED" <<<"$TRIO" \
     || fail "recipe block missing versionCode $EXPECTED (expected base*10+$ABI)"
 done
 CVC=$(grep -m1 'CurrentVersionCode:' "$RECIPE" | awk '{print $2}' || true)
@@ -92,7 +97,10 @@ fi
 RECIPE_NDK_PINS=$(grep -E '^[[:space:]]+ndk: ' "$RECIPE" | awk '{print $2}' | sort -u || true)
 [ -n "$RECIPE_NDK_PINS" ] || fail "no ndk pins found in the recipe"
 for PIN in $RECIPE_NDK_PINS; do
-  echo "$WORKFLOW_REMOTE" | grep -q "NDK_MAP=.*${PIN}=" \
+  # herestring, not `echo | grep -q`: grep -q exits on first match and the
+  # producer dies of SIGPIPE under pipefail, failing the check it just PASSED
+  # (the flaky NDK-map misses of 2026-09-01 were exactly this race)
+  grep -q "NDK_MAP=.*${PIN}=" <<<"$WORKFLOW_REMOTE" \
     || fail "recipe pins ndk $PIN but origin/main's NDK_MAP has no exact version for it (add '$PIN=<sdkmanager version>' to the NDK preinstall step and PUSH the workflow before dispatching)"
 done
 echo "== ndk pins OK: ${RECIPE_NDK_PINS} all mapped in origin/main's workflow"
@@ -123,5 +131,19 @@ if dupes:
     sys.exit(f"duplicate top-level keys: {dupes}")
 PYEOF
 echo "== YAML OK"
+
+# 8. No consecutive blank lines: fdroid's rewritemeta canonicalizes the recipe
+# to single blank lines, so a recipe carrying a double blank fails the fork
+# CI's `fdroid rewritemeta` job (proven on 1.11.1: the generator emitted a
+# double blank at the block->tail junction, fixed in new-fdroid-version.py
+# 2026-09-01; 1.11.0's recorded red was the NDK pin, a different cause).
+# Catch the class at gate A, before it becomes someone else's red build. This
+# awk is a PROJECTION of the CI predicate (byte equality with fdroidserver's
+# writer), not the predicate itself: if fdroidserver is ever installed
+# locally, prefer `fdroid rewritemeta -l` (the dry-run form) and keep this as
+# the fallback; do not vendor the writer here to chase full equivalence.
+awk '/^[[:space:]]*$/{ if (++b == 2) { print "  double blank line before recipe line " NR; exit 1 } } !/^[[:space:]]*$/{ b=0 }' "$RECIPE" \
+  || fail "recipe has consecutive blank lines: the fork CI fdroid rewritemeta job would go red; regenerate via scripts/new-fdroid-version.py"
+echo "== formatting OK (no double blank lines: the one drift class the generator can introduce)"
 
 echo "ALL CHECKS PASSED for $VERSION / $TAG"

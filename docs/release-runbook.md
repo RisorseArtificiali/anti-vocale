@@ -92,7 +92,9 @@ cd - && git diff metadata/com.antivocale.app.yml   # review the generated blocks
 `SKIP_BINARY_URLS=1 scripts/check-fdroid-release.sh` from the repo root and require
 ALL CHECKS PASSED. It pins the invariants that drifted silently on 2026-08-31
 (stale sherpa srclib pin cloned from the old blocks: 1.13.4 in the recipe vs
-1.13.5 in the app; issue #38). SKIP_BINARY_URLS=1 because on a fresh release the
+1.13.5 in the app; issue #38) and rejects consecutive blank lines, the
+formatting class that made the fork CI's `fdroid rewritemeta` job red on
+1.11.1 (a generator join bug fixed 2026-09-01). SKIP_BINARY_URLS=1 because on a fresh release the
 signed assets only exist after step 5's dispatch; the FULL checker (URLs included,
 no env var) is the post-build, pre-bot-MR gate. If the pin check fails, the
 generator should already have synced it: a failure means the recipe was edited by
