@@ -100,11 +100,15 @@ fi
 if [ "$OFFLINE" -eq 0 ] && [ -n "$TAG" ]; then
   recipe="$FORK_DIR/$RECIPE_REL"
   if [ -f "$recipe" ]; then
-    (git -C "$FORK_DIR" fetch -q origin "$FORK_BRANCH" 2>/dev/null; git -C "$FORK_DIR" show "origin/$FORK_BRANCH:$RECIPE_REL" > /tmp/preflight-recipe.yml 2>/dev/null) && recipe=/tmp/preflight-recipe.yml
+    # Read the LOCAL recipe: under the ordering invariant (runbook Step 4/6)
+    # the fork remote intentionally lags until finalize, so origin's copy is
+    # stale by design at dispatch time and must not be checked or coached
+    # here (the old origin-preferred read + "push the recipe BEFORE
+    # dispatching" fail message prescribed exactly the banned mid-flow push).
     tag_commit=$(git -C "$REPO_DIR" rev-parse "$TAG^{commit}" 2>/dev/null) || tag_commit=$(git ls-remote "https://github.com/RisorseArtificiali/anti-vocale" "refs/tags/$TAG" 2>/dev/null | awk '{print $1}')
     newest_commit=$(awk '/^[[:space:]]+commit:/{c=$2} END{print c}' "$recipe")
-    [ "$newest_commit" = "$tag_commit" ] && ok "recipe newest entry commit == $TAG" \
-      || fail "recipe newest commit $newest_commit != tag $TAG ($tag_commit): push the recipe BEFORE dispatching the signing job"
+    [ "$newest_commit" = "$tag_commit" ] && ok "recipe newest entry commit == $TAG (local; origin catches up at finalize)" \
+      || fail "recipe newest commit $newest_commit != tag $TAG ($tag_commit): run Step 4 (new-fdroid-version.py) locally before dispatching; the fork is pushed only at finalize"
     newest_codes=$(awk '/^[[:space:]]+versionCode:/{print $2}' "$recipe" | tail -3 | tr '\n' ' ')
     expected_codes="$((base*10+1)) $((base*10+2)) $((base*10+4)) "
     [ "$newest_codes" = "$expected_codes" ] && ok "recipe vercodes: $newest_codes" \

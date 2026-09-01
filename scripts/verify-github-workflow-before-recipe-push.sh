@@ -11,6 +11,8 @@
 #   2. The "reproducible" job succeeded (it reads the MIRROR recipe)
 #   3. All three signed APKs (app-fdroid-<abi>-release.apk) exist in the release
 #   4. The mirror recipe matches the fork recipe (drift = stale builds)
+#   5. origin's Builds adds nothing the local recipe lacks (the finalize
+#      force-push discards nothing)
 #
 # Usage: ./scripts/verify-github-workflow-before-recipe-push.sh [TAG]
 #   TAG: optional (defaults to CurrentVersion in the fork recipe)
@@ -152,12 +154,36 @@ if ! diff -q "$FORK_CHECKOUT/metadata/com.antivocale.app.yml" \
 fi
 ok "Fork and mirror recipes are identical (fork tree clean)"
 
+# ---------------------------------------------------------------------------
+# Check 4: origin's copy of the recipe carries nothing a push would discard
+# ---------------------------------------------------------------------------
+echo ""
+echo "Step 4: fork branch vs its remote (recipe content guard)..."
+CURRENT_BRANCH=$(git -C "$FORK_CHECKOUT" branch --show-current)
+[ -n "$CURRENT_BRANCH" ] || fail "fork checkout is on a detached HEAD; check out the recipe branch first"
+git -C "$FORK_CHECKOUT" fetch -q origin
+# Same Builds-section content guard as sync-fdroid-mirror.sh and the finalize
+# push (fdroiddata squash-merges MRs, so commit ancestry cannot express
+# "already merged upstream"; the check is directional on Builds content):
+# origin holding recipe lines this checkout lacks means the push would discard
+# them (!47391-style maintainer edits on our branch).
+FILTER_AWK='/^CurrentVersion(Code)?:/{next} 1'
+if diff -u \
+     <(git -C "$FORK_CHECKOUT" show "HEAD:metadata/com.antivocale.app.yml" | awk "$FILTER_AWK") \
+     <(git -C "$FORK_CHECKOUT" show "origin/$CURRENT_BRANCH:metadata/com.antivocale.app.yml" 2>/dev/null | awk "$FILTER_AWK") \
+   | grep -qE '^\+[^+]'; then
+  fail "origin/$CURRENT_BRANCH's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py"
+fi
+ok "origin's recipe adds nothing this checkout lacks"
+
 echo ""
 ok "ALL CHECKS PASSED; safe to push the recipe"
 echo ""
 echo "Next steps:"
 echo "  one command: scripts/release-fdroid-references.sh finalize ${TAG}"
 echo "    (runs this gate, pushes the fork if pending, polls the pipeline)"
-CURRENT_BRANCH=$(git -C "$FORK_CHECKOUT" branch --show-current)
-echo "  manual fork push: git -C ${FORK_CHECKOUT} push origin ${CURRENT_BRANCH}"
+echo "  manual fork push (non-FF by design after the Step 4 master reset; the"
+echo "   fork checkout's pre-push hook blocks the recipe branch until the"
+echo "   signed APK URLs resolve):"
+echo "    git -C ${FORK_CHECKOUT} push --force-with-lease origin ${CURRENT_BRANCH}"
 exit 0

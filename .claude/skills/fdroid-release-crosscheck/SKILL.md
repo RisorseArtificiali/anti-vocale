@@ -18,10 +18,16 @@ only by manual cross-check).
    from the repo root must print ALL CHECKS PASSED (the generator now syncs the
    srclib pin from `.sherpa-version` automatically; historical blocks stay as-built).
    SKIP_BINARY_URLS=1 because on a fresh release the signed assets do not exist yet.
-3. **Push BOTH recipe copies**: the GitLab fork branch (what an MR would use)
-   AND the GitHub mirror `paoloantinori/fdroid-data-mirror` branch `av1100-slim`
-   (what the reproducible-fdroid job actually clones; pushing only the fork
-   fails the recipe-commit guard).
+3. **Push ONLY the mirror before dispatch**: the GitHub mirror
+   `paoloantinori/fdroid-data-mirror` branch `av1100-slim` (what the
+   reproducible-fdroid job actually clones) via `scripts/sync-fdroid-mirror.sh`.
+   NEVER push the GitLab fork branch at this stage: the fork push triggers the
+   fdroiddata pipeline, which 404s on the `binary:` URLs until the signed APKs
+   exist (2026-09-01 incident: a premature fork push burned a runner on exactly
+   that). The fork branch is written ONLY at finalize
+   (`scripts/release-fdroid-references.sh finalize vX.Y.Z`), after gate C
+   proves the signed APKs exist; a pre-push hook in the fork checkout enforces
+   the same rule on manual pushes.
 4. **Full cross-check post-build, pre-bot-MR**: `scripts/check-fdroid-release.sh`
    (no env var: now including the `binary:` URL resolvability). It verifies:
    srclib pin in ALL THREE blocks == `.sherpa-version` (issue #38), AAR script

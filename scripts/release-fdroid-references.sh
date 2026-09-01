@@ -3,7 +3,7 @@
 # build. Every phase boundary is a gate that already exists as a script; this
 # orchestrator only chains them and stops at the first red (exit nonzero).
 #
-#   prepare   mirror sync (with fork pull: gate A validates fresh state) ->
+#   prepare   mirror sync (fetches the fork; gate A validates local state) ->
 #             gate A (pre-dispatch checker) -> stale-asset cleanup -> dispatch
 #   finalize  gate C (job success, signed URLs, fork==mirror, clean tree) ->
 #             fork push if local recipe commits are pending -> pipeline status
@@ -54,7 +54,7 @@ case "$PHASE" in prepare | finalize) ;; *) usage ;; esac
 cd "$APP_REPO"
 
 if [ "$PHASE" = "prepare" ]; then
-  say "phase 1/4: mirror sync (pulls the fork first, so gate A sees fresh state)"
+  say "phase 1/4: mirror sync (fetches the fork; the remote is written only at finalize)"
   DRY_RUN="${DRY_RUN:-0}" "$HERE/sync-fdroid-mirror.sh"
 
   say "phase 2/4: gate A (pre-dispatch checker, reads origin/main)"
@@ -112,7 +112,28 @@ REMOTE_SHA="$(git -C "$FORK_CHECKOUT" rev-parse -q --verify "origin/$BR" || true
 if [ -n "$REMOTE_SHA" ] && [ "$LOCAL_SHA" = "$REMOTE_SHA" ]; then
   say "fork branch $BR already pushed, nothing to do"
 else
-  run git -C "$FORK_CHECKOUT" push origin "$BR"
+  # The recipe branch is reset onto fdroid/master every release (runbook
+  # Step 4), and fdroiddata SQUASH-merges MRs, so origin's tip is never an
+  # ancestor of the rebuilt branch: this push is NON-FF by design and needs
+  # the lease. Ordering invariant (2026-09-01 incident): the fork remote is
+  # written ONLY here, after gate C proved the signed APKs exist. Two guards
+  # keep the force safe:
+  #  - refuse when origin's recipe carries lines this checkout lacks
+  #    (a maintainer's edits, !47391-style, anywhere in the file). Directional
+  #    on content, not commits: squash-merges break ancestry (an ancestor test
+  #    would deadlock the next release on the already-merged old tip); new local
+  #    blocks never appear as origin-side additions (the CurrentVersion fields
+  #    are machine-managed and exempt)
+  #    between), the one window the content check above cannot see
+  #  Same guard as sync-fdroid-mirror.sh and gate C; keep the copies aligned.
+  FILTER_AWK='/^CurrentVersion(Code)?:/{next} 1'
+  if diff -u \
+       <(git -C "$FORK_CHECKOUT" show "HEAD:$RECIPE_REL" | awk "$FILTER_AWK") \
+       <(git -C "$FORK_CHECKOUT" show "origin/$BR:$RECIPE_REL" 2>/dev/null | awk "$FILTER_AWK") \
+     | grep -qE '^\+[^+]'; then
+    fail "origin/$BR's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py; pushing now would discard it"
+  fi
+  run git -C "$FORK_CHECKOUT" push --force-with-lease origin "$BR"
   if [ "${DRY_RUN:-0}" = "1" ]; then
     say "DRY: push skipped; the pipeline state below is PRE-PUSH"
   else

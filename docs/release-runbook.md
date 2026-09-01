@@ -122,6 +122,16 @@ git add metadata/com.antivocale.app.yml
 git commit -m "Update to vX.Y.Z (versionCode ABC/ABD/ABF): <summary>"
 # NO fork push here: the fork push triggers the fdroiddata pipeline, which
 # 404s until the signed reference APKs exist. Push after Step 6's gate.
+# INVARIANT (2026-09-01 incident): the fork remote is written ONLY at finalize
+# (Step 6), with --force-with-lease. prepare and sync-fdroid-mirror never touch
+# it; a manual reconciliation push mid-flow is what started the doomed 404
+# pipeline. The branch is reset onto fdroid/master each release, so the
+# finalize push is non-FF BY DESIGN; the lease plus the recipe-content guard in
+# the script keep a maintainer's suggestion commits (!47391-style) safe.
+# On a fresh fork clone, install the pre-push hook (backup + shim; exact
+# commands in the header of scripts/fdroid-recipe-pre-push.sh): it refuses ANY
+# push of a recipe-carrying branch until the signed APK URLs resolve, so the
+# premature-push class cannot recur even by hand.
 ```
 
 **THEN the mirror (the step the workflow actually reads):** the reproducible
@@ -136,7 +146,7 @@ scripts/sync-fdroid-mirror.sh
 # cp + commit + push of the recipe to the mirror (branch av1100-slim). Fails
 # loudly on an uncommitted fork recipe, a diverged checkout, or a mirror not
 # on av1100-slim; verifies the remote branch matches before declaring sync.
-# DRY_RUN=1 prints the actions instead (pulls and diff still run).
+# DRY_RUN=1 prints the actions instead (fetches, guard and diff still run).
 ```
 
 ## Step 5. Build reference APKs (reproducible F-Droid)
@@ -202,11 +212,18 @@ pipeline failed on 404 binary URLs; run it before every recipe push, after
 Step 5 completes.
 
 **Only after the gate passes, push the fork** (this is what triggers the
-fdroiddata pipeline; until now the signed APKs were not there yet):
+fdroiddata pipeline; until now the signed APKs were not there yet). The push
+is NON-FF by design (the branch was reset onto fdroid/master at Step 4), so
+use the lease, and never discard origin-side Builds content (a maintainer's
+edits; the machine-managed CurrentVersion fields are exempt because the
+generator regenerates them):
 
 ```bash
 cd ~/data/repo/personal/fdroid-data
-git push origin anti-vocale-1.10.0   # the current recipe branch (see Prerequisites)
+git push --force-with-lease origin anti-vocale-1.10.0   # the current recipe branch (see Prerequisites)
+# A pre-push hook in this checkout (scripts/fdroid-recipe-pre-push.sh in the
+# app repo) blocks any push of the recipe branch until the signed APK URLs
+# resolve, so the premature-push class cannot recur even by hand.
 ```
 
 One command chains the whole post-build half: this gate, the fork push (only
