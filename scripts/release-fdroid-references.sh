@@ -66,8 +66,22 @@ if [ "$PHASE" = "prepare" ]; then
   # F-Droid's binary: targets, the exact incident this phase exists for).
   # Match by pattern on the REAL names: an ABI added to the workflow must not
   # depend on a second list here being updated too.
-  ASSETS="$(gh release view "$TAG" -R "$REPO" --json assets --jq '.assets[].name')" \
-    || fail "cannot list assets of release $TAG (gh auth/release missing?)"
+  # A MISSING release is the normal first-dispatch state (the workflow creates
+  # it via softprops/action-gh-release when uploading): nothing can be stale
+  # on a release that does not exist yet. Distinguish by HTTP code so a broken
+  # gh auth still fails loudly instead of masquerading as a fresh release
+  # (found on v1.11.1's first dispatch).
+  if ! ASSETS="$(gh release view "$TAG" -R "$REPO" --json assets --jq '.assets[].name' 2>/dev/null)"; then
+    # capture first: under pipefail the api|grep pipeline would inherit gh's
+    # exit 1 even when the grep matches.
+    api_msg="$(gh api "repos/$REPO/releases/tags/$TAG" 2>&1 || true)"
+    if grep -q "Not Found (HTTP 404)" <<<"$api_msg"; then
+      say "release $TAG does not exist yet (first dispatch): nothing to clean"
+    else
+      fail "cannot list assets of release $TAG (gh auth/release problem)"
+    fi
+    ASSETS=""
+  fi
   STALE="$(grep -E '^app-fdroid-.*-release(-unsigned)?\.apk$' <<<"$ASSETS" || true)"
   if [ -n "$STALE" ]; then
     while IFS= read -r asset; do
