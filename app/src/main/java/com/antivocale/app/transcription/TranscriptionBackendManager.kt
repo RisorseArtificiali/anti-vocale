@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import android.content.Context
 import android.util.Log
+import com.antivocale.app.audio.AudioDurationPolicy
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelRecordsProvider
 import com.antivocale.app.manager.LlmManager
@@ -158,7 +159,17 @@ class TranscriptionBackendManager @Inject constructor(
         val maxChunkDurationSeconds: Int?,
         /** Backends that force VAD-aligned chunking flip the path to whole-file. */
         val forcesVadAlignedChunking: Boolean,
-    )
+    ) {
+        /**
+         * The effective-VAD rule lives at this seam, not at each caller: the
+         * backend's forced VAD ORs with the user preference (mirroring what the
+         * orchestrator resolves for the live backend), then the policy decides
+         * the path.
+         */
+        fun decodePath(vadPreference: Boolean): AudioDurationPolicy.DecodePath =
+            AudioDurationPolicy.decodePathFor(
+                vadPreference || forcesVadAlignedChunking, maxChunkDurationSeconds)
+    }
 
     /**
      * Cold query for the long-audio dialog gate: predicts the decode path the

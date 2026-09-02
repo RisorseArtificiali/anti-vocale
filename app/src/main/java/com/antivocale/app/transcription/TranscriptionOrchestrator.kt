@@ -678,22 +678,20 @@ class TranscriptionOrchestrator @Inject constructor(
             }
             effective
         }
-        // decodePathFor is the single source of the path rule; the leading null
-        // check is redundant with it but keeps the smart cast to Int below.
-        val usePipeline = maxChunkDuration != null &&
-            AudioDurationPolicy.decodePathFor(vadEnabled, maxChunkDuration) ==
-            AudioDurationPolicy.DecodePath.STREAMING
+        // streamingChunkSeconds is the single source of the usePipeline rule:
+        // the chunk cap when this request streams, null when it decodes whole-file.
+        val pipelineChunkSeconds = AudioDurationPolicy.streamingChunkSeconds(vadEnabled, maxChunkDuration)
 
         val totalStartMs = System.currentTimeMillis()
 
-        if (usePipeline) {
+        if (pipelineChunkSeconds != null) {
             return applyFinalGenerativePass(
                 backend, promptPlan.finalPass,
                 processPipelinedAudio(
                     taskId = taskId,
                     filePath = filePath,
                     backend = backend,
-                    maxChunkDurationSeconds = maxChunkDuration,
+                    maxChunkDurationSeconds = pipelineChunkSeconds,
                     context = context,
                     coroutineScope = coroutineScope,
                     listener = listener,

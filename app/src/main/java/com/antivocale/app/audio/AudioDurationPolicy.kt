@@ -30,6 +30,8 @@ object AudioDurationPolicy {
         val showDialog: Boolean,
         /** Estimated compute time, rounded UP to the minute. */
         val estimateMinutes: Long,
+        /** Audio length, rounded UP to the minute; the dialog reads both from here. */
+        val durationMinutes: Long,
         /** True when the estimate came from the cold-start fallback (fewer than 2 calibration samples). */
         val isRough: Boolean,
     )
@@ -51,23 +53,34 @@ object AudioDurationPolicy {
             .coerceIn(VAD_MIN_SECONDS, VAD_MAX_SECONDS)
     }
 
-    /** Advisory dialog above 30 minutes. */
-    fun warnThresholdSeconds(): Long = 1800L
+    /** Advisory dialog threshold, above 30 minutes. */
+    const val WARN_THRESHOLD_SECONDS = 1800L
 
-    /** Mirrors TranscriptionOrchestrator's usePipeline rule: streaming needs VAD
-     *  off AND a chunking backend; everything else decodes whole-file PCM. */
+    /** The usePipeline rule, single source: streaming needs VAD off AND a
+     *  chunking backend; everything else decodes whole-file PCM. */
     fun decodePathFor(vadEnabled: Boolean, maxChunkDurationSeconds: Int?): DecodePath =
         if (!vadEnabled && maxChunkDurationSeconds != null) DecodePath.STREAMING
         else DecodePath.WHOLE_FILE_PCM
 
     /**
-     * Estimate tiering: the on-device calibration (2+ samples) wins even when
-     * slower than the family fallback, because optimism is the failure mode.
-     * A non-positive fallback RTF falls back to 1x real time (rtfEstimate is a
-     * free constructor parameter; a bad value must not yield Infinity).
+     * [decodePathFor] in a null-shaped form so the orchestrator consumes the
+     * decision instead of restating the null-ness rule for a smart cast: the
+     * chunk cap when this request streams, null when it decodes whole-file.
      */
-    fun resolveEstimateMsPerSec(calibratedMsPerSec: Float?, sampleCount: Int, fallbackRtf: Float): Float =
-        if (sampleCount >= 2 && calibratedMsPerSec != null && calibratedMsPerSec > 0f) calibratedMsPerSec
+    fun streamingChunkSeconds(vadEnabled: Boolean, maxChunkDurationSeconds: Int?): Int? =
+        if (decodePathFor(vadEnabled, maxChunkDurationSeconds) == DecodePath.STREAMING) maxChunkDurationSeconds
+        else null
+
+    /**
+     * Estimate tiering: the on-device calibration (calibration-sufficient
+     * samples, per TranscriptionCalibrator.CalibrationProfile.hasEstimate) wins
+     * even when slower than the family fallback, because optimism is the
+     * failure mode. A non-positive fallback RTF falls back to 1x real time
+     * (rtfEstimate is a free constructor parameter; a bad value must not yield
+     * Infinity).
+     */
+    fun resolveEstimateMsPerSec(calibratedMsPerSec: Float?, calibrated: Boolean, fallbackRtf: Float): Float =
+        if (calibrated && calibratedMsPerSec != null && calibratedMsPerSec > 0f) calibratedMsPerSec
         else 1000f / fallbackRtf.coerceAtLeast(0.001f).coerceAtMost(1000f)
 
     /**
@@ -86,9 +99,11 @@ object AudioDurationPolicy {
         // it, so a file exactly at the ceiling is transcribed and deserves the
         // advisory most (it is the longest accepted case).
         val show = dialogCapable &&
-            durationSeconds in (warnThresholdSeconds() + 1)..ceilingSeconds
-        if (!show) return WarnDecision(false, 0L, !calibrated)
+            durationSeconds in (WARN_THRESHOLD_SECONDS + 1)..ceilingSeconds
+        if (!show) return WarnDecision(false, 0L, durationSeconds.ceilMinutes(), !calibrated)
         val minutes = kotlin.math.ceil(durationSeconds * estimateMsPerSec / 1000f / 60f)
-        return WarnDecision(true, minutes.toLong(), !calibrated)
+        return WarnDecision(true, minutes.toLong(), durationSeconds.ceilMinutes(), !calibrated)
     }
+
+    private fun Long.ceilMinutes(): Long = kotlin.math.ceil(this / 60.0).toLong()
 }

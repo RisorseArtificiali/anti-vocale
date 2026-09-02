@@ -349,7 +349,8 @@ class LogsViewModel @Inject constructor(
      * bug class): every display label routes through the registry.
      */
     private suspend fun displayNameFor(backendId: String, context: Context): String {
-        val descriptor = backendRegistry.byBackendId(backendId) ?: return backendId
+        val descriptor = backendRegistry.byBackendId(backendId)
+            ?: return transcriptionBackendManager.getBackend(backendId)?.displayName ?: backendId
         val path = descriptor.modelPathFlow(preferencesManager).first()
         return when {
             descriptor.displayNameResId != null -> context.getString(descriptor.displayNameResId)
@@ -372,47 +373,37 @@ class LogsViewModel @Inject constructor(
             // dialogCapable is true here by construction: this is the interactive
             // in-app flow. Every headless dispatch site never calls the gate.
             val duration = withContext(Dispatchers.IO) { audioPreprocessor.getAudioDuration(filePath) }
-            // Mirror the orchestrator's VAD resolution exactly: the preference OR
-            // the backend's forced VAD (Canary/Gemma). Missing the forced term
-            // would promise a streaming transcription that is then refused
-            // whole-file (review finding 1).
-            val gateInputs = transcriptionBackendManager.gateInputsFor(backendId)
-            val vadEnabled = preferencesManager.vadEnabled.first() ||
-                (gateInputs?.forcesVadAlignedChunking == true)
-            val decodePath = AudioDurationPolicy.decodePathFor(vadEnabled, gateInputs?.maxChunkDurationSeconds)
+            // GateInputs owns the effective-VAD rule (preference OR backend-forced);
+            // an unknown backend degrades conservatively to the whole-file path.
+            val decodePath = transcriptionBackendManager.gateInputsFor(backendId)
+                ?.decodePath(preferencesManager.vadEnabled.first())
+                ?: AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM
             // applicationContext, not the Activity: the pending warning outlives
-            // rotation inside the ViewModel and must not hold a destroyed Activity
-            // (review finding 4).
+            // rotation inside the ViewModel and must not hold a destroyed Activity.
             val appContext = context.applicationContext
             val ceiling = AudioDurationPolicy.ceilingSeconds(
                 decodePath, MemoryReadings.availableRamBytes(appContext), MemoryReadings.maxHeapBytes())
             val descriptor = backendRegistry.byBackendId(backendId)
             val modelPath = descriptor?.modelPathFlow(preferencesManager)?.first()
             val profile = transcriptionCalibrator.getEstimate(backendId, modelPath ?: "")
+            val calibrated = profile?.hasEstimate == true
             val estimate = AudioDurationPolicy.resolveEstimateMsPerSec(
-                profile?.msPerSecondOfAudio, profile?.sampleCount ?: 0, descriptor?.rtfEstimate ?: 1f)
+                profile?.msPerSecondOfAudio, calibrated, descriptor?.rtfEstimate ?: 1f)
             val decision = AudioDurationPolicy.warnDecision(
-                duration.toLong(), ceiling, estimate, dialogCapable = true,
-                calibrated = profile?.hasEstimate == true)
+                duration.toLong(), ceiling, estimate, dialogCapable = true, calibrated = calibrated)
             if (!decision.showDialog) {
                 // below threshold or over ceiling: the pre-read refusal carries the message
                 dispatchTranscription(originalEntry, backendId, filePath, appContext)
                 return@launch
             }
-            val displayName = when {
-                descriptor == null ->
-                    transcriptionBackendManager.getBackend(backendId)?.displayName ?: backendId
-                descriptor.displayNameResId != null -> appContext.getString(descriptor.displayNameResId)
-                else -> descriptor.deriveDisplayName(appContext, modelPath ?: filePath)
-            }
             // A second long retranscribe while a warning is pending must not drop
             // the first request: the new confirm dispatches both, in order.
             val previous = _pendingLongAudioWarning.value
             _pendingLongAudioWarning.value = LongAudioWarning(
-                durationMinutes = kotlin.math.ceil(duration / 60.0).toInt(),
+                durationMinutes = decision.durationMinutes.toInt(),
                 estimateMinutes = decision.estimateMinutes,
                 isRough = decision.isRough,
-                modelDisplayName = displayName,
+                modelDisplayName = displayNameFor(backendId, appContext),
                 onConfirm = {
                     previous?.onConfirm?.invoke()
                     dispatchTranscription(originalEntry, backendId, filePath, appContext)

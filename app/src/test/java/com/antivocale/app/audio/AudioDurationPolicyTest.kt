@@ -2,6 +2,7 @@ package com.antivocale.app.audio
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -62,15 +63,16 @@ class AudioDurationPolicyTest {
 
     @Test
     fun `estimate tiering prefers the device calibration`() {
-        // 2+ samples: measured value wins even when slower than the fallback
+        // calibration-sufficient (CalibrationProfile.hasEstimate): measured value
+        // wins even when slower than the fallback
         val measured = 250f   // ms per second of audio (RTF 0.25)
-        assertEquals(measured, AudioDurationPolicy.resolveEstimateMsPerSec(measured, 2, 1000f / 15f))
-        assertEquals(measured, AudioDurationPolicy.resolveEstimateMsPerSec(measured, 7, 1000f / 15f))
-        // <2 samples: family fallback (rtf 15 => 1000/15 ms per second)
-        assertEquals(1000f / 15f, AudioDurationPolicy.resolveEstimateMsPerSec(measured, 1, 15f))
-        assertEquals(1000f / 15f, AudioDurationPolicy.resolveEstimateMsPerSec(null, 0, 15f))
+        assertEquals(measured, AudioDurationPolicy.resolveEstimateMsPerSec(measured, true, 1000f / 15f))
+        // not calibration-sufficient: family fallback (rtf 15 => 1000/15 ms per second)
+        assertEquals(1000f / 15f, AudioDurationPolicy.resolveEstimateMsPerSec(measured, false, 15f))
+        assertEquals(1000f / 15f, AudioDurationPolicy.resolveEstimateMsPerSec(null, false, 15f))
+        assertEquals(1000f / 15f, AudioDurationPolicy.resolveEstimateMsPerSec(null, true, 15f))
         // a degenerate fallback RTF must not yield Infinity (review finding 8)
-        assertEquals(1000f / 0.001f, AudioDurationPolicy.resolveEstimateMsPerSec(null, 0, 0f))
+        assertEquals(1000f / 0.001f, AudioDurationPolicy.resolveEstimateMsPerSec(null, false, 0f))
     }
 
     @Test
@@ -82,6 +84,7 @@ class AudioDurationPolicyTest {
         // above threshold + dialog-capable: dialog, estimate rounded UP to the minute
         val d = AudioDurationPolicy.warnDecision(2700L, ceiling, est, true)
         assertTrue(d.showDialog); assertEquals(3L, d.estimateMinutes)
+        assertEquals(45L, d.durationMinutes)
         // exactly at the ceiling: still transcribed (refusal is strictly above),
         // so the advisory must show
         assertTrue(AudioDurationPolicy.warnDecision(ceiling, ceiling, est, true).showDialog)
@@ -99,6 +102,13 @@ class AudioDurationPolicyTest {
             AudioDurationPolicy.decodePathFor(vadEnabled = true, maxChunkDurationSeconds = 30))
         assertEquals(AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
             AudioDurationPolicy.decodePathFor(vadEnabled = false, maxChunkDurationSeconds = null))
+    }
+
+    @Test
+    fun `streamingChunkSeconds returns the cap only on the streaming path`() {
+        assertEquals(30, AudioDurationPolicy.streamingChunkSeconds(vadEnabled = false, maxChunkDurationSeconds = 30))
+        assertNull(AudioDurationPolicy.streamingChunkSeconds(vadEnabled = true, maxChunkDurationSeconds = 30))
+        assertNull(AudioDurationPolicy.streamingChunkSeconds(vadEnabled = false, maxChunkDurationSeconds = null))
     }
 
     @Test

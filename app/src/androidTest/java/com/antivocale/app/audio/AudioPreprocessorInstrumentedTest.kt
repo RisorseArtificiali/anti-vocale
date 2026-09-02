@@ -146,7 +146,6 @@ class AudioPreprocessorInstrumentedTest {
         }
     }
 
-
     @Test
     fun getAudioInfo_withNonExistentFile_returnsErrorMessage() {
         val nonExistentPath = "/non/existent/file.m4a"
@@ -177,42 +176,23 @@ class AudioPreprocessorInstrumentedTest {
     // ========== Helper to create test audio file ==========
 
     /**
-     * TASK-432 duration fixture: a valid WAV header declaring [durationSeconds]
-     * of 8kHz mono s16 PCM. [actualDataFraction] < 1 writes only part of the
-     * declared payload (truncated file, header keeps promising more).
+     * TASK-432 duration fixture: a valid WAV declaring [durationSeconds] of
+     * 8kHz mono s16 PCM. WavUtils owns the header layout (no third hand-rolled
+     * writer here). [actualDataFraction] < 1 truncates the file below the
+     * declared payload: the header keeps promising more than the file holds.
      */
     private fun createWavWithDurationSeconds(
         durationSeconds: Double,
         actualDataFraction: Float = 1.0f,
     ): File {
-        val sampleRate = 8000
-        val channels = 1
-        val bitsPerSample = 16
-        val byteRate = sampleRate * channels * bitsPerSample / 8
-        val declaredDataSize = (durationSeconds * byteRate).toInt()
-        val actualDataSize = (declaredDataSize * actualDataFraction).toInt().coerceAtLeast(44)
-
+        val wav = com.antivocale.app.util.WavUtils.generateSilence(
+            sampleRate = 8000, channels = 1, bitsPerSample = 16,
+            durationSeconds = durationSeconds.toFloat())
         val wavFile = File(cacheDir, "duration_${durationSeconds.toInt()}s_${System.nanoTime()}.wav")
-        java.io.BufferedOutputStream(FileOutputStream(wavFile)).use { fos ->
-            fos.write("RIFF".toByteArray())
-            fos.write(intToLittleEndian(36 + declaredDataSize))
-            fos.write("WAVE".toByteArray())
-            fos.write("fmt ".toByteArray())
-            fos.write(intToLittleEndian(16))
-            fos.write(shortToLittleEndian(1))
-            fos.write(shortToLittleEndian(channels))
-            fos.write(intToLittleEndian(sampleRate))
-            fos.write(intToLittleEndian(byteRate))
-            fos.write(shortToLittleEndian(channels * bitsPerSample / 8))
-            fos.write(shortToLittleEndian(bitsPerSample))
-            fos.write("data".toByteArray())
-            fos.write(intToLittleEndian(declaredDataSize))
-            val zeros = ByteArray(64 * 1024)
-            var remaining = actualDataSize
-            while (remaining > 0) {
-                val n = minOf(remaining, zeros.size)
-                fos.write(zeros, 0, n)
-                remaining -= n
+        FileOutputStream(wavFile).use { it.write(wav) }
+        if (actualDataFraction < 1.0f) {
+            java.io.RandomAccessFile(wavFile, "rw").use {
+                it.setLength((wav.size * actualDataFraction).toLong().coerceAtLeast(44L))
             }
         }
         return wavFile

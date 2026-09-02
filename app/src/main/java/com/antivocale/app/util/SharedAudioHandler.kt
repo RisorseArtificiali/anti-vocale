@@ -59,12 +59,16 @@ object SharedAudioHandler {
         data class OutOfSpace(val neededMb: Int) : CopyResult()
     }
 
-    /** True when the target storage can hold the source plus margin (10% + 32MB). */
+    /** Bytes the target storage must hold for a source of [neededBytes]: source plus margin (10% + 32MB). */
+    internal fun requiredBytes(neededBytes: Long): Long =
+        neededBytes + neededBytes / 10L + 32L * 1024 * 1024L
+
+    /** True when the target storage can hold the source plus margin. */
     internal fun hasFreeSpace(availableBytes: Long, neededBytes: Long): Boolean =
-        availableBytes >= neededBytes + neededBytes / 10L + 32L * 1024 * 1024L
+        availableBytes >= requiredBytes(neededBytes)
 
     internal fun neededMb(neededBytes: Long): Int =
-        ((neededBytes + neededBytes / 10L + 32L * 1024 * 1024L) / (1024L * 1024L)).toInt()
+        (requiredBytes(neededBytes) / (1024L * 1024L)).toInt()
 
     /**
      * Copies a content:// URI to app-private storage.
@@ -101,22 +105,6 @@ object SharedAudioHandler {
                 return CopyResult.UnsupportedFormat(extension)
             }
 
-            // Pre-copy storage gate (TASK-432 spec: with the 2GB sanity bound, a
-            // near-full device would otherwise hit ENOSPC mid-copy). Source size via
-            // AssetFileDescriptor; unknown size fails open (the copy itself will
-            // error visibly).
-            val neededBytes = try {
-                context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
-            } catch (e: Exception) {
-                Log.w(TAG, "Could not size shared content: $uri", e)
-                -1L
-            }
-            if (neededBytes > 0 && !hasFreeSpace(
-                    android.os.StatFs(context.filesDir.path).availableBytes, neededBytes)) {
-                Log.e(TAG, "Not enough free space for $uri: needs ${neededBytes} bytes")
-                return CopyResult.OutOfSpace(neededMb(neededBytes))
-            }
-
             // Create output directory if needed
             val outputDir = File(context.filesDir, SHARED_AUDIO_DIR).apply {
                 if (!exists()) mkdirs()
@@ -126,16 +114,40 @@ object SharedAudioHandler {
             val fileName = "shared_${System.currentTimeMillis()}_${UUID.randomUUID().toString().take(8)}.$extension"
             val outputFile = File(outputDir, fileName)
 
+            // Pre-copy storage gate + copy over ONE provider session (TASK-432:
+            // with the 2GB sanity bound, a near-full device would otherwise hit
+            // ENOSPC mid-copy). Size and stream both come from the
+            // AssetFileDescriptor when the provider offers one; unknown size
+            // fails open (the copy itself will error visibly).
             try {
-                // Copy content
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    FileOutputStream(outputFile).use { output ->
-                        input.copyTo(output)
+                val afd = try {
+                    context.contentResolver.openAssetFileDescriptor(uri, "r")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Could not open AssetFileDescriptor for URI: $uri", e)
+                    null
+                }
+                if (afd != null) {
+                    afd.use {
+                        val neededBytes = it.length
+                        if (neededBytes > 0 && !hasFreeSpace(context.filesDir.usableSpace, neededBytes)) {
+                            Log.e(TAG, "Not enough free space for $uri: needs $neededBytes bytes")
+                            return CopyResult.OutOfSpace(neededMb(neededBytes))
+                        }
+                        it.createInputStream()?.use { input ->
+                            FileOutputStream(outputFile).use { output -> input.copyTo(output) }
+                        } ?: throw java.io.FileNotFoundException("AssetFileDescriptor gave no stream")
                     }
-                } ?: run {
-                    Log.e(TAG, "Could not open input stream for URI: $uri")
-                    outputFile.delete()
-                    return CopyResult.Unreadable
+                } else {
+                    // Providers without AFD support: fall back to the plain stream.
+                    context.contentResolver.openInputStream(uri)?.use { input ->
+                        FileOutputStream(outputFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    } ?: run {
+                        Log.e(TAG, "Could not open input stream for URI: $uri")
+                        outputFile.delete()
+                        return CopyResult.Unreadable
+                    }
                 }
             } catch (e: Exception) {
                 // Clean up any partially-written file so a flaky/revoked content provider
