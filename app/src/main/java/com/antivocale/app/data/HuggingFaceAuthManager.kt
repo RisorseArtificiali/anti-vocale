@@ -7,8 +7,9 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
 import com.antivocale.app.util.CrashReporter
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -58,6 +59,20 @@ class HuggingFaceAuthManager(
 
     private var authService: AuthorizationService? = null
     private var pendingTokenExchange: ((TokenResult) -> Unit)? = null
+
+    /**
+     * Own scope for fire-and-forget launches: structured (named owner, visible
+     * to tooling) while keeping the same never-cancelled semantics as the
+     * process-wide global scope it replaces, since this manager is a DI
+     * singleton that lives for the whole process. The CrashReporter handler is
+     * installed here so exceptions escaping [fetchUserInfo] still reach the
+     * crash reporter.
+     *
+     * Deliberately NOT cancelled in [dispose]: like [authService], the manager is
+     * lazily reusable after dispose, and a cancelled scope would silently swallow
+     * every subsequent launch.
+     */
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CrashReporter.handler)
 
     companion object {
         private const val TAG = "HuggingFaceAuthManager"
@@ -339,7 +354,7 @@ class HuggingFaceAuthManager(
      * Fetches user info from HuggingFace API.
      */
     private fun fetchUserInfo(accessToken: String, onResult: (UserInfoResult) -> Unit) {
-        GlobalScope.launch(Dispatchers.IO + CrashReporter.handler) {
+        scope.launch {
             when (val result = huggingFaceApiClient.validateToken(accessToken)) {
                 is HuggingFaceApiClient.ValidationResult.Success -> {
                     onResult(UserInfoResult.Success(result.username))
