@@ -34,10 +34,15 @@ class ResultNotificationFactoryTest {
         return List(pages * perPage) { "parola" }.joinToString(" ")
     }
 
-    private fun spec(text: String, page: Int = 0, repost: Boolean = false) = ResultNotificationSpec(
+    private fun spec(
+        text: String,
+        page: Int = 0,
+        repost: Boolean = false,
+        sourcePackage: String = "org.telegram.messenger"
+    ) = ResultNotificationSpec(
         transcriptionText = text,
         taskId = "task-1",
-        sourcePackage = "org.telegram.messenger",
+        sourcePackage = sourcePackage,
         confidence = 0.9f,
         detectedLanguage = null,
         notificationId = 5_000,
@@ -81,6 +86,45 @@ class ResultNotificationFactoryTest {
         assertEquals(listOf("Copy", "Send to Telegram"), n.titles())
         assertEquals(text, n.contentViewText())
         assertNull(n.subTextCompat())
+    }
+
+    /**
+     * TASK-433: the wiring (source package -> setPackage + action title) works
+     * for fork sources. Two representatives suffice here: the full per-fork
+     * census (names + targets + flavor suffixes + uncensused fallbacks) is
+     * pinned at the table level in AppInfoUtilsKnownNamesTest.
+     */
+    @Test
+    fun `telegram forks share back to the official telegram target`() {
+        val forks = listOf(
+            "com.radolyn.ayugram" to "AyuGram",
+            "org.telegram.messenger.web" to "Telegram"
+        )
+        forks.forEach { (source, label) ->
+            val n = factory.build(spec("ciao", sourcePackage = source), prefs)
+            val action = n.actions!!.first { it.title.toString() == "Send to $label" }
+            assertEquals(
+                "share-back target for $source",
+                "org.telegram.messenger",
+                Shadows.shadowOf(action.actionIntent).savedIntent.`package`
+            )
+        }
+    }
+
+    /** TASK-433: the family table must reproduce the old when block exactly. */
+    @Test
+    fun `share back target keeps the pre-TASK-433 family mappings`() {
+        // WhatsApp family flavors normalize to the canonical client.
+        val w4b = factory.build(spec("ciao", sourcePackage = "com.whatsapp.w4b"), prefs)
+        val w4bAction = w4b.actions!!.first { it.title.toString() == "Send to WhatsApp Business" }
+        assertEquals("com.whatsapp", Shadows.shadowOf(w4bAction.actionIntent).savedIntent.`package`)
+
+        // Apps outside every family share back to exactly themselves.
+        listOf("org.thoughtcrime.securesms", "com.example.unknown").forEach { source ->
+            val n = factory.build(spec("ciao", sourcePackage = source), prefs)
+            val action = n.actions!!.first { it.title.toString().startsWith("Send to ") }
+            assertEquals(source, Shadows.shadowOf(action.actionIntent).savedIntent.`package`)
+        }
     }
 
     @Test

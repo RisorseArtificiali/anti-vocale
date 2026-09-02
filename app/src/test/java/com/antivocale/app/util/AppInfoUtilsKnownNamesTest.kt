@@ -15,6 +15,10 @@ import org.junit.Test
  * apps so the Logs grouping never depends on PackageManager visibility
  * (Android 11+ package visibility intermittently fails for packages the
  * app has not queried, falling back to the raw "com.*" name).
+ *
+ * TASK-433: that map is now a prefix/family table that also drives the
+ * notification Share Back targeting; the censused Telegram forks and the
+ * uncensused-family fallback are pinned here.
  */
 class AppInfoUtilsKnownNamesTest {
 
@@ -28,8 +32,57 @@ class AppInfoUtilsKnownNamesTest {
     }
 
     @Test
+    fun `censused telegram forks map to their verified names`() {
+        assertEquals("AyuGram", AppInfoUtils.knownAppName("com.radolyn.ayugram"))
+        assertEquals("Nekogram", AppInfoUtils.knownAppName("tw.nekomimi.nekogram"))
+        assertEquals("Nekogram", AppInfoUtils.knownAppName("tw.nekomimi.nekogram.beta"))
+        assertEquals("exteraGram", AppInfoUtils.knownAppName("com.exteragram.messenger"))
+        assertEquals("exteraGram", AppInfoUtils.knownAppName("com.exteragram.messenger.beta"))
+        assertEquals("Telegram X", AppInfoUtils.knownAppName("org.thunderdog.challegram"))
+        assertEquals("Plus Messenger", AppInfoUtils.knownAppName("org.telegram.plus"))
+        assertEquals("OwlGram", AppInfoUtils.knownAppName("it.owlgram.android"))
+        assertEquals("iMe", AppInfoUtils.knownAppName("com.iMe.android"))
+    }
+
+    @Test
+    fun `official telegram flavor variants keep the Telegram name`() {
+        assertEquals("Telegram", AppInfoUtils.knownAppName("org.telegram.messenger.web"))
+        assertEquals("Telegram", AppInfoUtils.knownAppName("org.telegram.messenger.beta"))
+    }
+
+    @Test
+    fun `uncensused telegram family packages keep the label fallback`() {
+        // The bare org.telegram prefix normalizes only Share Back targeting;
+        // tier-2 forks stay on the PackageManager-label fallback (TASK-433).
+        assertNull(AppInfoUtils.knownAppName("org.telegram.BifToGram"))
+    }
+
+    @Test
     fun `unknown packages return null so the PackageManager fallback applies`() {
         assertNull(AppInfoUtils.knownAppName("com.example.unknown"))
+    }
+
+    @Test
+    fun `share back targets the canonical client of the app family`() {
+        assertEquals("com.whatsapp", AppInfoUtils.shareBackTarget("com.whatsapp"))
+        assertEquals("com.whatsapp", AppInfoUtils.shareBackTarget("com.whatsapp.w4b"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("org.telegram.messenger"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("com.radolyn.ayugram"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("tw.nekomimi.nekogram.beta"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("com.exteragram.messenger.beta"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("org.thunderdog.challegram"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("org.telegram.plus"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("it.owlgram.android"))
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("com.iMe.android"))
+        // Uncensused family members keep the pre-TASK-433 startsWith behavior.
+        assertEquals("org.telegram.messenger", AppInfoUtils.shareBackTarget("org.telegram.BifToGram"))
+    }
+
+    @Test
+    fun `share back keeps the exact source for family-less apps`() {
+        assertEquals("org.thoughtcrime.securesms", AppInfoUtils.shareBackTarget("org.thoughtcrime.securesms"))
+        assertEquals("com.example.unknown", AppInfoUtils.shareBackTarget("com.example.unknown"))
+        assertNull(AppInfoUtils.shareBackTarget(null))
     }
 
     @Test

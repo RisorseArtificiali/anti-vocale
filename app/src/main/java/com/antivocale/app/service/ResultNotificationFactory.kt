@@ -159,13 +159,9 @@ class ResultNotificationFactory(private val context: Context) {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_TEXT, spec.transcriptionText)
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                val targetPackage = when {
-                    spec.sourcePackage == "com.whatsapp" || spec.sourcePackage!!.startsWith("com.whatsapp") -> "com.whatsapp"
-                    spec.sourcePackage == "org.telegram.messenger" || spec.sourcePackage!!.startsWith("org.telegram") -> "org.telegram.messenger"
-                    spec.sourcePackage == "org.thoughtcrime.securesms" -> "org.thoughtcrime.securesms"
-                    else -> spec.sourcePackage
-                }
-                setPackage(targetPackage)
+                // Family normalization (forks, flavor builds) lives in the one
+                // known-app table in AppInfoUtils (TASK-433).
+                setPackage(AppInfoUtils.shareBackTarget(spec.sourcePackage))
             }
             val shareBackPendingIntent = PendingIntent.getActivity(
                 context,
