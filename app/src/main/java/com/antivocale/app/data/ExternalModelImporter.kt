@@ -467,6 +467,7 @@ class ExternalModelImporter(
                 modelType = modelType,
                 languages = languages,
                 options = options,
+                sourceUrl = sourceUrl,
                 dir = if (existingDirValid) existing.dir else targetDir.absolutePath,
             )
             store.update(updated)

@@ -399,4 +399,36 @@ class HuggingFaceRepoListingTest {
         assertEquals("ar", record.options["whisper.language"])
         assertEquals("transcribe", record.options["whisper.task"])
     }
+
+    @Test
+    fun `same-hash entry reimport dedupes onto the record and refreshes its sourceUrl`() = runTest {
+        val base = server.url("/").toString().trimEnd('/')
+        fun enqueueEntryPlusBodies() {
+            server.enqueue(MockResponse().setBody("""
+                {"name":"GigaAM v3","modelType":"nemo_transducer",
+                 "files":[{"name":"my_encoder.onnx","url":"$base/e","sha256":"${sha256(encoderBytes)}","size":${encoderBytes.size}},
+                          {"name":"decoder.onnx","url":"$base/d","sha256":"${sha256(decoderBytes)}","size":${decoderBytes.size}},
+                          {"name":"joiner.onnx","url":"$base/j","sha256":"${sha256(joinerBytes)}","size":${joinerBytes.size}},
+                          {"name":"tokens.txt","url":"$base/t","sha256":"${sha256(tokensBytes)}","size":${tokensBytes.size}}]}
+            """.trimIndent()))
+            server.enqueue(MockResponse().setBody(okio.Buffer().write(encoderBytes)))
+            server.enqueue(MockResponse().setBody(okio.Buffer().write(decoderBytes)))
+            server.enqueue(MockResponse().setBody(okio.Buffer().write(joinerBytes)))
+            server.enqueue(MockResponse().setBody(okio.Buffer().write(tokensBytes)))
+        }
+
+        enqueueEntryPlusBodies()
+        val first = importer.importFromEntryJson("$base/entry.json")
+        assertEquals("$base/entry.json", first.sourceUrl)
+
+        // Same file hashes (same pins) from a different entry URL: dedupe must land
+        // on the existing record WITH the fresh entry url, not keep the stale one.
+        enqueueEntryPlusBodies()
+        val second = importer.importFromEntryJson("$base/entry-v2.json")
+
+        assertEquals(first.id, second.id)
+        assertEquals(1, store.records().size)
+        assertEquals("$base/entry-v2.json", second.sourceUrl)
+        assertEquals("$base/entry-v2.json", store.records().single().sourceUrl)
+    }
 }
