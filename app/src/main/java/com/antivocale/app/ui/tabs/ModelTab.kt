@@ -849,9 +849,7 @@ private fun CatalogModelSection(
                             )
                         }
                         // GH #49: declare the audio-length capability BEFORE download
-                        val entryLimit = remember(entry.id, entry.storageDir) {
-                            audioLimitForCatalogEntry(entry.storageDir, entry.flags.chunkDurationSeconds)
-                        }
+                        val entryLimit = remember(entry) { audioLimitForCatalogEntry(entry) }
                         AudioLimitLabel(entryLimit)
                     }
                 }

@@ -7,10 +7,10 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Catalog parity for [ModelInfoProvider]: every bundled catalog variant (and the
- * parakeet storage dir) must resolve to a [ModelInfo], so the info overlay never
- * degrades to languages-only for a model the UI offers. A catalog addition that
- * forgets its ModelInfo fails here (fail-fast, same as the other parity tests).
+ * Catalog parity for [ModelInfoProvider]: every bundled catalog variant must
+ * resolve to a [ModelInfo], so the info overlay never degrades to
+ * languages-only for a model the UI offers. A catalog addition that forgets
+ * its ModelInfo fails here (fail-fast, same as the other parity tests).
  */
 class ModelInfoProviderCatalogTest {
 
@@ -29,9 +29,8 @@ class ModelInfoProviderCatalogTest {
     }
 
     @Test
-    fun `parakeet storage dir and both variant dir-names resolve`() {
+    fun `both parakeet variant dir-names resolve`() {
         val parakeet = parseRealCatalog().first { it.id == "sherpa-onnx" }
-        assertNotNull("parakeet storage dir must resolve", ModelInfoProvider.getInfoByDirName("parakeet-tdt"))
         for (variant in parakeet.variants) {
             assertNotNull(
                 "parakeet variant '${variant.dirName}' must resolve",

@@ -11,7 +11,12 @@ enum class ArchitectureType {
 
 data class ModelInfo(
     val architectureType: ArchitectureType,
-    val maxAudioDuration: Int?,
+    /**
+     * Hard per-pass audio cap (GH #49 display fact). Catalog-backed models carry
+     * it in `models_catalog.json` (`flags.maxAudioDurationSeconds`); only the
+     * non-catalog Gemma variants set it here. null = no known limit.
+     */
+    val maxAudioDuration: Int? = null,
     val recommendedThreads: IntRange,
     val quantizationLevel: String?,
     val isArm64Only: Boolean,
@@ -29,7 +34,6 @@ object ModelInfoProvider {
         // Shared across the storage-dir and the catalog variant dir-names.
         val parakeetInfo = ModelInfo(
             architectureType = ArchitectureType.TRANSDUCER,
-            maxAudioDuration = null,
             recommendedThreads = 6..8,
             quantizationLevel = "INT8",
             isArm64Only = true,
@@ -42,7 +46,6 @@ object ModelInfoProvider {
         )
         val nemotronInfo = ModelInfo(
             architectureType = ArchitectureType.TRANSDUCER,
-            maxAudioDuration = null,
             recommendedThreads = 4..6,
             quantizationLevel = "INT8",
             isArm64Only = true,
@@ -57,7 +60,6 @@ object ModelInfoProvider {
         buildMap {
             put("sherpa-onnx-whisper-small", ModelInfo(
                 architectureType = ArchitectureType.ENCODER_DECODER,
-                maxAudioDuration = 30,
                 recommendedThreads = 2..4,
                 quantizationLevel = null,
                 isArm64Only = false,
@@ -71,7 +73,6 @@ object ModelInfoProvider {
 
             put("sherpa-onnx-whisper-turbo", ModelInfo(
                 architectureType = ArchitectureType.ENCODER_DECODER,
-                maxAudioDuration = 30,
                 recommendedThreads = 4..6,
                 quantizationLevel = null,
                 isArm64Only = false,
@@ -85,7 +86,6 @@ object ModelInfoProvider {
 
             put("sherpa-onnx-whisper-medium", ModelInfo(
                 architectureType = ArchitectureType.ENCODER_DECODER,
-                maxAudioDuration = 30,
                 recommendedThreads = 4..6,
                 quantizationLevel = null,
                 isArm64Only = false,
@@ -99,7 +99,6 @@ object ModelInfoProvider {
 
             put("sherpa-onnx-whisper-distil-large-v3-it", ModelInfo(
                 architectureType = ArchitectureType.ENCODER_DECODER,
-                maxAudioDuration = 30,
                 recommendedThreads = 4..6,
                 quantizationLevel = "INT8",
                 isArm64Only = false,
@@ -113,7 +112,6 @@ object ModelInfoProvider {
 
             put("sherpa-onnx-qwen3-asr-0.6b-int8", ModelInfo(
                 architectureType = ArchitectureType.ENCODER_ONLY_CTC,
-                maxAudioDuration = 30,
                 recommendedThreads = 4..6,
                 quantizationLevel = "INT8",
                 isArm64Only = true,
@@ -125,10 +123,10 @@ object ModelInfoProvider {
                 performanceNotes = R.string.model_info_notes_qwen3
             ))
 
-            // The catalog storage dir ("parakeet-tdt") and the two variant dir-names
-            // both resolve to the same per-model info, so the section-level overlay and
-            // the per-variant cards (catalog variant dir-names) share it.
-            put("parakeet-tdt", parakeetInfo)
+            // Both variant dir-names resolve to the same per-model info, so the
+            // section-level overlay and the per-variant cards share it. (The catalog
+            // storage dir "parakeet-tdt" is NOT a key: since TASK-364 no production
+            // lookup keys by storage dir.)
             put("parakeet-tdt-0.6b-v3-smoothquant", parakeetInfo)
             put("parakeet-tdt-0.6b-v3-int8", parakeetInfo)
 
@@ -137,7 +135,6 @@ object ModelInfoProvider {
 
             put("gigaam-v3", ModelInfo(
                 architectureType = ArchitectureType.TRANSDUCER,
-                maxAudioDuration = null,
                 recommendedThreads = 4..6,
                 quantizationLevel = "INT8",
                 isArm64Only = true,
@@ -189,5 +186,12 @@ object ModelInfoProvider {
 
     fun getInfo(variant: ModelVariant): ModelInfo? = infoMap[variant.dirName]
 
+    /**
+     * String-keyed seam for the catalog-parity tests: they pin that every
+     * catalog variant dir-name resolves here. Production resolves through
+     * [getInfo] (the ModelVariant enum); no production caller keys by raw
+     * string since TASK-364 moved the audio-limit join onto catalog flags.
+     */
+    @androidx.annotation.VisibleForTesting
     fun getInfoByDirName(dirName: String): ModelInfo? = infoMap[dirName]
 }

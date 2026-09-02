@@ -46,6 +46,7 @@ object ModelCatalogJson {
         "blankPenalty",
         "maxNewTokens",
         "chunkDurationSeconds",
+        "maxAudioDurationSeconds",
     )
 
     /**
@@ -246,6 +247,7 @@ object ModelCatalogJson {
             blankPenalty = o.optDouble("blankPenalty", 0.0),
             maxNewTokens = o.optInt("maxNewTokens", 0),
             chunkDurationSeconds = o.optInt("chunkDurationSeconds", 0),
+            maxAudioDurationSeconds = o.optInt("maxAudioDurationSeconds", 0),
         )
     }
 
@@ -364,6 +366,12 @@ data class CatalogFlags(
      * (Whisper/Qwen3-ASR 30); 0 processes the whole clip in one pass (Parakeet/GigaAM/Nemotron).
      */
     val chunkDurationSeconds: Int = 0,
+    /**
+     * The model's own per-pass audio cap in seconds, as shown in the model list
+     * (GH #49 display fact; Whisper/Qwen3-ASR 30); 0 = no known limit. Display
+     * only: runtime duration ceilings come from AudioDurationPolicy, not this.
+     */
+    val maxAudioDurationSeconds: Int = 0,
 )
 
 /** One model in the catalog: the identity + tuning + the variants to download. */

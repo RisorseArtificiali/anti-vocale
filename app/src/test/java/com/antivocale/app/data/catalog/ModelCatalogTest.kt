@@ -213,7 +213,7 @@ class ModelCatalogTest {
     @Test
     fun `flags parse every field with defaults`() {
         val entry = ModelCatalogJson.parseEntry("""
-            {"name":"M","flags":{"ensureParentDirs":true,"tailPadSeconds":1.5,"languageOption":true,"metaKeys":["a","b"],"skipMetadataCheck":true,"whisperTailPaddings":1000,"blankPenalty":1.0,"maxNewTokens":2048,"chunkDurationSeconds":30},"files":[
+            {"name":"M","flags":{"ensureParentDirs":true,"tailPadSeconds":1.5,"languageOption":true,"metaKeys":["a","b"],"skipMetadataCheck":true,"whisperTailPaddings":1000,"blankPenalty":1.0,"maxNewTokens":2048,"chunkDurationSeconds":30,"maxAudioDurationSeconds":45},"files":[
               {"name":"e.onnx","url":"https://x/e","sha256":"${"a".repeat(64)}","size":1}]}
         """.trimIndent())
         val flags = entry.flags
@@ -227,6 +227,7 @@ class ModelCatalogTest {
         assertEquals(1.0, flags.blankPenalty, 0.0)
         assertEquals(2048, flags.maxNewTokens)
         assertEquals(30, flags.chunkDurationSeconds)
+        assertEquals(45, flags.maxAudioDurationSeconds)
 
         val defaults = ModelCatalogJson.parseEntry("""{"name":"D","files":[{"name":"e.onnx","url":"https://x/e","sha256":"${"a".repeat(64)}","size":1}]}""").flags
         assertEquals(CatalogFlags(), defaults)

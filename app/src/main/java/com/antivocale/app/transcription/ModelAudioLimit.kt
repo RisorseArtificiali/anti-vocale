@@ -1,5 +1,7 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.data.catalog.CatalogEntry
+
 /**
  * GH #49: a model's audio-length capability, derived from metadata only so the
  * model selection UI can declare it BEFORE the download (no per-model UI
@@ -18,8 +20,8 @@ sealed interface AudioLimit {
 }
 
 /**
- * @param maxAudioDuration hard per-pass cap from ModelInfoProvider (null = none)
- * @param chunkDurationSeconds catalog flag; > 0 means the app chunks inputs at
+ * @param maxAudioDuration hard per-pass cap (null = none)
+ * @param chunkDurationSeconds chunk size; > 0 means the app chunks inputs at
  *   that size, i.e. any length is accepted
  */
 fun audioLimit(maxAudioDuration: Int?, chunkDurationSeconds: Int): AudioLimit =
@@ -34,14 +36,14 @@ fun audioLimit(maxAudioDuration: Int?, chunkDurationSeconds: Int): AudioLimit =
 
 /**
  * Single derivation points so every UI surface resolves the limit the same way
- * (GH #49). Catalog entries join their chunk flag with the metadata cap
- * (lookups resolve by storageDir per ModelInfoProvider's contract); the
- * non-catalog Gemma variants carry their cap in ModelInfoProvider directly.
+ * (GH #49). Catalog entries carry BOTH facts in their flags (the cap as
+ * maxAudioDurationSeconds, the chunk size as chunkDurationSeconds); the
+ * non-catalog Gemma variants keep their cap in ModelInfoProvider directly.
  */
-fun audioLimitForCatalogEntry(storageDir: String?, chunkDurationSeconds: Int): AudioLimit =
+fun audioLimitForCatalogEntry(entry: CatalogEntry): AudioLimit =
     audioLimit(
-        maxAudioDuration = storageDir?.let { ModelInfoProvider.getInfoByDirName(it)?.maxAudioDuration },
-        chunkDurationSeconds = chunkDurationSeconds,
+        maxAudioDuration = entry.flags.maxAudioDurationSeconds.takeIf { it > 0 },
+        chunkDurationSeconds = entry.flags.chunkDurationSeconds,
     )
 
 fun audioLimitForVariants(

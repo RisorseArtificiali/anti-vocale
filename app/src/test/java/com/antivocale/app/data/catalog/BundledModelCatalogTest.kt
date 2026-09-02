@@ -90,6 +90,8 @@ class BundledModelCatalogTest {
         // 2.8GiB across sequential decodes; 60s chunks measured 1.8GiB end-to-end.
         // TranscriptionMemoryPolicy additionally tightens per device below this.
         assertEquals(60, parakeet.flags.chunkDurationSeconds)
+        // No declared per-pass cap (ModelInfoProvider's pre-catalog null).
+        assertEquals(0, parakeet.flags.maxAudioDurationSeconds)
 
         val qwen3 = byId.getValue("qwen3-asr")
         assertTrue(qwen3.flags.ensureParentDirs)
@@ -97,6 +99,7 @@ class BundledModelCatalogTest {
         assertEquals(1.0, qwen3.flags.blankPenalty, 0.0)
         assertEquals(2048, qwen3.flags.maxNewTokens)
         assertEquals(30, qwen3.flags.chunkDurationSeconds)
+        assertEquals(30, qwen3.flags.maxAudioDurationSeconds)
         assertEquals("sherpa-onnx-qwen3-asr-0.6b-int8", qwen3.defaultVariant.dirName)
         assertEquals(938L, qwen3.defaultVariant.estimatedSizeMB)
 
@@ -105,11 +108,13 @@ class BundledModelCatalogTest {
         assertEquals("", nemotron.modelType)
         assertTrue(nemotron.flags.languageOption)
         assertEquals(1.5, nemotron.flags.tailPadSeconds, 0.0)
+        assertEquals(0, nemotron.flags.maxAudioDurationSeconds)
         assertEquals("nemotron-3.5-asr-streaming-0.6b-1120ms-int8", nemotron.defaultVariant.dirName)
         assertEquals(640L, nemotron.defaultVariant.estimatedSizeMB)
 
         val gigaam = byId.getValue("gigaam")
         assertEquals(1.0, gigaam.flags.tailPadSeconds, 0.0)
+        assertEquals(0, gigaam.flags.maxAudioDurationSeconds)
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), gigaam.flags.metaKeys)
         assertEquals("pantinor/gigaam-v3", gigaam.defaultVariant.source.repo)
         assertEquals("gigaam-v3", gigaam.defaultVariant.dirName)
@@ -124,6 +129,7 @@ class BundledModelCatalogTest {
         assertTrue(whisper.flags.skipMetadataCheck)
         assertEquals(1000, whisper.flags.whisperTailPaddings)
         assertEquals(30, whisper.flags.chunkDurationSeconds)
+        assertEquals(30, whisper.flags.maxAudioDurationSeconds)
         val byName = whisper.variants.associateBy { it.name }
         assertEquals("sherpa-onnx-whisper-small", byName.getValue("small").dirName)
         assertEquals(358L, byName.getValue("small").estimatedSizeMB)

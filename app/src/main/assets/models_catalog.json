@@ -54,6 +54,7 @@
         "skipMetadataCheck": true,
         "whisperTailPaddings": 1000,
         "chunkDurationSeconds": 30,
+        "maxAudioDurationSeconds": 30,
         "passLanguage": true
       },
       "variants": [
@@ -113,7 +114,8 @@
         "ensureParentDirs": true,
         "blankPenalty": 1.0,
         "maxNewTokens": 2048,
-        "chunkDurationSeconds": 30
+        "chunkDurationSeconds": 30,
+        "maxAudioDurationSeconds": 30
       },
       "languages": ["af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "cs", "cy", "da", "de", "el", "en", "es", "et", "eu", "fa", "fi", "fr", "gl", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "jv", "ka", "kk", "ko", "lt", "lv", "mk", "ml", "ms", "nl", "no", "pl", "pt", "ro", "ru", "sk", "sl", "sq", "sr", "sv", "sw", "ta", "th", "tr", "uk", "ur", "uz", "vi", "zh"],
       "variants": [
