@@ -7,12 +7,13 @@ package com.antivocale.app.data.download
  * time has elapsed since the last report.
  */
 class ProgressThrottler(
-    private val intervalMs: Long = 1000L
+    private val intervalMs: Long = 1000L,
+    private val clock: () -> Long = System::currentTimeMillis
 ) {
     private var lastReportTimeMs: Long = 0L
 
     fun shouldReport(): Boolean {
-        val now = System.currentTimeMillis()
+        val now = clock()
         if (now - lastReportTimeMs >= intervalMs) {
             lastReportTimeMs = now
             return true

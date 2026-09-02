@@ -20,6 +20,7 @@ import com.antivocale.app.MainActivity
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
+import com.antivocale.app.data.download.ProgressThrottler
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.transcription.TranscriptionBackendManager
@@ -121,6 +122,12 @@ class InferenceService : Service(), TranscriptionListener {
     // Signature of the last rendered nav notification; when unchanged we skip the rebuild+notify
     // to avoid re-posting on every 200ms progress tick while the viewed chunk is stable.
     @Volatile private var lastNavSignature: String? = null
+    // TASK-266: gate progress-bar notification posts to ~1/sec (the orchestrator ticks
+    // every ~200ms), reusing the download ProgressThrottler. Only the smooth-progress
+    // path consults it: terminal notifications (result/error/no-model) post on separate
+    // ids, and chunk-nav rendering keeps its signature-based dedup. Swappable so tests
+    // can inject a fake clock (same seam idea as orchestrator.throttleClock).
+    internal var progressNotifyThrottler = ProgressThrottler()
 
     data class PendingRequest(
         val taskId: String,
@@ -260,6 +267,9 @@ class InferenceService : Service(), TranscriptionListener {
                         latestDurationSeconds = 0
                         latestQueuedCount = 0
                         lastNavSignature = null
+                        // Throttle carries no state across jobs: the first progress tick
+                        // of each request must post promptly (TASK-266).
+                        progressNotifyThrottler.reset()
 
                         // Per-task child job (GH #52): cancelling it (per-task cancel
                         // from the Logs menu) aborts only THIS request; the drain loop
@@ -402,7 +412,7 @@ class InferenceService : Service(), TranscriptionListener {
         val state = chunkNavState
         if (state != null && state.hasAnyChunk) {
             renderChunkNavNotification()
-        } else {
+        } else if (progressNotifyThrottler.shouldReport()) {
             updateNotificationWithSmoothProgress(
                 contentText, progressPercent, etaText, durationSeconds, startTimeMillis, pendingCount.get()
             )
