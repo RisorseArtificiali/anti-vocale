@@ -109,7 +109,6 @@ class LogsViewModel @Inject constructor(
         _pendingLongAudioWarning.value = null
     }
 
-
     val logs: StateFlow<List<LogEntry>> = logDao.getAll()
         .map { entities -> entities.map { it.toLogEntry() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
@@ -373,11 +372,20 @@ class LogsViewModel @Inject constructor(
             // dialogCapable is true here by construction: this is the interactive
             // in-app flow. Every headless dispatch site never calls the gate.
             val duration = withContext(Dispatchers.IO) { audioPreprocessor.getAudioDuration(filePath) }
-            val vadEnabled = preferencesManager.vadEnabled.first()
-            val decodePath = AudioDurationPolicy.decodePathFor(
-                vadEnabled, transcriptionBackendManager.chunkCapFor(backendId))
+            // Mirror the orchestrator's VAD resolution exactly: the preference OR
+            // the backend's forced VAD (Canary/Gemma). Missing the forced term
+            // would promise a streaming transcription that is then refused
+            // whole-file (review finding 1).
+            val gateInputs = transcriptionBackendManager.gateInputsFor(backendId)
+            val vadEnabled = preferencesManager.vadEnabled.first() ||
+                (gateInputs?.forcesVadAlignedChunking == true)
+            val decodePath = AudioDurationPolicy.decodePathFor(vadEnabled, gateInputs?.maxChunkDurationSeconds)
+            // applicationContext, not the Activity: the pending warning outlives
+            // rotation inside the ViewModel and must not hold a destroyed Activity
+            // (review finding 4).
+            val appContext = context.applicationContext
             val ceiling = AudioDurationPolicy.ceilingSeconds(
-                decodePath, MemoryReadings.availableRamBytes(context), MemoryReadings.maxHeapBytes())
+                decodePath, MemoryReadings.availableRamBytes(appContext), MemoryReadings.maxHeapBytes())
             val descriptor = backendRegistry.byBackendId(backendId)
             val modelPath = descriptor?.modelPathFlow(preferencesManager)?.first()
             val profile = transcriptionCalibrator.getEstimate(backendId, modelPath ?: "")
@@ -388,21 +396,27 @@ class LogsViewModel @Inject constructor(
                 calibrated = profile?.hasEstimate == true)
             if (!decision.showDialog) {
                 // below threshold or over ceiling: the pre-read refusal carries the message
-                dispatchTranscription(originalEntry, backendId, filePath, context)
+                dispatchTranscription(originalEntry, backendId, filePath, appContext)
                 return@launch
             }
             val displayName = when {
                 descriptor == null ->
                     transcriptionBackendManager.getBackend(backendId)?.displayName ?: backendId
-                descriptor.displayNameResId != null -> context.getString(descriptor.displayNameResId)
-                else -> descriptor.deriveDisplayName(context, modelPath ?: filePath)
+                descriptor.displayNameResId != null -> appContext.getString(descriptor.displayNameResId)
+                else -> descriptor.deriveDisplayName(appContext, modelPath ?: filePath)
             }
+            // A second long retranscribe while a warning is pending must not drop
+            // the first request: the new confirm dispatches both, in order.
+            val previous = _pendingLongAudioWarning.value
             _pendingLongAudioWarning.value = LongAudioWarning(
                 durationMinutes = kotlin.math.ceil(duration / 60.0).toInt(),
                 estimateMinutes = decision.estimateMinutes,
                 isRough = decision.isRough,
                 modelDisplayName = displayName,
-                onConfirm = { dispatchTranscription(originalEntry, backendId, filePath, context) }
+                onConfirm = {
+                    previous?.onConfirm?.invoke()
+                    dispatchTranscription(originalEntry, backendId, filePath, appContext)
+                }
             )
         }
     }

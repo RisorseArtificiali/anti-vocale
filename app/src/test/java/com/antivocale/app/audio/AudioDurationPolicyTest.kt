@@ -69,6 +69,8 @@ class AudioDurationPolicyTest {
         // <2 samples: family fallback (rtf 15 => 1000/15 ms per second)
         assertEquals(1000f / 15f, AudioDurationPolicy.resolveEstimateMsPerSec(measured, 1, 15f))
         assertEquals(1000f / 15f, AudioDurationPolicy.resolveEstimateMsPerSec(null, 0, 15f))
+        // a degenerate fallback RTF must not yield Infinity (review finding 8)
+        assertEquals(1000f / 0.001f, AudioDurationPolicy.resolveEstimateMsPerSec(null, 0, 0f))
     }
 
     @Test
@@ -80,6 +82,9 @@ class AudioDurationPolicyTest {
         // above threshold + dialog-capable: dialog, estimate rounded UP to the minute
         val d = AudioDurationPolicy.warnDecision(2700L, ceiling, est, true)
         assertTrue(d.showDialog); assertEquals(3L, d.estimateMinutes)
+        // exactly at the ceiling: still transcribed (refusal is strictly above),
+        // so the advisory must show
+        assertTrue(AudioDurationPolicy.warnDecision(ceiling, ceiling, est, true).showDialog)
         // headless: never a dialog
         assertFalse(AudioDurationPolicy.warnDecision(2700L, ceiling, est, false).showDialog)
         // above ceiling: NO dialog (the pre-read refusal carries the message)

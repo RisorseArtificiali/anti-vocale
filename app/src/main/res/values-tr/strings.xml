@@ -223,7 +223,7 @@
     <string name="error_not_initialized">Yüklü model yok. Model sekmesini açıp bir model indirin veya seçin.</string>
     <string name="error_model_unavailable">Seçili model artık kullanılamıyor. Model sekmesini açıp başka bir model seçin.</string>
     <string name="error_audio_too_long_streaming">2 saatten uzun sesler desteklenmiyor.</string>
-    <string name="error_audio_too_long_vad">VAD açıkken maksimum uzunluk cihazınızın belleğine bağlıdır (burada: %1$d dakika). Uzun kayıtlar için VAD\'ı kapatın veya bölümlenen bir model kullanın.</string>
+    <string name="error_audio_too_long_whole_file">Bu ses, bu cihazın tek geçişte işleyebileceği %1$d dakikalık sınırı aşıyor (sınır kullanılabilir belleğe bağlıdır). Uzun kayıtlar için uygulamanın otomatik böldüğü bir model kullanın ve VAD\'ı kapatın.</string>
     <string name="error_file_too_large">2 GB\'tan büyük ses dosyaları desteklenmiyor.</string>
     <string name="error_file_not_found">Ses dosyası bulunamadı</string>
     <string name="error_invalid_format">Ses biçimi belirlenemedi</string>

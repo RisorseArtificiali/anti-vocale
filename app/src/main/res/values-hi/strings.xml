@@ -211,7 +211,7 @@
     <string name="error_not_initialized">कोई मॉडल लोड नहीं है। मॉडल टैब खोलकर एक मॉडल डाउनलोड करें या चुनें।</string>
     <string name="error_model_unavailable">चुना गया मॉडल अब उपलब्ध नहीं है। मॉडल टैब खोलकर कोई दूसरा चुनें।</string>
     <string name="error_audio_too_long_streaming">2 घंटे से लंबा ऑडियो समर्थित नहीं है।</string>
-    <string name="error_audio_too_long_vad">VAD चालू होने पर अधिकतम लंबाई आपके डिवाइस की मेमोरी पर निर्भर करती है (यहाँ: %1$d मिनट)। लंबी रिकॉर्डिंग के लिए VAD बंद करें, या सेगमेंटेड मॉडल का उपयोग करें।</string>
+    <string name="error_audio_too_long_whole_file">यह ऑडियो इस डिवाइस की एक बार में प्रोसेस करने की %1$d मिनट की सीमा से लंबा है (सीमा उपलब्ध मेमोरी पर निर्भर करती है)। लंबी रिकॉर्डिंग के लिए ऐसा मॉडल उपयोग करें जिसे ऐप अपने आप बाँटता हो, VAD बंद रखकर।</string>
     <string name="error_file_too_large">2 GB से बड़ी ऑडियो फ़ाइलें समर्थित नहीं हैं।</string>
     <string name="error_file_not_found">ऑडियो फ़ाइल नहीं मिली</string>
     <string name="error_invalid_format">ऑडियो प्रारूप निर्धारित नहीं किया जा सका</string>

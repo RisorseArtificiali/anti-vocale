@@ -212,7 +212,7 @@
     <string name="error_not_initialized">Kein Modell geladen. Öffne den Tab \"Modell\", um eines herunterzuladen oder auszuwählen.</string>
     <string name="error_model_unavailable">Das ausgewählte Modell ist nicht mehr verfügbar. Öffne den Tab \"Modell\" und wähle ein anderes.</string>
     <string name="error_audio_too_long_streaming">Audio länger als 2 Stunden wird nicht unterstützt.</string>
-    <string name="error_audio_too_long_vad">Mit aktiviertem VAD hängt die maximale Länge vom Arbeitsspeicher deines Geräts ab (hier: %1$d Minuten). Deaktiviere VAD oder nutze ein Modell mit Segmentierung für lange Aufnahmen.</string>
+    <string name="error_audio_too_long_whole_file">Dieses Audio überschreitet das Limit von %1$d Minuten, das dieses Gerät in einem Durchlauf verarbeiten kann (das Limit hängt vom verfügbaren Arbeitsspeicher ab). Verwende für lange Aufnahmen ein Modell, das die App automatisch aufteilt, mit deaktiviertem VAD.</string>
     <string name="error_file_too_large">Audiodateien über 2 GB werden nicht unterstützt.</string>
     <string name="error_file_not_found">Audiodatei nicht gefunden</string>
     <string name="error_invalid_format">Audioformat konnte nicht ermittelt werden</string>

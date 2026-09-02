@@ -21,6 +21,8 @@ The Parakeet limit is not arbitrary: the model's attention has a hard 5000-frame
 
 Every "any length" in the table above means *the app does the splitting for you in software*: no model itself handles arbitrary length in one pass. The two "no known limit" rows are models with no measured cap and no app-side splitting.
 
+The absolute ceilings ([#73](https://github.com/RisorseArtificiali/anti-vocale/issues/73)): 2 hours for the streaming decode path, and files above 2GB are refused. With VAD enabled the whole audio is decoded into memory at once, so the maximum length depends on your device's memory (typically 10 to 25 minutes); the error message tells you the exact limit on your device. Turn VAD off for long recordings, or use a model the app chunks automatically.
+
 ### Why did my transcription stop while the app was in the background?
 
 Some Android phones (notably several OEM skins) kill apps in the background even when they are legitimately running a foreground service; the transcription is interrupted and only closes when you reopen the app. Anti-Vocale detects this and, after it happens, offers a one-tap fix in Settings > Advanced: adding the app to the battery-optimization exemption list. On some devices you may additionally need to allow background execution in the manufacturer's own battery settings.

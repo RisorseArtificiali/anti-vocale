@@ -152,13 +152,35 @@ class TranscriptionBackendManager @Inject constructor(
         if (isKnownExternal(backendId)) externalEngine
         else backends[backendId]
 
+    /** Decode-path inputs the long-audio dialog gate needs for one backend (TASK-432). */
+    data class GateInputs(
+        /** Pre-tightening chunk cap; the path decision keys on null-ness only. */
+        val maxChunkDurationSeconds: Int?,
+        /** Backends that force VAD-aligned chunking flip the path to whole-file. */
+        val forcesVadAlignedChunking: Boolean,
+    )
+
     /**
-     * Pre-tightening chunk cap of [backendId] (no memory adjustment: the
-     * AudioDurationPolicy.decodePathFor decision keys on null-ness only, which
-     * tightening preserves). The long-audio dialog gate uses this to predict the
-     * decode path the orchestrator will take (TASK-432).
+     * Cold query for the long-audio dialog gate: predicts the decode path the
+     * orchestrator will take for [backendId] WITHOUT loading anything. External
+     * ids are resolved from their RECORD (the shared engine's
+     * maxChunkDurationSeconds reads the last LOADED family and would mispredict
+     * any other record); static ids read the backend instance.
      */
-    fun chunkCapFor(backendId: String): Int? = getBackend(backendId)?.maxChunkDurationSeconds
+    fun gateInputsFor(backendId: String): GateInputs? {
+        if (isKnownExternal(backendId)) {
+            val record = externalRecordsProvider.records.value.firstOrNull { it.backendId == backendId }
+            return record?.let {
+                GateInputs(
+                    maxChunkDurationSeconds = ExternalSherpaBackend.familyChunkCapSeconds(it.family),
+                    forcesVadAlignedChunking = ExternalSherpaBackend.familyForcesVadAlignedChunking(it.family),
+                )
+            }
+        }
+        return getBackend(backendId)?.let {
+            GateInputs(it.maxChunkDurationSeconds, it.requiresVadAlignedChunking)
+        }
+    }
 
     /**
      * Checks if any backend is currently active.

@@ -229,7 +229,7 @@
     <string name="error_not_initialized">Модель не завантажено. Відкрийте вкладку «Модель», щоб завантажити або вибрати модель.</string>
     <string name="error_model_unavailable">Вибрана модель більше недоступна. Відкрийте вкладку «Модель» і виберіть іншу.</string>
     <string name="error_audio_too_long_streaming">Аудіо довше 2 годин не підтримується.</string>
-    <string name="error_audio_too_long_vad">За увімкненого VAD максимальна тривалість залежить від пам\'яті пристрою (тут: %1$d хвилин). Для довгих записів вимкніть VAD або використовуйте модель із сегментацією.</string>
+    <string name="error_audio_too_long_whole_file">Це аудіо перевищує ліміт у %1$d хвилин, який цей пристрій може обробити за один прохід (ліміт залежить від доступної пам\'яті). Для довгих записів використовуйте модель, яку застосунок автоматично розбиває, при вимкненому VAD.</string>
     <string name="error_file_too_large">Аудіофайли понад 2 ГБ не підтримуються.</string>
     <string name="error_file_not_found">Аудіофайл не знайдено</string>
     <string name="error_invalid_format">Не вдалося визначити формат аудіо</string>

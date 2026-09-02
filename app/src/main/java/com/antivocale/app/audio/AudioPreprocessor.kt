@@ -127,6 +127,17 @@ class AudioPreprocessor @Inject constructor() {
         // Get duration
         val duration = audioData.samples.size.toDouble() / audioData.sampleRate
 
+        // Post-decode backstop for metadata-less containers: the pre-read fails
+        // open when KEY_DURATION is absent, so for those files this decoded
+        // length is the only ceiling evidence (the PCM is already resident here,
+        // but that matches the pre-1.12 behavior instead of capping nothing).
+        val ceiling = AudioDurationPolicy.ceilingSeconds(
+            AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM, availableRamBytes, maxHeapBytes)
+        if (duration > ceiling) {
+            Log.e(TAG, "Audio too long (post-decode): ${duration}s > ${ceiling}s ceiling")
+            throw PreprocessingError.DurationTooLong(ceiling, AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM)
+        }
+
         Log.d(TAG, "Audio duration: ${duration}s")
 
         // Apply VAD silence stripping if enabled
@@ -619,9 +630,8 @@ class AudioPreprocessor @Inject constructor() {
     /**
      * Metadata pre-read enforcement (spec: the old post-decode check could not
      * enforce a heap-derived ceiling, because the full PCM was already resident
-     * when it fired). Reads container duration only, no decode. Missing
-     * metadata fails OPEN, matching the legacy whole-file behavior where a bad
-     * KEY_DURATION read as 0.
+     * when it fired). Reads container duration only, no decode. Missing metadata
+     * fails OPEN here; the whole-file path backstops those files post-decode.
      */
     private fun validateDuration(
         inputPath: String,
@@ -629,6 +639,11 @@ class AudioPreprocessor @Inject constructor() {
         availableRamBytes: Long?,
         maxHeapBytes: Long?,
     ) {
+        if (availableRamBytes == null || maxHeapBytes == null) {
+            // Visible so a future caller omitting the readings cannot silently
+            // reintroduce a flat 600s cap looking like a low-memory device.
+            Log.w(TAG, "validateDuration without memory readings: failing open to the 600s floor")
+        }
         val duration = getAudioDuration(inputPath)
         if (duration <= 0.0) return
         val ceiling = AudioDurationPolicy.ceilingSeconds(path, availableRamBytes, maxHeapBytes)

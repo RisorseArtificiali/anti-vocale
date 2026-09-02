@@ -40,6 +40,21 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     companion object {
         private const val TAG = "ExternalSherpaBackend"
         private const val PLACEHOLDER_ID = "external"
+
+        /**
+         * Family-declared chunk cap (TASK-402 whisper 30s, TASK-408 canary 10s;
+         * single-pass families have none). Shared by the engine property and the
+         * backend manager's cold gate query (TASK-432) so a record's predicted
+         * path can never drift from the loaded engine's behavior.
+         */
+        fun familyChunkCapSeconds(family: ModelFamily): Int? = when (family) {
+            ModelFamily.WHISPER -> 30
+            ModelFamily.CANARY -> 10
+            else -> null
+        }
+
+        fun familyForcesVadAlignedChunking(family: ModelFamily): Boolean =
+            family == ModelFamily.CANARY
     }
 
     @Volatile private var configuredId: String = PLACEHOLDER_ID
@@ -67,14 +82,10 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     // and genuinely handle any length in one pass (single-pass like
     // Parakeet/GigaAM, the original v2a assumption).
     override val maxChunkDurationSeconds: Int?
-        get() = when (configuredFamily) {
-            ModelFamily.WHISPER -> 30
-            ModelFamily.CANARY -> 10
-            else -> null
-        }
+        get() = configuredFamily?.let(::familyChunkCapSeconds)
 
     override val requiresVadAlignedChunking: Boolean
-        get() = configuredFamily == ModelFamily.CANARY
+        get() = configuredFamily?.let(::familyForcesVadAlignedChunking) == true
 
     // @Volatile: a concurrent transcribeAudio on another thread must not read a stale
     // null recognizer after initialize completes (the unload-during-transcription window

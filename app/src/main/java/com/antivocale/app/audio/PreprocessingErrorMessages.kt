@@ -15,7 +15,7 @@ object PreprocessingErrorMessages {
             AudioDurationPolicy.DecodePath.STREAMING ->
                 context.getString(R.string.error_audio_too_long_streaming)
             AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM ->
-                context.getString(R.string.error_audio_too_long_vad, error.ceilingSeconds / 60)
+                context.getString(R.string.error_audio_too_long_whole_file, error.ceilingSeconds / 60)
         }
         is PreprocessingError.FileTooLarge -> context.getString(R.string.error_file_too_large)
         is PreprocessingError.FileNotFound -> context.getString(R.string.error_file_not_found)

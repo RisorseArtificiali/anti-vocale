@@ -63,10 +63,12 @@ object AudioDurationPolicy {
     /**
      * Estimate tiering: the on-device calibration (2+ samples) wins even when
      * slower than the family fallback, because optimism is the failure mode.
+     * A non-positive fallback RTF falls back to 1x real time (rtfEstimate is a
+     * free constructor parameter; a bad value must not yield Infinity).
      */
     fun resolveEstimateMsPerSec(calibratedMsPerSec: Float?, sampleCount: Int, fallbackRtf: Float): Float =
         if (sampleCount >= 2 && calibratedMsPerSec != null && calibratedMsPerSec > 0f) calibratedMsPerSec
-        else 1000f / fallbackRtf
+        else 1000f / fallbackRtf.coerceAtLeast(0.001f).coerceAtMost(1000f)
 
     /**
      * No dialog when duration exceeds the ceiling: the pre-read refusal already
@@ -80,8 +82,11 @@ object AudioDurationPolicy {
         dialogCapable: Boolean,
         calibrated: Boolean = true,
     ): WarnDecision {
+        // Inclusive of the ceiling itself: validateDuration refuses only ABOVE
+        // it, so a file exactly at the ceiling is transcribed and deserves the
+        // advisory most (it is the longest accepted case).
         val show = dialogCapable &&
-            durationSeconds in (warnThresholdSeconds() + 1) until ceilingSeconds
+            durationSeconds in (warnThresholdSeconds() + 1)..ceilingSeconds
         if (!show) return WarnDecision(false, 0L, !calibrated)
         val minutes = kotlin.math.ceil(durationSeconds * estimateMsPerSec / 1000f / 60f)
         return WarnDecision(true, minutes.toLong(), !calibrated)
