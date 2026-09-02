@@ -409,7 +409,7 @@ class ModelViewModel @Inject constructor(
                     variantsNeedingExtraction = it.variantsNeedingExtraction - (variantName ?: ""),
                     orphanedVariants = it.orphanedVariants - (variantName ?: "")
                 ) }
-                shareTargetManager.onModelDownloaded()
+                viewModelScope.launch { shareTargetManager.onModelDownloaded() }
                 if (variantName != null) {
                     // Persist the freshly downloaded variant as the saved preference.
                     viewModelScope.launch {
@@ -480,7 +480,7 @@ class ModelViewModel @Inject constructor(
                     )
                 }
                 refreshDownloadedModels()
-                shareTargetManager.onModelDownloaded()
+                viewModelScope.launch { shareTargetManager.onModelDownloaded() }
                 if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
             },
             onCancelled = {
@@ -1550,7 +1550,8 @@ class ModelViewModel @Inject constructor(
     private fun onExternalImported(record: ExternalModelRecord) {
         _externalImportState.value = ExternalImportState.Idle
         _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.external_imported, record.displayName)))
-        shareTargetManager.onModelDownloaded()
+        // Called from a non-suspend fold callback; the manager is suspend since TASK-264.
+        viewModelScope.launch { shareTargetManager.onModelDownloaded() }
         // First-run behavior: auto-select when nothing is active.
         if (_uiState.value.modelName.isBlank()) {
             viewModelScope.launch { activateExternalModel(record) }

@@ -9,6 +9,10 @@ import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.LocaleManager
 import androidx.hilt.work.HiltWorkerFactory
 import dagger.hilt.android.HiltAndroidApp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 
@@ -20,6 +24,15 @@ class BridgeApplication : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var externalModelStore: com.antivocale.app.data.ExternalModelStore
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
+
+    /**
+     * Application-owned scope for startup work that must not block the first frame
+     * (same idiom as HuggingFaceAuthManager/LlmManager: SupervisorJob + dispatcher +
+     * CrashReporter.handler, never cancelled because the Application lives for the
+     * whole process).
+     */
+    private val applicationScope =
+        CoroutineScope(SupervisorJob() + Dispatchers.Default + CrashReporter.handler)
 
     /**
      * Provides the Hilt-aware [androidx.work.WorkManager] configuration so that
@@ -101,7 +114,16 @@ class BridgeApplication : Application(), Configuration.Provider {
         }.onFailure { e ->
             android.util.Log.e("BridgeApplication", "Non-terminal log sweep failed", e)
         }
-        shareTargetManager.syncAll()
+        // TASK-264: the share-target sync's DataStore reads + PackageManager IPCs must
+        // not block the main thread at cold start, so it launches on the application
+        // scope. Ordering: launched after the migrator and dangling-backend cleaner
+        // above complete (they are synchronous), so the store/registry it reads is
+        // settled. Race: component enable/disable is idempotent; a share intent
+        // racing this async sync resolves its alias against the PREVIOUS sync's
+        // component state, which was correct when the app last ran (component state
+        // persists in PackageManager), and share-target state only changes when a
+        // model is downloaded or deleted.
+        applicationScope.launch { shareTargetManager.syncAll() }
         migrateLanguagePreference()
         installGlobalExceptionHandler()
     }
