@@ -705,7 +705,9 @@ class TranscriptionOrchestrator @Inject constructor(
                 context = context,
                 enableVad = vadEnabled,
                 vadNumThreads = threadCount,
-                vadProvider = resolvedProvider
+                vadProvider = resolvedProvider,
+                availableRamBytes = MemoryReadings.availableRamBytes(context),
+                maxHeapBytes = MemoryReadings.maxHeapBytes()
             )
         } catch (e: PreprocessingError) {
             return Result.failure(e)
@@ -1075,7 +1077,9 @@ class TranscriptionOrchestrator @Inject constructor(
                 inputPath = filePath,
                 maxChunkDurationSeconds = maxChunkDurationSeconds,
                 context = context,
-                enableVad = false
+                enableVad = false,
+                availableRamBytes = MemoryReadings.availableRamBytes(context),
+                maxHeapBytes = MemoryReadings.maxHeapBytes()
             ).collect { event ->
                 when (event) {
                     is AudioPreprocessor.StreamEvent.Header -> {

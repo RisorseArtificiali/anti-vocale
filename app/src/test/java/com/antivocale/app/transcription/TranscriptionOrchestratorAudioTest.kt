@@ -45,8 +45,9 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 inputPath = any(),
                 maxChunkDurationSeconds = any(),
                 context = any(),
-                enableVad = any()
-            )
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns flow {
             emit(AudioPreprocessor.StreamEvent.Header(
                 AudioPreprocessor.StreamHeader(
@@ -103,8 +104,9 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns singleChunkResult()
         stubSingleChunkStream()
 
@@ -130,8 +132,9 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns singleChunkResult()
         stubSingleChunkStream()
 
@@ -162,8 +165,9 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns singleChunkResult()
         stubSingleChunkStream()
 
@@ -191,8 +195,9 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns singleChunkResult()
         stubSingleChunkStream()
 
@@ -218,16 +223,18 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } throws PreprocessingError.FileNotFound
         every {
             audioPreprocessor.prepareAudioStream(
                 inputPath = any(),
                 maxChunkDurationSeconds = any(),
                 context = any(),
-                enableVad = any()
-            )
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } throws PreprocessingError.FileNotFound
 
         val result = callProcessRequest(filePath = audioFile.absolutePath)
@@ -250,16 +257,18 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } throws RuntimeException("Codec exploded")
         every {
             audioPreprocessor.prepareAudioStream(
                 inputPath = any(),
                 maxChunkDurationSeconds = any(),
                 context = any(),
-                enableVad = any()
-            )
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } throws RuntimeException("Codec exploded")
 
         val result = callProcessRequest(filePath = audioFile.absolutePath)
@@ -309,16 +318,18 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } throws PreprocessingError.FileNotFound
         every {
             audioPreprocessor.prepareAudioStream(
                 inputPath = any(),
                 maxChunkDurationSeconds = any(),
                 context = any(),
-                enableVad = any()
-            )
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } throws PreprocessingError.FileNotFound
 
         val result = callProcessRequest(filePath = "/nonexistent/path/audio.ogg")

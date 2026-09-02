@@ -53,8 +53,9 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns AudioPreprocessor.PreprocessingResult(
             chunks = chunks,
             sampleRate = 16000,
@@ -88,8 +89,9 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
                 inputPath = any(),
                 maxChunkDurationSeconds = any(),
                 context = any(),
-                enableVad = any()
-            )
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns flow {
             streamEvents.forEach { emit(it) }
         }

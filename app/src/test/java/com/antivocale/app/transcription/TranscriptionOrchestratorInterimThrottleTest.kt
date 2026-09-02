@@ -65,7 +65,7 @@ class TranscriptionOrchestratorInterimThrottleTest : TranscriptionOrchestratorTe
         every {
             audioPreprocessor.prepareAudioStream(
                 inputPath = any(), maxChunkDurationSeconds = any(),
-                context = any(), enableVad = any())
+                context = any(), enableVad = any(), availableRamBytes = any(), maxHeapBytes = any())
         } returns kotlinx.coroutines.flow.flow { events.forEach { emit(it) } }
     }
 

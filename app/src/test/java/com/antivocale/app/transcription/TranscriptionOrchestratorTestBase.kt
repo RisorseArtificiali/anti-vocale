@@ -123,8 +123,9 @@ abstract class TranscriptionOrchestratorTestBase {
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns AudioPreprocessor.PreprocessingResult(
             chunks = chunks,
             sampleRate = 16000,

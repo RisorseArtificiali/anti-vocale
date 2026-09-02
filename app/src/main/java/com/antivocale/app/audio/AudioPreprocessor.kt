@@ -41,8 +41,7 @@ class AudioPreprocessor @Inject constructor() {
             ((maxChunkDurationSeconds ?: 30) - 2).coerceAtLeast(1)
         private const val TARGET_SAMPLE_RATE = 16000
         private const val TARGET_CHANNELS = 1
-        private const val MAX_FILE_SIZE_BYTES = 100 * 1024 * 1024 // 100MB limit
-        private const val MAX_DURATION_SECONDS = 600 // 10 minutes max
+        private const val MAX_FILE_SIZE_BYTES = 2L * 1024 * 1024 * 1024 // 2GB sanity bound
         private const val TIMEOUT_US = 10000L
     }
 
@@ -89,9 +88,10 @@ class AudioPreprocessor @Inject constructor() {
      */
     sealed class PreprocessingError(message: String) : Exception(message) {
         data object FileNotFound : PreprocessingError("Audio file not found")
-        data object FileTooLarge : PreprocessingError("Audio file exceeds 100MB limit")
+        data object FileTooLarge : PreprocessingError("Audio file exceeds 2GB limit")
         data object InvalidFormat : PreprocessingError("Unable to determine audio format")
-        data object DurationTooLong : PreprocessingError("Audio exceeds 10 minute limit")
+        data class DurationTooLong(val ceilingSeconds: Long, val path: AudioDurationPolicy.DecodePath) :
+            PreprocessingError("Audio exceeds ${ceilingSeconds / 60} minute limit on this path")
         data object DurationUnknown : PreprocessingError("Could not determine audio duration")
         data class ConversionFailed(val reason: String) : PreprocessingError("Conversion failed: $reason")
         data class ChunkFailed(val chunkIndex: Int, val reason: String) : PreprocessingError("Chunk $chunkIndex failed: $reason")
@@ -113,21 +113,19 @@ class AudioPreprocessor @Inject constructor() {
         context: Context? = null,
         enableVad: Boolean = false,
         vadNumThreads: Int = 1,
-        vadProvider: String = "cpu"
+        vadProvider: String = "cpu",
+        availableRamBytes: Long? = null,
+        maxHeapBytes: Long? = null
     ): PreprocessingResult {
         Log.d(TAG, "Preparing audio: $inputPath")
         validateInputFile(inputPath)
+        validateDuration(inputPath, AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM, availableRamBytes, maxHeapBytes)
 
         // Extract and resample audio
         val audioData = extractToMonoFloat(inputPath)
 
         // Get duration
         val duration = audioData.samples.size.toDouble() / audioData.sampleRate
-
-        if (duration > MAX_DURATION_SECONDS) {
-            Log.e(TAG, "Audio too long: ${duration}s")
-            throw PreprocessingError.DurationTooLong
-        }
 
         Log.d(TAG, "Audio duration: ${duration}s")
 
@@ -218,9 +216,12 @@ class AudioPreprocessor @Inject constructor() {
         context: Context? = null,
         enableVad: Boolean = false,
         vadNumThreads: Int = 1,
-        vadProvider: String = "cpu"
+        vadProvider: String = "cpu",
+        availableRamBytes: Long? = null,
+        maxHeapBytes: Long? = null
     ): Flow<StreamEvent> = flow {
         validateInputFile(inputPath)
+        validateDuration(inputPath, AudioDurationPolicy.DecodePath.STREAMING, availableRamBytes, maxHeapBytes)
 
         // VAD requires full audio — use synchronous path and emit results
         if (enableVad && context != null) {
@@ -231,7 +232,9 @@ class AudioPreprocessor @Inject constructor() {
                 context = context,
                 enableVad = true,
                 vadNumThreads = vadNumThreads,
-                vadProvider = vadProvider
+                vadProvider = vadProvider,
+                availableRamBytes = availableRamBytes,
+                maxHeapBytes = maxHeapBytes
             )
             emit(StreamEvent.Header(StreamHeader(
                 sampleRate = result.sampleRate,
@@ -264,10 +267,6 @@ class AudioPreprocessor @Inject constructor() {
 
                 val durationUs = inputFormat.getLong(MediaFormat.KEY_DURATION)
                 val totalDurationSeconds = durationUs / 1_000_000.0
-                if (totalDurationSeconds > MAX_DURATION_SECONDS) {
-                    channel.close(PreprocessingError.DurationTooLong)
-                    return@Thread
-                }
 
                 val chunkSamples = if (maxChunkDurationSeconds != null) inputSampleRate * maxChunkDurationSeconds else Int.MAX_VALUE
                 val expectedChunks = if (maxChunkDurationSeconds != null) {
@@ -615,6 +614,28 @@ class AudioPreprocessor @Inject constructor() {
         val fileSize = inputFile.length()
         if (fileSize > MAX_FILE_SIZE_BYTES) throw PreprocessingError.FileTooLarge
         if (fileSize == 0L) throw PreprocessingError.InvalidFormat
+    }
+
+    /**
+     * Metadata pre-read enforcement (spec: the old post-decode check could not
+     * enforce a heap-derived ceiling, because the full PCM was already resident
+     * when it fired). Reads container duration only, no decode. Missing
+     * metadata fails OPEN, matching the legacy whole-file behavior where a bad
+     * KEY_DURATION read as 0.
+     */
+    private fun validateDuration(
+        inputPath: String,
+        path: AudioDurationPolicy.DecodePath,
+        availableRamBytes: Long?,
+        maxHeapBytes: Long?,
+    ) {
+        val duration = getAudioDuration(inputPath)
+        if (duration <= 0.0) return
+        val ceiling = AudioDurationPolicy.ceilingSeconds(path, availableRamBytes, maxHeapBytes)
+        if (duration > ceiling) {
+            Log.e(TAG, "Audio too long: ${duration}s > ${ceiling}s ceiling on $path")
+            throw PreprocessingError.DurationTooLong(ceiling, path)
+        }
     }
 
     private fun findAudioTrack(extractor: MediaExtractor): Int {

@@ -70,8 +70,9 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
                 context = any(),
                 enableVad = any(),
                 vadNumThreads = any(),
-                vadProvider = any()
-            )
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns PreprocessingResult(
             chunks = chunks,
             sampleRate = 16000,

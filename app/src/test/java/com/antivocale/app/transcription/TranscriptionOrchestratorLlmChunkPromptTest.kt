@@ -75,7 +75,7 @@ class TranscriptionOrchestratorLlmChunkPromptTest : TranscriptionOrchestratorTes
         every {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = any(), cacheDir = any(), maxChunkDurationSeconds = any(),
-                context = any(), enableVad = any(), vadNumThreads = any(), vadProvider = any())
+                context = any(), enableVad = any(), vadNumThreads = any(), vadProvider = any(), availableRamBytes = any(), maxHeapBytes = any())
         } returns AudioPreprocessor.PreprocessingResult(
             chunks = chunks, sampleRate = 16000,
             totalDurationSeconds = 240.0, chunkCount = 8, isVadSegmented = false)
@@ -100,8 +100,9 @@ class TranscriptionOrchestratorLlmChunkPromptTest : TranscriptionOrchestratorTes
                 inputPath = any(),
                 maxChunkDurationSeconds = any(),
                 context = any(),
-                enableVad = any()
-            )
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns kotlinx.coroutines.flow.flow {
             streamEvents.forEach { emit(it) }
         }
@@ -168,7 +169,7 @@ class TranscriptionOrchestratorLlmChunkPromptTest : TranscriptionOrchestratorTes
         io.mockk.verify(atLeast = 1) {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = any(), cacheDir = any(), maxChunkDurationSeconds = any(),
-                context = any(), enableVad = true, vadNumThreads = any(), vadProvider = any())
+                context = any(), enableVad = true, vadNumThreads = any(), vadProvider = any(), availableRamBytes = any(), maxHeapBytes = any())
         }
     }
 }

@@ -49,7 +49,7 @@ class TranscriptionOrchestratorChunkOrderingTest : TranscriptionOrchestratorTest
         every {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = any(), cacheDir = any(), maxChunkDurationSeconds = any(),
-                context = any(), enableVad = any(), vadNumThreads = any(), vadProvider = any())
+                context = any(), enableVad = any(), vadNumThreads = any(), vadProvider = any(), availableRamBytes = any(), maxHeapBytes = any())
         } returns AudioPreprocessor.PreprocessingResult(
             chunks = chunks, sampleRate = 16000,
             totalDurationSeconds = 60.0, chunkCount = 2, isVadSegmented = true)

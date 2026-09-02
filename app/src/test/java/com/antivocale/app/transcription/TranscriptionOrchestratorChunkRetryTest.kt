@@ -63,8 +63,9 @@ class TranscriptionOrchestratorChunkRetryTest : TranscriptionOrchestratorTestBas
         }
         every {
             audioPreprocessor.prepareAudioStream(
-                inputPath = any(), maxChunkDurationSeconds = any(), context = any(), enableVad = any()
-            )
+                inputPath = any(), maxChunkDurationSeconds = any(), context = any(), enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns flow { streamEvents.forEach { emit(it) } }
         return chunks
     }
@@ -74,8 +75,9 @@ class TranscriptionOrchestratorChunkRetryTest : TranscriptionOrchestratorTestBas
         every {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = any(), cacheDir = any(), maxChunkDurationSeconds = any(),
-                context = any(), enableVad = any(), vadNumThreads = any(), vadProvider = any()
-            )
+                context = any(), enableVad = any(), vadNumThreads = any(), vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns AudioPreprocessor.PreprocessingResult(
             chunks = chunks, sampleRate = 16000,
             totalDurationSeconds = durationSeconds, chunkCount = chunkCount
@@ -93,8 +95,9 @@ class TranscriptionOrchestratorChunkRetryTest : TranscriptionOrchestratorTestBas
         }
         every {
             audioPreprocessor.prepareAudioStream(
-                inputPath = any(), maxChunkDurationSeconds = any(), context = any(), enableVad = any()
-            )
+                inputPath = any(), maxChunkDurationSeconds = any(), context = any(), enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns flow { streamEvents.forEach { emit(it) } }
         return chunks
     }

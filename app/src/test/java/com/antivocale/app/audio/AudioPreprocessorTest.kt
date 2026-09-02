@@ -28,7 +28,7 @@ class AudioPreprocessorTest {
     @Test
     fun `PreprocessingError FileTooLarge has correct message`() {
         val error = AudioPreprocessor.PreprocessingError.FileTooLarge
-        assertEquals("Audio file exceeds 100MB limit", error.message)
+        assertEquals("Audio file exceeds 2GB limit", error.message)
     }
 
     @Test
@@ -39,8 +39,9 @@ class AudioPreprocessorTest {
 
     @Test
     fun `PreprocessingError DurationTooLong has correct message`() {
-        val error = AudioPreprocessor.PreprocessingError.DurationTooLong
-        assertEquals("Audio exceeds 10 minute limit", error.message)
+        val error = AudioPreprocessor.PreprocessingError.DurationTooLong(
+            600L, AudioDurationPolicy.DecodePath.STREAMING)
+        assertEquals("Audio exceeds 10 minute limit on this path", error.message)
     }
 
     @Test
@@ -82,17 +83,10 @@ class AudioPreprocessorTest {
     // ========== Constants Validation ==========
 
     @Test
-    fun `MAX_FILE_SIZE_BYTES is 100MB`() {
-        val expectedMaxSize = 100 * 1024 * 1024L
+    fun `MAX_FILE_SIZE_BYTES is 2GB`() {
+        val expectedMaxSize = 2L * 1024 * 1024 * 1024
         // This test documents the expected constant value
-        assertEquals(100 * 1024 * 1024L, expectedMaxSize)
-    }
-
-    @Test
-    fun `MAX_DURATION_SECONDS is 10 minutes`() {
-        val expectedMaxDuration = 600
-        // This test documents the expected constant value
-        assertEquals(600, expectedMaxDuration)
+        assertEquals(2L * 1024 * 1024 * 1024, expectedMaxSize)
     }
 
     // ========== Chunking Logic Tests ==========
@@ -144,32 +138,15 @@ class AudioPreprocessorTest {
 
     @Test
     fun `file size validation logic is correct`() {
-        val maxSizeBytes = 100 * 1024 * 1024L // 100MB
+        val maxSizeBytes = 2L * 1024 * 1024 * 1024 // 2GB
 
         // Files under limit
-        assertTrue(50 * 1024 * 1024L < maxSizeBytes) // 50MB
-        assertTrue(99 * 1024 * 1024L < maxSizeBytes) // 99MB
+        assertTrue(100 * 1024 * 1024L < maxSizeBytes) // 100MB
         assertTrue(maxSizeBytes - 1 < maxSizeBytes) // Just under
 
         // Files at or over limit
         assertFalse(maxSizeBytes < maxSizeBytes) // Exactly at limit
         assertFalse(maxSizeBytes + 1 < maxSizeBytes) // Just over
-        assertFalse(200 * 1024 * 1024L < maxSizeBytes) // 200MB
-    }
-
-    @Test
-    fun `duration validation logic is correct`() {
-        val maxDurationSeconds = 600.0 // 10 minutes
-
-        // Durations under limit
-        assertTrue(30.0 <= maxDurationSeconds)
-        assertTrue(300.0 <= maxDurationSeconds) // 5 minutes
-        assertTrue(599.0 <= maxDurationSeconds)
-
-        // Durations over limit
-        assertFalse(600.1 <= maxDurationSeconds)
-        assertFalse(900.0 <= maxDurationSeconds) // 15 minutes
-        assertFalse(1200.0 <= maxDurationSeconds) // 20 minutes
     }
 
     // ========== WAV Format Tests ==========

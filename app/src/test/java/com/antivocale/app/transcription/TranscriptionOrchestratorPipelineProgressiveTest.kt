@@ -71,8 +71,9 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
                 inputPath = any(),
                 maxChunkDurationSeconds = any(),
                 context = any(),
-                enableVad = any()
-            )
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
         } returns flow {
             streamEvents.forEach { emit(it) }
         }
