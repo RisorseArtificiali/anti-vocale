@@ -1,6 +1,7 @@
 package com.antivocale.app.data.download
 
 import android.util.Log
+import com.antivocale.app.util.ProgressThrottler
 import java.io.File
 import java.io.FileOutputStream
 import java.net.HttpURLConnection

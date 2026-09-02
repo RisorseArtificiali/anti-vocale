@@ -20,12 +20,12 @@ import com.antivocale.app.MainActivity
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
-import com.antivocale.app.data.download.ProgressThrottler
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.util.CrashReporter
+import com.antivocale.app.util.ProgressThrottler
 import com.antivocale.app.util.TranscriptFileSaver
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*

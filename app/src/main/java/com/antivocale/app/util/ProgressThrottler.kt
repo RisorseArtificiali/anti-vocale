@@ -1,4 +1,4 @@
-package com.antivocale.app.data.download
+package com.antivocale.app.util
 
 /**
  * Throttles progress/state emissions to avoid excessive UI updates.

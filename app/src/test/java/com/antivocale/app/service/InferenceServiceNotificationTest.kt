@@ -12,8 +12,8 @@ import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows
 import org.robolectric.annotation.Config
-import com.antivocale.app.data.download.ProgressThrottler
 import com.antivocale.app.receiver.TaskerRequestReceiver
+import com.antivocale.app.util.ProgressThrottler
 
 /**
  * Tests that InferenceService creates the correct notification channels in onCreate().
