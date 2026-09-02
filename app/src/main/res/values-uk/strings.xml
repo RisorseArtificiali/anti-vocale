@@ -228,6 +228,15 @@
     <string name="error_native">Під час розшифровки сталася внутрішня помилка. Якщо це повторюється, спробуйте іншу модель.</string>
     <string name="error_not_initialized">Модель не завантажено. Відкрийте вкладку «Модель», щоб завантажити або вибрати модель.</string>
     <string name="error_model_unavailable">Вибрана модель більше недоступна. Відкрийте вкладку «Модель» і виберіть іншу.</string>
+    <string name="error_audio_too_long_streaming">Аудіо довше 2 годин не підтримується.</string>
+    <string name="error_audio_too_long_vad">За увімкненого VAD максимальна тривалість залежить від пам\'яті пристрою (тут: %1$d хвилин). Для довгих записів вимкніть VAD або використовуйте модель із сегментацією.</string>
+    <string name="error_file_too_large">Аудіофайли понад 2 ГБ не підтримуються.</string>
+    <string name="error_file_not_found">Аудіофайл не знайдено</string>
+    <string name="error_invalid_format">Не вдалося визначити формат аудіо</string>
+    <string name="error_no_audio_track">У файлі не знайдено аудіодоріжку</string>
+    <string name="error_duration_unknown">Не вдалося визначити тривалість аудіо</string>
+    <string name="error_conversion_failed">Помилка перетворення: %1$s</string>
+    <string name="error_chunk_failed">Сегмент %1$d завершився з помилкою: %2$s</string>
     <string name="native_crash_model_warning">Додаток несподівано закрився під час останньої розшифровки. Якщо це сталося під час завантаження моделі, файл може бути пошкоджений. Спробуйте завантажити його знову на вкладці «Модель».</string>
     <string name="oom_crash_title">Додаток закрито через брак пам\'яті</string>
     <string name="oom_crash_warning">Додаток було закрито, оскільки на пристрої закінчувалася пам\'ять. Перед новою розшифровкою спробуйте закрити інші додатки або використати меншу модель.</string>

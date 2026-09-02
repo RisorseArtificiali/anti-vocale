@@ -180,6 +180,15 @@
     <string name="error_native">Une erreur interne s\'est produite pendant la transcription. Si cela persiste, essayez un autre modèle.</string>
     <string name="error_not_initialized">Aucun modèle chargé. Ouvrez l\'onglet Modèle pour en télécharger ou sélectionner un.</string>
     <string name="error_model_unavailable">Le modèle sélectionné n\'est plus disponible. Ouvrez l\'onglet Modèle et choisissez-en un autre.</string>
+    <string name="error_audio_too_long_streaming">L\'audio de plus de 2 heures n\'est pas pris en charge.</string>
+    <string name="error_audio_too_long_vad">Avec le VAD activé, la durée maximale dépend de la mémoire de votre appareil (ici : %1$d minutes). Désactivez le VAD, ou utilisez un modèle à segmentation, pour les longs enregistrements.</string>
+    <string name="error_file_too_large">Les fichiers audio de plus de 2 Go ne sont pas pris en charge.</string>
+    <string name="error_file_not_found">Fichier audio introuvable</string>
+    <string name="error_invalid_format">Impossible de déterminer le format audio</string>
+    <string name="error_no_audio_track">Aucune piste audio trouvée dans le fichier</string>
+    <string name="error_duration_unknown">Impossible de déterminer la durée de l\'audio</string>
+    <string name="error_conversion_failed">Échec de la conversion : %1$s</string>
+    <string name="error_chunk_failed">Le segment %1$d a échoué : %2$s</string>
     <string name="native_crash_model_warning">L\'application s\'est fermée de manière inattendue pendant la dernière transcription. Si cela s\'est produit au chargement d\'un modèle, le fichier est peut-être corrompu. Re-téléchargez-le depuis l\'onglet Modèle.</string>
     <string name="oom_crash_title">Application fermée faute de mémoire</string>
     <string name="oom_crash_warning">L\'application a été fermée car la mémoire de l\'appareil était insuffisante. Fermez d\'autres applications ou utilisez un modèle plus léger avant de réessayer.</string>

@@ -220,6 +220,15 @@
     <string name="error_native">Во время распознавания произошла внутренняя ошибка. Если это повторяется, попробуйте другую модель.</string>
     <string name="error_not_initialized">Модель не загружена. Откройте вкладку «Модель», чтобы скачать или выбрать модель.</string>
     <string name="error_model_unavailable">Выбранная модель больше недоступна. Откройте вкладку «Модель» и выберите другую.</string>
+    <string name="error_audio_too_long_streaming">Аудио длиннее 2 часов не поддерживается.</string>
+    <string name="error_audio_too_long_vad">При включённом VAD максимальная длина зависит от памяти устройства (здесь: %1$d минут). Для длинных записей отключите VAD или используйте модель с сегментацией.</string>
+    <string name="error_file_too_large">Аудиофайлы больше 2 ГБ не поддерживаются.</string>
+    <string name="error_file_not_found">Аудиофайл не найден</string>
+    <string name="error_invalid_format">Не удалось определить формат аудио</string>
+    <string name="error_no_audio_track">В файле не найдена аудиодорожка</string>
+    <string name="error_duration_unknown">Не удалось определить длительность аудио</string>
+    <string name="error_conversion_failed">Ошибка конвертации: %1$s</string>
+    <string name="error_chunk_failed">Сегмент %1$d завершился с ошибкой: %2$s</string>
     <string name="native_crash_model_warning">Приложение неожиданно закрылось во время последнего распознавания. Если это произошло при загрузке модели, файл может быть повреждён. Попробуйте скачать его заново на вкладке «Модель».</string>
     <string name="oom_crash_title">Приложение закрыто из-за нехватки памяти</string>
     <string name="oom_crash_warning">Приложение было закрыто, так как на устройстве заканчивалась память. Закройте другие приложения или используйте модель меньшего размера перед новым распознаванием.</string>

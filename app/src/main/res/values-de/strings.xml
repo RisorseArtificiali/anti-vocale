@@ -211,6 +211,15 @@
     <string name="error_native">Beim Transkribieren ist ein interner Fehler aufgetreten. Falls das öfter passiert, versuche ein anderes Modell.</string>
     <string name="error_not_initialized">Kein Modell geladen. Öffne den Tab \"Modell\", um eines herunterzuladen oder auszuwählen.</string>
     <string name="error_model_unavailable">Das ausgewählte Modell ist nicht mehr verfügbar. Öffne den Tab \"Modell\" und wähle ein anderes.</string>
+    <string name="error_audio_too_long_streaming">Audio länger als 2 Stunden wird nicht unterstützt.</string>
+    <string name="error_audio_too_long_vad">Mit aktiviertem VAD hängt die maximale Länge vom Arbeitsspeicher deines Geräts ab (hier: %1$d Minuten). Deaktiviere VAD oder nutze ein Modell mit Segmentierung für lange Aufnahmen.</string>
+    <string name="error_file_too_large">Audiodateien über 2 GB werden nicht unterstützt.</string>
+    <string name="error_file_not_found">Audiodatei nicht gefunden</string>
+    <string name="error_invalid_format">Audioformat konnte nicht ermittelt werden</string>
+    <string name="error_no_audio_track">Keine Audiospur in der Datei gefunden</string>
+    <string name="error_duration_unknown">Audiodauer konnte nicht ermittelt werden</string>
+    <string name="error_conversion_failed">Konvertierung fehlgeschlagen: %1$s</string>
+    <string name="error_chunk_failed">Segment %1$d fehlgeschlagen: %2$s</string>
     <string name="native_crash_model_warning">Die App wurde während der letzten Transkription unerwartet geschlossen. Falls das beim Laden eines Modells geschah, kann die Datei beschädigt sein. Lade sie im Tab \"Modell\" erneut herunter.</string>
     <string name="oom_crash_title">App wegen wenig Speicher geschlossen</string>
     <string name="oom_crash_warning">Die App wurde geschlossen, weil der Gerätespeicher knapp war. Schließe andere Apps oder verwende ein kleineres Modell, bevor du erneut transkribierst.</string>

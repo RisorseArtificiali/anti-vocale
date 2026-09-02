@@ -210,6 +210,15 @@
     <string name="error_native">ट्रांसक्रिप्शन के दौरान एक अंदरूनी गड़बड़ी हुई। अगर यह बार-बार हो तो कोई दूसरा मॉडल आज़माएं।</string>
     <string name="error_not_initialized">कोई मॉडल लोड नहीं है। मॉडल टैब खोलकर एक मॉडल डाउनलोड करें या चुनें।</string>
     <string name="error_model_unavailable">चुना गया मॉडल अब उपलब्ध नहीं है। मॉडल टैब खोलकर कोई दूसरा चुनें।</string>
+    <string name="error_audio_too_long_streaming">2 घंटे से लंबा ऑडियो समर्थित नहीं है।</string>
+    <string name="error_audio_too_long_vad">VAD चालू होने पर अधिकतम लंबाई आपके डिवाइस की मेमोरी पर निर्भर करती है (यहाँ: %1$d मिनट)। लंबी रिकॉर्डिंग के लिए VAD बंद करें, या सेगमेंटेड मॉडल का उपयोग करें।</string>
+    <string name="error_file_too_large">2 GB से बड़ी ऑडियो फ़ाइलें समर्थित नहीं हैं।</string>
+    <string name="error_file_not_found">ऑडियो फ़ाइल नहीं मिली</string>
+    <string name="error_invalid_format">ऑडियो प्रारूप निर्धारित नहीं किया जा सका</string>
+    <string name="error_no_audio_track">फ़ाइल में कोई ऑडियो ट्रैक नहीं मिला</string>
+    <string name="error_duration_unknown">ऑडियो अवधि निर्धारित नहीं की जा सकी</string>
+    <string name="error_conversion_failed">रूपांतरण विफल: %1$s</string>
+    <string name="error_chunk_failed">सेगमेंट %1$d विफल: %2$s</string>
     <string name="native_crash_model_warning">पिछले ट्रांसक्रिप्शन के दौरान ऐप अचानक बंद हो गया। अगर यह मॉडल लोड करते समय हुआ था, तो फ़ाइल ख़राब हो सकती है। मॉडल टैब से इसे फिर से डाउनलोड करें।</string>
     <string name="oom_crash_title">मेमोरी कम होने से ऐप बंद हुआ</string>
     <string name="oom_crash_warning">डिवाइस की मेमोरी कम होने की वजह से ऐप बंद कर दिया गया। फिर ट्रांसक्राइब करने से पहले दूसरे ऐप बंद करें या कोई छोटा मॉडल इस्तेमाल करें।</string>

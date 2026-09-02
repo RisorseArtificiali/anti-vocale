@@ -222,6 +222,15 @@
     <string name="error_native">Metin çıkarma sırasında bir iç hata oluştu. Sorun sürerse farklı bir model deneyin.</string>
     <string name="error_not_initialized">Yüklü model yok. Model sekmesini açıp bir model indirin veya seçin.</string>
     <string name="error_model_unavailable">Seçili model artık kullanılamıyor. Model sekmesini açıp başka bir model seçin.</string>
+    <string name="error_audio_too_long_streaming">2 saatten uzun sesler desteklenmiyor.</string>
+    <string name="error_audio_too_long_vad">VAD açıkken maksimum uzunluk cihazınızın belleğine bağlıdır (burada: %1$d dakika). Uzun kayıtlar için VAD\'ı kapatın veya bölümlenen bir model kullanın.</string>
+    <string name="error_file_too_large">2 GB\'tan büyük ses dosyaları desteklenmiyor.</string>
+    <string name="error_file_not_found">Ses dosyası bulunamadı</string>
+    <string name="error_invalid_format">Ses biçimi belirlenemedi</string>
+    <string name="error_no_audio_track">Dosyada ses izi bulunamadı</string>
+    <string name="error_duration_unknown">Ses süresi belirlenemedi</string>
+    <string name="error_conversion_failed">Dönüştürme başarısız: %1$s</string>
+    <string name="error_chunk_failed">%1$d. bölüm başarısız: %2$s</string>
     <string name="native_crash_model_warning">Uygulama son metin çıkarma sırasında beklenmedik şekilde kapandı. Bu bir model yüklenirken olduysa dosya bozuk olabilir. Model sekmesinden yeniden indirmeyi deneyin.</string>
     <string name="oom_crash_title">Düşük bellek nedeniyle uygulama kapandı</string>
     <string name="oom_crash_warning">Cihazın belleği azaldığı için uygulama kapatıldı. Yeniden metin çıkarmadan önce diğer uygulamaları kapatmayı veya daha küçük bir model kullanmayı deneyin.</string>

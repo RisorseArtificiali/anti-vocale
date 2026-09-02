@@ -219,6 +219,15 @@
     <string name="error_native">Si è verificato un errore interno durante la trascrizione. Se persiste, prova un modello diverso.</string>
     <string name="error_not_initialized">Nessun modello caricato. Apri la scheda Modello per scaricarne o selezionarne uno.</string>
     <string name="error_model_unavailable">Il modello selezionato non è più disponibile. Apri la scheda Modello e selezionane un altro.</string>
+    <string name="error_audio_too_long_streaming">Gli audio più lunghi di 2 ore non sono supportati.</string>
+    <string name="error_audio_too_long_vad">Con VAD attivo la durata massima dipende dalla memoria del dispositivo (qui: %1$d minuti). Disattiva VAD, o usa un modello a segmenti, per le registrazioni lunghe.</string>
+    <string name="error_file_too_large">I file audio oltre 2 GB non sono supportati.</string>
+    <string name="error_file_not_found">File audio non trovato</string>
+    <string name="error_invalid_format">Impossibile determinare il formato audio</string>
+    <string name="error_no_audio_track">Nessuna traccia audio trovata nel file</string>
+    <string name="error_duration_unknown">Impossibile determinare la durata dell\'audio</string>
+    <string name="error_conversion_failed">Conversione non riuscita: %1$s</string>
+    <string name="error_chunk_failed">Il segmento %1$d non è riuscito: %2$s</string>
     <string name="native_crash_model_warning">L\'app si è chiusa in modo imprevisto durante l\'ultima trascrizione. Se è successo durante il caricamento di un modello, il file potrebbe essere danneggiato. Prova a scaricarlo di nuovo dalla scheda Modello.</string>
     <string name="oom_crash_title">App chiusa per memoria insufficiente</string>
     <string name="oom_crash_warning">L\'app è stata chiusa perché il dispositivo aveva poca memoria libera. Prova a chiudere le altre app o a usare un modello più piccolo prima di trascrivere di nuovo.</string>

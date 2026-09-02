@@ -226,6 +226,15 @@
     <string name="error_native">Wystąpił błąd wewnętrzny podczas transkrypcji. Jeśli się powtarza, spróbuj innego modelu.</string>
     <string name="error_not_initialized">Nie wczytano żadnego modelu. Otwórz kartę Model, aby pobrać lub wybrać model.</string>
     <string name="error_model_unavailable">Wybrany model nie jest już dostępny. Otwórz kartę Model i wybierz inny.</string>
+    <string name="error_audio_too_long_streaming">Dźwięk dłuższy niż 2 godziny nie jest obsługiwany.</string>
+    <string name="error_audio_too_long_vad">Przy włączonym VAD maksymalna długość zależy od pamięci urządzenia (tutaj: %1$d minut). Wyłącz VAD albo użyj modelu segmentowanego przy długich nagraniach.</string>
+    <string name="error_file_too_large">Pliki audio powyżej 2 GB nie są obsługiwane.</string>
+    <string name="error_file_not_found">Nie znaleziono pliku audio</string>
+    <string name="error_invalid_format">Nie można ustalić formatu audio</string>
+    <string name="error_no_audio_track">W pliku nie znaleziono ścieżki audio</string>
+    <string name="error_duration_unknown">Nie można ustalić czasu trwania audio</string>
+    <string name="error_conversion_failed">Konwersja nie powiodła się: %1$s</string>
+    <string name="error_chunk_failed">Segment %1$d nie powiódł się: %2$s</string>
     <string name="native_crash_model_warning">Aplikacja nieoczekiwanie zamknęła się podczas ostatniej transkrypcji. Jeśli zdarzyło się to przy wczytywaniu modelu, plik może być uszkodzony. Spróbuj pobrać go ponownie z karty Model.</string>
     <string name="oom_crash_title">Aplikacja zamknięta z powodu małej ilości pamięci</string>
     <string name="oom_crash_warning">Aplikacja została zamknięta, ponieważ urządzeniu kończyła się pamięć. Przed ponowną transkrypcją spróbuj zamknąć inne aplikacje lub użyć mniejszego modelu.</string>

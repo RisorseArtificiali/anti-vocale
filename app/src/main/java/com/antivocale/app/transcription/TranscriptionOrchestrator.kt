@@ -7,6 +7,7 @@ import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.audio.AudioPreprocessor.StreamEvent
 import com.antivocale.app.audio.MemoryReadings
+import com.antivocale.app.audio.PreprocessingErrorMessages
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.PreferencesManager
@@ -91,6 +92,10 @@ class TranscriptionOrchestrator @Inject constructor(
                     context.getString(R.string.error_model_unavailable)
                 is TranscriptionException.NoTranscriptionProduced ->
                     context.getString(R.string.transcription_failed)
+                // TASK-432: the pre-read duration refusal and every other
+                // preprocessing failure reach users through the notification and
+                // the Tasker reply; this branch routes them to localized advice.
+                is PreprocessingError -> PreprocessingErrorMessages.localize(context, error)
                 else -> context.getString(R.string.transcription_failed)
             }
         }

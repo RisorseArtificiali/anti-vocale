@@ -219,6 +219,15 @@
     <string name="error_native">An internal error occurred during transcription. If this persists, try a different model.</string>
     <string name="error_not_initialized">No model is loaded. Open the Model tab to download or select one.</string>
     <string name="error_model_unavailable">The selected model is no longer available. Open the Model tab and select another one.</string>
+    <string name="error_audio_too_long_streaming">Audio longer than 2 hours is not supported.</string>
+    <string name="error_audio_too_long_vad">With VAD enabled the maximum length depends on your device\'s memory (here: %1$d minutes). Turn VAD off, or use a chunked model, for long recordings.</string>
+    <string name="error_file_too_large">Audio files larger than 2GB are not supported.</string>
+    <string name="error_file_not_found">Audio file not found</string>
+    <string name="error_invalid_format">Unable to determine audio format</string>
+    <string name="error_no_audio_track">No audio track found in file</string>
+    <string name="error_duration_unknown">Could not determine audio duration</string>
+    <string name="error_conversion_failed">Conversion failed: %1$s</string>
+    <string name="error_chunk_failed">Chunk %1$d failed: %2$s</string>
     <string name="native_crash_model_warning">The app closed unexpectedly during the last transcription. If this happened while loading a model, the file may be corrupt. Try re-downloading it from the Model tab.</string>
     <string name="oom_crash_title">App closed for low memory</string>
     <string name="oom_crash_warning">The app was closed because the device was running low on memory. Try closing other apps or using a smaller model before transcribing again.</string>
