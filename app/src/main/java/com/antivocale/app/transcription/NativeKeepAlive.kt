@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -33,6 +34,20 @@ class NativeKeepAlive(
     private val timerActive = AtomicBoolean(false)
     private val lock = Any()
     private var job: Job? = null
+
+    /**
+     * TEST SEAM (TASK-388): invoked inside the idle-unload window, AFTER the
+     * workInFlight check has passed and BEFORE [onIdleUnload] runs, while
+     * [lock] is held. Null in production (one branch on a once-per-idle-period
+     * cold path; behavior identical). Race tests install a hook that freezes
+     * here so a work-start landing in the window becomes a deterministic
+     * interleaving instead of scheduler luck. Must not call back into this
+     * class from the hook: the monitor is reentrant so it would not deadlock,
+     * but an unpaired beginWork() would corrupt workInFlight.
+     */
+    @VisibleForTesting
+    @Volatile
+    internal var idleUnloadWindowHook: (() -> Unit)? = null
 
     /** Stores the timeout; a running timer restarts with the new value. */
     fun setTimeout(minutes: Int) {
@@ -95,6 +110,7 @@ class NativeKeepAlive(
             // stop() call does not deadlock).
             synchronized(lock) {
                 if (timerActive.get() && workInFlight.get() == 0) {
+                    idleUnloadWindowHook?.invoke()
                     onIdleUnload()
                     if (workInFlight.get() > 0) {
                         // Work that queued while we held the lock started on an
