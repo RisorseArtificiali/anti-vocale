@@ -228,6 +228,7 @@
     <string name="error_duration_unknown">Could not determine audio duration</string>
     <string name="error_conversion_failed">Conversion failed: %1$s</string>
     <string name="error_chunk_failed">Chunk %1$d failed: %2$s</string>
+    <string name="error_storage_full">Not enough free space to import this file (needs about %1$d MB).</string>
     <string name="native_crash_model_warning">The app closed unexpectedly during the last transcription. If this happened while loading a model, the file may be corrupt. Try re-downloading it from the Model tab.</string>
     <string name="oom_crash_title">App closed for low memory</string>
     <string name="oom_crash_warning">The app was closed because the device was running low on memory. Try closing other apps or using a smaller model before transcribing again.</string>

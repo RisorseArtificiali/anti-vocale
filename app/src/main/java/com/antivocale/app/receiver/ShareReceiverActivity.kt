@@ -252,6 +252,12 @@ class ShareReceiverActivity : Activity() {
                 finish()
                 return
             }
+            is SharedAudioHandler.CopyResult.OutOfSpace -> {
+                showErrorToast(getString(R.string.error_storage_full, result.neededMb))
+                cleanup()
+                finish()
+                return
+            }
         }
 
         Log.i(TAG, "Copied to: $localPath")

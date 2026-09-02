@@ -189,6 +189,7 @@
     <string name="error_duration_unknown">Não foi possível determinar a duração do áudio</string>
     <string name="error_conversion_failed">Falha na conversão: %1$s</string>
     <string name="error_chunk_failed">O segmento %1$d falhou: %2$s</string>
+    <string name="error_storage_full">Espaço livre insuficiente para importar este arquivo (precisa de cerca de %1$d MB).</string>
     <string name="native_crash_model_warning">O app fechou inesperadamente durante a última transcrição. Se isso ocorreu ao carregar um modelo, o arquivo pode estar corrompido. Baixe-o novamente na aba Modelo.</string>
     <string name="oom_crash_title">App fechado por falta de memória</string>
     <string name="oom_crash_warning">O app foi fechado porque o dispositivo estava com pouca memória. Feche outros apps ou use um modelo menor antes de tentar de novo.</string>

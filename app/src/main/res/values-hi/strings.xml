@@ -219,6 +219,7 @@
     <string name="error_duration_unknown">ऑडियो अवधि निर्धारित नहीं की जा सकी</string>
     <string name="error_conversion_failed">रूपांतरण विफल: %1$s</string>
     <string name="error_chunk_failed">सेगमेंट %1$d विफल: %2$s</string>
+    <string name="error_storage_full">इस फ़ाइल को आयात करने के लिए पर्याप्त खाली स्थान नहीं है (लगभग %1$d MB चाहिए)।</string>
     <string name="native_crash_model_warning">पिछले ट्रांसक्रिप्शन के दौरान ऐप अचानक बंद हो गया। अगर यह मॉडल लोड करते समय हुआ था, तो फ़ाइल ख़राब हो सकती है। मॉडल टैब से इसे फिर से डाउनलोड करें।</string>
     <string name="oom_crash_title">मेमोरी कम होने से ऐप बंद हुआ</string>
     <string name="oom_crash_warning">डिवाइस की मेमोरी कम होने की वजह से ऐप बंद कर दिया गया। फिर ट्रांसक्राइब करने से पहले दूसरे ऐप बंद करें या कोई छोटा मॉडल इस्तेमाल करें।</string>

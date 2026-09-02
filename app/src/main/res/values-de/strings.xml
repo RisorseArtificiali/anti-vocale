@@ -220,6 +220,7 @@
     <string name="error_duration_unknown">Audiodauer konnte nicht ermittelt werden</string>
     <string name="error_conversion_failed">Konvertierung fehlgeschlagen: %1$s</string>
     <string name="error_chunk_failed">Segment %1$d fehlgeschlagen: %2$s</string>
+    <string name="error_storage_full">Nicht genug freier Speicher, um diese Datei zu importieren (benötigt etwa %1$d MB).</string>
     <string name="native_crash_model_warning">Die App wurde während der letzten Transkription unerwartet geschlossen. Falls das beim Laden eines Modells geschah, kann die Datei beschädigt sein. Lade sie im Tab \"Modell\" erneut herunter.</string>
     <string name="oom_crash_title">App wegen wenig Speicher geschlossen</string>
     <string name="oom_crash_warning">Die App wurde geschlossen, weil der Gerätespeicher knapp war. Schließe andere Apps oder verwende ein kleineres Modell, bevor du erneut transkribierst.</string>

@@ -231,6 +231,7 @@
     <string name="error_duration_unknown">Ses süresi belirlenemedi</string>
     <string name="error_conversion_failed">Dönüştürme başarısız: %1$s</string>
     <string name="error_chunk_failed">%1$d. bölüm başarısız: %2$s</string>
+    <string name="error_storage_full">Bu dosyayı içe aktarmak için yeterli boş alan yok (yaklaşık %1$d MB gerekiyor).</string>
     <string name="native_crash_model_warning">Uygulama son metin çıkarma sırasında beklenmedik şekilde kapandı. Bu bir model yüklenirken olduysa dosya bozuk olabilir. Model sekmesinden yeniden indirmeyi deneyin.</string>
     <string name="oom_crash_title">Düşük bellek nedeniyle uygulama kapandı</string>
     <string name="oom_crash_warning">Cihazın belleği azaldığı için uygulama kapatıldı. Yeniden metin çıkarmadan önce diğer uygulamaları kapatmayı veya daha küçük bir model kullanmayı deneyin.</string>

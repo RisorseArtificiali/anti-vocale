@@ -55,7 +55,16 @@ object SharedAudioHandler {
         data class UnsupportedFormat(val extension: String) : CopyResult()
         /** The content could not be read (permission, I/O, empty stream). */
         object Unreadable : CopyResult()
+        /** Target storage cannot hold the source plus margin (TASK-432 pre-copy gate). */
+        data class OutOfSpace(val neededMb: Int) : CopyResult()
     }
+
+    /** True when the target storage can hold the source plus margin (10% + 32MB). */
+    internal fun hasFreeSpace(availableBytes: Long, neededBytes: Long): Boolean =
+        availableBytes >= neededBytes + neededBytes / 10L + 32L * 1024 * 1024L
+
+    internal fun neededMb(neededBytes: Long): Int =
+        ((neededBytes + neededBytes / 10L + 32L * 1024 * 1024L) / (1024L * 1024L)).toInt()
 
     /**
      * Copies a content:// URI to app-private storage.
@@ -90,6 +99,22 @@ object SharedAudioHandler {
             if (!SUPPORTED_EXTENSIONS.contains(extension.lowercase())) {
                 Log.e(TAG, "Unsupported audio format: $extension")
                 return CopyResult.UnsupportedFormat(extension)
+            }
+
+            // Pre-copy storage gate (TASK-432 spec: with the 2GB sanity bound, a
+            // near-full device would otherwise hit ENOSPC mid-copy). Source size via
+            // AssetFileDescriptor; unknown size fails open (the copy itself will
+            // error visibly).
+            val neededBytes = try {
+                context.contentResolver.openAssetFileDescriptor(uri, "r")?.use { it.length } ?: -1L
+            } catch (e: Exception) {
+                Log.w(TAG, "Could not size shared content: $uri", e)
+                -1L
+            }
+            if (neededBytes > 0 && !hasFreeSpace(
+                    android.os.StatFs(context.filesDir.path).availableBytes, neededBytes)) {
+                Log.e(TAG, "Not enough free space for $uri: needs ${neededBytes} bytes")
+                return CopyResult.OutOfSpace(neededMb(neededBytes))
             }
 
             // Create output directory if needed

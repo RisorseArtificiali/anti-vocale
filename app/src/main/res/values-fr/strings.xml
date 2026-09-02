@@ -189,6 +189,7 @@
     <string name="error_duration_unknown">Impossible de déterminer la durée de l\'audio</string>
     <string name="error_conversion_failed">Échec de la conversion : %1$s</string>
     <string name="error_chunk_failed">Le segment %1$d a échoué : %2$s</string>
+    <string name="error_storage_full">Pas assez d\'espace libre pour importer ce fichier (environ %1$d Mo nécessaires).</string>
     <string name="native_crash_model_warning">L\'application s\'est fermée de manière inattendue pendant la dernière transcription. Si cela s\'est produit au chargement d\'un modèle, le fichier est peut-être corrompu. Re-téléchargez-le depuis l\'onglet Modèle.</string>
     <string name="oom_crash_title">Application fermée faute de mémoire</string>
     <string name="oom_crash_warning">L\'application a été fermée car la mémoire de l\'appareil était insuffisante. Fermez d\'autres applications ou utilisez un modèle plus léger avant de réessayer.</string>
