@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
 
@@ -211,6 +212,28 @@ class BackendRegistryTest {
     fun `only nemotron is a streaming backend`() {
         val streaming = registry.backends.filter { it.isStreaming }.map { it.backendId }
         assertEquals(listOf(BuiltInBackendIds.NEMOTRON), streaming)
+    }
+
+    @Test
+    fun `rtfEstimate parakeet exception, conservative defaults elsewhere`() {
+        // TASK-432: cold-start dialog estimate fallback (calibrator samples win after 2 runs)
+        assertEquals(15f, registry.byBackendId(BuiltInBackendIds.PARAKEET)!!.rtfEstimate)
+        for (descriptor in registry.backends) {
+            assertTrue(
+                "rtfEstimate of ${descriptor.backendId} must stay within the conservative band",
+                descriptor.rtfEstimate in 1f..15f)
+        }
+        assertEquals(4f, registry.byBackendId(BuiltInBackendIds.WHISPER)!!.rtfEstimate)
+        assertEquals(1f, registry.byBackendId(LlmTranscriptionBackend.BACKEND_ID)!!.rtfEstimate)
+    }
+
+    @Test
+    fun `external descriptors get the conservative cluster rtfEstimate`() = runTest {
+        val fake = FakePreferencesManager()
+        val store = com.antivocale.app.data.ExternalModelStore(fake, dirExists = { true })
+        store.add(externalRecord())
+        val registry = BackendRegistry(store, providerWith(externalRecord()))
+        assertEquals(4f, registry.byBackendId("external:a1b2c3d4e5f6")!!.rtfEstimate)
     }
 
     // ---- dynamic external descriptors (spec v2a) ----

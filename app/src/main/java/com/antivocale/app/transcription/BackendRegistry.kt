@@ -70,6 +70,14 @@ data class BackendDescriptor(
     /** True for the streaming recognizer backend (Nemotron); all others are batch. */
     val isStreaming: Boolean = false,
 
+    /**
+     * Cold-start speed estimate: audio-seconds processed per compute-second.
+     * Used ONLY when TranscriptionCalibrator has fewer than 2 samples for this
+     * model on this device (AudioDurationPolicy.resolveEstimateMsPerSec tiers).
+     * The conservative default of 1f overestimates time, never underestimates.
+     */
+    val rtfEstimate: Float = 1f,
+
     /** Dedicated localized display name, or null when the name derives from the model path. */
     val displayNameResId: Int? = null,
 
@@ -161,10 +169,15 @@ class BackendRegistry @Inject constructor(
         val entry = requireNotNull(BundledCatalog.byId(entryId)) {
             "catalog missing entry '$entryId' for backend registry"
         }
+        // Cold-start RTF: Parakeet TDT is roughly 15x real time on a mid-range SoC;
+        // the other offline sherpa families cluster around 4x. Calibrator samples
+        // replace these after two runs on the actual device.
+        val rtf = if (entry.id == BuiltInBackendIds.PARAKEET) 15f else 4f
         return BackendDescriptor(
             backendId = entry.id,
             shareAlias = entry.shareAlias,
             isStreaming = entry.isStreaming,
+            rtfEstimate = rtf,
             displayNameResId = when {
                 entry.hasExplicitDisplay && entry.display is CatalogDisplay.Resource ->
                     CatalogStringKeys.resolve(entry.display.key)
@@ -187,6 +200,9 @@ class BackendRegistry @Inject constructor(
         // Fixed localized label for parity with the other static backends: without
         // it, path-derived labels leak file names into the retranscribe picker.
         displayNameResId = R.string.llm_backend_name,
+        // LLM decoding is near-real-time at best on device: 1f overestimates the
+        // wait, which is the safe direction for a cold-start dialog estimate.
+        rtfEstimate = 1f,
         // The LLM backend stores its model path in the generic preference.
         modelPathFlow = { it.modelPath },
         saveModelPath = { prefs, path -> prefs.saveModelPath(path) },
@@ -206,6 +222,9 @@ class BackendRegistry @Inject constructor(
     private fun descriptorFor(record: ExternalModelRecord): BackendDescriptor = BackendDescriptor(
         backendId = record.backendId,
         shareAlias = "",  // spec: the ShareExternal family alias is synced separately
+        // External families get the conservative cluster default: the catalog
+        // Parakeet exception cannot be detected from ModelFamily alone.
+        rtfEstimate = 4f,
         deriveDisplayName = { _, _ -> record.displayName },
         // The store (not the registry) owns the records JSON: the path flow derives
         // from its decoded list instead of a second raw-preference decoder here.
