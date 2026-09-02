@@ -1,12 +1,12 @@
 package com.antivocale.app.transcription
 
-import android.app.ActivityManager
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.R
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.audio.AudioPreprocessor.StreamEvent
+import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.PreferencesManager
@@ -454,14 +454,8 @@ class TranscriptionOrchestrator @Inject constructor(
         )
     }
 
-    private fun availableMemoryBytes(context: Context): Long {
-        val info = ActivityManager.MemoryInfo()
-        // String overload + safe cast: unit-test Context fakes return generic objects from
-        // getSystemService, and the class-based overload's implicit checkcast crashes them.
-        val am = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-        am?.getMemoryInfo(info)
-        return info.availMem
-    }
+    private fun availableMemoryBytes(context: Context): Long =
+        MemoryReadings.availableRamBytes(context) ?: 0L
 
     private fun formatMb(bytes: Long): String = "${bytes / MB}MB"
 
