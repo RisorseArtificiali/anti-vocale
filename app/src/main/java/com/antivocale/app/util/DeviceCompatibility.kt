@@ -59,13 +59,11 @@ object DeviceCompatibility {
         return totalRamMb >= required
     }
 
-    private fun totalRamBytes(context: Context): Long {
-        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
-            ?: return Long.MAX_VALUE // Can't determine, allow to proceed
-        val memInfo = ActivityManager.MemoryInfo()
-        activityManager.getMemoryInfo(memInfo)
-        return memInfo.totalMem
-    }
+    private fun totalRamBytes(context: Context): Long =
+        // MemoryReadings is the one owner of the platform memory reads; this
+        // gate keeps its own fail-open semantics on top.
+        com.antivocale.app.audio.MemoryReadings.totalRamBytes(context)
+            ?: Long.MAX_VALUE // Can't determine, allow to proceed
 
     /**
      * Checks if the current device is compatible.

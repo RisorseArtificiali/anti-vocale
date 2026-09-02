@@ -24,6 +24,9 @@ object CrashReporter {
     /** TASK-396: set by BridgeApplication at startup; must be set before report() can mark OOM. */
     @Volatile var filesDir: java.io.File? = null
     private const val KEY_CONTEXT = "crash_context"
+    private const val KEY_MEMORY_CLASS_MB = "memory_class_mb"
+    private const val KEY_TOTAL_RAM_BYTES = "total_ram_bytes"
+    private const val KEY_IS_LOW_RAM_DEVICE = "is_low_ram_device"
     private const val OOM_MARKER_PATH = "/data/data/com.antivocale.app/files/last_crash_oom"
 
     val handler = CoroutineExceptionHandler { context, throwable ->
@@ -41,6 +44,22 @@ object CrashReporter {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Failed to report to Crashlytics", e)
+        }
+    }
+
+    /** TASK-430: persistent keys annotating every subsequent report with the
+     *  device's memory profile (no public per-model heap-limit dataset exists,
+     *  so OOM reports must carry their own). Null readings are skipped; they
+     *  occur on unit-test Contexts whose ActivityManager is unavailable. */
+    fun setMemoryInfo(memoryClassMb: Int?, totalRamBytes: Long?, isLowRamDevice: Boolean?) {
+        try {
+            FirebaseCrashlytics.getInstance().apply {
+                memoryClassMb?.let { setCustomKey(KEY_MEMORY_CLASS_MB, it) }
+                totalRamBytes?.let { setCustomKey(KEY_TOTAL_RAM_BYTES, it) }
+                isLowRamDevice?.let { setCustomKey(KEY_IS_LOW_RAM_DEVICE, it) }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set memory info on Crashlytics", e)
         }
     }
 

@@ -29,6 +29,12 @@ object CrashReporter {
         markOomIfOOM(throwable)
     }
 
+    /** TASK-430: same API as the playStore build; the memory profile goes to
+     *  logcat only, nothing is reported off-device. */
+    fun setMemoryInfo(memoryClassMb: Int?, totalRamBytes: Long?, isLowRamDevice: Boolean?) {
+        Log.i(TAG, "Memory info: memoryClassMb=$memoryClassMb totalRamBytes=$totalRamBytes isLowRamDevice=$isLowRamDevice")
+    }
+
     /** TASK-396 pt.2: persist an OOM marker readable at the next cold start.
      *  Resolves via the injected [filesDir] (debug builds run as .debug and the
      *  hardcoded production path is unwritable there); falls back to it otherwise.

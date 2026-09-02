@@ -2,6 +2,7 @@ package com.antivocale.app
 
 import android.app.Application
 import androidx.work.Configuration
+import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.util.CrashReporter
@@ -72,6 +73,17 @@ class BridgeApplication : Application(), Configuration.Provider {
         // exist in this process, so no live row can be caught.
         // TASK-396: set BEFORE the sweep (it calls consumeLastCrashWasOOM)
         CrashReporter.filesDir = filesDir
+        // TASK-430: annotate every crash report with the device's memory
+        // profile, so OOM/kill reports arrive with their heap-class context.
+        // Contained: a telemetry failure must not break startup.
+        runCatching {
+            CrashReporter.setMemoryInfo(
+                MemoryReadings.memoryClassMb(this),
+                MemoryReadings.totalRamBytes(this),
+                MemoryReadings.isLowRamDevice(this))
+        }.onFailure { e ->
+            android.util.Log.e("BridgeApplication", "Memory-info telemetry failed", e)
+        }
         runCatching {
             val wasOOMCrash = CrashReporter.consumeLastCrashWasOOM()
             kotlinx.coroutines.runBlocking {
