@@ -3,6 +3,7 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.R
+import com.antivocale.app.audio.AudioDurationPolicy
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.audio.AudioPreprocessor.StreamEvent
@@ -677,7 +678,11 @@ class TranscriptionOrchestrator @Inject constructor(
             }
             effective
         }
-        val usePipeline = !vadEnabled && maxChunkDuration != null
+        // decodePathFor is the single source of the path rule; the leading null
+        // check is redundant with it but keeps the smart cast to Int below.
+        val usePipeline = maxChunkDuration != null &&
+            AudioDurationPolicy.decodePathFor(vadEnabled, maxChunkDuration) ==
+            AudioDurationPolicy.DecodePath.STREAMING
 
         val totalStartMs = System.currentTimeMillis()
 

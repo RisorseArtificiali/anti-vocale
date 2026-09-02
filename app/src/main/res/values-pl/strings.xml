@@ -236,6 +236,11 @@
     <string name="error_conversion_failed">Konwersja nie powiodła się: %1$s</string>
     <string name="error_chunk_failed">Segment %1$d nie powiódł się: %2$s</string>
     <string name="error_storage_full">Za mało wolnego miejsca, aby zaimportować ten plik (potrzeba około %1$d MB).</string>
+    <string name="dialog_long_audio_title">Długi dźwięk</string>
+    <string name="dialog_long_audio_message">Ten dźwięk trwa %1$d minut. Z %2$s zajmie to około %3$d minut. Po zakończeniu otrzymasz powiadomienie.</string>
+    <string name="dialog_long_audio_roughly">Szacunek przybliżony: to urządzenie wciąż kalibruje wybrany model.</string>
+    <string name="dialog_long_audio_continue">Kontynuuj</string>
+    <string name="dialog_long_audio_cancel">Anuluj</string>
     <string name="native_crash_model_warning">Aplikacja nieoczekiwanie zamknęła się podczas ostatniej transkrypcji. Jeśli zdarzyło się to przy wczytywaniu modelu, plik może być uszkodzony. Spróbuj pobrać go ponownie z karty Model.</string>
     <string name="oom_crash_title">Aplikacja zamknięta z powodu małej ilości pamięci</string>
     <string name="oom_crash_warning">Aplikacja została zamknięta, ponieważ urządzeniu kończyła się pamięć. Przed ponowną transkrypcją spróbuj zamknąć inne aplikacje lub użyć mniejszego modelu.</string>

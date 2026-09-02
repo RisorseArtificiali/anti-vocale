@@ -190,6 +190,11 @@
     <string name="error_conversion_failed">Échec de la conversion : %1$s</string>
     <string name="error_chunk_failed">Le segment %1$d a échoué : %2$s</string>
     <string name="error_storage_full">Pas assez d\'espace libre pour importer ce fichier (environ %1$d Mo nécessaires).</string>
+    <string name="dialog_long_audio_title">Audio long</string>
+    <string name="dialog_long_audio_message">Cet audio dure %1$d minutes. Avec %2$s, il faudra environ %3$d minutes. Vous recevrez une notification une fois terminé.</string>
+    <string name="dialog_long_audio_roughly">Estimation approximative : cet appareil se calibre encore pour le modèle sélectionné.</string>
+    <string name="dialog_long_audio_continue">Continuer</string>
+    <string name="dialog_long_audio_cancel">Annuler</string>
     <string name="native_crash_model_warning">L\'application s\'est fermée de manière inattendue pendant la dernière transcription. Si cela s\'est produit au chargement d\'un modèle, le fichier est peut-être corrompu. Re-téléchargez-le depuis l\'onglet Modèle.</string>
     <string name="oom_crash_title">Application fermée faute de mémoire</string>
     <string name="oom_crash_warning">L\'application a été fermée car la mémoire de l\'appareil était insuffisante. Fermez d\'autres applications ou utilisez un modèle plus léger avant de réessayer.</string>

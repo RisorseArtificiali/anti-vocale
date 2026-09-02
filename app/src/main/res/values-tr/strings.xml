@@ -232,6 +232,11 @@
     <string name="error_conversion_failed">Dönüştürme başarısız: %1$s</string>
     <string name="error_chunk_failed">%1$d. bölüm başarısız: %2$s</string>
     <string name="error_storage_full">Bu dosyayı içe aktarmak için yeterli boş alan yok (yaklaşık %1$d MB gerekiyor).</string>
+    <string name="dialog_long_audio_title">Uzun ses</string>
+    <string name="dialog_long_audio_message">Bu ses %1$d dakika sürüyor. %2$s ile yaklaşık %3$d dakika sürecek. Bittiğinde bir bildirim alacaksınız.</string>
+    <string name="dialog_long_audio_roughly">Kaba tahmin: bu cihaz seçilen model için henüz kalibre oluyor.</string>
+    <string name="dialog_long_audio_continue">Devam</string>
+    <string name="dialog_long_audio_cancel">İptal</string>
     <string name="native_crash_model_warning">Uygulama son metin çıkarma sırasında beklenmedik şekilde kapandı. Bu bir model yüklenirken olduysa dosya bozuk olabilir. Model sekmesinden yeniden indirmeyi deneyin.</string>
     <string name="oom_crash_title">Düşük bellek nedeniyle uygulama kapandı</string>
     <string name="oom_crash_warning">Cihazın belleği azaldığı için uygulama kapatıldı. Yeniden metin çıkarmadan önce diğer uygulamaları kapatmayı veya daha küçük bir model kullanmayı deneyin.</string>

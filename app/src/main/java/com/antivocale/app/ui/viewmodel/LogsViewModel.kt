@@ -9,16 +9,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.core.content.ContextCompat
 import com.antivocale.app.R
+import com.antivocale.app.audio.AudioDurationPolicy
+import com.antivocale.app.audio.AudioPreprocessor
+import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -29,6 +34,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.UUID
 
@@ -72,8 +78,37 @@ class LogsViewModel @Inject constructor(
     private val transcriptionBackendManager: TranscriptionBackendManager,
     private val logDao: LogDao,
     private val preferencesManager: PreferencesManager,
-    private val backendRegistry: BackendRegistry
+    private val backendRegistry: BackendRegistry,
+    private val audioPreprocessor: AudioPreprocessor,
+    private val transcriptionCalibrator: TranscriptionCalibrator
 ) : ViewModel() {
+
+    /**
+     * Pending long-audio warning (TASK-432): non-null while the advisory dialog
+     * is showing; [onConfirm] carries the deferred dispatch. Once per request,
+     * never persisted.
+     */
+    data class LongAudioWarning(
+        val durationMinutes: Int,
+        val estimateMinutes: Long,
+        val isRough: Boolean,
+        val modelDisplayName: String,
+        val onConfirm: () -> Unit,
+    )
+
+    private val _pendingLongAudioWarning = MutableStateFlow<LongAudioWarning?>(null)
+    val pendingLongAudioWarning: StateFlow<LongAudioWarning?> = _pendingLongAudioWarning.asStateFlow()
+
+    fun confirmLongAudioWarning() {
+        val warning = _pendingLongAudioWarning.value ?: return
+        _pendingLongAudioWarning.value = null
+        warning.onConfirm()
+    }
+
+    fun cancelLongAudioWarning() {
+        _pendingLongAudioWarning.value = null
+    }
+
 
     val logs: StateFlow<List<LogEntry>> = logDao.getAll()
         .map { entities -> entities.map { it.toLogEntry() } }
@@ -334,6 +369,50 @@ class LogsViewModel @Inject constructor(
             return
         }
 
+        viewModelScope.launch {
+            // dialogCapable is true here by construction: this is the interactive
+            // in-app flow. Every headless dispatch site never calls the gate.
+            val duration = withContext(Dispatchers.IO) { audioPreprocessor.getAudioDuration(filePath) }
+            val vadEnabled = preferencesManager.vadEnabled.first()
+            val decodePath = AudioDurationPolicy.decodePathFor(
+                vadEnabled, transcriptionBackendManager.chunkCapFor(backendId))
+            val ceiling = AudioDurationPolicy.ceilingSeconds(
+                decodePath, MemoryReadings.availableRamBytes(context), MemoryReadings.maxHeapBytes())
+            val descriptor = backendRegistry.byBackendId(backendId)
+            val modelPath = descriptor?.modelPathFlow(preferencesManager)?.first()
+            val profile = transcriptionCalibrator.getEstimate(backendId, modelPath ?: "")
+            val estimate = AudioDurationPolicy.resolveEstimateMsPerSec(
+                profile?.msPerSecondOfAudio, profile?.sampleCount ?: 0, descriptor?.rtfEstimate ?: 1f)
+            val decision = AudioDurationPolicy.warnDecision(
+                duration.toLong(), ceiling, estimate, dialogCapable = true,
+                calibrated = profile?.hasEstimate == true)
+            if (!decision.showDialog) {
+                // below threshold or over ceiling: the pre-read refusal carries the message
+                dispatchTranscription(originalEntry, backendId, filePath, context)
+                return@launch
+            }
+            val displayName = when {
+                descriptor == null ->
+                    transcriptionBackendManager.getBackend(backendId)?.displayName ?: backendId
+                descriptor.displayNameResId != null -> context.getString(descriptor.displayNameResId)
+                else -> descriptor.deriveDisplayName(context, modelPath ?: filePath)
+            }
+            _pendingLongAudioWarning.value = LongAudioWarning(
+                durationMinutes = kotlin.math.ceil(duration / 60.0).toInt(),
+                estimateMinutes = decision.estimateMinutes,
+                isRough = decision.isRough,
+                modelDisplayName = displayName,
+                onConfirm = { dispatchTranscription(originalEntry, backendId, filePath, context) }
+            )
+        }
+    }
+
+    private fun dispatchTranscription(
+        originalEntry: LogEntry,
+        backendId: String,
+        filePath: String,
+        context: android.content.Context
+    ) {
         val newTaskId = UUID.randomUUID().toString()
 
         val intent = Intent(context, InferenceService::class.java).apply {

@@ -55,6 +55,7 @@ import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import androidx.compose.runtime.produceState
+import com.antivocale.app.ui.dialogs.LongAudioWarningDialog
 import com.antivocale.app.ui.dialogs.RetranscribeDialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
@@ -287,6 +288,7 @@ fun LogsTab(
     var showClearDialog by remember { mutableStateOf(false) }
     var recentlyDeletedEntry by remember { mutableStateOf<LogEntry?>(null) }
     var retranscribeTarget by remember { mutableStateOf<LogEntry?>(null) }
+    val pendingLongAudioWarning by viewModel.pendingLongAudioWarning.collectAsState()
     val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
     val compactActions by viewModel.compactResultActions.collectAsState()
 
@@ -306,6 +308,20 @@ fun LogsTab(
                 retranscribeTarget = null
             },
             onDismiss = { retranscribeTarget = null }
+        )
+    }
+
+    // Long-audio advisory (TASK-432): renders only after the retranscribe gate
+    // decides a warning is warranted; state lives in the view model so
+    // Confirm/Cancel survive recomposition.
+    pendingLongAudioWarning?.let { warning ->
+        LongAudioWarningDialog(
+            durationMinutes = warning.durationMinutes,
+            estimateMinutes = warning.estimateMinutes,
+            isRough = warning.isRough,
+            modelDisplayName = warning.modelDisplayName,
+            onConfirm = { viewModel.confirmLongAudioWarning() },
+            onCancel = { viewModel.cancelLongAudioWarning() }
         )
     }
 

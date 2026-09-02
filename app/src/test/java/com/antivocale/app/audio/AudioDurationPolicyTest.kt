@@ -87,6 +87,16 @@ class AudioDurationPolicyTest {
     }
 
     @Test
+    fun `decodePathFor mirrors the usePipeline rule`() {
+        assertEquals(AudioDurationPolicy.DecodePath.STREAMING,
+            AudioDurationPolicy.decodePathFor(vadEnabled = false, maxChunkDurationSeconds = 30))
+        assertEquals(AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
+            AudioDurationPolicy.decodePathFor(vadEnabled = true, maxChunkDurationSeconds = 30))
+        assertEquals(AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
+            AudioDurationPolicy.decodePathFor(vadEnabled = false, maxChunkDurationSeconds = null))
+    }
+
+    @Test
     fun `estimate rounds up to the minute`() {
         // 31 min audio at RTF 15 => 124s = 2.07 min -> 3
         assertEquals(3L, AudioDurationPolicy.warnDecision(

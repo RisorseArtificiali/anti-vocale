@@ -190,6 +190,11 @@
     <string name="error_conversion_failed">Error de conversión: %1$s</string>
     <string name="error_chunk_failed">El segmento %1$d falló: %2$s</string>
     <string name="error_storage_full">No hay suficiente espacio libre para importar este archivo (necesita unos %1$d MB).</string>
+    <string name="dialog_long_audio_title">Audio largo</string>
+    <string name="dialog_long_audio_message">Este audio dura %1$d minutos. Con %2$s tardará unos %3$d minutos. Recibirás una notificación cuando termine.</string>
+    <string name="dialog_long_audio_roughly">Estimación aproximada: este dispositivo todavía se está calibrando para el modelo seleccionado.</string>
+    <string name="dialog_long_audio_continue">Continuar</string>
+    <string name="dialog_long_audio_cancel">Cancelar</string>
     <string name="native_crash_model_warning">La app se cerró inesperadamente durante la última transcripción. Si ocurrió al cargar un modelo, el archivo puede estar corrupto. Vuelve a descargarlo desde la pestaña Modelo.</string>
     <string name="oom_crash_title">App cerrada por falta de memoria</string>
     <string name="oom_crash_warning">La app se cerró porque el dispositivo tenía poca memoria. Cierra otras apps o usa un modelo más ligero antes de reintentar.</string>

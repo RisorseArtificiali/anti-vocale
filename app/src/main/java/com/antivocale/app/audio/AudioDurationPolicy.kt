@@ -54,6 +54,12 @@ object AudioDurationPolicy {
     /** Advisory dialog above 30 minutes. */
     fun warnThresholdSeconds(): Long = 1800L
 
+    /** Mirrors TranscriptionOrchestrator's usePipeline rule: streaming needs VAD
+     *  off AND a chunking backend; everything else decodes whole-file PCM. */
+    fun decodePathFor(vadEnabled: Boolean, maxChunkDurationSeconds: Int?): DecodePath =
+        if (!vadEnabled && maxChunkDurationSeconds != null) DecodePath.STREAMING
+        else DecodePath.WHOLE_FILE_PCM
+
     /**
      * Estimate tiering: the on-device calibration (2+ samples) wins even when
      * slower than the family fallback, because optimism is the failure mode.

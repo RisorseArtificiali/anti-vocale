@@ -31,7 +31,7 @@ class LogsViewModelSourcePackageTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         logDao = mockk(relaxed = true)
-        viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), staticRegistry())
+        viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), staticRegistry(), mockk(relaxed = true), mockk(relaxed = true))
     }
 
     @After

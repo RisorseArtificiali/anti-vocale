@@ -153,6 +153,14 @@ class TranscriptionBackendManager @Inject constructor(
         else backends[backendId]
 
     /**
+     * Pre-tightening chunk cap of [backendId] (no memory adjustment: the
+     * AudioDurationPolicy.decodePathFor decision keys on null-ness only, which
+     * tightening preserves). The long-audio dialog gate uses this to predict the
+     * decode path the orchestrator will take (TASK-432).
+     */
+    fun chunkCapFor(backendId: String): Int? = getBackend(backendId)?.maxChunkDurationSeconds
+
+    /**
      * Checks if any backend is currently active.
      *
      * @return true if a backend is active

@@ -44,7 +44,7 @@ class LogsViewModelRetranscribeNamesTest {
         manager = mockk(relaxed = true)
         preferences = stubPreferencesManager()
         every { preferences.sherpaModelPath(any()) } returns flowOf("/data/models/saved")
-        viewModel = LogsViewModel(manager, mockk<LogDao>(relaxed = true), preferences, staticRegistry())
+        viewModel = LogsViewModel(manager, mockk<LogDao>(relaxed = true), preferences, staticRegistry(), mockk(relaxed = true), mockk(relaxed = true))
     }
 
     @Test
