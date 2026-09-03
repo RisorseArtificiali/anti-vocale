@@ -220,6 +220,9 @@ class TestSpiOpsTest {
     @Test
     fun `help lists ops set keys and the PROCESS_REQUEST pointer`() = runTest {
         val json = JSONObject(ops.handle(TestSpiOps.OP_HELP))
+        // help is a known op: it must NOT carry the unknown-op error (device
+        // verification 2026-09-03 caught the dispatch bug this pins).
+        assertFalse(json.has("error"))
         assertEquals(listOf("get", "set", "records", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(TestSpiOps.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))

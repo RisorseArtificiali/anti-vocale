@@ -43,6 +43,7 @@ internal class TestSpiOps(
             OP_GET -> get()
             OP_SET -> set(key, value, entry)
             OP_RECORDS -> records()
+            OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
     }.getOrElse { e ->
