@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TASK-409: test SPI overlay, DEBUG BUILDS ONLY (both flavors).
+     A build-type overlay is merged solely into the debug variants, so release
+     builds of playStore AND fdroid contain neither the receiver nor the
+     TEST_SPI intent filter. The receiver additionally refuses to run unless
+     BuildConfig.DEBUG. The broadcast is exported with NO permission: any app
+     on a test device can read or flip the app's preferences through it, which
+     is acceptable only because debug builds are never distributed. See
+     docs/testing-spi.md; the production exported receivers are reviewed in
+     docs/research/2026-09-03_tasker-receiver-security-analysis.md. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+
+        <!-- BroadcastReceiver for the debug-only test SPI -->
+        <receiver
+            android:name=".receiver.TestSpiReceiver"
+            android:enabled="true"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.antivocale.app.TEST_SPI" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>
