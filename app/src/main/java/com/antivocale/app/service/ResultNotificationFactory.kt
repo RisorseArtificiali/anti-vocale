@@ -46,7 +46,9 @@ data class ResultNotificationSpec(
  * delegating classes (result, error, no-model) draws from [nextNotificationId],
  * replacing the two per-class counters that both seeded at 1002 and could
  * collide. Ids are unique within a process lifetime only; after process death
- * the sequence restarts at [RESULT_NOTIFICATION_ID_BASE] (TASK-329).
+ * the sequence restarts at [RESULT_NOTIFICATION_ID_BASE] (TASK-329). The
+ * companion also hosts [bandedNotificationId], the derivation every per-key
+ * producer below the base uses to stay out of the allocator's range.
  */
 class ResultNotificationFactory(private val context: Context) {
 
@@ -277,12 +279,25 @@ class ResultNotificationFactory(private val context: Context) {
          * - 1003: SubtitleChoiceTimeoutWorker.NOTIFICATION_ID (worker foreground)
          * - 2001..2100: ExtractionService download-progress band (per-jobKey hash)
          * - 2201..2300: TaskerRequestReceiver fallback band (per-taskId hash)
-         * New fixed ids or bands go under the base; 2301..2999 is free headroom.
-         * Known exception, pre-existing and outside this contract:
-         * ShareReceiverActivity posts its subtitle-choice and share-error
-         * notifications at raw String.hashCode() ids, which are unbounded.
+         * - 2401..2500: ShareReceiverActivity choice + share-error band
+         *   (per-taskId / per-message hash, TASK-440)
+         * New fixed ids or bands go under the base; 2301..2400 and 2501..2999
+         * are free headroom.
          */
         const val RESULT_NOTIFICATION_ID_BASE = 3000
+
+        /**
+         * Shared derivation for per-key notification ids: folds an arbitrary
+         * hash into a reserved band [base, base + range - 1], the idiom behind
+         * every banded id in the contract table above. The mask is load
+         * bearing and NOT interchangeable with abs(): abs(Int.MIN_VALUE) is
+         * still Int.MIN_VALUE, so an abs-based variant emits ids below the
+         * band for negative hashes and breaks the contract, while
+         * (hash and 0x7FFFFFFF) is in 0..0x7FFFFFFF for any Int, keeping the
+         * result inside the band.
+         */
+        internal fun bandedNotificationId(hash: Int, base: Int, range: Int): Int =
+            base + (hash and 0x7FFFFFFF) % range
 
         /** Process-wide id allocator; the seed doubles as the first id of a fresh process. */
         private val idCounter = AtomicInteger(RESULT_NOTIFICATION_ID_BASE)

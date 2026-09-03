@@ -97,9 +97,10 @@ class ExtractionService : Service() {
     /** Per-download display names for notifications. */
     private val displayNames = ConcurrentHashMap<String, String>()
 
-    /** Stable notification ID per download key. */
+    /** Stable notification ID per download key (shared banded derivation: see
+     *  ResultNotificationFactory.bandedNotificationId for the mask rationale). */
     private fun notificationIdForKey(key: String): Int =
-        NOTIFICATION_ID_BASE + (key.hashCode() and 0x7FFFFFFF) % NOTIFICATION_ID_RANGE
+        ResultNotificationFactory.bandedNotificationId(key.hashCode(), NOTIFICATION_ID_BASE, NOTIFICATION_ID_RANGE)
 
     /** Builds a unique key for tracking a download job. */
     private fun jobKey(modelKey: String, variant: String?): String =

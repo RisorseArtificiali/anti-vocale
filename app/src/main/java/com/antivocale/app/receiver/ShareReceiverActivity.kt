@@ -22,6 +22,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.receiver.ChooserBroadcastReceiver
 import com.antivocale.app.service.InferenceService
+import com.antivocale.app.service.ResultNotificationFactory
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.SubtitleExtractor
 import com.antivocale.app.transcription.SubtitleTrack
@@ -89,9 +90,31 @@ class ShareReceiverActivity : Activity() {
         // Keeps a shared video from silently hanging when the notification is ignored.
         internal const val SUBTITLE_CHOICE_TIMEOUT_MINUTES = 5L
 
+        // Reserved-range contract (TASK-440): both ShareReceiverActivity ids (the
+        // subtitle-choice prompt and the share-error notification) share this band,
+        // so a raw hashCode can never land in the result allocator's range
+        // (ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE and up) or on any
+        // other fixed/banded id. Internal so the contract test can pin the band's
+        // derived top instead of a stale-able literal (ExtractionService precedent).
+        // Distinct inputs share an id only with the usual 1-in-RANGE birthday odds.
+        internal const val NOTIFICATION_ID_BAND_BASE = 2401
+        internal const val NOTIFICATION_ID_BAND_RANGE = 100
+
         // Stable notification id per taskId so the choice prompt can be cancelled by the
-        // tap receiver or replaced on a re-share of the same taskId.
-        internal fun choiceNotificationId(taskId: String): Int = taskId.hashCode()
+        // tap receiver or replaced on a re-share of the same taskId. SubtitleChoiceTimeoutWorker
+        // and NotificationActionReceiver cancel through this same derivation, so same
+        // taskId must keep mapping to the same id.
+        internal fun choiceNotificationId(taskId: String): Int =
+            ResultNotificationFactory.bandedNotificationId(
+                taskId.hashCode(), NOTIFICATION_ID_BAND_BASE, NOTIFICATION_ID_BAND_RANGE
+            )
+
+        // Stable per error message: repeating the same failure replaces its
+        // notification instead of stacking duplicates.
+        internal fun errorNotificationId(message: String): Int =
+            ResultNotificationFactory.bandedNotificationId(
+                message.hashCode(), NOTIFICATION_ID_BAND_BASE, NOTIFICATION_ID_BAND_RANGE
+            )
 
         // The registry is NOT held here. Only DI assembles the store+provider pair this
         // registry needs; a second hand-built instance would add a second records collector
@@ -546,6 +569,6 @@ class ShareReceiverActivity : Activity() {
             .setAutoCancel(true)
             .build()
         val nm = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        nm.notify(message.hashCode(), notification)
+        nm.notify(errorNotificationId(message), notification)
     }
 }
