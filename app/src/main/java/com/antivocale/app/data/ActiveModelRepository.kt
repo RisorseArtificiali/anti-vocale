@@ -3,6 +3,7 @@ package com.antivocale.app.data
 import android.content.Context
 import com.antivocale.app.transcription.BackendDescriptor
 import com.antivocale.app.transcription.BackendRegistry
+import com.antivocale.app.transcription.variantAwareDisplayName
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -66,8 +67,10 @@ class ActiveModelRepository @Inject constructor(
     /**
      * Guards against a blank saved path and derives the [ActiveModel] fields:
      * the backend id passes through untouched, and the name comes from the
-     * descriptor contract (fixed localized name, else its path-derived name),
-     * falling back to the model file name for unregistered backends.
+     * shared variant-aware display-name derivation (TASK-436: fixed family
+     * label plus the installed catalog variant, else the descriptor's
+     * path-derived name), falling back to the model file name for unregistered
+     * backends.
      */
     private fun String?.toActiveModel(backendId: String, descriptor: BackendDescriptor?): ActiveModel {
         val effectivePath = this?.takeUnless { it.isBlank() }
@@ -75,10 +78,9 @@ class ActiveModelRepository @Inject constructor(
             backendId = backendId,
             modelPath = effectivePath,
             modelName = effectivePath?.let { path ->
-                when {
-                    descriptor == null -> File(path).name
-                    descriptor.displayNameResId != null -> context.getString(descriptor.displayNameResId)
-                    else -> descriptor.deriveDisplayName(context, path)
+                when (descriptor) {
+                    null -> File(path).name
+                    else -> variantAwareDisplayName(context, descriptor, path)
                 }
             }
         )

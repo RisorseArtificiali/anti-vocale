@@ -1,8 +1,11 @@
 package com.antivocale.app.data
 
 import android.content.Context
+import com.antivocale.app.R
 import com.antivocale.app.transcription.staticRegistry
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.first
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
@@ -255,5 +258,23 @@ class ActiveModelRepositoryTest {
         assertNotEquals("gemma-litert-latest.task", emissions.last().modelName)
 
         job.cancel()
+    }
+
+    // -- Variant-aware model name (TASK-436) --
+    // Same shared derivation as the log row: a multi-variant catalog backend
+    // surfaces the installed variant's localized title, so the settings label
+    // agrees with the Logs UI instead of showing the bare family label.
+
+    @Test
+    fun `whisper modelName carries the installed variant title`() = runTest {
+        val context = mockk<Context>()
+        every { context.getString(R.string.whisper_title) } returns "Whisper"
+        every { context.getString(R.string.whisper_small_title) } returns "Whisper Small"
+        fakePrefs._transcriptionBackend.value = "whisper"
+        fakePrefs._sherpaModelPath("whisper").value = "/data/models/sherpa-onnx-whisper-small"
+
+        val repo = ActiveModelRepository(fakePrefs, context, staticRegistry())
+
+        assertEquals("Whisper Small", repo.activeModelFlow.first().modelName)
     }
 }

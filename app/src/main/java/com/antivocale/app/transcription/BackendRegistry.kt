@@ -39,11 +39,13 @@ import javax.inject.Singleton
  * hand-written here by design.
  *
  * Display-name contract: if [displayNameResId] is non-null the backend has a
- * fixed localized name (`context.getString(displayNameResId)`); otherwise call
- * [deriveDisplayName] with the saved model path — a variant title resolved from
- * the catalog for entries without an explicit display (Whisper, Qwen3-ASR), else
- * the model file name. This is the single implementation of the derivations
- * (ActiveModelRepository consumes it since TASK-321).
+ * fixed localized family name, which [variantAwareDisplayName] enriches with
+ * the installed catalog variant (TASK-436: "Whisper" becomes "Whisper Small");
+ * otherwise [deriveDisplayName] derives the name from the saved model path, a
+ * variant title resolved from the catalog for entries without an explicit
+ * display, else the model file name. [variantAwareDisplayName] is the one
+ * implementation shared by every registered-backend consumer (the GH #45
+ * log-row write; ActiveModelRepository since TASK-321).
  *
  * Backend-id VALIDATION site (TASK-394): the ONE shared predicate
  * BuiltInBackendIds.isSelectableBackendId accepts EXTRA_BACKEND_ID values
@@ -99,6 +101,44 @@ data class BackendDescriptor(
     /** Clears this backend's model path preference. */
     val clearModelPath: suspend (PreferencesManager) -> Unit,
 )
+
+/**
+ * The ONE display-name derivation for a REGISTERED backend: the GH #45 log-row
+ * write in [TranscriptionOrchestrator] and the modelName of
+ * [com.antivocale.app.data.ActiveModelRepository] both resolve through it
+ * (TASK-436). Fixed-label backends get the family label plus the installed
+ * catalog variant; path-derived backends keep the descriptor's own
+ * [BackendDescriptor.deriveDisplayName]. Callers keep their null-descriptor
+ * fallbacks (backend.displayName / the model file name), which is why
+ * [descriptor] is non-null here.
+ *
+ * Fixed-label rule: when the catalog entry has multiple variants and the saved
+ * path's directory is one of them, the localized variant title replaces the
+ * family label if the title already contains it ("Whisper Small", "Parakeet
+ * TDT (SmoothQuant)"); otherwise the two join with a space ("Whisper Distil
+ * Italian"). Single-variant entries (Qwen3-ASR, Nemotron, GigaAM), the LLM
+ * backend (no catalog entry) and blank or unresolvable paths keep the plain
+ * family label: a display name must never throw and break the metadata-only
+ * log write.
+ */
+internal fun variantAwareDisplayName(
+    context: Context,
+    descriptor: BackendDescriptor,
+    savedPath: String?,
+): String {
+    val familyResId = descriptor.displayNameResId
+        ?: return descriptor.deriveDisplayName(context, savedPath ?: "")
+    val family = context.getString(familyResId)
+    val entry = BundledCatalog.byId(descriptor.backendId) ?: return family
+    if (entry.variants.size <= 1) return family
+    val dirName = savedPath?.takeUnless { it.isBlank() }?.let { File(it).name } ?: return family
+    // Strict dir-name match (SherpaModelManager.isValidModelDir's scan idiom):
+    // variantForDirName's default-variant fallback would label an unresolvable
+    // path with the wrong variant.
+    val variant = entry.variants.firstOrNull { it.dirName == dirName } ?: return family
+    val variantTitle = context.getString(CatalogVariantUi.of(entry.id, variant.name).titleResId)
+    return if (variantTitle.contains(family, ignoreCase = true)) variantTitle else "$family $variantTitle"
+}
 
 /**
  * Single source of truth for transcription-backend metadata: the ordered list

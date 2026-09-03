@@ -209,14 +209,15 @@ class TranscriptionOrchestrator @Inject constructor(
             // GH #45: record which model handled the request, as soon as the
             // backend is resolved (before the result lands). Resolved through the
             // registry display-name contract so raw backend ids never reach the
-            // Logs UI. Metadata only: never let it break the transcription itself.
+            // Logs UI; TASK-436 makes the shared derivation variant-aware
+            // ("Whisper Small", not the bare family label). Metadata only:
+            // never let it break the transcription itself.
             runCatching {
                 val backend = backendManager.getActiveBackend() ?: return@runCatching
                 val descriptor = backendRegistry.byBackendId(backend.id)
                 val name = when {
                     descriptor == null -> backend.displayName
-                    descriptor.displayNameResId != null -> context.getString(descriptor.displayNameResId)
-                    else -> descriptor.deriveDisplayName(context, modelPathForBackend(backend.id))
+                    else -> variantAwareDisplayName(context, descriptor, modelPathForBackend(backend.id))
                 }
                 logDao.setModelName(taskId, name)
             }
