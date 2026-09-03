@@ -7,6 +7,8 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Test
@@ -23,37 +25,41 @@ import org.junit.Test
  */
 class LlmManagerLiteRTUpgradeTest {
 
+    // Plain test scope: since TASK-438 the manager takes the shared application
+    // scope via constructor injection, so tests keep control.
+    private val testScope = CoroutineScope(UnconfinedTestDispatcher())
+
     // -------------------------------------------------------------------------
     // 1. LlmManager contract tests (mock-based)
     // -------------------------------------------------------------------------
 
     @Test
     fun `isLiteRTAvailable always returns true`() {
-        val manager = LlmManager()
+        val manager = LlmManager(testScope)
         assertTrue(manager.isLiteRTAvailable())
     }
 
     @Test
     fun `isReady returns false before initialization`() {
-        val manager = LlmManager()
+        val manager = LlmManager(testScope)
         assertFalse(manager.isReady())
     }
 
     @Test
     fun `isAudioSupported returns false before initialization`() {
-        val manager = LlmManager()
+        val manager = LlmManager(testScope)
         assertFalse(manager.isAudioSupported())
     }
 
     @Test
     fun `getModelPath returns null before initialization`() {
-        val manager = LlmManager()
+        val manager = LlmManager(testScope)
         assertNull(manager.getModelPath())
     }
 
     @Test
     fun `unload is safe to call without initialization`() {
-        val manager = LlmManager()
+        val manager = LlmManager(testScope)
         // Must not throw
         manager.unload()
         assertFalse(manager.isReady())
@@ -61,7 +67,7 @@ class LlmManagerLiteRTUpgradeTest {
 
     @Test
     fun `generateText returns failure when not initialized`() = runTest {
-        val manager = LlmManager()
+        val manager = LlmManager(testScope)
         val result = manager.generateText("test prompt")
         assertTrue("generateText should return failure", result.isFailure)
         assertTrue(
@@ -72,7 +78,7 @@ class LlmManagerLiteRTUpgradeTest {
 
     @Test
     fun `generateFromAudio returns failure when not initialized`() = runTest {
-        val manager = LlmManager()
+        val manager = LlmManager(testScope)
         val result = manager.generateFromAudio("transcribe", ByteArray(0))
         assertTrue("generateFromAudio should return failure", result.isFailure)
         assertTrue(

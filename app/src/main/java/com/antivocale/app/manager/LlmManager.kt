@@ -3,9 +3,9 @@ package com.antivocale.app.manager
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.transcription.TranscriptionException
 import com.google.ai.edge.litertlm.*
-import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.WavUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -36,7 +36,12 @@ import javax.inject.Singleton
  * - Keep-alive timeout for automatic unloading
  */
 @Singleton
-open class LlmManager @Inject constructor() {
+open class LlmManager @Inject constructor(
+    // Shared process-lifetime scope (TASK-438; see [ApplicationScope]) for the
+    // keep-alive timer and callback dispatches. Never cancelled here: its
+    // shutdown() cancels only the keep-alive Job.
+    @ApplicationScope private val managerScope: CoroutineScope
+) {
 
     companion object {
         private const val TAG = "LlmManager"
@@ -99,7 +104,6 @@ open class LlmManager @Inject constructor() {
     private var appContext: Context? = null
 
     // Keep-alive timeout management
-    private val managerScope = CoroutineScope(Dispatchers.Default + SupervisorJob() + CrashReporter.handler)
     private var keepAliveJob: Job? = null
     private var keepAliveTimeoutMinutes: Int = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
 
@@ -565,7 +569,9 @@ open class LlmManager @Inject constructor() {
     private fun startKeepAliveTimer() {
         if (!isInitialized) return
 
-        keepAliveJob = managerScope.launch {
+        // Explicit Default: preserves the pre-TASK-438 private scope's built-in
+        // dispatcher; the shared scope carries none.
+        keepAliveJob = managerScope.launch(Dispatchers.Default) {
             val timeoutMs = keepAliveTimeoutMinutes * 60 * 1000L
             Log.d(TAG, "Starting keep-alive timer: ${keepAliveTimeoutMinutes} minutes")
 
@@ -606,12 +612,17 @@ open class LlmManager @Inject constructor() {
     }
 
     /**
-     * Cancels all coroutines and cleans up.
+     * Cleans up the manager's coroutines and model state.
      * Call this when the app is being destroyed.
+     *
+     * Only the keep-alive Job is cancelled (TASK-438): the scope itself is the
+     * shared process-lifetime applicationScope, whose contract forbids
+     * cancelling it (see [ApplicationScope]). The only long-lived coroutine
+     * this manager launches is the keep-alive timer, already cancelled above;
+     * the two Main-dispatcher callback dispatches are momentary fire-and-forget.
      */
     fun shutdown() {
         cancelKeepAliveTimer()
-        managerScope.cancel()
         unload()
     }
 }

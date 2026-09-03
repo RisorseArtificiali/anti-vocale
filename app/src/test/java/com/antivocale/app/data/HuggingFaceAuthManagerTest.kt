@@ -6,6 +6,8 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -28,7 +30,10 @@ class HuggingFaceAuthManagerTest {
         context = mockk(relaxed = true)
         tokenManager = mockk(relaxed = true)
         apiClient = mockk(relaxed = true)
-        authManager = HuggingFaceAuthManager(context, tokenManager, apiClient)
+        // Plain test scope: since TASK-438 the manager takes the shared
+        // application scope via constructor injection, so tests keep control.
+        authManager = HuggingFaceAuthManager(
+            context, tokenManager, apiClient, CoroutineScope(UnconfinedTestDispatcher()))
     }
 
     // --- handleAuthResult routing ---

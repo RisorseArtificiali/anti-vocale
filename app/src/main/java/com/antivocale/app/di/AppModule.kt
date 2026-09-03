@@ -17,10 +17,13 @@ import java.util.concurrent.TimeUnit
 import com.antivocale.app.data.local.AppDatabase
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.transcription.BackendRegistry
+import com.antivocale.app.util.CrashReporter
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.withContext
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -31,6 +34,19 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
+
+    /**
+     * The single process-lifetime scope shared by BridgeApplication,
+     * DefaultExternalModelRecordsProvider, HuggingFaceAuthManager and LlmManager
+     * (TASK-438 consolidated their four private scopes). No dispatcher: launch
+     * sites pass their own, preserving each owner's pre-consolidation execution
+     * semantics. Never cancelled (see [ApplicationScope]).
+     */
+    @Provides
+    @Singleton
+    @ApplicationScope
+    fun provideApplicationScope(): CoroutineScope =
+        CoroutineScope(SupervisorJob() + CrashReporter.handler)
 
     @Provides
     @Singleton
@@ -141,8 +157,9 @@ object AppModule {
     fun provideHuggingFaceAuthManager(
         @ApplicationContext context: Context,
         tokenManager: HuggingFaceTokenManager,
-        apiClient: HuggingFaceApiClient
+        apiClient: HuggingFaceApiClient,
+        @ApplicationScope scope: CoroutineScope
     ): HuggingFaceAuthManager {
-        return HuggingFaceAuthManager(context, tokenManager, apiClient)
+        return HuggingFaceAuthManager(context, tokenManager, apiClient, scope)
     }
 }

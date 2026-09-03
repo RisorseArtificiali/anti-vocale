@@ -6,10 +6,9 @@ import android.content.Intent
 import android.net.Uri
 import android.util.Log
 import androidx.activity.result.ActivityResultLauncher
-import com.antivocale.app.util.CrashReporter
+import com.antivocale.app.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
@@ -36,7 +35,7 @@ import kotlin.coroutines.resumeWithException
  * ## Usage
  *
  * ```kotlin
- * val authManager = HuggingFaceAuthManager(context, tokenManager)
+ * val authManager = HuggingFaceAuthManager(context, tokenManager, apiClient, scope)
  *
  * // Start OAuth flow
  * authManager.startAuthFlow(activity, authLauncher)
@@ -54,25 +53,23 @@ import kotlin.coroutines.resumeWithException
 class HuggingFaceAuthManager(
     private val context: Context,
     private val huggingFaceTokenManager: HuggingFaceTokenManager,
-    private val huggingFaceApiClient: HuggingFaceApiClient
+    private val huggingFaceApiClient: HuggingFaceApiClient,
+    /**
+     * Shared process-lifetime scope for fire-and-forget launches (TASK-438; see
+     * [ApplicationScope]): structured and visible to tooling while keeping the
+     * never-cancelled semantics of the process-wide scope it replaces, since this
+     * manager is a DI singleton that lives for the whole process. Its
+     * CrashReporter handler reaches exceptions escaping [fetchUserInfo].
+     *
+     * Deliberately NOT cancelled in [dispose]: like [authService], the manager is
+     * lazily reusable after dispose, and cancelling the shared scope would
+     * silently swallow every subsequent launch of every owner.
+     */
+    @ApplicationScope private val scope: CoroutineScope
 ) {
 
     private var authService: AuthorizationService? = null
     private var pendingTokenExchange: ((TokenResult) -> Unit)? = null
-
-    /**
-     * Own scope for fire-and-forget launches: structured (named owner, visible
-     * to tooling) while keeping the same never-cancelled semantics as the
-     * process-wide global scope it replaces, since this manager is a DI
-     * singleton that lives for the whole process. The CrashReporter handler is
-     * installed here so exceptions escaping [fetchUserInfo] still reach the
-     * crash reporter.
-     *
-     * Deliberately NOT cancelled in [dispose]: like [authService], the manager is
-     * lazily reusable after dispose, and a cancelled scope would silently swallow
-     * every subsequent launch.
-     */
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO + CrashReporter.handler)
 
     companion object {
         private const val TAG = "HuggingFaceAuthManager"
@@ -354,7 +351,9 @@ class HuggingFaceAuthManager(
      * Fetches user info from HuggingFace API.
      */
     private fun fetchUserInfo(accessToken: String, onResult: (UserInfoResult) -> Unit) {
-        scope.launch {
+        // Explicit IO: preserves the pre-TASK-438 private scope's built-in
+        // dispatcher (network-bound validation); the shared scope carries none.
+        scope.launch(Dispatchers.IO) {
             when (val result = huggingFaceApiClient.validateToken(accessToken)) {
                 is HuggingFaceApiClient.ValidationResult.Success -> {
                     onResult(UserInfoResult.Success(result.username))

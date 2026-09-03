@@ -5,13 +5,13 @@ import androidx.work.Configuration
 import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
+import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.LocaleManager
 import androidx.hilt.work.HiltWorkerFactory
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -26,13 +26,11 @@ class BridgeApplication : Application(), Configuration.Provider {
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
 
     /**
-     * Application-owned scope for startup work that must not block the first frame
-     * (same idiom as HuggingFaceAuthManager/LlmManager: SupervisorJob + dispatcher +
-     * CrashReporter.handler, never cancelled because the Application lives for the
-     * whole process).
+     * Shared process-lifetime scope for startup work that must not block the
+     * first frame (TASK-438; see [ApplicationScope]). Launch sites pass an
+     * explicit dispatcher because the scope itself carries none.
      */
-    private val applicationScope =
-        CoroutineScope(SupervisorJob() + Dispatchers.Default + CrashReporter.handler)
+    @Inject @ApplicationScope lateinit var applicationScope: CoroutineScope
 
     /**
      * Provides the Hilt-aware [androidx.work.WorkManager] configuration so that
@@ -123,7 +121,9 @@ class BridgeApplication : Application(), Configuration.Provider {
         // component state, which was correct when the app last ran (component state
         // persists in PackageManager), and share-target state only changes when a
         // model is downloaded or deleted.
-        applicationScope.launch { shareTargetManager.syncAll() }
+        // Explicit Default: preserves the pre-TASK-438 private scope's built-in
+        // dispatcher; the shared scope carries none.
+        applicationScope.launch(Dispatchers.Default) { shareTargetManager.syncAll() }
         migrateLanguagePreference()
         installGlobalExceptionHandler()
     }

@@ -1,9 +1,9 @@
 package com.antivocale.app.data
 
 import android.util.Log
+import com.antivocale.app.di.ApplicationScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -29,17 +29,21 @@ interface ExternalModelRecordsProvider {
 @Singleton
 class DefaultExternalModelRecordsProvider @Inject constructor(
     store: ExternalModelStore,
+    // Shared process-lifetime scope (TASK-438): also gains the CrashReporter
+    // handler this collector was missing when it built a private scope.
+    @ApplicationScope private val scope: CoroutineScope,
 ) : ExternalModelRecordsProvider {
     private companion object {
         const val TAG = "ExternalModelRecords"
     }
 
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val _records = MutableStateFlow<List<ExternalModelRecord>>(emptyList())
     override val records: StateFlow<List<ExternalModelRecord>> = _records
 
     init {
-        scope.launch {
+        // Explicit Default: preserves the pre-TASK-438 private scope's built-in
+        // dispatcher; the shared scope carries none.
+        scope.launch(Dispatchers.Default) {
             // Keep the last snapshot on failure: an upstream error must not kill
             // the process-wide collector permanently (catch completes the flow);
             // recovery comes only with a process restart.
