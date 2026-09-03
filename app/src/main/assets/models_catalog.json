@@ -169,6 +169,8 @@
       "storageDir": "gigaam-v3",
       "flags": {
         "tailPadSeconds": 1,
+        "chunkDurationSeconds": 180,
+        "maxAudioDurationSeconds": 180,
         "metaKeys": ["vocab_size", "subsampling_factor", "model_type"]
       },
       "languages": ["ru"],

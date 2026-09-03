@@ -114,10 +114,15 @@ class BundledModelCatalogTest {
 
         val gigaam = byId.getValue("gigaam")
         assertEquals(1.0, gigaam.flags.tailPadSeconds, 0.0)
-        assertEquals(0, gigaam.flags.maxAudioDurationSeconds)
+        assertEquals(180, gigaam.flags.maxAudioDurationSeconds)
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), gigaam.flags.metaKeys)
         assertEquals("pantinor/gigaam-v3", gigaam.defaultVariant.source.repo)
         assertEquals("gigaam-v3", gigaam.defaultVariant.dirName)
+        // The NeMo export bakes a rotary positional table of 5000 positions
+        // (25/s of audio): a single decode above ~200s dies in the Mul node
+        // (broadcast 5000 by N; user report 2026-09-03, reproduced desktop).
+        // 180s chunks + the 1s tail pad stay at 4525 positions, inside the table.
+        assertEquals(180, gigaam.flags.chunkDurationSeconds)
         assertEquals(326L, gigaam.defaultVariant.estimatedSizeMB)
         assertTrue("gigaam files must keep their SHA-256 pins", gigaam.defaultVariant.files.all { it.sha256 != null })
     }

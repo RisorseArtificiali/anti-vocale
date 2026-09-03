@@ -27,7 +27,7 @@ class ModelAudioLimitCatalogTest {
         "whisper" to AudioLimit.ChunkedAnyLength, // 30s cap + 30s chunks
         "qwen3-asr" to AudioLimit.ChunkedAnyLength, // 30s cap + 30s chunks
         "nemotron-streaming" to AudioLimit.NoKnownLimit, // streaming, no cap
-        "gigaam" to AudioLimit.NoKnownLimit, // offline transducer, no cap
+        "gigaam" to AudioLimit.ChunkedAnyLength, // 180s chunks (TASK-447: native 200s rotary pos table)
     )
 
     @Test
