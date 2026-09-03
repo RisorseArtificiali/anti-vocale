@@ -117,6 +117,7 @@ class ModelViewModelUseModelPersistenceTest {
             ),
             litertLmUrlImporter = io.mockk.mockk(relaxed = true),
             externalCatalogRepository = io.mockk.mockk(relaxed = true),
+            applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
         )
 
     }

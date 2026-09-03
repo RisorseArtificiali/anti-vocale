@@ -63,6 +63,18 @@ class AppInfoUtilsKnownNamesTest {
     }
 
     @Test
+    fun `sub-packages of standalone apps keep the PackageManager label`() {
+        // Standalones match EXACTLY (code review 2026-09-03): prefix-matching
+        // them relabeled the Docs/Sheets/Slides editors as "Google Drive".
+        assertNull(AppInfoUtils.knownAppName("com.google.android.apps.docs.editors.docs"))
+        assertNull(AppInfoUtils.knownAppName("com.google.android.apps.docs.editors.sheets"))
+        // And their Share Back stays self-targeted, not the Drive package.
+        assertEquals(
+            "com.google.android.apps.docs.editors.docs",
+            AppInfoUtils.shareBackTarget("com.google.android.apps.docs.editors.docs"))
+    }
+
+    @Test
     fun `share back targets the canonical client of the app family`() {
         assertEquals("com.whatsapp", AppInfoUtils.shareBackTarget("com.whatsapp"))
         assertEquals("com.whatsapp", AppInfoUtils.shareBackTarget("com.whatsapp.w4b"))

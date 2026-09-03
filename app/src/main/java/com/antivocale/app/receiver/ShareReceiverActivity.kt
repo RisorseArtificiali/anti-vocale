@@ -26,6 +26,7 @@ import com.antivocale.app.service.ResultNotificationFactory
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.SubtitleExtractor
 import com.antivocale.app.transcription.SubtitleTrack
+import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.work.SubtitleChoiceTimeoutWorker
@@ -90,15 +91,21 @@ class ShareReceiverActivity : Activity() {
         // Keeps a shared video from silently hanging when the notification is ignored.
         internal const val SUBTITLE_CHOICE_TIMEOUT_MINUTES = 5L
 
-        // Reserved-range contract (TASK-440): both ShareReceiverActivity ids (the
-        // subtitle-choice prompt and the share-error notification) share this band,
-        // so a raw hashCode can never land in the result allocator's range
-        // (ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE and up) or on any
-        // other fixed/banded id. Internal so the contract test can pin the band's
-        // derived top instead of a stale-able literal (ExtractionService precedent).
-        // Distinct inputs share an id only with the usual 1-in-RANGE birthday odds.
+        // Reserved-range contract (TASK-440): the subtitle-choice prompt and
+        // the share-error notification each own a SUB-BAND of the 2401..2500
+        // range, so a raw hashCode can never land in the result allocator's
+        // range or on any other fixed/banded id, AND a share error can never
+        // replace a pending choice prompt (review 2026-09-03: two hash
+        // domains folded into one band collided with p=1/100, and the timeout
+        // worker's cancel then killed whichever notification held the slot).
+        // Internal so the contract test can pin the bands' derived tops via
+        // live constants.
         internal const val NOTIFICATION_ID_BAND_BASE = 2401
         internal const val NOTIFICATION_ID_BAND_RANGE = 100
+        internal const val CHOICE_ID_BAND_BASE = 2401
+        internal const val CHOICE_ID_BAND_RANGE = 50
+        internal const val ERROR_ID_BAND_BASE = 2451
+        internal const val ERROR_ID_BAND_RANGE = 50
 
         // Stable notification id per taskId so the choice prompt can be cancelled by the
         // tap receiver or replaced on a re-share of the same taskId. SubtitleChoiceTimeoutWorker
@@ -106,14 +113,15 @@ class ShareReceiverActivity : Activity() {
         // taskId must keep mapping to the same id.
         internal fun choiceNotificationId(taskId: String): Int =
             ResultNotificationFactory.bandedNotificationId(
-                taskId.hashCode(), NOTIFICATION_ID_BAND_BASE, NOTIFICATION_ID_BAND_RANGE
+                taskId.hashCode(), CHOICE_ID_BAND_BASE, CHOICE_ID_BAND_RANGE
             )
 
         // Stable per error message: repeating the same failure replaces its
-        // notification instead of stacking duplicates.
+        // notification instead of stacking duplicates. Its own sub-band, so an
+        // error can never replace a pending choice prompt.
         internal fun errorNotificationId(message: String): Int =
             ResultNotificationFactory.bandedNotificationId(
-                message.hashCode(), NOTIFICATION_ID_BAND_BASE, NOTIFICATION_ID_BAND_RANGE
+                message.hashCode(), ERROR_ID_BAND_BASE, ERROR_ID_BAND_RANGE
             )
 
         // The registry is NOT held here. Only DI assembles the store+provider pair this
@@ -425,7 +433,10 @@ class ShareReceiverActivity : Activity() {
             Log.w(TAG, "Could not read transcription language pref, using first track", e)
             return tracks.first()
         }
-        if (preferred.isBlank() || preferred == "auto" || preferred == "system") {
+        if (preferred.isBlank() ||
+            preferred == TranscriptionLanguagePolicy.PREF_AUTO ||
+            preferred == TranscriptionLanguagePolicy.PREF_SYSTEM
+        ) {
             return tracks.first()
         }
         return tracks.firstOrNull { track ->

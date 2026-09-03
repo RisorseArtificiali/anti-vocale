@@ -12,6 +12,7 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelRecord
@@ -47,6 +48,7 @@ import com.antivocale.app.util.LocaleManager
 import com.antivocale.app.util.formatFileSize
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -80,6 +82,11 @@ class ModelViewModel @Inject constructor(
     private val externalModelImporter: ExternalModelImportOperations,
     private val litertLmUrlImporter: LitertLmUrlImporter,
     private val externalCatalogRepository: ExternalCatalogRepository,
+    // Process-lifetime scope for share-alias sync work (code review 2026-09-03):
+    // on viewModelScope, a ViewModel clear mid-sync (DataStore reads + PackageManager
+    // IPCs) killed the enablement and the affected model stayed MISSING from
+    // share sheets until the next cold start. The application scope survives.
+    @ApplicationScope private val applicationScope: CoroutineScope,
 ) : ViewModel() {
 
     val tokenState = tokenManager.tokenState
@@ -411,7 +418,7 @@ class ModelViewModel @Inject constructor(
                     variantsNeedingExtraction = it.variantsNeedingExtraction - (variantName ?: ""),
                     orphanedVariants = it.orphanedVariants - (variantName ?: "")
                 ) }
-                viewModelScope.launch { shareTargetManager.onModelDownloaded() }
+                applicationScope.launch { shareTargetManager.onModelDownloaded() }
                 if (variantName != null) {
                     // Persist the freshly downloaded variant as the saved preference.
                     viewModelScope.launch {
@@ -482,7 +489,7 @@ class ModelViewModel @Inject constructor(
                     )
                 }
                 refreshDownloadedModels()
-                viewModelScope.launch { shareTargetManager.onModelDownloaded() }
+                applicationScope.launch { shareTargetManager.onModelDownloaded() }
                 if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
             },
             onCancelled = {
@@ -1553,7 +1560,7 @@ class ModelViewModel @Inject constructor(
         _externalImportState.value = ExternalImportState.Idle
         _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.external_imported, record.displayName)))
         // Called from a non-suspend fold callback; the manager is suspend since TASK-264.
-        viewModelScope.launch { shareTargetManager.onModelDownloaded() }
+        applicationScope.launch { shareTargetManager.onModelDownloaded() }
         // First-run behavior: auto-select when nothing is active.
         if (_uiState.value.modelName.isBlank()) {
             viewModelScope.launch { activateExternalModel(record) }
@@ -1601,7 +1608,7 @@ class ModelViewModel @Inject constructor(
                 preferencesManager.saveTranscriptionBackend(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
                 _uiState.update { it.copy(modelPath = "", modelName = "") }
             }
-            shareTargetManager.syncAll()
+            applicationScope.launch { shareTargetManager.syncAll() }
             _snackbarEvent.tryEmit(SnackbarEvent.Message(
                 ctx.getString(R.string.external_deleted, record.displayName)))
         }

@@ -24,7 +24,7 @@ Android application written in Kotlin for transcribing voice messages locally on
 ## Project Structure
 
 - `app/src/main/java/com/antivocale/app/` — Main source
-  - `audio/` - Audio input domain: `AudioPreprocessor` (decode/chunking/VAD), `AudioDurationPolicy` (ALL duration ceilings + the long-audio warn decision, TASK-432: streaming 2h valve, whole-file heap-derived), `MemoryReadings` (one owner of platform memory reads), `PreprocessingErrorMessages` (localized error mapping)
+  - `audio/`: Audio input domain; `AudioPreprocessor` (decode/chunking/VAD), `AudioDurationPolicy` (ALL duration ceilings + the long-audio warn decision, TASK-432: streaming 2h valve, whole-file heap-derived), `MemoryReadings` (one owner of platform memory reads), `PreprocessingErrorMessages` (localized error mapping)
   - `transcription/` — Transcription backends + model managers:
     - `SherpaBackend` (ONE sherpa-onnx engine; all built-in models are bundled-catalog entries: Parakeet TDT via OfflineRecognizer, Whisper via OfflineRecognizer, Qwen3-ASR via OfflineRecognizer, Nemotron 3.5 via OnlineRecognizer — the only streaming backend, GigaAM v3 Russian via OfflineRecognizer; per-entry `SherpaModelManager`/`SherpaModelDownloader` handle discovery + download)
     - `ExternalSherpaBackend` (user-imported external models, via OfflineRecognizer; dynamic BackendRegistry descriptors, `external:` prefix routing; ShareExternal family alias with chooser; families: Transducer/Whisper/CTC/SenseVoice/Canary)

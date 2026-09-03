@@ -12,7 +12,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.service.InferenceService
-import com.antivocale.app.transcription.LlmTranscriptionBackend
+import com.antivocale.app.transcription.BuiltInBackendIds
 
 /**
  * BroadcastReceiver for handling Tasker requests.
@@ -65,21 +65,25 @@ class TaskerRequestReceiver : BroadcastReceiver() {
         const val STATUS_SUCCESS = "success"
         const val STATUS_ERROR = "error"
 
-        // Fallback notification. TASK-380: id is derived per taskId so two
-        // queued requests don't overwrite each other's notification.
-        // TASK-329: the hash is banded (the shared derivation in
-        // ResultNotificationFactory.bandedNotificationId) so a raw hashCode can
-        // never land in the result allocator's range
-        // (ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE and up).
-        // Two distinct taskIds share an id only with the usual 1-in-RANGE
-        // birthday odds.
+        // Fallback notification. The id is a SEQUENTIAL slot in the reserved
+        // band (TASK-329 contract), NOT derived from the taskId: nothing ever
+        // cancels this notification by a derived id (dismissal is setAutoCancel
+        // on tap), so the only property that matters is that two CONCURRENT
+        // posts never share a slot. A hash fold cannot promise that (code
+        // review 2026-09-03: sequential Tasker ids collide deterministically,
+        // e.g. task_8/task_40 band to the same slot at any modulus tried), and
+        // the fallback notification's contentIntent is the SOLE carrier of the
+        // pending request, so a collision silently dropped a transcription.
+        // A counter repeats only after RANGE concurrent notifications.
         private val FALLBACK_CHANNEL_ID = AppNotificationChannel.TASKER_FALLBACK.id
-        private const val FALLBACK_NOTIFICATION_ID_BASE = 2201
-        private const val FALLBACK_NOTIFICATION_ID_RANGE = 100
+        internal const val FALLBACK_NOTIFICATION_ID_BASE = 2201
+        internal const val FALLBACK_NOTIFICATION_ID_RANGE = 100
 
-        internal fun fallbackNotificationId(taskId: String): Int =
-            com.antivocale.app.service.ResultNotificationFactory.bandedNotificationId(
-                taskId.hashCode(), FALLBACK_NOTIFICATION_ID_BASE, FALLBACK_NOTIFICATION_ID_RANGE)
+        private val fallbackIdCounter = java.util.concurrent.atomic.AtomicInteger(0)
+
+        internal fun fallbackNotificationId(): Int =
+            FALLBACK_NOTIFICATION_ID_BASE +
+                fallbackIdCounter.getAndIncrement() % FALLBACK_NOTIFICATION_ID_RANGE
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -135,13 +139,9 @@ class TaskerRequestReceiver : BroadcastReceiver() {
     }
 
     // The BackendRegistry is Hilt-scoped and this receiver has no injection, so
-    // the valid-id space is enumerated from its static sources: the "llm" id,
-    // catalog entry ids, and the external: prefix (record validity is enforced
-    // downstream with a loud ExternalModelUnavailable).
-    private fun isKnownBackendId(id: String): Boolean =
-        id == LlmTranscriptionBackend.BACKEND_ID ||
-            BundledCatalog.byId(id) != null ||
-            id.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX)
+    // the valid-id space is the ONE shared static predicate (record validity is
+    // enforced downstream with a loud ExternalModelUnavailable).
+    private fun isKnownBackendId(id: String): Boolean = BuiltInBackendIds.isSelectableBackendId(id)
 
     /**
      * Posts a high-priority notification that, when tapped, launches [TaskerTrampolineActivity]
@@ -189,7 +189,7 @@ class TaskerRequestReceiver : BroadcastReceiver() {
             .setContentIntent(pendingIntent)
             .build()
 
-        notificationManager.notify(fallbackNotificationId(taskId), notification)
+        notificationManager.notify(fallbackNotificationId(), notification)
         Log.i(TAG, "Posted fallback notification for taskId: $taskId")
     }
 

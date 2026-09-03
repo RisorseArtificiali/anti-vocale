@@ -20,7 +20,16 @@ object AppInfoUtils {
         val prefix: String,
         /** Null on family catch-alls whose members are not censused: the PackageManager-label fallback applies. */
         val displayName: String?,
-        val shareTarget: String? = null
+        val shareTarget: String? = null,
+        /**
+         * Families match by PREFIX (forks and flavor builds share a family
+         * stem); standalone apps match EXACTLY, so sub-packages of a
+         * standalone namespace (com.google.android.apps.docs.editors.*, the
+         * Docs/Sheets/Slides editors) fall through to the PackageManager label
+         * instead of reading "Google Drive" (code review 2026-09-03: prefix
+         * matching them was a behavior change beyond the fork census).
+         */
+        val byPrefix: Boolean = false,
     )
 
     /**
@@ -46,22 +55,22 @@ object AppInfoUtils {
      */
     private val knownApps = listOf(
         // WhatsApp family.
-        KnownApp(PerAppPreferencesManager.WHATSAPP, "WhatsApp", PerAppPreferencesManager.WHATSAPP),
-        KnownApp("com.whatsapp.w4b", "WhatsApp Business", PerAppPreferencesManager.WHATSAPP),
+        KnownApp(PerAppPreferencesManager.WHATSAPP, "WhatsApp", PerAppPreferencesManager.WHATSAPP, byPrefix = true),
+        KnownApp("com.whatsapp.w4b", "WhatsApp Business", PerAppPreferencesManager.WHATSAPP, byPrefix = true),
         // Telegram family: the official client, the censused forks, and the
         // bare family prefix as a display-less catch-all so uncensused
         // org.telegram.* packages keep the pre-TASK-433 Share Back behavior
         // (startsWith("org.telegram") -> official client) without gaining an
         // unverified History name.
-        KnownApp(PerAppPreferencesManager.TELEGRAM, "Telegram", PerAppPreferencesManager.TELEGRAM),
-        KnownApp("com.radolyn.ayugram", "AyuGram", PerAppPreferencesManager.TELEGRAM),
-        KnownApp("tw.nekomimi.nekogram", "Nekogram", PerAppPreferencesManager.TELEGRAM),
-        KnownApp("com.exteragram.messenger", "exteraGram", PerAppPreferencesManager.TELEGRAM),
-        KnownApp("org.thunderdog.challegram", "Telegram X", PerAppPreferencesManager.TELEGRAM),
-        KnownApp("org.telegram.plus", "Plus Messenger", PerAppPreferencesManager.TELEGRAM),
-        KnownApp("it.owlgram.android", "OwlGram", PerAppPreferencesManager.TELEGRAM),
-        KnownApp("com.iMe.android", "iMe", PerAppPreferencesManager.TELEGRAM),
-        KnownApp("org.telegram", null, PerAppPreferencesManager.TELEGRAM),
+        KnownApp(PerAppPreferencesManager.TELEGRAM, "Telegram", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        KnownApp("com.radolyn.ayugram", "AyuGram", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        KnownApp("tw.nekomimi.nekogram", "Nekogram", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        KnownApp("com.exteragram.messenger", "exteraGram", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        KnownApp("org.thunderdog.challegram", "Telegram X", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        KnownApp("org.telegram.plus", "Plus Messenger", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        KnownApp("it.owlgram.android", "OwlGram", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        KnownApp("com.iMe.android", "iMe", PerAppPreferencesManager.TELEGRAM, byPrefix = true),
+        KnownApp("org.telegram", null, PerAppPreferencesManager.TELEGRAM, byPrefix = true),
         // Standalone apps: Share Back returns to the exact source package.
         KnownApp(PerAppPreferencesManager.SIGNAL, "Signal"),
         KnownApp("com.google.android.apps.nbu.files", "Files by Google"),
@@ -74,7 +83,10 @@ object AppInfoUtils {
     ).sortedByDescending { it.prefix.length }
 
     private fun match(packageName: String): KnownApp? =
-        knownApps.firstOrNull { packageName.startsWith(it.prefix) }
+        // Exact entries first (standalones must not prefix-swallow sub-packages),
+        // then the prefix rows (families, catch-alls), longest stem first.
+        knownApps.firstOrNull { !it.byPrefix && it.prefix == packageName }
+            ?: knownApps.firstOrNull { it.byPrefix && packageName.startsWith(it.prefix) }
 
     /**
      * Logical name for a known package, or null when unknown (callers should

@@ -14,6 +14,7 @@ import com.k2fsa.sherpa.onnx.OnlineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OnlineStream
 import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.util.CrashReporter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -97,7 +98,13 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     @Volatile private var isInitialized = false
 
     /** Idle-unload timer, same rationale as SherpaBackend (TASK-344 / issue #42). */
-    private val keepAliveScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val keepAliveScope =
+        // Deliberately hand-built (its Job must be cancellable independently of
+        // the shared @ApplicationScope), but carries the CrashReporter handler
+        // like every process-lifetime scope (code review 2026-09-03: the keep-alive
+        // timer body is uncaught otherwise, and OOM/kill investigations lost these
+        // reports). Never cancelled: the timer Job is, resetKeepAliveTimer().
+        CoroutineScope(SupervisorJob() + Dispatchers.Default + CrashReporter.handler)
     private val keepAlive = NativeKeepAlive(
         scope = keepAliveScope,
         tag = TAG,

@@ -467,7 +467,11 @@ class ExternalModelImporter(
                 modelType = modelType,
                 languages = languages,
                 options = options,
-                sourceUrl = sourceUrl,
+                // Refresh the URL only when the re-import CARRIES one: a folder
+                // re-import over a URL-imported record must not erase its
+                // provenance while leaving source=URL (code review 2026-09-03;
+                // the reverse direction is symmetric).
+                sourceUrl = sourceUrl ?: existing.sourceUrl,
                 dir = if (existingDirValid) existing.dir else targetDir.absolutePath,
             )
             store.update(updated)

@@ -111,6 +111,7 @@ class ModelViewModelLitertLmImportTest {
             ),
             litertLmUrlImporter = importer,
             externalCatalogRepository = mockk(relaxed = true),
+            applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
         )
     }
 

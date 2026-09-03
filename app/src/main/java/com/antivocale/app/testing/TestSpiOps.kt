@@ -146,10 +146,7 @@ internal class TestSpiOps(
      * is pinned to that id set by BundledModelCatalogTest, so both checks
      * accept the same ids.
      */
-    private fun isKnownBackend(id: String): Boolean =
-        id == LlmTranscriptionBackend.BACKEND_ID ||
-            id in BuiltInBackendIds.ALL ||
-            id.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX)
+    private fun isKnownBackend(id: String): Boolean = BuiltInBackendIds.isSelectableBackendId(id)
 
     /** Every set error carries the full key list: a debugging tool should self-describe. */
     private fun setError(message: String): String = JSONObject()

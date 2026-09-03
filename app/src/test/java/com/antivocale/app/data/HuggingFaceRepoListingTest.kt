@@ -431,4 +431,37 @@ class HuggingFaceRepoListingTest {
         assertEquals("$base/entry-v2.json", second.sourceUrl)
         assertEquals("$base/entry-v2.json", store.records().single().sourceUrl)
     }
+
+    @Test
+    fun `folder reimport over a URL record keeps its provenance`() = runTest {
+        // Code review 2026-09-03: importFromDirectory registers with
+        // sourceUrl=null; the dedup copy must not erase a URL-imported
+        // record's provenance while leaving source=URL behind.
+        val base = server.url("/").toString().trimEnd('/')
+        server.enqueue(MockResponse().setBody("""
+            {"name":"GigaAM v3","modelType":"nemo_transducer",
+             "files":[{"name":"my_encoder.onnx","url":"$base/e","sha256":"${sha256(encoderBytes)}","size":${encoderBytes.size}},
+                      {"name":"decoder.onnx","url":"$base/d","sha256":"${sha256(decoderBytes)}","size":${decoderBytes.size}},
+                      {"name":"joiner.onnx","url":"$base/j","sha256":"${sha256(joinerBytes)}","size":${joinerBytes.size}},
+                      {"name":"tokens.txt","url":"$base/t","sha256":"${sha256(tokensBytes)}","size":${tokensBytes.size}}]}
+        """.trimIndent()))
+        server.enqueue(MockResponse().setBody(okio.Buffer().write(encoderBytes)))
+        server.enqueue(MockResponse().setBody(okio.Buffer().write(decoderBytes)))
+        server.enqueue(MockResponse().setBody(okio.Buffer().write(joinerBytes)))
+        server.enqueue(MockResponse().setBody(okio.Buffer().write(tokensBytes)))
+        val urlRecord = importer.importFromEntryJson("$base/entry.json")
+        assertEquals("$base/entry.json", urlRecord.sourceUrl)
+
+        // A FOLDER reimport of the identical files (same pins): dedupe must
+        // keep the URL, not overwrite it with null.
+        val dir = tmp.newFolder("mirror")
+        java.io.File(dir, "my_encoder.onnx").writeBytes(encoderBytes)
+        java.io.File(dir, "decoder.onnx").writeBytes(decoderBytes)
+        java.io.File(dir, "joiner.onnx").writeBytes(joinerBytes)
+        java.io.File(dir, "tokens.txt").writeBytes(tokensBytes)
+        val folderRecord = importer.importFromDirectory(dir)
+        assertEquals(urlRecord.id, folderRecord.id)
+        assertEquals(1, store.records().size)
+        assertEquals("$base/entry.json", store.records().single().sourceUrl)
+    }
 }

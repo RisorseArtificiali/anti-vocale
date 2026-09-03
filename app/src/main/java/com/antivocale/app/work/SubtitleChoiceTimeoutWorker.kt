@@ -60,10 +60,13 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
         Log.i(TAG, "Subtitle choice timed out for taskId=$taskId — running ASR fallback")
 
         // Cancel the choice notification so the user does not see a stale prompt after ASR
-        // has already produced a result notification.
+        // has already produced a result notification. The legacy raw-hash id too:
+        // a prompt posted by a pre-TASK-440 build survives an in-window app update
+        // (this worker does), and a stale prompt with live actions is worse than none.
         try {
             val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
             notificationManager.cancel(ShareReceiverActivity.choiceNotificationId(taskId))
+            notificationManager.cancel(taskId.hashCode())
         } catch (e: Exception) {
             Log.w(TAG, "Could not cancel choice notification", e)
         }

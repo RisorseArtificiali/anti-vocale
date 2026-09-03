@@ -42,15 +42,52 @@ class ReservedNotificationIdContractTest {
         assertTrue(InferenceService.NOTIFICATION_ID < base)
         assertTrue(SubtitleChoiceTimeoutWorker.NOTIFICATION_ID < base)
         assertTrue(ExtractionService.NOTIFICATION_ID_BASE + ExtractionService.NOTIFICATION_ID_RANGE - 1 < base)
-        assertTrue(ShareReceiverActivity.NOTIFICATION_ID_BAND_BASE + ShareReceiverActivity.NOTIFICATION_ID_BAND_RANGE - 1 < base)
+        assertTrue(ShareReceiverActivity.CHOICE_ID_BAND_BASE + ShareReceiverActivity.CHOICE_ID_BAND_RANGE - 1 < base)
+        assertTrue(ShareReceiverActivity.ERROR_ID_BAND_BASE + ShareReceiverActivity.ERROR_ID_BAND_RANGE - 1 < base)
+        assertTrue(TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_BASE + TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_RANGE - 1 < base)
+    }
+
+    /**
+     * Band-vs-band disjointness, the check the original contract test lacked
+     * (review 2026-09-03: moving a band INSIDE another band compiled and
+     * passed every existing test). Every fixed and banded producer interval,
+     * pairwise disjoint, expressed from the live constants.
+     */
+    @Test
+    fun `every notification id band is pairwise disjoint`() {
+        val intervals = listOf(
+            "inference-foreground" to (InferenceService.NOTIFICATION_ID..InferenceService.NOTIFICATION_ID),
+            "worker-foreground" to (SubtitleChoiceTimeoutWorker.NOTIFICATION_ID..SubtitleChoiceTimeoutWorker.NOTIFICATION_ID),
+            "download-band" to (ExtractionService.NOTIFICATION_ID_BASE until
+                ExtractionService.NOTIFICATION_ID_BASE + ExtractionService.NOTIFICATION_ID_RANGE),
+            "tasker-fallback-band" to (TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_BASE until
+                TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_BASE + TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_RANGE),
+            "share-choice-band" to (ShareReceiverActivity.CHOICE_ID_BAND_BASE until
+                ShareReceiverActivity.CHOICE_ID_BAND_BASE + ShareReceiverActivity.CHOICE_ID_BAND_RANGE),
+            "share-error-band" to (ShareReceiverActivity.ERROR_ID_BAND_BASE until
+                ShareReceiverActivity.ERROR_ID_BAND_BASE + ShareReceiverActivity.ERROR_ID_BAND_RANGE),
+        )
+        for (i in intervals.indices) for (j in i + 1 until intervals.size) {
+            val (nameA, a) = intervals[i]
+            val (nameB, b) = intervals[j]
+            assertTrue(
+                "bands '$nameA' $a and '$nameB' $b overlap",
+                a.first >= b.last + 1 || b.first >= a.last + 1,
+            )
+        }
     }
 
     @Test
-    fun `tasker fallback ids stay inside their reserved band`() {
-        listOf("tasker-a", "unknown_1725300000000", "").forEach { taskId ->
-            val id = TaskerRequestReceiver.fallbackNotificationId(taskId)
-            assertTrue("id $id for taskId '$taskId' outside 2201..2300", id in 2201..2300)
-        }
+    fun `tasker fallback ids are sequential and stay inside their reserved band`() {
+        // Sequential, not hash-derived: the fallback notification is the sole
+        // carrier of a pending request, so two concurrent posts must NEVER
+        // share a slot (hash folds collide deterministically for sequential
+        // Tasker ids: task_8/task_40 at any modulus tried; review 2026-09-03).
+        val base = TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_BASE
+        val band = base until base + TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_RANGE
+        val ids = (1..20).map { TaskerRequestReceiver.fallbackNotificationId() }
+        ids.forEach { assertTrue("id $it outside $band", it in band) }
+        assertEquals("concurrent fallback posts must never share a slot", ids.size, ids.toSet().size)
     }
 
     @Test
@@ -75,11 +112,11 @@ class ReservedNotificationIdContractTest {
         // SubtitleChoiceTimeoutWorker and NotificationActionReceiver; all three
         // sites go through choiceNotificationId, so an exact pin catches any
         // drift to a second derivation. Expected values verified against Java's
-        // String.hashCode: masked ids 2479 and 2418. Both source hashes are
-        // negative, so the pins also catch an abs() variant of the mask
-        // (it would produce 2471 and 2432 instead).
-        assertEquals(2479, ShareReceiverActivity.choiceNotificationId("share_1725300000000"))
-        assertEquals(2418, ShareReceiverActivity.errorNotificationId("No audio file"))
+        // String.hashCode over the two SUB-BANDS (choice 2401..2450,
+        // error 2451..2500): choice 2429, error 2468. Both source hashes are
+        // negative, so the pins also catch an abs() variant of the mask.
+        assertEquals(2429, ShareReceiverActivity.choiceNotificationId("share_1725300000000"))
+        assertEquals(2468, ShareReceiverActivity.errorNotificationId("No audio file"))
     }
 
     @Test

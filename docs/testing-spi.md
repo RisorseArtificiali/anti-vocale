@@ -59,8 +59,8 @@ Two delivery rules learned on the real device (2026-09-03):
 - **Implicit shell broadcasts are NOT delivered on this device.** A bare `am broadcast -a com.antivocale.app.TEST_SPI` completes silently with `result=0` and the receiver never runs; the same broadcast with `-n` is delivered. Verified as device behavior, not SPI behavior: an implicit `PROCESS_REQUEST` (a receiver that has worked for months) was also silently dropped in the same session, while its explicit form ran. Prefix every SPI call with the component:
 
 ```bash
-adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op get \
-  -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver
+adb shell am broadcast -a com.antivocale.app.TEST_SPI \
+  -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op get
 ```
 
 - **After a fresh install the app sits in the stopped state and receives nothing**, even with `-n`. Launch it once (`am start -n com.antivocale.app.debug/com.antivocale.app.MainActivity`) before the first SPI call of a session.

@@ -95,16 +95,15 @@ object DeviceCompatibility {
     }
 
     private fun checkRam(context: Context): CheckResult {
-        val activityManager = context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        // MemoryReadings is the one owner of the platform memory reads (same
+        // delegation as totalRamBytes above; code review 2026-09-03 caught this
+        // hand-rolled copy surviving 40 lines below its migrated sibling).
+        val totalRam = com.antivocale.app.audio.MemoryReadings.totalRamBytes(context)
             ?: run {
                 Log.w(TAG, "ActivityManager not available")
                 return CheckResult.Compatible // Can't determine, allow to proceed
             }
 
-        val memInfo = ActivityManager.MemoryInfo()
-        activityManager.getMemoryInfo(memInfo)
-
-        val totalRam = memInfo.totalMem
         val totalGb = totalRam / (1024.0 * 1024.0 * 1024.0)
 
         if (totalRam < MIN_RAM_BYTES) {
