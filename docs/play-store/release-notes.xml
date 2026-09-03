@@ -1,4 +1,11 @@
 <en-US>
+What's new in 1.11.2:
+
+• No more 10-minute limit: long recordings now transcribe (up to 2 hours with chunked models; other setups get a limit based on your device's memory)
+• Errors for too-long files now name the real limit instead of a generic message
+• Starting a very long transcription in the app asks first, with a time estimate
+• GigaAM v3 (Russian): recordings past ~3 minutes no longer fail with a native error
+
 What's new in 1.11.1:
 
 • Fixed: crashes when transcribing long, high-quality recordings on low-memory phones
@@ -196,6 +203,13 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.11.2:
+
+• Addio limite dei 10 minuti: le registrazioni lunghe ora vengono trascritte (fino a 2 ore con i modelli a segmenti; negli altri casi il limite dipende dalla memoria del dispositivo)
+• Gli errori per file troppo lunghi indicano il limite reale invece di un messaggio generico
+• Avviare una trascrizione molto lunga dall'app chiede prima conferma, con una stima dei tempi
+• GigaAM v3: sistemato l'errore nativo oltre i ~3 minuti
+
 Novità della versione 1.11.1:
 
 • Corretto: crash durante la trascrizione di registrazioni lunghe o in alta qualità su telefoni con poca memoria
@@ -393,6 +407,13 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.11.2:
+
+• Kein 10-Minuten-Limit mehr: lange Aufnahmen werden jetzt transkribiert (bis zu 2 Stunden mit segmentierten Modellen; sonst richtet sich das Limit nach dem Arbeitsspeicher des Geräts)
+• Fehlermeldungen nennen bei zu langen Dateien das echte Limit statt einer allgemeinen Meldung
+• Sehr lange Transkriptionen fragen in der App zuerst nach Bestätigung, mit Zeitangabe
+• GigaAM v3 (Russisch): Aufnahmen über ~3 Minuten schlagen nicht mehr fehl
+
 Neuigkeiten in Version 1.11.1:
 
 • Behoben: Abstürze bei der Transkription langer, hochwertiger Aufnahmen auf Geräten mit wenig Speicher
@@ -410,6 +431,13 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>
+Novedades de la versión 1.11.2:
+
+• Fuera el límite de 10 minutos: las grabaciones largas ya se pueden transcribir (hasta 2 horas con modelos por segmentos; en otros casos el límite depende de la memoria del dispositivo)
+• Los errores de archivos demasiado largos indican el límite real en lugar de un mensaje genérico
+• Iniciar una transcripción muy larga en la app pide confirmación primero, con una estimación del tiempo
+• GigaAM v3: arreglado el error en audios de más de 3 minutos
+
 Novedades de la versión 1.11.1:
 
 • Corregido: fallos al transcribir grabaciones largas o de alta calidad en móviles con poca memoria
@@ -427,6 +455,13 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.11.2 :
+
+• Fini la limite de 10 minutes : les enregistrements longs sont désormais transcrits (jusqu'à 2 heures avec les modèles segmentés ; sinon la limite dépend de la mémoire de l'appareil)
+• Les erreurs pour les fichiers trop longs indiquent la vraie limite au lieu d'un message générique
+• Une très longue transcription demande confirmation avant de démarrer, avec une estimation du temps
+• GigaAM v3 : erreur native corrigée après 3 minutes
+
 Nouveautés de la version 1.11.1 :
 
 • Corrigé : plantages lors de la transcription d'enregistrements longs ou haute qualité sur téléphones à faible mémoire
@@ -444,6 +479,13 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>
+Novidades da versão 1.11.2:
+
+• Chega de limite de 10 minutos: gravações longas agora são transcritas (até 2 horas com modelos segmentados; nos demais casos o limite depende da memória do aparelho)
+• Os erros de arquivos longos demais indicam o limite real em vez de uma mensagem genérica
+• Iniciar uma transcrição muito longa no app pede confirmação antes, com estimativa de tempo
+• GigaAM v3: corrigido o erro nativo em áudios de mais de 3 minutos
+
 Novidades da versão 1.11.1:
 
 • Corrigido: travamentos ao transcrever gravações longas ou de alta qualidade em celulares com pouca memória
@@ -461,6 +503,13 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>
+Что нового в версии 1.11.2:
+
+• Лимит 10 минут убран: длинные записи теперь расшифровываются (до 2 часов с сегментированными моделями; иначе лимит зависит от памяти устройства)
+• Ошибки для слишком длинных файлов называют реальный лимит вместо общего сообщения
+• Запуск очень длинной расшифровки в приложении сначала спрашивает подтверждение с оценкой времени
+• GigaAM v3: исправлена ошибка на записях длиннее 3 минут
+
 Что нового в версии 1.11.1:
 
 • Исправлено: сбои при расшифровке длинных или качественных записей на телефонах с малым объёмом памяти
@@ -478,6 +527,13 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>
+Sürüm 1.11.2'deki yenilikler:
+
+• 10 dakika sınırı kalktı: uzun kayıtlar artık yazıya dökülüyor (bölümlenen modellerle 2 saate kadar; diğer durumlarda sınır cihazın belleğine bağlı)
+• Çok uzun dosyalardaki hatalar genel bir mesaj yerine gerçek sınırı belirtiyor
+• Uygulamada çok uzun bir yazıya dökme başlatırken önce onay isteniyor, süre tahminiyle
+• GigaAM v3: 3 dakikadan uzun kayıtlarda artık hata yok
+
 Sürüm 1.11.1'deki yenilikler:
 
 • Düzeltildi: düşük bellekli telefonlarda uzun kayıtların yazıya aktarılmasında çökmeler
@@ -495,6 +551,13 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.11.2:
+
+• Koniec z limitem 10 minut: długie nagrania są teraz transkrybowane (do 2 godzin z modelami segmentowanymi; w pozostałych przypadkach limit zależy od pamięci urządzenia)
+• Błędy dla zbyt długich plików podają rzeczywisty limit zamiast ogólnej wiadomości
+• Uruchomienie bardzo długiej transkrypcji w aplikacji najpierw pyta o potwierdzenie, wraz z szacowanym czasem
+• GigaAM v3: naprawiono błąd natywny przy nagraniach ponad 3 minuty
+
 Nowości w wersji 1.11.1:
 
 • Naprawiono: awarie przy transkrypcji długich, wysokojakościowych nagrań na telefonach z małą pamięcią
@@ -512,6 +575,13 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>
+संस्करण 1.11.2 में नया क्या है:
+
+• 10 मिनट की सीमा हटा दी गई: लंबी रिकॉर्डिंग अब ट्रांसक्रिप्ट होती हैं (सेगमेंटेड मॉडल के साथ 2 घंटे तक; अन्य स्थितियों में सीमा डिवाइस की मेमोरी पर निर्भर है)
+• बहुत लंबी फ़ाइलों की त्रुटियाँ सामान्य संदेश के बजाय असली सीमा बताती हैं
+• ऐप में बहुत लंबी ट्रांसक्रिप्शन शुरू करने पर पहले पुष्टि मांगी जाती है, समय के अनुमान के साथ
+• GigaAM v3: 3 मिनट से लंबी रिकॉर्डिंग की त्रुटि ठीक की गई
+
 संस्करण 1.11.1 में नया क्या है:
 
 • सुधार: कम मेमोरी वाले फ़ोन पर लंबी रिकॉर्डिंग ट्रांसक्रिप्ट करते समय क्रैश
