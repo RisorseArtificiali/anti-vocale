@@ -26,8 +26,10 @@ class PreferencesManagerTest {
     }
 
     @Test
-    fun `DEFAULT_TRANSCRIPTION_LANGUAGE is auto`() {
-        assertEquals("auto", PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE)
+    fun `DEFAULT_TRANSCRIPTION_LANGUAGE is the system sentinel`() {
+        // TASK-434: the untouched default follows the app locale (never "auto",
+        // which is the explicit model-side auto-detection choice).
+        assertEquals("system", PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE)
     }
 
     @Test

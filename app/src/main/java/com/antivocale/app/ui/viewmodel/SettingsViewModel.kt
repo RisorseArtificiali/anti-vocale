@@ -18,6 +18,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.transcription.InferenceProvider
+import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.manager.LlmManager
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
@@ -75,14 +76,10 @@ class SettingsViewModel @Inject constructor(
     // language by its own name). TASK-353: sorted at READ time per the active
     // app locale; see languageOptionsFor below.
     val languageOptions: List<LanguageOption> =
-        languageOptionsFor(
-            com.antivocale.app.util.LocaleManager.getCurrentLocale() ?: java.util.Locale.getDefault()
-        )
+        languageOptionsFor(LocaleManager.effectiveLocale())
 
     val transcriptionLanguageOptions: List<LanguageOption> =
-        transcriptionOptionsFor(
-            com.antivocale.app.util.LocaleManager.getCurrentLocale() ?: java.util.Locale.getDefault()
-        )
+        transcriptionOptionsFor(LocaleManager.effectiveLocale())
 
     // Theme options
     val themeOptions = ThemeType.entries
@@ -751,9 +748,9 @@ class SettingsViewModel @Inject constructor(
 // Collator for the active app locale (what the Android system language picker
 // does, frameworks/opt/localepicker LocaleHelper). Display names come from the
 // platform ICU/CLDR data via [LanguageNames] (native names: users find their
-// language by its own name; see util/LanguageNames.kt). The sentinel entry
-// (system default / auto-detect) stays pinned first; its label is genuinely
-// translatable and resolved from string resources at the UI layer, so its
+// language by its own name; see util/LanguageNames.kt). The sentinel entries
+// (app language / auto-detect) stay pinned first; their labels are genuinely
+// translatable and resolved from string resources at the UI layer, so their
 // displayName here is an unused placeholder.
 data class LanguageOption(val code: String, val displayName: String)
 
@@ -764,7 +761,7 @@ private val transcriptionLanguageCodes =
     listOf("ar", "de", "en", "es", "fr", "it", "ja", "pt", "zh")
 
 private fun optionsFor(
-    sentinelCode: String,
+    sentinelCodes: List<String>,
     codes: List<String>,
     locale: java.util.Locale,
 ): List<LanguageOption> {
@@ -772,11 +769,17 @@ private fun optionsFor(
     val entries = codes
         .map { LanguageOption(it, LanguageNames.nativeLanguageName(it)) }
         .sortedWith { a, b -> collator.compare(a.displayName, b.displayName) }
-    return listOf(LanguageOption(sentinelCode, "")) + entries
+    return sentinelCodes.map { LanguageOption(it, "") } + entries
 }
 
 internal fun languageOptionsFor(locale: java.util.Locale): List<LanguageOption> =
-    optionsFor("system", appLanguageCodes, locale)
+    optionsFor(listOf("system"), appLanguageCodes, locale)
 
+// TASK-434: "system" (the untouched default: follow the app locale where the
+// variant supports it) pins first, then explicit "auto" (model-side detection).
 internal fun transcriptionOptionsFor(locale: java.util.Locale): List<LanguageOption> =
-    optionsFor("auto", transcriptionLanguageCodes, locale)
+    optionsFor(
+        listOf(TranscriptionLanguagePolicy.PREF_SYSTEM, TranscriptionLanguagePolicy.PREF_AUTO),
+        transcriptionLanguageCodes,
+        locale,
+    )

@@ -155,6 +155,17 @@ class BundledModelCatalogTest {
     }
 
     @Test
+    fun `preferUiLanguage is declared on whisper small only`() {
+        // TASK-434: the locale-following transcription-language default is
+        // opt-in per variant; only Small (unreliable language auto-detection)
+        // carries it. Every other variant in the whole catalog stays unflagged.
+        val flagged = catalog()
+            .flatMap { entry -> entry.variants.map { entry.id to it } }
+            .filter { it.second.preferUiLanguage }
+        assertEquals(listOf("whisper" to "small"), flagged.map { it.first to it.second.name })
+    }
+
+    @Test
     fun `every variant is well-formed and resolvable`() {
         for (m in catalog()) {
             assertTrue("${m.id}: runtime", m.runtime == "offline" || m.runtime == "online")

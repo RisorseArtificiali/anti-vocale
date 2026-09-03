@@ -123,7 +123,7 @@
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">Многоязычное распознавание речи</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~358 МБ • Ниже точность, особенно на зашумлённом аудио • Только для слабых устройств</string>
+    <string name="whisper_small_description">~358 МБ • Ниже точность, особенно на зашумлённом аудио • Ненадёжное автоопределение языка (по умолчанию язык приложения) • Только для слабых устройств</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~988 МБ • Качество почти как у large-v3 • Сбалансированная многоязычная</string>
     <string name="whisper_medium_title">Whisper Medium</string>
@@ -469,9 +469,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Язык распознавания</string>
+    <string name="transcription_language_system">Как язык приложения</string>
     <string name="transcription_language_auto">Определять автоматически</string>
     <string name="transcription_language_description">Язык аудио для распознавания. Выбор конкретного языка пропускает автоопределение и ускоряет обработку</string>
-    <string name="transcription_language_note">Применяется только к моделям Whisper. Модель Distil Italian всегда использует итальянский. Остальные бэкенды (Gemma, Parakeet, Qwen3-ASR) определяют язык автоматически.</string>
+    <string name="transcription_language_note">По умолчанию на Whisper Small используется язык приложения (автоматическое определение, если модель его не поддерживает). Применяется только к моделям Whisper. Модель Distil Italian всегда использует итальянский. Остальные бэкенды (Gemma, Parakeet, Qwen3-ASR) определяют язык автоматически.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Тема</string>
@@ -787,7 +788,7 @@
     <string name="model_info_progressive">Прогрессивное распознавание</string>
     <string name="model_info_vad_recommended">Рекомендуется предобработка VAD</string>
     <string name="model_info_best_for_whisper_small">Компактная многоязычная модель для быстрой проверки</string>
-    <string name="model_info_notes_whisper_small">Хорошая отправная точка. Точность ниже, чем у крупных моделей.</string>
+    <string name="model_info_notes_whisper_small">Хорошая отправная точка. Точность ниже, чем у крупных моделей. Автоопределение языка ненадёжно; по умолчанию используется язык приложения.</string>
     <string name="model_info_best_for_whisper_turbo">Сбалансированная многоязычная модель с автоопределением</string>
     <string name="model_info_notes_whisper_turbo">Качество почти как у large-v3 при умеренной скорости. Подходит для многоязычных пользователей.</string>
     <string name="model_info_best_for_whisper_medium">Многоязычная модель среднего размера</string>

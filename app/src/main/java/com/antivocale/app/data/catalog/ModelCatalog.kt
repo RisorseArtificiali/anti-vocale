@@ -168,6 +168,7 @@ object ModelCatalogJson {
             badgeKey = o.optString("badgeKey", "").ifBlank { null },
             dirName = o.getString("dirName"),
             estimatedSizeMB = o.getLong("estimatedSizeMB"),
+            preferUiLanguage = o.optBoolean("preferUiLanguage", false),
             languages = optStringList(o, "languages"),
             source = parseSource(o.getJSONObject("source"), entryId, name),
             files = files,
@@ -326,6 +327,15 @@ data class CatalogVariant(
     val badgeKey: String? = null,
     val dirName: String,
     val estimatedSizeMB: Long,
+    /**
+     * TASK-434: on the untouched "system" language default, resolve the language
+     * from the app/UI locale when it is in [CatalogEntry.languagesFor] of this
+     * variant, instead of model-side auto-detection. Set ONLY on variants whose
+     * auto-detection is unreliable (Whisper Small: language misconditioning feeds
+     * its repetition-loop hallucination, docs/research/2026-09-02). An explicit
+     * "auto" preference always means true model-side detection, flagged or not.
+     */
+    val preferUiLanguage: Boolean = false,
     val languages: List<String> = emptyList(),
     val source: CatalogSource,
     val files: List<CatalogFile>,
@@ -408,6 +418,16 @@ data class CatalogEntry(
     val isStreaming: Boolean get() = runtime == "online"
 
     fun variant(name: String?): CatalogVariant? = variants.firstOrNull { it.name == name }
+
+    /**
+     * The variant whose dirName matches the installed model directory, else the
+     * default: the ONE "which variant is on disk" resolution, shared by the
+     * orchestrator load path, the Model benchmark, and the sherpa engine init
+     * (per-variant data like preferUiLanguage must follow the installed
+     * variant, never the default).
+     */
+    fun variantForDirName(dirName: String): CatalogVariant =
+        variants.firstOrNull { it.dirName == dirName } ?: defaultVariant
 
     /** The default variant: flags.defaultVariant if declared, else the first. */
     val defaultVariant: CatalogVariant get() = flags.defaultVariant?.let(::variant) ?: variants.first()

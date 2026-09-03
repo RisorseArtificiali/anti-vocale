@@ -127,7 +127,7 @@
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">Çok dilli konuşma tanıma</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~358MB • Daha düşük doğruluk, özellikle gürültülü seste • Yalnızca düşük özellikli cihazlar için</string>
+    <string name="whisper_small_description">~358MB • Daha düşük doğruluk, özellikle gürültülü seste • Dil otomatik algılaması güvenilmez (varsayılan: uygulama dili) • Yalnızca düşük özellikli cihazlar için</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~988MB • large-v3 kalitesine yakın • Dengeli çok dilli</string>
     <string name="whisper_medium_title">Whisper Medium</string>
@@ -469,9 +469,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Metin Çıkarma Dili</string>
+    <string name="transcription_language_system">Uygulama dilini kullan</string>
     <string name="transcription_language_auto">Otomatik algıla</string>
     <string name="transcription_language_description">Metin çıkarma için ses dili. Belirli bir dil seçmek algılamayı atlar ve işlemeyi hızlandırır.</string>
-    <string name="transcription_language_note">Yalnızca Whisper modelleri için geçerlidir. Distil Italian modeli her zaman İtalyanca kullanır. Diğer arka uçlar (Gemma, Parakeet, Qwen3-ASR) otomatik algılar.</string>
+    <string name="transcription_language_note">Varsayılan olarak Whisper Small\'da uygulama dili kullanılır (model desteklemiyorsa otomatik algılama). Yalnızca Whisper modelleri için geçerlidir. Distil Italian modeli her zaman İtalyanca kullanır. Diğer arka uçlar (Gemma, Parakeet, Qwen3-ASR) otomatik algılar.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Tema</string>
@@ -781,7 +782,7 @@
     <string name="model_info_progressive">Aşamalı metin çıkarma</string>
     <string name="model_info_vad_recommended">VAD ön işlemesi önerilir</string>
     <string name="model_info_best_for_whisper_small">Hızlı test için kompakt çok dilli model</string>
-    <string name="model_info_notes_whisper_small">İyi bir başlangıç noktası. Daha büyük modellere kıyasla sınırlı doğruluk.</string>
+    <string name="model_info_notes_whisper_small">İyi bir başlangıç noktası. Daha büyük modellere kıyasla sınırlı doğruluk. Dilin otomatik algılanması güvenilir değildir; varsayılan olarak uygulama dili kullanılır.</string>
     <string name="model_info_best_for_whisper_turbo">Otomatik algılamalı dengeli çok dilli ASR</string>
     <string name="model_info_notes_whisper_turbo">Orta hızda large-v3 kalitesine yakın. Çok dilli kullanıcılar için iyi.</string>
     <string name="model_info_best_for_whisper_medium">Orta boy çok dilli model</string>

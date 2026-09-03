@@ -27,6 +27,7 @@ import com.antivocale.app.transcription.CatalogVariantUi
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.SherpaModelDownloader
 import com.antivocale.app.transcription.SherpaModelManager
+import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.transcription.cleanOrphanedModelDirs
 import com.antivocale.app.R
 import com.antivocale.app.data.catalog.BundledCatalog
@@ -42,6 +43,7 @@ import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.benchmark.BenchmarkManager
 import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.util.DeviceCompatibility
+import com.antivocale.app.util.LocaleManager
 import com.antivocale.app.util.formatFileSize
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -1668,10 +1670,20 @@ class ModelViewModel @Inject constructor(
                 BundledCatalog.byId(backendId) != null -> {
                     val entry = BundledCatalog.byId(backendId)!!
                     val lang = preferencesManager.transcriptionLanguage.first()
+                    // Same variant + language resolution as the orchestrator's load path
+                    // (TASK-434): the benchmark must measure what transcription would
+                    // actually run with, and the "system" default must never reach the
+                    // recognizer as a literal language code.
+                    val variant = entry.variantForDirName(File(modelPath).name)
                     BackendConfig.SherpaOnnxConfig(
                         modelDir = modelPath,
                         numThreads = threadCount,
-                        language = if (entry.flags.passLanguage) { if (lang == "auto") "" else lang } else "",
+                        language = TranscriptionLanguagePolicy.resolveForEntry(
+                            entry = entry,
+                            variant = variant,
+                            preference = lang,
+                            uiLocale = LocaleManager.effectiveLocale(),
+                        ),
                         provider = resolvedProvider
                     )
                 }

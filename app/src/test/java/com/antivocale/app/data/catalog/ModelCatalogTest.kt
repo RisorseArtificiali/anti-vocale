@@ -96,6 +96,21 @@ class ModelCatalogTest {
     }
 
     @Test
+    fun `variant preferUiLanguage defaults to false and parses when declared`() {
+        // TASK-434: the locale-following default is opt-in per variant.
+        val unflagged = ModelCatalogJson.parseCatalog(builtInDoc).single().variants
+        assertTrue(unflagged.all { !it.preferUiLanguage })
+
+        val flagged = builtInDoc.replace(
+            "\"estimatedSizeMB\": 862,",
+            "\"estimatedSizeMB\": 862,\n                  \"preferUiLanguage\": true,",
+        )
+        val variants = ModelCatalogJson.parseCatalog(flagged).single().variants
+        assertTrue(variants.first().preferUiLanguage)
+        assertTrue(!variants.last().preferUiLanguage)
+    }
+
+    @Test
     fun `schema version mismatch is rejected`() {
         assertTrue(runCatching { ModelCatalogJson.parseCatalog(builtInDoc.replace("1", "2", ignoreCase = false)) }.isFailure)
         assertTrue(runCatching {
@@ -259,5 +274,18 @@ class ModelCatalogTest {
         val models = ModelCatalogJson.parseCatalog(builtInDoc)
         val parakeet = models.single()
         assertEquals(listOf("ru", "en"), parakeet.languagesFor(parakeet.variants.first()))
+    }
+
+    @Test
+    fun `variantForDirName matches dirName and falls back to the default variant`() {
+        val parakeet = ModelCatalogJson.parseCatalog(builtInDoc).single()
+        assertEquals(
+            "parakeet-tdt-0.6b-v3-int8",
+            parakeet.variantForDirName("parakeet-tdt-0.6b-v3-int8").dirName,
+        )
+        assertEquals(
+            "parakeet-tdt-0.6b-v3-smoothquant",
+            parakeet.variantForDirName("unknown-dir").dirName,
+        )
     }
 }

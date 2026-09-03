@@ -22,11 +22,13 @@ class LanguageOptionsOrderTest {
     }
 
     @Test
-    fun `transcription options pin auto-detect first and collate the rest`() {
+    fun `transcription options pin system then auto-detect and collate the rest`() {
         val options = transcriptionOptionsFor(Locale.ENGLISH)
 
-        assertEquals("auto", options.first().code)
-        val rest = options.drop(1).map { it.displayName }
+        // TASK-434: "system" (the untouched default: follow the app locale)
+        // pins first, then explicit "auto" (model-side detection).
+        assertEquals(listOf("system", "auto"), options.take(2).map { it.code })
+        val rest = options.drop(2).map { it.displayName }
         val collator = java.text.Collator.getInstance(Locale.ENGLISH)
         assertEquals(rest.sortedWith { a, b -> collator.compare(a, b) }, rest)
     }
@@ -50,6 +52,6 @@ class LanguageOptionsOrderTest {
     @Test
     fun `all entries survive sorting`() {
         assertEquals(9, languageOptionsFor(Locale.ENGLISH).size)
-        assertEquals(10, transcriptionOptionsFor(Locale.ENGLISH).size)
+        assertEquals(11, transcriptionOptionsFor(Locale.ENGLISH).size)
     }
 }

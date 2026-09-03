@@ -131,7 +131,7 @@
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">Багатомовне розпізнавання мовлення</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~358МБ • Нижча точність, особливо на шумному аудіо • Лише для слабких пристроїв</string>
+    <string name="whisper_small_description">~358МБ • Нижча точність, особливо на шумному аудіо • Ненадійне автовизначення мови (типово мова застосунку) • Лише для слабких пристроїв</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~988МБ • Якість близька до large-v3 • Збалансована багатомовна</string>
     <string name="whisper_medium_title">Whisper Medium</string>
@@ -479,9 +479,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Мова розшифровки</string>
+    <string name="transcription_language_system">Як мова застосунку</string>
     <string name="transcription_language_auto">Автовизначення</string>
     <string name="transcription_language_description">Виберіть мову розшифровки аудіо. Вибір конкретної мови пропускає визначення і є швидшим.</string>
-    <string name="transcription_language_note">Стосується лише моделей Whisper. Модель Distil Italian завжди використовує італійську. Інші бекенди (Gemma, Parakeet, Qwen3-ASR) визначають автоматично.</string>
+    <string name="transcription_language_note">Типово на Whisper Small використовується мова застосунку (автовизначення, якщо модель її не підтримує). Стосується лише моделей Whisper. Модель Distil Italian завжди використовує італійську. Інші бекенди (Gemma, Parakeet, Qwen3-ASR) визначають автоматично.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Тема</string>
@@ -797,7 +798,7 @@
     <string name="model_info_progressive">Поступова розшифровка</string>
     <string name="model_info_vad_recommended">Рекомендована попередня обробка VAD</string>
     <string name="model_info_best_for_whisper_small">Компактна багатомовна модель для швидких тестів</string>
-    <string name="model_info_notes_whisper_small">Добра стартова точка. Обмежена точність порівняно з більшими моделями.</string>
+    <string name="model_info_notes_whisper_small">Добра стартова точка. Обмежена точність порівняно з більшими моделями. Автовизначення мови ненадійне; типовно використовується мова застосунку.</string>
     <string name="model_info_best_for_whisper_turbo">Збалансована багатомовна ASR з автовизначенням</string>
     <string name="model_info_notes_whisper_turbo">Якість близька до large-v3 при помірній швидкості. Добра для багатомовних користувачів.</string>
     <string name="model_info_best_for_whisper_medium">Багатомовна модель середнього розміру</string>

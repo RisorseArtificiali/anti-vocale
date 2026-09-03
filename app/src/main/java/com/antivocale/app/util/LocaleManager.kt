@@ -68,6 +68,14 @@ object LocaleManager {
     }
 
     /**
+     * The effective UI locale: the explicit per-app locale when one is set,
+     * else the system default. This is THE app locale; locale-following
+     * behavior (TASK-434 transcription-language default) resolves from it,
+     * never from a bare Locale.getDefault().
+     */
+    fun effectiveLocale(): Locale = getCurrentLocale() ?: Locale.getDefault()
+
+    /**
      * Updates the context with the current locale for Compose content.
      * This is needed for apps using ComponentActivity instead of AppCompatActivity.
      */

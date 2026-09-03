@@ -107,7 +107,13 @@ interface PreferencesManager {
         // A wrong modelType causes an uncatchable native exit(255); user can change it in the import UI.
         const val DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE = "nemo_transducer"
         const val DEFAULT_LANGUAGE = "system"
-        const val DEFAULT_TRANSCRIPTION_LANGUAGE = "auto"
+        /**
+         * TASK-434: the untouched default follows the app/UI locale on variants
+         * flagged `preferUiLanguage` (Whisper Small), else auto-detects. "auto"
+         * remains a selectable, explicit model-side auto-detection choice; see
+         * TranscriptionLanguagePolicy.
+         */
+        const val DEFAULT_TRANSCRIPTION_LANGUAGE = "system"
         const val DEFAULT_SWIPE_ACTION_MODE = "REVEAL"
         const val DEFAULT_INFERENCE_PROVIDER = "auto"
         const val DEFAULT_GROUP_LOGS_BY_CONVERSATION = true

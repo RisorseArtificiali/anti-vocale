@@ -41,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import com.antivocale.app.transcription.InferenceProvider
+import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
@@ -335,14 +336,14 @@ fun SettingsTab(
                         currentValue = currentTranscriptionLanguage,
                         options = viewModel.transcriptionLanguageOptions.map { it.code },
                         currentValueDisplay = languageOptionLabel(
-                            currentTranscriptionLanguage, "auto",
-                            R.string.transcription_language_auto,
+                            currentTranscriptionLanguage,
+                            transcriptionSentinelLabels,
                             viewModel.transcriptionLanguageOptions
                         ),
                         optionDisplay = { code ->
                             languageOptionLabel(
-                                code, "auto",
-                                R.string.transcription_language_auto,
+                                code,
+                                transcriptionSentinelLabels,
                                 viewModel.transcriptionLanguageOptions
                             )
                         },
@@ -663,13 +664,15 @@ fun SettingsTab(
                         currentValue = currentLanguage,
                         options = viewModel.languageOptions.map { it.code },
                         currentValueDisplay = languageOptionLabel(
-                            currentLanguage, "system",
-                            R.string.language_system, viewModel.languageOptions
+                            currentLanguage,
+                            appLanguageSentinelLabels,
+                            viewModel.languageOptions
                         ),
                         optionDisplay = { code ->
                             languageOptionLabel(
-                                code, "system",
-                                R.string.language_system, viewModel.languageOptions
+                                code,
+                                appLanguageSentinelLabels,
+                                viewModel.languageOptions
                             )
                         },
                         onOptionSelected = { viewModel.saveLanguagePreference(it) },
@@ -1782,19 +1785,33 @@ private fun OutputFolderSettingCard(
 }
 
 /**
- * Single label policy for the language dropdowns: the sentinel code resolves
- * to its string resource, everything else goes through the option list and
- * falls back to an ICU native name. Shared by both dropdowns so the fallback
- * chain cannot drift apart.
+ * Single label policy for the language dropdowns: a sentinel code resolves to
+ * its string resource, everything else goes through the option list and falls
+ * back to an ICU native name. Shared by both dropdowns so the fallback chain
+ * cannot drift apart. [sentinelLabels] carries each sentinel's code → label
+ * resource; both dropdowns pass the same hoisted map to the current-value and
+ * per-option label calls.
  */
 @Composable
 private fun languageOptionLabel(
     code: String,
-    sentinelCode: String,
-    sentinelLabelRes: Int,
+    sentinelLabels: Map<String, Int>,
     options: List<LanguageOption>,
-): String = when (code) {
-    sentinelCode -> stringResource(sentinelLabelRes)
-    else -> options.find { it.code == code }?.displayName
+): String {
+    sentinelLabels[code]?.let { return stringResource(it) }
+    return options.find { it.code == code }?.displayName
         ?: LanguageNames.nativeLanguageName(code)
 }
+
+/** App-language dropdown sentinel (the per-app "System Default" entry). */
+private val appLanguageSentinelLabels = mapOf("system" to R.string.language_system)
+
+/**
+ * Transcription-language dropdown sentinels (TASK-434): "system" is the
+ * untouched default (follow the app locale where the variant supports it),
+ * "auto" the explicit model-side detection choice.
+ */
+private val transcriptionSentinelLabels = mapOf(
+    TranscriptionLanguagePolicy.PREF_SYSTEM to R.string.transcription_language_system,
+    TranscriptionLanguagePolicy.PREF_AUTO to R.string.transcription_language_auto,
+)

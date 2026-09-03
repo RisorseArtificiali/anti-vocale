@@ -22,11 +22,13 @@ import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.service.ExtractionService
 import com.antivocale.app.service.TranscriptionListener
 import com.antivocale.app.ui.viewmodel.LogEntry
+import com.antivocale.app.util.LocaleManager
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.sync.Semaphore
 import java.io.File
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -122,6 +124,14 @@ class TranscriptionOrchestrator @Inject constructor(
      */
     internal var maxConcurrentChunks: Int = MAX_CONCURRENT_CHUNKS
     private val chunkSemaphore by lazy { Semaphore(maxConcurrentChunks) }
+
+    /**
+     * Locale read ONLY for the locale-following transcription-language default
+     * (TASK-434): the app's per-app locale, system default as fallback. Injectable
+     * so the resolution is deterministic in unit tests (the JVM default locale
+     * varies by machine).
+     */
+    internal var uiLocaleProvider: () -> Locale = { LocaleManager.effectiveLocale() }
 
     /**
      * Processes a single transcription request.
@@ -437,15 +447,22 @@ class TranscriptionOrchestrator @Inject constructor(
         }
         // Language wiring is catalog data: languageOption (online Nemotron) passes "auto"
         // or a code per stream; passLanguage (offline Whisper) maps "auto" to "" so the
-        // model auto-detects and passes a concrete code through; everything else gets "".
+        // model auto-detects and passes a concrete code through, while the untouched
+        // "system" default follows the app locale on variants flagged preferUiLanguage
+        // (TASK-434, Whisper Small: language misdetection feeds its repetition-loop
+        // hallucination); everything else gets "". Single-language variants (Distil-IT)
+        // are forced later in SherpaBackend, which keeps winning over this resolution.
         val languagePref = preferencesManager.transcriptionLanguage.first()
-        val language = when {
-            entry.flags.languageOption ->
-                if (languagePref.isBlank() || languagePref == "system") "auto" else languagePref
-            entry.flags.passLanguage ->
-                if (languagePref == "auto") "" else languagePref
-            else -> ""
-        }
+        // The variant actually on disk decides the per-variant flags, so the
+        // locale-following default applies only to the flagged variant, never
+        // to the entry as a whole.
+        val variant = entry.variantForDirName(File(resolvedPath).name)
+        val language = TranscriptionLanguagePolicy.resolveForEntry(
+            entry = entry,
+            variant = variant,
+            preference = languagePref,
+            uiLocale = uiLocaleProvider(),
+        )
         val label = when (val d = entry.display) {
             is CatalogDisplay.Resource -> context.getString(CatalogStringKeys.resolve(d.key))
             is CatalogDisplay.Literal -> d.text

@@ -37,6 +37,10 @@ Because no model is universally better: different models win on different langua
 
 Also, Gemma is not just another transcriber: it is a full LLM, the only model in the app capable of generative post-processing (summarization, restructuring, formatting). The 30-second cap limits the audio input, not that capability. The prompt driving it is customizable in **Settings → Transcription → Default Transcription Prompt**, with ready-made examples.
 
+### Whisper Small answered in the wrong language, or repeated the same phrase forever. What happened?
+
+That is a documented Whisper failure class (a repetition-loop hallucination under greedy decoding, made likelier when the language token is guessed wrong), and Small is the model most prone to it: its language auto-detection is the least reliable in the catalog. Since this release the app no longer leaves that guess to chance: if you have not set a **Transcription Language**, Whisper Small transcribes in your app language whenever the model supports it, and only auto-detects otherwise. If you explicitly select **Auto-detect**, the model detects the language itself, exactly as before. Pinning a concrete language in **Settings → Transcription → Transcription Language** removes the guess entirely and is the strongest fix; for Italian, Distil Italian or Parakeet are the better models anyway.
+
 ## Queue and concurrent requests
 
 ### What happens if I share a second audio while one is transcribing?

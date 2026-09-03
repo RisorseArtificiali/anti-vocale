@@ -116,7 +116,7 @@
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">Mehrsprachige Spracherkennung</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~358 MB • Geringere Genauigkeit, besonders bei verrauschtem Audio • Nur für leistungsschwache Geräte</string>
+    <string name="whisper_small_description">~358 MB • Geringere Genauigkeit, besonders bei verrauschtem Audio • Unzuverlässige Spracherkennung (standardmäßig Ihre App-Sprache) • Nur für leistungsschwache Geräte</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~988 MB • Fast large-v3-Qualität • Ausgewogen mehrsprachig</string>
     <string name="whisper_medium_title">Whisper Medium</string>
@@ -448,9 +448,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Transkriptionssprache</string>
+    <string name="transcription_language_system">App-Sprache folgen</string>
     <string name="transcription_language_auto">Automatisch erkennen</string>
     <string name="transcription_language_description">Sprache des Audios für die Transkription. Eine feste Sprache überspringt die Erkennung und beschleunigt die Verarbeitung.</string>
-    <string name="transcription_language_note">Gilt nur für Whisper-Modelle. Das Distil-Italian-Modell verwendet immer Italienisch. Andere Backends (Gemma, Parakeet, Qwen3-ASR) erkennen automatisch.</string>
+    <string name="transcription_language_note">Standardmäßig wird auf Whisper Small Ihre App-Sprache verwendet (automatische Erkennung, wenn das Modell sie nicht unterstützt). Gilt nur für Whisper-Modelle. Das Distil-Italian-Modell verwendet immer Italienisch. Andere Backends (Gemma, Parakeet, Qwen3-ASR) erkennen automatisch.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Design</string>
@@ -748,7 +749,7 @@
     <string name="model_info_progressive">Progressive Transkription</string>
     <string name="model_info_vad_recommended">VAD-Vorverarbeitung empfohlen</string>
     <string name="model_info_best_for_whisper_small">Kompaktes mehrsprachiges Modell zum schnellen Ausprobieren</string>
-    <string name="model_info_notes_whisper_small">Guter Einstieg. Geringere Genauigkeit im Vergleich zu größeren Modellen.</string>
+    <string name="model_info_notes_whisper_small">Guter Einstieg. Geringere Genauigkeit im Vergleich zu größeren Modellen. Die automatische Spracherkennung ist unzuverlässig; standardmäßig wird stattdessen Ihre App-Sprache verwendet.</string>
     <string name="model_info_best_for_whisper_turbo">Ausgewogenes mehrsprachiges ASR mit automatischer Erkennung</string>
     <string name="model_info_notes_whisper_turbo">Fast large-v3-Qualität bei moderater Geschwindigkeit. Gut für mehrsprachige Nutzer.</string>
     <string name="model_info_best_for_whisper_medium">Mittelgroßes mehrsprachiges Modell</string>

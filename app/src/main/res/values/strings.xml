@@ -124,7 +124,7 @@
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">Multilingual speech recognition</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~358MB • Lower accuracy, especially on noisy audio • Only for low-spec devices</string>
+    <string name="whisper_small_description">~358MB • Lower accuracy, especially on noisy audio • Unreliable language auto-detection (defaults to your app language) • Only for low-spec devices</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~988MB • Near large-v3 quality • Balanced multilingual</string>
     <string name="whisper_medium_title">Whisper Medium</string>
@@ -466,9 +466,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Transcription Language</string>
+    <string name="transcription_language_system">Follow app language</string>
     <string name="transcription_language_auto">Auto-detect</string>
     <string name="transcription_language_description">Audio language for transcription. Selecting a specific language skips detection and speeds up processing.</string>
-    <string name="transcription_language_note">Only applies to Whisper models. The Distil Italian model always uses Italian. Other backends (Gemma, Parakeet, Qwen3-ASR) auto-detect.</string>
+    <string name="transcription_language_note">By default your app language is used on Whisper Small (auto-detect when the model does not support it). Only applies to Whisper models. The Distil Italian model always uses Italian. Other backends (Gemma, Parakeet, Qwen3-ASR) auto-detect.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Theme</string>
@@ -778,7 +779,7 @@
     <string name="model_info_progressive">Progressive transcription</string>
     <string name="model_info_vad_recommended">VAD preprocessing recommended</string>
     <string name="model_info_best_for_whisper_small">Compact multilingual model for quick testing</string>
-    <string name="model_info_notes_whisper_small">Good starting point. Limited accuracy compared to larger models.</string>
+    <string name="model_info_notes_whisper_small">Good starting point. Limited accuracy compared to larger models. Language auto-detection is unreliable; by default your app language is used instead.</string>
     <string name="model_info_best_for_whisper_turbo">Balanced multilingual ASR with auto-detection</string>
     <string name="model_info_notes_whisper_turbo">Near large-v3 quality at moderate speed. Good for multilingual users.</string>
     <string name="model_info_best_for_whisper_medium">Mid-size multilingual model</string>

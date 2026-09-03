@@ -115,7 +115,7 @@
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">बहुभाषी स्पीच रिकग्निशन</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~358MB • कम सटीकता, ख़ासकर शोर वाले ऑडियो पर • सिर्फ़ कम शक्ति वाले डिवाइस के लिए</string>
+    <string name="whisper_small_description">~358MB • कम सटीकता, ख़ासकर शोर वाले ऑडियो पर • भाषा की अपने आप पहचान अविश्वसनीय (डिफ़ॉल्ट रूप से ऐप भाषा) • सिर्फ़ कम शक्ति वाले डिवाइस के लिए</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~988MB • large-v3 जितनी ही क्वालिटी • संतुलित बहुभाषी</string>
     <string name="whisper_medium_title">Whisper Medium</string>
@@ -447,9 +447,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">ट्रांसक्रिप्शन भाषा</string>
+    <string name="transcription_language_system">ऐप भाषा के अनुसार</string>
     <string name="transcription_language_auto">अपने आप पहचानें</string>
     <string name="transcription_language_description">ट्रांसक्रिप्शन के लिए ऑडियो की भाषा। कोई खास भाषा चुनने पर डिटेक्शन छूटता है और प्रोसेसिंग तेज़ होती है।</string>
-    <string name="transcription_language_note">सिर्फ़ Whisper मॉडल पर लागू। Distil Italian मॉडल हमेशा इतालवी इस्तेमाल करता है। बाक़ी बैकएंड (Gemma, Parakeet, Qwen3-ASR) अपने आप पहचानते हैं।</string>
+    <string name="transcription_language_note">डिफ़ॉल्ट रूप से Whisper Small पर आपकी ऐप भाषा इस्तेमाल होती है (मॉडल समर्थन न करे तो अपने आप पहचान)। सिर्फ़ Whisper मॉडल पर लागू। Distil Italian मॉडल हमेशा इतालवी इस्तेमाल करता है। बाक़ी बैकएंड (Gemma, Parakeet, Qwen3-ASR) अपने आप पहचानते हैं।</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">थीम</string>
@@ -747,7 +748,7 @@
     <string name="model_info_progressive">प्रगतिशील ट्रांसक्रिप्शन</string>
     <string name="model_info_vad_recommended">VAD प्रीप्रोसेसिंग अनुशंसित</string>
     <string name="model_info_best_for_whisper_small">तुरंत टेस्ट के लिए कॉम्पैक्ट बहुभाषी मॉडल</string>
-    <string name="model_info_notes_whisper_small">अच्छी शुरुआत। बड़े मॉडलों की तुलना में सटीकता सीमित।</string>
+    <string name="model_info_notes_whisper_small">अच्छी शुरुआत। बड़े मॉडलों की तुलना में सटीकता सीमित। भाषा की अपने आप पहचान अविश्वसनीय है; डिफ़ॉल्ट रूप से ऐप भाषा इस्तेमाल होती है।</string>
     <string name="model_info_best_for_whisper_turbo">ऑटो-डिटेक्शन वाला संतुलित बहुभाषी ASR</string>
     <string name="model_info_notes_whisper_turbo">मध्यम गति पर large-v3 जितनी क्वालिटी। बहुभाषी उपयोगकर्ताओं के लिए अच्छा।</string>
     <string name="model_info_best_for_whisper_medium">मध्य-साइज़ बहुभाषी मॉडल</string>

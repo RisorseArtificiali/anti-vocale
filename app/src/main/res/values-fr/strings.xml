@@ -99,7 +99,7 @@
     <string name="whisper_title">Whisper</string>
     <string name="whisper_description">Reconnaissance vocale multilingue</string>
     <string name="whisper_small_title">Whisper Small</string>
-    <string name="whisper_small_description">~358 Mo • Précision inférieure, surtout sur audio bruité • Appareils modestes uniquement</string>
+    <string name="whisper_small_description">~358 Mo • Précision inférieure, surtout sur audio bruité • Détection automatique de langue peu fiable (votre langue d\'application par défaut) • Appareils modestes uniquement</string>
     <string name="whisper_turbo_title">Whisper Turbo</string>
     <string name="whisper_turbo_description">~988 Mo • Qualité proche de large-v3 • Multilingue équilibré</string>
     <string name="whisper_medium_title">Whisper Medium</string>
@@ -388,9 +388,10 @@
     <string name="language_description">Choisissez la langue d\'affichage de l\'application.</string>
     <string name="language_system">Valeur système</string>
     <string name="transcription_language_title">Langue de transcription</string>
+    <string name="transcription_language_system">Suivre la langue de l\'application</string>
     <string name="transcription_language_auto">Détection automatique</string>
     <string name="transcription_language_description">Langue de l\'audio pour la transcription. Choisir une langue précise évite la détection et accélère le traitement.</string>
-    <string name="transcription_language_note">Ne s\'applique qu\'aux modèles Whisper. Distil Italian utilise toujours l\'italien. Les autres backends (Gemma, Parakeet, Qwen3-ASR) détectent automatiquement.</string>
+    <string name="transcription_language_note">Par défaut, la langue de l\'application est utilisée sur Whisper Small (détection automatique si le modèle ne la prend pas en charge). Ne s\'applique qu\'aux modèles Whisper. Distil Italian utilise toujours l\'italien. Les autres backends (Gemma, Parakeet, Qwen3-ASR) détectent automatiquement.</string>
     <string name="theme_title">Thème</string>
     <string name="theme_description">Choisissez le thème de couleur de l\'application.</string>
     <string name="theme_mode_title">Mode du thème</string>
@@ -650,7 +651,7 @@
     <string name="model_info_progressive">Transcription progressive</string>
     <string name="model_info_vad_recommended">Prétraitement VAD recommandé</string>
     <string name="model_info_best_for_whisper_small">Modèle multilingue compact pour tests rapides</string>
-    <string name="model_info_notes_whisper_small">Bon point de départ. Précision limitée face aux modèles plus grands.</string>
+    <string name="model_info_notes_whisper_small">Bon point de départ. Précision limitée face aux modèles plus grands. La détection automatique de langue est peu fiable ; la langue de l\'application est utilisée par défaut.</string>
     <string name="model_info_best_for_whisper_turbo">ASR multilingue équilibré avec détection automatique</string>
     <string name="model_info_notes_whisper_turbo">Qualité proche de large-v3 à vitesse modérée. Idéal pour les utilisateurs multilingues.</string>
     <string name="model_info_best_for_whisper_medium">Modèle multilingue de taille moyenne</string>

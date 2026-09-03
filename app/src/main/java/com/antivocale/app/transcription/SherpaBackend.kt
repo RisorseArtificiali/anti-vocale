@@ -377,7 +377,7 @@ class SherpaBackend(
         // Resolve which catalog variant lives in the dir (multi-variant entries) so the
         // file roles and any single-language forcing (Whisper Distil) come from the
         // actual installed variant, not the default.
-        val variant = entry.variants.firstOrNull { it.dirName == dir.name } ?: entry.defaultVariant
+        val variant = entry.variantForDirName(dir.name)
         val fileNames = variant.files.map { it.name }
 
         // Completeness: every catalog file must be present (ONNX via .size sidecar).
@@ -545,8 +545,13 @@ class SherpaBackend(
         onlineRecognizer = OnlineRecognizer(config = recognizerConfig)
     }
 
-    /** A variant with exactly one supported language forces it (Whisper Distil-IT → "it"). */
-    private fun forcedLanguage(entry: CatalogEntry, variant: CatalogVariant, configLanguage: String): String {
+    /**
+     * A variant with exactly one supported language forces it (Whisper Distil-IT → "it"),
+     * overriding any config language the orchestrator resolved (TASK-434: the
+     * locale-following default must not loosen single-language forcing).
+     */
+    @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+    internal fun forcedLanguage(entry: CatalogEntry, variant: CatalogVariant, configLanguage: String): String {
         val langs = entry.languagesFor(variant)
         return if (langs.size == 1) langs.first() else configLanguage
     }
