@@ -24,6 +24,7 @@ Android application written in Kotlin for transcribing voice messages locally on
 ## Project Structure
 
 - `app/src/main/java/com/antivocale/app/` — Main source
+  - `audio/` - Audio input domain: `AudioPreprocessor` (decode/chunking/VAD), `AudioDurationPolicy` (ALL duration ceilings + the long-audio warn decision, TASK-432: streaming 2h valve, whole-file heap-derived), `MemoryReadings` (one owner of platform memory reads), `PreprocessingErrorMessages` (localized error mapping)
   - `transcription/` — Transcription backends + model managers:
     - `SherpaBackend` (ONE sherpa-onnx engine; all built-in models are bundled-catalog entries: Parakeet TDT via OfflineRecognizer, Whisper via OfflineRecognizer, Qwen3-ASR via OfflineRecognizer, Nemotron 3.5 via OnlineRecognizer — the only streaming backend, GigaAM v3 Russian via OfflineRecognizer; per-entry `SherpaModelManager`/`SherpaModelDownloader` handle discovery + download)
     - `ExternalSherpaBackend` (user-imported external models, via OfflineRecognizer; dynamic BackendRegistry descriptors, `external:` prefix routing; ShareExternal family alias with chooser; families: Transducer/Whisper/CTC/SenseVoice/Canary)
@@ -79,6 +80,14 @@ Gotchas:
 - `ExternalModelStore` has NO `@Inject` (defaulted lambda params break Dagger; AppModule provider instead)
 - The `external:` prefix is intercepted BEFORE the registry lookup in the orchestrator (cold-start race)
 - `buildCopyPlan` role matching: encoder/decoder by keyword, joiner also matches "joint" (GigaAM), tokens prefers rnnt-hinted and ctc-free `.txt` files
+
+**Notification ids are a reserved-range contract.** The result allocator owns every id from 3000 up; fixed and banded ids (foreground 1001/1003, download band 2001..2100, Tasker 2201..2300, share-choice 2401..2500) stay below it. The table lives on `ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE` and `ReservedNotificationIdContractTest` enforces it. A new notification id outside the contract silently replaces another notification.
+
+**Process-lifetime coroutines use the injected `@ApplicationScope`** (`di/ApplicationScope.kt`, no dispatcher on the scope: launch sites pass their own). Never hand-build a scope for process-lifetime work; the four hand-built ones drifted (one lost the CrashReporter handler) and were consolidated in TASK-438.
+
+**Language wiring is catalog data with a named owner:** `TranscriptionLanguagePolicy` resolves preference x per-variant `preferUiLanguage` flag x UI locale. The untouched default is the "system" sentinel (follows the app language on flagged variants, TASK-434: whisper small only); explicit "Auto-detect" keeps model-side detection. The benchmark site resolves through the same policy: change the mapping there, never at a call site.
+
+**Debug-build test SPI:** the `TEST_SPI` broadcast reads/writes app state for device-driven tests (`docs/testing-spi.md`; ops get/set/records/help). Always invoke with `-n` (implicit shell broadcasts are silently dropped on the RMX3853) and launch the app once after a fresh install. Release builds contain no receiver.
 
 ## NNAPI crash recovery (issue #26)
 

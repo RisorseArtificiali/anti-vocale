@@ -48,7 +48,7 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 - **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, Qwen3-ASR, GigaAM v3, Nemotron 3.5 (streaming), or import your own
 - **Custom model import** - Bring any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice) from a folder or HuggingFace URL, no app update needed; one-tap validated entries live in the community catalog, and only models matching a supported family's layout import ([docs](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise))
 - **Full user manual** - Getting started, choosing a model, troubleshooting and FAQ, in 8 languages ([user guide](docs/user-guide/))
-- **Any audio length** - Long inputs are automatically split and stitched: no model's internal limit is user-facing (see the [FAQ](FAQ.md))
+- **Any audio length** - Long inputs are automatically split and stitched; practical ceilings are declared up front (2 hours on the streaming path, memory-dependent with VAD enabled) (see the [FAQ](FAQ.md))
 - **Declared limits before download** - Each model card states its audio-length capability up front, so big downloads are informed choices
 - **Model benchmarking** - Compare real-world transcription speed between models on your own device
 
@@ -83,7 +83,7 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 - **Configurable inference threads** - Auto-detects or manually sets thread count; NNAPI and CPU providers selectable
 - **Performance stats** - Track real-world transcription speed per model on your device
 - **Theming** - Three color palettes (Indigo, WhatsApp, Telegram) with light and dark modes
-- **Multilingual UI** - Interface translated in English, Italian, German, Spanish, French, Portuguese (BR), Russian, and Hindi
+- **Multilingual UI** - Interface translated in English, Italian, German, Spanish, French, Hindi, Polish, Portuguese (BR), Russian, Turkish, and Ukrainian
 - **Per-app settings** - Configure notification behavior per messaging app
 - **Organized settings** - Grouped into Transcription, Appearance, and Advanced sections
 
@@ -256,12 +256,14 @@ adb shell am broadcast \
   -n com.antivocale.app/.receiver.TaskerRequestReceiver \
   -a com.antivocale.app.PROCESS_REQUEST \
   --es request_type "audio" \
-  --es file_path "/sdcard/Download/voice_message.ogg" \
+  --es file_path "<app-readable path>" \
   --es task_id "transcribe_$(date +%s)"
 
 # Preload model into memory
 adb shell am broadcast -a com.antivocale.app.PRELOAD_MODEL
 ```
+
+The app holds no storage permissions, so shared-storage paths like `/sdcard/Download` are NOT readable by it: pass a path inside the app's own storage (how Tasker setups stage files is covered in the guide).
 
 See [docs/TASKER_GUIDE.md](docs/TASKER_GUIDE.md) for detailed automation setup.
 
