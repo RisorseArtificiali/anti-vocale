@@ -45,11 +45,13 @@ import javax.inject.Singleton
  * the model file name. This is the single implementation of the derivations
  * (ActiveModelRepository consumes it since TASK-321).
  *
- * Backend-id VALIDATION site (TASK-394): TaskerRequestReceiver.isKnownBackendId
- * accepts EXTRA_BACKEND_ID values against "llm" + BundledCatalog ids + the
- * external: prefix (the registry is Hilt-scoped and the receiver has no
- * injection). A new static backend outside the catalog must update that
- * validation too or Tasker overrides will reject it as unknown.
+ * Backend-id VALIDATION site (TASK-394): the ONE shared predicate
+ * BuiltInBackendIds.isSelectableBackendId accepts EXTRA_BACKEND_ID values
+ * against "llm" + the catalog ids + the external: prefix; TaskerRequestReceiver
+ * and the debug TestSpi both delegate to it (a second copy is how they briefly
+ * accepted different id spaces). A new static backend outside the catalog must
+ * land in BuiltInBackendIds.ALL or Tasker/SPI overrides will reject it as
+ * unknown (ALL == catalog ids is pinned by BundledModelCatalogTest).
  */
 data class BackendDescriptor(
     /** Value of the backend's `BACKEND_ID` companion constant (e.g. "sherpa-onnx"). */

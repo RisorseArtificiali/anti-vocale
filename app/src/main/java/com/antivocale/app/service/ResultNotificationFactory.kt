@@ -278,7 +278,7 @@ class ResultNotificationFactory(private val context: Context) {
          * - 1001: InferenceService.NOTIFICATION_ID (service foreground/progress)
          * - 1003: SubtitleChoiceTimeoutWorker.NOTIFICATION_ID (worker foreground)
          * - 2001..2100: ExtractionService download-progress band (per-jobKey hash)
-         * - 2201..2300: TaskerRequestReceiver fallback band (per-taskId hash)
+         * - 2201..2300: TaskerRequestReceiver fallback band (sequential slots)
          * - 2401..2500: ShareReceiverActivity choice + share-error band
          *   (per-taskId / per-message hash, TASK-440)
          * New fixed ids or bands go under the base; 2301..2400 and 2501..2999

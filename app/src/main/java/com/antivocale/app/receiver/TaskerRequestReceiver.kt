@@ -9,8 +9,6 @@ import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.antivocale.app.R
-import com.antivocale.app.data.ExternalModelRecord
-import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.BuiltInBackendIds
 
@@ -82,8 +80,8 @@ class TaskerRequestReceiver : BroadcastReceiver() {
         private val fallbackIdCounter = java.util.concurrent.atomic.AtomicInteger(0)
 
         internal fun fallbackNotificationId(): Int =
-            FALLBACK_NOTIFICATION_ID_BASE +
-                fallbackIdCounter.getAndIncrement() % FALLBACK_NOTIFICATION_ID_RANGE
+            FALLBACK_NOTIFICATION_ID_BASE + Math.floorMod(
+                fallbackIdCounter.getAndIncrement(), FALLBACK_NOTIFICATION_ID_RANGE)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
