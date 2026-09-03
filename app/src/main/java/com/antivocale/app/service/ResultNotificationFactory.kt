@@ -46,7 +46,7 @@ data class ResultNotificationSpec(
  * delegating classes (result, error, no-model) draws from [nextNotificationId],
  * replacing the two per-class counters that both seeded at 1002 and could
  * collide. Ids are unique within a process lifetime only; after process death
- * the sequence restarts at 1002 (pre-existing behavior, unchanged).
+ * the sequence restarts at [RESULT_NOTIFICATION_ID_BASE] (TASK-329).
  */
 class ResultNotificationFactory(private val context: Context) {
 
@@ -267,8 +267,25 @@ class ResultNotificationFactory(private val context: Context) {
 
         private const val CONFIDENCE_MEDIUM_THRESHOLD = 0.5f
 
-        /** Process-wide id allocator: fixes the 1002 collision between the old per-class counters. */
-        private val idCounter = AtomicInteger(InferenceService.RESULT_NOTIFICATION_ID)
+        /**
+         * Reserved-range contract (TASK-329): the allocator owns every id at or
+         * above this base, and every fixed or banded notification id elsewhere
+         * must stay below it, so an allocator id can never replace another
+         * notification or be replaced by one. Occupants of the fixed range
+         * today, all below 3000:
+         * - 1001: InferenceService.NOTIFICATION_ID (service foreground/progress)
+         * - 1003: SubtitleChoiceTimeoutWorker.NOTIFICATION_ID (worker foreground)
+         * - 2001..2100: ExtractionService download-progress band (per-jobKey hash)
+         * - 2201..2300: TaskerRequestReceiver fallback band (per-taskId hash)
+         * New fixed ids or bands go under the base; 2301..2999 is free headroom.
+         * Known exception, pre-existing and outside this contract:
+         * ShareReceiverActivity posts its subtitle-choice and share-error
+         * notifications at raw String.hashCode() ids, which are unbounded.
+         */
+        const val RESULT_NOTIFICATION_ID_BASE = 3000
+
+        /** Process-wide id allocator; the seed doubles as the first id of a fresh process. */
+        private val idCounter = AtomicInteger(RESULT_NOTIFICATION_ID_BASE)
 
         fun nextNotificationId(): Int = idCounter.getAndIncrement()
     }

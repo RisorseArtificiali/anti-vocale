@@ -55,8 +55,10 @@ class ExtractionService : Service() {
     companion object {
         const val TAG = "ExtractionService"
         val CHANNEL_ID = AppNotificationChannel.EXTRACTION.id
-        private const val NOTIFICATION_ID_BASE = 2001
-        private const val NOTIFICATION_ID_RANGE = 100
+        // Internal so the reserved-range contract test (ResultNotificationFactoryTest,
+        // TASK-329) can pin the band's derived top instead of a stale-able literal.
+        internal const val NOTIFICATION_ID_BASE = 2001
+        internal const val NOTIFICATION_ID_RANGE = 100
 
         const val ACTION_CANCEL = "com.antivocale.app.CANCEL_EXTRACTION"
 

@@ -67,11 +67,17 @@ class TaskerRequestReceiver : BroadcastReceiver() {
 
         // Fallback notification. TASK-380: id is derived per taskId so two
         // queued requests don't overwrite each other's notification.
+        // TASK-329: the hash is masked into this band (ExtractionService's
+        // pattern) so a raw hashCode can never land in the result allocator's
+        // range (ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE and up)
+        // or in ExtractionService's 2001..2100 download band. Two distinct
+        // taskIds share an id only with the usual 1-in-RANGE birthday odds.
         private val FALLBACK_CHANNEL_ID = AppNotificationChannel.TASKER_FALLBACK.id
-        private const val FALLBACK_NOTIFICATION_ID_BASE = 2001
+        private const val FALLBACK_NOTIFICATION_ID_BASE = 2201
+        private const val FALLBACK_NOTIFICATION_ID_RANGE = 100
 
         internal fun fallbackNotificationId(taskId: String): Int =
-            FALLBACK_NOTIFICATION_ID_BASE + taskId.hashCode()
+            FALLBACK_NOTIFICATION_ID_BASE + (taskId.hashCode() and 0x7FFFFFFF) % FALLBACK_NOTIFICATION_ID_RANGE
     }
 
     override fun onReceive(context: Context, intent: Intent) {

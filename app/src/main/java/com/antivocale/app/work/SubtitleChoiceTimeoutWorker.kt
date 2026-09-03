@@ -137,7 +137,11 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
 
     companion object {
         private const val TAG = "SubtitleChoiceTimeoutWorker"
-        private const val NOTIFICATION_ID = 1003
+
+        // Reserved-range contract (TASK-329): fixed ids must stay below
+        // ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE. Internal so
+        // the contract test can pin this value.
+        internal const val NOTIFICATION_ID = 1003
 
         const val KEY_FILE_PATH = "file_path"
         const val KEY_TASK_ID = "task_id"

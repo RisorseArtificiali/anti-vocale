@@ -57,7 +57,6 @@ class InferenceService : Service(), TranscriptionListener {
         val CHANNEL_ID = AppNotificationChannel.INFERENCE.id
         val RESULT_CHANNEL_ID = AppNotificationChannel.TRANSCRIPTION_RESULT.id
         const val NOTIFICATION_ID = 1001
-        const val RESULT_NOTIFICATION_ID = 1002
 
         private const val RC_LAUNCH_DEFAULT = 0
         private const val RC_LAUNCH_MODEL_TAB = 1

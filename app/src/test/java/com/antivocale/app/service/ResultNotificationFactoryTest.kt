@@ -5,6 +5,8 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.receiver.NotificationActionReceiver
+import com.antivocale.app.receiver.TaskerRequestReceiver
+import com.antivocale.app.work.SubtitleChoiceTimeoutWorker
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -77,6 +79,32 @@ class ResultNotificationFactoryTest {
         val second = ResultNotificationFactory.nextNotificationId()
         assertEquals(first + 1, second)
         // Not asserting the absolute value: earlier tests in the same process may draw ids.
+    }
+
+    @Test
+    fun `allocator seeds at the reserved base and never dips below it`() {
+        // The seed doubles as the first id of a fresh process; pinning the
+        // absolute value keeps the reserved-range contract (BASE KDoc table)
+        // visible in every review of a change to it.
+        assertEquals(3000, ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE)
+        val id = ResultNotificationFactory.nextNotificationId()
+        assertTrue(id >= ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE)
+    }
+
+    @Test
+    fun `reserved base sits above every fixed and banded notification id`() {
+        val base = ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE
+        assertTrue(InferenceService.NOTIFICATION_ID < base)
+        assertTrue(SubtitleChoiceTimeoutWorker.NOTIFICATION_ID < base)
+        assertTrue(ExtractionService.NOTIFICATION_ID_BASE + ExtractionService.NOTIFICATION_ID_RANGE - 1 < base)
+    }
+
+    @Test
+    fun `tasker fallback ids stay inside their reserved band`() {
+        listOf("tasker-a", "unknown_1725300000000", "").forEach { taskId ->
+            val id = TaskerRequestReceiver.fallbackNotificationId(taskId)
+            assertTrue("id $id for taskId '$taskId' outside 2201..2300", id in 2201..2300)
+        }
     }
 
     @Test
