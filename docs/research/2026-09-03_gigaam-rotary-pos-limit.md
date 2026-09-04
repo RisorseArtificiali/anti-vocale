@@ -38,8 +38,8 @@ The 180s catalog chunk cap (commit 2126859, release/1.11.2) is the same strategy
 
 ## Sources
 
-1. sherpa-onnx v1.13.5, scripts/nemo/GigaAM/export-onnx-rnnt-v3.py (cfg printout; gigaam.load_model) - read locally at the pinned tag.
-2. salute-developers/GigaAM, gigaam/encoder.py (RotaryPositionalEmbedding.create_pe, ConformerEncoder default pos_emb_max_len=5000, extend_pe) - via HF mirror waveletdeboshir/gigaam-rnnt (verbatim copy of Sber's file).
+1. sherpa-onnx v1.13.5, scripts/nemo/GigaAM/export-onnx-rnnt-v3.py (cfg printout; gigaam.load_model): read locally at the pinned tag.
+2. salute-developers/GigaAM, gigaam/encoder.py (RotaryPositionalEmbedding.create_pe, ConformerEncoder default pos_emb_max_len=5000, extend_pe): via HF mirror waveletdeboshir/gigaam-rnnt (verbatim copy of Sber's file).
 3. salute-developers/GigaAM, gigaam/model.py (LONGFORM_THRESHOLD = 25*SAMPLE_RATE, transcribe raise, transcribe_longform VAD segmentation).
 4. NVIDIA NeMo Speech, nemo/collections/asr/modules/conformer_encoder.py (pos_emb_max_len default 5000).
 5. Desktop reproduction: /tmp/gigaam-repro (190s OK / 205s fails "5000 by 5125"; 400s as 3x180s chunks all pass).

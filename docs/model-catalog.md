@@ -54,7 +54,7 @@ The only streaming model: it shows partial results while audio is still being pr
 
 Russian specialist transducer from SberDevices.
 
-- Size: 326 MB; no known audio-length cap
+- Size: 326 MB; audio limit 200 s per segment (a rotary positional table in the NeMo export), split automatically at 180 s
 - Original model: [ai-sage/GigaAM-v3](https://huggingface.co/ai-sage/GigaAM-v3)
 - Downloads from: [pantinor/gigaam-v3](https://huggingface.co/pantinor/gigaam-v3)
 

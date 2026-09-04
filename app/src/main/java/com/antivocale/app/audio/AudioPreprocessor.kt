@@ -33,18 +33,22 @@ class AudioPreprocessor @Inject constructor() {
 
         /**
          * VAD segments are merged up to the model's per-segment limit minus a 2s
-         * margin (GH #50): 30s-limit models keep the historical 28s window, a
-         * 60s-limit model (Parakeet since TASK-406) merges speech into large
-         * segments instead of many Whisper-sized ones.
+         * margin (GH #50). The limit follows the request-time cap verbatim, so a
+         * 30s model keeps the historical 28s window and a RAM-rich device with a
+         * 180s cap (gigaam, TASK-447) merges speech into 178s passes, matching
+         * what the same request does on the streaming path (VAD off); on low RAM
+         * TranscriptionMemoryPolicy tightens the cap and this window follows.
          */
         internal fun vadMergeLimitSeconds(maxChunkDurationSeconds: Int?): Int =
             ((maxChunkDurationSeconds ?: 30) - 2).coerceAtLeast(1)
 
         /**
          * Chunk-count estimate for the streaming header (progress subtext and
-         * PERF summary): CEIL of duration/cap, floor 1. The decode loop always
-         * emits a final remainder chunk, so a floor here under-counts by one
-         * for every non-exact multiple (TASK-444).
+         * PERF summary): CEIL of duration/cap, floor 1. The decode loop emits
+         * full cap-sized chunks while decoding and flushes the trailing
+         * remainder at end-of-stream only when samples are left over, so the
+         * emitted count is exactly CEIL: a floor under-counts by one for every
+         * non-exact multiple (TASK-444).
          */
         internal fun expectedChunkCount(totalDurationSeconds: Double, chunkDurationSeconds: Int): Int =
             kotlin.math.ceil(totalDurationSeconds / chunkDurationSeconds).toInt().coerceAtLeast(1)
@@ -53,6 +57,9 @@ class AudioPreprocessor @Inject constructor() {
         private const val TARGET_CHANNELS = 1
         private const val MAX_FILE_SIZE_BYTES = 2L * 1024 * 1024 * 1024 // 2GB sanity bound
         private const val TIMEOUT_US = 10000L
+
+        /** Streaming decode channel capacity; see the Channel construction site. */
+        private const val STREAM_CHANNEL_CAPACITY = 2
     }
 
     /**
@@ -82,6 +89,9 @@ class AudioPreprocessor @Inject constructor() {
     data class StreamHeader(
         val sampleRate: Int,
         val totalDurationSeconds: Double,
+        /** 0 = unknown: the container carries no KEY_DURATION, so the count is
+         * unknowable pre-decode; consumers render progress without a total
+         * instead of inventing one (estimate drift, code review 2026-09-04 F6). */
         val expectedChunkCount: Int
     )
 
@@ -284,8 +294,13 @@ class AudioPreprocessor @Inject constructor() {
             return@flow
         }
 
-        // Streaming path: decode and emit chunks
-        val channel = Channel<StreamEvent>(capacity = Channel.BUFFERED)
+        // Streaming path: decode and emit chunks. Capacity 2 (one chunk in
+        // flight, one pre-decoded) is all the overlap the pipeline needs:
+        // inference is always the bottleneck, and BUFFERED (64) would let the
+        // hardware decoder sprint ahead and pin 64 chunks of PCM on the dalvik
+        // heap: 64 x 180s x AudioDurationPolicy.PCM_BYTES_PER_SECOND = 720MB
+        // at gigaam's chunk size (code review 2026-09-04, F1).
+        val channel = Channel<StreamEvent>(capacity = STREAM_CHANNEL_CAPACITY)
         val decoderThread = Thread {
             val extractor = MediaExtractor()
             try {
@@ -297,13 +312,15 @@ class AudioPreprocessor @Inject constructor() {
                 val inputChannels = inputFormat.getInteger(MediaFormat.KEY_CHANNEL_COUNT)
                 val mime = inputFormat.getString(MediaFormat.KEY_MIME)!!
 
+                // getLong returns 0 when KEY_DURATION is absent.
                 val durationUs = inputFormat.getLong(MediaFormat.KEY_DURATION)
                 val totalDurationSeconds = durationUs / 1_000_000.0
 
-                val chunkSamples = if (maxChunkDurationSeconds != null) inputSampleRate * maxChunkDurationSeconds else Int.MAX_VALUE
-                val expectedChunks = if (maxChunkDurationSeconds != null) {
-                    expectedChunkCount(totalDurationSeconds, maxChunkDurationSeconds)
-                } else 1
+                val expectedChunks = when {
+                    maxChunkDurationSeconds == null -> 1
+                    durationUs <= 0 -> 0
+                    else -> expectedChunkCount(totalDurationSeconds, maxChunkDurationSeconds)
+                }
 
                 val outputSampleRate = if (inputSampleRate != TARGET_SAMPLE_RATE) TARGET_SAMPLE_RATE else inputSampleRate
 
@@ -317,6 +334,9 @@ class AudioPreprocessor @Inject constructor() {
                 val accumulator = mutableListOf<FloatArray>()
                 var accumulatedSamples = 0
                 var chunkIndex = 0
+                // Chunk size in OUTPUT samples; loop-invariant (both inputs are).
+                // Unreachable-large when the backend chunks nothing (null cap).
+                val resampledChunkSamples = outputSampleRate * (maxChunkDurationSeconds ?: Int.MAX_VALUE / outputSampleRate)
                 try {
                     decoder.configure(inputFormat, null, null, 0)
                     decoder.start()
@@ -352,7 +372,6 @@ class AudioPreprocessor @Inject constructor() {
                                 accumulator.add(decoded)
                                 accumulatedSamples += decoded.size
 
-                                val resampledChunkSamples = outputSampleRate * (maxChunkDurationSeconds ?: Int.MAX_VALUE / outputSampleRate)
                                 while (accumulatedSamples >= resampledChunkSamples && maxChunkDurationSeconds != null) {
                                     val chunk = mergeAccumulated(accumulator, resampledChunkSamples)
                                     channel.trySendBlocking(StreamEvent.Chunk(StreamChunk(
@@ -376,14 +395,20 @@ class AudioPreprocessor @Inject constructor() {
                     decoder.release()
                 }
 
-                // Emit remaining samples as final chunk
+                // Emit remaining samples as final chunk. The index is the NEXT
+                // sequential slot (not -1): the orchestrator renders 'Chunk i/N',
+                // the chunk-nav notification keys on chunkIndex >= 0, and the
+                // TTFT/PERF instrumentation keys on chunkIndex == 0, so a -1
+                // here mislabels the last chunk, drops it from the nav, and
+                // silences the instrumentation for single-chunk files
+                // (code review 2026-09-04, F2).
                 if (accumulator.isNotEmpty()) {
                     val remaining = mergeAccumulated(accumulator, Int.MAX_VALUE)
                     if (remaining.isNotEmpty()) {
                         channel.trySendBlocking(StreamEvent.Chunk(StreamChunk(
                             samples = remaining,
                             sampleRate = outputSampleRate,
-                            chunkIndex = -1,
+                            chunkIndex = chunkIndex,
                             isLast = true
                         )))
                     }

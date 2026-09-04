@@ -114,7 +114,10 @@ class BundledModelCatalogTest {
 
         val gigaam = byId.getValue("gigaam")
         assertEquals(1.0, gigaam.flags.tailPadSeconds, 0.0)
-        assertEquals(180, gigaam.flags.maxAudioDurationSeconds)
+        // 200s is the MODEL's own rotary-table limit (5000 positions / 25 per
+        // second), not our chunk size; the display fact must state the model
+        // capability (research 2026-09-03). The chunk cap stays at 180 for margin.
+        assertEquals(200, gigaam.flags.maxAudioDurationSeconds)
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), gigaam.flags.metaKeys)
         assertEquals("pantinor/gigaam-v3", gigaam.defaultVariant.source.repo)
         assertEquals("gigaam-v3", gigaam.defaultVariant.dirName)
@@ -123,6 +126,11 @@ class BundledModelCatalogTest {
         // (broadcast 5000 by N; user report 2026-09-03, reproduced desktop).
         // 180s chunks + the 1s tail pad stay at 4525 positions, inside the table.
         assertEquals(180, gigaam.flags.chunkDurationSeconds)
+        // F5 range guard: the chunk cap MUST stay strictly below the native
+        // rotary-table limit (GH #76 class). Same invariant style as Parakeet's
+        // 30..390 guard in ParakeetCatalogChunkingTest.
+        assertTrue("gigaam chunk cap ${gigaam.flags.chunkDurationSeconds}s must stay below the 200s native rotary limit",
+            gigaam.flags.chunkDurationSeconds < gigaam.flags.maxAudioDurationSeconds)
         assertEquals(326L, gigaam.defaultVariant.estimatedSizeMB)
         assertTrue("gigaam files must keep their SHA-256 pins", gigaam.defaultVariant.files.all { it.sha256 != null })
     }

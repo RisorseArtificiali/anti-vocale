@@ -1091,7 +1091,14 @@ class TranscriptionOrchestrator @Inject constructor(
         val chunkProcessingStartTime = System.currentTimeMillis()
         val accumulatedText = StringBuilder()
         var totalDurationSeconds = 0.0
+        // Actual decoded duration: replaces the header's metadata-derived value
+        // at the summary sites, repairing the metadata-less-container case (0s
+        // Logs row, silently dropped calibration sample; code review 2026-09-04 F6).
+        var decodedSeconds = 0.0
         var expectedChunkCount = 0
+        var processedChunks = 0
+        // "" while the chunk total is unknown (0 sentinel, see StreamHeader).
+        var chunkTotalSuffix = ""
         var firstChunkDecodeMs = 0L
         var firstChunkInferStartMs = 0L
         var failedChunks = 0
@@ -1111,11 +1118,17 @@ class TranscriptionOrchestrator @Inject constructor(
                     is AudioPreprocessor.StreamEvent.Header -> {
                         totalDurationSeconds = event.header.totalDurationSeconds
                         expectedChunkCount = event.header.expectedChunkCount
+                        if (expectedChunkCount > 0) chunkTotalSuffix = "/$expectedChunkCount"
                         updateAudioDuration(taskId, event.header.totalDurationSeconds)
-                        Log.i(TAG, "Pipeline: expecting ${event.header.expectedChunkCount} chunks, ${event.header.totalDurationSeconds}s")
+                        Log.i(TAG, if (expectedChunkCount > 0)
+                            "Pipeline: expecting $expectedChunkCount chunks, ${event.header.totalDurationSeconds}s"
+                        else
+                            "Pipeline: unknown chunk count (no duration metadata), ${event.header.totalDurationSeconds}s")
                     }
                     is AudioPreprocessor.StreamEvent.Chunk -> {
                         val chunk = event.chunk
+                        processedChunks++
+                        decodedSeconds += chunk.samples.size.toDouble() / chunk.sampleRate
                         val chunkReceiveMs = System.currentTimeMillis() - pipelineStartMs
                         if (chunk.chunkIndex == 0) {
                             firstChunkDecodeMs = chunkReceiveMs
@@ -1140,7 +1153,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                         listener.onInterimResult(
                                             contentText = trimmed,
                                             bigText = trimmed,
-                                            subText = "Chunk ${chunk.chunkIndex + 1}/$expectedChunkCount",
+                                            subText = "Chunk ${chunk.chunkIndex + 1}$chunkTotalSuffix",
                                             chunkIndex = chunk.chunkIndex,
                                             chunkText = trimmed,
                                             totalChunks = expectedChunkCount
@@ -1165,7 +1178,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                                 listener.onInterimResult(
                                                     contentText = trimmed,
                                                     bigText = trimmed,
-                                                    subText = "Chunk ${chunk.chunkIndex + 1}/$expectedChunkCount (retry)",
+                                                    subText = "Chunk ${chunk.chunkIndex + 1}$chunkTotalSuffix (retry)",
                                                     chunkIndex = chunk.chunkIndex,
                                                     chunkText = trimmed,
                                                     totalChunks = expectedChunkCount
@@ -1194,22 +1207,34 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             }
         } catch (e: PreprocessingError) {
+            // Same decoded-duration repair as the success path: a mid-stream
+            // failure must not leave the ERROR row at the metadata value (0.0
+            // for metadata-less containers).
+            if (decodedSeconds > 0.0) updateAudioDuration(taskId, decodedSeconds)
             return Result.failure(e)
         } catch (e: Exception) {
+            if (decodedSeconds > 0.0) updateAudioDuration(taskId, decodedSeconds)
             return Result.failure(IllegalStateException("Pipeline failed: ${e.message}"))
         }
 
         val combinedResult = accumulatedText.toString()
+        // The decoded length beats the metadata value at the summary sites: it
+        // is the ground truth (also when the container's duration tag lies or
+        // is absent, where totalDurationSeconds is 0.0).
+        if (decodedSeconds > 0.0) {
+            totalDurationSeconds = decodedSeconds
+            updateAudioDuration(taskId, decodedSeconds)
+        }
         recordCalibration(backend, totalDurationSeconds.toInt(), chunkProcessingStartTime)
 
         val totalMs = System.currentTimeMillis() - pipelineStartMs
-        Log.i(TAG, "PERF: pipeline total ${totalMs}ms for ${totalDurationSeconds}s audio, ${expectedChunkCount} chunks, backend=${backend.id}, ttft_decode=${firstChunkDecodeMs}ms")
+        Log.i(TAG, "PERF: pipeline total ${totalMs}ms for ${totalDurationSeconds}s audio, $processedChunks chunks (expected $expectedChunkCount), backend=${backend.id}, ttft_decode=${firstChunkDecodeMs}ms")
 
         return if (combinedResult.isBlank()) {
             Result.failure(TranscriptionException.NoTranscriptionProduced())
         } else {
             if (failedChunks > 0) {
-                Log.w(TAG, "Pipeline completed with $failedChunks/$expectedChunkCount failed chunks")
+                Log.w(TAG, "Pipeline completed with $failedChunks/$processedChunks failed chunks")
             }
             Result.success(TranscriptionResult(
                 text = combinedResult,

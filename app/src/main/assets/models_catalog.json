@@ -170,7 +170,7 @@
       "flags": {
         "tailPadSeconds": 1,
         "chunkDurationSeconds": 180,
-        "maxAudioDurationSeconds": 180,
+        "maxAudioDurationSeconds": 200,
         "metaKeys": ["vocab_size", "subsampling_factor", "model_type"]
       },
       "languages": ["ru"],

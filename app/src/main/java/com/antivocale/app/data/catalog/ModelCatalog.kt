@@ -373,7 +373,8 @@ data class CatalogFlags(
     val maxNewTokens: Int = 0,
     /**
      * Max chunk duration in seconds for the orchestrator: >0 chunks longer audio
-     * (Whisper/Qwen3-ASR 30); 0 processes the whole clip in one pass (Parakeet/GigaAM/Nemotron).
+     * (Whisper/Qwen3-ASR 30, Parakeet 60, GigaAM 180); 0 processes the whole clip
+     * in one pass (Nemotron streams).
      */
     val chunkDurationSeconds: Int = 0,
     /**
