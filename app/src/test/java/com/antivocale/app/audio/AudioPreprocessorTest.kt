@@ -284,4 +284,19 @@ class AudioPreprocessorTest {
         // one second over the cap is already 2 chunks
         assertEquals(2, AudioPreprocessor.expectedChunkCount(151.0, 150))
     }
+
+    @Test
+    fun `chunkTotalSuffix hides the total when unknown or exceeded`() {
+        // TASK-449: the estimate is metadata-derived; once the decoded stream
+        // passes it, the total is dropped instead of rendering "Chunk N+1/N".
+        // normal: first and last chunk of three
+        assertEquals("/3", AudioPreprocessor.chunkTotalSuffix(3, 0))
+        assertEquals("/3", AudioPreprocessor.chunkTotalSuffix(3, 2))
+        // unknown estimate (0 sentinel, metadata-less container)
+        assertEquals("", AudioPreprocessor.chunkTotalSuffix(0, 0))
+        // drift: decode emits chunk 3 while the duration tag implied 2
+        assertEquals("", AudioPreprocessor.chunkTotalSuffix(2, 2))
+        // single chunk: the one case the legacy notification path renders
+        assertEquals("/1", AudioPreprocessor.chunkTotalSuffix(1, 0))
+    }
 }

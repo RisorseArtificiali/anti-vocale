@@ -1097,8 +1097,6 @@ class TranscriptionOrchestrator @Inject constructor(
         var decodedSeconds = 0.0
         var expectedChunkCount = 0
         var processedChunks = 0
-        // "" while the chunk total is unknown (0 sentinel, see StreamHeader).
-        var chunkTotalSuffix = ""
         var firstChunkDecodeMs = 0L
         var firstChunkInferStartMs = 0L
         var failedChunks = 0
@@ -1118,7 +1116,6 @@ class TranscriptionOrchestrator @Inject constructor(
                     is AudioPreprocessor.StreamEvent.Header -> {
                         totalDurationSeconds = event.header.totalDurationSeconds
                         expectedChunkCount = event.header.expectedChunkCount
-                        if (expectedChunkCount > 0) chunkTotalSuffix = "/$expectedChunkCount"
                         updateAudioDuration(taskId, event.header.totalDurationSeconds)
                         Log.i(TAG, if (expectedChunkCount > 0)
                             "Pipeline: expecting $expectedChunkCount chunks, ${event.header.totalDurationSeconds}s"
@@ -1136,6 +1133,10 @@ class TranscriptionOrchestrator @Inject constructor(
                             Log.i(TAG, "PERF: pipeline first chunk decoded in ${firstChunkDecodeMs}ms")
                         }
                         Log.d(TAG, "Pipeline: transcribing chunk ${chunk.chunkIndex} (${chunk.samples.size} samples)")
+                        // One label for both the success and retry emissions; the
+                        // suffix helper hides the total once the decoded stream
+                        // passes the metadata-derived estimate (TASK-449).
+                        val chunkLabel = "Chunk ${chunk.chunkIndex + 1}${AudioPreprocessor.chunkTotalSuffix(expectedChunkCount, chunk.chunkIndex)}"
 
                         val chunkResult = backend.transcribeAudio(
                             samples = chunk.samples,
@@ -1153,7 +1154,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                         listener.onInterimResult(
                                             contentText = trimmed,
                                             bigText = trimmed,
-                                            subText = "Chunk ${chunk.chunkIndex + 1}$chunkTotalSuffix",
+                                            subText = chunkLabel,
                                             chunkIndex = chunk.chunkIndex,
                                             chunkText = trimmed,
                                             totalChunks = expectedChunkCount
@@ -1178,7 +1179,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                                 listener.onInterimResult(
                                                     contentText = trimmed,
                                                     bigText = trimmed,
-                                                    subText = "Chunk ${chunk.chunkIndex + 1}$chunkTotalSuffix (retry)",
+                                                    subText = "$chunkLabel (retry)",
                                                     chunkIndex = chunk.chunkIndex,
                                                     chunkText = trimmed,
                                                     totalChunks = expectedChunkCount

@@ -53,6 +53,18 @@ class AudioPreprocessor @Inject constructor() {
         internal fun expectedChunkCount(totalDurationSeconds: Double, chunkDurationSeconds: Int): Int =
             kotlin.math.ceil(totalDurationSeconds / chunkDurationSeconds).toInt().coerceAtLeast(1)
 
+        /**
+         * The "/N" total for interim progress, or "" when showing a total would
+         * mislead: the estimate is unknown (0 sentinel) or already exceeded by
+         * the decoded stream. The estimate derives from the container's
+         * duration tag, which can under-report the real decoded length, so the
+         * emitted count can pass it (metadata drift, TASK-449); the total is
+         * then dropped for the rest of the transcription instead of rendering
+         * "Chunk N+1/N".
+         */
+        internal fun chunkTotalSuffix(expectedChunkCount: Int, emittedChunkIndex: Int): String =
+            if (expectedChunkCount > emittedChunkIndex) "/$expectedChunkCount" else ""
+
         private const val TARGET_SAMPLE_RATE = 16000
         private const val TARGET_CHANNELS = 1
         private const val MAX_FILE_SIZE_BYTES = 2L * 1024 * 1024 * 1024 // 2GB sanity bound
