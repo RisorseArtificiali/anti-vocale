@@ -11,6 +11,11 @@
 # Usage: scripts/check-fdroid-release.sh [tag] [path-to-fdroid-data]
 #   tag defaults to the versionName in app/build.gradle.kts
 #   fdroid-data defaults to ~/data/repo/personal/fdroid-data
+# Env:
+#   EXPECT_COMMIT=<sha>  build-first mode (TASK-446): the tag does not exist
+#                        yet; the recipe trio must point at this SHA instead of
+#                        at a peeled tag. Use for gate A before a
+#                        `-f commit=<sha>` dispatch.
 
 set -euo pipefail
 
@@ -29,11 +34,27 @@ BASE=$(grep -m1 'versionCode = ' app/build.gradle.kts | grep -oE '[0-9]+')
 TAG="${TAG:-v$VERSION}"
 echo "== app: $VERSION (base $BASE), checking tag $TAG"
 
-# 2. tag must exist and its commit identified (peeled for annotated, direct for lightweight)
-TAG_COMMIT=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG^{}" | awk '{print $1}')
-[ -n "$TAG_COMMIT" ] || TAG_COMMIT=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG" | awk '{print $1}')
-[ -n "$TAG_COMMIT" ] || fail "tag $TAG not found on origin"
-echo "== tag $TAG -> $TAG_COMMIT"
+# 2. tag must exist and its commit identified (peeled for annotated, direct
+# for lightweight). Build-first (EXPECT_COMMIT): the tag does not exist yet;
+# the dispatched SHA stands in for it, and if the tag DOES already exist it
+# must agree (a mistaken re-check after publishing).
+if [ -n "${EXPECT_COMMIT:-}" ]; then
+  # Prefer the peeled line like the legacy branch below: for an annotated tag,
+  # ls-remote lists the plain ref first, and head -1 would return the tag
+  # OBJECT sha, not the commit.
+  EXISTING=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG^{}" | awk '{print $1}' | head -1)
+  [ -n "$EXISTING" ] || EXISTING=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG" | awk '{print $1}' | head -1)
+  if [ -n "$EXISTING" ] && [ "$EXISTING" != "$EXPECT_COMMIT" ]; then
+    fail "tag $TAG already exists at $EXISTING, not at EXPECT_COMMIT $EXPECT_COMMIT"
+  fi
+  TAG_COMMIT="$EXPECT_COMMIT"
+  echo "== build-first: tag $TAG not required, recipe must point at $TAG_COMMIT"
+else
+  TAG_COMMIT=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG^{}" | awk '{print $1}')
+  [ -n "$TAG_COMMIT" ] || TAG_COMMIT=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG" | awk '{print $1}')
+  [ -n "$TAG_COMMIT" ] || fail "tag $TAG not found on origin"
+  echo "== tag $TAG -> $TAG_COMMIT"
+fi
 
 # 3. srclib pin must match .sherpa-version (issue #38 rule)
 PIN_EXPECTED=$(grep -oE '[0-9a-f]{40}' .sherpa-version || true)
@@ -64,7 +85,7 @@ AAR_VER=$(grep -oE 'SHERPA_ONNX_VERSION="[0-9.]+"' scripts/fetch-sherpa-aar.sh |
 echo "== sherpa $SHERPA_VER / AAR script $AAR_VER"
 [ "v$AAR_VER" = "$SHERPA_VER" ] || fail "fetch-sherpa-aar.sh ($AAR_VER) != .sherpa-version ($SHERPA_VER)"
 
-# 4. recipe commit must equal the tag commit
+# 4. recipe commit must equal the tag commit (or, build-first, the dispatched SHA)
 BAD_COMMIT=$(grep -oE 'commit: [0-9a-f]{40}' <<<"$TRIO" | awk '{print $2}' | grep -v "^$TAG_COMMIT$" | head -1 || true)
 [ -z "$BAD_COMMIT" ] || fail "recipe commit mismatch in the $VERSION trio: $BAD_COMMIT != tag commit $TAG_COMMIT"
 echo "== recipe commit OK"

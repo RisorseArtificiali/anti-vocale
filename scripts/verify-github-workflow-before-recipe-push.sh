@@ -92,7 +92,8 @@ done
 
 if [ -z "$RUN_ID" ]; then
   echo "   No completed dispatch run with a reproducible job found."
-  echo "   Dispatch first: gh workflow run android-release.yml -f tag=${TAG}"
+  echo "   Dispatch first: scripts/release-fdroid-references.sh prepare ${TAG} <commit-sha>"
+  echo "   (build-first; the legacy -f tag= form still works but races the bot)"
   fail "No reference build exists for the recipe to point at."
 fi
 

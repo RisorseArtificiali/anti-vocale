@@ -6,6 +6,9 @@
 # Usage:
 #   scripts/release-preflight.sh                 # full check (network: yes)
 #   scripts/release-preflight.sh --tag v1.10.0   # also verify the fork recipe vs tag
+#   scripts/release-preflight.sh --tag v1.12.0 --commit <sha>
+#         BUILD-FIRST: the tag does not exist yet; check the recipe against
+#         the bump commit instead (TASK-446 order: tag is born at publish)
 #   scripts/release-preflight.sh --offline       # skip gh/api/curl checks
 #
 # Checks (each prints OK or FAIL; any FAIL exits non-zero at the end):
@@ -33,6 +36,7 @@ FORK_BRANCH="$(git -C "$FORK_DIR" branch --show-current 2>/dev/null)"
 RECIPE_REL="metadata/com.antivocale.app.yml"
 OFFLINE=0
 TAG=""
+COMMIT=""
 
 failures=0
 ok()   { echo "OK   $*"; }
@@ -42,6 +46,7 @@ while [ $# -gt 0 ]; do
   case "$1" in
     --offline) OFFLINE=1 ;;
     --tag) shift; TAG="${1:-}" ;;
+    --commit) shift; COMMIT="${1:-}" ;;
     *) echo "unknown arg: $1" >&2; exit 2 ;;
   esac
   shift
@@ -105,7 +110,13 @@ if [ "$OFFLINE" -eq 0 ] && [ -n "$TAG" ]; then
     # stale by design at dispatch time and must not be checked or coached
     # here (the old origin-preferred read + "push the recipe BEFORE
     # dispatching" fail message prescribed exactly the banned mid-flow push).
-    tag_commit=$(git -C "$REPO_DIR" rev-parse "$TAG^{commit}" 2>/dev/null) || tag_commit=$(git ls-remote "https://github.com/RisorseArtificiali/anti-vocale" "refs/tags/$TAG" 2>/dev/null | awk '{print $1}')
+    # BUILD-FIRST (--commit): the tag does not exist yet; the bump commit IS
+    # the recipe target by construction.
+    if [ -n "$COMMIT" ]; then
+      tag_commit="$COMMIT"
+    else
+      tag_commit=$(git -C "$REPO_DIR" rev-parse "$TAG^{commit}" 2>/dev/null) || tag_commit=$(git ls-remote "https://github.com/RisorseArtificiali/anti-vocale" "refs/tags/$TAG" 2>/dev/null | awk '{print $1}')
+    fi
     newest_commit=$(awk '/^[[:space:]]+commit:/{c=$2} END{print c}' "$recipe")
     [ "$newest_commit" = "$tag_commit" ] && ok "recipe newest entry commit == $TAG (local; origin catches up at finalize)" \
       || fail "recipe newest commit $newest_commit != tag $TAG ($tag_commit): run Step 4 (new-fdroid-version.py) locally before dispatching; the fork is pushed only at finalize"

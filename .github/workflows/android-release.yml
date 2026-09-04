@@ -12,6 +12,9 @@ on:
       tag:
         description: 'Release tag to attach APK to (e.g., 0.1)'
         required: false
+      commit:
+        description: 'Build-first mode (TASK-446): full SHA to build from BEFORE the tag exists. No release is created; all release assets upload as workflow artifacts for scripts/release-create.sh. Mutually exclusive with tag.'
+        required: false
       play-store-track:
         description: 'Upload AAB to Play Store track'
         type: choice
@@ -91,10 +94,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v5
         with:
-          # Build from the dispatched tag's commit, not whatever main HEAD happens
-          # to be at run time. Without this, the -unsigned APKs could be built
-          # from a different commit than the release they are attached to.
-          ref: ${{ github.event.inputs.tag || github.ref }}
+          # Build from the dispatched tag's or commit's SHA, not whatever main
+          # HEAD happens to be at run time. Without this, the APKs could be
+          # built from a different commit than the release they belong to.
+          # `commit` is the build-first mode (TASK-446): the tag does not exist
+          # yet, the SHA is the future tag target.
+          ref: ${{ github.event.inputs.commit || github.event.inputs.tag || github.ref }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -150,9 +155,11 @@ jobs:
       # flavor directory (staged to canonical names below).
       - name: Build per-ABI debug APKs (tester builds)
         id: debug-apk
+        # tag OR commit dispatch: build-first (commit) produces the tester APKs
+        # as artifacts too; only the attach steps below stay tag-only.
         if: >-
           github.event_name == 'release' ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.tag != '' || github.event.inputs.commit != ''))
         run: |
           if ./gradlew assemblePlayStoreDebug; then
             echo "flavor=playStore" >> "$GITHUB_OUTPUT"
@@ -222,7 +229,7 @@ jobs:
       - name: Stage tester APKs under canonical tester names
         if: >-
           github.event_name == 'release' ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.tag != '' || github.event.inputs.commit != ''))
         run: |
           set -eu
           mkdir -p test-apks
@@ -252,7 +259,7 @@ jobs:
       - name: Test-sign staged fdroid APKs with a fresh debug keystore
         if: >-
           github.event_name == 'release' ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
+          (github.event_name == 'workflow_dispatch' && (github.event.inputs.tag != '' || github.event.inputs.commit != ''))
         run: |
           set -eu
           keytool -genkeypair -keystore debug.keystore -alias androiddebugkey \
@@ -297,6 +304,19 @@ jobs:
             test-apks/antivocale-fdroid-testsigned-x86_64.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Build-first (TASK-446): no release exists to attach to; the staged
+      # tester APKs upload as an artifact that scripts/release-create.sh
+      # downloads and attaches when it creates tag + release together.
+      - name: Upload tester APKs artifact (build-first mode)
+        if: >-
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.commit != '' && github.event.inputs.tag == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: tester-apks
+          path: test-apks/*.apk
+          if-no-files-found: error
 
   publish-play-store:
     name: Publish to Play Store
@@ -440,13 +460,25 @@ jobs:
           apt-get update -qq && apt-get install -y --no-install-recommends wget build-essential cmake g++ zip unzip
           fdroid --version || true
 
-      - name: Verify recipe commit matches the release tag (prevent stale-recipe reference)
+      - name: Verify recipe commit matches the release target (prevent stale-recipe reference)
         env:
           # Resolve the tag the same way the release-attach step does (inputs.tag,
           # else the ref the run was triggered on).
           RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+          # Build-first mode (TASK-446): the dispatched commit is the future
+          # tag target; the tag itself does not exist yet.
+          DISPATCH_COMMIT: ${{ github.event.inputs.commit }}
+          DISPATCH_TAG: ${{ github.event.inputs.tag }}
         run: |
           set -eu
+          # Mode matrix guard: tag and commit dispatches are mutually exclusive
+          # (declared on the input). With both set, every step-level condition
+          # silently degrades to the legacy tag-published flow, the exact
+          # bot-racy shape build-first exists to retire.
+          if [ -n "$DISPATCH_COMMIT" ] && [ -n "$DISPATCH_TAG" ]; then
+            echo "ERROR: dispatch with EITHER -f commit=<sha> (build-first) OR -f tag=vX.Y.Z (legacy), never both."
+            exit 1
+          fi
           # GUARD: this job builds the reference APKs that F-Droid will verify
           # reproducibility against. It clones the fdroid-data fork and builds
           # whatever `commit:` the recipe points to. If the recipe on the fork is
@@ -461,6 +493,32 @@ jobs:
           RECIPE_COMMIT=$(awk '/^[[:space:]]+commit:/{c=$2} END{print c}' "$RECIPE")
           if [ -z "$RECIPE_COMMIT" ]; then
             echo "ERROR: could not read commit: from $RECIPE"; exit 1
+          fi
+          if [ -n "$DISPATCH_COMMIT" ]; then
+            # Build-first: the recipe must point at the dispatched SHA, and if
+            # the tag already exists it must agree with it (stale recipe or a
+            # mistaken re-dispatch after publishing). RELEASE_TAG falls back to
+            # the BRANCH name in this mode (no tag input), so derive the real
+            # tag from the recipe's newest versionName instead.
+            RECIPE_TAG="v$(awk '/^  - versionName:/{v=$3} END{print v}' "$RECIPE")"
+            if [ "$RECIPE_COMMIT" != "$DISPATCH_COMMIT" ]; then
+              echo "ERROR: recipe commit ($RECIPE_COMMIT) != dispatched commit ($DISPATCH_COMMIT)."
+              echo "       Regenerate the recipe with --commit $DISPATCH_COMMIT and re-sync the mirror."
+              exit 1
+            fi
+            EXISTING=$(git ls-remote https://github.com/RisorseArtificiali/anti-vocale \
+              "refs/tags/${RECIPE_TAG}^{}" 2>/dev/null | awk '{print $1}' | head -1)
+            if [ -z "$EXISTING" ]; then
+              EXISTING=$(git ls-remote https://github.com/RisorseArtificiali/anti-vocale \
+                "refs/tags/${RECIPE_TAG}" 2>/dev/null | awk '{print $1}' | head -1)
+            fi
+            if [ -n "$EXISTING" ] && [ "$EXISTING" != "$DISPATCH_COMMIT" ]; then
+              echo "ERROR: tag ${RECIPE_TAG} already exists at $EXISTING, not at the dispatched $DISPATCH_COMMIT."
+              exit 1
+            fi
+            [ -z "$EXISTING" ] && echo "note: tag ${RECIPE_TAG} does not exist yet (build-first; release-create.sh makes it)"
+            echo "OK: recipe commit matches the dispatched commit (build-first)."
+            exit 0
           fi
           # Resolve the commit the target tag actually points to. ^{} peels an
           # annotated tag; lightweight tags (created by gh release create, which is
@@ -648,7 +706,14 @@ jobs:
           test "$SIGNED_ANY" -eq 1 || { echo "No built unsigned APKs found to sign"; exit 1; }
           ls -la app-fdroid-*-release.apk
 
+      # Tag-anchored modes only (release event or dispatch WITH a tag): the
+      # bare `inputs.tag || ref_name` fallback would resolve to the branch name
+      # on a tagless dispatch (build-first included), creating a release on a
+      # nonsense "main" tag. Build-first uploads artifacts below instead.
       - name: Attach signed per-ABI reference APKs to GitHub Release
+        if: >-
+          github.event_name == 'release' ||
+          (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
@@ -659,6 +724,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      # Build-first (TASK-446): the signed references land as an artifact;
+      # scripts/release-create.sh attaches them when tag + release are created.
+      - name: Upload signed reference APKs artifact (build-first mode)
+        if: >-
+          github.event_name == 'workflow_dispatch' &&
+          github.event.inputs.commit != '' && github.event.inputs.tag == ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdroid-signed-references
+          path: app-fdroid-*-release.apk
+          if-no-files-found: error
+
   # TASK-333: incomplete or untested releases must fail LOUDLY, never silently.
   # Root cause of issue #27 was silence on two fronts: the signing job was skipped
   # without a word on release events, and a red test job produced no explicit
@@ -667,6 +744,10 @@ jobs:
     name: Release sanity (loud failure on incomplete releases)
     runs-on: ubuntu-latest
     needs: [test, build]
+    # BUILD-FIRST DELEGATION: on a -f commit= dispatch there is no release, so
+    # the asset-pairing steps below skip by their tag-only conditions; the
+    # completeness check for that mode lives in scripts/release-create.sh
+    # guard 5 (12-asset manifest), which refuses to publish an incomplete set.
     # always(): this job exists precisely to report on failed siblings; without it
     # GitHub would skip it whenever `test` fails, recreating the silence it fixes.
     if: >-

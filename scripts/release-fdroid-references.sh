@@ -9,7 +9,15 @@
 #             fork push if local recipe commits are pending -> pipeline status
 #             for THIS recipe SHA (+ retry if a write token is configured)
 #
-# Usage: scripts/release-fdroid-references.sh {prepare|finalize} vX.Y.Z
+# Usage: scripts/release-fdroid-references.sh {prepare|finalize} vX.Y.Z [commit]
+#   prepare vX.Y.Z <sha>   BUILD-FIRST (TASK-446, the default flow): dispatch
+#                          `-f commit=<sha>` before any tag exists; the run
+#                          uploads every release asset as artifacts. Afterwards
+#                          scripts/release-create.sh vX.Y.Z <run-id> makes tag +
+#                          release + binaries public in one act, then finalize.
+#   prepare vX.Y.Z         LEGACY tag flow: dispatch `-f tag=vX.Y.Z` (the
+#                          workflow creates the release itself). Kept as the
+#                          fallback; the checkupdates bot can race it.
 # Env:
 #   DRY_RUN=1            print the side-effecting actions instead of running
 #                        (exported to the sync script: its dry run is real too)
@@ -44,12 +52,17 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 run() {
   if [ "${DRY_RUN:-0}" = "1" ]; then echo "DRY: $*"; else "$@"; fi
 }
-usage() { echo "usage: $0 {prepare|finalize} vX.Y.Z" >&2; exit 2; }
+usage() { echo "usage: $0 {prepare vX.Y.Z [commit] | finalize vX.Y.Z}" >&2; exit 2; }
 
-[ $# -eq 2 ] || usage
-PHASE="$1"
-TAG="$2"
+PHASE="${1:-}"
+TAG="${2:-}"
+COMMIT="${3:-}"
+[ -n "$PHASE" ] && [ -n "$TAG" ] || usage
+[ "$#" -le 3 ] || usage
 case "$PHASE" in prepare | finalize) ;; *) usage ;; esac
+# finalize takes no commit arg: by then tag + release exist (release-create.sh
+# ran), and gate C resolves everything from the tag.
+[ "$PHASE" = "finalize" ] && [ -n "$COMMIT" ] && usage
 
 cd "$APP_REPO"
 
@@ -58,43 +71,81 @@ if [ "$PHASE" = "prepare" ]; then
   DRY_RUN="${DRY_RUN:-0}" "$HERE/sync-fdroid-mirror.sh"
 
   say "phase 2/4: gate A (pre-dispatch checker, reads origin/main)"
-  SKIP_BINARY_URLS=1 "$HERE/check-fdroid-release.sh" "$TAG" "$FORK_CHECKOUT"
+  # EXPECT_COMMIT set = build-first: the recipe trio must point at the
+  # dispatched SHA; the tag is not required to exist (and must agree if it
+  # does). Empty in the legacy flow; the prefix shadows any inherited value.
+  SKIP_BINARY_URLS=1 EXPECT_COMMIT="${COMMIT:-}" "$HERE/check-fdroid-release.sh" "$TAG" "$FORK_CHECKOUT"
 
   say "phase 3/4: stale-asset cleanup on release $TAG"
-  # one snapshot, and a loud failure if the listing itself breaks: a silent
-  # empty list would skip the cleanup (the stale APKs would stay and become
-  # F-Droid's binary: targets, the exact incident this phase exists for).
-  # Match by pattern on the REAL names: an ABI added to the workflow must not
-  # depend on a second list here being updated too.
-  # A MISSING release is the normal first-dispatch state (the workflow creates
-  # it via softprops/action-gh-release when uploading): nothing can be stale
-  # on a release that does not exist yet. Distinguish by HTTP code so a broken
-  # gh auth still fails loudly instead of masquerading as a fresh release
-  # (found on v1.11.1's first dispatch).
-  if ! ASSETS="$(gh release view "$TAG" -R "$REPO" --json assets --jq '.assets[].name' 2>/dev/null)"; then
-    # capture first: under pipefail the api|grep pipeline would inherit gh's
-    # exit 1 even when the grep matches.
-    api_msg="$(gh api "repos/$REPO/releases/tags/$TAG" 2>&1 || true)"
-    if grep -q "Not Found (HTTP 404)" <<<"$api_msg"; then
-      say "release $TAG does not exist yet (first dispatch): nothing to clean"
-    else
-      fail "cannot list assets of release $TAG (gh auth/release problem)"
-    fi
-    ASSETS=""
-  fi
-  STALE="$(grep -E '^app-fdroid-.*-release(-unsigned)?\.apk$' <<<"$ASSETS" || true)"
-  if [ -n "$STALE" ]; then
-    while IFS= read -r asset; do
-      run gh release delete-asset "$TAG" "$asset" -R "$REPO" --yes
-    done <<<"$STALE"
+  # Build-first normally has no release yet (gate A accepts an absent tag OR
+  # one already at the dispatched SHA), so skip the asset probes in that mode.
+  # Re-prepare AFTER publishing must go through release-create.sh guard 1,
+  # which refuses an existing tag; the unconditional legacy cleanup below
+  # covers re-dispatches of an already-published release.
+  if [ -n "$COMMIT" ]; then
+    say "build-first: skipping stale-asset probes (no release expected before the publish act)"
   else
-    say "no stale app-fdroid assets on $TAG"
+    # one snapshot, and a loud failure if the listing itself breaks: a silent
+    # empty list would skip the cleanup (the stale APKs would stay and become
+    # F-Droid's binary: targets, the exact incident this phase exists for).
+    # Match by pattern on the REAL names: an ABI added to the workflow must not
+    # depend on a second list here being updated too.
+    # A MISSING release is the normal first-dispatch state (the workflow creates
+    # it via softprops/action-gh-release when uploading): nothing can be stale
+    # on a release that does not exist yet. Distinguish by HTTP code so a broken
+    # gh auth still fails loudly instead of masquerading as a fresh release
+    # (found on v1.11.1's first dispatch).
+    if ! ASSETS="$(gh release view "$TAG" -R "$REPO" --json assets --jq '.assets[].name' 2>/dev/null)"; then
+      # capture first: under pipefail the api|grep pipeline would inherit gh's
+      # exit 1 even when the grep matches.
+      api_msg="$(gh api "repos/$REPO/releases/tags/$TAG" 2>&1 || true)"
+      if grep -q "Not Found (HTTP 404)" <<<"$api_msg"; then
+        say "release $TAG does not exist yet (first dispatch): nothing to clean"
+      else
+        fail "cannot list assets of release $TAG (gh auth/release problem)"
+      fi
+      ASSETS=""
+    fi
+    STALE="$(grep -E '^app-fdroid-.*-release(-unsigned)?\.apk$' <<<"$ASSETS" || true)"
+    if [ -n "$STALE" ]; then
+      while IFS= read -r asset; do
+        run gh release delete-asset "$TAG" "$asset" -R "$REPO" --yes
+      done <<<"$STALE"
+    else
+      say "no stale app-fdroid assets on $TAG"
+    fi
   fi
 
   say "phase 4/4: dispatch reference build"
-  run gh workflow run android-release.yml -f tag="$TAG" -R "$REPO"
+  if [ -n "$COMMIT" ]; then
+    run gh workflow run android-release.yml -f commit="$COMMIT" -R "$REPO"
+  else
+    run gh workflow run android-release.yml -f tag="$TAG" -R "$REPO"
+  fi
   say "monitor: https://github.com/$REPO/actions (reproducible job: 40-50 min)"
-  say "when green: scripts/release-fdroid-references.sh finalize $TAG"
+  if [ -n "$COMMIT" ]; then
+    # Best-effort run-id capture for release-create.sh (its --run-id is
+    # explicit because dispatch inputs are not queryable afterwards). The
+    # listing can lag the dispatch; if the poll misses, the manual gh run
+    # list below is the fallback. Skipped under DRY_RUN: no dispatch happened,
+    # so the listing would return the PREVIOUS release's run id.
+    if [ "${DRY_RUN:-0}" = "1" ]; then
+      say "DRY: would poll for the dispatch run id (gh run list --event workflow_dispatch --limit 1)"
+    else
+      RUN_ID=""
+      for _ in 1 2 3 4 5; do
+        sleep 3
+        RUN_ID=$(gh run list --workflow=android-release.yml --event workflow_dispatch \
+          --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+        [ -n "$RUN_ID" ] && break
+      done
+      say "dispatch run id: ${RUN_ID:-NOT CAPTURED (gh run list --event workflow_dispatch --limit 1)}"
+    fi
+    say "when green: scripts/release-create.sh $TAG --run-id <id> --commit $COMMIT"
+    say "then: scripts/release-fdroid-references.sh finalize $TAG"
+  else
+    say "when green: scripts/release-fdroid-references.sh finalize $TAG"
+  fi
   exit 0
 fi
 

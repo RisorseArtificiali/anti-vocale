@@ -49,15 +49,22 @@ Three audiences, three artifacts (learned shipping v1.11.0):
 
 Proof: the XML contains the new version in every locale section; the extractor runs green; the changelog files exist and reference the correct versionCode.
 
-## Step 3. Commit, tag, push
+## Step 3. Commit and push main (build-first: NO tag here)
+
+The tag is created LATER, by Step 5b's publish act, together with the release
+and all binaries. Until then no tag exists, so the fdroid checkupdates bot
+(`UpdateCheckMode: Tags`) cannot see the version at all; when the tag appears,
+every `binary:` URL already resolves. This ordering replaced the old
+tag-then-build flow, which the bot's sweep could race (2026-09-04: bot MR at
+06:23 UTC, signed APKs attached ~07:20, pipeline 404).
 
 ```bash
 git commit -m "release: vX.Y.Z (versionCode N) - <summary>"
-git tag vX.Y.Z
-git push origin main --tags
+git push origin main
+SHA=$(git rev-parse HEAD)   # the bump commit: recipe, dispatch and tag all anchor here
 ```
 
-Proof: `git ls-remote --tags origin | grep vX.Y.Z` shows the tag at the commit SHA.
+Proof: `git ls-remote origin main` shows origin/main at `$SHA`; `git ls-remote --tags origin | grep -c vX.Y.Z` prints 0 (the tag must NOT exist yet).
 
 ## Step 4. Update the F-Droid recipe (BEFORE building references)
 
@@ -81,21 +88,25 @@ git diff HEAD upstream/master -- metadata/com.antivocale.app.yml   # expect empt
 git reset --hard upstream/master
 # Generate the three per-ABI blocks with the repo script (NEVER hand-append:
 # the 2026-08-30 hand edit landed the blocks inside VercodeOperation's list
-# and cost three failed reference builds):
+# and cost three failed reference builds). BUILD-FIRST: pass the bump commit
+# explicitly (--commit); the default peels the tag from origin, and no tag
+# exists yet.
 cd ~/data/repo/personal/anti-vocale
 python3 scripts/new-fdroid-version.py \
-  --recipe ~/data/repo/personal/fdroid-data/metadata/com.antivocale.app.yml --write
+  --recipe ~/data/repo/personal/fdroid-data/metadata/com.antivocale.app.yml \
+  --commit "$SHA" --write
 cd - && git diff metadata/com.antivocale.app.yml   # review the generated blocks
 ```
 
 **Cross-check BEFORE pushing anywhere (TASK-420):** run
-`SKIP_BINARY_URLS=1 scripts/check-fdroid-release.sh` from the repo root and require
+`SKIP_BINARY_URLS=1 EXPECT_COMMIT="$SHA" scripts/check-fdroid-release.sh vX.Y.Z`
+from the repo root and require
 ALL CHECKS PASSED. It pins the invariants that drifted silently on 2026-08-31
 (stale sherpa srclib pin cloned from the old blocks: 1.13.4 in the recipe vs
 1.13.5 in the app; issue #38) and rejects consecutive blank lines, the
 formatting class that made the fork CI's `fdroid rewritemeta` job red on
 1.11.1 (a generator join bug fixed 2026-09-01). SKIP_BINARY_URLS=1 because on a fresh release the
-signed assets only exist after step 5's dispatch; the FULL checker (URLs included,
+signed assets only exist after step 5b's publish act; the FULL checker (URLs included,
 no env var) is the post-build, pre-bot-MR gate. If the pin check fails, the
 generator should already have synced it: a failure means the recipe was edited by
 hand, fix the blocks and re-run.
@@ -151,28 +162,28 @@ scripts/sync-fdroid-mirror.sh
 # DRY_RUN=1 prints the actions instead (fetches, guard and diff still run).
 ```
 
-## Step 5. Build reference APKs (reproducible F-Droid)
+## Step 5. Build reference APKs (reproducible F-Droid, pre-tag dispatch)
 
-Now dispatch the workflow. The job clones the mirror recipe (which now points
-at the correct commit), builds, signs, and uploads.
+Dispatch the workflow with the bump COMMIT (no tag exists yet). The job clones
+the mirror recipe (which points at that commit), builds, signs, and uploads
+every release asset as workflow ARTIFACTS; nothing is published.
 
 ```
-gh workflow run android-release.yml -f tag=vX.Y.Z
+gh workflow run android-release.yml -f commit=$SHA
 ```
 
 One command chains the whole pre-build half: gate A (the SKIP_BINARY_URLS=1
-checker), the mirror sync above, the stale-asset cleanup below, and this
-dispatch:
+checker in EXPECT_COMMIT mode), the mirror sync above, the stale-asset cleanup
+below (a no-op while the release does not exist), and this dispatch:
 
 ```
-scripts/release-fdroid-references.sh prepare vX.Y.Z
+scripts/release-fdroid-references.sh prepare vX.Y.Z $SHA
 ```
 
 A built-in guard step fails the job fast if the recipe's `commit:` does not match
-the peeled commit of the dispatched tag, so a stale-recipe reference cannot ship
-silently.
+the dispatched SHA, so a stale-recipe reference cannot ship silently.
 
-**Stale-asset rule:** before ANY re-dispatch of the same tag, DELETE the
+**Stale-asset rule:** before ANY re-dispatch after publishing, DELETE the
 canonical `app-fdroid-*` release assets (signed + unsigned): the workflow's
 uploads are the `binary:` targets, and whatever is attached when the recipe
 pushes is what F-Droid ships. The script cannot tell a "right" prior asset
@@ -180,16 +191,42 @@ from a wrong one, so the cleanup is unconditional; `prepare` does it
 automatically (pattern-matched against the live asset list).
 
 Two jobs:
-1. `Build` assembles the unsigned APKs and uploads them with `-unsigned` suffix.
+1. `Build` assembles the unsigned APKs (artifact `app-fdroid-release`) and the
+   tester APKs (artifact `tester-apks`).
 2. `reproducible-fdroid` rebuilds inside the F-Droid buildserver image, signs the
-   three per-ABI APKs with `apksigner` (v2/v3 only, `--alignment-preserved`), and
-   uploads them as `app-fdroid-<abi>-release.apk` (no `-unsigned` suffix).
+   three per-ABI APKs with `apksigner` (v2/v3 only, `--alignment-preserved`),
+   and uploads them as the `fdroid-signed-references` artifact.
 
 This is the slowest step: sherpa-onnx is compiled from source for 3 ABIs (~25-40 min).
 
-Proof: `gh run view <id> --json jobs` shows `reproducible-fdroid` = success, and
-`gh release view vX.Y.Z --json assets --jq '.assets[].name'` lists the three
-**signed** (no `-unsigned`) APKs.
+Proof: `gh run view <id> --json jobs` shows `reproducible-fdroid` = success and
+the three artifacts present; NOTE the run id (`gh run list --event
+workflow_dispatch --limit 1`) for Step 5b. `gh release view vX.Y.Z` still 404s:
+nothing is public yet.
+
+## Step 5b. Publish: tag + release + all binaries in one act
+
+`scripts/release-create.sh` downloads the three artifacts, verifies the 12-file
+set, and creates the tag, the release, and every asset with ONE `gh release
+create`. That single command is the moment the version becomes public; from it
+on, the recipe's `binary:` URLs all resolve, so the checkupdates bot cannot hit
+a partial release whatever its schedule.
+
+```
+scripts/release-create.sh vX.Y.Z --run-id <id> --commit $SHA --notes-file <github-body.md>
+```
+
+`--notes-file` is the curated GitHub release body from Step 2.2 saved to a file.
+
+Proof: the script's post-checks pass (tag at `$SHA`, 12 assets). `gh release
+view vX.Y.Z --json assets --jq '.assets[].name'` lists the three **signed** (no
+`-unsigned`) APKs among them. If `gh release create` dies mid-upload the post
+checks fail loudly; finish with `gh release upload vX.Y.Z <remaining files>`
+(the release is public but partial until then, so act quickly).
+
+LEGACY fallback (`-f tag=` dispatch, the workflow creates the release itself):
+still supported by `prepare vX.Y.Z` without the commit arg; do not use it for
+releases the bot can race.
 
 ## Step 6. Verify binary: URLs resolve
 
@@ -211,7 +248,8 @@ the reproducible job to have SUCCEEDED (not just finished) and the fork and
 mirror recipes to be identical. It exists because on 2026-08-31 the recipe was
 pushed while the reference build was still running, and the fdroiddata
 pipeline failed on 404 binary URLs; run it before every recipe push, after
-Step 5 completes.
+Step 5b completes (the release must exist by then; in build-first order it
+does, created by the publish act).
 
 **Only after the gate passes, push the fork** (this is what triggers the
 fdroiddata pipeline; until now the signed APKs were not there yet). The push
@@ -266,14 +304,16 @@ Proof: Play Console shows the new release in review/published.
 
 ## Preflight and verify gates (TASK-335, added after v1.10.0)
 
-One command before every tagging and before every workflow dispatch:
+One command before the pre-tag dispatch and again before publishing:
 
 ```bash
-scripts/release-preflight.sh --tag vX.Y.Z   # add --offline to skip network checks
+scripts/release-preflight.sh --tag vX.Y.Z --commit $SHA   # --commit: build-first (no tag yet); add --offline to skip network checks
 # The preflight checks that .sherpa-version, fetch-sherpa-aar.sh, and the
 # build.gradle.kts SRCLIB PIN comment are in sync, and that the fork recipe's
-# srclib pin matches the commit in .sherpa-version.
-scripts/release-verify.sh vX.Y.Z            # after the signing job completes
+# srclib pin matches the commit in .sherpa-version. --commit makes the
+# recipe-commit check run against the bump SHA instead of a tag that does not
+# exist yet (without it, preflight fails spuriously in build-first order).
+scripts/release-verify.sh vX.Y.Z            # after the publish act completes
 ```
 
 The preflight encodes every failure mode of the v1.10.0 release day:
