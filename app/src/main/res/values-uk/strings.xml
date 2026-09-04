@@ -442,7 +442,18 @@
     <string name="output_folder_choose">Вибрати папку</string>
     <string name="output_folder_clear">Очистити папку</string>
 
+    <!-- Settings Tab - Punctuation (TASK-276) -->
     <!-- Settings Tab - VAD -->
+    <string name="punctuation_status">Форматування ШІ…</string>
+    <string name="punctuation_mode_title">Пунктуація та форматування</string>
+    <string name="punctuation_mode_description">Переписує розшифровки без пунктуації моделлю Gemma. Автоматично лише для моделей без пунктуації (потрібно завантажене Gemma).</string>
+    <string name="punctuation_mode_off">Вимкнено</string>
+    <string name="punctuation_mode_auto">Автоматично</string>
+    <string name="punctuation_mode_always">Завжди</string>
+    <string name="punctuation_prompt_title">Промпт пунктуації</string>
+    <string name="punctuation_prompt_description">Інструкція для кроку пунктуації. Залиште порожнім, щоб використати вбудовану.</string>
+    <string name="punctuation_prompt_placeholder">Вбудований промпт</string>
+    <string name="punctuation_default_prompt">Додай пунктуацію та великі літери до цієї розшифровки. Збережи кожне слово точно як написано; нічого не виправляй, не перекладай, не додавай і не видаляй. Виведи лише виправлену розшифровку.</string>
     <string name="vad_title">Прибирати тишу (VAD)</string>
     <string name="vad_description">Видаляє тихі частини з голосових повідомлень перед розшифровкою. Зменшує час обробки та покращує точність.</string>
     <string name="progressive_title">Поступове відображення</string>

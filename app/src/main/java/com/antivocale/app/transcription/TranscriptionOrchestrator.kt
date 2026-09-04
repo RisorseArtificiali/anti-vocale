@@ -239,7 +239,22 @@ class TranscriptionOrchestrator @Inject constructor(
 
             val duration = System.currentTimeMillis() - startTime
 
-            result.fold(
+            // TASK-276: the punctuation pass maps the RESULT before the fold, so
+            // the returned value, the log row and the notification all carry the
+            // same final text. It runs exactly once at this single funnel for
+            // every decode path (pipeline, parallel, VAD-progressive); text
+            // requests are the LLM's own output and take no pass.
+            val delivered: Result<TranscriptionResult> =
+                if (requestType == "audio" && result.isSuccess) {
+                    // Captured once here (not re-read inside the pass): the
+                    // backend that produced this result. The queue is serial,
+                    // so nothing else has swapped it since the ASR finished.
+                    val asrBackendId = backendManager.getActiveBackend()?.id
+                    if (asrBackendId == null) result
+                    else result.map { applyPunctuationPass(context, asrBackendId, it, listener) }
+                } else result
+
+            delivered.fold(
                 onSuccess = { transcriptionResult ->
                     logSuccess(
                         taskId,
@@ -265,7 +280,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             )
 
-            return result.map { it.text }
+            return delivered.map { it.text }
 
         } catch (e: CancellationException) {
             val duration = System.currentTimeMillis() - startTime
@@ -367,6 +382,73 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     // ---- Backend Loading ----
+
+    /**
+     * TASK-276: the punctuation pass. Chains Gemma after a non-punctuating ASR
+     * model (GigaAM today): the transcript is complete in hand, so loading the
+     * LLM through the normal backend swap unloads the ASR model first and the
+     * two are never resident together. Every skip path (mode, per-model flag,
+     * the text's own punctuation, context limit, no Gemma configured) avoids
+     * the swap entirely, and any failure degrades to the raw transcript: an
+     * optional polish may never fail a completed transcription. The backend
+     * that produced the text is the manager's active one at fold time (the
+     * queue is serial, so nothing else has loaded since).
+     */
+    private suspend fun applyPunctuationPass(
+        context: Context,
+        asrBackendId: String,
+        result: TranscriptionResult,
+        listener: TranscriptionListener,
+    ): TranscriptionResult {
+        // The LLM's own ASR output is covered by the custom-prompt final pass
+        // (ChunkPromptPolicy.plan); polishing it here would double-pass.
+        if (asrBackendId == LlmTranscriptionBackend.BACKEND_ID) return result
+        // Everything from here runs under runCatching: a preference read, a
+        // backend swap, or a generation failure in an OPTIONAL polish must
+        // never break the delivery of a finished transcript.
+        return runCatching {
+            val mode = PunctuationPolicy.modeFromPref(preferencesManager.punctuationMode.first())
+            val modelPunctuates = backendRegistry.byBackendId(asrBackendId)?.punctuatesOutput ?: true
+            if (!PunctuationPolicy.shouldRun(mode, modelPunctuates, result.text)) return@runCatching result
+            if (!PunctuationPolicy.withinContextLimit(result.text)) {
+                Log.i(TAG, "Punctuation pass skipped: ${result.text.length} chars exceeds the Gemma context guard")
+                return@runCatching result
+            }
+            if (preferencesManager.modelPath.first().isNullOrBlank()) {
+                Log.i(TAG, "Punctuation pass skipped: no Gemma model configured (delivering raw transcript)")
+                return@runCatching result
+            }
+            listener.onStatusUpdate(context.getString(R.string.punctuation_status))
+            ensureBackendLoaded(context, LlmTranscriptionBackend.BACKEND_ID).getOrThrow()
+            val llm = backendManager.getActiveBackend() ?: error("LLM backend not active after load")
+            val prompt = ChunkPromptPolicy.finalPrompt(
+                PunctuationPolicy.effectivePrompt(
+                    preferencesManager.punctuationPrompt.first(),
+                    context.getString(R.string.punctuation_default_prompt)),
+                result.text)
+            val polished = llm.generateText(prompt).getOrThrow().trim()
+            if (!PunctuationPolicy.acceptablePolish(polished, result.text)) {
+                error("punctuation pass collapsed the transcript " +
+                    "(${polished.length} vs ${result.text.length} chars); keeping the original")
+            }
+            result.copy(text = polished.ifBlank { result.text })
+        }.fold(
+            onSuccess = { polished ->
+                if (polished !== result) {
+                    Log.i(TAG, "Punctuation pass applied (${result.text.length} -> ${polished.text.length} chars)")
+                }
+                polished
+            },
+            onFailure = { e ->
+                // A cancellation (user cancel, queue teardown) is not a polish
+                // failure: rethrow so processRequest's dedicated
+                // CancellationException handling keeps its contract.
+                if (e is CancellationException) throw e
+                Log.w(TAG, "Punctuation pass failed; delivering the raw transcript", e)
+                result
+            },
+        )
+    }
 
     private suspend fun ensureBackendLoaded(
         context: Context,

@@ -107,6 +107,10 @@ abstract class TranscriptionOrchestratorTestBase {
         every { preferencesManager.defaultPrompt } returns flowOf("")
         every { preferencesManager.keepAliveTimeout } returns flowOf(5)
         every { preferencesManager.progressiveTranscription } returns flowOf(false)
+        // TASK-276: OFF by default in the fixture so existing tests never take
+        // the punctuation pass; the dedicated pass test overrides these.
+        every { preferencesManager.punctuationMode } returns flowOf("off")
+        every { preferencesManager.punctuationPrompt } returns flowOf("")
         every { preferencesManager.sherpaModelPath("whisper") } returns flowOf("/models/whisper")
     }
 

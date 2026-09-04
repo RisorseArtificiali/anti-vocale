@@ -11,6 +11,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.File
@@ -297,4 +298,17 @@ class BackendRegistryTest {
         // Store records are keyed by identity, not a path preference: saving redirects the record's dir.
         assertEquals("/new/dir", store.records().first().dir)
     }
+    @Test
+    fun `punctuation flag is false only for gigaam`() {
+        // TASK-276: the AUTO mode of the punctuation pass keys on this flag.
+        val byId = registry.backends.associateBy { it.backendId }
+        assertFalse("gigaam must be flagged non-punctuating",
+            byId.getValue(BuiltInBackendIds.GIGAAM).punctuatesOutput)
+        for (id in BuiltInBackendIds.ALL.filter { it != BuiltInBackendIds.GIGAAM }) {
+            assertTrue("$id must keep the punctuating default", byId.getValue(id).punctuatesOutput)
+        }
+        assertTrue("llm must keep the punctuating default",
+            byId.getValue(LlmTranscriptionBackend.BACKEND_ID).punctuatesOutput)
+    }
+
 }

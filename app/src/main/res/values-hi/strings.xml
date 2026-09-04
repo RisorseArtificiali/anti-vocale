@@ -410,7 +410,18 @@
     <string name="output_folder_choose">फ़ोल्डर चुनें</string>
     <string name="output_folder_clear">फ़ोल्डर हटाएं</string>
 
+    <!-- Settings Tab - Punctuation (TASK-276) -->
     <!-- Settings Tab - VAD -->
+    <string name="punctuation_status">AI से फ़ॉर्मैट हो रहा है…</string>
+    <string name="punctuation_mode_title">विराम चिह्न और फ़ॉर्मैटिंग</string>
+    <string name="punctuation_mode_description">बिना विराम चिह्न वाली ट्रांसक्रिप्शन को Gemma मॉडल से फिर से लिखता है। स्वतः केवल उन मॉडलों के लिए जो विराम चिह्न नहीं लगाते (Gemma डाउनलोड आवश्यक)।</string>
+    <string name="punctuation_mode_off">बंद</string>
+    <string name="punctuation_mode_auto">स्वतः</string>
+    <string name="punctuation_mode_always">हमेशा</string>
+    <string name="punctuation_prompt_title">विराम चिह्न प्रॉम्प्ट</string>
+    <string name="punctuation_prompt_description">विराम चिह्न चरण के लिए निर्देश। अंतर्निहित प्रॉम्प्ट के लिए खाली छोड़ें।</string>
+    <string name="punctuation_prompt_placeholder">अंतर्निहित प्रॉम्प्ट</string>
+    <string name="punctuation_default_prompt">इस ट्रांसक्रिप्शन में विराम चिह्न और बड़े अक्षर जोड़ें। हर शब्द बिल्कुल वैसा ही रखें जैसा लिखा है; कुछ भी ठीक न करें, अनुवाद न करें, जोड़ें नहीं या हटाएँ नहीं। केवल सुधारी हुई ट्रांसक्रिप्शन ही लिखें।</string>
     <string name="vad_title">मौन हटाएं (VAD)</string>
     <string name="vad_description">ट्रांसक्रिप्शन से पहले वॉइस मैसेज के ख़ामोश हिस्से हटाएं। प्रोसेसिंग समय घटता है और सटीकता बेहतर होती है।</string>
     <string name="progressive_title">प्रगतिशील डिस्प्ले</string>

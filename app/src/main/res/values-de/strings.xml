@@ -411,7 +411,18 @@
     <string name="output_folder_choose">Ordner auswählen</string>
     <string name="output_folder_clear">Leeren</string>
 
+    <!-- Settings Tab - Punctuation (TASK-276) -->
     <!-- Settings Tab - VAD -->
+    <string name="punctuation_status">Formatierung mit KI…</string>
+    <string name="punctuation_mode_title">Zeichensetzung und Formatierung</string>
+    <string name="punctuation_mode_description">Schreibt Transkripte ohne Zeichensetzung mit dem Gemma-Modell neu. Automatisch nur für Modelle ohne Zeichensetzung (erfordert das heruntergeladene Gemma).</string>
+    <string name="punctuation_mode_off">Aus</string>
+    <string name="punctuation_mode_auto">Automatisch</string>
+    <string name="punctuation_mode_always">Immer</string>
+    <string name="punctuation_prompt_title">Zeichensetzungs-Prompt</string>
+    <string name="punctuation_prompt_description">Anweisung für den Zeichensetzungsschritt. Leer lassen, um den eingebauten Prompt zu verwenden.</string>
+    <string name="punctuation_prompt_placeholder">Eingebauter Prompt</string>
+    <string name="punctuation_default_prompt">Füge dieser Transkription Zeichensetzung und Großschreibung hinzu. Behalte jedes Wort genau wie geschrieben; korrigiere, übersetze, ergänze oder entferne nichts. Gib nur die korrigierte Transkription aus.</string>
     <string name="vad_title">Stille entfernen (VAD)</string>
     <string name="vad_description">Entfernt stille Abschnitte aus Sprachnachrichten vor der Transkription. Reduziert die Verarbeitungszeit und verbessert die Genauigkeit.</string>
     <string name="progressive_title">Progressive Anzeige</string>

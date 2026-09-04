@@ -62,6 +62,8 @@ class PreferencesManagerImpl(
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
         private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
+        private val PUNCTUATION_MODE = stringPreferencesKey("punctuation_mode")
+        private val PUNCTUATION_PROMPT = stringPreferencesKey("punctuation_prompt")
         private val THREAD_COUNT = intPreferencesKey("thread_count")
         private val INFERENCE_PROVIDER = stringPreferencesKey("inference_provider")
         private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
@@ -98,6 +100,8 @@ class PreferencesManagerImpl(
         val vadEnabled: Boolean = PreferencesManager.DEFAULT_VAD_ENABLED,
         val progressiveTranscription: Boolean = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         val defaultPrompt: String = PreferencesManager.DEFAULT_PROMPT_VALUE,
+        val punctuationMode: String = PreferencesManager.DEFAULT_PUNCTUATION_MODE,
+        val punctuationPrompt: String = "",
         val threadCount: Int = PreferencesManager.DEFAULT_THREAD_COUNT,
         val inferenceProvider: String = PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         val transcriptionLanguage: String = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
@@ -134,6 +138,8 @@ class PreferencesManagerImpl(
         vadEnabled = this[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED,
         progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         defaultPrompt = this[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE,
+        punctuationMode = this[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE,
+        punctuationPrompt = this[PUNCTUATION_PROMPT] ?: "",
         threadCount = this[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT,
         inferenceProvider = this[INFERENCE_PROVIDER] ?: PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
@@ -353,6 +359,29 @@ class PreferencesManagerImpl(
             preferences[DEFAULT_PROMPT] = truncated
         }
         cache.updateAndGet { it.copy(defaultPrompt = truncated) }
+    }
+
+    override val punctuationMode: Flow<String> = dataStore.data.map { it[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE }
+        .onStart { emit(cache.get().punctuationMode) }
+
+    override suspend fun savePunctuationMode(mode: String) {
+        dataStore.edit { preferences ->
+            preferences[PUNCTUATION_MODE] = mode
+        }
+        cache.updateAndGet { it.copy(punctuationMode = mode) }
+    }
+
+    override val punctuationPrompt: Flow<String> = dataStore.data.map { it[PUNCTUATION_PROMPT] ?: "" }
+        .onStart { emit(cache.get().punctuationPrompt) }
+
+    override suspend fun savePunctuationPrompt(prompt: String) {
+        // Same 500-char cap as the default transcription prompt: one
+        // instruction paragraph, not an essay (TASK-276).
+        val truncated = prompt.take(500)
+        dataStore.edit { preferences ->
+            preferences[PUNCTUATION_PROMPT] = truncated
+        }
+        cache.updateAndGet { it.copy(punctuationPrompt = truncated) }
     }
 
     override val threadCount: Flow<Int> = dataStore.data.map { it[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT }

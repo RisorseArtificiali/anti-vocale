@@ -440,7 +440,18 @@
     <string name="output_folder_choose">Wybierz folder</string>
     <string name="output_folder_clear">Wyczyść folder</string>
 
+    <!-- Settings Tab - Punctuation (TASK-276) -->
     <!-- Settings Tab - VAD -->
+    <string name="punctuation_status">Formatowanie przez AI…</string>
+    <string name="punctuation_mode_title">Interpunkcja i formatowanie</string>
+    <string name="punctuation_mode_description">Przepisuje transkrypcje bez interpunkcji modelem Gemma. Automatycznie tylko dla modeli bez interpunkcji (wymaga pobranego Gemma).</string>
+    <string name="punctuation_mode_off">Wyłączona</string>
+    <string name="punctuation_mode_auto">Automatycznie</string>
+    <string name="punctuation_mode_always">Zawsze</string>
+    <string name="punctuation_prompt_title">Prompt interpunkcji</string>
+    <string name="punctuation_prompt_description">Instrukcja dla kroku interpunkcji. Zostaw puste, aby użyć wbudowanej.</string>
+    <string name="punctuation_prompt_placeholder">Wbudowany prompt</string>
+    <string name="punctuation_default_prompt">Dodaj interpunkcję i wielkie litery do tej transkrypcji. Zachowaj każde słowo dokładnie jak napisane; niczego nie poprawiaj, nie tłumacz, nie dodawaj ani nie usuwaj. Zwróć tylko poprawioną transkrypcję.</string>
     <string name="vad_title">Usuwanie ciszy (VAD)</string>
     <string name="vad_description">Usuwa ciche fragmenty z wiadomości głosowych przed transkrypcją. Skraca czas przetwarzania i poprawia dokładność.</string>
     <string name="progressive_title">Wyświetlanie progresywne</string>

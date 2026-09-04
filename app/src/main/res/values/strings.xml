@@ -430,6 +430,17 @@
     <string name="output_folder_clear">Clear folder</string>
 
     <!-- Settings Tab - VAD -->
+    <!-- Settings Tab - Punctuation (TASK-276) -->
+    <string name="punctuation_status">Formatting with AI…</string>
+    <string name="punctuation_mode_title">Punctuation and Formatting</string>
+    <string name="punctuation_mode_description">Rewrite unpunctuated transcripts with the Gemma model. Automatic runs only for models that do not punctuate (needs Gemma downloaded).</string>
+    <string name="punctuation_mode_off">Off</string>
+    <string name="punctuation_mode_auto">Automatic</string>
+    <string name="punctuation_mode_always">Always</string>
+    <string name="punctuation_prompt_title">Punctuation Prompt</string>
+    <string name="punctuation_prompt_description">Instruction for the punctuation pass. Leave empty to use the built-in prompt.</string>
+    <string name="punctuation_prompt_placeholder">Built-in prompt</string>
+    <string name="punctuation_default_prompt">Add punctuation and capitalization to this transcript. Keep every word exactly as written; do not fix, translate, add, or remove anything. Output only the corrected transcript.</string>
     <string name="vad_title">Strip Silence (VAD)</string>
     <string name="vad_description">Remove silent portions from voice messages before transcription. Reduces processing time and improves accuracy.</string>
     <string name="progressive_title">Progressive Display</string>

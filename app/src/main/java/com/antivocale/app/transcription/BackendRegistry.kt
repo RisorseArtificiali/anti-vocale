@@ -82,6 +82,14 @@ data class BackendDescriptor(
      */
     val rtfEstimate: Float = 1f,
 
+    /**
+     * False for ASR models that emit unpunctuated text (GigaAM v3): the
+     * punctuation pass (TASK-276) keys on this in AUTO mode. Defaults true:
+     * every other bundled family punctuates, and external imports keep the
+     * default (SenseVoice and the encoder-decoder families do too).
+     */
+    val punctuatesOutput: Boolean = true,
+
     /** Dedicated localized display name, or null when the name derives from the model path. */
     val displayNameResId: Int? = null,
 
@@ -215,11 +223,15 @@ class BackendRegistry @Inject constructor(
         // the other offline sherpa families cluster around 4x. Calibrator samples
         // replace these after two runs on the actual device.
         val rtf = if (entry.id == BuiltInBackendIds.PARAKEET) 15f else 4f
+        // TASK-276: GigaAM v3 emits unpunctuated Russian; every other bundled
+        // family punctuates. The punctuation pass trusts this in AUTO mode.
+        val punctuates = entry.id != BuiltInBackendIds.GIGAAM
         return BackendDescriptor(
             backendId = entry.id,
             shareAlias = entry.shareAlias,
             isStreaming = entry.isStreaming,
             rtfEstimate = rtf,
+            punctuatesOutput = punctuates,
             displayNameResId = when {
                 entry.hasExplicitDisplay && entry.display is CatalogDisplay.Resource ->
                     CatalogStringKeys.resolve(entry.display.key)

@@ -6,6 +6,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.LlmTranscriptionBackend
+import com.antivocale.app.transcription.PunctuationPolicy
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
@@ -65,6 +66,8 @@ internal class TestSpiOps(
             .put("op", OP_GET)
             .put("vadEnabled", preferences.vadEnabled.first())
             .put("progressiveEnabled", preferences.progressiveTranscription.first())
+            .put("punctuationMode", preferences.punctuationMode.first())
+            .put("punctuationPrompt", preferences.punctuationPrompt.first())
             .put("threadCount", preferences.threadCount.first())
             .put("inferenceProvider", preferences.inferenceProvider.first())
             .put("transcriptionLanguage", preferences.transcriptionLanguage.first())
@@ -102,6 +105,15 @@ internal class TestSpiOps(
                     ?: return setError("progressive expects true or false, got '$value'")
                 preferences.saveProgressiveTranscription(enabled)
             }
+            // TASK-276: the punctuation pass mode matches the settings
+            // dropdown's exact set; anything else would silently run as AUTO.
+            "punctuation" -> {
+                if (value !in PUNCTUATION_MODES) {
+                    return setError("punctuation expects one of ${PUNCTUATION_MODES.joinToString(", ")}, got '$value'")
+                }
+                preferences.savePunctuationMode(value)
+            }
+            "punctuation_prompt" -> preferences.savePunctuationPrompt(value)
             "threads" -> {
                 val threads = value.toIntOrNull()
                     ?: return setError("threads expects an integer, got '$value'")
@@ -205,6 +217,9 @@ internal class TestSpiOps(
         const val OP_HELP = "help"
 
         /** Every key accepted by `op=set`, in help order. */
-        val SET_KEYS = listOf("vad", "progressive", "threads", "provider", "backend", "language", "model_path", "sherpa_path")
+        val SET_KEYS = listOf("vad", "progressive", "punctuation", "punctuation_prompt", "threads", "provider", "backend", "language", "model_path", "sherpa_path")
+
+        /** TASK-276: the single source is PunctuationPolicy.MODE_PREFS; the SPI only adds write-time strictness. */
+        val PUNCTUATION_MODES = PunctuationPolicy.MODE_PREFS
     }
 }

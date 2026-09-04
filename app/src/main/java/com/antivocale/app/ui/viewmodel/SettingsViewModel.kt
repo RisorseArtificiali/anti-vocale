@@ -18,6 +18,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.transcription.InferenceProvider
+import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.manager.LlmManager
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
@@ -158,6 +159,21 @@ class SettingsViewModel @Inject constructor(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE
+        )
+
+    // TASK-276: punctuation pass mode + user prompt override.
+    val punctuationModeOptions: List<String> = PunctuationPolicy.MODE_PREFS
+    val currentPunctuationMode: StateFlow<String> = preferencesManager.punctuationMode
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_PUNCTUATION_MODE
+        )
+    val currentPunctuationPrompt: StateFlow<String> = preferencesManager.punctuationPrompt
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ""
         )
 
     // TASK-336: background-kill detection (cold-start sweep marker rows) for the
@@ -438,6 +454,19 @@ class SettingsViewModel @Inject constructor(
             preferencesManager.saveTranscriptionLanguage(language)
         }
     }
+
+    fun savePunctuationMode(mode: String) {
+        viewModelScope.launch {
+            preferencesManager.savePunctuationMode(mode)
+        }
+    }
+
+    fun savePunctuationPrompt(prompt: String) {
+        viewModelScope.launch {
+            preferencesManager.savePunctuationPrompt(prompt)
+        }
+    }
+
 
     /**
      * Saves the swipe action mode preference.

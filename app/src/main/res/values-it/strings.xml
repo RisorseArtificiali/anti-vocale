@@ -421,6 +421,17 @@
     <string name="auto_copy_description">Copia il testo finito negli appunti. La copia manuale dalla notifica resta disponibile.</string>
 
     <!-- Settings Tab - VAD -->
+    <!-- Settings Tab - Punctuation (TASK-276) -->
+    <string name="punctuation_status">Formattazione con IA…</string>
+    <string name="punctuation_mode_title">Punteggiatura e formattazione</string>
+    <string name="punctuation_mode_description">Riscrive le trascrizioni senza punteggiatura con il modello Gemma. Automatico solo per i modelli che non punteggiano (richiede Gemma scaricato).</string>
+    <string name="punctuation_mode_off">Disattivata</string>
+    <string name="punctuation_mode_auto">Automatica</string>
+    <string name="punctuation_mode_always">Sempre</string>
+    <string name="punctuation_prompt_title">Prompt di punteggiatura</string>
+    <string name="punctuation_prompt_description">Istruzione per la passata di punteggiatura. Lascia vuoto per usare quella integrata.</string>
+    <string name="punctuation_prompt_placeholder">Prompt integrato</string>
+    <string name="punctuation_default_prompt">Aggiungi punteggiatura e maiuscole a questa trascrizione. Mantieni ogni parola esattamente come scritta; non correggere, tradurre, aggiungere o rimuovere nulla. Restituisci solo la trascrizione corretta.</string>
     <string name="vad_title">Rimuovi Silenzio (VAD)</string>
     <string name="vad_description">Rimuovi le parti silenti dai messaggi vocali prima della trascrizione. Riduce il tempo di elaborazione e migliora la precisione.</string>
 

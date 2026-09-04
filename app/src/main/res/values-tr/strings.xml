@@ -432,7 +432,18 @@
     <string name="output_folder_choose">Klasör seç</string>
     <string name="output_folder_clear">Klasörü temizle</string>
 
+    <!-- Settings Tab - Punctuation (TASK-276) -->
     <!-- Settings Tab - VAD -->
+    <string name="punctuation_status">YZ ile biçimlendiriliyor…</string>
+    <string name="punctuation_mode_title">Noktalama ve biçimlendirme</string>
+    <string name="punctuation_mode_description">Noktalamasız transkriptleri Gemma modeliyle yeniden yazar. Otomatik yalnızca noktalama yapmayan modeller için (Gemma indirilmiş olmalı).</string>
+    <string name="punctuation_mode_off">Kapalı</string>
+    <string name="punctuation_mode_auto">Otomatik</string>
+    <string name="punctuation_mode_always">Her zaman</string>
+    <string name="punctuation_prompt_title">Noktalama istemi</string>
+    <string name="punctuation_prompt_description">Noktalama adımı için yönerge. Yerleşik olanı kullanmak için boş bırakın.</string>
+    <string name="punctuation_prompt_placeholder">Yerleşik istem</string>
+    <string name="punctuation_default_prompt">Bu transkripte noktalama ve büyük harfler ekle. Her kelimeyi tam yazıldığı gibi koru; hiçbir şeyi düzeltme, çevirme, ekleme veya çıkarma. Yalnızca düzeltilmiş transkripti yaz.</string>
     <string name="vad_title">Sessizliği Kırp (VAD)</string>
     <string name="vad_description">Metin çıkarmadan önce sesli mesajlardaki sessiz kısımları kaldırır. İşleme süresini azaltır ve doğruluğu artırır.</string>
     <string name="progressive_title">Aşamalı Görüntüleme</string>

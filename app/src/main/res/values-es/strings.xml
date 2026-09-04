@@ -360,6 +360,16 @@
     <string name="output_folder_description">Cada transcripción se guarda como archivo .txt independiente en la carpeta elegida (p. ej. Drive o Syncthing).</string>
     <string name="output_folder_choose">Elegir carpeta</string>
     <string name="output_folder_clear">Quitar carpeta</string>
+    <string name="punctuation_status">Formateando con IA…</string>
+    <string name="punctuation_mode_title">Puntuación y formato</string>
+    <string name="punctuation_mode_description">Reescribe las transcripciones sin puntuación con el modelo Gemma. Automático solo para modelos que no puntúan (requiere Gemma descargado).</string>
+    <string name="punctuation_mode_off">Desactivado</string>
+    <string name="punctuation_mode_auto">Automático</string>
+    <string name="punctuation_mode_always">Siempre</string>
+    <string name="punctuation_prompt_title">Prompt de puntuación</string>
+    <string name="punctuation_prompt_description">Instrucción para el paso de puntuación. Déjalo vacío para usar el integrado.</string>
+    <string name="punctuation_prompt_placeholder">Prompt integrado</string>
+    <string name="punctuation_default_prompt">Añade puntuación y mayúsculas a esta transcripción. Mantén cada palabra exactamente como está escrita; no corrijas, traduzcas, añadas ni quites nada. Devuelve solo la transcripción corregida.</string>
     <string name="vad_title">Eliminar silencios (VAD)</string>
     <string name="vad_description">Elimina las partes de silencio de los mensajes de voz antes de transcribir. Reduce el tiempo de proceso y mejora la precisión.</string>
     <string name="progressive_title">Visualización progresiva</string>

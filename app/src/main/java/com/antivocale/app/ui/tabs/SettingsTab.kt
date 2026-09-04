@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -41,6 +42,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import com.antivocale.app.transcription.InferenceProvider
+import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
@@ -399,6 +401,29 @@ fun SettingsTab(
                     viewModel.saveProgressiveTranscription(enabled)
                 }
             )
+
+            // TASK-276: punctuation pass mode + prompt override
+            val currentPunctuationMode by viewModel.currentPunctuationMode.collectAsState()
+            SettingsDropdown(
+                currentValue = currentPunctuationMode,
+                options = viewModel.punctuationModeOptions,
+                currentValueDisplay = punctuationModeLabel(currentPunctuationMode),
+                optionDisplay = { punctuationModeLabel(it) },
+                onOptionSelected = { viewModel.savePunctuationMode(it) },
+                label = stringResource(R.string.punctuation_mode_title),
+                enabled = !uiState.isSaving
+            )
+            Text(
+                text = stringResource(R.string.punctuation_mode_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (currentPunctuationMode != PunctuationPolicy.PREF_OFF) {
+                PunctuationPromptCard(
+                    prompt = viewModel.currentPunctuationPrompt.collectAsState().value,
+                    onSave = { viewModel.savePunctuationPrompt(it) }
+                )
+            }
 
             // Default Prompt Setting Navigation Card
             Card(
@@ -1815,3 +1840,54 @@ private val transcriptionSentinelLabels = mapOf(
     TranscriptionLanguagePolicy.PREF_SYSTEM to R.string.transcription_language_system,
     TranscriptionLanguagePolicy.PREF_AUTO to R.string.transcription_language_auto,
 )
+
+/**
+ * TASK-276: editable override of the punctuation-pass prompt. Blank means the
+ * localized built-in default. Commits on focus loss so DataStore is not
+ * written per keystroke (same 500-char cap as the impl layer).
+ */
+@Composable
+private fun PunctuationPromptCard(
+    prompt: String,
+    onSave: (String) -> Unit,
+) {
+    var text by remember(prompt) { mutableStateOf(prompt) }
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.punctuation_prompt_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = stringResource(R.string.punctuation_prompt_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedTextField(
+                value = text,
+                onValueChange = { text = it.take(500) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onFocusChanged { focused ->
+                        if (!focused.isFocused && text != prompt) onSave(text)
+                    },
+                placeholder = { Text(stringResource(R.string.punctuation_prompt_placeholder)) },
+                minLines = 2,
+                supportingText = {
+                    Text(stringResource(R.string.default_prompt_chars, text.length))
+                }
+            )
+        }
+    }
+}
+
+
+/** TASK-276: pref value -> localized label, one fallback for unknown values. */
+@Composable
+private fun punctuationModeLabel(pref: String): String = when (pref) {
+    PunctuationPolicy.PREF_OFF -> stringResource(R.string.punctuation_mode_off)
+    PunctuationPolicy.PREF_ALWAYS -> stringResource(R.string.punctuation_mode_always)
+    else -> stringResource(R.string.punctuation_mode_auto)
+}

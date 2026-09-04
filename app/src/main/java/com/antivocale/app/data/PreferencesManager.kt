@@ -33,6 +33,10 @@ interface PreferencesManager {
     val vadAdvisoryDismissed: Flow<Boolean>
     val progressiveTranscription: Flow<Boolean>
     val defaultPrompt: Flow<String>
+    /** TASK-276 punctuation pass mode: "off" | "auto" | "always"; default "auto". */
+    val punctuationMode: Flow<String>
+    /** TASK-276 user override of the punctuation prompt; blank = the localized curated default. */
+    val punctuationPrompt: Flow<String>
     val threadCount: Flow<Int>
     val inferenceProvider: Flow<String>
     val transcriptionLanguage: Flow<String>
@@ -67,6 +71,8 @@ interface PreferencesManager {
     suspend fun saveVadAdvisoryDismissed(dismissed: Boolean)
     suspend fun saveProgressiveTranscription(enabled: Boolean)
     suspend fun saveDefaultPrompt(prompt: String)
+    suspend fun savePunctuationMode(mode: String)
+    suspend fun savePunctuationPrompt(prompt: String)
     suspend fun saveThreadCount(threads: Int)
     suspend fun saveInferenceProvider(provider: String)
     suspend fun saveTranscriptionLanguage(language: String)
@@ -98,6 +104,8 @@ interface PreferencesManager {
         const val DEFAULT_VAD_ENABLED = false
         const val DEFAULT_PROGRESSIVE_TRANSCRIPTION = true
         const val DEFAULT_PROMPT_VALUE = ""
+        /** TASK-276: the AUTO mode trusts the per-model punctuatesOutput flag. */
+        const val DEFAULT_PUNCTUATION_MODE = "auto"
         const val DEFAULT_THEME = "DEFAULT"
         const val DEFAULT_THEME_MODE = "SYSTEM"
         const val DEFAULT_TRANSCRIPTION_BACKEND = "sherpa-onnx"
