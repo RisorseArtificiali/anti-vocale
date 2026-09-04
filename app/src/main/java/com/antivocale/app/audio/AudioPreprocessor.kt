@@ -39,6 +39,16 @@ class AudioPreprocessor @Inject constructor() {
          */
         internal fun vadMergeLimitSeconds(maxChunkDurationSeconds: Int?): Int =
             ((maxChunkDurationSeconds ?: 30) - 2).coerceAtLeast(1)
+
+        /**
+         * Chunk-count estimate for the streaming header (progress subtext and
+         * PERF summary): CEIL of duration/cap, floor 1. The decode loop always
+         * emits a final remainder chunk, so a floor here under-counts by one
+         * for every non-exact multiple (TASK-444).
+         */
+        internal fun expectedChunkCount(totalDurationSeconds: Double, chunkDurationSeconds: Int): Int =
+            kotlin.math.ceil(totalDurationSeconds / chunkDurationSeconds).toInt().coerceAtLeast(1)
+
         private const val TARGET_SAMPLE_RATE = 16000
         private const val TARGET_CHANNELS = 1
         private const val MAX_FILE_SIZE_BYTES = 2L * 1024 * 1024 * 1024 // 2GB sanity bound
@@ -292,7 +302,7 @@ class AudioPreprocessor @Inject constructor() {
 
                 val chunkSamples = if (maxChunkDurationSeconds != null) inputSampleRate * maxChunkDurationSeconds else Int.MAX_VALUE
                 val expectedChunks = if (maxChunkDurationSeconds != null) {
-                    (totalDurationSeconds / maxChunkDurationSeconds).toInt().coerceAtLeast(1)
+                    expectedChunkCount(totalDurationSeconds, maxChunkDurationSeconds)
                 } else 1
 
                 val outputSampleRate = if (inputSampleRate != TARGET_SAMPLE_RATE) TARGET_SAMPLE_RATE else inputSampleRate

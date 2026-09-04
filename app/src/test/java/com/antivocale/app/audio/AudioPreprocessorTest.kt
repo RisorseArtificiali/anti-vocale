@@ -270,4 +270,18 @@ class AudioPreprocessorTest {
         assertEquals(600, merged[0].size)
         assertTrue(FloatArray(600) { if (it < 300) it.toFloat() else 1000f + (it - 300) }.contentEquals(merged[0]))
     }
+
+    @Test
+    fun `expectedChunkCount ceils instead of flooring`() {
+        // TASK-444, device-verified miscount: 226.59s at a 150s cap emitted
+        // "expecting 1 chunks" while the decoder correctly produced 2.
+        assertEquals(2, AudioPreprocessor.expectedChunkCount(226.59, 150))
+        // exact multiple: no remainder chunk
+        assertEquals(2, AudioPreprocessor.expectedChunkCount(300.0, 150))
+        // under one cap: single chunk
+        assertEquals(1, AudioPreprocessor.expectedChunkCount(122.01, 150))
+        assertEquals(1, AudioPreprocessor.expectedChunkCount(0.8, 150))
+        // one second over the cap is already 2 chunks
+        assertEquals(2, AudioPreprocessor.expectedChunkCount(151.0, 150))
+    }
 }
