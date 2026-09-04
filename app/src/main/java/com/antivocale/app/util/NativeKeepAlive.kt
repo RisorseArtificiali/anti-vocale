@@ -1,4 +1,4 @@
-package com.antivocale.app.transcription
+package com.antivocale.app.util
 
 import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.CoroutineScope
@@ -9,15 +9,17 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
- * Idle-unload timer for backends that hold native memory (sherpa-onnx sessions).
+ * Idle-unload timer for engines that hold native memory. Born in TASK-344
+ * for the sherpa-onnx sessions; since TASK-451 the Gemma/LiteRT engine runs
+ * on it too (LlmManager), which is why it lives in util rather than
+ * transcription.
  *
  * Why this exists (TASK-344 / issue #42): the ORT CPU arena backing a loaded
  * sherpa model never shrinks while the session lives, and a loaded Parakeet
  * session retains ~2.3GB of native heap after transcription. OfflineRecognizer
  * .release() provably frees the arena, so unloading when idle returns the
  * process to baseline. The keep-alive timeout used to be a no-op for every
- * sherpa backend; this timer is that missing implementation, mirroring the
- * one LlmManager has always had for the Gemma backend.
+ * sherpa backend; this timer is that missing implementation.
  *
  * Concurrency: [beginWork]/[endWork] bracket a native call; the timer never
  * fires while work is in flight (the flag is re-checked after the delay too,
@@ -65,7 +67,16 @@ class NativeKeepAlive(
         }
     }
 
-    /** Stops the timer and forgets it (call on [TranscriptionBackend.unload]). */
+    /** TASK-451: the effective timeout (user pref or the default fallback). */
+    fun currentTimeoutMinutes(): Int = timeoutMinutes.get()
+
+    /** TASK-451: state reads for LlmManager.getRemainingTimeSeconds and tests. */
+    fun isTimerActiveForTest(): Boolean = timerActive.get()
+
+    /** TASK-451: in-flight generation count, for the bracket tests. */
+    fun workInFlightForTest(): Int = workInFlight.get()
+
+    /** Stops the timer and forgets it (call on the owning backend's unload). */
     fun stop() {
         synchronized(lock) {
             timerActive.set(false)

@@ -5,6 +5,7 @@ import android.util.Log
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.transcription.TranscriptionException
+import com.antivocale.app.util.NativeKeepAlive
 import com.google.ai.edge.litertlm.*
 import com.antivocale.app.util.WavUtils
 import kotlinx.coroutines.*
@@ -104,8 +105,22 @@ open class LlmManager @Inject constructor(
     private var appContext: Context? = null
 
     // Keep-alive timeout management
-    private var keepAliveJob: Job? = null
-    private var keepAliveTimeoutMinutes: Int = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
+
+    // TASK-451: the shared idle-unload component (util.NativeKeepAlive, born in
+    // TASK-344 for sherpa) replaces this manager's hand-rolled timer. The old
+    // timer only RESET before a generation, so a generation longer than the
+    // timeout unloaded the engine mid-stream; the component's work-in-flight
+    // bracket pauses the countdown for the whole call, re-arming on completion
+    // (including failure), and re-checks inactivity after the delay.
+    // The scope carries no dispatcher (ApplicationScope contract): the
+    // component's launch falls back to Dispatchers.Default, exactly the old
+    // timer's explicit default, so the fire path's dispatcher is unchanged.
+    private val keepAlive = NativeKeepAlive(
+        scope = managerScope,
+        tag = TAG,
+        defaultTimeoutMinutes = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT,
+        onIdleUnload = { performAutoUnload() },
+    )
 
     // Mutex to serialize audio transcription — LiteRT-LM only supports ONE conversation at a time,
     // so parallel chunk processing must be serialized to avoid "Conversation is closed" errors.
@@ -122,9 +137,12 @@ open class LlmManager @Inject constructor(
      * After this period of inactivity, the model will be automatically unloaded.
      */
     fun setKeepAliveTimeout(minutes: Int) {
-        keepAliveTimeoutMinutes = if (minutes > 0) minutes else PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
-        Log.d(TAG, "Keep-alive timeout set to $keepAliveTimeoutMinutes minutes")
+        keepAlive.setTimeout(if (minutes > 0) minutes else PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT)
     }
+
+    /** TASK-451 test seam: the shared idle-unload component this manager runs on. */
+    @androidx.annotation.VisibleForTesting
+    internal fun keepAliveForTest(): NativeKeepAlive = keepAlive
 
     /**
      * Sets a callback to be invoked when the model is automatically unloaded due to timeout.
@@ -237,7 +255,7 @@ open class LlmManager @Inject constructor(
             modelPath = path
             isInitialized = true
             _isReady.value = true
-            startKeepAliveTimer()
+            keepAlive.start()
 
             Log.i(TAG, "LiteRT-LM engine initialized successfully (multimodal)")
             Result.success(Unit)
@@ -278,7 +296,7 @@ open class LlmManager @Inject constructor(
             modelPath = path
             isInitialized = true
             _isReady.value = true
-            startKeepAliveTimer()
+            keepAlive.start()
 
             Log.i(TAG, "MediaPipe backend initialized (text only)")
             Result.success(Unit)
@@ -300,15 +318,17 @@ open class LlmManager @Inject constructor(
             return@withContext Result.failure(IllegalStateException("Model not initialized"))
         }
 
-        // Reset keep-alive timer on activity
-        resetKeepAliveTimer()
-
         Log.d(TAG, "Generating text for prompt: ${prompt.take(50)}...")
 
-        return@withContext when (currentBackend) {
-            Backend.LITERT_LM -> generateTextLiteRT(prompt)
-            Backend.MEDIAPIPE_GENAI -> generateTextMediaPipe(prompt)
-            null -> Result.failure(IllegalStateException("No backend initialized"))
+        // TASK-451: the bracket, not a reset. The old reset-before-generate let
+        // a generation longer than the idle timeout unload the engine
+        // mid-stream; withWork pauses the countdown for the whole call.
+        return@withContext keepAlive.withWork {
+            when (currentBackend) {
+                Backend.LITERT_LM -> generateTextLiteRT(prompt)
+                Backend.MEDIAPIPE_GENAI -> generateTextMediaPipe(prompt)
+                null -> Result.failure(IllegalStateException("No backend initialized"))
+            }
         }
     }
 
@@ -372,21 +392,21 @@ open class LlmManager @Inject constructor(
                 return@withContext Result.failure(IllegalStateException("Model not initialized"))
             }
 
-            // Reset keep-alive timer on activity
-            resetKeepAliveTimer()
-
             Log.d(TAG, "Processing audio: ${audioData.size} bytes with backend: $currentBackend")
 
-            return@withContext when (currentBackend) {
-                Backend.LITERT_LM -> generateFromAudioLiteRT(prompt, audioData)
-                Backend.MEDIAPIPE_GENAI -> {
-                    Log.w(TAG, "Audio processing not supported with MediaPipe backend")
-                    Result.failure(IllegalStateException(
-                        "Audio transcription requires LiteRT-LM backend with a .litertlm model. " +
-                        "Current backend (MediaPipe) only supports text inference."
-                    ))
+            // TASK-451: same bracket as generateText; see there.
+            return@withContext keepAlive.withWork {
+                when (currentBackend) {
+                    Backend.LITERT_LM -> generateFromAudioLiteRT(prompt, audioData)
+                    Backend.MEDIAPIPE_GENAI -> {
+                        Log.w(TAG, "Audio processing not supported with MediaPipe backend")
+                        Result.failure(IllegalStateException(
+                            "Audio transcription requires LiteRT-LM backend with a .litertlm model. " +
+                            "Current backend (MediaPipe) only supports text inference."
+                        ))
+                    }
+                    null -> Result.failure(IllegalStateException("No backend initialized"))
                 }
-                null -> Result.failure(IllegalStateException("No backend initialized"))
             }
         }
     }
@@ -528,8 +548,8 @@ open class LlmManager @Inject constructor(
      * Returns null if no timer is running or model is not loaded.
      */
     fun getRemainingTimeSeconds(): Long? {
-        if (!isInitialized || keepAliveJob == null) return null
-        return (keepAliveTimeoutMinutes * 60).toLong()
+        if (!isInitialized || !keepAlive.isTimerActiveForTest()) return null
+        return (keepAlive.currentTimeoutMinutes() * 60).toLong()
     }
 
     /**
@@ -538,7 +558,7 @@ open class LlmManager @Inject constructor(
     open fun unload() {
         Log.i(TAG, "Unloading model")
 
-        cancelKeepAliveTimer()
+        keepAlive.stop()
 
         // Close LiteRT resources (use safe helper — never throws on double-close)
         closeConversationSafe(litertConversation)
@@ -562,34 +582,15 @@ open class LlmManager @Inject constructor(
      */
     fun resetKeepAliveTimer() {
         if (!isInitialized) return
-        cancelKeepAliveTimer()
-        startKeepAliveTimer()
+        keepAlive.start()
     }
 
-    private fun startKeepAliveTimer() {
-        if (!isInitialized) return
-
-        // Explicit Default: preserves the pre-TASK-438 private scope's built-in
-        // dispatcher; the shared scope carries none.
-        keepAliveJob = managerScope.launch(Dispatchers.Default) {
-            val timeoutMs = keepAliveTimeoutMinutes * 60 * 1000L
-            Log.d(TAG, "Starting keep-alive timer: ${keepAliveTimeoutMinutes} minutes")
-
-            delay(timeoutMs)
-
-            if (isInitialized) {
-                Log.i(TAG, "Keep-alive timeout reached, auto-unloading model")
-                performAutoUnload()
-            }
-        }
-    }
-
-    private fun cancelKeepAliveTimer() {
-        keepAliveJob?.cancel()
-        keepAliveJob = null
-    }
 
     private fun performAutoUnload() {
+        // The KeepAlive fire condition checks inactivity, not initialization;
+        // the documented re-arm race (work queued during the unload window)
+        // can fire a second time on already-unloaded state. Idempotent no-op.
+        if (!isInitialized) return
         closeConversationSafe(litertConversation)
         litertConversation = null
         litertEngine?.close()
@@ -602,7 +603,6 @@ open class LlmManager @Inject constructor(
         isInitialized = false
         _isReady.value = false
         currentBackend = null
-        keepAliveJob = null
 
         onAutoUnloadCallback.get()?.let { callback ->
             managerScope.launch(Dispatchers.Main) {
@@ -622,7 +622,7 @@ open class LlmManager @Inject constructor(
      * the two Main-dispatcher callback dispatches are momentary fire-and-forget.
      */
     fun shutdown() {
-        cancelKeepAliveTimer()
+        unload()
         unload()
     }
 }

@@ -21,6 +21,7 @@ import com.k2fsa.sherpa.onnx.OnlineStream
 import com.k2fsa.sherpa.onnx.OnlineTransducerModelConfig
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.util.CrashReporter
+import com.antivocale.app.util.NativeKeepAlive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

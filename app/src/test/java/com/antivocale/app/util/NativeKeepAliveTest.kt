@@ -1,4 +1,4 @@
-package com.antivocale.app.transcription
+package com.antivocale.app.util
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope

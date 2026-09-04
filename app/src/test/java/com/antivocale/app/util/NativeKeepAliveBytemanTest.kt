@@ -1,4 +1,4 @@
-package com.antivocale.app.transcription
+package com.antivocale.app.util
 
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.CoroutineScope
