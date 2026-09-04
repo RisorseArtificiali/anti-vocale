@@ -25,7 +25,7 @@ The absolute ceilings ([#73](https://github.com/RisorseArtificiali/anti-vocale/i
 
 ### Why does the app say "Audio exceeds 11 minute limit on this path"?
 
-The number is your phone's, not a fixed app limit. The message appears on the **Strip Silence (VAD)** path: with VAD enabled the whole recording is decoded into memory at once, so the maximum length is derived from how much memory your device has (typically 10 to 25 minutes, and the message always states your exact limit). For longer recordings turn off **Settings → Strip Silence (VAD)**: the app then processes the audio in pieces and accepts files up to 2 hours, with any model the app chunks automatically. If you remember an old fixed "10 minute limit", that limit no longer exists; this message is its honest, per-device replacement.
+The number is your phone's, not a fixed app limit. The message appears on the **Strip Silence (VAD)** path: with VAD enabled the whole recording is decoded into memory at once, so the maximum length is derived from how much memory your device has (typically 10 to 25 minutes, and the message always states your exact limit). For models the app chunks, this switch now happens automatically: a recording longer than the VAD limit is streamed instead, and the result notification notes "Without silence stripping" when it happened. The message still appears for recordings above 2 hours, and for models that need the VAD. To keep silence stripping on long recordings with those models, turn off **Settings → Strip Silence (VAD)**. If you remember an old fixed "10 minute limit", that limit no longer exists; this message is its honest, per-device replacement.
 
 ### Why did my transcription stop while the app was in the background?
 
