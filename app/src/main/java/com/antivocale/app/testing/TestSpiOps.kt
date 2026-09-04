@@ -64,6 +64,7 @@ internal class TestSpiOps(
         return JSONObject()
             .put("op", OP_GET)
             .put("vadEnabled", preferences.vadEnabled.first())
+            .put("progressiveEnabled", preferences.progressiveTranscription.first())
             .put("threadCount", preferences.threadCount.first())
             .put("inferenceProvider", preferences.inferenceProvider.first())
             .put("transcriptionLanguage", preferences.transcriptionLanguage.first())
@@ -93,6 +94,13 @@ internal class TestSpiOps(
                 val enabled = value.toBooleanStrictOrNull()
                     ?: return setError("vad expects true or false, got '$value'")
                 preferences.saveVadEnabled(enabled)
+            }
+            // Same strict boolean as vad: this toggle gates the interim
+            // chunk notifications and the chunk nav.
+            "progressive" -> {
+                val enabled = value.toBooleanStrictOrNull()
+                    ?: return setError("progressive expects true or false, got '$value'")
+                preferences.saveProgressiveTranscription(enabled)
             }
             "threads" -> {
                 val threads = value.toIntOrNull()
@@ -197,6 +205,6 @@ internal class TestSpiOps(
         const val OP_HELP = "help"
 
         /** Every key accepted by `op=set`, in help order. */
-        val SET_KEYS = listOf("vad", "threads", "provider", "backend", "language", "model_path", "sherpa_path")
+        val SET_KEYS = listOf("vad", "progressive", "threads", "provider", "backend", "language", "model_path", "sherpa_path")
     }
 }

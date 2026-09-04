@@ -26,7 +26,7 @@ Action: com.antivocale.app.TEST_SPI   (string extras, one op per broadcast)
 
 | Op | Extras | Response |
 |---|---|---|
-| `get` | none | JSON object: `vadEnabled`, `threadCount`, `inferenceProvider`, `transcriptionLanguage`, `transcriptionBackend`, `activeModelPath` (saved path of the current backend: the record's `dir` for `external:` ids, the generic preference for `llm`, the keyed sherpa preference for catalog ids), and `paths` mapping every catalog id plus `llm` to its saved path (or `null`) |
+| `get` | none | JSON object: `vadEnabled`, `progressiveEnabled`, `threadCount`, `inferenceProvider`, `transcriptionLanguage`, `transcriptionBackend`, `activeModelPath` (saved path of the current backend: the record's `dir` for `external:` ids, the generic preference for `llm`, the keyed sherpa preference for catalog ids), and `paths` mapping every catalog id plus `llm` to its saved path (or `null`) |
 | `set` | `key`, `value`, plus `entry` for `sherpa_path` | confirmation JSON echoing `key`/`value` (`entry` too when used), or an error object with `error` and the full `supportedKeys` list |
 | `records` | none | JSON array of the imported external models; each element is the record's persisted JSON plus the derived `backendId`. All records are listed, including dangling ones whose directory no longer exists, because dangling state is precisely what a debugging session needs to see |
 | `help` | none | the op list, the set keys, the usage line, and the `PROCESS_REQUEST` pointer |
@@ -36,6 +36,7 @@ Set keys and value formats:
 | Key | Writes | Value |
 |---|---|---|
 | `vad` | `saveVadEnabled` | `true` or `false` (strict; anything else is an error) |
+| `progressive` | `saveProgressiveTranscription` | `true` or `false` (strict); gates the interim chunk notifications and the chunk nav (added after the 2026-09-04 session burned six UI taps on this toggle) |
 | `threads` | `saveThreadCount` | integer (for example `4`) |
 | `provider` | `saveInferenceProvider` | `auto`, `nnapi`, `cpu` (the settings dropdown's exact set; anything else is rejected because the app would silently run it as CPU) |
 | `backend` | `saveTranscriptionBackend` | a catalog id (`sherpa-onnx`, `whisper`, `qwen3-asr`, `nemotron-streaming`, `gigaam`), `llm`, or `external:<record id>`; unknown ids are rejected without writing |
@@ -75,11 +76,13 @@ Read the whole testable state in one call:
 adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op get
 ```
 
-Toggle VAD (the classic multi-tap time sink):
+Toggle VAD and the progressive display (the classic multi-tap time sinks):
 
 ```bash
 adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op set --es key vad --es value true
 adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op set --es key vad --es value false
+adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op set --es key progressive --es value true
+adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op set --es key progressive --es value false
 ```
 
 Switch the active backend and language:

@@ -111,6 +111,22 @@ class TestSpiOpsTest {
     }
 
     @Test
+    fun `set progressive writes through and parses booleans strictly`() = runTest {
+        // 2026-09-04 device session: the only state the SPI could not reach,
+        // six UI taps to flip. Same strict-boolean contract as vad.
+        val json = JSONObject(ops.handle(TestSpiOps.OP_SET, key = "progressive", value = "false"))
+        assertEquals("progressive", json.getString("key"))
+        assertFalse(fake._progressiveTranscription.value)
+
+        // "True" (not "1"): toBooleanOrNull would also reject "1", so the
+        // case variant is what pins the STRICT parser against a silent
+        // relaxation; the vad test's "yes" cannot discriminate.
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_SET, key = "progressive", value = "True"))
+                .getString("error").contains("progressive"))
+    }
+
+    @Test
     fun `set threads writes through and parses integers`() = runTest {
         JSONObject(ops.handle(TestSpiOps.OP_SET, key = "threads", value = "4"))
         assertEquals(4, fake._threadCount.value)
