@@ -23,6 +23,10 @@ Every "any length" in the table above means *the app does the splitting for you 
 
 The absolute ceilings ([#73](https://github.com/RisorseArtificiali/anti-vocale/issues/73)): 2 hours for the streaming decode path, and files above 2GB are refused. With VAD enabled the whole audio is decoded into memory at once, so the maximum length depends on your device's memory (typically 10 to 25 minutes); the error message tells you the exact limit on your device. Turn VAD off for long recordings, or use a model the app chunks automatically.
 
+### Why does the app say "Audio exceeds 11 minute limit on this path"?
+
+The number is your phone's, not a fixed app limit. The message appears on the **Strip Silence (VAD)** path: with VAD enabled the whole recording is decoded into memory at once, so the maximum length is derived from how much memory your device has (typically 10 to 25 minutes, and the message always states your exact limit). For longer recordings turn off **Settings → Strip Silence (VAD)**: the app then processes the audio in pieces and accepts files up to 2 hours, with any model the app chunks automatically. If you remember an old fixed "10 minute limit", that limit no longer exists; this message is its honest, per-device replacement.
+
 ### Why did my transcription stop while the app was in the background?
 
 Some Android phones (notably several OEM skins) kill apps in the background even when they are legitimately running a foreground service; the transcription is interrupted and only closes when you reopen the app. Anti-Vocale detects this and, after it happens, offers a one-tap fix in Settings > Advanced: adding the app to the battery-optimization exemption list. On some devices you may additionally need to allow background execution in the manufacturer's own battery settings.
