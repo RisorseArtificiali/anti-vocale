@@ -212,6 +212,7 @@
     <string name="share_transcription">Udostępnij</string>
     <string name="copy_transcription">Kopiuj do schowka</string>
     <string name="copied_to_clipboard">Skopiowano do schowka</string>
+    <string name="transcription_streamed_without_vad">Bez usuwania ciszy</string>
     <string name="audio_received_for_transcription">Otrzymano audio do transkrypcji</string>
     <string name="transcription_complete">Transkrypcja ukończona</string>
     <plurals name="transcription_partial">

@@ -63,6 +63,26 @@ object AudioDurationPolicy {
         else DecodePath.WHOLE_FILE_PCM
 
     /**
+     * TASK-450: with VAD on (whole-file PCM path) the memory-derived ceiling
+     * can refuse a file the streaming path would accept. That refusal is a
+     * configuration trap, not a hardware limit, so when the backend can
+     * stream, fall back to the streaming path for that request instead of
+     * failing. Duration-only on purpose: backend capability (a chunk cap and
+     * no forced VAD-aligned chunking) is the caller's fact and lives in the
+     * orchestrator's guards around this call. True only when the fallback can
+     * SUCCEED: a duration above the streaming valve would just re-refuse with
+     * a different number. A non-positive duration (unreadable metadata) stays
+     * on the whole-file path, whose post-decode backstop still catches those
+     * files.
+     */
+    fun shouldFallBackToStreaming(
+        durationSeconds: Double,
+        wholeFileCeilingSeconds: Long,
+    ): Boolean =
+        durationSeconds > wholeFileCeilingSeconds &&
+            durationSeconds <= STREAMING_MAX_SECONDS
+
+    /**
      * [decodePathFor] in a null-shaped form so the orchestrator consumes the
      * decision instead of restating the null-ness rule for a smart cast: the
      * chunk cap when this request streams, null when it decodes whole-file.

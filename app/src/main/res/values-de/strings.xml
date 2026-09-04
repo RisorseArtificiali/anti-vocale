@@ -199,6 +199,7 @@
     <string name="share_transcription">Teilen</string>
     <string name="copy_transcription">In die Zwischenablage kopieren</string>
     <string name="copied_to_clipboard">In die Zwischenablage kopiert</string>
+    <string name="transcription_streamed_without_vad">Ohne Stille-Entfernung</string>
     <string name="audio_received_for_transcription">Audio zur Transkription empfangen</string>
     <string name="transcription_complete">Transkription abgeschlossen</string>
     <plurals name="transcription_partial">

@@ -210,6 +210,7 @@
     <string name="share_transcription">Paylaş</string>
     <string name="copy_transcription">Panoya Kopyala</string>
     <string name="copied_to_clipboard">Panoya kopyalandı</string>
+    <string name="transcription_streamed_without_vad">Sessizlik kırpılmadan</string>
     <string name="audio_received_for_transcription">Metin çıkarma için ses alındı</string>
     <string name="transcription_complete">Metin çıkarma tamamlandı</string>
     <plurals name="transcription_partial">

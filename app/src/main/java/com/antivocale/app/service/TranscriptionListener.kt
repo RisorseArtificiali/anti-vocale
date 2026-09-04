@@ -54,7 +54,10 @@ interface TranscriptionListener {
         confidence: Float? = null,
         detectedLanguage: String? = null,
         isPartial: Boolean = false,
-        failedChunkCount: Int = 0
+        failedChunkCount: Int = 0,
+        /** TASK-450: the request was streamed without silence stripping after
+         *  the VAD path would have refused it (device memory ceiling). */
+        streamedWithoutVad: Boolean = false
     )
 
     /** Transcription or backend loading failed */

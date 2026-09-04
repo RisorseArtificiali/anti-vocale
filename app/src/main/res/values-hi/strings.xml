@@ -198,6 +198,7 @@
     <string name="share_transcription">शेयर करें</string>
     <string name="copy_transcription">क्लिपबोर्ड पर कॉपी करें</string>
     <string name="copied_to_clipboard">क्लिपबोर्ड पर कॉपी हो गया</string>
+    <string name="transcription_streamed_without_vad">मौन हटाए बिना</string>
     <string name="audio_received_for_transcription">ट्रांसक्रिप्शन के लिए ऑडियो मिला</string>
     <string name="transcription_complete">ट्रांसक्रिप्शन पूरा हुआ</string>
     <plurals name="transcription_partial">

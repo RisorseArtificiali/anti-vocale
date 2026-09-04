@@ -117,4 +117,22 @@ class AudioDurationPolicyTest {
         assertEquals(3L, AudioDurationPolicy.warnDecision(
             1860L, 7200L, 1000f / 15f, true).estimateMinutes)
     }
+
+    @Test
+    fun `shouldFallBackToStreaming fires only when the fallback can succeed`() {
+        // TASK-450: Tim's case. 12 minutes of call audio, an 11-minute VAD
+        // ceiling on his phone. Backend capability is gated by the orchestrator
+        // around this call (a chunk cap and no forced VAD-aligned chunking);
+        // this predicate owns the duration facts only.
+        assertTrue(AudioDurationPolicy.shouldFallBackToStreaming(720.0, 660L))
+        // within the VAD ceiling: no refusal to escape, no fallback
+        assertFalse(AudioDurationPolicy.shouldFallBackToStreaming(660.0, 660L))
+        // above the streaming valve the fallback would just re-refuse: keep the
+        // whole-file refusal and its message
+        assertFalse(AudioDurationPolicy.shouldFallBackToStreaming(7300.0, 660L))
+        // unreadable metadata: whole-file path, post-decode backstop still guards
+        assertFalse(AudioDurationPolicy.shouldFallBackToStreaming(0.0, 660L))
+        // the exact streaming valve is accepted (inclusive)
+        assertTrue(AudioDurationPolicy.shouldFallBackToStreaming(7200.0, 660L))
+    }
 }

@@ -102,7 +102,8 @@ class TranscriptionNotificationListener(
         confidence: Float?,
         detectedLanguage: String?,
         isPartial: Boolean,
-        failedChunkCount: Int
+        failedChunkCount: Int,
+        streamedWithoutVad: Boolean
     ) {
         // The worker has no Tasker reply channel; only the service sends ACTION_TASKER_REPLY.
         // For share requests, mirror the service: auto-copy (if enabled) + post the result.
@@ -110,7 +111,7 @@ class TranscriptionNotificationListener(
             coroutineScope.launch {
                 autoCopyIfEnabled(resultText, sourcePackage)
                 saveTranscriptToFileIfEnabled(resultText, sourcePackage)
-                showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount)
+                showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad)
             }
         }
     }
@@ -178,7 +179,8 @@ class TranscriptionNotificationListener(
         confidence: Float?,
         detectedLanguage: String?,
         isPartial: Boolean = false,
-        failedChunkCount: Int = 0
+        failedChunkCount: Int = 0,
+        streamedWithoutVad: Boolean = false
     ) {
         val prefs = if (sourcePackage != null) {
             try {
@@ -201,6 +203,7 @@ class TranscriptionNotificationListener(
             isPartial = isPartial,
             failedChunkCount = failedChunkCount,
             notificationId = id,
+            streamedWithoutVad = streamedWithoutVad,
             firstPostedAt = System.currentTimeMillis()
         )
         val notification = resultNotificationFactory.build(spec, prefs)

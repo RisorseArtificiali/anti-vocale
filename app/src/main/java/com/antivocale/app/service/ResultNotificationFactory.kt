@@ -27,6 +27,9 @@ data class ResultNotificationSpec(
     val notificationId: Int,
     /** TASK-385: the clipboard was silently modified; surfaced in subText instead of a toast-only signal. */
     val copiedToClipboard: Boolean = false,
+    /** TASK-450: the request was streamed without silence stripping after the
+     *  VAD path would have refused it (device memory ceiling); said in subText. */
+    val streamedWithoutVad: Boolean = false,
     val firstPostedAt: Long = System.currentTimeMillis(),
     /** True when rebuilding after a prev/next tap: suppresses re-alerting. */
     val repost: Boolean = false
@@ -142,6 +145,9 @@ class ResultNotificationFactory(private val context: Context) {
         }
         if (spec.copiedToClipboard) {
             subTextParts.add(context.getString(R.string.copied_to_clipboard))
+        }
+        if (spec.streamedWithoutVad) {
+            subTextParts.add(context.getString(R.string.transcription_streamed_without_vad))
         }
         if (subTextParts.isNotEmpty()) {
             builder.setSubText(subTextParts.joinToString(" · "))

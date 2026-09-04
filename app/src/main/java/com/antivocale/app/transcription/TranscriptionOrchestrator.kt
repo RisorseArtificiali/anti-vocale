@@ -252,7 +252,8 @@ class TranscriptionOrchestrator @Inject constructor(
                         confidence = transcriptionResult.confidence,
                         detectedLanguage = transcriptionResult.detectedLanguage,
                         isPartial = transcriptionResult.isPartial,
-                        failedChunkCount = transcriptionResult.failedChunkCount
+                        failedChunkCount = transcriptionResult.failedChunkCount,
+                        streamedWithoutVad = transcriptionResult.streamedWithoutVad
                     )
                 },
                 onFailure = { error ->
@@ -698,7 +699,27 @@ class TranscriptionOrchestrator @Inject constructor(
         }
         // streamingChunkSeconds is the single source of the usePipeline rule:
         // the chunk cap when this request streams, null when it decodes whole-file.
-        val pipelineChunkSeconds = AudioDurationPolicy.streamingChunkSeconds(vadEnabled, maxChunkDuration)
+        // TASK-450: when the VAD preference routes a file the whole-file path
+        // would refuse for this device's memory ceiling, and the backend can
+        // stream, run this request on the streaming path instead of failing:
+        // the user keeps the transcription and loses only silence stripping
+        // on this file (the result notification says so). The two capability
+        // guards sit BEFORE the duration probe so VAD-off and forced-VAD
+        // requests (Gemma, Canary) never pay the metadata open.
+        val canStreamWithoutVad = !backend.requiresVadAlignedChunking && maxChunkDuration != null
+        val fellBackFromVad = vadEnabled && canStreamWithoutVad &&
+            AudioDurationPolicy.shouldFallBackToStreaming(
+                audioPreprocessor.getAudioDuration(filePath),
+                AudioDurationPolicy.ceilingSeconds(
+                    AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
+                    MemoryReadings.availableRamBytes(context),
+                    MemoryReadings.maxHeapBytes()),
+            )
+        if (fellBackFromVad) {
+            Log.i(TAG, "TASK-450: file exceeds this device's VAD-path ceiling; streaming without silence stripping (backend=${backend.id})")
+        }
+        val effectiveVad = vadEnabled && !fellBackFromVad
+        val pipelineChunkSeconds = AudioDurationPolicy.streamingChunkSeconds(effectiveVad, maxChunkDuration)
 
         val totalStartMs = System.currentTimeMillis()
 
@@ -710,6 +731,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     filePath = filePath,
                     backend = backend,
                     maxChunkDurationSeconds = pipelineChunkSeconds,
+                    streamedWithoutVad = fellBackFromVad,
                     context = context,
                     coroutineScope = coroutineScope,
                     listener = listener,
@@ -729,7 +751,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 // as much as the pipeline path does.
                 maxChunkDurationSeconds = maxChunkDuration,
                 context = context,
-                enableVad = vadEnabled,
+                enableVad = effectiveVad,
                 vadNumThreads = threadCount,
                 vadProvider = resolvedProvider,
                 availableRamBytes = MemoryReadings.availableRamBytes(context),
@@ -1079,6 +1101,8 @@ class TranscriptionOrchestrator @Inject constructor(
         filePath: String,
         backend: TranscriptionBackend,
         maxChunkDurationSeconds: Int,
+        /** TASK-450: set when the request fell back from the refused VAD path. */
+        streamedWithoutVad: Boolean,
         context: Context,
         coroutineScope: CoroutineScope,
         listener: TranscriptionListener,
@@ -1242,7 +1266,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 confidence = minConfidence,
                 detectedLanguage = detectedLang,
                 isPartial = failedChunks > 0,
-                failedChunkCount = failedChunks
+                failedChunkCount = failedChunks,
+                streamedWithoutVad = streamedWithoutVad
             ))
         }
     }

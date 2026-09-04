@@ -551,7 +551,8 @@ class InferenceService : Service(), TranscriptionListener {
         confidence: Float?,
         detectedLanguage: String?,
         isPartial: Boolean,
-        failedChunkCount: Int
+        failedChunkCount: Int,
+        streamedWithoutVad: Boolean
     ) {
         sendSuccessReply(taskId, resultText)
         if (isShareRequest) {
@@ -565,7 +566,7 @@ class InferenceService : Service(), TranscriptionListener {
                 try {
                     val copied = autoCopyIfEnabled(resultText, sourcePackage)
                     saveTranscriptToFileIfEnabled(resultText, sourcePackage)
-                    showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied)
+                    showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad)
                 } finally {
                     pendingResultNotifications.remove(coroutineContext[Job])
                 }
@@ -803,6 +804,7 @@ class InferenceService : Service(), TranscriptionListener {
         isPartial: Boolean = false,
         failedChunkCount: Int = 0,
         copiedToClipboard: Boolean = false,
+        streamedWithoutVad: Boolean = false,
     ) {
         val prefs = if (sourcePackage != null) {
             try {
@@ -826,6 +828,7 @@ class InferenceService : Service(), TranscriptionListener {
             failedChunkCount = failedChunkCount,
             notificationId = id,
             copiedToClipboard = copiedToClipboard,
+            streamedWithoutVad = streamedWithoutVad,
             firstPostedAt = System.currentTimeMillis()
         )
         val notification = resultNotificationFactory.build(spec, prefs)

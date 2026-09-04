@@ -197,7 +197,11 @@ data class TranscriptionResult(
     val confidence: Float? = null,
     val detectedLanguage: String? = null,
     val isPartial: Boolean = false,
-    val failedChunkCount: Int = 0
+    val failedChunkCount: Int = 0,
+    /** TASK-450: this request would have been refused on the VAD (whole-file)
+     *  path for the device's memory ceiling and was streamed without silence
+     *  stripping instead; surfaced in the result notification's subtext. */
+    val streamedWithoutVad: Boolean = false
 ) {
     companion object {
         private val WHITESPACE = Regex("\\s+")
