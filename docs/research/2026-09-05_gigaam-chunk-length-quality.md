@@ -50,10 +50,17 @@ Cliff mapping on harvard (23.5 min):
 | 90s | 14.12% | 8.31% |
 | 180s | 67.26% | 60.60% |
 
-The seventh file (tuberculosis, 30 min, noisiest domain) could not complete on
-the desktop (process died repeatedly under load; the same behavior on both
-25s and 180s passes, so it adds no signal to the comparison). Six files and the
-cliff map are unambiguous.
+The seventh file (tuberculosis, 30 min, noisiest domain) could not complete:
+CORRECTED 2026-09-05 (later session): the harness's CER was a quadratic Python
+DP over ~25k chars (~6GB), OOM-killed by the kernel; NOT model behavior (the
+first guess, "process died under load", was wrong). The fix pattern is
+rapidfuzz's C++ Levenshtein (same unit-cost metric). Six files and the cliff
+map are unambiguous either way.
+
+Follow-up same day: the full segmentation landscape (fixed 25/30, VAD strip,
+VAD-aligned no-strip) is measured in 2026-09-05_gigaam-segmentation-landscape.md;
+all sub-30s schemes sit in a 10.7-11.5% band and Parakeet is flat on pass
+length, so the cliff is GigaAM-specific and the 30s cap stands.
 
 ## Interpretation
 
