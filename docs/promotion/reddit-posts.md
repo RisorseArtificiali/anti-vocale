@@ -130,3 +130,43 @@ Note: The app currently uses Firebase Crashlytics for crash reporting. A de-trac
 - **Timing:** stagger the posts (don't post all four on the same day). Start with r/ItalyInformatica (friendliest, best topical fit), then r/fossdroid 1-2 days later, then the others.
 - **Engagement:** reply to comments promptly on the first day — it boosts visibility (Reddit algorithm favors early engagement).
 - **Screenshots:** attach 2-3 screenshots to each post if possible (share-from-WhatsApp flow, model selection screen, progressive transcription). These dramatically increase click-through.
+
+
+---
+
+## 5. r/brasil / r/AndroidBR (PT-BR, Brazil entry, plan 2026-09-05)
+
+**Venue note (verify at posting time):** r/brasil forbids self-promo outside
+specific contexts; the safer targets are r/AndroidBR (app posts welcome with
+flair) and r/appsdoandroid. Rule-check both on the day; r/brasil only inside
+a thread where voice messages or transcription comes up naturally.
+
+**Title:** App gratuita e open-source para transcrever audios do WhatsApp no proprio celular, sem enviar nada pra nuvem
+
+**Body (PT-BR):**
+
+Anti-Vocale: transcrição offline de mensagens de voz para Android (português + 25 idiomas)
+
+Se você também recebe aquela mensagem de voz de 7 minutos e não pode ouvir na hora, esse projeto é pra você. O Anti-Vocale transcreve audios do WhatsApp, Telegram e Signal inteiramente no celular, sem nuvem, sem conta, sem internet depois de baixar os modelos.
+
+**O problema:** a transcrição nativa do WhatsApp no Android não cobre português, e as alternativas existentes ou mandam seu áudio pra nuvem de terceiros, ou não funcionam offline. No Anti-Vocale o áudio nunca sai do aparelho.
+
+**O que faz:**
+- Transcreve português e outros 25 idiomas europeus com modelos de IA que rodam no próprio telefone
+- Escolha entre 5 modelos (Parakeet TDT multilíngue e rápido, Whisper, Qwen3-ASR, Nemotron em streaming, Gemma multimodal)
+- Copia a transcrição automaticamente pra área de transferência (é só colar na conversa)
+- Salvamento automático das transcrições numa pasta sua (Drive, Syncthing, Dropbox)
+- Transcreve arquivos de vídeo (extraindo o áudio)
+- Texto aparecendo em tempo real durante a transcrição
+- Interface Material 3, disponível em português
+
+**O que NÃO faz:** nada de nuvem, nada de conta, nada de anúncio. Licença Apache 2.0, código aberto no GitHub.
+
+**Tamanhos:** os modelos têm entre 300MB e 940MB, baixados uma vez só (o mais rápido, Parakeet, tem 640MB).
+
+**Links:**
+- F-Droid: https://f-droid.org/packages/com.antivocale.app/
+- Play Store: https://play.google.com/store/apps/details?id=com.antivocale.app
+- GitHub: https://github.com/RisorseArtificiali/anti-vocale
+
+Aceito feedback, principalmente sobre a qualidade da transcrição em português (usamos o Whisper, e os benchmarks públicos são medidos em outros idiomas, então relatos reais brasileiros ajudam demais). Se testarem e encontrarem erros, me avisem, ajuda a melhorar o modelo pra PT-BR.
