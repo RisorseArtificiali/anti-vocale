@@ -261,7 +261,8 @@ class TranscriptionOrchestrator @Inject constructor(
                         transcriptionResult.text,
                         duration,
                         transcriptionResult.isPartial,
-                        transcriptionResult.failedChunkCount
+                        transcriptionResult.failedChunkCount,
+                        rawTranscript = transcriptionResult.rawTranscript
                     )
                     listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
                         confidence = transcriptionResult.confidence,
@@ -431,7 +432,11 @@ class TranscriptionOrchestrator @Inject constructor(
                 error("punctuation pass collapsed the transcript " +
                     "(${polished.length} vs ${result.text.length} chars); keeping the original")
             }
-            result.copy(text = polished.ifBlank { result.text })
+            val effectiveText = polished.ifBlank { result.text }
+            result.copy(
+                text = effectiveText,
+                rawTranscript = if (effectiveText != result.text) result.text else null
+            )
         }.fold(
             onSuccess = { polished ->
                 if (polished !== result) {
@@ -1534,12 +1539,15 @@ class TranscriptionOrchestrator @Inject constructor(
         result: String,
         durationMs: Long,
         isPartial: Boolean = false,
-        failedChunkCount: Int = 0
+        failedChunkCount: Int = 0,
+        /** TASK-276 AC3: the pre-punctuation original, kept when the pass changed the text. */
+        rawTranscript: String? = null,
     ) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
             status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs,
-            isPartial = isPartial, failedChunkCount = failedChunkCount
+            isPartial = isPartial, failedChunkCount = failedChunkCount,
+            rawTranscript = rawTranscript
         ).toEntity())
         preferencesManager.clearPartialTranscriptionState()
         lastPartialSaveMs = 0L

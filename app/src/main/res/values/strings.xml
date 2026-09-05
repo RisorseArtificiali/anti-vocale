@@ -88,6 +88,7 @@
     <string name="logs_status_success">Success</string>
     <string name="logs_status_error">Error</string>
     <string name="logs_status_processing">Processing</string>
+    <string name="logs_original_label">Original (before punctuation):</string>
     <string name="logs_model_label">Model: %1$s</string>
     <string name="logs_transcription_cancelled">Transcription cancelled</string>
     <string name="logs_search_placeholder">Search entries…</string>

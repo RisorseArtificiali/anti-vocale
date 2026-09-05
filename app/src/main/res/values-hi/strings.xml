@@ -908,6 +908,7 @@
     <string name="logs_status_success">सफल</string>
     <string name="logs_status_error">त्रुटि</string>
     <string name="logs_status_processing">प्रोसेसिंग</string>
+    <string name="logs_original_label">मूल (विराम चिह्न से पहले):</string>
     <string name="logs_model_label">मॉडल: %1$s</string>
     <string name="model_limit_chunked">कोई सीमा नहीं: लंबी ऑडियो स्वतः विभाजित होती है</string>
     <string name="show_task_details_title">टास्क विवरण दिखाएँ</string>

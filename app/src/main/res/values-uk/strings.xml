@@ -95,6 +95,7 @@
     <string name="logs_status_success">Успішно</string>
     <string name="logs_status_error">Помилка</string>
     <string name="logs_status_processing">Обробка</string>
+    <string name="logs_original_label">Оригінал (до пунктуації):</string>
     <string name="logs_model_label">Модель: %1$s</string>
     <string name="logs_transcription_cancelled">Розшифровку скасовано</string>
     <string name="logs_search_placeholder">Пошук записів…</string>

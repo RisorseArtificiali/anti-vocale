@@ -69,7 +69,7 @@ class AppDatabaseMigrationTest {
         seedV2Database()
 
         db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
             .allowMainThreadQueries()
             .build()
 
@@ -93,13 +93,41 @@ class AppDatabaseMigrationTest {
         // Seed a v3 database by running the 2->3 chain first, then 3->4 on top.
         seedV2Database()
         db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
-            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4)
+            .addMigrations(AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
             .allowMainThreadQueries()
             .build()
 
         val row = runBlocking { db!!.logDao().getByTaskId("task-1") }
         assertNotNull(row)
         assertNull("modelName must be null after the v4 migration for old rows", row!!.modelName)
+    }
+
+    /** MIGRATION_4_5 (TASK-276 AC3) must run and preserve rows. */
+    @Test
+    fun migrate_4_to_5_preservesRowAndPassesSchemaValidation() {
+        // Seed a v2 database, then run the full chain 1->5 on top.
+        seedV2Database()
+        db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
+            .addMigrations(
+                AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3,
+                AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5)
+            .allowMainThreadQueries()
+            .build()
+
+        val row = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertNotNull(row)
+        assertNull("rawTranscript must be null after the v5 migration for old rows", row!!.rawTranscript)
+
+        // Round-trip: a row carrying the new column survives write + read.
+        // The entity is built directly: the seeded legacy type 'TRANSCRIPTION'
+        // predates the TEXT/AUDIO enum and does not round-trip toLogEntry().
+        runBlocking {
+            db!!.logDao().update(row.copy(
+                rawTranscript = "привет как дела", result = "Привет, как дела?"))
+        }
+        val updated = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertEquals("привет как дела", updated!!.rawTranscript)
+        assertEquals("Привет, как дела?", updated.result)
     }
 
     /** A fresh v3 DB (no migration) must also be internally consistent with the entity. */

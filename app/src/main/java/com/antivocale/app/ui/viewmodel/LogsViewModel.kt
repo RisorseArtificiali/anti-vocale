@@ -55,6 +55,8 @@ data class LogEntry(
     val failedChunkCount: Int = 0,
     /** Display name of the model that produced this transcription (GH #45; null on old rows). */
     val modelName: String? = null,
+    /** TASK-276 AC3: raw ASR text pre-punctuation, when the pass changed it. */
+    val rawTranscript: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
     enum class Status { QUEUED, PROCESSING, SUCCESS, ERROR }

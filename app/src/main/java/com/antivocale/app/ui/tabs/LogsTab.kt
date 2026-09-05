@@ -1065,6 +1065,38 @@ fun LogEntryItem(
                                 .padding(8.dp)
                         )
 
+                        // TASK-276 AC3: the pre-punctuation original, when the pass
+                        // changed the text. Always visible in the expanded card
+                        // (the raw ASR output is what the model actually heard).
+                        log.rawTranscript?.let { original ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(R.string.logs_original_label),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                // highlightText short-circuits on a blank query, so the
+                                // wrap is free and keeps search matches highlighted in
+                                // the original too, symmetric with the result box above.
+                                text = highlightText(
+                                    original,
+                                    searchQuery,
+                                    MaterialTheme.colorScheme.tertiary
+                                ),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                                        shape = MaterialTheme.shapes.small
+                                    )
+                                    .padding(8.dp)
+                            )
+                        }
+
                         // Metadata row
                         Spacer(modifier = Modifier.height(8.dp))
                         Row(

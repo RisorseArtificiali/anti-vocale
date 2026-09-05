@@ -926,6 +926,7 @@
     <string name="logs_status_success">Успешно</string>
     <string name="logs_status_error">Ошибка</string>
     <string name="logs_status_processing">Обработка</string>
+    <string name="logs_original_label">Оригинал (до пунктуации):</string>
     <string name="logs_model_label">Модель: %1$s</string>
     <string name="model_limit_chunked">Без ограничений: длинные записи разбиваются автоматически</string>
     <string name="show_task_details_title">Показывать детали задачи</string>

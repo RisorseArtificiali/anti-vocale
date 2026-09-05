@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import com.antivocale.app.data.local.LogEntity
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -91,6 +92,10 @@ class TranscriptionOrchestratorPunctuationPassTest : TranscriptionOrchestratorTe
 
     @Test
     fun `auto mode punctuates a non-punctuating model via the llm backend`() = runTest {
+        // logSuccess needs an existing row to update (the base stubs null).
+        coEvery { logDao.getByTaskId(any()) } returns LogEntity(
+            id = "punct-1", timestamp = 1, taskId = "punct-1",
+            type = "AUDIO", status = "PROCESSING", prompt = "", result = "")
         every { preferencesManager.punctuationMode } returns flowOf("auto")
         stubSwapToLlm()
         coEvery { llmBackend.generateText(any()) } returns Result.success(punctuatedTranscript)
@@ -110,6 +115,12 @@ class TranscriptionOrchestratorPunctuationPassTest : TranscriptionOrchestratorTe
         coVerify(exactly = 1) { backendManager.setActiveBackend(eq(LlmTranscriptionBackend.BACKEND_ID), any(), any()) }
         coVerify(exactly = 1) { llmBackend.generateText(any()) }
         assertEquals(punctuatedTranscript, result.getOrNull())
+        // AC3: the row's original is the pre-polish ASR text
+        coVerify {
+            logDao.update(match {
+                it.result == punctuatedTranscript && it.rawTranscript == rawTranscript
+            })
+        }
         // the pass fed the curated default prompt + the raw transcript
         coVerify {
             llmBackend.generateText(match { it.contains(rawTranscript) && it.isNotBlank() })

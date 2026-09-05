@@ -28,6 +28,10 @@ data class LogEntity(
     val failedChunkCount: Int = 0,
     /** Display name of the model that produced this transcription (GH #45; null on pre-v4 rows). */
     val modelName: String? = null,
+    /** TASK-276 AC3: the raw ASR text before the punctuation pass, kept when the
+     *  pass changed the words' presentation (null when it never fired or made
+     *  no change; null on pre-v5 rows). */
+    val rawTranscript: String? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -48,7 +52,8 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     sourcePackageName = sourcePackageName,
     isPartial = isPartial,
     failedChunkCount = failedChunkCount,
-    modelName = modelName
+    modelName = modelName,
+    rawTranscript = rawTranscript
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -66,5 +71,6 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     sourcePackageName = sourcePackageName,
     isPartial = isPartial,
     failedChunkCount = failedChunkCount,
-    modelName = modelName
+    modelName = modelName,
+    rawTranscript = rawTranscript
 )

@@ -93,6 +93,7 @@
     <string name="logs_status_success">Zakończono</string>
     <string name="logs_status_error">Błąd</string>
     <string name="logs_status_processing">Przetwarzanie</string>
+    <string name="logs_original_label">Oryginał (przed interpunkcją):</string>
     <string name="logs_model_label">Model: %1$s</string>
     <string name="logs_transcription_cancelled">Transkrypcja anulowana</string>
     <string name="logs_search_placeholder">Szukaj wpisów…</string>

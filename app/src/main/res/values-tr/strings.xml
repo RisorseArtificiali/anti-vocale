@@ -91,6 +91,7 @@
     <string name="logs_status_success">Başarılı</string>
     <string name="logs_status_error">Hata</string>
     <string name="logs_status_processing">İşleniyor</string>
+    <string name="logs_original_label">Orijinal (noktalamadan önce):</string>
     <string name="logs_model_label">Model: %1$s</string>
     <string name="logs_transcription_cancelled">Metin çıkarma iptal edildi</string>
     <string name="logs_search_placeholder">Kayıtlarda ara…</string>
