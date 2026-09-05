@@ -33,11 +33,11 @@ class AudioPreprocessor @Inject constructor() {
 
         /**
          * VAD segments are merged up to the model's per-segment limit minus a 2s
-         * margin (GH #50). The limit follows the request-time cap verbatim, so a
-         * 30s model keeps the historical 28s window and a RAM-rich device with a
-         * 180s cap (gigaam, TASK-447) merges speech into 178s passes, matching
-         * what the same request does on the streaming path (VAD off); on low RAM
-         * TranscriptionMemoryPolicy tightens the cap and this window follows.
+         * margin (GH #50). The limit follows the request-time cap verbatim, so
+         * every model keeps the historical 28s window at its 30s cap (gigaam
+         * joined them in TASK-448: its 180s experiment measured quality
+         * degrading from ~60s and collapsing by ~90s per pass); on low RAM TranscriptionMemoryPolicy
+         * tightens the cap and this window follows.
          */
         internal fun vadMergeLimitSeconds(maxChunkDurationSeconds: Int?): Int =
             ((maxChunkDurationSeconds ?: 30) - 2).coerceAtLeast(1)
@@ -310,8 +310,9 @@ class AudioPreprocessor @Inject constructor() {
         // flight, one pre-decoded) is all the overlap the pipeline needs:
         // inference is always the bottleneck, and BUFFERED (64) would let the
         // hardware decoder sprint ahead and pin 64 chunks of PCM on the dalvik
-        // heap: 64 x 180s x AudioDurationPolicy.PCM_BYTES_PER_SECOND = 720MB
-        // at gigaam's chunk size (code review 2026-09-04, F1).
+        // heap: 64 x 60s x AudioDurationPolicy.PCM_BYTES_PER_SECOND = 240MiB
+        // at the largest capped chunk in the catalog, Parakeet (code review
+        // 2026-09-04, F1; anchor updated when gigaam's cap dropped to 30s).
         val channel = Channel<StreamEvent>(capacity = STREAM_CHANNEL_CAPACITY)
         val decoderThread = Thread {
             val extractor = MediaExtractor()

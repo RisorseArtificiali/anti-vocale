@@ -116,16 +116,18 @@ class BundledModelCatalogTest {
         assertEquals(1.0, gigaam.flags.tailPadSeconds, 0.0)
         // 200s is the MODEL's own rotary-table limit (5000 positions / 25 per
         // second), not our chunk size; the display fact must state the model
-        // capability (research 2026-09-03). The chunk cap stays at 180 for margin.
+        // capability (research 2026-09-03). The chunk cap: TASK-448 measured
+        // quality degrading from ~60s and collapsing by ~90s per pass (macro WER 65% at 180s vs 10.7%
+        // at 25s, six Russian lectures); 30s is indistinguishable from Sber's
+        // own 25s training max on the same data (research 2026-09-05).
         assertEquals(200, gigaam.flags.maxAudioDurationSeconds)
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), gigaam.flags.metaKeys)
         assertEquals("pantinor/gigaam-v3", gigaam.defaultVariant.source.repo)
         assertEquals("gigaam-v3", gigaam.defaultVariant.dirName)
-        // The NeMo export bakes a rotary positional table of 5000 positions
-        // (25/s of audio): a single decode above ~200s dies in the Mul node
-        // (broadcast 5000 by N; user report 2026-09-03, reproduced desktop).
-        // 180s chunks + the 1s tail pad stay at 4525 positions, inside the table.
-        assertEquals(180, gigaam.flags.chunkDurationSeconds)
+        // 30s chunks + the 1s tail pad: quality-bounded, not crash-bounded
+        // (TASK-448). Sber trains on 25s utterances; 30s is the measured-safe
+        // ceiling and matches the Whisper/Qwen3 chunk size.
+        assertEquals(30, gigaam.flags.chunkDurationSeconds)
         // F5 range guard: the chunk cap MUST stay strictly below the native
         // rotary-table limit (GH #76 class). Same invariant style as Parakeet's
         // 30..390 guard in ParakeetCatalogChunkingTest.

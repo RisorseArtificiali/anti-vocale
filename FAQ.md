@@ -15,7 +15,7 @@ There is no app-level limit. Each model has its own **per-segment** limit, and t
 | Parakeet TDT | 1:00 app-side chunking (the model's own hard cap is 6:40) | chunked by the app ([#50](https://github.com/RisorseArtificiali/anti-vocale/issues/50)), chunk length sized to free RAM ([#44](https://github.com/RisorseArtificiali/anti-vocale/issues/44)) |
 | Gemma (LLM) | 30 s | currently one segment |
 | Nemotron 3.5 (streaming) | no known limit (streams) | n/a |
-| GigaAM v3 | 3:00 app-side chunking (the model's own hard cap is 3:20) | chunked by the app, any length |
+| GigaAM v3 | 0:30 app-side chunking (the model's own crash cap is 3:20, but quality degrades well before that) | chunked by the app, any length |
 
 The Parakeet limit is not arbitrary: the model's attention has a hard 5000-frame cap baked into NVIDIA's checkpoint, and 5000 frames at 12.5 frames/s is exactly 400 seconds. Inputs beyond it fail natively; the app-side chunking that removes this limitation landed in [#50](https://github.com/RisorseArtificiali/anti-vocale/issues/50). Since [#44](https://github.com/RisorseArtificiali/anti-vocale/issues/44) the app chunks Parakeet at 1 minute rather than just under the native cap: attention memory grows with the square of the chunk length, and a single 6-minute pass peaks at over 5GB of RAM, enough to starve an 8GB phone. The chunk length also tightens automatically on devices with little free memory.
 
