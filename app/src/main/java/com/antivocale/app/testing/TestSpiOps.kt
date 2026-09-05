@@ -69,6 +69,7 @@ internal class TestSpiOps(
             .put("punctuationMode", preferences.punctuationMode.first())
             .put("punctuationPrompt", preferences.punctuationPrompt.first())
             .put("threadCount", preferences.threadCount.first())
+            .put("keepAliveTimeoutMinutes", preferences.keepAliveTimeout.first())
             .put("inferenceProvider", preferences.inferenceProvider.first())
             .put("transcriptionLanguage", preferences.transcriptionLanguage.first())
             .put("transcriptionBackend", backend)
@@ -114,6 +115,18 @@ internal class TestSpiOps(
                 preferences.savePunctuationMode(value)
             }
             "punctuation_prompt" -> preferences.savePunctuationPrompt(value)
+            // TASK-451: strictly positive; non-positive silently falls back to
+            // the default in NativeKeepAlive.setTimeout while get would report
+            // the stored value. Values outside the dropdown
+            // (SettingsViewModel.timeoutOptions) are accepted on purpose: any
+            // positive int is honored downstream, and a timing test may want 3.
+            "keep_alive" -> {
+                val minutes = value.toIntOrNull()
+                if (minutes == null || minutes <= 0) {
+                    return setError("keep_alive expects a positive integer (minutes), got '$value'")
+                }
+                preferences.saveKeepAliveTimeout(minutes)
+            }
             "threads" -> {
                 val threads = value.toIntOrNull()
                     ?: return setError("threads expects an integer, got '$value'")
@@ -217,7 +230,7 @@ internal class TestSpiOps(
         const val OP_HELP = "help"
 
         /** Every key accepted by `op=set`, in help order. */
-        val SET_KEYS = listOf("vad", "progressive", "punctuation", "punctuation_prompt", "threads", "provider", "backend", "language", "model_path", "sherpa_path")
+        val SET_KEYS = listOf("vad", "progressive", "punctuation", "punctuation_prompt", "keep_alive", "threads", "provider", "backend", "language", "model_path", "sherpa_path")
 
         /** TASK-276: the single source is PunctuationPolicy.MODE_PREFS; the SPI only adds write-time strictness. */
         val PUNCTUATION_MODES = PunctuationPolicy.MODE_PREFS
