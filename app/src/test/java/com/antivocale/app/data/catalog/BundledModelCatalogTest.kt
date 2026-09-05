@@ -113,11 +113,13 @@ class BundledModelCatalogTest {
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), gigaam.flags.metaKeys)
         assertEquals("pantinor/gigaam-v3", gigaam.defaultVariant.source.repo)
         assertEquals("gigaam-v3", gigaam.defaultVariant.dirName)
-        // The NeMo export bakes a rotary positional table of 5000 positions
-        // (25/s of audio): a single decode above ~200s dies in the Mul node
-        // (broadcast 5000 by N; user report 2026-09-03, reproduced desktop).
-        // 180s chunks + the 1s tail pad stay at 4525 positions, inside the table.
-        assertEquals(180, gigaam.flags.chunkDurationSeconds)
+        // 30s chunks + the 1s tail pad: quality-bounded, not crash-bounded
+        // (TASK-448). The NeMo export bakes a rotary positional table of 5000
+        // positions (25/s of audio): a single decode above ~200s dies in the
+        // Mul node, but quality degrades well before that (macro WER 65% at
+        // 180s vs 10.7% at 25s, six Russian lectures); 30s is indistinguishable
+        // from Sber's own 25s training max on the same data (research 2026-09-05).
+        assertEquals(30, gigaam.flags.chunkDurationSeconds)
         assertEquals(326L, gigaam.defaultVariant.estimatedSizeMB)
         assertTrue("gigaam files must keep their SHA-256 pins", gigaam.defaultVariant.files.all { it.sha256 != null })
     }
