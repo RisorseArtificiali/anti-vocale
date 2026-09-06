@@ -299,16 +299,16 @@ class BackendRegistryTest {
         assertEquals("/new/dir", store.records().first().dir)
     }
     @Test
-    fun `punctuation flag is false only for gigaam`() {
-        // TASK-276: the AUTO mode of the punctuation pass keys on this flag.
-        val byId = registry.backends.associateBy { it.backendId }
-        assertFalse("gigaam must be flagged non-punctuating",
-            byId.getValue(BuiltInBackendIds.GIGAAM).punctuatesOutput)
-        for (id in BuiltInBackendIds.ALL.filter { it != BuiltInBackendIds.GIGAAM }) {
-            assertTrue("$id must keep the punctuating default", byId.getValue(id).punctuatesOutput)
+    fun `punctuation flag is true for every backend`() {
+        // 2026-09-06 correction: the e2e GigaAM variant punctuates natively
+        // (verified on two 30s lecture windows), so no bundled or imported
+        // family carries punctuatesOutput=false today. The field stays for
+        // any future model that genuinely needs it.
+        val ids = registry.backends.map { it.backendId }
+        assertTrue("expected the static six plus external records", ids.size >= 6)
+        for (descriptor in registry.backends) {
+            assertTrue("${descriptor.backendId} must be flagged punctuating",
+                descriptor.punctuatesOutput)
         }
-        assertTrue("llm must keep the punctuating default",
-            byId.getValue(LlmTranscriptionBackend.BACKEND_ID).punctuatesOutput)
     }
-
 }
