@@ -1,4 +1,8 @@
 <en-US>
+What's new in 1.11.3:
+
+• GigaAM v3 (Russian): much better accuracy on recordings longer than a minute (audio is now split into 30 s passes, matching how the model was trained)
+
 What's new in 1.11.2:
 
 • No more 10-minute limit: long recordings now transcribe (up to 2 hours with chunked models; other setups get a limit based on your device's memory)
@@ -203,6 +207,10 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.11.3:
+
+• GigaAM v3 (russo): accuratezza nettamente migliore sulle registrazioni più lunghe di un minuto (l'audio ora viene spezzato in passaggi da 30 s, come nell'addestramento del modello)
+
 Novità della versione 1.11.2:
 
 • Addio limite dei 10 minuti: le registrazioni lunghe ora vengono trascritte (fino a 2 ore con i modelli a segmenti; negli altri casi il limite dipende dalla memoria del dispositivo)
@@ -407,6 +415,10 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.11.3:
+
+• GigaAM v3 (Russisch): deutlich genauere Transkription bei Aufnahmen länger als eine Minute (Audio wird jetzt in 30-s-Abschnitten verarbeitet, passend zum Training des Modells)
+
 Neuigkeiten in Version 1.11.2:
 
 • Kein 10-Minuten-Limit mehr: lange Aufnahmen werden jetzt transkribiert (bis zu 2 Stunden mit segmentierten Modellen; sonst richtet sich das Limit nach dem Arbeitsspeicher des Geräts)
@@ -431,6 +443,10 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>
+Novedades de la versión 1.11.3:
+
+• GigaAM v3 (ruso): precisión mucho mejor en grabaciones de más de un minuto (el audio se divide ahora en pasadas de 30 s, como en el entrenamiento del modelo)
+
 Novedades de la versión 1.11.2:
 
 • Fuera el límite de 10 minutos: las grabaciones largas ya se pueden transcribir (hasta 2 horas con modelos por segmentos; en otros casos el límite depende de la memoria del dispositivo)
@@ -455,6 +471,10 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.11.3 :
+
+• GigaAM v3 (russe) : bien meilleure précision sur les enregistrements de plus d'une minute (l'audio est désormais découpé en passes de 30 s, comme pour l'entraînement du modèle)
+
 Nouveautés de la version 1.11.2 :
 
 • Fini la limite de 10 minutes : les enregistrements longs sont désormais transcrits (jusqu'à 2 heures avec les modèles segmentés ; sinon la limite dépend de la mémoire de l'appareil)
@@ -479,6 +499,10 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>
+Novidades da versão 1.11.3:
+
+• GigaAM v3 (russo): precisão muito melhor em gravações com mais de um minuto (o áudio agora é dividido em passagens de 30 s, como no treinamento do modelo)
+
 Novidades da versão 1.11.2:
 
 • Chega de limite de 10 minutos: gravações longas agora são transcritas (até 2 horas com modelos segmentados; nos demais casos o limite depende da memória do aparelho)
@@ -503,6 +527,10 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>
+Что нового в версии 1.11.3:
+
+• GigaAM v3 (русский): заметно выше точность на записях длиннее минуты (звук теперь обрабатывается отрезками по 30 с, как при обучении модели)
+
 Что нового в версии 1.11.2:
 
 • Лимит 10 минут убран: длинные записи теперь расшифровываются (до 2 часов с сегментированными моделями; иначе лимит зависит от памяти устройства)
@@ -527,6 +555,10 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>
+Sürüm 1.11.3'teki yenilikler:
+
+• GigaAM v3 (Rusça): bir dakikadan uzun kayıtlarda çok daha doğru transkripsiyon (ses artık modelin eğitimiyle uyumlu biçimde 30 s'lik bölümlerle işleniyor)
+
 Sürüm 1.11.2'deki yenilikler:
 
 • 10 dakika sınırı kalktı: uzun kayıtlar artık yazıya dökülüyor (bölümlenen modellerle 2 saate kadar; diğer durumlarda sınır cihazın belleğine bağlı)
@@ -551,6 +583,10 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.11.3:
+
+• GigaAM v3 (rosyjski): znacznie lepsza dokładność przy nagraniach dłuższych niż minuta (dźwięk jest teraz dzielony na fragmenty po 30 s, zgodnie z treningiem modelu)
+
 Nowości w wersji 1.11.2:
 
 • Koniec z limitem 10 minut: długie nagrania są teraz transkrybowane (do 2 godzin z modelami segmentowanymi; w pozostałych przypadkach limit zależy od pamięci urządzenia)
@@ -575,6 +611,10 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>
+संस्करण 1.11.3 में नया क्या है:
+
+• GigaAM v3 (रूसी): एक मिनट से लंबी रिकॉर्डिंग पर काफ़ी बेहतर सटीकता (ऑडियो अब मॉडल की ट्रेनिंग के अनुरूप 30 सेकंड के भागों में संसाधित होता है)
+
 संस्करण 1.11.2 में नया क्या है:
 
 • 10 मिनट की सीमा हटा दी गई: लंबी रिकॉर्डिंग अब ट्रांसक्रिप्ट होती हैं (सेगमेंटेड मॉडल के साथ 2 घंटे तक; अन्य स्थितियों में सीमा डिवाइस की मेमोरी पर निर्भर है)

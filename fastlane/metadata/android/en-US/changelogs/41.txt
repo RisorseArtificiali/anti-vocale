@@ -1,0 +1,1 @@
+GigaAM v3 (Russian): much better accuracy on recordings longer than a minute. Long audio is now split into 30 s passes, matching how the model was trained (WER on long recordings dropped from ~65% to ~11% in our tests).
