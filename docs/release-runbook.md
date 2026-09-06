@@ -302,7 +302,9 @@ Proof: Play Console shows the new release in review/published.
   resolve toward main; expect the net diff to be version files only). Otherwise
   main keeps the old version line and the next release's preflight/guards read
   stale versions (main sat at 1.11.1 while v1.11.2/v1.11.3 shipped; found
-  2026-09-06). Proof: `git log vX.Y.Z --not main` empty for every shipped tag.
+  2026-09-06). Then set main's `versionName` to the next planned version with
+  `-SNAPSHOT` so unreleased builds self-identify in the About row. Proof:
+  `git log vX.Y.Z --not main` empty for every shipped tag.
 - Update `project_play_store_release.md` memory with any new gotchas.
 - Keep the F-Droid MR polling cron active until merge.
 - If reproducibility fails: do NOT stack workarounds. Diff the built vs reference
