@@ -1,0 +1,1 @@
+GigaAM v3 (russo): accuratezza nettamente migliore sulle registrazioni più lunghe di un minuto. L'audio lungo ora viene spezzato in passaggi da 30 s, come nell'addestramento del modello (nelle nostre prove il WER su audio lungo è sceso da ~65% a ~11%).

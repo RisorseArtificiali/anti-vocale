@@ -1,0 +1,1 @@
+The 10-minute limit is gone. Long recordings now transcribe: up to 2 hours with chunked models, while other setups get a limit based on your device's memory instead of a fixed one. Errors for too-long files name the real limit, and starting a very long transcription in the app asks first with a time estimate. Also fixes GigaAM v3 failing on recordings longer than about 3 minutes.
