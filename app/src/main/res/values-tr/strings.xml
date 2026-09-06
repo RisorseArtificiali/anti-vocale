@@ -334,6 +334,7 @@
     <string name="settings_feedback_source_title">Kaynak kod</string>
     <string name="settings_feedback_license_title">Lisans</string>
     <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">Sürüm</string>
     <string name="settings_feedback_privacy_note">Siz işlem yapmadan hiçbir şey gönderilmez; bu e-postayı e-posta uygulamanız gönderir.</string>
     <string name="settings_feedback_address_copied">E-posta uygulaması bulunamadı. Adres panoya kopyalandı: %1$s</string>
     <string name="settings_feedback_body_version">Uygulama sürümü</string>

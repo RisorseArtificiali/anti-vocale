@@ -340,6 +340,7 @@
     <string name="settings_feedback_source_title">Kod źródłowy</string>
     <string name="settings_feedback_license_title">Licencja</string>
     <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">Wersja</string>
     <string name="settings_feedback_privacy_note">Nic nie jest wysyłane bez Twojego działania; tę wiadomość wysyła Twoja aplikacja pocztowa.</string>
     <string name="settings_feedback_address_copied">Nie znaleziono aplikacji pocztowej. Adres skopiowano do schowka: %1$s</string>
     <string name="settings_feedback_body_version">Wersja aplikacji</string>

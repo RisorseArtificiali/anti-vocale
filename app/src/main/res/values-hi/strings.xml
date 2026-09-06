@@ -315,6 +315,7 @@
     <string name="settings_feedback_source_title">सोर्स कोड</string>
     <string name="settings_feedback_license_title">लाइसेंस</string>
     <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">संस्करण</string>
     <string name="settings_feedback_privacy_note">आपकी कार्रवाई के बिना कुछ नहीं भेजा जाता; यह ईमेल आपका मेल ऐप भेजता है।</string>
     <string name="settings_feedback_address_copied">कोई मेल ऐप नहीं मिला। पता क्लिपबोर्ड पर कॉपी हुआ: %1$s</string>
     <string name="settings_feedback_body_version">ऐप वर्ज़न</string>

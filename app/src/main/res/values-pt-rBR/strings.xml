@@ -280,6 +280,7 @@
     <string name="settings_feedback_source_title">Código-fonte</string>
     <string name="settings_feedback_license_title">Licença</string>
     <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">Versão</string>
     <string name="settings_feedback_privacy_note">Nada é enviado sem sua ação; seu app de e-mail envia esta mensagem.</string>
     <string name="settings_feedback_address_copied">Sem app de e-mail. Endereço copiado: %1$s</string>
     <string name="settings_feedback_body_version">Versão do app</string>

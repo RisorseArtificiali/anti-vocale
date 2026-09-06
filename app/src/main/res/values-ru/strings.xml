@@ -331,6 +331,7 @@
     <string name="settings_feedback_source_title">Исходный код</string>
     <string name="settings_feedback_license_title">Лицензия</string>
     <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">Версия</string>
     <string name="settings_feedback_privacy_note">Ничего не отправляется без вашего действия; письмо отправится вашим почтовым приложением.</string>
     <string name="settings_feedback_address_copied">Почтовое приложение не найдено. Адрес скопирован в буфер обмена: %1$s</string>
     <string name="settings_feedback_body_version">Версия приложения</string>

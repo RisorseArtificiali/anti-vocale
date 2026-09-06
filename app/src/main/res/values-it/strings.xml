@@ -328,6 +328,7 @@
     <string name="settings_feedback_source_title">Codice sorgente</string>
     <string name="settings_feedback_license_title">Licenza</string>
     <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">Versione</string>
     <string name="settings_feedback_privacy_note">Nulla viene inviato senza un tuo intervento; questa email la invia la tua app email.</string>
     <string name="settings_feedback_address_copied">Nessuna app email trovata. Indirizzo copiato negli appunti: %1$s</string>
     <string name="settings_feedback_body_version">Versione app</string>

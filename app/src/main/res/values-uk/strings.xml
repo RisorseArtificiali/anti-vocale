@@ -342,6 +342,7 @@
     <string name="settings_feedback_source_title">Вихідний код</string>
     <string name="settings_feedback_license_title">Ліцензія</string>
     <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">Версія</string>
     <string name="settings_feedback_privacy_note">Нічого не надсилається без вашої дії; цей лист надсилає ваша поштова програма.</string>
     <string name="settings_feedback_address_copied">Поштову програму не знайдено. Адресу скопійовано в буфер обміну: %1$s</string>
     <string name="settings_feedback_body_version">Версія додатка</string>

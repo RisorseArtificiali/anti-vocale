@@ -280,6 +280,7 @@
     <string name="settings_feedback_source_title">Code source</string>
     <string name="settings_feedback_license_title">Licence</string>
     <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">Version</string>
     <string name="settings_feedback_privacy_note">Rien n\'est envoyé sans votre action ; votre application de messagerie envoie cet e-mail.</string>
     <string name="settings_feedback_address_copied">Aucune application de messagerie trouvée. Adresse copiée : %1$s</string>
     <string name="settings_feedback_body_version">Version de l\'application</string>

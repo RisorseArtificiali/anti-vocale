@@ -31,6 +31,8 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -1689,36 +1691,20 @@ private fun FeedbackSection(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                 // License row (informational, no action)
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Description,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_feedback_license_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                    // Locale-safe: weighted value wraps under a longer title instead
-                    // of overflowing the row (TASK-345)
-                    Text(
-                        text = stringResource(R.string.settings_feedback_license_value),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.End,
-                        modifier = Modifier.weight(1f)
-                    )
-                }
+                InfoRow(
+                    icon = Icons.Default.Description,
+                    title = stringResource(R.string.settings_feedback_license_title),
+                    value = stringResource(R.string.settings_feedback_license_value)
+                )
+
+                // Version row (TASK-459): lets users tell which build they run;
+                // the versionCode identifies the exact per-ABI build (F-Droid
+                // can serve an older version for days after a release)
+                InfoRow(
+                    icon = Icons.Default.Info,
+                    title = stringResource(R.string.settings_feedback_version_title),
+                    value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
+                )
 
                 // Privacy note
                 Text(
@@ -1728,6 +1714,46 @@ private fun FeedbackSection(
                 )
             }
         }
+    }
+}
+
+/**
+ * Informational (non-clickable) row of the Feedback & About section: icon +
+ * bold title on the leading edge, value on the trailing edge. Shared by the
+ * license and version rows (TASK-459 extraction; the clickable rows above
+ * have a different shape and stay inline).
+ */
+@Composable
+private fun InfoRow(icon: ImageVector, title: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        // Locale-safe: weighted value wraps under a longer title instead
+        // of overflowing the row (TASK-345)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.End,
+            modifier = Modifier.weight(1f)
+        )
     }
 }
 

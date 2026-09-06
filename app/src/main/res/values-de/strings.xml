@@ -316,6 +316,7 @@
     <string name="settings_feedback_source_title">Quellcode</string>
     <string name="settings_feedback_license_title">Lizenz</string>
     <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">Version</string>
     <string name="settings_feedback_privacy_note">Nichts wird ohne deine Aktion gesendet; deine E-Mail-App sendet diese E-Mail.</string>
     <string name="settings_feedback_address_copied">Keine E-Mail-App gefunden. Adresse in die Zwischenablage kopiert: %1$s</string>
     <string name="settings_feedback_body_version">App-Version</string>
