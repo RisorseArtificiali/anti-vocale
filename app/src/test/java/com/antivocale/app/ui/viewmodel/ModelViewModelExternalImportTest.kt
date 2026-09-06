@@ -124,7 +124,6 @@ class ModelViewModelExternalImportTest {
             preferencesManager = fakePrefs,
             activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry()),
             tokenManager = mockk(relaxed = true),
-            benchmarkManager = mockk(relaxed = true),
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),
             shareTargetManager = mockk(relaxed = true),

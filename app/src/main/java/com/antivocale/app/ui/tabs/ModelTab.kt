@@ -74,6 +74,7 @@ import com.antivocale.app.ui.components.DeleteConfirmationDialog
 import com.antivocale.app.ui.components.DownloadConfirmationDialog
 import com.antivocale.app.ui.components.ModelInfoOverlay
 import com.antivocale.app.benchmark.BenchmarkState
+import com.antivocale.app.ui.viewmodel.BenchmarkViewModel
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 
 private fun <T> filterVariants(
@@ -89,6 +90,7 @@ private fun <T> filterVariants(
 @Composable
 fun ModelTab(
     viewModel: ModelViewModel = hiltViewModel(),
+    benchmarkViewModel: BenchmarkViewModel = hiltViewModel(),
     onNavigateToSettings: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -388,16 +390,16 @@ fun ModelTab(
     }
 
     // Benchmark dialog
-    val benchmarkState by viewModel.benchmarkState.collectAsState()
-    val benchmarkTargetName by viewModel.benchmarkTargetName.collectAsState()
+    val benchmarkState by benchmarkViewModel.benchmarkState.collectAsState()
+    val benchmarkTargetName by benchmarkViewModel.benchmarkTargetName.collectAsState()
     if (benchmarkState !is BenchmarkState.Idle || benchmarkTargetName.isNotEmpty()) {
         BenchmarkDialog(
             modelName = benchmarkTargetName,
             state = benchmarkState,
-            onDismiss = { viewModel.dismissBenchmark() },
-            onCancel = { viewModel.cancelBenchmark() },
+            onDismiss = { benchmarkViewModel.dismissBenchmark() },
+            onCancel = { benchmarkViewModel.cancelBenchmark() },
             onRerun = {
-                viewModel.rerunBenchmark()
+                benchmarkViewModel.rerunBenchmark()
             }
         )
     }
@@ -455,6 +457,7 @@ fun ModelTab(
             if (visibleVariants.isNotEmpty()) {
                 CatalogModelSection(
                     viewModel = viewModel,
+                    benchmarkViewModel = benchmarkViewModel,
                     entry = entry,
                     state = catalogStates[entry.id] ?: ModelViewModel.ModelEntryUiState(),
                     activeBackendId = activeBackendId,
@@ -781,6 +784,7 @@ private fun ModelDownloadSection(
 @Composable
 private fun CatalogModelSection(
     viewModel: ModelViewModel,
+    benchmarkViewModel: BenchmarkViewModel,
     entry: CatalogEntry,
     state: ModelViewModel.ModelEntryUiState,
     activeBackendId: String,
@@ -925,7 +929,7 @@ private fun CatalogModelSection(
                     onBenchmarkClick = {
                         val path = SherpaModelDownloader.of(entry.id).getModelPath(context, variant.variantName)
                         if (path != null) {
-                            viewModel.startBenchmark(
+                            benchmarkViewModel.startBenchmark(
                                 entry.id,
                                 path,
                                 context.getString(variant.titleResId)

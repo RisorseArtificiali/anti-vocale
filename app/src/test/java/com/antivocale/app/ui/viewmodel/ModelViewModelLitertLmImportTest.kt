@@ -98,7 +98,6 @@ class ModelViewModelLitertLmImportTest {
             preferencesManager = prefs,
             activeModelRepository = ActiveModelRepository(prefs, mockContext, staticRegistry()),
             tokenManager = mockk(relaxed = true),
-            benchmarkManager = mockk(relaxed = true),
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),
             shareTargetManager = mockk(relaxed = true),

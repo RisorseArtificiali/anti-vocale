@@ -30,7 +30,7 @@ import org.junit.Test
  * Construction follows the house LogsViewModel pattern: a
  * [StandardTestDispatcher] is installed as Main in [setup] and reset in
  * [tearDown]. [FakePreferencesManager] and [ActiveModelRepository] are real;
- * every other constructor dependency (token/benchmark/backend/llm/share-target
+ * every other constructor dependency (token/backend/llm/share-target
  * managers) is a relaxed mockk, and the @ApplicationContext Context is a
  * mockk with filesDir pointed at a real empty temp directory so the init-time
  * download-state scans touch real (nonexistent) paths instead of mocked Files.
@@ -94,7 +94,6 @@ class ModelViewModelActiveModelTest {
             preferencesManager = fakePrefs,
             activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry()),
             tokenManager = mockk(relaxed = true),
-            benchmarkManager = mockk(relaxed = true),
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),
             shareTargetManager = mockk(relaxed = true),
