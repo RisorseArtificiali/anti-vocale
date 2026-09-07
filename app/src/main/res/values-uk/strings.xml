@@ -507,6 +507,14 @@
     <string name="theme_whatsapp">WhatsApp</string>
     <string name="theme_telegram">Telegram</string>
 
+    <!-- Settings Tab - App icon (TASK-392) -->
+    <string name="app_icon_title">Значок застосунку</string>
+    <string name="app_icon_note">Під час зміни значок у деяких лаунчерах може на мить зникнути; у магазині лишається стандартний значок.</string>
+    <string name="app_icon_variant_default">Стандартний</string>
+    <string name="app_icon_variant_teal">Бірюзовий</string>
+    <string name="app_icon_variant_ink">Чорнильний</string>
+    <string name="app_icon_variant_amber">Бурштиновий</string>
+
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Налаштування для додатків</string>
     <string name="per_app_settings_description">Налаштуйте поведінку повідомлень для кожного додатка</string>

@@ -483,6 +483,14 @@
     <string name="theme_whatsapp">WhatsApp</string>
     <string name="theme_telegram">Telegram</string>
 
+    <!-- Settings Tab - App icon (TASK-392) -->
+    <string name="app_icon_title">Icona dell\'app</string>
+    <string name="app_icon_note">Cambiandola, l\'icona può sparire per un attimo su alcuni launcher; la scheda dello store mantiene l\'icona predefinita.</string>
+    <string name="app_icon_variant_default">Predefinita</string>
+    <string name="app_icon_variant_teal">Verde petrolio</string>
+    <string name="app_icon_variant_ink">Inchiostro</string>
+    <string name="app_icon_variant_amber">Ambra</string>
+
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Impostazioni per App</string>
     <string name="per_app_settings_description">Personalizza il comportamento delle notifiche per ogni app</string>

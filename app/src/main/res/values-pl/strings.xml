@@ -505,6 +505,14 @@
     <string name="theme_whatsapp">WhatsApp</string>
     <string name="theme_telegram">Telegram</string>
 
+    <!-- Settings Tab - App icon (TASK-392) -->
+    <string name="app_icon_title">Ikona aplikacji</string>
+    <string name="app_icon_note">Przełączenie może na chwilę ukryć ikonę na niektórych launcherach; w sklepie pozostaje ikona domyślna.</string>
+    <string name="app_icon_variant_default">Domyślna</string>
+    <string name="app_icon_variant_teal">Turkusowa</string>
+    <string name="app_icon_variant_ink">Atramentowa</string>
+    <string name="app_icon_variant_amber">Bursztynowa</string>
+
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Ustawienia per aplikacja</string>
     <string name="per_app_settings_description">Dostosuj zachowanie powiadomień dla każdej aplikacji</string>

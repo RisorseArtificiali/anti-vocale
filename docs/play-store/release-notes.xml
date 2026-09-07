@@ -1,8 +1,8 @@
-<en-US>
-What's new in 1.12.0:
+<en-US>What's new in 1.12.0:
 
-• Transcription language setting now follows the model in use: it offers the languages the active model actually supports, explains itself when the model detects language automatically, and warns when a language is forced
-• Fixed: Whisper no longer silently uses the app language on foreign-language audio, which could produce a fluent translation instead of a transcript
+• New: choose the app icon from four variants (re-pin it once if it was pinned to the home screen)
+• The language setting now follows the model in use: only supported languages, with a warning when one is forced
+• Fixed: Whisper no longer applies the app language to foreign audio, which could yield a translation instead of a transcript
 
 What's new in 1.11.3:
 
@@ -211,11 +211,11 @@ What's new since 1.0.3:
 • LiteRT-LM backend for multimodal on-device inference (Gemma models with audio)
 </en-US>
 
-<it-IT>
-Novità della versione 1.12.0:
+<it-IT>Novità della versione 1.12.0:
 
-• L'impostazione lingua di trascrizione ora segue il modello in uso: propone le lingue effettivamente supportate, si spiega quando il modello rileva la lingua da solo e avvisa quando una lingua è forzata
-• Corretto: Whisper non usa più silenziosamente la lingua dell'app su audio in altra lingua, che poteva produrre una traduzione fluente invece di una trascrizione
+• Novità: scegli l'icona dell'app tra quattro varianti (se era fissata nella home, fissala di nuovo una volta)
+• L'impostazione lingua segue il modello in uso: solo lingue supportate, con avviso quando una è forzata
+• Corretto: Whisper non applica più la lingua dell'app ad audio in altra lingua, che poteva dare una traduzione invece di una trascrizione
 
 Novità della versione 1.11.3:
 
@@ -424,11 +424,11 @@ Novità dalla versione 1.0.3:
 • Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)
 </it-IT>
 
-<de-DE>
-Neuigkeiten in Version 1.12.0:
+<de-DE>Neuigkeiten in Version 1.12.0:
 
-• Die Einstellung Transkriptionssprache folgt jetzt dem aktiven Modell: sie bietet nur die unterstützten Sprachen an, erklärt sich bei automatischer Spracherkennung und warnt bei erzwungener Sprache
-• Behoben: Whisper verwendet bei Audio in einer Fremdsprache nicht mehr still die App-Sprache, was eine flüssige Übersetzung statt einer Transkription liefern konnte
+• Neu: App-Symbol aus vier Varianten wählen (falls angeheftet, einmal neu anheften)
+• Die Spracheinstellung folgt dem aktiven Modell: nur unterstützte Sprachen, mit Warnung bei erzwungener Sprache
+• Behoben: Whisper wendet bei Fremdsprache-Audio nicht mehr still die App-Sprache an, was eine Übersetzung statt einer Transkription liefern konnte
 
 Neuigkeiten in Version 1.11.3:
 
@@ -457,11 +457,11 @@ Neuigkeiten in Version 1.11.0:
 
 </de-DE>
 
-<es-ES>
-Novedades de la versión 1.12.0:
+<es-ES>Novedades de la versión 1.12.0:
 
-• El ajuste de idioma de transcripción ahora sigue el modelo activo: ofrece los idiomas que realmente admite, se explica cuando el modelo detecta el idioma automáticamente y avisa cuando se fuerza un idioma
-• Corregido: Whisper ya no usa silenciosamente el idioma de la app con audio en otro idioma, lo que podía producir una traducción fluida en vez de una transcripción
+• Nuevo: elige el icono de la app entre cuatro variantes (si estaba fijado, vuelve a fijarlo una vez)
+• El ajuste de idioma sigue el modelo en uso: solo idiomas admitidos, con aviso al forzar uno
+• Corregido: Whisper ya no aplica el idioma de la app al audio en otro idioma, lo que podía dar una traducción en vez de una transcripción
 
 Novedades de la versión 1.11.3:
 
@@ -490,11 +490,11 @@ Novedades de la versión 1.11.0:
 
 </es-ES>
 
-<fr-FR>
-Nouveautés de la version 1.12.0 :
+<fr-FR>Nouveautés de la version 1.12.0 :
 
-• Le réglage de langue de transcription suit désormais le modèle actif : il propose les langues réellement prises en charge, s'explique quand le modèle détecte la langue automatiquement et avertit quand une langue est forcée
-• Corrigé : Whisper n'utilise plus silencieusement la langue de l'application sur un audio en langue étrangère, ce qui pouvait produire une traduction fluide au lieu d'une transcription
+• Nouveau : choisissez l'icône parmi quatre variantes (si elle était épinglée, épinglez-la une fois de plus)
+• Le réglage de langue suit le modèle actif : langues prises en charge uniquement, avec avertissement si l'une est forcée
+• Corrigé : Whisper n'applique plus la langue de l'application à l'audio étranger, ce qui pouvait donner une traduction au lieu d'une transcription
 
 Nouveautés de la version 1.11.3 :
 
@@ -523,11 +523,11 @@ Nouveautés de la version 1.11.0 :
 
 </fr-FR>
 
-<pt-BR>
-Novidades da versão 1.12.0:
+<pt-BR>Novidades da versão 1.12.0:
 
-• A configuração de idioma de transcrição agora segue o modelo em uso: oferece os idiomas que ele realmente suporta, explica quando o modelo detecta o idioma sozinho e avisa quando um idioma é forçado
-• Corrigido: o Whisper não usa mais silenciosamente o idioma do app em áudio em outro idioma, o que podia produzir uma tradução fluente em vez de uma transcrição
+• Novo: escolha o ícone do app entre quatro variantes (se estava fixado, fixe novamente uma vez)
+• O ajuste de idioma segue o modelo em uso: só idiomas suportados, com aviso ao forçar um
+• Corrigido: o Whisper não aplica mais o idioma do app a áudio em outro idioma, o que podia gerar uma tradução em vez de uma transcrição
 
 Novidades da versão 1.11.3:
 
@@ -556,11 +556,11 @@ Novidades da versão 1.11.0:
 
 </pt-BR>
 
-<ru-RU>
-Что нового в версии 1.12.0:
+<ru-RU>Что нового в версии 1.12.0:
 
-• Настройка языка расшифровки теперь следует активной модели: предлагает только поддерживаемые языки, поясняет работу автоподбора и предупреждает при принудительном языке
-• Исправлено: Whisper больше не подставляет молча язык приложения к записи на другом языке, что могло давать беглый перевод вместо расшифровки
+• Новое: выберите иконку приложения из четырёх вариантов (если была закреплена, закрепите заново один раз)
+• Настройка языка следует активной модели: только поддерживаемые языки, с предупреждением при принудительном языке
+• Исправлено: Whisper больше не подставляет язык приложения к записи на другом языке, что могло давать перевод вместо расшифровки
 
 Что нового в версии 1.11.3:
 
@@ -589,11 +589,11 @@ Novidades da versão 1.11.0:
 
 </ru-RU>
 
-<tr-TR>
-Sürüm 1.12.0'deki yenilikler:
+<tr-TR>Sürüm 1.12.0'deki yenilikler:
 
-• Transkripsiyon dili ayarı artık kullanılan modeli takip ediyor: yalnızca desteklenen dilleri sunar, model dili kendisi algıladığında bunu açıklar ve bir dil zorlandığında uyarır
-• Düzeltildi: Whisper, başka bir dildeki seslerde artık sessizce uygulama dilini kullanmıyor; bu, transkripsiyon yerine akıcı bir çeviri üretebiliyordu
+• Yeni: uygulama simgesini dört varyanttan seçin (sabitlenmişse bir kez yeniden sabitleyin)
+• Dil ayarı kullanılan modeli izler: yalnızca desteklenen diller, bir dil zorlanınca uyarı
+• Düzeltildi: Whisper, başka dildeki sese artık sessizce uygulama dilini uygulamıyor; bu, transkripsiyon yerine çeviri verebiliyordu
 
 Sürüm 1.11.3'teki yenilikler:
 
@@ -622,11 +622,11 @@ Sürüm 1.11.0'daki yenilikler:
 
 </tr-TR>
 
-<pl-PL>
-Nowości w wersji 1.12.0:
+<pl-PL>Nowości w wersji 1.12.0:
 
-• Ustawienie języka transkrypcji podąża teraz za aktywnym modelem: proponuje języki, które on faktycznie obsługuje, wyjaśnia, gdy model sam wykrywa język, i ostrzega przy wymuszeniu języka
-• Poprawione: Whisper nie używa już po cichu języka aplikacji przy nagraniu w innym języku, co mogło dawać płynne tłumaczenie zamiast transkrypcji
+• Nowość: wybierz ikonę aplikacji spośród czterech wariantów (jeśli była przypięta, przypnij ponownie raz)
+• Ustawienie języka podąża za aktywnym modelem: tylko obsługiwane języki, z ostrzeżeniem przy wymuszeniu
+• Poprawione: Whisper nie stosuje już po cichu języka aplikacji do nagrania w innym języku, co mogło dawać tłumaczenie zamiast transkrypcji
 
 Nowości w wersji 1.11.3:
 
@@ -655,11 +655,11 @@ Nowości w wersji 1.11.0:
 
 </pl-PL>
 
-<hi-IN>
-संस्करण 1.12.0 में नया क्या है:
+<hi-IN>संस्करण 1.12.0 में नया क्या है:
 
-• ट्रांस्क्रिप्शन भाषा की सेटिंग अब चालू मॉडल के अनुसार चलती है: वह केवल समर्थित भाषाएँ दिखाती है, मॉडल के स्वतः भाषा पहचानने पर समझाती है, और भाषा बाध्य करने पर चेतावनी देती है
-• सुधार: Whisper अब दूसरी भाषा के ऑडियो पर चुपचाप ऐप की भाषा नहीं अपनाता, जिससे ट्रांस्क्रिप्ट की जगह एक सधी हुई अनुवाद बन सकती थी
+• नया: चार रूपों में से ऐप का आइकन चुनें (होम पर पिन था तो एक बार फिर पिन करें)
+• भाषा सेटिंग चालू मॉडल के अनुसार चलती है: केवल समर्थित भाषाएँ, बाध्य करने पर चेतावनी
+• सुधार: Whisper अब दूसरी भाषा के ऑडियो पर चुपचाप ऐप की भाषा नहीं अपनाता, जिससे ट्रांस्क्रिप्ट की जगह अनुवाद बन सकता था
 
 संस्करण 1.11.3 में नया क्या है:
 

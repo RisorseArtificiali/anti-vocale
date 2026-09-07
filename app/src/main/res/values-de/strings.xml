@@ -475,6 +475,14 @@
     <string name="theme_whatsapp">WhatsApp</string>
     <string name="theme_telegram">Telegram</string>
 
+    <!-- Settings Tab - App icon (TASK-392) -->
+    <string name="app_icon_title">App-Symbol</string>
+    <string name="app_icon_note">Beim Wechsel kann das Symbol auf einigen Launchern kurz verschwinden; der Store-Eintrag behält das Standardsymbol.</string>
+    <string name="app_icon_variant_default">Standard</string>
+    <string name="app_icon_variant_teal">Petrol</string>
+    <string name="app_icon_variant_ink">Tinte</string>
+    <string name="app_icon_variant_amber">Bernstein</string>
+
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">App-spezifische Einstellungen</string>
     <string name="per_app_settings_description">Benachrichtigungsverhalten pro App anpassen</string>

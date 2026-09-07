@@ -497,6 +497,14 @@
     <string name="theme_whatsapp">WhatsApp</string>
     <string name="theme_telegram">Telegram</string>
 
+    <!-- Settings Tab - App icon (TASK-392) -->
+    <string name="app_icon_title">Uygulama simgesi</string>
+    <string name="app_icon_note">Değiştirirken simge bazı başlatıcılarda kısa süre kaybolabilir; mağaza listesinde varsayılan simge kalır.</string>
+    <string name="app_icon_variant_default">Varsayılan</string>
+    <string name="app_icon_variant_teal">Turkuaz</string>
+    <string name="app_icon_variant_ink">Mürekkep</string>
+    <string name="app_icon_variant_amber">Amber</string>
+
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Uygulama Başına Ayarlar</string>
     <string name="per_app_settings_description">Her uygulama için bildirim davranışını özelleştirin</string>

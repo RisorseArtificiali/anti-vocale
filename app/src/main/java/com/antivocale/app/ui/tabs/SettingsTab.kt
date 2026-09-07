@@ -10,10 +10,20 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.documentfile.provider.DocumentFile
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -57,6 +67,7 @@ import com.antivocale.app.ui.components.SettingsDropdown
 import com.antivocale.app.ui.components.TokenInputField
 import com.antivocale.app.ui.components.ToggleSettingCard
 import com.antivocale.app.ui.components.UnloadModelButton
+import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.ui.dialogs.PerformanceStatsDialog
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.screens.PromptSettingsScreen
@@ -665,6 +676,56 @@ fun SettingsTab(
                         onOptionSelected = { viewModel.saveThemeMode(it) },
                         label = stringResource(R.string.theme_mode_title)
                     )
+                }
+            }
+
+            // App icon variants (TASK-392): previews composite the variant's
+            // background color with the shared foreground bitmap, so what the
+            // user picks is what ships.
+            val currentLauncherIcon by viewModel.currentLauncherIcon.collectAsState()
+            Card(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Apps,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.app_icon_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.app_icon_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .selectableGroup(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+                    ) {
+                        LauncherIconVariant.entries.forEach { variant ->
+                            LauncherIconOption(
+                                variant = variant,
+                                selected = variant == currentLauncherIcon,
+                                onSelect = { viewModel.selectLauncherIcon(variant) }
+                            )
+                        }
+                    }
                 }
             }
 
@@ -1933,4 +1994,64 @@ private fun punctuationModeLabel(pref: String): String = when (pref) {
     PunctuationPolicy.PREF_OFF -> stringResource(R.string.punctuation_mode_off)
     PunctuationPolicy.PREF_ALWAYS -> stringResource(R.string.punctuation_mode_always)
     else -> stringResource(R.string.punctuation_mode_auto)
+}
+
+/**
+ * One launcher-icon tile (TASK-392): a WYSIWYG composite of the variant's
+ * background color and the shared foreground bitmap inside a circular clip
+ * (the adaptive-icon XML is not a vector, so painterResource cannot load it),
+ * localized name underneath, primary ring on the selected tile. selectable so
+ * TalkBack announces the picked state (TASK-384 precedent for icon-only
+ * selection states). The label text carries the semantic name; the image stays
+ * decorative.
+ */
+@Composable
+private fun LauncherIconOption(
+    variant: LauncherIconVariant,
+    selected: Boolean,
+    onSelect: () -> Unit,
+) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier
+            .clip(RoundedCornerShape(12.dp))
+            .selectable(
+                selected = selected,
+                role = Role.Button,
+                onClick = onSelect,
+            )
+            .padding(horizontal = 4.dp),
+    ) {
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(56.dp)
+                .clip(CircleShape)
+                .background(colorResource(variant.backgroundRes))
+                .then(
+                    if (selected) Modifier.border(
+                        width = 3.dp,
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = CircleShape,
+                    ) else Modifier
+                ),
+        ) {
+            // The foreground bitmap ships with the adaptive-icon safe-zone
+            // padding baked in (glyph in the middle two-thirds), so a
+            // full-bleed render reproduces the launcher's framing.
+            Image(
+                painter = painterResource(R.mipmap.ic_launcher_foreground),
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+            )
+        }
+        Text(
+            text = stringResource(variant.nameRes),
+            style = MaterialTheme.typography.bodySmall,
+            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            color = if (selected) MaterialTheme.colorScheme.primary
+            else MaterialTheme.colorScheme.onSurface,
+        )
+    }
 }

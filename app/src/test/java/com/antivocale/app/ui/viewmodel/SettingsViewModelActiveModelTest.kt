@@ -6,6 +6,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.FakePreferencesManager
 import com.antivocale.app.transcription.staticRegistry
+import com.antivocale.app.ui.appearance.LauncherIconVariant
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -61,6 +62,11 @@ class SettingsViewModelActiveModelTest {
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),
             shareTargetManager = mockk(relaxed = true),
+            // Enum returns are stubbed explicitly: a relaxed mock's enum answer
+            // is version-dependent, and the ViewModel reads current() at init.
+            launcherIconManager = mockk(relaxed = true) {
+                every { current() } returns LauncherIconVariant.DEFAULT
+            },
             // getString is stubbed so the fixed catalog display name (whisper_title)
             // resolves to a distinguishable value instead of a relaxed-mock empty string.
             activeModelRepository = ActiveModelRepository(

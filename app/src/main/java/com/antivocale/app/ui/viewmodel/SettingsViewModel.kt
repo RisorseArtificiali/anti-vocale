@@ -25,6 +25,8 @@ import com.antivocale.app.manager.LlmManager
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
 // GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import com.antivocale.app.ui.appearance.LauncherIconManager
+import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.LanguageNames
@@ -40,6 +42,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
@@ -63,7 +66,8 @@ class SettingsViewModel @Inject constructor(
     private val backendManager: TranscriptionBackendManager,
     private val llmManager: LlmManager,
     private val shareTargetManager: ShareTargetManager,
-    private val activeModelRepository: ActiveModelRepository
+    private val activeModelRepository: ActiveModelRepository,
+    private val launcherIconManager: LauncherIconManager
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -332,6 +336,12 @@ class SettingsViewModel @Inject constructor(
     private val _currentThemeMode = MutableStateFlow(ThemeMode.SYSTEM)
     val currentThemeMode: StateFlow<ThemeMode> = _currentThemeMode.asStateFlow()
 
+    // Launcher icon variants (TASK-392): source of truth is the PackageManager
+    // component state (binder calls), read on Dispatchers.Default like
+    // BridgeApplication's share-target sync.
+    private val _currentLauncherIcon = MutableStateFlow(LauncherIconVariant.DEFAULT)
+    val currentLauncherIcon: StateFlow<LauncherIconVariant> = _currentLauncherIcon.asStateFlow()
+
     // HuggingFace token state
     val tokenState = huggingFaceTokenManager.tokenState
 
@@ -369,6 +379,12 @@ class SettingsViewModel @Inject constructor(
                     ThemeMode.SYSTEM
                 }
             }
+        }
+        // Read the active launcher icon alias from PackageManager component
+        // state: a binder call, so it runs on Dispatchers.Default
+        // (BridgeApplication's share-target-sync precedent).
+        viewModelScope.launch(Dispatchers.Default) {
+            _currentLauncherIcon.value = launcherIconManager.current()
         }
     }
 
@@ -601,6 +617,20 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.saveThemeMode(mode.name)
             _currentThemeMode.value = mode
+        }
+    }
+
+    /**
+     * Switches the launcher icon alias (TASK-392). The manager enables the
+     * chosen alias before disabling the others, so the app never loses its
+     * last enabled launcher alias mid-switch; the flow then re-reads the
+     * component state so the picker reflects what PackageManager actually
+     * holds. Binder calls, so the whole switch runs on Dispatchers.Default.
+     */
+    fun selectLauncherIcon(variant: LauncherIconVariant) {
+        viewModelScope.launch(Dispatchers.Default) {
+            launcherIconManager.select(variant)
+            _currentLauncherIcon.value = launcherIconManager.current()
         }
     }
 

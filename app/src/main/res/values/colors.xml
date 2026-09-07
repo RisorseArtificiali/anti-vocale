@@ -12,4 +12,15 @@
     <color name="on_background">#f1f5f9</color>
     <color name="on_surface">#e2e8f0</color>
     <color name="on_surface_variant">#e2e8f0</color>
+
+    <!-- Launcher icon variant backgrounds (TASK-392): same foreground/monochrome
+         layers as the default icon, recolored from the theme palette (teal from the
+         WhatsApp palette, ink is the app background, muted amber). The default is
+         the brand background the ic_launcher_background PNG fills with (verified
+         against the asset: solid #E91E63 in every density), so the picker preview
+         composites exactly what the adaptive XML renders. -->
+    <color name="launcher_icon_default">#E91E63</color>
+    <color name="launcher_icon_teal">#128C7E</color>
+    <color name="launcher_icon_ink">#0F172A</color>
+    <color name="launcher_icon_amber">#D97706</color>
 </resources>
