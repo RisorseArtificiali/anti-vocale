@@ -10,6 +10,7 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -17,6 +18,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -118,5 +121,35 @@ class SettingsViewModelActiveModelTest {
         assertEquals("gemma4_gguf", state.transcriptionBackend)
         assertEquals("/models/gemma-4-e2b-it.gguf", state.currentModelPath)
         assertEquals("gemma-4-e2b-it.gguf", state.currentModelName)
+    }
+
+    /**
+     * TASK-458: the Transcription Language picker derives from the ACTIVE
+     * backend through the same ActiveModelRepository chain (the bundled
+     * catalog is already seeded by staticRegistry() in setup): the Whisper
+     * Distil-IT directory name yields its single-language set, and a backend
+     * without language conditioning (Parakeet, the default) disables the
+     * picker.
+     */
+    @Test
+    fun `transcription language picker derives from the active backend and model`() = runTest {
+        fakePrefs._transcriptionBackend.value = "whisper"
+        fakePrefs._sherpaModelPath("whisper").value = "/models/sherpa-onnx-whisper-distil-large-v3-it"
+
+        val collector = launch { viewModel.transcriptionLanguagePicker.collect {} }
+        runCurrent()
+
+        val whisper = viewModel.transcriptionLanguagePicker.value
+        assertTrue(whisper.conditioningAvailable)
+        assertEquals(setOf("it"), whisper.offeredCodes)
+
+        fakePrefs._transcriptionBackend.value = "sherpa-onnx"
+        runCurrent()
+
+        val parakeet = viewModel.transcriptionLanguagePicker.value
+        assertFalse(parakeet.conditioningAvailable)
+        assertTrue(parakeet.offeredCodes.isEmpty())
+
+        collector.cancel()
     }
 }

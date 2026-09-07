@@ -10,7 +10,6 @@ import com.antivocale.app.transcription.BackendConfig
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
-import com.antivocale.app.util.LocaleManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -19,7 +18,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.io.File
 import javax.inject.Inject
 
 /**
@@ -78,19 +76,16 @@ class BenchmarkViewModel @Inject constructor(
                         return@launch
                     }
                     val lang = preferencesManager.transcriptionLanguage.first()
-                    // Same variant + language resolution as the orchestrator's load path
-                    // (TASK-434): the benchmark must measure what transcription would
-                    // actually run with, and the "system" default must never reach the
-                    // recognizer as a literal language code.
-                    val variant = entry.variantForDirName(File(modelPath).name)
+                    // Same language resolution as the orchestrator's load path: the
+                    // benchmark must measure what transcription would actually run
+                    // with, and the "system" default must never reach the recognizer
+                    // as a literal language code.
                     BackendConfig.SherpaOnnxConfig(
                         modelDir = modelPath,
                         numThreads = threadCount,
                         language = TranscriptionLanguagePolicy.resolveForEntry(
                             entry = entry,
-                            variant = variant,
                             preference = lang,
-                            uiLocale = LocaleManager.effectiveLocale(),
                         ),
                         provider = resolvedProvider
                     )

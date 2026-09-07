@@ -87,6 +87,7 @@ fun SettingsTab(
     val autoDetectedThreads = viewModel.autoDetectedThreadCount
     val currentLanguage by viewModel.currentLanguage.collectAsState()
     val currentTranscriptionLanguage by viewModel.currentTranscriptionLanguage.collectAsState()
+    val transcriptionPicker by viewModel.transcriptionLanguagePicker.collectAsState()
     val currentTheme by viewModel.currentTheme.collectAsState()
     val swipeActionMode by viewModel.swipeActionMode.collectAsState()
     val groupLogsByConversation by viewModel.groupLogsByConversation.collectAsState()
@@ -304,6 +305,9 @@ fun SettingsTab(
             }
 
             // Transcription Language Setting
+            val transcriptionPinState = TranscriptionLanguagePolicy.pinState(
+                currentTranscriptionLanguage, transcriptionPicker.offeredCodes
+            )
             Card(
                 modifier = Modifier.fillMaxWidth()
             ) {
@@ -327,40 +331,50 @@ fun SettingsTab(
                         )
                     }
 
-                    Text(
-                        text = stringResource(R.string.transcription_language_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                    // Transcription language dropdown
+                    // TASK-458: the dropdown offers what the ACTIVE model conditions
+                    // on; backends without language conditioning render it disabled.
                     SettingsDropdown(
                         currentValue = currentTranscriptionLanguage,
-                        options = viewModel.transcriptionLanguageOptions.map { it.code },
+                        options = transcriptionPicker.codes,
                         currentValueDisplay = languageOptionLabel(
                             currentTranscriptionLanguage,
                             transcriptionSentinelLabels,
-                            viewModel.transcriptionLanguageOptions
+                            transcriptionPicker.optionByCode
                         ),
                         optionDisplay = { code ->
                             languageOptionLabel(
                                 code,
                                 transcriptionSentinelLabels,
-                                viewModel.transcriptionLanguageOptions
+                                transcriptionPicker.optionByCode
                             )
                         },
                         onOptionSelected = { viewModel.saveTranscriptionLanguage(it) },
                         label = stringResource(R.string.transcription_language_title),
-                        enabled = !uiState.isSaving
+                        enabled = transcriptionPicker.conditioningAvailable && !uiState.isSaving
                     )
 
-                    Text(
-                        text = stringResource(R.string.transcription_language_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    // TASK-458: one explanatory line per the state of the active
+                    // model vs the stored preference (mutually exclusive by design:
+                    // a model that ignores the setting entirely shows only the
+                    // no-conditioning explanation, never the pin notes).
+                    val hintRes = when {
+                        !transcriptionPicker.conditioningAvailable ->
+                            R.string.transcription_language_no_conditioning
+                        transcriptionPinState == TranscriptionLanguagePolicy.PinState.SUPPORTED_PIN ->
+                            R.string.transcription_language_forced_hint
+                        transcriptionPinState == TranscriptionLanguagePolicy.PinState.UNSUPPORTED_PIN ->
+                            R.string.transcription_language_unsupported_pin
+                        else -> null
+                    }
+                    hintRes?.let {
+                        Text(
+                            text = stringResource(it),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -687,19 +701,22 @@ fun SettingsTab(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     // Language dropdown
+                    val appOptionsByCode = remember(viewModel.languageOptions) {
+                        viewModel.languageOptions.associateBy { it.code }
+                    }
                     SettingsDropdown(
                         currentValue = currentLanguage,
                         options = viewModel.languageOptions.map { it.code },
                         currentValueDisplay = languageOptionLabel(
                             currentLanguage,
                             appLanguageSentinelLabels,
-                            viewModel.languageOptions
+                            appOptionsByCode
                         ),
                         optionDisplay = { code ->
                             languageOptionLabel(
                                 code,
                                 appLanguageSentinelLabels,
-                                viewModel.languageOptions
+                                appOptionsByCode
                             )
                         },
                         onOptionSelected = { viewModel.saveLanguagePreference(it) },
@@ -1847,10 +1864,10 @@ private fun OutputFolderSettingCard(
 private fun languageOptionLabel(
     code: String,
     sentinelLabels: Map<String, Int>,
-    options: List<LanguageOption>,
+    options: Map<String, LanguageOption>,
 ): String {
     sentinelLabels[code]?.let { return stringResource(it) }
-    return options.find { it.code == code }?.displayName
+    return options[code]?.displayName
         ?: LanguageNames.nativeLanguageName(code)
 }
 
@@ -1858,12 +1875,12 @@ private fun languageOptionLabel(
 private val appLanguageSentinelLabels = mapOf("system" to R.string.language_system)
 
 /**
- * Transcription-language dropdown sentinels (TASK-434): "system" is the
- * untouched default (follow the app locale where the variant supports it),
- * "auto" the explicit model-side detection choice.
+ * Transcription-language dropdown sentinel (TASK-457): "auto" is the
+ * model-side detection choice. A stored "system" (the pre-457 untouched
+ * default) resolves identically now that the app-locale pinning is gone, so
+ * it renders with the same label instead of a second sentinel entry.
  */
 private val transcriptionSentinelLabels = mapOf(
-    TranscriptionLanguagePolicy.PREF_SYSTEM to R.string.transcription_language_system,
     TranscriptionLanguagePolicy.PREF_AUTO to R.string.transcription_language_auto,
 )
 

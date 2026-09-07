@@ -11,15 +11,14 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import java.io.File
-import java.util.Locale
 
 /**
- * TASK-434: the wiring of the transcription-language mapping through
+ * The wiring of the transcription-language mapping through
  * [TranscriptionOrchestrator.loadCatalogBackend] against the REAL bundled
- * catalog (seeded by the test base): the variant flagged preferUiLanguage
- * (Whisper Small) resolves the untouched "system" default from the app locale,
- * unflagged Whisper variants keep model-side detection, and single-language
- * forcing in SherpaBackend still wins. The pure mapping matrix lives in
+ * catalog (seeded by the test base): the sentinels keep model-side detection
+ * (TASK-457 removed the app-locale pinning the "system" default used to
+ * carry), pinned codes pass through, and single-language forcing in
+ * SherpaBackend still wins. The pure mapping matrix lives in
  * [TranscriptionLanguagePolicyTest].
  */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -31,9 +30,6 @@ class TranscriptionOrchestratorLanguageTest : TranscriptionOrchestratorTestBase(
         super.baseSetUp()
         every { preferencesManager.inferenceProvider } returns flowOf("auto")
         every { preferencesManager.transcriptionLanguage } returns flowOf("auto")
-        // The locale the "system" default follows; deterministic (the JVM default
-        // locale varies by machine).
-        orchestrator.uiLocaleProvider = { Locale.ITALIAN }
     }
 
     @After
@@ -106,16 +102,18 @@ class TranscriptionOrchestratorLanguageTest : TranscriptionOrchestratorTestBase(
     }
 
     @Test
-    fun `untouched default follows the app locale on the flagged small variant`() {
+    fun `untouched default keeps model-side detection on the small variant`() {
+        // TASK-457: the "system" default no longer follows the app locale
+        // (the silent pin translated wrong-language audio, GH #84).
         assertLoadedLanguage(
             createVariantDir("small"),
             preference = TranscriptionLanguagePolicy.PREF_SYSTEM,
-            expected = "it",
+            expected = "",
         )
     }
 
     @Test
-    fun `untouched default keeps model-side detection on unflagged whisper variants`() {
+    fun `untouched default keeps model-side detection on every whisper variant`() {
         assertLoadedLanguage(
             createVariantDir("turbo"),
             preference = TranscriptionLanguagePolicy.PREF_SYSTEM,
@@ -124,7 +122,7 @@ class TranscriptionOrchestratorLanguageTest : TranscriptionOrchestratorTestBase(
     }
 
     @Test
-    fun `explicit auto keeps model-side detection on the flagged small variant`() {
+    fun `explicit auto keeps model-side detection on the small variant`() {
         assertLoadedLanguage(
             createVariantDir("small"),
             preference = TranscriptionLanguagePolicy.PREF_AUTO,
@@ -133,18 +131,8 @@ class TranscriptionOrchestratorLanguageTest : TranscriptionOrchestratorTestBase(
     }
 
     @Test
-    fun `pinned language passes through on the flagged small variant`() {
+    fun `pinned language passes through on the small variant`() {
         assertLoadedLanguage(createVariantDir("small"), preference = "it", expected = "it")
-    }
-
-    @Test
-    fun `locale the variant does not support falls back to auto`() {
-        orchestrator.uiLocaleProvider = { Locale("xx") }
-        assertLoadedLanguage(
-            createVariantDir("small"),
-            preference = TranscriptionLanguagePolicy.PREF_SYSTEM,
-            expected = "",
-        )
     }
 
     /**

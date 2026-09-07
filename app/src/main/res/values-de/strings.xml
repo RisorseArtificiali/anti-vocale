@@ -461,10 +461,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Transkriptionssprache</string>
-    <string name="transcription_language_system">App-Sprache folgen</string>
     <string name="transcription_language_auto">Automatisch erkennen</string>
-    <string name="transcription_language_description">Sprache des Audios für die Transkription. Eine feste Sprache überspringt die Erkennung und beschleunigt die Verarbeitung.</string>
-    <string name="transcription_language_note">Standardmäßig wird auf Whisper Small Ihre App-Sprache verwendet (automatische Erkennung, wenn das Modell sie nicht unterstützt). Gilt nur für Whisper-Modelle. Das Distil-Italian-Modell verwendet immer Italienisch. Andere Backends (Gemma, Parakeet, Qwen3-ASR) erkennen automatisch.</string>
+    <string name="transcription_language_no_conditioning">Das aktive Modell erkennt die Sprache automatisch. Diese Einstellung gilt für Whisper-Modelle und das Streaming-Modell.</string>
+    <string name="transcription_language_unsupported_pin">Das aktive Modell unterstützt diese Sprache nicht. Wählen Sie eine unterstützte Sprache oder die automatische Erkennung; Ihre Auswahl bleibt gespeichert, bis Sie sie ändern.</string>
+    <string name="transcription_language_forced_hint">Erzwingt diese Sprache: Audio in einer anderen Sprache kann in schlechterer Qualität oder als Übersetzung ausgegeben werden. Bevorzugen Sie die automatische Erkennung, solange sie nicht fehlschlägt.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Design</string>

@@ -17,6 +17,7 @@ import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
+import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
@@ -32,9 +33,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -79,8 +82,37 @@ class SettingsViewModel @Inject constructor(
     val languageOptions: List<LanguageOption> =
         languageOptionsFor(LocaleManager.effectiveLocale())
 
-    val transcriptionLanguageOptions: List<LanguageOption> =
-        transcriptionOptionsFor(LocaleManager.effectiveLocale())
+    /**
+     * TASK-458: the Transcription Language picker follows the ACTIVE backend.
+     * The offered codes derive from the active model via
+     * [TranscriptionLanguagePolicy.offeredLanguages] (GH #78: the hardcoded
+     * list could drift from per-backend support), so the UI list always
+     * matches what the recognizer actually consumes. Collects
+     * [ActiveModelRepository.activeModelFlow] like [loadCurrentModel], so a
+     * backend or model change re-derives the picker reactively. Until the
+     * first emission the picker starts disabled (the default backend,
+     * Parakeet, conditions on no language at all).
+     */
+    val transcriptionLanguagePicker: StateFlow<TranscriptionLanguagePicker> =
+        activeModelRepository.activeModelFlow
+            .distinctUntilChanged()
+            .map { active ->
+                transcriptionPickerFor(
+                    TranscriptionLanguagePolicy.offeredLanguages(
+                        modelPath = active.modelPath,
+                        entry = BundledCatalog.byId(active.backendId),
+                    ),
+                    LocaleManager.effectiveLocale(),
+                )
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5000),
+                initialValue = transcriptionPickerFor(
+                    emptySet(),
+                    LocaleManager.effectiveLocale(),
+                ),
+            )
 
     // Theme options
     val themeOptions = ThemeType.entries
@@ -153,12 +185,20 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_PROMPT_VALUE
         )
 
-    // Transcription language preference
+    // Transcription language preference. Normalized at this boundary (TASK-457):
+    // the legacy "system" sentinel and a blank value resolve identically to
+    // "auto", so the dropdown's checkmark lands on Auto instead of matching
+    // no row (the policy maps them equivalently on the decode side).
     val currentTranscriptionLanguage: StateFlow<String> = preferencesManager.transcriptionLanguage
+        .map { pref ->
+            if (pref.isBlank() || pref == TranscriptionLanguagePolicy.PREF_SYSTEM) {
+                TranscriptionLanguagePolicy.PREF_AUTO
+            } else pref
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE
+            initialValue = TranscriptionLanguagePolicy.PREF_AUTO
         )
 
     // TASK-276: punctuation pass mode + user prompt override.
@@ -786,14 +826,12 @@ data class LanguageOption(val code: String, val displayName: String)
 private val appLanguageCodes =
     listOf("de", "en", "es", "fr", "hi", "it", "pt-BR", "ru")
 
-private val transcriptionLanguageCodes =
-    listOf("ar", "de", "en", "es", "fr", "it", "ja", "pt", "zh")
-
 private fun optionsFor(
     sentinelCodes: List<String>,
     codes: List<String>,
     locale: java.util.Locale,
 ): List<LanguageOption> {
+    if (codes.isEmpty()) return sentinelCodes.map { LanguageOption(it, "") }
     val collator = java.text.Collator.getInstance(locale)
     val entries = codes
         .map { LanguageOption(it, LanguageNames.nativeLanguageName(it)) }
@@ -804,11 +842,34 @@ private fun optionsFor(
 internal fun languageOptionsFor(locale: java.util.Locale): List<LanguageOption> =
     optionsFor(listOf("system"), appLanguageCodes, locale)
 
-// TASK-434: "system" (the untouched default: follow the app locale where the
-// variant supports it) pins first, then explicit "auto" (model-side detection).
-internal fun transcriptionOptionsFor(locale: java.util.Locale): List<LanguageOption> =
-    optionsFor(
-        listOf(TranscriptionLanguagePolicy.PREF_SYSTEM, TranscriptionLanguagePolicy.PREF_AUTO),
-        transcriptionLanguageCodes,
-        locale,
-    )
+/**
+ * TASK-458: what the Transcription Language card renders for the active
+ * backend. An empty offered set means "no language conditioning" and renders
+ * the card disabled with an explanatory line; the offered codes become the
+ * dropdown entries under the one "auto" sentinel (TASK-457: a stored "system"
+ * default resolves identically to "auto", so it is no longer offered or
+ * labeled separately).
+ */
+data class TranscriptionLanguagePicker(
+    /** The "auto" sentinel plus the offered codes, sentinel-first, collated for the locale. */
+    val options: List<LanguageOption>,
+    /** The raw offered set; the unsupported-pin check compares the stored pin against it. */
+    val offeredCodes: Set<String>,
+) {
+    /** False = the active model does not condition on language; the card renders disabled. */
+    val conditioningAvailable: Boolean get() = offeredCodes.isNotEmpty()
+
+    /** Just the code list, in menu order (no per-recomposition mapping at the call site). */
+    val codes: List<String> get() = options.map { it.code }
+
+    /** Label lookup for the dropdown rows and the current value (O(1), not a scan). */
+    val optionByCode: Map<String, LanguageOption> by lazy { options.associateBy { it.code } }
+}
+
+internal fun transcriptionPickerFor(
+    offered: Set<String>,
+    locale: java.util.Locale,
+): TranscriptionLanguagePicker = TranscriptionLanguagePicker(
+    options = optionsFor(listOf(TranscriptionLanguagePolicy.PREF_AUTO), offered.toList(), locale),
+    offeredCodes = offered,
+)

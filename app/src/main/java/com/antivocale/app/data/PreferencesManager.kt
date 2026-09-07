@@ -116,9 +116,10 @@ interface PreferencesManager {
         const val DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE = "nemo_transducer"
         const val DEFAULT_LANGUAGE = "system"
         /**
-         * TASK-434: the untouched default follows the app/UI locale on variants
-         * flagged `preferUiLanguage` (Whisper Small), else auto-detects. "auto"
-         * remains a selectable, explicit model-side auto-detection choice; see
+         * The untouched default. TASK-457 removed the app-locale pinning it used
+         * to carry: "system" now resolves exactly like "auto" (model-side
+         * detection), and survives only as the stored default so existing
+         * installs keep resolving without a preference migration; see
          * TranscriptionLanguagePolicy.
          */
         const val DEFAULT_TRANSCRIPTION_LANGUAGE = "system"

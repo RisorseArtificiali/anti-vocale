@@ -483,10 +483,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Metin Çıkarma Dili</string>
-    <string name="transcription_language_system">Uygulama dilini kullan</string>
     <string name="transcription_language_auto">Otomatik algıla</string>
-    <string name="transcription_language_description">Metin çıkarma için ses dili. Belirli bir dil seçmek algılamayı atlar ve işlemeyi hızlandırır.</string>
-    <string name="transcription_language_note">Varsayılan olarak Whisper Small\'da uygulama dili kullanılır (model desteklemiyorsa otomatik algılama). Yalnızca Whisper modelleri için geçerlidir. Distil Italian modeli her zaman İtalyanca kullanır. Diğer arka uçlar (Gemma, Parakeet, Qwen3-ASR) otomatik algılar.</string>
+    <string name="transcription_language_no_conditioning">Etkin model dili otomatik algılar. Bu ayar Whisper modellerine ve akış modeline uygulanır.</string>
+    <string name="transcription_language_unsupported_pin">Etkin model bu dili desteklemiyor. Desteklenen bir dil veya otomatik algılamayı seçin; seçiminiz değiştirene kadar korunur.</string>
+    <string name="transcription_language_forced_hint">Bu dili zorlar: başka bir dildeki ses bozuk veya çevrilmiş çıkabilir. Algılama yanlış olmadıkça otomatik algılamayı kullanın.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Tema</string>

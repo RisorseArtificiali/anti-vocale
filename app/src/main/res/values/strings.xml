@@ -480,10 +480,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Transcription Language</string>
-    <string name="transcription_language_system">Follow app language</string>
     <string name="transcription_language_auto">Auto-detect</string>
-    <string name="transcription_language_description">Audio language for transcription. Selecting a specific language skips detection and speeds up processing.</string>
-    <string name="transcription_language_note">By default your app language is used on Whisper Small (auto-detect when the model does not support it). Only applies to Whisper models. The Distil Italian model always uses Italian. Other backends (Gemma, Parakeet, Qwen3-ASR) auto-detect.</string>
+    <string name="transcription_language_no_conditioning">The active model detects the language automatically. This setting applies to Whisper models and the streaming model.</string>
+    <string name="transcription_language_unsupported_pin">The active model does not support this language. Choose a supported language or Auto-detect; your choice is kept until you change it.</string>
+    <string name="transcription_language_forced_hint">Forces this language: audio in another language can come out degraded or translated. Prefer Auto-detect unless detection misfires.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Theme</string>

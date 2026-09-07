@@ -22,15 +22,27 @@ class LanguageOptionsOrderTest {
     }
 
     @Test
-    fun `transcription options pin system then auto-detect and collate the rest`() {
-        val options = transcriptionOptionsFor(Locale.ENGLISH)
+    fun `transcription picker pins auto-detect first and collates the offered languages`() {
+        val picker = transcriptionPickerFor(setOf("zh", "de", "it"), Locale.ENGLISH)
 
-        // TASK-434: "system" (the untouched default: follow the app locale)
-        // pins first, then explicit "auto" (model-side detection).
-        assertEquals(listOf("system", "auto"), options.take(2).map { it.code })
-        val rest = options.drop(2).map { it.displayName }
+        // TASK-457: "auto" is the only sentinel; a stored "system" default
+        // resolves identically, so it is no longer offered separately.
+        assertEquals(listOf("auto"), picker.options.take(1).map { it.code })
+        assertEquals(setOf("zh", "de", "it"), picker.offeredCodes)
+        val rest = picker.options.drop(1).map { it.displayName }
         val collator = java.text.Collator.getInstance(Locale.ENGLISH)
         assertEquals(rest.sortedWith { a, b -> collator.compare(a, b) }, rest)
+    }
+
+    @Test
+    fun `transcription picker with no offered languages renders disabled`() {
+        // TASK-458: an empty offered set means "no language conditioning" and
+        // the card renders disabled with the explanatory line.
+        val picker = transcriptionPickerFor(emptySet(), Locale.ENGLISH)
+
+        assertEquals(false, picker.conditioningAvailable)
+        assertEquals(listOf("auto"), picker.options.map { it.code })
+        assertTrue(picker.offeredCodes.isEmpty())
     }
 
     @Test
@@ -52,6 +64,8 @@ class LanguageOptionsOrderTest {
     @Test
     fun `all entries survive sorting`() {
         assertEquals(9, languageOptionsFor(Locale.ENGLISH).size)
-        assertEquals(11, transcriptionOptionsFor(Locale.ENGLISH).size)
+        // sentinel + every offered entry survive the picker build
+        val offered = setOf("zh", "de", "it")
+        assertEquals(1 + offered.size, transcriptionPickerFor(offered, Locale.ENGLISH).options.size)
     }
 }

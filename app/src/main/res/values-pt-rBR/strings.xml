@@ -400,10 +400,10 @@
     <string name="language_description">Escolha o idioma do aplicativo.</string>
     <string name="language_system">Padrão do sistema</string>
     <string name="transcription_language_title">Idioma de transcrição</string>
-    <string name="transcription_language_system">Seguir o idioma do aplicativo</string>
     <string name="transcription_language_auto">Detecção automática</string>
-    <string name="transcription_language_description">Idioma do áudio para a transcrição. Escolher um idioma específico pula a detecção e acelera o processamento.</string>
-    <string name="transcription_language_note">Por padrão, o Whisper Small usa o idioma do aplicativo (detecção automática se o modelo não o suportar). Aplica-se apenas a modelos Whisper. Distil Italian sempre usa italiano. Outros backends (Gemma, Parakeet, Qwen3-ASR) detectam automaticamente.</string>
+    <string name="transcription_language_no_conditioning">O modelo ativo detecta o idioma automaticamente. Esta configuração se aplica aos modelos Whisper e ao modelo de streaming.</string>
+    <string name="transcription_language_unsupported_pin">O modelo ativo não suporta este idioma. Escolha um idioma suportado ou a detecção automática; sua escolha fica guardada até você mudá-la.</string>
+    <string name="transcription_language_forced_hint">Força este idioma: áudio em outro idioma pode sair degradado ou traduzido. Prefira a detecção automática, salvo quando ela falhar.</string>
     <string name="theme_title">Tema</string>
     <string name="theme_description">Escolha o tema de cores do aplicativo.</string>
     <string name="theme_mode_title">Modo do tema</string>

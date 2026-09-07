@@ -460,10 +460,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">ट्रांसक्रिप्शन भाषा</string>
-    <string name="transcription_language_system">ऐप भाषा के अनुसार</string>
     <string name="transcription_language_auto">अपने आप पहचानें</string>
-    <string name="transcription_language_description">ट्रांसक्रिप्शन के लिए ऑडियो की भाषा। कोई खास भाषा चुनने पर डिटेक्शन छूटता है और प्रोसेसिंग तेज़ होती है।</string>
-    <string name="transcription_language_note">डिफ़ॉल्ट रूप से Whisper Small पर आपकी ऐप भाषा इस्तेमाल होती है (मॉडल समर्थन न करे तो अपने आप पहचान)। सिर्फ़ Whisper मॉडल पर लागू। Distil Italian मॉडल हमेशा इतालवी इस्तेमाल करता है। बाक़ी बैकएंड (Gemma, Parakeet, Qwen3-ASR) अपने आप पहचानते हैं।</string>
+    <string name="transcription_language_no_conditioning">सक्रिय मॉडल भाषा अपने आप पहचानता है। यह सेटिंग सिर्फ़ Whisper मॉडल और स्ट्रीमिंग मॉडल पर लागू होती है।</string>
+    <string name="transcription_language_unsupported_pin">सक्रिय मॉडल इस भाषा को समर्थन नहीं देता। कोई समर्थित भाषा या अपने आप पहचानना चुनें; बदलने तक आपकी पसंद ऐसे ही रहेगी।</string>
+    <string name="transcription_language_forced_hint">यह भाषा ज़बरदस्ती लागू होती है: किसी दूसरी भाषा का ऑडियो ख़राब या अनुवादित रूप में आ सकता है। पहचान ग़लत न हो तो अपने आप पहचानना ही रखें।</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">थीम</string>

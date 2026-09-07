@@ -43,7 +43,9 @@ Also, Gemma is not just another transcriber: it is a full LLM, the only model in
 
 ### Whisper Small answered in the wrong language, or repeated the same phrase forever. What happened?
 
-That is a documented Whisper failure class (a repetition-loop hallucination under greedy decoding, made likelier when the language token is guessed wrong), and Small is the model most prone to it: its language auto-detection is the least reliable in the catalog. Since this release the app no longer leaves that guess to chance: if you have not set a **Transcription Language**, Whisper Small transcribes in your app language whenever the model supports it, and only auto-detects otherwise. If you explicitly select **Auto-detect**, the model detects the language itself, exactly as before. Pinning a concrete language in **Settings → Transcription → Transcription Language** removes the guess entirely and is the strongest fix; for Italian, Distil Italian or Parakeet are the better models anyway.
+That is a documented Whisper failure class (a repetition-loop hallucination under greedy decoding, made likelier when the language token is guessed wrong), and Small is the model most prone to it: its language auto-detection is the least reliable in the catalog. Pinning a concrete language in **Settings → Transcription → Transcription Language** removes the guess entirely and is the strongest fix; for Italian, Distil Italian or Parakeet are the better models anyway.
+
+With **Auto-detect**, Whisper detects the language of the audio itself, and that is the right default. Setting a language explicitly forces it: audio in a different language can then come out degraded, or even translated into the language you set. Leave Auto-detect unless the detection misfires.
 
 ## Queue and concurrent requests
 

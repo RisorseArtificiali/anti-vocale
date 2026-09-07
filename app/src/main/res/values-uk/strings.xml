@@ -493,10 +493,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Мова розшифровки</string>
-    <string name="transcription_language_system">Як мова застосунку</string>
     <string name="transcription_language_auto">Автовизначення</string>
-    <string name="transcription_language_description">Виберіть мову розшифровки аудіо. Вибір конкретної мови пропускає визначення і є швидшим.</string>
-    <string name="transcription_language_note">Типово на Whisper Small використовується мова застосунку (автовизначення, якщо модель її не підтримує). Стосується лише моделей Whisper. Модель Distil Italian завжди використовує італійську. Інші бекенди (Gemma, Parakeet, Qwen3-ASR) визначають автоматично.</string>
+    <string name="transcription_language_no_conditioning">Активна модель визначає мову автоматично. Це налаштування стосується моделей Whisper і потокової моделі.</string>
+    <string name="transcription_language_unsupported_pin">Активна модель не підтримує цю мову. Виберіть підтримувану мову або автовизначення; вибір зберігається, поки ви його не зміните.</string>
+    <string name="transcription_language_forced_hint">Мову буде застосовано примусово: аудіо іншою мовою може вийти спотвореним або перекладеним. Залишайте автовизначення, якщо воно не помиляється.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Тема</string>

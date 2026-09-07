@@ -491,10 +491,10 @@
 
     <!-- Settings Tab - Transcription Language -->
     <string name="transcription_language_title">Język transkrypcji</string>
-    <string name="transcription_language_system">Zgodnie z językiem aplikacji</string>
     <string name="transcription_language_auto">Automatyczna detekcja</string>
-    <string name="transcription_language_description">Język audio dla transkrypcji. Wybranie konkretnego języka pomija detekcję i przyspiesza przetwarzanie.</string>
-    <string name="transcription_language_note">Domyślnie w modelu Whisper Small używany jest język aplikacji (automatyczna detekcja, jeśli model go nie obsługuje). Dotyczy tylko modeli Whisper. Model Distil Italian zawsze używa włoskiego. Pozostałe backendy (Gemma, Parakeet, Qwen3-ASR) wykrywają automatycznie.</string>
+    <string name="transcription_language_no_conditioning">Aktywny model automatycznie wykrywa język. To ustawienie dotyczy modeli Whisper i modelu strumieniowego.</string>
+    <string name="transcription_language_unsupported_pin">Aktywny model nie obsługuje tego języka. Wybierz obsługiwany język lub automatyczną detekcję; wybór zostanie zachowany, dopóki go nie zmienisz.</string>
+    <string name="transcription_language_forced_hint">Wymusza ten język: audio w innym języku może wyjść zniekształcone lub przetłumaczone. Zostaw automatyczną detekcję, chyba że zawodzi.</string>
 
     <!-- Settings Tab - Theme -->
     <string name="theme_title">Motyw</string>
