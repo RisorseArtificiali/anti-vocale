@@ -1,4 +1,9 @@
 <en-US>
+What's new in 1.12.0:
+
+• Transcription language setting now follows the model in use: it offers the languages the active model actually supports, explains itself when the model detects language automatically, and warns when a language is forced
+• Fixed: Whisper no longer silently uses the app language on foreign-language audio, which could produce a fluent translation instead of a transcript
+
 What's new in 1.11.3:
 
 • GigaAM v3 (Russian): much better accuracy on recordings longer than a minute (audio is now split into 30 s passes, matching how the model was trained)
@@ -207,6 +212,11 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>
+Novità della versione 1.12.0:
+
+• L'impostazione lingua di trascrizione ora segue il modello in uso: propone le lingue effettivamente supportate, si spiega quando il modello rileva la lingua da solo e avvisa quando una lingua è forzata
+• Corretto: Whisper non usa più silenziosamente la lingua dell'app su audio in altra lingua, che poteva produrre una traduzione fluente invece di una trascrizione
+
 Novità della versione 1.11.3:
 
 • GigaAM v3 (russo): accuratezza nettamente migliore sulle registrazioni più lunghe di un minuto (l'audio ora viene spezzato in passaggi da 30 s, come nell'addestramento del modello)
@@ -415,6 +425,11 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.12.0:
+
+• Die Einstellung Transkriptionssprache folgt jetzt dem aktiven Modell: sie bietet nur die unterstützten Sprachen an, erklärt sich bei automatischer Spracherkennung und warnt bei erzwungener Sprache
+• Behoben: Whisper verwendet bei Audio in einer Fremdsprache nicht mehr still die App-Sprache, was eine flüssige Übersetzung statt einer Transkription liefern konnte
+
 Neuigkeiten in Version 1.11.3:
 
 • GigaAM v3 (Russisch): deutlich genauere Transkription bei Aufnahmen länger als eine Minute (Audio wird jetzt in 30-s-Abschnitten verarbeitet, passend zum Training des Modells)
@@ -443,6 +458,11 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>
+Novedades de la versión 1.12.0:
+
+• El ajuste de idioma de transcripción ahora sigue el modelo activo: ofrece los idiomas que realmente admite, se explica cuando el modelo detecta el idioma automáticamente y avisa cuando se fuerza un idioma
+• Corregido: Whisper ya no usa silenciosamente el idioma de la app con audio en otro idioma, lo que podía producir una traducción fluida en vez de una transcripción
+
 Novedades de la versión 1.11.3:
 
 • GigaAM v3 (ruso): precisión mucho mejor en grabaciones de más de un minuto (el audio se divide ahora en pasadas de 30 s, como en el entrenamiento del modelo)
@@ -471,6 +491,11 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.12.0 :
+
+• Le réglage de langue de transcription suit désormais le modèle actif : il propose les langues réellement prises en charge, s'explique quand le modèle détecte la langue automatiquement et avertit quand une langue est forcée
+• Corrigé : Whisper n'utilise plus silencieusement la langue de l'application sur un audio en langue étrangère, ce qui pouvait produire une traduction fluide au lieu d'une transcription
+
 Nouveautés de la version 1.11.3 :
 
 • GigaAM v3 (russe) : bien meilleure précision sur les enregistrements de plus d'une minute (l'audio est désormais découpé en passes de 30 s, comme pour l'entraînement du modèle)
@@ -499,6 +524,11 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>
+Novidades da versão 1.12.0:
+
+• A configuração de idioma de transcrição agora segue o modelo em uso: oferece os idiomas que ele realmente suporta, explica quando o modelo detecta o idioma sozinho e avisa quando um idioma é forçado
+• Corrigido: o Whisper não usa mais silenciosamente o idioma do app em áudio em outro idioma, o que podia produzir uma tradução fluente em vez de uma transcrição
+
 Novidades da versão 1.11.3:
 
 • GigaAM v3 (russo): precisão muito melhor em gravações com mais de um minuto (o áudio agora é dividido em passagens de 30 s, como no treinamento do modelo)
@@ -527,6 +557,11 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>
+Что нового в версии 1.12.0:
+
+• Настройка языка расшифровки теперь следует активной модели: предлагает только поддерживаемые языки, поясняет работу автоподбора и предупреждает при принудительном языке
+• Исправлено: Whisper больше не подставляет молча язык приложения к записи на другом языке, что могло давать беглый перевод вместо расшифровки
+
 Что нового в версии 1.11.3:
 
 • GigaAM v3 (русский): заметно выше точность на записях длиннее минуты (звук теперь обрабатывается отрезками по 30 с, как при обучении модели)
@@ -555,6 +590,11 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>
+Sürüm 1.12.0'deki yenilikler:
+
+• Transkripsiyon dili ayarı artık kullanılan modeli takip ediyor: yalnızca desteklenen dilleri sunar, model dili kendisi algıladığında bunu açıklar ve bir dil zorlandığında uyarır
+• Düzeltildi: Whisper, başka bir dildeki seslerde artık sessizce uygulama dilini kullanmıyor; bu, transkripsiyon yerine akıcı bir çeviri üretebiliyordu
+
 Sürüm 1.11.3'teki yenilikler:
 
 • GigaAM v3 (Rusça): bir dakikadan uzun kayıtlarda çok daha doğru transkripsiyon (ses artık modelin eğitimiyle uyumlu biçimde 30 s'lik bölümlerle işleniyor)
@@ -583,6 +623,11 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.12.0:
+
+• Ustawienie języka transkrypcji podąża teraz za aktywnym modelem: proponuje języki, które on faktycznie obsługuje, wyjaśnia, gdy model sam wykrywa język, i ostrzega przy wymuszeniu języka
+• Poprawione: Whisper nie używa już po cichu języka aplikacji przy nagraniu w innym języku, co mogło dawać płynne tłumaczenie zamiast transkrypcji
+
 Nowości w wersji 1.11.3:
 
 • GigaAM v3 (rosyjski): znacznie lepsza dokładność przy nagraniach dłuższych niż minuta (dźwięk jest teraz dzielony na fragmenty po 30 s, zgodnie z treningiem modelu)
@@ -611,6 +656,11 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>
+संस्करण 1.12.0 में नया क्या है:
+
+• ट्रांस्क्रिप्शन भाषा की सेटिंग अब चालू मॉडल के अनुसार चलती है: वह केवल समर्थित भाषाएँ दिखाती है, मॉडल के स्वतः भाषा पहचानने पर समझाती है, और भाषा बाध्य करने पर चेतावनी देती है
+• सुधार: Whisper अब दूसरी भाषा के ऑडियो पर चुपचाप ऐप की भाषा नहीं अपनाता, जिससे ट्रांस्क्रिप्ट की जगह एक सधी हुई अनुवाद बन सकती थी
+
 संस्करण 1.11.3 में नया क्या है:
 
 • GigaAM v3 (रूसी): एक मिनट से लंबी रिकॉर्डिंग पर काफ़ी बेहतर सटीकता (ऑडियो अब मॉडल की ट्रेनिंग के अनुरूप 30 सेकंड के भागों में संसाधित होता है)
