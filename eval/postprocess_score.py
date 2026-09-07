@@ -67,6 +67,8 @@ import urllib.request
 from pathlib import Path
 from statistics import mean
 
+import audio_loader  # eval/-local: shared ffmpeg+soundfile loader (TASK-461)
+
 # ──────────────────────────────────────────────────────────────────────────────
 # CONFIG. App-fidelity constants (PunctuationPolicy.kt, ChunkPromptPolicy.kt,
 # values{-it}/strings.xml punctuation_default_prompt, LlmManager.kt).
@@ -421,39 +423,33 @@ def transcribe_missing(samples_dir: Path, ref_dir: Path) -> int:
     """Write ref_dir/<id>.txt for every clip missing one, using the app's
     default model (parakeet-tdt-0.6b-v3 int8, greedy) via run_baseline. These
     transcripts are ASR output, not human ground truth: reports built on them
-    must say so. Returns the number written. Audio is decoded with ffmpeg +
-    soundfile because run_baseline's librosa loader is not installed in the
-    eval venv."""
+    must say so. Returns the number written. Audio is decoded by the shared
+    ffmpeg+soundfile loader (audio_loader.load_audio), the same one
+    run_baseline uses."""
     audio = _audio_by_stem(samples_dir)
     todo = [cid for cid in audio if not (ref_dir / f"{cid}.txt").exists()]
     if not todo:
         return 0
-
-    import io
-    import subprocess
-
-    import numpy as np
-    import soundfile as sf
 
     sys.path.insert(0, str(HERE))
     import run_baseline as rb  # noqa: PLC0415 (lazy: it sys.exits if sherpa is missing)
 
     rec, _ = rb.build_recognizer(rb.BACKENDS["parakeet"])
     ref_dir.mkdir(parents=True, exist_ok=True)
+    written = 0
     for cid in todo:
-        # Decode any container to the 16 kHz mono the model expects, via a
-        # pipe (no temp file to leak).
-        proc = subprocess.run(
-            ["ffmpeg", "-v", "error", "-i", str(audio[cid]),
-             "-ar", "16000", "-ac", "1", "-f", "wav", "-"],
-            capture_output=True, check=True,
-        )
-        samples, sr = sf.read(io.BytesIO(proc.stdout), dtype="float32")
-        assert sr == 16_000
-        text = rb.recognize_offline(rec, np.asarray(samples, dtype=np.float32)).strip()
+        # Per-clip guard mirrors run_baseline's loop: one undecodable clip
+        # must not kill the whole --transcribe run (review finding, TASK-461)
+        try:
+            samples = audio_loader.load_audio(audio[cid], sample_rate=rb.SAMPLE_RATE)
+            text = rb.recognize_offline(rec, samples).strip()
+        except Exception as e:  # noqa: BLE001 (decode/recognize both fail soft here)
+            print(f"  SKIP {cid}: {e}")
+            continue
         (ref_dir / f"{cid}.txt").write_text(text + "\n", encoding="utf-8")
         print(f"  transcribed {cid} ({len(text)} chars) -> {ref_dir / (cid + '.txt')}")
-    return len(todo)
+        written += 1
+    return written
 
 
 # ──────────────────────────────────────────────────────────────────────────────

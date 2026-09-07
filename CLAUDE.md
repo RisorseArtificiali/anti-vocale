@@ -42,7 +42,7 @@ Android application written in Kotlin for transcribing voice messages locally on
 - `.sherpa-version` — Marker file at the repo root (tag + srclib commit hash of the pinned sherpa-onnx). When bumping the sherpa version, update ALL THREE sync points: this file, `SHERPA_ONNX_VERSION` in `scripts/fetch-sherpa-aar.sh`, and the `SRCLIB PIN` comment in `app/build.gradle.kts`. The F-Droid recipe's `sherpa_onnx` srclib pin must match the commit listed here (issue #38).
 - `docs/` — Build guides, research notes, scout reports
 - `scripts/` — Build/install helpers (`install.sh`)
-- `eval/` — Desktop eval harness (`run_baseline.py`: WER/CER/loops via sherpa-onnx Python; `smoke_nemotron.py`: model validation). Uses `eval/.venv` with sherpa-onnx 1.13.3 Python.
+- `eval/` (desktop eval harness): `run_baseline.py` (WER/CER/loops via sherpa-onnx Python), `postprocess_score.py` (punctuation-pass scoring), `audio_loader.py` (shared ffmpeg+soundfile loader), `smoke_nemotron.py` (model validation). Uses `eval/.venv` with sherpa-onnx 1.13.5 Python, pinned to match `.sherpa-version` and `eval/requirements.txt`.
 - `fastlane/` — Store listing metadata (en-US + it-IT) for F-Droid
 - `metadata/` — F-Droid build recipe (`com.antivocale.app.yml`)
 

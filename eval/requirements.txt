@@ -1,12 +1,15 @@
-# Anti-Vocale eval harness — desktop Python deps.
-# Pinned to match the shipped sherpa-onnx AAR version so recognition params line up.
-sherpa-onnx==1.13.3
+# Anti-Vocale eval harness: desktop Python deps.
+# Exact pins = eval/.venv pip freeze, recorded 2026-09-07 (sherpa-onnx-core and
+# cffi install alongside as transitive deps). sherpa-onnx matches the shipped
+# AAR (.sherpa-version) so recognition params line up.
+sherpa-onnx==1.13.5
 
-# Audio decode + resample to 16 kHz mono (any ffmpeg format: opus/m4a/mp3/wav).
-# Requires ffmpeg on PATH for opus/m4a: `sudo dnf install ffmpeg` / `brew install ffmpeg`.
-librosa>=0.10,<0.12
-soundfile>=0.12
+# Audio decode + resample to 16 kHz mono (any ffmpeg format: opus/m4a/mp3/wav)
+# via the shared ffmpeg-pipe loader in audio_loader.py, used by run_baseline.py
+# and postprocess_score.py. librosa was removed in TASK-461 (listed here but
+# never installed in the venv); do not re-add. Requires ffmpeg on PATH:
+# `sudo dnf install ffmpeg` / `brew install ffmpeg`.
+soundfile==0.14.0
 
 # WER/CER use the script's built-in unit-cost Levenshtein (no jiwer needed).
-
-numpy>=1.24
+numpy==2.5.1

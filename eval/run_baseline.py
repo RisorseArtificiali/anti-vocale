@@ -31,16 +31,13 @@ try:
 except ImportError:
     sys.exit(
         "sherpa-onnx not installed. Run:  pip install -r eval/requirements.txt\n"
-        "(pinned to sherpa-onnx==1.13.3 to match the shipped AAR)"
+        "(pinned to sherpa-onnx==1.13.5 to match the shipped AAR)"
     )
 
-# Optional deps — degrade gracefully with a clear message if missing.
-librosa = None  # type: ignore[assignment]  # bound below if importable; stays None otherwise
-try:
-    import librosa  # type: ignore[import-not-found]
-    _HAVE_LIBROSA = True
-except ImportError:
-    _HAVE_LIBROSA = False
+# Audio decode: shared ffmpeg+soundfile loader (audio_loader.py, TASK-461),
+# also used by postprocess_score --transcribe; ffmpeg must be on PATH. The
+# missing-dep hint lives in the loader, not here.
+from audio_loader import load_audio
 
 # WER/CER use a built-in unit-cost Levenshtein (= S+D+I), so no jiwer dependency.
 
@@ -194,19 +191,6 @@ def repetition_loops(tokens: list[str], threshold: int = LOOP_THRESHOLD) -> int:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Audio loading — decode any ffmpeg format → 16 kHz mono float32
-# ──────────────────────────────────────────────────────────────────────────────
-
-def load_audio(path: Path) -> np.ndarray:
-    if not _HAVE_LIBROSA:
-        sys.exit("librosa not installed (needed to decode audio). pip install -r eval/requirements.txt")
-    assert librosa is not None  # narrowed for type checkers; guarded by _HAVE_LIBROSA above
-    samples, _ = librosa.load(str(path), sr=SAMPLE_RATE, mono=True)
-    # sherpa expects float32 in [-1, 1]
-    return np.asarray(samples, dtype=np.float32)
-
-
-# ──────────────────────────────────────────────────────────────────────────────
 # Recognizer construction — one builder per backend kind, mirroring the app config
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -272,7 +256,7 @@ def build_recognizer(cfg: dict):
 
     if cfg["kind"] == "online_transducer":
         # NemotronStreamingBackend.kt:98-113 (OnlineRecognizer, empty model_type).
-        # NOTE: sherpa-onnx 1.13.3 (the version pinned in requirements.txt) does NOT
+        # NOTE: sherpa-onnx 1.13.x (1.13.3 through the pinned 1.13.5) does NOT
         # expose OnlineRecognizer.from_args or the Online*Config classes in Python.
         # The version-stable construction is the from_transducer classmethod.
         return sherpa_onnx.OnlineRecognizer.from_transducer(
@@ -407,7 +391,7 @@ def main():
     rows = []
     for cid, audio_path, ref_text in pairs:
         try:
-            samples = load_audio(audio_path)
+            samples = load_audio(audio_path, sample_rate=SAMPLE_RATE)
         except Exception as e:  # noqa: BLE001
             print(f"  ✗ {cid}: audio load failed ({e})")
             continue
