@@ -62,7 +62,7 @@ class LauncherIconManifestTest {
 
     @Test
     fun `launcher aliases match the manager's pinned component names`() {
-        val expected = LauncherIconVariant.entries.map { ".Launcher" + it.id.replaceFirstChar { c -> c.uppercaseChar() } }
+        val expected = LauncherIconVariant.entries.map { ".Launcher" + it.name.lowercase().replaceFirstChar { c -> c.uppercaseChar() } }
         assertEquals(expected, launcherAliases().map { it.getAttribute("android:name") })
         assertEquals(
             expected.map { "com.antivocale.app$it" },

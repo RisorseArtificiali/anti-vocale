@@ -41,6 +41,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
@@ -712,6 +713,9 @@ fun SettingsTab(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
+                    // One shared painter: per-tile call sites each hold their own
+                    // decoded bitmap (the shared foreground is ~746KB at xxxhdpi).
+                    val foreground = painterResource(R.mipmap.ic_launcher_foreground)
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -721,6 +725,7 @@ fun SettingsTab(
                         LauncherIconVariant.entries.forEach { variant ->
                             LauncherIconOption(
                                 variant = variant,
+                                foreground = foreground,
                                 selected = variant == currentLauncherIcon,
                                 onSelect = { viewModel.selectLauncherIcon(variant) }
                             )
@@ -2008,6 +2013,7 @@ private fun punctuationModeLabel(pref: String): String = when (pref) {
 @Composable
 private fun LauncherIconOption(
     variant: LauncherIconVariant,
+    foreground: Painter,
     selected: Boolean,
     onSelect: () -> Unit,
 ) {
@@ -2041,7 +2047,7 @@ private fun LauncherIconOption(
             // padding baked in (glyph in the middle two-thirds), so a
             // full-bleed render reproduces the launcher's framing.
             Image(
-                painter = painterResource(R.mipmap.ic_launcher_foreground),
+                painter = foreground,
                 contentDescription = null,
                 modifier = Modifier.fillMaxSize(),
             )

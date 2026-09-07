@@ -19,37 +19,32 @@ import javax.inject.Singleton
  * one adaptive XML per variant, with no change to this class beyond a new entry
  * (alias component name must keep the Launcher<Variant> pattern, pinned by tests).
  *
- * The variant ids and alias component names are a pinned contract mirrored by the
+ * The alias component names are a pinned contract mirrored by the
  * manifest activity-alias literals (LauncherIconManifestTest) and by
  * [com.antivocale.app.data.ShareTargetManager]'s separate share-target alias set;
  * the two sets must never overlap.
  */
 enum class LauncherIconVariant(
-    val id: String,
     val aliasComponentName: String,
     @ColorRes val backgroundRes: Int,
     @StringRes val nameRes: Int,
 ) {
     DEFAULT(
-        id = "default",
         aliasComponentName = "com.antivocale.app.LauncherDefault",
         backgroundRes = R.color.launcher_icon_default,
         nameRes = R.string.app_icon_variant_default,
     ),
     TEAL(
-        id = "teal",
         aliasComponentName = "com.antivocale.app.LauncherTeal",
         backgroundRes = R.color.launcher_icon_teal,
         nameRes = R.string.app_icon_variant_teal,
     ),
     INK(
-        id = "ink",
         aliasComponentName = "com.antivocale.app.LauncherInk",
         backgroundRes = R.color.launcher_icon_ink,
         nameRes = R.string.app_icon_variant_ink,
     ),
     AMBER(
-        id = "amber",
         aliasComponentName = "com.antivocale.app.LauncherAmber",
         backgroundRes = R.color.launcher_icon_amber,
         nameRes = R.string.app_icon_variant_amber,

@@ -12,6 +12,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import com.antivocale.app.util.ComponentAliasSync
 
 /**
  * Launcher-icon alias switching (TASK-392) against Robolectric's real
@@ -69,9 +70,9 @@ class LauncherIconManagerTest {
     /** Spies the shared write seam, recording "className=enabled" for every component write. */
     private fun recordWrites(block: (MutableList<String>) -> Unit): List<String> {
         val writes = mutableListOf<String>()
-        mockkObject(com.antivocale.app.util.ComponentAliasSync) {
+        mockkObject(ComponentAliasSync) {
             every {
-                com.antivocale.app.util.ComponentAliasSync.setEnabled(any(), any(), any(), any())
+                ComponentAliasSync.setEnabled(any(), any(), any(), any())
             } answers {
                 writes.add("${args[1]}=${args[2]}")
                 callOriginal()
@@ -92,7 +93,7 @@ class LauncherIconManagerTest {
                 "ink" to "com.antivocale.app.LauncherInk",
                 "amber" to "com.antivocale.app.LauncherAmber",
             ),
-            LauncherIconVariant.entries.associate { it.id to it.aliasComponentName },
+            LauncherIconVariant.entries.associate { it.name.lowercase() to it.aliasComponentName },
         )
     }
 
@@ -100,8 +101,8 @@ class LauncherIconManagerTest {
     fun `default is the canonical first variant and every variant carries a background color and name resource`() {
         assertEquals(LauncherIconVariant.DEFAULT, LauncherIconVariant.entries.first())
         LauncherIconVariant.entries.forEach { variant ->
-            assert(variant.backgroundRes != 0) { "${variant.id} needs a background color" }
-            assert(variant.nameRes != 0) { "${variant.id} needs a localized name" }
+            assert(variant.backgroundRes != 0) { "${variant.name} needs a background color" }
+            assert(variant.nameRes != 0) { "${variant.name} needs a localized name" }
         }
     }
 
@@ -110,7 +111,9 @@ class LauncherIconManagerTest {
     @Test
     fun `fresh install state resolves to Default`() {
         // All aliases sit at COMPONENT_ENABLED_STATE_DEFAULT: the manifest
-        // declares Default enabled and the recolors disabled.
+        // declares Default enabled and the recolors disabled, and the
+        // default-state resolution itself must count Default as enabled.
+        assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, aliasState(LauncherIconVariant.DEFAULT))
         assertEquals(LauncherIconVariant.DEFAULT, manager.current())
     }
 
@@ -121,18 +124,13 @@ class LauncherIconManagerTest {
         assertEquals(LauncherIconVariant.TEAL, manager.current())
         LauncherIconVariant.entries.forEach { variant ->
             assertEquals(
-                "alias of ${variant.id}",
+                "alias of ${variant.name}",
                 variant == LauncherIconVariant.TEAL,
                 aliasEnabled(variant),
             )
         }
-    }
-
-    @Test
-    fun `switching away from Default leaves the target enabled and Default disabled`() {
-        manager.select(LauncherIconVariant.TEAL)
-
-        assertTrue(aliasEnabled(LauncherIconVariant.TEAL))
+        // Default was explicitly DISABLED by the switch (not left at its
+        // manifest-default state): one pinned write per non-target alias.
         assertEquals(
             PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
             aliasState(LauncherIconVariant.DEFAULT),
@@ -184,15 +182,6 @@ class LauncherIconManagerTest {
         assertEquals(1, LauncherIconVariant.entries.count(::aliasEnabled))
     }
 
-    @Test
-    fun `default alias under its manifest-default state counts as enabled`() {
-        // After a real switch away and back, Default sits at ENABLED, not
-        // DEFAULT; but a fresh-install read must not depend on that: the
-        // manifest-declared state itself resolves to Default.
-        assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, aliasState(LauncherIconVariant.DEFAULT))
-        assertEquals(LauncherIconVariant.DEFAULT, manager.current())
-    }
-
     // ---- write ordering and no-op skipping (ComponentAliasSync seam) ----
 
     @Test
@@ -213,14 +202,15 @@ class LauncherIconManagerTest {
         // sequence never starts with a disable, so at least one alias stays
         // enabled. killAt = the write index the "process death" preempts
         // (indices past the actual write count simply complete the switch).
+        var diedAtLeastOnce = false
         for (killAt in 0 until LauncherIconVariant.entries.size) {
             LauncherIconVariant.entries.forEach {
                 forceAlias(it, PackageManager.COMPONENT_ENABLED_STATE_DEFAULT)
             }
             var writes = 0
-            mockkObject(com.antivocale.app.util.ComponentAliasSync) {
+            mockkObject(ComponentAliasSync) {
                 every {
-                    com.antivocale.app.util.ComponentAliasSync.setEnabled(any(), any(), any(), any())
+                    ComponentAliasSync.setEnabled(any(), any(), any(), any())
                 } answers {
                     if (writes == killAt) throw SimulatedProcessDeath()
                     writes++
@@ -231,6 +221,7 @@ class LauncherIconManagerTest {
                     manager.select(LauncherIconVariant.TEAL)
                 } catch (e: SimulatedProcessDeath) {
                     // aborted mid-sequence: assert the invariant below
+                    diedAtLeastOnce = true
                 }
             }
             assertTrue(
@@ -238,6 +229,9 @@ class LauncherIconManagerTest {
                 LauncherIconVariant.entries.any(::effectivelyEnabled),
             )
         }
+        // Vacuity guard: if a refactor ever bypasses the seam, no death fires
+        // and every iteration above passes trivially.
+        assertTrue("kill simulation never fired: the test exercised nothing", diedAtLeastOnce)
     }
 
     @Test

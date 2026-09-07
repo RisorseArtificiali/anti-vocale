@@ -48,11 +48,7 @@ class ShareTargetManager(
     private fun setComponentEnabled(target: BackendDescriptor, enabled: Boolean) {
         // Sideload-only and external backends have no manifest activity-alias; skip them.
         if (target.shareAlias.isBlank()) return
-        setClassNameEnabled(target.shareAlias, enabled)
-    }
-
-    private fun setClassNameEnabled(className: String, enabled: Boolean) {
-        ComponentAliasSync.setEnabled(context, className, enabled, TAG)
+        ComponentAliasSync.setEnabled(context, target.shareAlias, enabled, TAG)
     }
 
     private suspend fun externalRecordsPresent(): Boolean =
@@ -60,7 +56,7 @@ class ShareTargetManager(
 
     /** Family-level sync for the external-models share target: enabled iff advanced sharing AND a valid record. */
     private suspend fun syncExternalFamily(advancedEnabled: Boolean) {
-        setClassNameEnabled(EXTERNAL_FAMILY_ALIAS, advancedEnabled && externalRecordsPresent())
+        ComponentAliasSync.setEnabled(context, EXTERNAL_FAMILY_ALIAS, advancedEnabled && externalRecordsPresent(), TAG)
     }
 
     suspend fun syncAll() {
@@ -98,7 +94,7 @@ class ShareTargetManager(
             syncAll()
         } else {
             backendRegistry.backends.forEach { setComponentEnabled(it, false) }
-            setClassNameEnabled(EXTERNAL_FAMILY_ALIAS, false)
+            ComponentAliasSync.setEnabled(context, EXTERNAL_FAMILY_ALIAS, false, TAG)
         }
     }
 }
