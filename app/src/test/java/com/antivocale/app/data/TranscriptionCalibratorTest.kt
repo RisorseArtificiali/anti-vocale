@@ -38,6 +38,37 @@ class TranscriptionCalibratorTest {
         assertEquals("backend__", calibrator.buildKey("backend", ""))
     }
 
+    // --- backendIdOf (the key decode the share-shortcut recency source uses) ---
+
+    @Test
+    fun `backendIdOf decodes a normal key and round-trips through buildKey`() {
+        val key = calibrator.buildKey("whisper", "/data/models/whisper-turbo")
+        assertEquals("whisper", calibrator.backendIdOf(key))
+    }
+
+    @Test
+    fun `backendIdOf splits on the first separator when the dirName contains one`() {
+        // dirNames may contain "__": only the FIRST segment is the backend id.
+        assertEquals("sherpa-onnx", calibrator.backendIdOf("sherpa-onnx__distil__it"))
+    }
+
+    @Test
+    fun `backendIdOf keeps an external hex record id intact`() {
+        // External backend ids are "external:" + a hex record id; the hex never
+        // contains the separator, so the decode is lossless even over a
+        // separator-carrying dirName.
+        val externalId = "external:9f2c1ab3e0d54f6a8b7c2d1e"
+        val key = calibrator.buildKey(externalId, "/storage/models/ctc__small")
+        assertEquals(externalId, calibrator.backendIdOf(key))
+    }
+
+    @Test
+    fun `backendIdOf returns a separator-less legacy key unchanged`() {
+        // A key persisted without any separator decodes to itself: the whole
+        // string was the backend id.
+        assertEquals("whisper", calibrator.backendIdOf("whisper"))
+    }
+
     // --- CalibrationProfile.confidence ---
 
     @Test

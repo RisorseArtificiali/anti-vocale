@@ -62,6 +62,7 @@ class SettingsViewModelActiveModelTest {
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),
             shareTargetManager = mockk(relaxed = true),
+            shareShortcutManager = mockk(relaxed = true),
             // Enum returns are stubbed explicitly: a relaxed mock's enum answer
             // is version-dependent, and the ViewModel reads current() at init.
             launcherIconManager = mockk(relaxed = true) {

@@ -31,6 +31,15 @@ private val Context.calibrationDataStore: DataStore<Preferences> by preferencesD
  */
 class TranscriptionCalibrator(context: Context) {
 
+    companion object {
+        /**
+         * Separates backendId from dirName in persisted calibration keys
+         * ([buildKey]). Private: external consumers decode with [backendIdOf],
+         * which owns the split rule.
+         */
+        private const val KEY_SEPARATOR = "__"
+    }
+
     private val dataStore = context.calibrationDataStore
 
     data class CalibrationProfile(
@@ -61,8 +70,22 @@ class TranscriptionCalibrator(context: Context) {
      */
     fun buildKey(backendId: String, modelPath: String): String {
         val dirName = File(modelPath).name
-        return "${backendId}__${dirName}"
+        return "${backendId}${KEY_SEPARATOR}${dirName}"
     }
+
+    /**
+     * Decodes the backend-id half of a persisted calibration key: the inverse
+     * of [buildKey] for the first half. Splits on the FIRST separator only,
+     * because backend ids never contain it while dirNames may (a dirName like
+     * "model__v2" must not be mistaken for more segments). A key without any
+     * separator (a legacy backend-id-only key) returns itself unchanged.
+     *
+     * Consumers reading keys as a usage-recency source (the share-shortcut
+     * ranking) inherit the calibration store's semantics: [resetAll] clears
+     * every key, hence recency; and runs with non-positive audio duration are
+     * never recorded ([record] returns early), hence uncounted.
+     */
+    fun backendIdOf(key: String): String = key.substringBefore(KEY_SEPARATOR)
 
     private fun msKey(id: String) = floatPreferencesKey("cal_${id}_msPerSec")
     private fun countKey(id: String) = intPreferencesKey("cal_${id}_count")

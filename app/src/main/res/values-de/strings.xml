@@ -802,6 +802,7 @@
     <string name="share_target_nemotron">Anti-Vocale (Nemotron)</string>
     <string name="share_target_gigaam">Anti-Vocale (GigaAM)</string>
     <string name="share_target_external">Anti-Vocale (Extern)</string>
+    <string name="share_shortcut_transcribe_with">Mit %1$s transkribieren</string>
     <string name="external_none_imported">Keine externen Modelle importiert</string>
     <string name="external_section_title">Externe Modelle</string>
     <string name="model_advanced_section">Erweitert</string>

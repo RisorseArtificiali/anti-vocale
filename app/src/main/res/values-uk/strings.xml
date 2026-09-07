@@ -852,6 +852,7 @@
     <string name="share_target_nemotron">Anti-Vocale (Nemotron)</string>
     <string name="share_target_gigaam">Anti-Vocale (GigaAM)</string>
     <string name="share_target_external">Anti-Vocale (External)</string>
+    <string name="share_shortcut_transcribe_with">Розшифрувати за допомогою %1$s</string>
     <string name="external_none_imported">Зовнішніх моделей не імпортовано</string>
     <string name="external_section_title">Зовнішні моделі</string>
     <string name="model_advanced_section">Розширені</string>

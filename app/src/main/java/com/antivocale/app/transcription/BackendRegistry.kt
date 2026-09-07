@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import com.antivocale.app.R
 import android.content.Context
+import androidx.annotation.ColorRes
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelRecordsProvider
 import com.antivocale.app.data.ExternalModelStore
@@ -81,6 +82,14 @@ data class BackendDescriptor(
      * The conservative default of 1f overestimates time, never underestimates.
      */
     val rtfEstimate: Float = 1f,
+
+    /**
+     * Per-family accent color (a [com.antivocale.app.R.color] resource) used by
+     * the dynamic share-shortcut icons (ShareShortcutIcons draws the model
+     * initial on it). Defaults to the primary tone (the LLM entry's color), the
+     * same fallback unknown ids had before the mapping moved into descriptors.
+     */
+    @ColorRes val accentColorRes: Int = R.color.share_shortcut_llm,
 
     /**
      * False only for ASR models that emit unpunctuated text; the punctuation
@@ -192,6 +201,22 @@ class BackendRegistry @Inject constructor(
     private val recordsProvider: ExternalModelRecordsProvider,
 ) {
 
+    private companion object {
+        /**
+         * Static-backend accent colors for [BackendDescriptor.accentColorRes]
+         * (the dynamic share-shortcut icon backgrounds). Keyed on
+         * [BuiltInBackendIds], so the mapping cannot drift from the registered
+         * id space; ids missing here (none today) keep the descriptor default.
+         */
+        private val accentColorByBackendId = mapOf(
+            BuiltInBackendIds.PARAKEET to R.color.share_shortcut_parakeet,
+            BuiltInBackendIds.WHISPER to R.color.share_shortcut_whisper,
+            BuiltInBackendIds.QWEN3_ASR to R.color.share_shortcut_qwen3,
+            BuiltInBackendIds.NEMOTRON to R.color.share_shortcut_nemotron,
+            BuiltInBackendIds.GIGAAM to R.color.share_shortcut_gigaam,
+        )
+    }
+
     /** The six enabled static backends in canonical order (default backend first). */
     private val staticBackends: List<BackendDescriptor> by lazy {
         buildList {
@@ -229,6 +254,7 @@ class BackendRegistry @Inject constructor(
             shareAlias = entry.shareAlias,
             isStreaming = entry.isStreaming,
             rtfEstimate = rtf,
+            accentColorRes = accentColorByBackendId[entry.id] ?: R.color.share_shortcut_llm,
             displayNameResId = when {
                 entry.hasExplicitDisplay && entry.display is CatalogDisplay.Resource ->
                     CatalogStringKeys.resolve(entry.display.key)
@@ -258,6 +284,7 @@ class BackendRegistry @Inject constructor(
         modelPathFlow = { it.modelPath },
         saveModelPath = { prefs, path -> prefs.saveModelPath(path) },
         clearModelPath = { it.clearModelPath() },
+        accentColorRes = R.color.share_shortcut_llm,
     )
 
     /** Static backends first (canonical order), then one descriptor per valid external record. */

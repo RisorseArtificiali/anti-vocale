@@ -8,6 +8,8 @@ import com.antivocale.app.data.HuggingFaceTokenManagerImpl
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.PreferencesManagerImpl
+import com.antivocale.app.data.RecentModelUse
+import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.ExternalModelImporter
@@ -81,6 +83,36 @@ object AppModule {
         externalModelStore: ExternalModelStore
     ): ShareTargetManager {
         return ShareTargetManager(context, preferencesManager, backendRegistry, externalModelStore)
+    }
+
+    /**
+     * The dynamic share-shortcut manager's recency source (TASK-393): the
+     * calibrator's per-model last-use timestamps, which are keyed by backend id.
+     * The Room logs table was rejected as the source: it records the GH #45
+     * display name, a localized string that cannot be mapped back to a backend
+     * after a locale change, while calibration keys parse losslessly.
+     */
+    @Provides
+    @Singleton
+    fun provideShareShortcutManager(
+        @ApplicationContext context: Context,
+        preferencesManager: PreferencesManager,
+        backendRegistry: BackendRegistry,
+        transcriptionCalibrator: TranscriptionCalibrator
+    ): ShareShortcutManager {
+        return ShareShortcutManager(
+            context = context,
+            preferencesManager = preferencesManager,
+            backendRegistry = backendRegistry,
+            recentUsage = {
+                transcriptionCalibrator.getAllProfiles().map { profile ->
+                    RecentModelUse(
+                        backendId = transcriptionCalibrator.backendIdOf(profile.modelId),
+                        lastUsedAtMillis = profile.lastTimestamp,
+                    )
+                }
+            },
+        )
     }
 
     @Provides

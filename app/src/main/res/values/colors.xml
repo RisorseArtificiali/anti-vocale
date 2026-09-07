@@ -23,4 +23,16 @@
     <color name="launcher_icon_teal">#128C7E</color>
     <color name="launcher_icon_ink">#0F172A</color>
     <color name="launcher_icon_amber">#D97706</color>
+
+    <!-- Dynamic share-shortcut icon backgrounds (TASK-393): aliases, not new
+         hex, so a palette change updates the shortcut icons with it. Each
+         backend picks an existing theme or launcher color (per-entry mapping in
+         BackendDescriptor.accentColorRes); a white bold initial is drawn on
+         each (all six are dark enough for white). -->
+    <color name="share_shortcut_parakeet">@color/launcher_icon_teal</color>
+    <color name="share_shortcut_whisper">@color/primary_dark</color>
+    <color name="share_shortcut_qwen3">@color/launcher_icon_amber</color>
+    <color name="share_shortcut_nemotron">@color/launcher_icon_default</color>
+    <color name="share_shortcut_gigaam">@color/surface</color>
+    <color name="share_shortcut_llm">@color/primary</color>
 </resources>

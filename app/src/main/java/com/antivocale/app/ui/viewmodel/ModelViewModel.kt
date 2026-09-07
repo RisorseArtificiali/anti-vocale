@@ -13,6 +13,7 @@ import com.antivocale.app.BuildConfig
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.ApplicationScope
+import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelRecord
@@ -69,6 +70,7 @@ class ModelViewModel @Inject constructor(
     private val backendManager: TranscriptionBackendManager,
     private val llmManager: LlmManager,
     private val shareTargetManager: ShareTargetManager,
+    private val shareShortcutManager: ShareShortcutManager,
     @ApplicationContext private val ctx: Context,
     private val backendRegistry: BackendRegistry,
     private val externalModelStore: ExternalModelStore,
@@ -411,7 +413,10 @@ class ModelViewModel @Inject constructor(
                     variantsNeedingExtraction = it.variantsNeedingExtraction - (variantName ?: ""),
                     orphanedVariants = it.orphanedVariants - (variantName ?: "")
                 ) }
-                applicationScope.launch { shareTargetManager.onModelDownloaded() }
+                applicationScope.launch {
+                    shareTargetManager.onModelDownloaded()
+                    shareShortcutManager.refresh()
+                }
                 if (variantName != null) {
                     // Persist the freshly downloaded variant as the saved preference.
                     viewModelScope.launch {
@@ -482,7 +487,10 @@ class ModelViewModel @Inject constructor(
                     )
                 }
                 refreshDownloadedModels()
-                applicationScope.launch { shareTargetManager.onModelDownloaded() }
+                applicationScope.launch {
+                    shareTargetManager.onModelDownloaded()
+                    shareShortcutManager.refresh()
+                }
                 if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
             },
             onCancelled = {
@@ -1132,6 +1140,7 @@ class ModelViewModel @Inject constructor(
                 if (_uiState.value.modelPath.contains(variant.fileName)) {
                     preferencesManager.saveModelPath("")
                     shareTargetManager.onModelDeleted(LlmTranscriptionBackend.BACKEND_ID)
+                    shareShortcutManager.refresh()
                     _uiState.update { it.copy(
                         modelPath = "",
                         modelName = "",
@@ -1388,6 +1397,7 @@ class ModelViewModel @Inject constructor(
                         preferencesManager.clearSherpaModelPath(entryId)
                         _uiState.update { it.copy(modelPath = "", modelName = "") }
                         shareTargetManager.onModelDeleted(entryId)
+                        shareShortcutManager.refresh()
                     }
                 }
                 updateEntry(entryId) { it.copy(modelPath = activePath) }

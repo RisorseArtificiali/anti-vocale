@@ -19,6 +19,7 @@ import com.antivocale.app.R
 import com.antivocale.app.MainActivity
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.receiver.TaskerRequestReceiver
@@ -51,6 +52,7 @@ class InferenceService : Service(), TranscriptionListener {
     @Inject lateinit var perAppPreferencesManager: PerAppPreferencesManager
     @Inject lateinit var orchestrator: TranscriptionOrchestrator
     @Inject lateinit var logDao: LogDao
+    @Inject lateinit var shareShortcutManager: ShareShortcutManager
 
     companion object {
         const val TAG = "InferenceService"
@@ -555,6 +557,10 @@ class InferenceService : Service(), TranscriptionListener {
         streamedWithoutVad: Boolean
     ) {
         sendSuccessReply(taskId, resultText)
+        // Every completed task moves the model-recency source: re-derive the
+        // launcher's dynamic share shortcuts. Metadata-only side effect on the
+        // service scope (IO), must never reach the result path.
+        serviceScope.launch { shareShortcutManager.refresh() }
         if (isShareRequest) {
             // Track the notification job: processQueue()'s finally must NOT stopSelf
             // while it is still pending. It used to be an untracked launch, and for

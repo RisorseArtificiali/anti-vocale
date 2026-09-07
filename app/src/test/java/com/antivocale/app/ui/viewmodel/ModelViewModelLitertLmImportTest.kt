@@ -101,6 +101,7 @@ class ModelViewModelLitertLmImportTest {
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),
             shareTargetManager = mockk(relaxed = true),
+            shareShortcutManager = mockk(relaxed = true),
             ctx = mockContext,
             backendRegistry = staticRegistry(),
             externalModelStore = ExternalModelStore(prefs),

@@ -22,6 +22,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.MainScreen
@@ -32,9 +33,11 @@ import com.antivocale.app.ui.viewmodel.LogsViewModel
 import com.antivocale.app.util.DeviceCompatibility
 import com.antivocale.app.util.NativeCrashDetector
 import dagger.hilt.android.AndroidEntryPoint
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import androidx.activity.viewModels
 import javax.inject.Inject
 
@@ -42,6 +45,7 @@ import javax.inject.Inject
 class MainActivity : AppCompatActivity() {
 
     @Inject lateinit var preferencesManager: PreferencesManager
+    @Inject lateinit var shareShortcutManager: ShareShortcutManager
     private val logsViewModel: LogsViewModel by viewModels()
 
     companion object {
@@ -154,6 +158,15 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Re-derive the dynamic long-press share shortcuts on every foreground:
+        // converges any state change made outside the hooked sync sites (model
+        // path swaps that keep the alias enabled). refresh() shifts itself to
+        // Dispatchers.Default for the icon rasterization.
+        lifecycleScope.launch { shareShortcutManager.refresh() }
     }
 
     override fun onNewIntent(intent: Intent) {

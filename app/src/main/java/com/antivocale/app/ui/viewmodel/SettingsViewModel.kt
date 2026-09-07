@@ -15,6 +15,7 @@ import com.antivocale.app.data.ModelDiscovery
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.catalog.BundledCatalog
@@ -66,6 +67,7 @@ class SettingsViewModel @Inject constructor(
     private val backendManager: TranscriptionBackendManager,
     private val llmManager: LlmManager,
     private val shareTargetManager: ShareTargetManager,
+    private val shareShortcutManager: ShareShortcutManager,
     private val activeModelRepository: ActiveModelRepository,
     private val launcherIconManager: LauncherIconManager
 ) : AndroidViewModel(application) {
@@ -282,6 +284,10 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.saveAdvancedSharingEnabled(enabled)
             shareTargetManager.setAdvancedSharingEnabled(enabled)
+            // Shortcuts launch the alias components this toggle just enabled or
+            // disabled; their eligibility shares the same predicate, so they
+            // re-derive here too (TASK-393).
+            shareShortcutManager.refresh()
         }
     }
 

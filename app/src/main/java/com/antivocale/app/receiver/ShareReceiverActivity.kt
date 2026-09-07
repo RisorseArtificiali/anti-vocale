@@ -13,6 +13,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.NotificationCompat
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -87,9 +88,22 @@ class ShareReceiverActivity : Activity() {
         const val TAG = "ShareReceiverActivity"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
 
+        /**
+         * Marker set by [com.antivocale.app.data.ShareShortcutManager] on its
+         * dynamic launcher-shortcut intents. A shortcut intent carries the
+         * ACTION_SEND alias component but cannot carry EXTRA_STREAM, so with
+         * this marker the null-stream case opens the SAF audio picker instead
+         * of the "no audio" error path. Without it, every null-stream intent
+         * keeps the legacy error behavior.
+         */
+        const val EXTRA_FROM_SHORTCUT = "com.antivocale.app.FROM_SHORTCUT"
+
         // The choice prompt auto-resolves to ASR after this delay if the user does nothing.
         // Keeps a shared video from silently hanging when the notification is ignored.
         internal const val SUBTITLE_CHOICE_TIMEOUT_MINUTES = 5L
+
+        // Request code of the shortcut flow's SAF audio pick ([launchAudioPicker]).
+        private const val REQUEST_PICK_AUDIO = 1
 
         // Reserved-range contract (TASK-440): the subtitle-choice prompt and
         // the share-error notification each own a SUB-BAND of the 2401..2500
@@ -140,6 +154,14 @@ class ShareReceiverActivity : Activity() {
     private var sourcePackage: String? = null
     private var detectionTimeoutHandler: Handler? = null
     private var detectionTimeoutRunnable: Runnable? = null
+
+    /**
+     * SAF audio picker for the shortcut flow: the same OpenDocument contract
+     * the ModelTab file picker uses, driven via createIntent/parseResult
+     * because this plain Activity (deliberately not a ComponentActivity) has
+     * no registerForActivityResult. The stateless contract is safe to share.
+     */
+    private val audioPickerContract = ActivityResultContracts.OpenDocument()
 
     // Local BroadcastReceiver to receive detected package from ChooserBroadcastReceiver
     private val chosenAppReceiver = object : BroadcastReceiver() {
@@ -240,6 +262,16 @@ class ShareReceiverActivity : Activity() {
         Log.i(TAG, "Handle share: URI=$uri, MIME=${intent.type}, source=$sourcePackage")
 
         if (uri == null) {
+            // Dynamic launcher shortcuts (TASK-393) reach here by design: the
+            // shortcut intent carries the alias component but cannot carry an
+            // audio stream. With the shortcut marker, open the SAF audio
+            // picker instead of dead-ending; the alias backend override is
+            // re-derived from this intent's component after the pick, which
+            // returns to this same Activity instance.
+            if (intent.getBooleanExtra(EXTRA_FROM_SHORTCUT, false)) {
+                launchAudioPicker()
+                return
+            }
             Log.e(TAG, "No EXTRA_STREAM in intent")
             showErrorToast(getString(R.string.no_audio_file))
             cleanup()
@@ -247,12 +279,51 @@ class ShareReceiverActivity : Activity() {
             return
         }
 
+        processSharedAudio(uri, intent.type)
+    }
+
+    /**
+     * Opens the system SAF audio picker for the shortcut flow. The transparent
+     * Activity stays alive (no finish) so the picker result can return to this
+     * instance in [onActivityResult].
+     */
+    private fun launchAudioPicker() {
+        startActivityForResult(
+            audioPickerContract.createIntent(this, arrayOf("audio/*")),
+            REQUEST_PICK_AUDIO,
+        )
+    }
+
+    @Deprecated("Deprecated in Java")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != REQUEST_PICK_AUDIO) return
+        val uri = audioPickerContract.parseResult(resultCode, data)
+        if (uri == null) {
+            // User backed out of the picker: nothing to transcribe; the same
+            // quiet exit as the external-model chooser cancel path.
+            cleanup()
+            finish()
+            return
+        }
+        processSharedAudio(uri, data?.type)
+    }
+
+    /**
+     * The shared copy-and-dispatch flow for both audio sources: an EXTRA_STREAM
+     * share and a shortcut-picker pick. Copies while the URI grant is held,
+     * resolves the alias backend override from the LAUNCH intent's component
+     * (the picker result returns to the same instance, so the shortcut's alias
+     * is still this.intent's component), then routes to the external chooser or
+     * the subtitle/ASR dispatch.
+     */
+    private fun processSharedAudio(uri: Uri, mimeType: String?) {
         // Copy file while Activity has URI permission
         // Content URI permissions are tied to this Activity instance
         val result = SharedAudioHandler.copyToAppStorage(
             applicationContext,
             uri,
-            intent.type
+            mimeType
         )
 
         val localPath: String = when (result) {
