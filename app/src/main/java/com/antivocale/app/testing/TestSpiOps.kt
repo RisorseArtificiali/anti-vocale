@@ -7,6 +7,8 @@ import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.PunctuationPolicy
+import com.antivocale.app.ui.theme.ThemeMode
+import com.antivocale.app.ui.theme.ThemeType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
@@ -75,6 +77,21 @@ internal class TestSpiOps(
             .put("transcriptionBackend", backend)
             .put("activeModelPath", activeModelPath(backend) ?: JSONObject.NULL)
             .put("paths", paths)
+            .put("summarizeEnabled", preferences.summarizeEnabled.first())
+            .put("autoCopyEnabled", preferences.autoCopyEnabled.first())
+            .put("forceModelLoad", preferences.forceModelLoad.first())
+            .put("compactResultActions", preferences.compactResultActions.first())
+            .put("showTaskDetails", preferences.showTaskDetails.first())
+            .put("advancedSharingEnabled", preferences.advancedSharingEnabled.first())
+            .put("showRetranscribeButton", preferences.showRetranscribeButton.first())
+            .put("groupLogsByConversation", preferences.groupLogsByConversation.first())
+            .put("vadAdvisoryDismissed", preferences.vadAdvisoryDismissed.first())
+            .put("swipeActionMode", preferences.swipeActionMode.first())
+            .put("themePreference", preferences.themePreference.first())
+            .put("themeMode", preferences.themeMode.first())
+            .put("defaultPrompt", preferences.defaultPrompt.first())
+            .put("outputFolderUri", preferences.outputFolderUri.first() ?: JSONObject.NULL)
+            .put("externalCatalogUrl", preferences.externalCatalogUrl.first())
             .toString()
     }
 
@@ -90,31 +107,83 @@ internal class TestSpiOps(
         else -> preferences.sherpaModelPath(backend).first()
     }
 
+    /**
+     * Boolean preferences as one table: every key shares the strict
+     * true/false parse (a coerced "yes" would make a test run silently mean
+     * false), and SET_KEYS derives from the map so a writable key can never
+     * be missing from help.
+     */
+    private val booleanKeys: Map<String, suspend (Boolean) -> Unit> = mapOf(
+        "vad" to preferences::saveVadEnabled,
+        "progressive" to preferences::saveProgressiveTranscription,
+        "summarize" to preferences::saveSummarizeEnabled,
+        "auto_copy" to preferences::saveAutoCopyEnabled,
+        "vad_advisory" to preferences::saveVadAdvisoryDismissed,
+        "group_logs" to preferences::saveGroupLogsByConversation,
+        "advanced_sharing" to preferences::saveAdvancedSharingEnabled,
+        "show_retranscribe" to preferences::saveShowRetranscribeButton,
+        "force_model_load" to preferences::saveForceModelLoad,
+        "compact_result_actions" to preferences::saveCompactResultActions,
+        "show_task_details" to preferences::saveShowTaskDetails,
+    )
+
+    /**
+     * Enum-valued preferences, validated against the app's own option sets:
+     * the app resolves several of these silently to a default (provider to
+     * CPU, punctuation to AUTO), which would make a typo'd test run look
+     * like a real one.
+     */
+    private val choiceKeys: Map<String, Pair<List<String>, suspend (String) -> Unit>> = mapOf(
+        "punctuation" to Pair(PUNCTUATION_MODES, preferences::savePunctuationMode),
+        "provider" to Pair(InferenceProvider.options, preferences::saveInferenceProvider),
+        "swipe_action" to Pair(PreferencesManager.SWIPE_ACTION_MODES, preferences::saveSwipeActionMode),
+        "theme" to Pair(THEME_TYPES, preferences::saveThemePreference),
+        "theme_mode" to Pair(THEME_MODES, preferences::saveThemeMode),
+    )
+
+    /** Free-text preferences: written as given, no parse. */
+    private val textKeys: Map<String, suspend (String) -> Unit> = mapOf(
+        "punctuation_prompt" to preferences::savePunctuationPrompt,
+        "default_prompt" to preferences::saveDefaultPrompt,
+        "external_catalog_url" to preferences::saveExternalCatalogUrl,
+        // An unset SAF folder is null, not "": blank clears.
+        "output_folder" to { preferences.saveOutputFolderUri(it.ifBlank { null }) },
+        "language" to preferences::saveTranscriptionLanguage,
+        "model_path" to preferences::saveModelPath,
+    )
+
+    /**
+     * Every key accepted by `op=set`, derived from the dispatch tables plus
+     * the hand-listed [SPECIAL_SET_KEYS]: a key added to one of the tables
+     * cannot go missing from help, but a new `when` branch must be added to
+     * SPECIAL_SET_KEYS too (the completeness test catches the reverse
+     * direction only).
+     */
+    val SET_KEYS: List<String> =
+        (booleanKeys.keys + choiceKeys.keys + textKeys.keys + SPECIAL_SET_KEYS).sorted()
+
     private suspend fun set(key: String?, value: String?, entry: String?): String {
         if (key == null) return setError("missing key extra")
         if (value == null) return setError("missing value extra for key '$key'")
+
+        booleanKeys[key]?.let { save ->
+            val enabled = value.toBooleanStrictOrNull()
+                ?: return setError("$key expects true or false, got '$value'")
+            save(enabled)
+            return setAck(key, value, entry)
+        }
+        choiceKeys[key]?.let { (options, save) ->
+            if (value !in options) {
+                return setError("$key expects one of ${options.joinToString(", ")}, got '$value'")
+            }
+            save(value)
+            return setAck(key, value, entry)
+        }
+        textKeys[key]?.let { save ->
+            save(value)
+            return setAck(key, value, entry)
+        }
         when (key) {
-            "vad" -> {
-                val enabled = value.toBooleanStrictOrNull()
-                    ?: return setError("vad expects true or false, got '$value'")
-                preferences.saveVadEnabled(enabled)
-            }
-            // Same strict boolean as vad: this toggle gates the interim
-            // chunk notifications and the chunk nav.
-            "progressive" -> {
-                val enabled = value.toBooleanStrictOrNull()
-                    ?: return setError("progressive expects true or false, got '$value'")
-                preferences.saveProgressiveTranscription(enabled)
-            }
-            // TASK-276: the punctuation pass mode matches the settings
-            // dropdown's exact set; anything else would silently run as AUTO.
-            "punctuation" -> {
-                if (value !in PUNCTUATION_MODES) {
-                    return setError("punctuation expects one of ${PUNCTUATION_MODES.joinToString(", ")}, got '$value'")
-                }
-                preferences.savePunctuationMode(value)
-            }
-            "punctuation_prompt" -> preferences.savePunctuationPrompt(value)
             // TASK-451: strictly positive; non-positive silently falls back to
             // the default in NativeKeepAlive.setTimeout while get would report
             // the stored value. Values outside the dropdown
@@ -128,19 +197,13 @@ internal class TestSpiOps(
                 preferences.saveKeepAliveTimeout(minutes)
             }
             "threads" -> {
+                // Positive only: sherpa-onnx rejects num_threads < 1 at
+                // recognizer load, and 0 would brick the next cold start.
                 val threads = value.toIntOrNull()
-                    ?: return setError("threads expects an integer, got '$value'")
-                preferences.saveThreadCount(threads)
-            }
-            "provider" -> {
-                // Strict on purpose: the app silently resolves unknown providers
-                // to CPU (InferenceProvider.resolve), which would make a typo'd
-                // test run look like it used a real provider.
-                if (value !in InferenceProvider.options) {
-                    return setError(
-                        "provider expects one of ${InferenceProvider.options.joinToString(", ")}, got '$value'")
+                if (threads == null || threads <= 0) {
+                    return setError("threads expects a positive integer, got '$value'")
                 }
-                preferences.saveInferenceProvider(value)
+                preferences.saveThreadCount(threads)
             }
             "backend" -> {
                 if (!isKnownBackend(value)) {
@@ -150,8 +213,6 @@ internal class TestSpiOps(
                 }
                 preferences.saveTranscriptionBackend(value)
             }
-            "language" -> preferences.saveTranscriptionLanguage(value)
-            "model_path" -> preferences.saveModelPath(value)
             "sherpa_path" -> {
                 if (entry == null || entry !in BuiltInBackendIds.ALL) {
                     return setError(
@@ -163,13 +224,15 @@ internal class TestSpiOps(
             }
             else -> return setError("unknown key '$key'")
         }
-        return JSONObject()
-            .put("op", OP_SET)
-            .put("key", key)
-            .apply { if (key == "sherpa_path") put("entry", entry) }
-            .put("value", value)
-            .toString()
+        return setAck(key, value, entry)
     }
+
+    private fun setAck(key: String, value: String, entry: String?): String = JSONObject()
+        .put("op", OP_SET)
+        .put("key", key)
+        .apply { if (key == "sherpa_path") put("entry", entry) }
+        .put("value", value)
+        .toString()
 
     /**
      * Same rule as TaskerRequestReceiver.isKnownBackendId (llm + built-in ids +
@@ -229,10 +292,14 @@ internal class TestSpiOps(
         const val OP_RECORDS = "records"
         const val OP_HELP = "help"
 
-        /** Every key accepted by `op=set`, in help order. */
-        val SET_KEYS = listOf("vad", "progressive", "punctuation", "punctuation_prompt", "keep_alive", "threads", "provider", "backend", "language", "model_path", "sherpa_path")
+        /** Keys with per-key parsing or side conditions, dispatched in `set`'s when. */
+        val SPECIAL_SET_KEYS = listOf("keep_alive", "threads", "backend", "sherpa_path")
 
         /** TASK-276: the single source is PunctuationPolicy.MODE_PREFS; the SPI only adds write-time strictness. */
         val PUNCTUATION_MODES = PunctuationPolicy.MODE_PREFS
+
+        /** Persisted as the enum names (SettingsViewModel.saveThemePreference/Mode). */
+        val THEME_TYPES = ThemeType.entries.map { it.name }
+        val THEME_MODES = ThemeMode.entries.map { it.name }
     }
 }

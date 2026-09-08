@@ -144,13 +144,19 @@ class TestSpiOpsTest {
     }
 
     @Test
-    fun `set threads writes through and parses integers`() = runTest {
+    fun `set threads writes through and rejects non-positive values`() = runTest {
+        // sherpa-onnx rejects num_threads < 1 at recognizer load, so a 0
+        // stored here would brick the next cold start (verified against the
+        // v1.13.5 .so during the 2026-09-08 review).
         JSONObject(ops.handle(TestSpiOps.OP_SET, key = "threads", value = "4"))
         assertEquals(4, fake._threadCount.value)
 
-        assertTrue(
-            JSONObject(ops.handle(TestSpiOps.OP_SET, key = "threads", value = "four"))
-                .getString("error").contains("threads"))
+        for (bad in listOf("four", "0", "-2")) {
+            assertTrue(
+                JSONObject(ops.handle(TestSpiOps.OP_SET, key = "threads", value = bad))
+                    .getString("error").contains("threads"))
+        }
+        assertEquals("a rejected value must not overwrite the saved preference", 4, fake._threadCount.value)
     }
 
     @Test
@@ -225,13 +231,88 @@ class TestSpiOpsTest {
     fun `set with an unknown key returns an error listing the supported keys`() = runTest {
         val json = JSONObject(ops.handle(TestSpiOps.OP_SET, key = "nope", value = "1"))
         assertTrue(json.getString("error").contains("nope"))
-        assertEquals(TestSpiOps.SET_KEYS, json.getJSONArray("supportedKeys").optStringList())
+        assertEquals(ops.SET_KEYS, json.getJSONArray("supportedKeys").optStringList())
     }
 
     @Test
     fun `set without key or value returns errors`() = runTest {
         assertTrue(ops.handle(TestSpiOps.OP_SET).contains("missing key"))
         assertTrue(ops.handle(TestSpiOps.OP_SET, key = "vad").contains("missing value"))
+    }
+
+    @Test
+    fun `set summarize writes through and parses booleans strictly`() = runTest {
+        // 2026-09-08 session: the summary-pass memory measurement needed this
+        // toggle and found the SPI could not reach it (maintainer rule: add
+        // every missing key, same session).
+        JSONObject(ops.handle(TestSpiOps.OP_SET, key = "summarize", value = "true"))
+        assertTrue(fake._summarizeEnabled.value)
+
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_SET, key = "summarize", value = "on"))
+                .getString("error").contains("summarize"))
+    }
+
+    @Test
+    fun `set theme and swipe_action write through and reject values the dropdown never offers`() = runTest {
+        ops.handle(TestSpiOps.OP_SET, key = "theme", value = "TELEGRAM")
+        assertEquals("TELEGRAM", fake._themePreference.value)
+        ops.handle(TestSpiOps.OP_SET, key = "swipe_action", value = "IMMEDIATE_DELETE")
+        assertEquals("IMMEDIATE_DELETE", fake._swipeActionMode.value)
+
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_SET, key = "theme", value = "dark"))
+                .getString("error").contains("dark"))
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_SET, key = "swipe_action", value = "DELETE"))
+                .getString("error").contains("DELETE"))
+    }
+
+    @Test
+    fun `set output_folder writes the uri and blank clears it to null`() = runTest {
+        ops.handle(TestSpiOps.OP_SET, key = "output_folder", value = "content://tree/primary%3ATranscripts")
+        assertEquals("content://tree/primary%3ATranscripts", fake._outputFolderUri.value)
+
+        ops.handle(TestSpiOps.OP_SET, key = "output_folder", value = "")
+        assertEquals(null, fake._outputFolderUri.value)
+    }
+
+    @Test
+    fun `get exposes the summary output and ui preferences`() = runTest {
+        fake._summarizeEnabled.value = true
+        fake._swipeActionMode.value = "IMMEDIATE_DELETE"
+        fake._outputFolderUri.value = "content://tree/x"
+
+        val json = JSONObject(ops.handle(TestSpiOps.OP_GET))
+        assertTrue(json.getBoolean("summarizeEnabled"))
+        assertEquals("IMMEDIATE_DELETE", json.getString("swipeActionMode"))
+        assertEquals("content://tree/x", json.getString("outputFolderUri"))
+
+        fake._outputFolderUri.value = null
+        assertTrue(
+            "unset folder serializes as null",
+            JSONObject(ops.handle(TestSpiOps.OP_GET)).isNull("outputFolderUri"))
+    }
+
+    @Test
+    fun `every SET_KEYS entry dispatches a valid sample without error`() = runTest {
+        // The completeness guard: SET_KEYS derives from the dispatch tables,
+        // so a key that parses nothing (or a table key missing from help)
+        // fails here rather than surfacing mid device session.
+        val samples = mapOf(
+            "punctuation" to "auto", "provider" to "cpu", "swipe_action" to "REVEAL",
+            "theme" to "DEFAULT", "theme_mode" to "SYSTEM", "punctuation_prompt" to "p",
+            "default_prompt" to "d", "external_catalog_url" to "https://x",
+            "output_folder" to "", "keep_alive" to "5", "threads" to "4",
+            "backend" to "llm", "language" to "auto", "model_path" to "/m",
+            "sherpa_path" to "/m",
+        )
+        for (key in ops.SET_KEYS) {
+            val sample = samples[key] ?: "true"
+            val json = JSONObject(
+                ops.handle(TestSpiOps.OP_SET, key = key, value = sample, entry = if (key == "sherpa_path") BuiltInBackendIds.PARAKEET else null))
+            assertFalse("'$key' must dispatch '$sample', got: $json", json.has("error"))
+        }
     }
 
     @Test
@@ -257,7 +338,7 @@ class TestSpiOpsTest {
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
         assertEquals(listOf("get", "set", "records", "help"), json.getJSONArray("ops").optStringList())
-        assertEquals(TestSpiOps.SET_KEYS, json.getJSONArray("setKeys").optStringList())
+        assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
     }

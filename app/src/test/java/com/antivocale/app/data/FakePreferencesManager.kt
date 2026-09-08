@@ -23,6 +23,7 @@ internal class FakePreferencesManager : PreferencesManager {
     val _themePreference = MutableStateFlow("DEFAULT")
     val _themeMode = MutableStateFlow("SYSTEM")
     val _transcriptionBackend = MutableStateFlow(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
+    val _externalCatalogUrl = MutableStateFlow(PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL)
     private val _sherpaModelPaths = mutableMapOf<String, MutableStateFlow<String?>>()
 
     /** Backing flow for a catalog entry's saved model path (mirrors the keyed accessor). */
@@ -62,9 +63,8 @@ internal class FakePreferencesManager : PreferencesManager {
     override val themeMode: Flow<String> get() = _themeMode
     override val transcriptionBackend: Flow<String> get() = _transcriptionBackend
     override fun sherpaModelPath(entryId: String): Flow<String?> = _sherpaModelPath(entryId)
-    override val externalCatalogUrl: kotlinx.coroutines.flow.Flow<String> =
-        kotlinx.coroutines.flow.MutableStateFlow(PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL)
-    override suspend fun saveExternalCatalogUrl(url: String) {}
+    override val externalCatalogUrl: Flow<String> get() = _externalCatalogUrl
+    override suspend fun saveExternalCatalogUrl(url: String) { _externalCatalogUrl.value = url }
 
     override val externalMigrationDone: Flow<Boolean> get() = _externalMigrationDone
     override val customTransducerModelPath: Flow<String?> get() = _customTransducerModelPath
@@ -111,9 +111,9 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveVadAdvisoryDismissed(dismissed: Boolean) { _vadAdvisoryDismissed.value = dismissed }
     override suspend fun saveProgressiveTranscription(enabled: Boolean) { _progressiveTranscription.value = enabled }
     override suspend fun savePunctuationMode(mode: String) { _punctuationMode.value = mode }
-    override suspend fun savePunctuationPrompt(prompt: String) { _punctuationPrompt.value = prompt }
+    override suspend fun savePunctuationPrompt(prompt: String) { _punctuationPrompt.value = prompt.take(500) }
     override suspend fun saveSummarizeEnabled(enabled: Boolean) { _summarizeEnabled.value = enabled }
-    override suspend fun saveDefaultPrompt(prompt: String) { _defaultPrompt.value = prompt }
+    override suspend fun saveDefaultPrompt(prompt: String) { _defaultPrompt.value = prompt.take(500) }
     override suspend fun saveThreadCount(threads: Int) { _threadCount.value = threads }
     override suspend fun saveInferenceProvider(provider: String) { _inferenceProvider.value = provider }
     override suspend fun saveTranscriptionLanguage(language: String) { _transcriptionLanguage.value = language }
@@ -125,8 +125,14 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveCompactResultActions(enabled: Boolean) { _compactResultActions.value = enabled }
     override suspend fun saveShowTaskDetails(enabled: Boolean) { _showTaskDetails.value = enabled }
     override suspend fun saveExternalModelsJson(json: String) { _externalModelsJson.value = json }
-    override suspend fun savePartialTranscriptionState(text: String) { _partialTranscriptionText.value = text }
-    override suspend fun clearPartialTranscriptionState() { _partialTranscriptionText.value = null }
+    override suspend fun savePartialTranscriptionState(text: String) {
+        _partialTranscriptionText.value = text
+        _partialTranscriptionTimestamp.value = System.currentTimeMillis()
+    }
+    override suspend fun clearPartialTranscriptionState() {
+        _partialTranscriptionText.value = null
+        _partialTranscriptionTimestamp.value = null
+    }
     override suspend fun getLegacyLanguagePreference(): String = "en"
 
     override suspend fun saveBenchmarkResult(modelId: String, jsonResult: String) {

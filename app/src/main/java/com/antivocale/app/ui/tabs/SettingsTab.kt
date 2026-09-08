@@ -838,7 +838,7 @@ fun SettingsTab(
 
                     SettingsDropdown(
                         currentValue = swipeActionMode,
-                        options = listOf("REVEAL", "IMMEDIATE_DELETE"),
+                        options = PreferencesManager.SWIPE_ACTION_MODES,
                         currentValueDisplay = when (swipeActionMode) {
                             "REVEAL" -> stringResource(R.string.swipe_action_reveal)
                             "IMMEDIATE_DELETE" -> stringResource(R.string.swipe_action_immediate_delete)

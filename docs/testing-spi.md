@@ -26,7 +26,7 @@ Action: com.antivocale.app.TEST_SPI   (string extras, one op per broadcast)
 
 | Op | Extras | Response |
 |---|---|---|
-| `get` | none | JSON object: `vadEnabled`, `progressiveEnabled`, `punctuationMode`, `punctuationPrompt`, `keepAliveTimeoutMinutes`, `threadCount`, `inferenceProvider`, `transcriptionLanguage`, `transcriptionBackend`, `activeModelPath` (saved path of the current backend: the record's `dir` for `external:` ids, the generic preference for `llm`, the keyed sherpa preference for catalog ids), and `paths` mapping every catalog id plus `llm` to its saved path (or `null`) |
+| `get` | none | JSON object: `vadEnabled`, `progressiveEnabled`, `punctuationMode`, `punctuationPrompt`, `keepAliveTimeoutMinutes`, `threadCount`, `inferenceProvider`, `transcriptionLanguage`, `transcriptionBackend`, `activeModelPath` (saved path of the current backend: the record's `dir` for `external:` ids, the generic preference for `llm`, the keyed sherpa preference for catalog ids), `paths` mapping every catalog id plus `llm` to its saved path (or `null`), plus the remaining user preferences: `summarizeEnabled`, `autoCopyEnabled`, `forceModelLoad`, `compactResultActions`, `showTaskDetails`, `advancedSharingEnabled`, `showRetranscribeButton`, `groupLogsByConversation`, `vadAdvisoryDismissed`, `swipeActionMode`, `themePreference`, `themeMode`, `defaultPrompt`, `outputFolderUri` (or `null`), `externalCatalogUrl` |
 | `set` | `key`, `value`, plus `entry` for `sherpa_path` | confirmation JSON echoing `key`/`value` (`entry` too when used), or an error object with `error` and the full `supportedKeys` list |
 | `records` | none | JSON array of the imported external models; each element is the record's persisted JSON plus the derived `backendId`. All records are listed, including dangling ones whose directory no longer exists, because dangling state is precisely what a debugging session needs to see |
 | `help` | none | the op list, the set keys, the usage line, and the `PROCESS_REQUEST` pointer |
@@ -43,11 +43,20 @@ Set keys and value formats:
 | `threads` | `saveThreadCount` | integer (for example `4`) |
 | `provider` | `saveInferenceProvider` | `auto`, `nnapi`, `cpu` (the settings dropdown's exact set; anything else is rejected because the app would silently run it as CPU) |
 | `backend` | `saveTranscriptionBackend` | a catalog id (`sherpa-onnx`, `whisper`, `qwen3-asr`, `nemotron-streaming`, `gigaam`), `llm`, or `external:<record id>`; unknown ids are rejected without writing |
-| `language` | `saveTranscriptionLanguage` | BCP-47 tag, `system`, or `auto` |
+| `language` | `saveTranscriptionLanguage` | BCP-47 tag, `system`, or `auto`; written as given, no validation (the Settings picker normally constrains this to the catalog's languages) |
 | `model_path` | `saveModelPath` | path (llm backend's model file) |
 | `sherpa_path` | `saveSherpaModelPath(entry, path)` | path, with `entry=<catalog id>` naming which backend's keyed preference is written |
+| `summarize` | `saveSummarizeEnabled` | `true` or `false` (strict); the opt-in summary pass over long transcripts (added after the 2026-09-08 memory-measurement session found the SPI could not reach it) |
+| `auto_copy`, `force_model_load`, `compact_result_actions`, `show_task_details`, `advanced_sharing`, `show_retranscribe`, `group_logs`, `vad_advisory` | the matching `save*Enabled`/`save*` boolean preference | `true` or `false` (strict), same contract as `vad` |
+| `swipe_action` | `saveSwipeActionMode` | `REVEAL` or `IMMEDIATE_DELETE` (the Logs settings dropdown's exact set) |
+| `theme`, `theme_mode` | `saveThemePreference`, `saveThemeMode` | the enum names: `DEFAULT`/`WHATSAPP`/`TELEGRAM` and `SYSTEM`/`DARK`/`LIGHT` |
+| `default_prompt` | `saveDefaultPrompt` | free text, 500-char cap (like `punctuation_prompt`); the Tasker default prompt |
+| `external_catalog_url` | `saveExternalCatalogUrl` | URL of the community-catalog JSON source |
+| `output_folder` | `saveOutputFolderUri` | SAF tree URI; a blank value clears the preference back to unset (`null`). Only URIs the app was granted through the SAF picker work: the SPI stores the string but cannot take the persistable URI grant, so a never-granted tree fails silently at the next auto-save. Set folders that came out of a real picker session |
 
 Paths are written as given and not validated against the filesystem. A test that writes a bogus path and then transcribes will fail at model load; set paths that came out of `op=get` or `op=records`, or a real download directory.
+
+Deliberately NOT reachable through the SPI (kept out on purpose): `partialTranscription*` (transient crash-recovery state) and benchmark results (their own domain, reset from the UI); legacy one-shot markers (`externalMigrationDone`, `customTransducer*`); the disabled GGUF path (`ggufModelPath`); `externalModelsJson` (read via `op=records`, written by the import pipeline).
 
 ## Reading responses
 

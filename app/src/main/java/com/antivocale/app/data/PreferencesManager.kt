@@ -129,6 +129,9 @@ interface PreferencesManager {
          */
         const val DEFAULT_TRANSCRIPTION_LANGUAGE = "system"
         const val DEFAULT_SWIPE_ACTION_MODE = "REVEAL"
+
+        /** The Logs swipe dropdown's exact option set (SettingsTab + the test SPI both pin to this). */
+        val SWIPE_ACTION_MODES = listOf("REVEAL", "IMMEDIATE_DELETE")
         const val DEFAULT_INFERENCE_PROVIDER = "auto"
         const val DEFAULT_GROUP_LOGS_BY_CONVERSATION = true
         const val DEFAULT_ADVANCED_SHARING_ENABLED = false
