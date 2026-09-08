@@ -1,0 +1,203 @@
+name: Nightly
+
+# TASK-465: rolling nightly pre-release built from main, playStore flavor.
+#
+# Dispatch ONLY, by design (maintainer decision 2026-09-08): no push trigger and
+# no schedule. No cron until the manual flow has been proven end-to-end at least
+# once (first run + device install check), per the approved plan.
+#
+# F-DROID SAFETY: the release is published on the rolling tag `nightly`, which is
+# NOT semver ON PURPOSE. The fdroiddata recipe uses UpdateCheckMode: Tags, and
+# fdroidserver's check_tags() parses EVERY tag with no name filter (verified in
+# fdroidserver master 3cbbe810, fdroidserver/checkupdates.py): the bot reads the
+# versionCode at the tag's commit and only stays quiet while that code does not
+# exceed the released CurrentVersionCode. The tag name alone is NOT protection.
+# Before the first publish the recipe must get the documented pattern suffix
+# (`UpdateCheckMode: Tags .*[0-9]$`), the one allowed fdroiddata edit per the
+# TASK-465 plan; until then never let main's versionCode exceed the released one
+# (it must not: the nightly stays at the current base). See docs/ci.md.
+# Do NOT rename this tag to anything resembling X.Y.Z.
+#
+# The playStore flavor is deliberate: it is signed with the SAME release key as
+# the Play Store build (keystore.properties secrets, exactly like the
+# bundlePlayStoreRelease step of android-release.yml), so the APK installs as an
+# update over a Play install. F-Droid flavor builds are signed by F-Droid and
+# would force testers to uninstall (losing downloaded models).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+# Two manual runs must not race on the same rolling tag and release.
+concurrency:
+  group: nightly
+  cancel-in-progress: true
+
+jobs:
+  nightly:
+    name: Build + publish nightly pre-release
+    runs-on: ubuntu-latest
+
+    steps:
+      # Always main: the nightly is "whatever main looks like right now".
+      - name: Checkout main
+        uses: actions/checkout@v5
+        with:
+          ref: main
+          # Full history is not needed, but the tag push below needs the origin
+          # remote configured, which checkout provides.
+          fetch-depth: 1
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Record run date (UTC)
+        id: date
+        run: date -u +"%Y-%m-%d"
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      # Same secret + same layout as the release AAB step in android-release.yml:
+      # the playStore flavor applies the google-services plugin, which needs the
+      # json at configure time.
+      - name: Write google-services.json
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON_B64 }}" | base64 -d > app/google-services.json
+
+      - name: Fetch sherpa-onnx AAR
+        run: ./scripts/fetch-sherpa-aar.sh
+
+      # Signing EXACTLY as android-release.yml signs its playStore release
+      # builds: KEYSTORE_BASE64 -> app/release.keystore, KEYSTORE_PROPERTIES ->
+      # keystore.properties, then repoint storeFile at the written file. No new
+      # secrets introduced.
+      - name: Write release keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+          echo "${{ secrets.KEYSTORE_PROPERTIES }}" > keystore.properties
+          sed -i 's|storeFile=.*|storeFile=release.keystore|' keystore.properties
+
+      - name: Build playStore release APKs (per-ABI splits)
+        run: ./gradlew :app:assemblePlayStoreRelease --console=plain
+
+      # Asset names antivocale-nightly-<abi>.apk are DELIBERATELY distinct from
+      # every name android-release.yml can publish (app-fdroid-<abi>-release.apk,
+      # app-fdroid-<abi>-release-unsigned.apk, antivocale-debug-<abi>.apk,
+      # antivocale-fdroid-testsigned-<abi>.apk): a nightly asset can never
+      # collide with, or be mistaken for, a release asset. isUniversalApk is
+      # false (app/build.gradle.kts), so the glob yields exactly the 3 ABIs.
+      - name: Stage nightly APKs
+        run: |
+          set -euo pipefail
+          mkdir -p nightly-apks
+          for APK in app/build/outputs/apk/playStore/release/app-playStore-*-release.apk; do
+            ABI=$(basename "$APK" | sed -E 's/^app-playStore-(.+)-release\.apk$/\1/')
+            case "$ABI" in
+              armeabi-v7a|arm64-v8a|x86_64) cp "$APK" "nightly-apks/antivocale-nightly-${ABI}.apk" ;;
+              *) echo "::error::unexpected split output '$APK' (ABI '$ABI')"; exit 1 ;;
+            esac
+          done
+          test "$(find nightly-apks -name 'antivocale-nightly-*.apk' | wc -l)" -eq 3 || { echo "::error::expected 3 per-ABI APKs"; exit 1; }
+          ls -la nightly-apks/
+
+      - name: Read versionName from the built APK
+        run: |
+          set -euo pipefail
+          AAPT=$(find "$ANDROID_HOME"/build-tools \( -name aapt2 -o -name aapt \) | sort -V | tail -1)
+          VERSION_NAME=$("$AAPT" dump badging nightly-apks/antivocale-nightly-arm64-v8a.apk \
+            | head -1 | grep -oE "versionName='[^']+'" | cut -d"'" -f2)
+          echo "Expected 1.12.0-SNAPSHOT, got: $VERSION_NAME"
+          echo "VERSION_NAME=$VERSION_NAME" >> "$GITHUB_ENV"
+
+      # Re-point the rolling tag at this run's commit (delete + recreate the
+      # ref via a forced push). The F-Droid safety of this whole design rests on
+      # `nightly` parsing as no version; keep the name as-is. NOTE: if repo
+      # protected tags ever start matching `nightly`, this push fails and the
+      # workflow fails loudly - that is intended, unprotect the tag first.
+      - name: Re-point the nightly tag at this commit
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -f nightly "$GITHUB_SHA"
+          git push --force origin refs/tags/nightly
+
+      # Replace the assets: drop any same-named assets from the existing
+      # nightly release before uploading, so a failed upload can never leave a
+      # stale APK silently paired with a new build.
+      - name: Delete previous nightly assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          ASSET_IDS=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/nightly" \
+            --jq '.assets[] | select(.name | startswith("antivocale-nightly-")) | .id' 2>/dev/null || true)
+          for ID in $ASSET_IDS; do
+            echo "deleting old asset $ID"
+            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/$ID"
+          done
+
+      # Create-or-update the pre-release. softprops updates the existing release
+      # for the tag when one is present. GH.Release body: versionName from the
+      # build, commit SHA, the untested-snapshot warning, the signature caveat,
+      # and the explicit not-for-F-Droid note.
+      - name: Publish nightly pre-release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: Nightly (${{ steps.date.outputs.date }})
+          prerelease: true
+          make_latest: false
+          files: nightly-apks/antivocale-nightly-*.apk
+          body: |
+            **Nightly build, generated automatically from main.**
+
+            - versionName: ${{ env.VERSION_NAME }} (the About row in the app shows the same `1.12.0-SNAPSHOT`)
+            - commit: ${{ github.sha }}
+            - built: ${{ steps.date.outputs.date }} (UTC)
+
+            :warning: **Untested snapshot.** This build has passed compilation only: no test suite, no device verification, no review. Expect breakage.
+
+            :warning: **Not for F-Droid users.** Stay on the F-Droid release. This rolling tag is intentionally non-semantic so the F-Droid update checker never offers it.
+
+            :information_source: **Signature:** signed with the same release key as the Play Store build, so it installs as an update over a Play install. F-Droid-installed copies use a different signature: updating from F-Droid to a nightly requires uninstalling first, which erases downloaded transcription models.
+
+            For stable releases see https://github.com/${{ github.repository }}/releases
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Failure modes: nothing above is wrapped in `|| true`. If the tag move or
+      # the upload fails mid-way the workflow is red; a partially-updated
+      # nightly (new tag, old body or old assets) is acceptable ONLY as a
+      # visible failure, which this is.
+      - name: Sanity - the nightly release exists with 3 assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          COUNT=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/nightly" --jq '[.assets[] | select(.name | startswith("antivocale-nightly-"))] | length')
+          test "$COUNT" -eq 3 || { echo "::error::nightly release has $COUNT nightly assets, expected 3 (partial publish)"; exit 1; }
+          echo "OK: 3 nightly assets on the rolling pre-release"
+
+      # Retention: after a successful publish, remove any OTHER nightly-*
+      # pre-release (a dated-tag scheme from an earlier era, or an accidental
+      # duplicate), so the repo never accumulates rolling snapshots. The current
+      # release (tag exactly `nightly`) is always kept.
+      - name: Delete old nightly-* pre-releases
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          gh api --paginate "repos/${GITHUB_REPOSITORY}/releases" --jq \
+            '.[] | select(.prerelease) | select(.tag_name | test("^nightly-")) | .tag_name' \
+            | sort -u | while read -r TAG; do
+              echo "deleting stale nightly pre-release: $TAG"
+              gh release delete "$TAG" --yes --cleanup-tag
+            done
