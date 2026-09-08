@@ -94,6 +94,7 @@
     <string name="logs_status_error">Błąd</string>
     <string name="logs_status_processing">Przetwarzanie</string>
     <string name="logs_original_label">Oryginał (przed interpunkcją):</string>
+    <string name="logs_summary_label">Podsumowanie:</string>
     <string name="logs_model_label">Model: %1$s</string>
     <string name="logs_transcription_cancelled">Transkrypcja anulowana</string>
     <string name="logs_search_placeholder">Szukaj wpisów…</string>
@@ -454,6 +455,11 @@
     <string name="punctuation_prompt_description">Instrukcja dla kroku interpunkcji. Zostaw puste, aby użyć wbudowanej.</string>
     <string name="punctuation_prompt_placeholder">Wbudowany prompt</string>
     <string name="punctuation_default_prompt">Dodaj interpunkcję i wielkie litery do tej transkrypcji. Zachowaj każde słowo dokładnie jak napisane; niczego nie poprawiaj, nie tłumacz, nie dodawaj ani nie usuwaj. Zwróć tylko poprawioną transkrypcję.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">Podsumuj długie transkrypcje</string>
+    <string name="summarize_description">Dodaje krótkie podsumowanie AI do długich transkrypcji za pomocą modelu Gemma (wymaga pobranego Gemma).</string>
+    <string name="summarize_status">Podsumowywanie przez AI…</string>
+    <string name="summary_default_prompt">Podsumuj tę transkrypcję w 2-3 zdaniach, w języku transkrypcji. Zachowaj imiona i liczby. Zwróć tylko podsumowanie.</string>
     <string name="vad_title">Usuwanie ciszy (VAD)</string>
     <string name="vad_description">Usuwa ciche fragmenty z wiadomości głosowych przed transkrypcją. Skraca czas przetwarzania i poprawia dokładność.</string>
     <string name="progressive_title">Wyświetlanie progresywne</string>

@@ -423,6 +423,11 @@
     <string name="punctuation_prompt_description">विराम चिह्न चरण के लिए निर्देश। अंतर्निहित प्रॉम्प्ट के लिए खाली छोड़ें।</string>
     <string name="punctuation_prompt_placeholder">अंतर्निहित प्रॉम्प्ट</string>
     <string name="punctuation_default_prompt">इस ट्रांसक्रिप्शन में विराम चिह्न और बड़े अक्षर जोड़ें। हर शब्द बिल्कुल वैसा ही रखें जैसा लिखा है; कुछ भी ठीक न करें, अनुवाद न करें, जोड़ें नहीं या हटाएँ नहीं। केवल सुधारी हुई ट्रांसक्रिप्शन ही लिखें।</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">लंबी ट्रांसक्रिप्शन का सारांश बनाएं</string>
+    <string name="summarize_description">Gemma मॉडल से लंबी ट्रांसक्रिप्शन में एक छोटा AI सारांश जोड़ता है (Gemma डाउनलोड होना चाहिए)।</string>
+    <string name="summarize_status">AI से सारांश बन रहा है…</string>
+    <string name="summary_default_prompt">इस ट्रांसक्रिप्शन का सारांश 2-3 वाक्यों में दें, ट्रांसक्रिप्शन की भाषा में। नाम और संख्याएँ बनाए रखें। केवल सारांश ही लिखें।</string>
     <string name="vad_title">मौन हटाएं (VAD)</string>
     <string name="vad_description">ट्रांसक्रिप्शन से पहले वॉइस मैसेज के ख़ामोश हिस्से हटाएं। प्रोसेसिंग समय घटता है और सटीकता बेहतर होती है।</string>
     <string name="progressive_title">प्रगतिशील डिस्प्ले</string>
@@ -919,6 +924,7 @@
     <string name="logs_status_error">त्रुटि</string>
     <string name="logs_status_processing">प्रोसेसिंग</string>
     <string name="logs_original_label">मूल (विराम चिह्न से पहले):</string>
+    <string name="logs_summary_label">सारांश:</string>
     <string name="logs_model_label">मॉडल: %1$s</string>
     <string name="model_limit_chunked">कोई सीमा नहीं: लंबी ऑडियो स्वतः विभाजित होती है</string>
     <string name="show_task_details_title">टास्क विवरण दिखाएँ</string>

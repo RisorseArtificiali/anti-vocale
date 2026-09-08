@@ -371,6 +371,11 @@
     <string name="punctuation_prompt_description">Instrucción para el paso de puntuación. Déjalo vacío para usar el integrado.</string>
     <string name="punctuation_prompt_placeholder">Prompt integrado</string>
     <string name="punctuation_default_prompt">Añade puntuación y mayúsculas a esta transcripción. Mantén cada palabra exactamente como está escrita; no corrijas, traduzcas, añadas ni quites nada. Devuelve solo la transcripción corregida.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">Resumir transcripciones largas</string>
+    <string name="summarize_description">Añade un resumen corto con IA a las transcripciones largas con el modelo Gemma (requiere Gemma descargado).</string>
+    <string name="summarize_status">Resumiendo con IA…</string>
+    <string name="summary_default_prompt">Resume esta transcripción en 2-3 frases, en el idioma de la transcripción. Mantén los nombres y los números. Devuelve solo el resumen.</string>
     <string name="vad_title">Eliminar silencios (VAD)</string>
     <string name="vad_description">Elimina las partes de silencio de los mensajes de voz antes de transcribir. Reduce el tiempo de proceso y mejora la precisión.</string>
     <string name="progressive_title">Visualización progresiva</string>
@@ -785,6 +790,7 @@
     <string name="logs_status_error">Error</string>
     <string name="logs_status_processing">Procesando</string>
     <string name="logs_original_label">Original (antes de la puntuación):</string>
+    <string name="logs_summary_label">Resumen:</string>
     <string name="logs_model_label">Modelo: %1$s</string>
     <string name="model_limit_chunked">Sin límite: los audios largos se dividen automáticamente</string>
     <string name="show_task_details_title">Mostrar detalles de la tarea</string>

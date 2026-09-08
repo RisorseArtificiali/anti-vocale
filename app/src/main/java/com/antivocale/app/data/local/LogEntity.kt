@@ -32,6 +32,9 @@ data class LogEntity(
      *  pass changed the words' presentation (null when it never fired or made
      *  no change; null on pre-v5 rows). */
     val rawTranscript: String? = null,
+    /** TASK-121.4: the AI summary of a long transcript, attached as metadata
+     *  (null when the pass never fired or degraded; null on pre-v6 rows). */
+    val summary: String? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -53,7 +56,8 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     isPartial = isPartial,
     failedChunkCount = failedChunkCount,
     modelName = modelName,
-    rawTranscript = rawTranscript
+    rawTranscript = rawTranscript,
+    summary = summary
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -72,5 +76,6 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     isPartial = isPartial,
     failedChunkCount = failedChunkCount,
     modelName = modelName,
-    rawTranscript = rawTranscript
+    rawTranscript = rawTranscript,
+    summary = summary
 )

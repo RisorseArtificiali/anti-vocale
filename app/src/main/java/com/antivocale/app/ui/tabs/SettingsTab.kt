@@ -453,6 +453,19 @@ fun SettingsTab(
                 )
             }
 
+            // TASK-121.4: smart-summary toggle. Always shown: with no Gemma model
+            // configured the pass silently skips at runtime (same graceful branch
+            // as the punctuation pass), so the setting does not hide itself.
+            ToggleSettingCard(
+                icon = Icons.Default.Notes,
+                title = stringResource(R.string.summarize_title),
+                description = stringResource(R.string.summarize_description),
+                checked = viewModel.summarizeEnabled.collectAsState().value,
+                onCheckedChange = { enabled ->
+                    viewModel.saveSummarizeEnabled(enabled)
+                }
+            )
+
             // Default Prompt Setting Navigation Card
             Card(
                 modifier = Modifier

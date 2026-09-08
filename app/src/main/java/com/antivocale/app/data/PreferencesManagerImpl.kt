@@ -64,6 +64,7 @@ class PreferencesManagerImpl(
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
         private val PUNCTUATION_MODE = stringPreferencesKey("punctuation_mode")
         private val PUNCTUATION_PROMPT = stringPreferencesKey("punctuation_prompt")
+        private val SUMMARIZE_ENABLED = booleanPreferencesKey("summarize_enabled")
         private val THREAD_COUNT = intPreferencesKey("thread_count")
         private val INFERENCE_PROVIDER = stringPreferencesKey("inference_provider")
         private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
@@ -102,6 +103,7 @@ class PreferencesManagerImpl(
         val defaultPrompt: String = PreferencesManager.DEFAULT_PROMPT_VALUE,
         val punctuationMode: String = PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         val punctuationPrompt: String = "",
+        val summarizeEnabled: Boolean = PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         val threadCount: Int = PreferencesManager.DEFAULT_THREAD_COUNT,
         val inferenceProvider: String = PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         val transcriptionLanguage: String = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
@@ -140,6 +142,7 @@ class PreferencesManagerImpl(
         defaultPrompt = this[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE,
         punctuationMode = this[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         punctuationPrompt = this[PUNCTUATION_PROMPT] ?: "",
+        summarizeEnabled = this[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         threadCount = this[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT,
         inferenceProvider = this[INFERENCE_PROVIDER] ?: PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
@@ -382,6 +385,16 @@ class PreferencesManagerImpl(
             preferences[PUNCTUATION_PROMPT] = truncated
         }
         cache.updateAndGet { it.copy(punctuationPrompt = truncated) }
+    }
+
+    override val summarizeEnabled: Flow<Boolean> = dataStore.data.map { it[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED }
+        .onStart { emit(cache.get().summarizeEnabled) }
+
+    override suspend fun saveSummarizeEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SUMMARIZE_ENABLED] = enabled
+        }
+        cache.updateAndGet { it.copy(summarizeEnabled = enabled) }
     }
 
     override val threadCount: Flow<Int> = dataStore.data.map { it[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT }

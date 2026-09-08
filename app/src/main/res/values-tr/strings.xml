@@ -92,6 +92,7 @@
     <string name="logs_status_error">Hata</string>
     <string name="logs_status_processing">İşleniyor</string>
     <string name="logs_original_label">Orijinal (noktalamadan önce):</string>
+    <string name="logs_summary_label">Özet:</string>
     <string name="logs_model_label">Model: %1$s</string>
     <string name="logs_transcription_cancelled">Metin çıkarma iptal edildi</string>
     <string name="logs_search_placeholder">Kayıtlarda ara…</string>
@@ -446,6 +447,11 @@
     <string name="punctuation_prompt_description">Noktalama adımı için yönerge. Yerleşik olanı kullanmak için boş bırakın.</string>
     <string name="punctuation_prompt_placeholder">Yerleşik istem</string>
     <string name="punctuation_default_prompt">Bu transkripte noktalama ve büyük harfler ekle. Her kelimeyi tam yazıldığı gibi koru; hiçbir şeyi düzeltme, çevirme, ekleme veya çıkarma. Yalnızca düzeltilmiş transkripti yaz.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">Uzun transkriptleri özetle</string>
+    <string name="summarize_description">Gemma modeliyle uzun transkriptlere kısa bir yapay zekâ özeti ekler (Gemma\'nın indirilmiş olması gerekir).</string>
+    <string name="summarize_status">Yapay zekâ ile özetleniyor…</string>
+    <string name="summary_default_prompt">Bu transkripti 2-3 cümleyle, transkriptin dilinde özetle. İsimleri ve sayıları koru. Sadece özeti yaz.</string>
     <string name="vad_title">Sessizliği Kırp (VAD)</string>
     <string name="vad_description">Metin çıkarmadan önce sesli mesajlardaki sessiz kısımları kaldırır. İşleme süresini azaltır ve doğruluğu artırır.</string>
     <string name="progressive_title">Aşamalı Görüntüleme</string>

@@ -222,6 +222,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = ""
         )
 
+    // TASK-121.4: smart-summary pass toggle.
+    val summarizeEnabled: StateFlow<Boolean> = preferencesManager.summarizeEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_SUMMARIZE_ENABLED
+        )
+
     // TASK-336: background-kill detection (cold-start sweep marker rows) for the
     // battery-exemption card. Only re-offered after a NEW interruption.
     private val _backgroundKills = MutableStateFlow(0)
@@ -529,6 +537,11 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun saveSummarizeEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveSummarizeEnabled(enabled)
+        }
+    }
 
     /**
      * Saves the swipe action mode preference.

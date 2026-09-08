@@ -1065,35 +1065,26 @@ fun LogEntryItem(
                                 .padding(8.dp)
                         )
 
+                        // TASK-121.4: the AI summary of a long transcript, when the
+                        // pass produced one. Metadata only: the result box above stays
+                        // the delivered transcript. Shown above the original block
+                        // (summary before provenance).
+                        log.summary?.let { summary ->
+                            LabeledTranscriptBlock(
+                                label = stringResource(R.string.logs_summary_label),
+                                text = summary,
+                                searchQuery = searchQuery,
+                            )
+                        }
+
                         // TASK-276 AC3: the pre-punctuation original, when the pass
                         // changed the text. Always visible in the expanded card
                         // (the raw ASR output is what the model actually heard).
                         log.rawTranscript?.let { original ->
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Text(
-                                text = stringResource(R.string.logs_original_label),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                // highlightText short-circuits on a blank query, so the
-                                // wrap is free and keeps search matches highlighted in
-                                // the original too, symmetric with the result box above.
-                                text = highlightText(
-                                    original,
-                                    searchQuery,
-                                    MaterialTheme.colorScheme.tertiary
-                                ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                                        shape = MaterialTheme.shapes.small
-                                    )
-                                    .padding(8.dp)
+                            LabeledTranscriptBlock(
+                                label = stringResource(R.string.logs_original_label),
+                                text = original,
+                                searchQuery = searchQuery,
                             )
                         }
 
@@ -1578,4 +1569,32 @@ private fun groupLogsByConversation(
             )
         }
         .sortedByDescending { it.logs.first().timestamp }
+}
+
+/**
+ * A labeled secondary transcript block of the expanded log card (summary,
+ * pre-punctuation original): labelSmall caption, highlighted body on the
+ * subdued surfaceVariant background. Shared so the two blocks cannot drift.
+ */
+@Composable
+private fun LabeledTranscriptBlock(label: String, text: String, searchQuery: String) {
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        text = label,
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant
+    )
+    Spacer(modifier = Modifier.height(4.dp))
+    Text(
+        text = highlightText(text, searchQuery, MaterialTheme.colorScheme.tertiary),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+                shape = MaterialTheme.shapes.small
+            )
+            .padding(8.dp)
+    )
 }

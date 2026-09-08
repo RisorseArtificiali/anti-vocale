@@ -445,6 +445,11 @@
     <string name="punctuation_prompt_description">Инструкция для этапа пунктуации. Оставьте пустым, чтобы использовать встроенную.</string>
     <string name="punctuation_prompt_placeholder">Встроенный промпт</string>
     <string name="punctuation_default_prompt">Добавь пунктуацию и заглавные буквы в эту расшифровку. Сохрани каждое слово точно как написано; ничего не исправляй, не переводи, не добавляй и не удаляй. Выведи только исправленную расшифровку.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">Резюмировать длинные расшифровки</string>
+    <string name="summarize_description">Добавляет короткое резюме с ИИ к длинным расшифровкам с помощью модели Gemma (требуется скачанная Gemma).</string>
+    <string name="summarize_status">Резюмирую с помощью ИИ…</string>
+    <string name="summary_default_prompt">Сделай краткое содержание этой расшифровки в 2-3 предложениях, на языке расшифровки. Сохрани имена и числа. Выведи только краткое содержание.</string>
     <string name="vad_title">Удаление тишины (VAD)</string>
     <string name="vad_description">Удалять беззвучные участки из голосовых сообщений перед распознаванием. Сокращает время обработки и повышает точность.</string>
     <string name="progressive_title">Прогрессивный показ</string>
@@ -937,6 +942,7 @@
     <string name="logs_status_error">Ошибка</string>
     <string name="logs_status_processing">Обработка</string>
     <string name="logs_original_label">Оригинал (до пунктуации):</string>
+    <string name="logs_summary_label">Краткое содержание:</string>
     <string name="logs_model_label">Модель: %1$s</string>
     <string name="model_limit_chunked">Без ограничений: длинные записи разбиваются автоматически</string>
     <string name="show_task_details_title">Показывать детали задачи</string>

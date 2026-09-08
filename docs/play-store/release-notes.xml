@@ -1,4 +1,5 @@
 <en-US>What's new in 1.12.0:
+• New, opt-in: AI summary of long transcriptions, shown in the entry details
 
 • New: choose the app icon from four variants (re-pin it once if it was pinned to the home screen)
 • The language setting now follows the model in use: only supported languages, with a warning when one is forced
@@ -212,6 +213,7 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>Novità della versione 1.12.0:
+• Novità, opzionale: riepilogo AI delle trascrizioni lunghe, mostrato nei dettagli della voce
 
 • Novità: scegli l'icona dell'app tra quattro varianti (se era fissata nella home, fissala di nuovo una volta)
 • L'impostazione lingua segue il modello in uso: solo lingue supportate, con avviso quando una è forzata
@@ -425,6 +427,7 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>Neuigkeiten in Version 1.12.0:
+• Neu, optional: KI-Zusammenfassung langer Transkripte, in den Details des Eintrags
 
 • Neu: App-Symbol aus vier Varianten wählen (falls angeheftet, einmal neu anheften)
 • Die Spracheinstellung folgt dem aktiven Modell: nur unterstützte Sprachen, mit Warnung bei erzwungener Sprache
@@ -458,6 +461,7 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>Novedades de la versión 1.12.0:
+• Nuevo, opcional: resumen con IA de transcripciones largas, en los detalles de la entrada
 
 • Nuevo: elige el icono de la app entre cuatro variantes (si estaba fijado, vuelve a fijarlo una vez)
 • El ajuste de idioma sigue el modelo en uso: solo idiomas admitidos, con aviso al forzar uno
@@ -491,10 +495,11 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>Nouveautés de la version 1.12.0 :
+• Nouveau, optionnel : résumé IA des longues transcriptions, dans le détail de l'entrée
 
 • Nouveau : choisissez l'icône parmi quatre variantes (si elle était épinglée, épinglez-la une fois de plus)
 • Le réglage de langue suit le modèle actif : langues prises en charge uniquement, avec avertissement si l'une est forcée
-• Corrigé : Whisper n'applique plus la langue de l'application à l'audio étranger, ce qui pouvait donner une traduction au lieu d'une transcription
+• Corrigé : Whisper n'applique plus la langue de l'app à l'audio étranger, qui pouvait donner une traduction au lieu d'une transcription
 
 Nouveautés de la version 1.11.3 :
 
@@ -524,6 +529,7 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>Novidades da versão 1.12.0:
+• Novo, opcional: resumo com IA das transcrições longas, nos detalhes da entrada
 
 • Novo: escolha o ícone do app entre quatro variantes (se estava fixado, fixe novamente uma vez)
 • O ajuste de idioma segue o modelo em uso: só idiomas suportados, com aviso ao forçar um
@@ -557,6 +563,7 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>Что нового в версии 1.12.0:
+• Новое, опционально: ИИ-резюме длинных расшифровок, в деталях записи
 
 • Новое: выберите иконку приложения из четырёх вариантов (если была закреплена, закрепите заново один раз)
 • Настройка языка следует активной модели: только поддерживаемые языки, с предупреждением при принудительном языке
@@ -590,6 +597,7 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>Sürüm 1.12.0'deki yenilikler:
+• Yeni, isteğe bağlı: uzun transkripsiyonlar için yapay zekâ özeti, giriş ayrıntılarında
 
 • Yeni: uygulama simgesini dört varyanttan seçin (sabitlenmişse bir kez yeniden sabitleyin)
 • Dil ayarı kullanılan modeli izler: yalnızca desteklenen diller, bir dil zorlanınca uyarı
@@ -623,6 +631,7 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>Nowości w wersji 1.12.0:
+• Nowość, opcjonalnie: podsumowanie AI długich transkrypcji, w szczegółach wpisu
 
 • Nowość: wybierz ikonę aplikacji spośród czterech wariantów (jeśli była przypięta, przypnij ponownie raz)
 • Ustawienie języka podąża za aktywnym modelem: tylko obsługiwane języki, z ostrzeżeniem przy wymuszeniu
@@ -656,6 +665,7 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>संस्करण 1.12.0 में नया क्या है:
+• नया, वैकल्पिक: लंबी ट्रांस्क्रिप्ट का AI सारांश, प्रविष्टि विवरण में
 
 • नया: चार रूपों में से ऐप का आइकन चुनें (होम पर पिन था तो एक बार फिर पिन करें)
 • भाषा सेटिंग चालू मॉडल के अनुसार चलती है: केवल समर्थित भाषाएँ, बाध्य करने पर चेतावनी

@@ -89,6 +89,7 @@
     <string name="logs_status_error">Errore</string>
     <string name="logs_status_processing">Elaborazione</string>
     <string name="logs_original_label">Originale (prima della punteggiatura):</string>
+    <string name="logs_summary_label">Riepilogo:</string>
     <string name="logs_model_label">Modello: %1$s</string>
     <string name="logs_transcription_cancelled">Trascrizione annullata</string>
     <string name="logs_search_placeholder">Cerca voci…</string>
@@ -434,6 +435,11 @@
     <string name="punctuation_prompt_description">Istruzione per la passata di punteggiatura. Lascia vuoto per usare quella integrata.</string>
     <string name="punctuation_prompt_placeholder">Prompt integrato</string>
     <string name="punctuation_default_prompt">Aggiungi punteggiatura e maiuscole a questa trascrizione. Mantieni ogni parola esattamente come scritta; non correggere, tradurre, aggiungere o rimuovere nulla. Restituisci solo la trascrizione corretta.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">Riassumi le trascrizioni lunghe</string>
+    <string name="summarize_description">Aggiunge un breve riassunto con IA alle trascrizioni lunghe usando il modello Gemma (richiede Gemma scaricato).</string>
+    <string name="summarize_status">Riassunto con IA…</string>
+    <string name="summary_default_prompt">Riassumi questa trascrizione in 2-3 frasi, nella lingua della trascrizione. Mantieni nomi e numeri. Restituisci solo il riassunto.</string>
     <string name="vad_title">Rimuovi Silenzio (VAD)</string>
     <string name="vad_description">Rimuovi le parti silenti dai messaggi vocali prima della trascrizione. Riduce il tempo di elaborazione e migliora la precisione.</string>
 

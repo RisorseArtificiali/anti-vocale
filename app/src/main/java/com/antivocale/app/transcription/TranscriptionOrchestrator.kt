@@ -234,6 +234,9 @@ class TranscriptionOrchestrator @Inject constructor(
             // same final text. It runs exactly once at this single funnel for
             // every decode path (pipeline, parallel, VAD-progressive); text
             // requests are the LLM's own output and take no pass.
+            // TASK-121.4: the summary pass chains AFTER it and only attaches
+            // metadata; the delivered text is whatever the punctuation pass
+            // left (or the raw transcript when it skipped).
             val delivered: Result<TranscriptionResult> =
                 if (requestType == "audio" && result.isSuccess) {
                     // Captured once here (not re-read inside the pass): the
@@ -241,7 +244,9 @@ class TranscriptionOrchestrator @Inject constructor(
                     // so nothing else has swapped it since the ASR finished.
                     val asrBackendId = backendManager.getActiveBackend()?.id
                     if (asrBackendId == null) result
-                    else result.map { applyPunctuationPass(context, asrBackendId, it, listener) }
+                    else result
+                        .map { applyPunctuationPass(context, asrBackendId, it, listener) }
+                        .map { applySummaryPass(context, it, listener) }
                 } else result
 
             delivered.fold(
@@ -252,7 +257,8 @@ class TranscriptionOrchestrator @Inject constructor(
                         duration,
                         transcriptionResult.isPartial,
                         transcriptionResult.failedChunkCount,
-                        rawTranscript = transcriptionResult.rawTranscript
+                        rawTranscript = transcriptionResult.rawTranscript,
+                        summary = transcriptionResult.summary
                     )
                     listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
                         confidence = transcriptionResult.confidence,
@@ -375,6 +381,19 @@ class TranscriptionOrchestrator @Inject constructor(
     // ---- Backend Loading ----
 
     /**
+     * The shared degrade path of the optional LLM passes (punctuation,
+     * summary): a cancellation is rethrown so processRequest's dedicated
+     * CancellationException handling keeps its contract; any other failure
+     * logs and delivers the untouched transcript. An optional extra may
+     * never fail a completed transcription.
+     */
+    private fun degradeTo(result: TranscriptionResult, passName: String, e: Throwable): TranscriptionResult {
+        if (e is CancellationException) throw e
+        Log.w(TAG, "$passName pass failed; delivering the transcript unchanged", e)
+        return result
+    }
+
+    /**
      * TASK-276: the punctuation pass. Chains Gemma after a non-punctuating ASR
      * model (GigaAM today): the transcript is complete in hand, so loading the
      * LLM through the normal backend swap unloads the ASR model first and the
@@ -435,12 +454,67 @@ class TranscriptionOrchestrator @Inject constructor(
                 polished
             },
             onFailure = { e ->
-                // A cancellation (user cancel, queue teardown) is not a polish
-                // failure: rethrow so processRequest's dedicated
-                // CancellationException handling keeps its contract.
-                if (e is CancellationException) throw e
-                Log.w(TAG, "Punctuation pass failed; delivering the raw transcript", e)
-                result
+                degradeTo(result, "Punctuation", e)
+            },
+        )
+    }
+
+    /**
+     * TASK-121.4: the summary pass. Chains Gemma after a long transcription
+     * (the punctuation pass, when it ran, has already left the LLM active)
+     * and attaches a short summary as METADATA: the delivered transcript is
+     * never replaced (content preservation is the app's prime directive).
+     * Opt-in and skipped for short transcripts; every skip path (toggle,
+     * length, context limit, no Gemma configured) avoids the swap entirely,
+     * and any failure degrades to no summary: an optional extra may never
+     * fail a completed transcription.
+     */
+    private suspend fun applySummaryPass(
+        context: Context,
+        result: TranscriptionResult,
+        listener: TranscriptionListener,
+    ): TranscriptionResult {
+        // Everything from here runs under runCatching: a preference read, a
+        // backend swap, or a generation failure in an OPTIONAL extra must
+        // never break the delivery of a finished transcript.
+        return runCatching {
+            if (!preferencesManager.summarizeEnabled.first()) return@runCatching result
+            if (!SummaryPolicy.needsSummary(result.text)) return@runCatching result
+            if (!SummaryPolicy.withinContextLimit(result.text)) {
+                Log.i(TAG, "Summary pass skipped: ${result.text.length} chars exceeds the Gemma context guard")
+                return@runCatching result
+            }
+            if (preferencesManager.modelPath.first().isNullOrBlank()) {
+                Log.i(TAG, "Summary pass skipped: no Gemma model configured (delivering transcript without summary)")
+                return@runCatching result
+            }
+            listener.onStatusUpdate(context.getString(R.string.summarize_status))
+            // Same swap bracket as the punctuation pass: when it ran, the LLM
+            // is already active and this is a no-op; when it did not, the ASR
+            // model unloads first and the two are never resident together.
+            ensureBackendLoaded(context, LlmTranscriptionBackend.BACKEND_ID).getOrThrow()
+            val llm = backendManager.getActiveBackend() ?: error("LLM backend not active after load")
+            // Language-aware by instruction: the curated default tells the
+            // model to answer in the transcript's language (the app locale
+            // is deliberately not resolved into the prompt).
+            val prompt = ChunkPromptPolicy.finalPrompt(
+                context.getString(R.string.summary_default_prompt),
+                result.text)
+            val summary = llm.generateText(prompt).getOrThrow().trim()
+            if (!SummaryPolicy.acceptableSummary(summary, result.text)) {
+                error("summary failed the collapse guard " +
+                    "(${summary.length} chars vs transcript ${result.text.length}); keeping no summary")
+            }
+            result.copy(summary = summary)
+        }.fold(
+            onSuccess = { withSummary ->
+                if (withSummary !== result) {
+                    Log.i(TAG, "Summary pass applied (${result.text.length} chars -> ${withSummary.summary?.length}-char summary)")
+                }
+                withSummary
+            },
+            onFailure = { e ->
+                degradeTo(result, "Summary", e)
             },
         )
     }
@@ -1524,12 +1598,15 @@ class TranscriptionOrchestrator @Inject constructor(
         failedChunkCount: Int = 0,
         /** TASK-276 AC3: the pre-punctuation original, kept when the pass changed the text. */
         rawTranscript: String? = null,
+        /** TASK-121.4: the AI summary of a long transcript, when generation succeeded. */
+        summary: String? = null,
     ) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
             status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs,
             isPartial = isPartial, failedChunkCount = failedChunkCount,
-            rawTranscript = rawTranscript
+            rawTranscript = rawTranscript,
+            summary = summary
         ).toEntity())
         preferencesManager.clearPartialTranscriptionState()
         lastPartialSaveMs = 0L

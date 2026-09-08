@@ -84,6 +84,11 @@ abstract class TranscriptionOrchestratorTestBase {
         // GH #45: the model-name write reads the LLM model path before deriving the
         // display name; a relaxed mock Flow explodes on first().
         every { preferencesManager.modelPath } returns flowOf("/models/gemma")
+        // TASK-121.4: the summary toggle off at the BASE (unlike punctuationMode,
+        // which is only stubbed in stubDefaultWhisperPreferences): the pass runs
+        // after the punctuation pass for every audio test, so every one of them
+        // needs the explicit off, not just the whisper-shaped ones.
+        every { preferencesManager.summarizeEnabled } returns flowOf(false)
     }
 
     protected fun stubWhisperBackend(): TranscriptionBackend =

@@ -57,6 +57,8 @@ data class LogEntry(
     val modelName: String? = null,
     /** TASK-276 AC3: raw ASR text pre-punctuation, when the pass changed it. */
     val rawTranscript: String? = null,
+    /** TASK-121.4: the AI summary of a long transcript, when the pass produced one. */
+    val summary: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
     enum class Status { QUEUED, PROCESSING, SUCCESS, ERROR }

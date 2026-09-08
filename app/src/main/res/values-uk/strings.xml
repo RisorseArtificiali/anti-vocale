@@ -96,6 +96,7 @@
     <string name="logs_status_error">Помилка</string>
     <string name="logs_status_processing">Обробка</string>
     <string name="logs_original_label">Оригінал (до пунктуації):</string>
+    <string name="logs_summary_label">Короткий виклад:</string>
     <string name="logs_model_label">Модель: %1$s</string>
     <string name="logs_transcription_cancelled">Розшифровку скасовано</string>
     <string name="logs_search_placeholder">Пошук записів…</string>
@@ -456,6 +457,11 @@
     <string name="punctuation_prompt_description">Інструкція для кроку пунктуації. Залиште порожнім, щоб використати вбудовану.</string>
     <string name="punctuation_prompt_placeholder">Вбудований промпт</string>
     <string name="punctuation_default_prompt">Додай пунктуацію та великі літери до цієї розшифровки. Збережи кожне слово точно як написано; нічого не виправляй, не перекладай, не додавай і не видаляй. Виведи лише виправлену розшифровку.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">Резюмувати довгі розшифровки</string>
+    <string name="summarize_description">Додає короткий виклад зі ШІ до довгих розшифровок за допомогою моделі Gemma (потрібна завантажена Gemma).</string>
+    <string name="summarize_status">Резюмування зі ШІ…</string>
+    <string name="summary_default_prompt">Зроби короткий виклад цієї розшифровки у 2-3 реченнях, мовою розшифровки. Збережи імена та числа. Виведи лише короткий виклад.</string>
     <string name="vad_title">Прибирати тишу (VAD)</string>
     <string name="vad_description">Видаляє тихі частини з голосових повідомлень перед розшифровкою. Зменшує час обробки та покращує точність.</string>
     <string name="progressive_title">Поступове відображення</string>

@@ -89,6 +89,7 @@
     <string name="logs_status_error">Error</string>
     <string name="logs_status_processing">Processing</string>
     <string name="logs_original_label">Original (before punctuation):</string>
+    <string name="logs_summary_label">Summary:</string>
     <string name="logs_model_label">Model: %1$s</string>
     <string name="logs_transcription_cancelled">Transcription cancelled</string>
     <string name="logs_search_placeholder">Search entries…</string>
@@ -443,6 +444,11 @@
     <string name="punctuation_prompt_description">Instruction for the punctuation pass. Leave empty to use the built-in prompt.</string>
     <string name="punctuation_prompt_placeholder">Built-in prompt</string>
     <string name="punctuation_default_prompt">Add punctuation and capitalization to this transcript. Keep every word exactly as written; do not fix, translate, add, or remove anything. Output only the corrected transcript.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">Summarize Long Transcriptions</string>
+    <string name="summarize_description">Add a short AI summary to long transcriptions with the Gemma model (needs Gemma downloaded).</string>
+    <string name="summarize_status">Summarizing with AI…</string>
+    <string name="summary_default_prompt">Summarize this transcription in 2-3 sentences, in the language of the transcript. Keep names and numbers. Output only the summary.</string>
     <string name="vad_title">Strip Silence (VAD)</string>
     <string name="vad_description">Remove silent portions from voice messages before transcription. Reduces processing time and improves accuracy.</string>
     <string name="progressive_title">Progressive Display</string>
