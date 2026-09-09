@@ -1,6 +1,7 @@
 package com.antivocale.app.transcription
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 /**
@@ -36,14 +37,20 @@ class TranscriptionMemoryPolicyTest {
 
     @Test
     fun `tight device tightens the cap below the catalog value`() {
-        // 3300 MiB free, SmoothQuant 864 MiB: budget 3300-1229=2071, baseline 1764,
-        // t = sqrt(307/0.030) ~ 101 -> floored to 100.
-        assertEquals(100, TranscriptionMemoryPolicy.effectiveChunkSeconds(3300 * MiB, 864 * MiB, 120))
+        // TASK-472 frame: avail is POST-load, so the baseline is decode-side
+        // only (900). Budget 3300-1229=2071, t = sqrt(1171/0.030) ~ 197 ->
+        // floored 190, coerced to the 120 catalog cap: this device keeps the
+        // cap (the pre-472 model-inclusive baseline wrongly tightened it).
+        assertEquals(120, TranscriptionMemoryPolicy.effectiveChunkSeconds(3300 * MiB, 864 * MiB, 120))
+        // One step tighter does clamp: budget 3000-1229=1771, t = sqrt(871/0.030)
+        // ~ 170 -> floored 170, below the 180 catalog cap.
+        assertEquals(170, TranscriptionMemoryPolicy.effectiveChunkSeconds(3000 * MiB, 864 * MiB, 180))
     }
 
     @Test
     fun `starved device falls back to the minimum chunk`() {
-        // Budget below the load baseline: the smallest chunk is the only safe answer.
+        // Budget 2048-1229=819 below the decode baseline 900: the smallest
+        // chunk is the only safe answer.
         assertEquals(
             TranscriptionMemoryPolicy.MIN_CHUNK_SECONDS,
             TranscriptionMemoryPolicy.effectiveChunkSeconds(2L * 1024 * MiB, 864 * MiB, 120))
@@ -66,5 +73,35 @@ class TranscriptionMemoryPolicyTest {
         // within ~10% of the measured VmHWM values
         assertEquals(1946.0, peak120, 195.0)
         assertEquals(5226.0, peak366, 523.0)
+    }
+
+    @Test
+    fun `canServeMinimumChunk fails open on unknown inputs`() {
+        assertNull(TranscriptionMemoryPolicy.canServeMinimumChunk(0L, 640 * MiB))
+        assertNull(TranscriptionMemoryPolicy.canServeMinimumChunk(4L * 1024 * MiB, 0L))
+    }
+
+    @Test
+    fun `canServeMinimumChunk refuses the starved class and serves the ample one`() {
+        // The 4GB-reporter class, POST-load: the pre-flight let the 862MB
+        // model load with ~1.4GB free, leaving ~540MB; the decode budget is
+        // negative against the 927MiB minimum baseline: refuse.
+        val reporterPostLoadAvail = 540L * MiB
+        val parakeetSmoothquant = 862L * MiB
+        assertEquals(false, TranscriptionMemoryPolicy.canServeMinimumChunk(reporterPostLoadAvail, parakeetSmoothquant))
+        // A healthy phone: several GB free holds the baseline comfortably.
+        assertEquals(true, TranscriptionMemoryPolicy.canServeMinimumChunk(6L * 1024 * MiB, parakeetSmoothquant))
+    }
+
+    @Test
+    fun `canServeMinimumChunk boundary is pinned at the minimum decode baseline`() {
+        // Onset: budget == baseline + headroom is a REFUSAL (strict >).
+        // baseline = 900 + 0.030*30^2 = 927; onset avail = 927 + 1229 = 2156.
+        val onset = 2156L * MiB
+        val model = 862L * MiB
+        assertEquals(false, TranscriptionMemoryPolicy.canServeMinimumChunk(onset, model))
+        assertEquals(true, TranscriptionMemoryPolicy.canServeMinimumChunk(onset + MiB, model))
+        // The refusal's user-facing number is the same bar.
+        assertEquals(onset, TranscriptionMemoryPolicy.minimumDecodeBaselineBytes())
     }
 }

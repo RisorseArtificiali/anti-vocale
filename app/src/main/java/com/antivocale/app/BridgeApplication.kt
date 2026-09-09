@@ -126,6 +126,9 @@ class BridgeApplication : Application(), Configuration.Provider {
         // model is downloaded or deleted.
         // Explicit Default: preserves the pre-TASK-438 private scope's built-in
         // dispatcher; the shared scope carries none.
+        // TASK-472b: silent-death telemetry OUTSIDE the launched sync, so an
+        // OEM/LMK kill ending the process mid-sync still left its record.
+        com.antivocale.app.util.NativeCrashDetector.reportUnreportedDeaths(this)
         applicationScope.launch(Dispatchers.Default) {
             // Launcher-alias heal BEFORE the shortcut refresh: a user coming
             // from a retired icon variant (TASK-473) has every alias disabled,

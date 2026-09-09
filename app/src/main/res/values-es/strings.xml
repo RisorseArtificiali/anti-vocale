@@ -202,6 +202,7 @@
     <string name="native_crash_title">La app se cerró inesperadamente</string>
     <string name="native_crash_go_to_model">Ir a la pestaña Modelo</string>
     <string name="model_load_low_memory">No hay memoria libre suficiente para este modelo (%1$s disponible, ~%2$s necesario). Cierra otras apps o usa un modelo más ligero. La carga forzada está disponible en Ajustes.</string>
+    <string name="transcribe_low_memory">No hay memoria libre suficiente para transcribir con este modelo (unas %1$s libres, se necesitan %2$s). Cierra otras apps e inténtalo de nuevo, o activa Forzar carga del modelo en Ajustes.</string>
     <string name="force_model_load">Forzar carga del modelo</string>
     <string name="force_model_load_desc">Carga el modelo aunque la memoria parezca insuficiente. Puede cerrar la app en dispositivos con poca RAM.</string>
     <string name="copy">Copiar</string>

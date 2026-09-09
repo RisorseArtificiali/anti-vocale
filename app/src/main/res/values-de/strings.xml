@@ -233,6 +233,7 @@
     <string name="native_crash_title">App unerwartet geschlossen</string>
     <string name="native_crash_go_to_model">Zum Tab \"Modell\" gehen</string>
     <string name="model_load_low_memory">Nicht genug freier Speicher für dieses Modell (%1$s verfügbar, etwa %2$s benötigt). Schließe andere Apps oder verwende ein kleineres Modell. Erzwungenes Laden ist in den Einstellungen verfügbar.</string>
+    <string name="transcribe_low_memory">Nicht genug freier Speicher, um mit diesem Modell zu transkribieren (etwa %1$s frei, %2$s benötigt). Schließe andere Apps und versuche es erneut, oder aktiviere Modell laden erzwingen in den Einstellungen.</string>
     <string name="force_model_load">Modellladen erzwingen</string>
     <string name="force_model_load_desc">Das Modell auch dann laden, wenn der Speicher nicht auszureichen scheint. Kann die App auf Geräten mit wenig RAM schließen.</string>
     <string name="copy">Kopieren</string>

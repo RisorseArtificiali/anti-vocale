@@ -834,6 +834,31 @@ class TranscriptionOrchestrator @Inject constructor(
             val modelSize = if (availBytes <= 0) 0L
                 else modelPathForBackend(backend.id).takeIf { it.isNotBlank() }
                     ?.let { modelSizeBytes(File(it)) } ?: 0L
+            // TASK-472a: refuse instead of floor-clamping. When free RAM cannot
+            // hold even the minimum-chunk baseline, the old path proceeded at
+            // the floor and the process walked into an LMK/OEM kill with no
+            // trace anywhere (the 4GB crash report, TASK-468). A clear error
+            // beats a silent death; forceModelLoad keeps the bypass, mirroring
+            // the load pre-flight. Returned (not thrown) so the refusal rides
+            // the same failure path as every other transcription refusal.
+            // avail is read POST-load (the model is resident), so the
+            // required figure is the decode-side bar only; the displayed
+            // number is exactly the compared number.
+            if (!preferencesManager.forceModelLoad.first() &&
+                TranscriptionMemoryPolicy.canServeMinimumChunk(availBytes, modelSize) == false
+            ) {
+                val requiredBytes = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes() +
+                    (TranscriptionMemoryPolicy.HEADROOM_MIB * 1024 * 1024).toLong()
+                Log.w(
+                    TAG,
+                    "Refusing ${backend.id}: post-load avail=${availBytes / MB}MB cannot hold " +
+                        "the minimum-chunk decode baseline (required=${requiredBytes / MB}MB)",
+                )
+                return Result.failure(TranscriptionException.InsufficientMemory(
+                    context.getString(
+                        R.string.transcribe_low_memory, formatMb(availBytes), formatMb(requiredBytes))
+                ))
+            }
             val effective = TranscriptionMemoryPolicy.effectiveChunkSeconds(availBytes, modelSize, cap)
             if (effective != cap) {
                 Log.i(TAG, "Chunk cap tightened ${cap}s -> ${effective}s for ${backend.id} (RAM-derived)")

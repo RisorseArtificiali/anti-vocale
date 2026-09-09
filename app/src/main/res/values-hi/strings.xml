@@ -232,6 +232,7 @@
     <string name="native_crash_title">ऐप अचानक बंद हुआ</string>
     <string name="native_crash_go_to_model">मॉडल टैब पर जाएं</string>
     <string name="model_load_low_memory">इस मॉडल के लिए ज़रूरी मेमोरी काफ़ी नहीं है (%1$s उपलब्ध, लगभग %2$s चाहिए)। दूसरे ऐप बंद करें या छोटा मॉडल इस्तेमाल करें। सेटिंग में फ़ोर्स्ड लोडिंग उपलब्ध है।</string>
+    <string name="transcribe_low_memory">इस मॉडल से ट्रांसक्राइब करने के लिए पर्याप्त खाली मेमोरी नहीं है (लगभग %1$s खाली, %2$s चाहिए)। अन्य ऐप्स बंद करके पुनः प्रयास करें, या सेटिंग में मॉडल लोड बाध्य करें चालू करें।</string>
     <string name="force_model_load">मॉडल ज़बरदस्ती लोड करें</string>
     <string name="force_model_load_desc">मेमोरी कम लगने पर भी मॉडल लोड करें। कम RAM वाले डिवाइस पर ऐप बंद हो सकता है।</string>
     <string name="copy">कॉपी करें</string>

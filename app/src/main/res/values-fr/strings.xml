@@ -202,6 +202,7 @@
     <string name="native_crash_title">Application fermée de manière inattendue</string>
     <string name="native_crash_go_to_model">Aller à l\'onglet Modèle</string>
     <string name="model_load_low_memory">Mémoire libre insuffisante pour ce modèle (%1$s disponibles, environ %2$s nécessaires). Fermez d\'autres applications ou utilisez un modèle plus léger. Le chargement forcé est disponible dans les paramètres.</string>
+    <string name="transcribe_low_memory">Mémoire libre insuffisante pour transcrire avec ce modèle (environ %1$s libres, %2$s nécessaires). Fermez d\'autres applications et réessayez, ou activez Forcer le chargement du modèle dans les paramètres.</string>
     <string name="force_model_load">Forcer le chargement du modèle</string>
     <string name="force_model_load_desc">Charge le modèle même si la mémoire semble insuffisante. Peut fermer l\'application sur les appareils avec peu de RAM.</string>
     <string name="copy">Copier</string>

@@ -246,6 +246,7 @@
     <string name="native_crash_title">Uygulama beklenmedik şekilde kapandı</string>
     <string name="native_crash_go_to_model">Model sekmesine git</string>
     <string name="model_load_low_memory">Bu model için yeterli boş bellek yok (%1$s boş, yaklaşık %2$s gerekiyor). Diğer uygulamaları kapatın veya daha küçük bir model kullanın. Zorunlu yükleme Ayarlar\'dan yapılabilir.</string>
+    <string name="transcribe_low_memory">Bu modelle transkripsiyon için yeterli boş bellek yok (yaklaşık %1$s boş, %2$s gerekiyor). Diğer uygulamaları kapatıp tekrar deneyin veya ayarlarda Model yüklemeyi zorla seçeneğini açın.</string>
     <string name="force_model_load">Model yüklemeyi zorla</string>
     <string name="force_model_load_desc">Bellek yetersiz görünse bile modeli yükle. Az RAM\'li cihazlarda uygulamayı kapatabilir.</string>
     <string name="copy">Kopyala</string>

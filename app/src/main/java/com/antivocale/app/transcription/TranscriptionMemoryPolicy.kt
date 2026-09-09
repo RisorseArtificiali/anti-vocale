@@ -19,9 +19,21 @@ import kotlin.math.sqrt
  * 380s catalog cap meant one whole-file pass) killed an 8GB phone system-wide
  * (GH #44), while 30s voice messages cost nothing above the loaded-model baseline.
  *
+ * FRAME (TASK-472 review): the calibration compared peak RSS against PRE-load free
+ * RAM. Callers here read availability AFTER the model is resident, so the model
+ * term must NOT re-enter the comparison (post-load avail + already-resident model
+ * = pre-load avail): every predicate in this object therefore works on the
+ * DECODE-side delta alone, [OVERHEAD_MIB] plus the attention term. The original
+ * model-inclusive comparison double-counted the model and over-tightened every
+ * cap on starved devices; with TASK-472 turning the starved case into a
+ * user-visible refusal, the double count became a false-refusal band.
+ *
  * The policy only TIGHTENS the catalog cap; it never raises it. Devices with ample
- * RAM keep the shipped default, and a device whose free RAM cannot even hold the
- * load baseline falls back to the minimum chunk rather than refusing to transcribe.
+ * RAM keep the shipped default. A device whose free RAM cannot hold even the
+ * minimum-chunk baseline is the caller's refusal to make ([canServeMinimumChunk],
+ * TASK-472): proceeding at the floor there walked the process into an LMK/OEM
+ * kill with no trace, so this object stays a pure cap and the go/no-go lives
+ * upstream.
  */
 object TranscriptionMemoryPolicy {
 
@@ -42,6 +54,19 @@ object TranscriptionMemoryPolicy {
     private const val STEP_SECONDS = 10
 
     /**
+     * Whether free RAM can hold even the minimum-chunk decode baseline. Null when
+     * either input is unknown: the same fail-open stance as
+     * [effectiveChunkSeconds] and the orchestrator's load pre-flight. TASK-472.
+     *
+     * [modelSizeBytes] no longer enters the arithmetic (see the FRAME note above)
+     * but still gates fail-open: an unknown model size means an unknown picture.
+     */
+    fun canServeMinimumChunk(availableBytes: Long, modelSizeBytes: Long): Boolean? {
+        if (availableBytes <= 0 || modelSizeBytes <= 0) return null
+        return decodeFits(availableBytes, minimumDecodeBaselineMiB())
+    }
+
+    /**
      * Effective chunk cap for this request: the catalog cap tightened by free RAM.
      * Fails open to [catalogCapSeconds] when either memory input is unknown (0),
      * mirroring the load pre-flight's fail-open stance.
@@ -53,14 +78,35 @@ object TranscriptionMemoryPolicy {
         // throws when min > max; a starved device must clamp to the family's
         // own cap, not to 30s of degenerate decode.
         val floor = minOf(MIN_CHUNK_SECONDS, catalogCapSeconds)
-        val availableMiB = availableBytes / (1024.0 * 1024.0)
-        val modelMiB = modelSizeBytes / (1024.0 * 1024.0)
-        val budgetMiB = availableMiB - HEADROOM_MIB
-        val baselineMiB = modelMiB + OVERHEAD_MIB
-        if (budgetMiB <= baselineMiB) return floor
-        val seconds = floor(sqrt((budgetMiB - baselineMiB) / K_MIB_PER_S2) / STEP_SECONDS) * STEP_SECONDS
+        if (decodeFits(availableBytes, OVERHEAD_MIB) != true) return floor
+        val budgetMiB = decodeBudgetMiB(availableBytes)
+        val seconds = floor(sqrt((budgetMiB - OVERHEAD_MIB) / K_MIB_PER_S2) / STEP_SECONDS) * STEP_SECONDS
         return seconds.toInt().coerceIn(floor, catalogCapSeconds)
     }
+
+    /** The decode-side budget: post-load free RAM minus the system headroom (MiB). */
+    private fun decodeBudgetMiB(availableBytes: Long): Double =
+        availableBytes / (1024.0 * 1024.0) - HEADROOM_MIB
+
+    /**
+     * Single source of every budget comparison, so the refusal predicate and the
+     * cap predicate cannot drift apart. Null is impossible here (inputs are
+     * pre-gated by the callers' fail-open), the Boolean is the verdict.
+     */
+    private fun decodeFits(availableBytes: Long, decodeBaselineMiB: Double): Boolean =
+        decodeBudgetMiB(availableBytes) > decodeBaselineMiB
+
+    /**
+     * Decode cost of the smallest chunk the cap machinery can hand a backend:
+     * overhead plus the attention term at the 30s floor. Families capped below
+     * 30s (canary at 10s) are held to this slightly stricter bar.
+     */
+    private fun minimumDecodeBaselineMiB(): Double =
+        OVERHEAD_MIB + K_MIB_PER_S2 * MIN_CHUNK_SECONDS * MIN_CHUNK_SECONDS
+
+    /** [minimumDecodeBaselineMiB] plus the system headroom, as bytes: the number the refusal shows. */
+    fun minimumDecodeBaselineBytes(): Long =
+        ((minimumDecodeBaselineMiB() + HEADROOM_MIB) * 1024 * 1024).toLong()
 
     /** Peak-RSS prediction for the calibration test; same constants as the cap. */
     internal fun predictedPeakMiB(modelSizeMiB: Long, chunkSeconds: Int): Double =

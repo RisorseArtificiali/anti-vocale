@@ -250,6 +250,7 @@
     <string name="native_crash_title">Aplikacja zamknęła się nieoczekiwanie</string>
     <string name="native_crash_go_to_model">Przejdź do karty Model</string>
     <string name="model_load_low_memory">Za mało wolnej pamięci dla tego modelu (dostępne %1$s, potrzeba ok. %2$s). Zamknij inne aplikacje lub użyj mniejszego modelu. Wymuszone wczytanie jest dostępne w Ustawieniach.</string>
+    <string name="transcribe_low_memory">Za mało wolnej pamięci, aby transkrybować tym modelem (około %1$s wolne, wymagane %2$s). Zamknij inne aplikacje i spróbuj ponownie albo włącz Wymuszaj ładowanie modelu w ustawieniach.</string>
     <string name="force_model_load">Wymuś wczytanie modelu</string>
     <string name="force_model_load_desc">Wczytaj model nawet, gdy pamięci wydaje się brakować. Może zamknąć aplikację na urządzeniach z małą ilością RAM.</string>
     <string name="copy">Kopiuj</string>

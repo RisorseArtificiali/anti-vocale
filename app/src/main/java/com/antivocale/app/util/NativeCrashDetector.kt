@@ -4,6 +4,7 @@ import android.app.ActivityManager
 import android.app.ApplicationExitInfo
 import android.content.Context
 import android.util.Log
+import androidx.core.content.edit
 
 /**
  * Detects whether the app's previous process died from a native crash (exit 255,
@@ -22,7 +23,22 @@ object NativeCrashDetector {
     private const val PREFS_NAME = "native_crash_detection"
     private const val KEY_LAST_NATIVE_CRASH_TS = "last_native_crash_ts"
     private const val KEY_LAST_LOW_MEMORY_TS = "last_low_memory_ts"
+    private const val KEY_LAST_REPORTED_DEATH_TS = "last_reported_death_ts"
     private const val RECENT_WINDOW_MS = 5 * 60 * 1000L // 5 minutes
+
+    /**
+     * TASK-472b: the silent-death reasons worth telemetry. LMKD kills surface
+     * as [ApplicationExitInfo.REASON_LOW_MEMORY]; OEM killers (MIUI
+     * PowerKeeper, ColorOS UserAwareMgr) as [ApplicationExitInfo.REASON_SIGNALED].
+     * Neither leaves a trace in Crashlytics or Play vitals, which is why the
+     * 4GB crash investigation (GH reporter, TASK-468) had to be reconstructed
+     * statically: these reports close that blind spot.
+     */
+    @android.annotation.SuppressLint("InlinedApi") // compile-time-int constants, no runtime field access below API 30
+    private val REPORTED_DEATH_REASONS = setOf(
+        ApplicationExitInfo.REASON_LOW_MEMORY,
+        ApplicationExitInfo.REASON_SIGNALED,
+    )
 
     /**
      * Sealed result so the caller can pick a distinct message per cause. Each non-None
@@ -84,4 +100,65 @@ object NativeCrashDetector {
             CrashCheckResult.None
         }
     }
+
+    /**
+     * One silent death as the exit-info API saw it. Our own type (not the
+     * final [ApplicationExitInfo]) so the reporting logic is testable
+     * without shelling the platform.
+     */
+    data class ExitRecord(val reason: Int, val timestamp: Long, val description: String?)
+
+    /**
+     * TASK-472b cold-start telemetry: report every silent death since the
+     * last report as a Crashlytics non-fatal (the fdroid flavor's
+     * [CrashReporter] is a logcat no-op by design). Unlike the banner's
+     * [checkForRecentCrash] there is no recency window: a death the user
+     * never reopened the app for is exactly the one we must hear about.
+     * Metadata-only; never throws.
+     *
+     * Known limits: the dedup mark is a wall-clock timestamp, so a clock set
+     * backwards past a death hides it forever; the platform keeps at most the
+     * last five exit records, so a burst of deaths with no launch in between
+     * drops the oldest; and REASON_SIGNALED also covers `adb shell am kill`,
+     * so device-automation sessions contribute dev kills to the reports.
+     */
+    fun reportUnreportedDeaths(context: Context) {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return
+        try {
+            val am = context.getSystemService(ActivityManager::class.java) ?: return
+            val exits = am.getHistoricalProcessExitReasons(context.packageName, 0, 5) ?: return
+            val records = exits.map { ExitRecord(it.reason, it.timestamp, it.description) }
+            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val lastTs = prefs.getLong(KEY_LAST_REPORTED_DEATH_TS, 0L)
+            val toReport = unreported(records, lastTs)
+            toReport.forEach { record ->
+                CrashReporter.report(
+                    SilentProcessDeath(record),
+                    "Silent process exit: ${reasonName(record.reason)} at ${record.timestamp}",
+                )
+            }
+            val newMax = toReport.maxOfOrNull { it.timestamp } ?: lastTs
+            if (newMax > lastTs) {
+                prefs.edit { putLong(KEY_LAST_REPORTED_DEATH_TS, newMax) }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to report unreported deaths", e)
+        }
+    }
+
+    /** Pure: deaths worth reporting, oldest first, past the last-reported mark. */
+    internal fun unreported(records: List<ExitRecord>, lastReportedTs: Long): List<ExitRecord> =
+        records
+            .filter { it.timestamp > lastReportedTs && it.reason in REPORTED_DEATH_REASONS }
+            .sortedBy { it.timestamp }
+
+    private fun reasonName(reason: Int): String = when (reason) {
+        ApplicationExitInfo.REASON_LOW_MEMORY -> "LOW_MEMORY"
+        ApplicationExitInfo.REASON_SIGNALED -> "SIGNALED"
+        else -> "reason=$reason"
+    }
+
+    /** Telemetry carrier rendered as a Crashlytics non-fatal record. */
+    class SilentProcessDeath(record: ExitRecord) :
+        RuntimeException("Silent process death: ${reasonName(record.reason)} (${record.description ?: "no description"})")
 }

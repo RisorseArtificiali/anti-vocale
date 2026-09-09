@@ -243,6 +243,7 @@
     <string name="native_crash_title">App closed unexpectedly</string>
     <string name="native_crash_go_to_model">Go to Model tab</string>
     <string name="model_load_low_memory">Not enough free memory for this model (%1$s available, about %2$s needed). Close other apps or use a smaller model. Forced loading is available in Settings.</string>
+    <string name="transcribe_low_memory">Not enough free memory to transcribe with this model (about %1$s free, %2$s needed). Close other apps and try again, or enable Force model load in Settings.</string>
     <string name="force_model_load">Force model load</string>
     <string name="force_model_load_desc">Load the model even when memory seems insufficient. May close the app on devices with little RAM.</string>
     <string name="copy">Copy</string>
