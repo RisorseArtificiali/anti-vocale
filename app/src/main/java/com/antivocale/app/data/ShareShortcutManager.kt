@@ -18,8 +18,11 @@ import com.antivocale.app.receiver.ShareReceiverActivity
 import com.antivocale.app.transcription.BackendDescriptor
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.variantAwareDisplayName
+import com.antivocale.app.ui.appearance.LauncherIconManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 /** One usage observation from the model-recency source: a backend id and when it last ran. */
@@ -60,6 +63,7 @@ class ShareShortcutManager(
     private val context: Context,
     private val preferencesManager: PreferencesManager,
     private val backendRegistry: BackendRegistry,
+    private val launcherIconManager: LauncherIconManager,
     private val recentUsage: suspend () -> List<RecentModelUse>,
 ) {
     companion object {
@@ -77,13 +81,26 @@ class ShareShortcutManager(
         context.getSystemService(ShortcutManager::class.java)
 
     /**
-     * The (id, label, rank) triples of the last set the manager successfully
-     * pushed. A refresh deriving the same triples is a no-op: identical ids,
-     * labels and ranks mean the launcher state already matches, so the icon
-     * rasterization and the [ShortcutManager.setDynamicShortcuts] IPC are
-     * skipped. Only set after a successful push, so a failed sync retries.
+     * The anchor alias plus the (id, label, rank) triples of the last set the
+     * manager successfully pushed. A refresh deriving the same value is a
+     * no-op: identical anchor, ids, labels and ranks mean the launcher state
+     * already matches, so the icon rasterization and the
+     * [ShortcutManager.setDynamicShortcuts] IPC are skipped. The anchor is
+     * part of the signature because a launcher-icon switch changes WHERE the
+     * set must live even when the candidates are unchanged (2026-09-09
+     * trial: the old signature skipped the republish and the enabled alias
+     * kept an empty long-press menu). Only set after a successful push, so a
+     * failed sync retries.
      */
-    private var lastSignature: List<Triple<String, String, Int>>? = null
+    private data class ShortcutSetSignature(
+        val anchorAlias: String,
+        val shortcuts: List<Triple<String, String, Int>>,
+    )
+
+    private var lastSignature: ShortcutSetSignature? = null
+
+    /** Serializes [refresh]'s derive-and-push across its eight call sites. */
+    private val refreshMutex = Mutex()
 
     /**
      * One shortcut candidate after the eligibility checks, before the icon is
@@ -107,23 +124,41 @@ class ShareShortcutManager(
      */
     suspend fun refresh() = withContext(Dispatchers.Default) {
         val manager = shortcutManager ?: return@withContext
-        // The whole derivation is contained, not just the write: call sites run
-        // on scopes without a CoroutineExceptionHandler (viewModelScope,
-        // lifecycleScope), and a malformed label would throw from
-        // ShortcutInfo.Builder before any IPC.
-        runCatching {
-            val candidates = if (!preferencesManager.advancedSharingEnabled.first()) {
-                emptyList()
-            } else {
-                val cap = minOf(MAX_SHORTCUTS, manager.maxShortcutCountPerActivity)
-                rankRecentBackends(recentUsage(), cap)
-                    .mapIndexedNotNull { rank, backendId -> resolveShortcut(backendId, rank) }
-            }
-            val signature = candidates.map { Triple(it.id, it.label, it.rank) }
-            if (signature == lastSignature) return@runCatching
-            manager.setDynamicShortcuts(candidates.map(::buildShortcut))
-            lastSignature = signature
-        }.onFailure { Log.w(TAG, "Dynamic share-shortcut sync failed", it) }
+        // Serialized on purpose: refresh has eight independent call sites, and
+        // a refresh that read the anchor before a variant switch landing after
+        // the switch's own push would re-anchor the set onto the now-disabled
+        // alias, reproducing the empty-menu bug this class exists to prevent.
+        // The signature check keeps the contended path cheap.
+        refreshMutex.withLock {
+            // The whole derivation is contained, not just the write: call sites run
+            // on scopes without a CoroutineExceptionHandler (viewModelScope,
+            // lifecycleScope), and a malformed label would throw from
+            // ShortcutInfo.Builder before any IPC.
+            runCatching {
+                val candidates = if (!preferencesManager.advancedSharingEnabled.first()) {
+                    emptyList()
+                } else {
+                    val cap = minOf(MAX_SHORTCUTS, manager.maxShortcutCountPerActivity)
+                    rankRecentBackends(recentUsage(), cap)
+                        .mapIndexedNotNull { rank, backendId -> resolveShortcut(backendId, rank) }
+                }
+                // The anchor is the ENABLED launcher alias: a shortcut is visible
+                // only on the activity the launcher resolved, and the icon-variant
+                // switcher enables a different alias component (TASK-392/473).
+                // Anchoring to a fixed component orphaned the set after a variant
+                // switch: the enabled alias had no shortcuts and the long-press
+                // menu came up empty (device trial 2026-09-09). Ids are unique per
+                // app, so the set is published once, on the current alias.
+                val anchor = launcherIconManager.currentComponentName()
+                val signature = ShortcutSetSignature(
+                    anchorAlias = anchor.className,
+                    shortcuts = candidates.map { Triple(it.id, it.label, it.rank) },
+                )
+                if (signature == lastSignature) return@runCatching
+                manager.setDynamicShortcuts(candidates.map { buildShortcut(it, anchor) })
+                lastSignature = signature
+            }.onFailure { Log.w(TAG, "Dynamic share-shortcut sync failed", it) }
+        }
     }
 
     /**
@@ -146,7 +181,7 @@ class ShareShortcutManager(
         )
     }
 
-    private fun buildShortcut(resolved: ResolvedShortcut): ShortcutInfo {
+    private fun buildShortcut(resolved: ResolvedShortcut, anchor: ComponentName): ShortcutInfo {
         // Exactly the static alias flow: an explicit ACTION_SEND to the alias
         // component, which ShareReceiverActivity resolves back to this backend
         // via its intent component (no parallel backend-override contract). The
@@ -159,6 +194,7 @@ class ShareShortcutManager(
         }
         val color = ContextCompat.getColor(context, resolved.descriptor.accentColorRes)
         return ShortcutInfo.Builder(context, resolved.id)
+            .setActivity(anchor)
             .setShortLabel(resolved.label)
             .setLongLabel(context.getString(R.string.share_shortcut_transcribe_with, resolved.label))
             .setIcon(Icon.createWithAdaptiveBitmap(ShareShortcutIcons.createAdaptiveIcon(resolved.label, color)))

@@ -5,6 +5,8 @@ import android.content.Intent
 import android.content.pm.ShortcutManager
 import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.R
+import com.antivocale.app.ui.appearance.LauncherIconManager
+import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.emptyRecordsProvider
 import com.antivocale.app.transcription.seedCatalogForTest
@@ -30,6 +32,7 @@ class ShareShortcutManagerTest {
 
     private lateinit var context: Context
     private lateinit var fake: FakePreferencesManager
+    private lateinit var iconManager: LauncherIconManager
     private lateinit var manager: ShareShortcutManager
     private lateinit var shortcutManager: ShortcutManager
 
@@ -44,7 +47,10 @@ class ShareShortcutManagerTest {
         fake = FakePreferencesManager()
         seedCatalogForTest()
         val registry = BackendRegistry(ExternalModelStore(fake), emptyRecordsProvider())
-        manager = ShareShortcutManager(context, fake, registry, recentUsage = { usage })
+        iconManager = LauncherIconManager(context)
+        manager = ShareShortcutManager(
+            context, fake, registry, iconManager, recentUsage = { usage },
+        )
         shortcutManager = context.getSystemService(ShortcutManager::class.java)!!
         fake._advancedSharingEnabled.value = true
     }
@@ -153,6 +159,36 @@ class ShareShortcutManagerTest {
 
         // Timestamps rank nemotron > gigaam > qwen3 > llm > whisper; only the top 3 register.
         assertEquals(setOf("share-gigaam", "share-nemotron-streaming", "share-qwen3-asr"), dynamicShortcutsById().keys)
+    }
+
+    /**
+     * Regression for the 2026-09-09 device trial: a shortcut is visible only
+     * on the launcher activity the system resolved, and switching the
+     * launcher-icon variant enables a DIFFERENT alias component. The set must
+     * anchor to the enabled alias, and a variant switch must re-publish even
+     * when the candidates are unchanged (the anchor is part of the refresh
+     * signature for exactly this reason).
+     */
+    @Test
+    fun `shortcuts anchor to the enabled alias and re-anchor on variant switch`() = runTest {
+        saveModel("whisper"); use("whisper", now)
+
+        manager.refresh()
+        assertEquals(
+            "fresh install anchors every shortcut on the default alias",
+            List(shortcutManager.dynamicShortcuts.size) { "com.antivocale.app.LauncherDefault" },
+            shortcutManager.dynamicShortcuts.map { it.activity!!.className },
+        )
+
+        iconManager.select(LauncherIconVariant.CROSSED)
+        manager.refresh()
+        assertEquals(
+            "the switch moves the anchor even with identical candidates",
+            List(shortcutManager.dynamicShortcuts.size) { "com.antivocale.app.LauncherCrossed" },
+            shortcutManager.dynamicShortcuts.map { it.activity!!.className },
+        )
+        // Same set, new home: nothing lost in the move.
+        assertEquals(setOf("share-whisper"), dynamicShortcutsById().keys)
     }
 
     @Test

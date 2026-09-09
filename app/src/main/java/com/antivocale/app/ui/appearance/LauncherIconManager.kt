@@ -118,6 +118,13 @@ class LauncherIconManager @Inject constructor(
         LauncherIconVariant.entries.firstOrNull(::isEnabled) ?: LauncherIconVariant.DEFAULT
 
     /**
+     * [current] as the alias component, for consumers that anchor other
+     * surfaces to the enabled launcher activity (the dynamic share
+     * shortcuts): they must not re-derive the alias-componentName contract.
+     */
+    fun currentComponentName(): ComponentName = current().componentName()
+
+    /**
      * Enables the chosen alias and disables every other one; self-heals drift.
      * Enable-first ordering: the target is enabled before any other alias is
      * disabled, so every intermediate state keeps at least one enabled launcher

@@ -15,6 +15,7 @@ import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.catalog.BundledModelCatalog
+import com.antivocale.app.ui.appearance.LauncherIconManager
 import java.util.concurrent.TimeUnit
 import com.antivocale.app.data.local.AppDatabase
 import com.antivocale.app.data.local.LogDao
@@ -98,12 +99,14 @@ object AppModule {
         @ApplicationContext context: Context,
         preferencesManager: PreferencesManager,
         backendRegistry: BackendRegistry,
+        launcherIconManager: LauncherIconManager,
         transcriptionCalibrator: TranscriptionCalibrator
     ): ShareShortcutManager {
         return ShareShortcutManager(
             context = context,
             preferencesManager = preferencesManager,
             backendRegistry = backendRegistry,
+            launcherIconManager = launcherIconManager,
             recentUsage = {
                 transcriptionCalibrator.getAllProfiles().map { profile ->
                     RecentModelUse(

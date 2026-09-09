@@ -650,6 +650,11 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.Default) {
             launcherIconManager.select(variant)
             _currentLauncherIcon.value = launcherIconManager.current()
+            // The dynamic long-press shortcuts are anchored to the ENABLED
+            // alias: a switch moves WHERE the set must live, so it re-derives
+            // here (2026-09-09 trial: without this, the new variant's menu
+            // came up empty until the next unrelated refresh).
+            shareShortcutManager.refresh()
         }
     }
 
