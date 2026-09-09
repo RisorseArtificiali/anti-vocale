@@ -78,7 +78,7 @@ object TranscriptionMemoryPolicy {
         // throws when min > max; a starved device must clamp to the family's
         // own cap, not to 30s of degenerate decode.
         val floor = minOf(MIN_CHUNK_SECONDS, catalogCapSeconds)
-        if (decodeFits(availableBytes, OVERHEAD_MIB) != true) return floor
+        if (!decodeFits(availableBytes, OVERHEAD_MIB)) return floor
         val budgetMiB = decodeBudgetMiB(availableBytes)
         val seconds = floor(sqrt((budgetMiB - OVERHEAD_MIB) / K_MIB_PER_S2) / STEP_SECONDS) * STEP_SECONDS
         return seconds.toInt().coerceIn(floor, catalogCapSeconds)

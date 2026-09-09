@@ -847,8 +847,9 @@ class TranscriptionOrchestrator @Inject constructor(
             if (!preferencesManager.forceModelLoad.first() &&
                 TranscriptionMemoryPolicy.canServeMinimumChunk(availBytes, modelSize) == false
             ) {
-                val requiredBytes = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes() +
-                    (TranscriptionMemoryPolicy.HEADROOM_MIB * 1024 * 1024).toLong()
+                // minimumDecodeBaselineBytes already carries the headroom:
+                // this IS the compared bar, byte for byte.
+                val requiredBytes = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes()
                 Log.w(
                     TAG,
                     "Refusing ${backend.id}: post-load avail=${availBytes / MB}MB cannot hold " +
