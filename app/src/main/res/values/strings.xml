@@ -504,9 +504,6 @@
     <string name="app_icon_title">App icon</string>
     <string name="app_icon_note">Switching may briefly hide the icon on some launchers; the store listing keeps the default icon.</string>
     <string name="app_icon_variant_default">Default</string>
-    <string name="app_icon_variant_teal">Teal</string>
-    <string name="app_icon_variant_ink">Ink</string>
-    <string name="app_icon_variant_amber">Amber</string>
     <string name="app_icon_variant_wavecut">Interrupted Waveform</string>
     <string name="app_icon_variant_crossed">Crossed Waveform</string>
     <string name="app_icon_variant_textblock">Waveform to Text</string>

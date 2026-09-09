@@ -10,29 +10,14 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.documentfile.provider.DocumentFile
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.colorResource
-import android.graphics.BitmapFactory
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -50,7 +35,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
@@ -77,8 +61,8 @@ import com.antivocale.app.ui.components.SettingsDropdown
 import com.antivocale.app.ui.components.TokenInputField
 import com.antivocale.app.ui.components.ToggleSettingCard
 import com.antivocale.app.ui.components.UnloadModelButton
-import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.ui.dialogs.PerformanceStatsDialog
+import com.antivocale.app.ui.screens.LauncherIconScreen
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.theme.ThemeType
@@ -129,6 +113,7 @@ fun SettingsTab(
     var perfStatsProfiles by remember { mutableStateOf<List<CalibrationProfile>>(emptyList()) }
     val perfStatsScope = rememberCoroutineScope()
     var showPromptSettings by remember { mutableStateOf(false) }
+    var showIconSettings by remember { mutableStateOf(false) }
 
     // OAuth launcher
     val oauthLauncher = rememberLauncherForActivityResult(
@@ -170,6 +155,11 @@ fun SettingsTab(
         PerAppSettingsScreen(
             preferencesManager = viewModel.perAppPreferencesManager,
             onBack = { showPerAppSettings = false }
+        )
+    } else if (showIconSettings) {
+        LauncherIconScreen(
+            viewModel = viewModel,
+            onBack = { showIconSettings = false }
         )
     } else if (showPromptSettings) {
         PromptSettingsScreen(
@@ -702,43 +692,42 @@ fun SettingsTab(
                 }
             }
 
-            // App icon variants (TASK-392, TASK-473): the picker previews the
-            // recolors as color plus the shared foreground and the derei
-            // concepts at the launcher's own framing, so what the user picks
-            // is what ships.
+            // App icon variants (TASK-392, TASK-473): selection moved to a
+            // dedicated sub-page (maintainer decision 2026-09-09); the row
+            // shows the active variant and opens the picker grid.
             val currentLauncherIcon by viewModel.currentLauncherIcon.collectAsState()
             Card(
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { showIconSettings = true }
+                        .padding(16.dp)
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Apps,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                    Icon(
+                        imageVector = Icons.Default.Apps,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = stringResource(R.string.app_icon_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
+                        Text(
+                            text = stringResource(currentLauncherIcon.nameRes),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-
-                    Text(
-                        text = stringResource(R.string.app_icon_note),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    LauncherIconPickerRow(
-                        current = currentLauncherIcon,
-                        onSelect = { viewModel.selectLauncherIcon(it) },
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -2006,136 +1995,4 @@ private fun punctuationModeLabel(pref: String): String = when (pref) {
     PunctuationPolicy.PREF_OFF -> stringResource(R.string.punctuation_mode_off)
     PunctuationPolicy.PREF_ALWAYS -> stringResource(R.string.punctuation_mode_always)
     else -> stringResource(R.string.punctuation_mode_auto)
-}
-
-/**
- * The variant picker (TASK-392, TASK-473). FlowRow, not a plain Row: the set
- * grew from four to ten tiles and a Row measures children past the exhausted
- * width to zero, which made the derei variants invisible and untappable on
- * phone screens (found in the TASK-473 review; no test covers layout).
- */
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-private fun LauncherIconPickerRow(
-    current: LauncherIconVariant,
-    onSelect: (LauncherIconVariant) -> Unit,
-) {
-    // One shared painter for the recolors (one decode for all four). The
-    // derei tiles decode each, at preview resolution via [tilePreviewPainter]:
-    // the full-canvas assets are 3-4x the tile size, and seven full-canvas
-    // bitmaps would land in memory on every Settings visit.
-    val foreground = painterResource(R.mipmap.ic_launcher_foreground)
-    FlowRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .selectableGroup(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        LauncherIconVariant.entries.forEach { variant ->
-            LauncherIconOption(
-                variant = variant,
-                foreground = variant.foregroundRes?.let { tilePreviewPainter(it) } ?: foreground,
-                selected = variant == current,
-                onSelect = { onSelect(variant) },
-            )
-        }
-    }
-}
-
-/**
- * Decodes a full-canvas launcher foreground at preview resolution: the assets
- * ship at the 108dp adaptive canvas (432px at xxxhdpi) while the preview tile
- * is 56dp, so an unsampled decode holds 3-4x more pixels than the tile can
- * show, on the main thread, in the same process that later loads ASR models.
- * inSampleSize=2 (432->216) is the nearest power of two above the 56dp tile
- * at any density bucket.
- */
-@Composable
-private fun tilePreviewPainter(@DrawableRes res: Int): Painter {
-    val context = LocalContext.current
-    val density = LocalDensity.current
-    return remember(res, density.density) {
-        val targetPx = with(density) { 56.dp.toPx() }.toInt()
-        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-        BitmapFactory.decodeResource(context.resources, res, bounds)
-        var sample = 1
-        while (bounds.outWidth / (sample * 2) >= targetPx) sample *= 2
-        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
-        BitmapPainter(BitmapFactory.decodeResource(context.resources, res, opts).asImageBitmap())
-    }
-}
-
-/**
- * One launcher-icon tile (TASK-392): the variant's foreground bitmap inside a
- * circular clip, localized name underneath, primary ring on the selected
- * tile. The recolors render the shared foreground full-bleed (its bitmap
- * already carries the adaptive-icon safe-zone padding); the derei tiles are
- * edge-to-edge artwork, so they render at 1.5x inside the clip, which shows
- * the same central 72/108 window the launcher mask shows. selectable so
- * TalkBack announces the picked state (TASK-384 precedent for icon-only
- * selection states). The label text carries the semantic name; the image stays
- * decorative.
- */
-@Composable
-private fun LauncherIconOption(
-    variant: LauncherIconVariant,
-    foreground: Painter,
-    selected: Boolean,
-    onSelect: () -> Unit,
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .selectable(
-                selected = selected,
-                role = Role.Button,
-                onClick = onSelect,
-            )
-            .padding(horizontal = 4.dp),
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(56.dp)
-                .clip(CircleShape)
-                .background(colorResource(variant.backgroundRes))
-                .then(
-                    if (selected) Modifier.border(
-                        width = 3.dp,
-                        color = MaterialTheme.colorScheme.primary,
-                        shape = CircleShape,
-                    ) else Modifier
-                ),
-        ) {
-            // The recolors' shared bitmap ships with the adaptive-icon
-            // safe-zone padding baked in, so full-bleed reproduces the
-            // launcher's framing. The derei tiles are edge-to-edge, so they
-            // render at 1.5x: the 56dp circle then shows the central 2/3 of
-            // the canvas, exactly the window the launcher mask shows.
-            Image(
-                painter = foreground,
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = if (variant.foregroundRes != null) {
-                    // 56dp x 1.5 = 84dp: the circle's window onto the tile is
-                    // the central 2/3, the same fraction the launcher mask
-                    // shows of the 108dp canvas. fillMaxSize's fraction
-                    // argument caps at 1.0, hence the explicit size.
-                    Modifier.size(84.dp)
-                } else {
-                    Modifier.fillMaxSize()
-                },
-            )
-        }
-        Text(
-            text = stringResource(variant.nameRes),
-            style = MaterialTheme.typography.bodySmall,
-            fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-            color = if (selected) MaterialTheme.colorScheme.primary
-            else MaterialTheme.colorScheme.onSurface,
-        )
-    }
 }

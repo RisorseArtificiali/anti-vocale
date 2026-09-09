@@ -493,9 +493,6 @@
     <string name="app_icon_title">Icona dell\'app</string>
     <string name="app_icon_note">Cambiandola, l\'icona può sparire per un attimo su alcuni launcher; la scheda dello store mantiene l\'icona predefinita.</string>
     <string name="app_icon_variant_default">Predefinita</string>
-    <string name="app_icon_variant_teal">Verde petrolio</string>
-    <string name="app_icon_variant_ink">Inchiostro</string>
-    <string name="app_icon_variant_amber">Ambra</string>
     <string name="app_icon_variant_wavecut">Onda interrotta</string>
     <string name="app_icon_variant_crossed">Onda barrata</string>
     <string name="app_icon_variant_textblock">Da voce a testo</string>

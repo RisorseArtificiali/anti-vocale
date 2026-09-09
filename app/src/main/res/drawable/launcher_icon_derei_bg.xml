@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The shared vertical gradient of derei's concept set (GH #61): sampled
+     from the proposals' own tiles, one drawable for all six variants. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:angle="270"
+        android:startColor="@color/launcher_icon_derei_gradient_top"
+        android:endColor="@color/launcher_icon_derei_gradient_bottom"
+        android:type="linear"/>
+</shape>

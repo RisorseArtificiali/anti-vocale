@@ -507,9 +507,6 @@
     <string name="app_icon_title">Uygulama simgesi</string>
     <string name="app_icon_note">Değiştirirken simge bazı başlatıcılarda kısa süre kaybolabilir; mağaza listesinde varsayılan simge kalır.</string>
     <string name="app_icon_variant_default">Varsayılan</string>
-    <string name="app_icon_variant_teal">Turkuaz</string>
-    <string name="app_icon_variant_ink">Mürekkep</string>
-    <string name="app_icon_variant_amber">Amber</string>
     <string name="app_icon_variant_wavecut">Kesik dalga</string>
     <string name="app_icon_variant_crossed">Üstü çizili dalga</string>
     <string name="app_icon_variant_textblock">Sesten metne</string>

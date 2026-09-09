@@ -421,9 +421,6 @@
     <string name="app_icon_title">Icône de l\'application</string>
     <string name="app_icon_note">Le changement peut masquer l\'icône un instant sur certains lanceurs; la fiche du magasin garde l\'icône par défaut.</string>
     <string name="app_icon_variant_default">Par défaut</string>
-    <string name="app_icon_variant_teal">Sarcelle</string>
-    <string name="app_icon_variant_ink">Encre</string>
-    <string name="app_icon_variant_amber">Ambre</string>
     <string name="app_icon_variant_wavecut">Onde interrompue</string>
     <string name="app_icon_variant_crossed">Onde barrée</string>
     <string name="app_icon_variant_textblock">De la voix au texte</string>

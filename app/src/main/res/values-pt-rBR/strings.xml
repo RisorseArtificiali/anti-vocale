@@ -421,9 +421,6 @@
     <string name="app_icon_title">Ícone do app</string>
     <string name="app_icon_note">Ao trocar, o ícone pode desaparecer por um instante em alguns lançadores; a listagem da loja mantém o ícone padrão.</string>
     <string name="app_icon_variant_default">Padrão</string>
-    <string name="app_icon_variant_teal">Azul-petróleo</string>
-    <string name="app_icon_variant_ink">Tinta</string>
-    <string name="app_icon_variant_amber">Âmbar</string>
     <string name="app_icon_variant_wavecut">Onda interrompida</string>
     <string name="app_icon_variant_crossed">Onda riscada</string>
     <string name="app_icon_variant_textblock">Da voz ao texto</string>

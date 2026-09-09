@@ -517,9 +517,6 @@
     <string name="app_icon_title">Значок застосунку</string>
     <string name="app_icon_note">Під час зміни значок у деяких лаунчерах може на мить зникнути; у магазині лишається стандартний значок.</string>
     <string name="app_icon_variant_default">Стандартний</string>
-    <string name="app_icon_variant_teal">Бірюзовий</string>
-    <string name="app_icon_variant_ink">Чорнильний</string>
-    <string name="app_icon_variant_amber">Бурштиновий</string>
     <string name="app_icon_variant_wavecut">Перервана хвиля</string>
     <string name="app_icon_variant_crossed">Перекреслена хвиля</string>
     <string name="app_icon_variant_textblock">З голосу в текст</string>

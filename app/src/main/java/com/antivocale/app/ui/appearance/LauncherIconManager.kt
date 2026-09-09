@@ -3,7 +3,6 @@ package com.antivocale.app.ui.appearance
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
-import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.antivocale.app.R
@@ -13,13 +12,16 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Curated launcher-icon variants (TASK-392, GH #86), Telegram-style. Each variant
- * is a launcher activity-alias in the manifest. The recolors (TASK-392) differ
- * only by their adaptive-icon background color and share the default's foreground;
- * the derei variants (TASK-473, GH #61) carry their own full-tile foreground
- * artwork ([foregroundRes]; the tile's gradient is baked in, so the background
- * layer is a same-family mid color that only shows under parallax). The alias
- * component name must keep the Launcher<Variant> pattern, pinned by tests.
+ * Launcher-icon variants: Default plus derei's six concepts (GH #61,
+ * TASK-473), each a launcher activity-alias in the manifest. The recolor
+ * set (TASK-392's Teal/Ink/Amber) was retired with the TASK-473 rework:
+ * a user still pinned to a removed alias is healed back to Default at
+ * startup ([LauncherIconManager.healIfNoAliasEnabled]); the read path
+ * alone would show Default in Settings while the launcher showed nothing. The derei concepts
+ * are vector glyphs ([glyphRes], safe-zone framing built into the 108dp
+ * viewport) over the shared gradient drawable; Default keeps the original
+ * color-plus-foreground adaptive icon. The alias component name must keep
+ * the Launcher<Variant> pattern, pinned by tests.
  *
  * The alias component names are a pinned contract mirrored by the
  * manifest activity-alias literals (LauncherIconManifestTest) and by
@@ -28,65 +30,42 @@ import javax.inject.Singleton
  */
 enum class LauncherIconVariant(
     val aliasComponentName: String,
-    @ColorRes val backgroundRes: Int,
     @StringRes val nameRes: Int,
-    @DrawableRes val foregroundRes: Int? = null,
+    @DrawableRes val glyphRes: Int? = null,
 ) {
     DEFAULT(
         aliasComponentName = "com.antivocale.app.LauncherDefault",
-        backgroundRes = R.color.launcher_icon_default,
         nameRes = R.string.app_icon_variant_default,
-    ),
-    TEAL(
-        aliasComponentName = "com.antivocale.app.LauncherTeal",
-        backgroundRes = R.color.launcher_icon_teal,
-        nameRes = R.string.app_icon_variant_teal,
-    ),
-    INK(
-        aliasComponentName = "com.antivocale.app.LauncherInk",
-        backgroundRes = R.color.launcher_icon_ink,
-        nameRes = R.string.app_icon_variant_ink,
-    ),
-    AMBER(
-        aliasComponentName = "com.antivocale.app.LauncherAmber",
-        backgroundRes = R.color.launcher_icon_amber,
-        nameRes = R.string.app_icon_variant_amber,
     ),
     WAVECUT(
         aliasComponentName = "com.antivocale.app.LauncherWavecut",
-        backgroundRes = R.color.launcher_icon_derei_wavecut,
         nameRes = R.string.app_icon_variant_wavecut,
-        foregroundRes = R.mipmap.ic_launcher_fg_derei_wavecut,
+        glyphRes = R.drawable.ic_launcher_glyph_derei_wavecut,
     ),
     CROSSED(
         aliasComponentName = "com.antivocale.app.LauncherCrossed",
-        backgroundRes = R.color.launcher_icon_derei_crossed,
         nameRes = R.string.app_icon_variant_crossed,
-        foregroundRes = R.mipmap.ic_launcher_fg_derei_crossed,
+        glyphRes = R.drawable.ic_launcher_glyph_derei_crossed,
     ),
     TEXTBLOCK(
         aliasComponentName = "com.antivocale.app.LauncherTextblock",
-        backgroundRes = R.color.launcher_icon_derei_textblock,
         nameRes = R.string.app_icon_variant_textblock,
-        foregroundRes = R.mipmap.ic_launcher_fg_derei_textblock,
+        glyphRes = R.drawable.ic_launcher_glyph_derei_textblock,
     ),
     MONOGRAM(
         aliasComponentName = "com.antivocale.app.LauncherMonogram",
-        backgroundRes = R.color.launcher_icon_derei_monogram,
         nameRes = R.string.app_icon_variant_monogram,
-        foregroundRes = R.mipmap.ic_launcher_fg_derei_monogram,
+        glyphRes = R.drawable.ic_launcher_glyph_derei_monogram,
     ),
     CAPSULE(
         aliasComponentName = "com.antivocale.app.LauncherCapsule",
-        backgroundRes = R.color.launcher_icon_derei_capsule,
         nameRes = R.string.app_icon_variant_capsule,
-        foregroundRes = R.mipmap.ic_launcher_fg_derei_capsule,
+        glyphRes = R.drawable.ic_launcher_glyph_derei_capsule,
     ),
     MUTEBAR(
         aliasComponentName = "com.antivocale.app.LauncherMutebar",
-        backgroundRes = R.color.launcher_icon_derei_mutebar,
         nameRes = R.string.app_icon_variant_mutebar,
-        foregroundRes = R.mipmap.ic_launcher_fg_derei_mutebar,
+        glyphRes = R.drawable.ic_launcher_glyph_derei_mutebar,
     ),
 }
 
@@ -110,7 +89,7 @@ class LauncherIconManager @Inject constructor(
     /**
      * Current variant derived from component state. COMPONENT_ENABLED_STATE_DEFAULT
      * means the manifest-declared state (enabled for Default, disabled for the
-     * recolors), which is exactly the fresh-install condition. If nothing is
+     * concept aliases), which is exactly the fresh-install condition. If nothing is
      * enabled (unknown state), Default wins; if more than one is enabled (drift),
      * the first in canonical order wins deterministically.
      */
@@ -123,6 +102,18 @@ class LauncherIconManager @Inject constructor(
      * shortcuts): they must not re-derive the alias-componentName contract.
      */
     fun currentComponentName(): ComponentName = current().componentName()
+
+    /**
+     * Startup safety net for retired variants (TASK-473): a user who had a
+     * removed alias selected also carries an explicit DISABLED write for
+     * Default (select() always disabled the others), so after the update NO
+     * alias is enabled and the app would vanish from the launcher. When
+     * nothing is effectively enabled, re-select Default. Free when not needed:
+     * a converged re-select performs zero writes.
+     */
+    fun healIfNoAliasEnabled() {
+        if (LauncherIconVariant.entries.none(::isEnabled)) select(LauncherIconVariant.DEFAULT)
+    }
 
     /**
      * Enables the chosen alias and disables every other one; self-heals drift.

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- derei's Broken Voice Note concept (GH #61), redrawn as vector paths from the
+     proposal geometry. The glyph field spans the central 66 of the 108dp
+     canvas: the guaranteed visible zone under EVERY launcher mask shape,
+     including full circles. Cut and slice elements use the set's shared
+     dark tone for figure-ground separation. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M33,45 L75,45 A9,9 0 0 1 84,54 L84,54 A9,9 0 0 1 75,63 L33,63 A9,9 0 0 1 24,54 L24,54 A9,9 0 0 1 33,45 Z"
+        android:fillColor="#FFFFFFFF"/>
+    <path
+        android:pathData="M55,44 L53,64"
+        android:strokeColor="#3D2411"
+        android:strokeWidth="6"
+        android:strokeLineCap="round"/>
+</vector>

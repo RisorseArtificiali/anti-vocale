@@ -89,9 +89,6 @@ class LauncherIconManagerTest {
         assertEquals(
             mapOf(
                 "default" to "com.antivocale.app.LauncherDefault",
-                "teal" to "com.antivocale.app.LauncherTeal",
-                "ink" to "com.antivocale.app.LauncherInk",
-                "amber" to "com.antivocale.app.LauncherAmber",
                 "wavecut" to "com.antivocale.app.LauncherWavecut",
                 "crossed" to "com.antivocale.app.LauncherCrossed",
                 "textblock" to "com.antivocale.app.LauncherTextblock",
@@ -104,10 +101,10 @@ class LauncherIconManagerTest {
     }
 
     @Test
-    fun `default is the canonical first variant and every variant carries a background color and name resource`() {
+    fun `default is the canonical first variant and every variant carries a localized name`() {
         assertEquals(LauncherIconVariant.DEFAULT, LauncherIconVariant.entries.first())
         LauncherIconVariant.entries.forEach { variant ->
-            assert(variant.backgroundRes != 0) { "${variant.name} needs a background color" }
+
             assert(variant.nameRes != 0) { "${variant.name} needs a localized name" }
         }
     }
@@ -117,7 +114,7 @@ class LauncherIconManagerTest {
     @Test
     fun `fresh install state resolves to Default`() {
         // All aliases sit at COMPONENT_ENABLED_STATE_DEFAULT: the manifest
-        // declares Default enabled and the recolors disabled, and the
+        // declares Default enabled and the concepts disabled, and the
         // default-state resolution itself must count Default as enabled.
         assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT, aliasState(LauncherIconVariant.DEFAULT))
         assertEquals(LauncherIconVariant.DEFAULT, manager.current())
@@ -125,13 +122,13 @@ class LauncherIconManagerTest {
 
     @Test
     fun `select enables exactly the chosen alias`() {
-        manager.select(LauncherIconVariant.TEAL)
+        manager.select(LauncherIconVariant.WAVECUT)
 
-        assertEquals(LauncherIconVariant.TEAL, manager.current())
+        assertEquals(LauncherIconVariant.WAVECUT, manager.current())
         LauncherIconVariant.entries.forEach { variant ->
             assertEquals(
                 "alias of ${variant.name}",
-                variant == LauncherIconVariant.TEAL,
+                variant == LauncherIconVariant.WAVECUT,
                 aliasEnabled(variant),
             )
         }
@@ -145,24 +142,46 @@ class LauncherIconManagerTest {
 
     @Test
     fun `switching back and forth flips the enabled alias`() {
-        manager.select(LauncherIconVariant.AMBER)
-        assertEquals(LauncherIconVariant.AMBER, manager.current())
+        manager.select(LauncherIconVariant.MUTEBAR)
+        assertEquals(LauncherIconVariant.MUTEBAR, manager.current())
 
         manager.select(LauncherIconVariant.DEFAULT)
         assertEquals(LauncherIconVariant.DEFAULT, manager.current())
         assertEquals(
             PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
-            aliasState(LauncherIconVariant.AMBER),
+            aliasState(LauncherIconVariant.MUTEBAR),
         )
     }
 
     @Test
     fun `re-selecting the current variant keeps exactly one enabled`() {
-        manager.select(LauncherIconVariant.INK)
-        manager.select(LauncherIconVariant.INK)
+        manager.select(LauncherIconVariant.CROSSED)
+        manager.select(LauncherIconVariant.CROSSED)
 
-        assertEquals(LauncherIconVariant.INK, manager.current())
+        assertEquals(LauncherIconVariant.CROSSED, manager.current())
         assertEquals(1, LauncherIconVariant.entries.count(::aliasEnabled))
+    }
+
+    @Test
+    fun `heal re-enables Default when every alias was left disabled`() {
+        // The retired-variant migration (TASK-473): a user with a removed
+        // variant selected also carries an explicit DISABLED write for
+        // Default, so after the update nothing is enabled and the app would
+        // vanish from the launcher until something writes Default back.
+        LauncherIconVariant.entries.forEach {
+            forceAlias(it, PackageManager.COMPONENT_ENABLED_STATE_DISABLED)
+        }
+
+        manager.healIfNoAliasEnabled()
+
+        assertEquals(LauncherIconVariant.DEFAULT, manager.current())
+        assertEquals(1, LauncherIconVariant.entries.count(::aliasEnabled))
+    }
+
+    @Test
+    fun `heal is free when an alias is already enabled`() {
+        val writes = recordWrites { manager.healIfNoAliasEnabled() }
+        assertTrue("converged heal must not write", writes.isEmpty())
     }
 
     @Test
@@ -178,13 +197,13 @@ class LauncherIconManagerTest {
     @Test
     fun `drift with two enabled aliases resolves to the first enabled in canonical order and select heals it`() {
         forceAlias(LauncherIconVariant.DEFAULT, PackageManager.COMPONENT_ENABLED_STATE_DISABLED)
-        forceAlias(LauncherIconVariant.TEAL, PackageManager.COMPONENT_ENABLED_STATE_ENABLED)
-        forceAlias(LauncherIconVariant.INK, PackageManager.COMPONENT_ENABLED_STATE_ENABLED)
+        forceAlias(LauncherIconVariant.WAVECUT, PackageManager.COMPONENT_ENABLED_STATE_ENABLED)
+        forceAlias(LauncherIconVariant.CROSSED, PackageManager.COMPONENT_ENABLED_STATE_ENABLED)
 
-        assertEquals(LauncherIconVariant.TEAL, manager.current())
+        assertEquals(LauncherIconVariant.WAVECUT, manager.current())
 
-        manager.select(LauncherIconVariant.AMBER)
-        assertEquals(LauncherIconVariant.AMBER, manager.current())
+        manager.select(LauncherIconVariant.MUTEBAR)
+        assertEquals(LauncherIconVariant.MUTEBAR, manager.current())
         assertEquals(1, LauncherIconVariant.entries.count(::aliasEnabled))
     }
 
@@ -192,10 +211,10 @@ class LauncherIconManagerTest {
 
     @Test
     fun `select enables the target before disabling any other alias`() {
-        val writes = recordWrites { manager.select(LauncherIconVariant.TEAL) }
+        val writes = recordWrites { manager.select(LauncherIconVariant.WAVECUT) }
 
         assertTrue("select must write at least the enable", writes.isNotEmpty())
-        assertEquals("com.antivocale.app.LauncherTeal=true", writes.first())
+        assertEquals("com.antivocale.app.LauncherWavecut=true", writes.first())
         assertTrue(
             "every write after the first must be a disable: $writes",
             writes.drop(1).isNotEmpty() && writes.drop(1).all { it.endsWith("=false") },
@@ -224,7 +243,7 @@ class LauncherIconManagerTest {
                 }
                 // An Error escapes the seam's catch(Exception), like a real kill.
                 try {
-                    manager.select(LauncherIconVariant.TEAL)
+                    manager.select(LauncherIconVariant.WAVECUT)
                 } catch (e: SimulatedProcessDeath) {
                     // aborted mid-sequence: assert the invariant below
                     diedAtLeastOnce = true
@@ -242,9 +261,9 @@ class LauncherIconManagerTest {
 
     @Test
     fun `re-selecting a converged state performs no component writes`() {
-        manager.select(LauncherIconVariant.TEAL)
+        manager.select(LauncherIconVariant.WAVECUT)
 
-        val writes = recordWrites { manager.select(LauncherIconVariant.TEAL) }
+        val writes = recordWrites { manager.select(LauncherIconVariant.WAVECUT) }
         assertTrue("expected zero writes, got $writes", writes.isEmpty())
     }
 

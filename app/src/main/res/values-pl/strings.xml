@@ -515,9 +515,6 @@
     <string name="app_icon_title">Ikona aplikacji</string>
     <string name="app_icon_note">Przełączenie może na chwilę ukryć ikonę na niektórych launcherach; w sklepie pozostaje ikona domyślna.</string>
     <string name="app_icon_variant_default">Domyślna</string>
-    <string name="app_icon_variant_teal">Turkusowa</string>
-    <string name="app_icon_variant_ink">Atramentowa</string>
-    <string name="app_icon_variant_amber">Bursztynowa</string>
     <string name="app_icon_variant_wavecut">Przerwana fala</string>
     <string name="app_icon_variant_crossed">Przekreślona fala</string>
     <string name="app_icon_variant_textblock">Z głosu na tekst</string>

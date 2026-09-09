@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- derei's Waveform to Text concept (GH #61), redrawn as vector paths from the
+     proposal geometry. The glyph field spans the central 66 of the 108dp
+     canvas: the guaranteed visible zone under EVERY launcher mask shape,
+     including full circles. Cut and slice elements use the set's shared
+     dark tone for figure-ground separation. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M26,47.5 L26,60.5"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M34,38.5 L34,69.5"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M74,38.5 L74,69.5"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M82,47.5 L82,60.5"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M51,28 L57,28 A7,7 0 0 1 64,35 L64,73 A7,7 0 0 1 57,80 L51,80 A7,7 0 0 1 44,73 L44,35 A7,7 0 0 1 51,28 Z"
+        android:fillColor="#FFFFFFFF"/>
+</vector>

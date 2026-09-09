@@ -484,9 +484,6 @@
     <string name="app_icon_title">App-Symbol</string>
     <string name="app_icon_note">Beim Wechsel kann das Symbol auf einigen Launchern kurz verschwinden; der Store-Eintrag behält das Standardsymbol.</string>
     <string name="app_icon_variant_default">Standard</string>
-    <string name="app_icon_variant_teal">Petrol</string>
-    <string name="app_icon_variant_ink">Tinte</string>
-    <string name="app_icon_variant_amber">Bernstein</string>
     <string name="app_icon_variant_wavecut">Unterbrochene Wellenform</string>
     <string name="app_icon_variant_crossed">Durchgestrichene Wellenform</string>
     <string name="app_icon_variant_textblock">Wellenform zu Text</string>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- derei's Mute Bar concept (GH #61), redrawn as vector paths from the
+     proposal geometry. The glyph field spans the central 66 of the 108dp
+     canvas: the guaranteed visible zone under EVERY launcher mask shape,
+     including full circles. Cut and slice elements use the set's shared
+     dark tone for figure-ground separation. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:pathData="M25.7,48.9 L25.7,59.1"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7.0"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M35.1,42.3 L35.1,65.7"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7.0"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M44.6,35.1 L44.6,72.9"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7.0"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M54,27.8 L54,80.2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7.0"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M63.4,35.1 L63.4,72.9"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7.0"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M72.9,42.3 L72.9,65.7"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7.0"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M82.3,48.9 L82.3,59.1"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="7.0"
+        android:strokeLineCap="round"/>
+    <path
+        android:pathData="M29,54 L79,54"
+        android:strokeColor="#3D2411"
+        android:strokeWidth="11"
+        android:strokeLineCap="round"/>
+</vector>
