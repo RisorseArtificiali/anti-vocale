@@ -61,6 +61,38 @@ jobs:
         id: date
         run: date -u +"%Y-%m-%d"
 
+      # Testers' downloaded models survive an update unless the model
+      # download/layout surface changed since the last stable release; the
+      # body line tells them which case this build is. Runs before the build
+      # and before any destructive step: a fetch failure here must not abort
+      # a run that already moved the rolling tag or deleted assets. BASE is
+      # picked from remote metadata with the F-Droid recipe's own filter
+      # (^v\d+\.\d+\.\d+$, plain stables only): sort -V alone would let a
+      # v*-rc/beta tag of a higher version win and silently narrow the diff
+      # window; only the chosen tag's commit is then fetched (bounded).
+      - name: Model re-download verdict
+        id: models
+        run: |
+          set -euo pipefail
+          BASE=$(git ls-remote --refs --tags origin "refs/tags/v*" \
+            | grep -E 'refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | awk -F/ '{print $NF}' | sort -V | tail -1)
+          [ -n "$BASE" ] || { echo "no stable v* tag found" >&2; exit 1; }
+          git fetch --depth=1 --quiet origin "refs/tags/$BASE:refs/tags/$BASE"
+          CHANGED=$(git diff --name-only "$BASE" "$GITHUB_SHA" -- \
+            .sherpa-version \
+            scripts/fetch-sherpa-aar.sh \
+            app/src/main/assets/models_catalog.json \
+            app/src/main/java/com/antivocale/app/transcription/BuiltInBackendIds.kt \
+            app/src/main/java/com/antivocale/app/transcription/OrphanedModelDirCleaner.kt \
+            app/src/main/java/com/antivocale/app/transcription/SherpaModelManager.kt \
+            app/src/main/java/com/antivocale/app/transcription/SherpaModelDownloader.kt)
+          if [ -n "$CHANGED" ]; then
+            echo "note=this build MAY REQUIRE re-downloading models (the model set or engine changed since $BASE)." >> "$GITHUB_OUTPUT"
+          else
+            echo "note=no model re-download needed (model set unchanged since $BASE)." >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -173,6 +205,7 @@ jobs:
             - versionName: ${{ env.VERSION_NAME }} (the About row in the app shows the same `1.12.0-SNAPSHOT`)
             - commit: ${{ github.sha }}
             - built: ${{ steps.date.outputs.date }} (UTC)
+            - models: ${{ steps.models.outputs.note }}
 
             :warning: **Untested snapshot.** This build has passed compilation only: no test suite, no device verification, no review. Expect breakage.
 
