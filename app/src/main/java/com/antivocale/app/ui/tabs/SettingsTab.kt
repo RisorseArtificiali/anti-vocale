@@ -780,9 +780,7 @@ fun SettingsTab(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
                     // Language dropdown
-                    val appOptionsByCode = remember(viewModel.languageOptions) {
-                        viewModel.languageOptions.associateBy { it.code }
-                    }
+                    val appOptionsByCode = viewModel.languageOptions.associateBy { option -> option.code }
                     SettingsDropdown(
                         currentValue = currentLanguage,
                         options = viewModel.languageOptions.map { it.code },
