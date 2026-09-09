@@ -12,8 +12,8 @@ name: Nightly
 # fdroidserver master 3cbbe810, fdroidserver/checkupdates.py): the bot reads the
 # versionCode at the tag's commit and only stays quiet while that code does not
 # exceed the released CurrentVersionCode. The tag name alone is NOT protection.
-# Before the first publish the recipe must get the documented pattern suffix
-# (`UpdateCheckMode: Tags .*[0-9]$`), the one allowed fdroiddata edit per the
+# Before the first publish the recipe must get the documented pattern filter
+# (`UpdateCheckMode: Tags ^v[\d.]+$`, plain vX.Y.Z tags only), the one allowed fdroiddata edit per the
 # TASK-465 plan; until then never let main's versionCode exceed the released one
 # (it must not: the nightly stays at the current base). See docs/ci.md.
 # Do NOT rename this tag to anything resembling X.Y.Z.
