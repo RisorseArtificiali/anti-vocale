@@ -18,11 +18,14 @@ name: Nightly
 # (it must not: the nightly stays at the current base). See docs/ci.md.
 # Do NOT rename this tag to anything resembling X.Y.Z.
 #
-# The playStore flavor is deliberate: it is signed with the SAME release key as
-# the Play Store build (keystore.properties secrets, exactly like the
-# bundlePlayStoreRelease step of android-release.yml), so the APK installs as an
-# update over a Play install. F-Droid flavor builds are signed by F-Droid and
-# would force testers to uninstall (losing downloaded models).
+# Signature truth (device-verified 2026-09-09): the APK is signed with the
+# PROJECT RELEASE KEY, the same keystore android-release.yml signs its uploaded
+# AAB with, and the key the F-Droid recipe pins (AllowedAPKSigningKeys). That
+# is NOT the signature a store-delivered install carries: Google re-signs Play
+# deliveries via Play App Signing, and F-Droid signs its own builds, so moving
+# to a nightly from EITHER store requires uninstalling first (erasing
+# downloaded models). The signature does match previous nightlies and the
+# GitHub reference APKs: a nightly updates in place over another nightly.
 
 on:
   workflow_dispatch:
@@ -211,7 +214,7 @@ jobs:
 
             :warning: **Not for F-Droid users.** Stay on the F-Droid release. This rolling tag is intentionally non-semantic so the F-Droid update checker never offers it.
 
-            :information_source: **Signature:** signed with the same release key as the Play Store build, so it installs as an update over a Play install. F-Droid-installed copies use a different signature: updating from F-Droid to a nightly requires uninstalling first, which erases downloaded transcription models.
+            :information_source: **Signature:** signed with the project's release key (the key the F-Droid recipe pins), so it updates in place over another nightly. Play and F-Droid installs carry different signatures (Google re-signs Play deliveries, F-Droid signs its own), so moving to a nightly from either store requires uninstalling first, which erases downloaded transcription models.
 
             For stable releases see https://github.com/${{ github.repository }}/releases
         env:

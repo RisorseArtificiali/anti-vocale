@@ -74,6 +74,12 @@ In the **Logs** tab: each entry shows "Processed in Xs" under the transcript, al
 
 Swipe an entry to delete it. A standard long-press context menu is being added alongside the gesture ([#52](https://github.com/RisorseArtificiali/anti-vocale/issues/52)), with options like delete, re-transcribe, and copy.
 
+## Nightly builds
+
+### What is the nightly build, and can I install it over my store copy?
+
+Every build from `main` is published as a rolling pre-release on the [nightly tag](https://github.com/RisorseArtificiali/anti-vocale/releases/tag/nightly): the newest code, compiled but otherwise untested, meant for testers. It is signed with the project's own release key, so it installs as a plain update over another nightly (or over a sideloaded release APK signed with the same key). It is NOT signed like a store copy: Google re-signs Play deliveries and F-Droid signs its own builds, so moving to a nightly from the Play Store or from F-Droid requires uninstalling the app first, and uninstalling erases every downloaded transcription model. The release notes tell you two more things before you jump: the exact commit you would be running, and whether that build requires re-downloading models compared to the last stable release.
+
 ## The project
 
 ### Is this app built with AI?
