@@ -23,6 +23,16 @@
     <color name="launcher_icon_teal">#128C7E</color>
     <color name="launcher_icon_ink">#0F172A</color>
     <color name="launcher_icon_amber">#D97706</color>
+    <!-- One mid-orange, not six: the derei tiles bake their own gradient and
+         this color only peeks under parallax, so per-variant deltas were
+         copy noise (TASK-473 review). -->
+    <color name="launcher_icon_derei_base">#EC5A26</color>
+    <color name="launcher_icon_derei_wavecut">@color/launcher_icon_derei_base</color>
+    <color name="launcher_icon_derei_crossed">@color/launcher_icon_derei_base</color>
+    <color name="launcher_icon_derei_textblock">@color/launcher_icon_derei_base</color>
+    <color name="launcher_icon_derei_monogram">@color/launcher_icon_derei_base</color>
+    <color name="launcher_icon_derei_capsule">@color/launcher_icon_derei_base</color>
+    <color name="launcher_icon_derei_mutebar">@color/launcher_icon_derei_base</color>
 
     <!-- Dynamic share-shortcut icon backgrounds (TASK-393): aliases, not new
          hex, so a palette change updates the shortcut icons with it. Each

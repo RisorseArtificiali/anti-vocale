@@ -424,6 +424,12 @@
     <string name="app_icon_variant_teal">Azul-petróleo</string>
     <string name="app_icon_variant_ink">Tinta</string>
     <string name="app_icon_variant_amber">Âmbar</string>
+    <string name="app_icon_variant_wavecut">Onda interrompida</string>
+    <string name="app_icon_variant_crossed">Onda riscada</string>
+    <string name="app_icon_variant_textblock">Da voz ao texto</string>
+    <string name="app_icon_variant_monogram">Monograma AV</string>
+    <string name="app_icon_variant_capsule">Recado de voz quebrado</string>
+    <string name="app_icon_variant_mutebar">Barra de mudo</string>
     <string name="per_app_settings_title">Configurações por aplicativo</string>
     <string name="per_app_settings_description">Personalize o comportamento de notificação de cada app</string>
     <string name="per_app_settings_info">Toque em um app para configurar as notificações dele.</string>

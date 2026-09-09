@@ -510,6 +510,12 @@
     <string name="app_icon_variant_teal">Turkuaz</string>
     <string name="app_icon_variant_ink">Mürekkep</string>
     <string name="app_icon_variant_amber">Amber</string>
+    <string name="app_icon_variant_wavecut">Kesik dalga</string>
+    <string name="app_icon_variant_crossed">Üstü çizili dalga</string>
+    <string name="app_icon_variant_textblock">Sesten metne</string>
+    <string name="app_icon_variant_monogram">AV monogramı</string>
+    <string name="app_icon_variant_capsule">Yırtık sesli mesaj</string>
+    <string name="app_icon_variant_mutebar">Sessizlik çubuğu</string>
 
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Uygulama Başına Ayarlar</string>

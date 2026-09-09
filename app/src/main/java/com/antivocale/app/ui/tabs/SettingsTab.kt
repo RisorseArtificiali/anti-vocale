@@ -23,6 +23,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.colorResource
+import android.graphics.BitmapFactory
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.rememberScrollState
@@ -693,9 +702,10 @@ fun SettingsTab(
                 }
             }
 
-            // App icon variants (TASK-392): previews composite the variant's
-            // background color with the shared foreground bitmap, so what the
-            // user picks is what ships.
+            // App icon variants (TASK-392, TASK-473): the picker previews the
+            // recolors as color plus the shared foreground and the derei
+            // concepts at the launcher's own framing, so what the user picks
+            // is what ships.
             val currentLauncherIcon by viewModel.currentLauncherIcon.collectAsState()
             Card(
                 modifier = Modifier.fillMaxWidth()
@@ -726,24 +736,10 @@ fun SettingsTab(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
 
-                    // One shared painter: per-tile call sites each hold their own
-                    // decoded bitmap (the shared foreground is ~746KB at xxxhdpi).
-                    val foreground = painterResource(R.mipmap.ic_launcher_foreground)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .selectableGroup(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
-                    ) {
-                        LauncherIconVariant.entries.forEach { variant ->
-                            LauncherIconOption(
-                                variant = variant,
-                                foreground = foreground,
-                                selected = variant == currentLauncherIcon,
-                                onSelect = { viewModel.selectLauncherIcon(variant) }
-                            )
-                        }
-                    }
+                    LauncherIconPickerRow(
+                        current = currentLauncherIcon,
+                        onSelect = { viewModel.selectLauncherIcon(it) },
+                    )
                 }
             }
 
@@ -2013,10 +2009,70 @@ private fun punctuationModeLabel(pref: String): String = when (pref) {
 }
 
 /**
- * One launcher-icon tile (TASK-392): a WYSIWYG composite of the variant's
- * background color and the shared foreground bitmap inside a circular clip
- * (the adaptive-icon XML is not a vector, so painterResource cannot load it),
- * localized name underneath, primary ring on the selected tile. selectable so
+ * The variant picker (TASK-392, TASK-473). FlowRow, not a plain Row: the set
+ * grew from four to ten tiles and a Row measures children past the exhausted
+ * width to zero, which made the derei variants invisible and untappable on
+ * phone screens (found in the TASK-473 review; no test covers layout).
+ */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun LauncherIconPickerRow(
+    current: LauncherIconVariant,
+    onSelect: (LauncherIconVariant) -> Unit,
+) {
+    // One shared painter for the recolors (one decode for all four). The
+    // derei tiles decode each, at preview resolution via [tilePreviewPainter]:
+    // the full-canvas assets are 3-4x the tile size, and seven full-canvas
+    // bitmaps would land in memory on every Settings visit.
+    val foreground = painterResource(R.mipmap.ic_launcher_foreground)
+    FlowRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .selectableGroup(),
+        horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        LauncherIconVariant.entries.forEach { variant ->
+            LauncherIconOption(
+                variant = variant,
+                foreground = variant.foregroundRes?.let { tilePreviewPainter(it) } ?: foreground,
+                selected = variant == current,
+                onSelect = { onSelect(variant) },
+            )
+        }
+    }
+}
+
+/**
+ * Decodes a full-canvas launcher foreground at preview resolution: the assets
+ * ship at the 108dp adaptive canvas (432px at xxxhdpi) while the preview tile
+ * is 56dp, so an unsampled decode holds 3-4x more pixels than the tile can
+ * show, on the main thread, in the same process that later loads ASR models.
+ * inSampleSize=2 (432->216) is the nearest power of two above the 56dp tile
+ * at any density bucket.
+ */
+@Composable
+private fun tilePreviewPainter(@DrawableRes res: Int): Painter {
+    val context = LocalContext.current
+    val density = LocalDensity.current
+    return remember(res, density.density) {
+        val targetPx = with(density) { 56.dp.toPx() }.toInt()
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        BitmapFactory.decodeResource(context.resources, res, bounds)
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= targetPx) sample *= 2
+        val opts = BitmapFactory.Options().apply { inSampleSize = sample }
+        BitmapPainter(BitmapFactory.decodeResource(context.resources, res, opts).asImageBitmap())
+    }
+}
+
+/**
+ * One launcher-icon tile (TASK-392): the variant's foreground bitmap inside a
+ * circular clip, localized name underneath, primary ring on the selected
+ * tile. The recolors render the shared foreground full-bleed (its bitmap
+ * already carries the adaptive-icon safe-zone padding); the derei tiles are
+ * edge-to-edge artwork, so they render at 1.5x inside the clip, which shows
+ * the same central 72/108 window the launcher mask shows. selectable so
  * TalkBack announces the picked state (TASK-384 precedent for icon-only
  * selection states). The label text carries the semantic name; the image stays
  * decorative.
@@ -2054,13 +2110,24 @@ private fun LauncherIconOption(
                     ) else Modifier
                 ),
         ) {
-            // The foreground bitmap ships with the adaptive-icon safe-zone
-            // padding baked in (glyph in the middle two-thirds), so a
-            // full-bleed render reproduces the launcher's framing.
+            // The recolors' shared bitmap ships with the adaptive-icon
+            // safe-zone padding baked in, so full-bleed reproduces the
+            // launcher's framing. The derei tiles are edge-to-edge, so they
+            // render at 1.5x: the 56dp circle then shows the central 2/3 of
+            // the canvas, exactly the window the launcher mask shows.
             Image(
                 painter = foreground,
                 contentDescription = null,
-                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Crop,
+                modifier = if (variant.foregroundRes != null) {
+                    // 56dp x 1.5 = 84dp: the circle's window onto the tile is
+                    // the central 2/3, the same fraction the launcher mask
+                    // shows of the 108dp canvas. fillMaxSize's fraction
+                    // argument caps at 1.0, hence the explicit size.
+                    Modifier.size(84.dp)
+                } else {
+                    Modifier.fillMaxSize()
+                },
             )
         }
         Text(

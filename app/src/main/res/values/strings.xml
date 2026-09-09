@@ -507,6 +507,12 @@
     <string name="app_icon_variant_teal">Teal</string>
     <string name="app_icon_variant_ink">Ink</string>
     <string name="app_icon_variant_amber">Amber</string>
+    <string name="app_icon_variant_wavecut">Interrupted Waveform</string>
+    <string name="app_icon_variant_crossed">Crossed Waveform</string>
+    <string name="app_icon_variant_textblock">Waveform to Text</string>
+    <string name="app_icon_variant_monogram">AV Monogram</string>
+    <string name="app_icon_variant_capsule">Broken Voice Note</string>
+    <string name="app_icon_variant_mutebar">Mute Bar</string>
 
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Per-App Settings</string>

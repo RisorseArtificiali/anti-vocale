@@ -4,6 +4,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import androidx.annotation.ColorRes
+import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import com.antivocale.app.R
 import com.antivocale.app.util.ComponentAliasSync
@@ -13,11 +14,12 @@ import javax.inject.Singleton
 
 /**
  * Curated launcher-icon variants (TASK-392, GH #86), Telegram-style. Each variant
- * is a launcher activity-alias in the manifest and differs only by its adaptive-icon
- * background color; foreground and monochrome layers are shared with the default
- * icon. v2 artwork (derei's GH #61 proposals) slots in as new foreground assets plus
- * one adaptive XML per variant, with no change to this class beyond a new entry
- * (alias component name must keep the Launcher<Variant> pattern, pinned by tests).
+ * is a launcher activity-alias in the manifest. The recolors (TASK-392) differ
+ * only by their adaptive-icon background color and share the default's foreground;
+ * the derei variants (TASK-473, GH #61) carry their own full-tile foreground
+ * artwork ([foregroundRes]; the tile's gradient is baked in, so the background
+ * layer is a same-family mid color that only shows under parallax). The alias
+ * component name must keep the Launcher<Variant> pattern, pinned by tests.
  *
  * The alias component names are a pinned contract mirrored by the
  * manifest activity-alias literals (LauncherIconManifestTest) and by
@@ -28,6 +30,7 @@ enum class LauncherIconVariant(
     val aliasComponentName: String,
     @ColorRes val backgroundRes: Int,
     @StringRes val nameRes: Int,
+    @DrawableRes val foregroundRes: Int? = null,
 ) {
     DEFAULT(
         aliasComponentName = "com.antivocale.app.LauncherDefault",
@@ -48,6 +51,42 @@ enum class LauncherIconVariant(
         aliasComponentName = "com.antivocale.app.LauncherAmber",
         backgroundRes = R.color.launcher_icon_amber,
         nameRes = R.string.app_icon_variant_amber,
+    ),
+    WAVECUT(
+        aliasComponentName = "com.antivocale.app.LauncherWavecut",
+        backgroundRes = R.color.launcher_icon_derei_wavecut,
+        nameRes = R.string.app_icon_variant_wavecut,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_wavecut,
+    ),
+    CROSSED(
+        aliasComponentName = "com.antivocale.app.LauncherCrossed",
+        backgroundRes = R.color.launcher_icon_derei_crossed,
+        nameRes = R.string.app_icon_variant_crossed,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_crossed,
+    ),
+    TEXTBLOCK(
+        aliasComponentName = "com.antivocale.app.LauncherTextblock",
+        backgroundRes = R.color.launcher_icon_derei_textblock,
+        nameRes = R.string.app_icon_variant_textblock,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_textblock,
+    ),
+    MONOGRAM(
+        aliasComponentName = "com.antivocale.app.LauncherMonogram",
+        backgroundRes = R.color.launcher_icon_derei_monogram,
+        nameRes = R.string.app_icon_variant_monogram,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_monogram,
+    ),
+    CAPSULE(
+        aliasComponentName = "com.antivocale.app.LauncherCapsule",
+        backgroundRes = R.color.launcher_icon_derei_capsule,
+        nameRes = R.string.app_icon_variant_capsule,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_capsule,
+    ),
+    MUTEBAR(
+        aliasComponentName = "com.antivocale.app.LauncherMutebar",
+        backgroundRes = R.color.launcher_icon_derei_mutebar,
+        nameRes = R.string.app_icon_variant_mutebar,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_mutebar,
     ),
 }
 

@@ -508,6 +508,12 @@
     <string name="app_icon_variant_teal">Бирюзовый</string>
     <string name="app_icon_variant_ink">Чернильный</string>
     <string name="app_icon_variant_amber">Янтарный</string>
+    <string name="app_icon_variant_wavecut">Прерванная волна</string>
+    <string name="app_icon_variant_crossed">Перечёркнутая волна</string>
+    <string name="app_icon_variant_textblock">Из голоса в текст</string>
+    <string name="app_icon_variant_monogram">Монограмма AV</string>
+    <string name="app_icon_variant_capsule">Разорванная голосовая</string>
+    <string name="app_icon_variant_mutebar">Полоса тишины</string>
 
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Настройки по приложениям</string>

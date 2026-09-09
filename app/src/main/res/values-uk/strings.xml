@@ -520,6 +520,12 @@
     <string name="app_icon_variant_teal">Бірюзовий</string>
     <string name="app_icon_variant_ink">Чорнильний</string>
     <string name="app_icon_variant_amber">Бурштиновий</string>
+    <string name="app_icon_variant_wavecut">Перервана хвиля</string>
+    <string name="app_icon_variant_crossed">Перекреслена хвиля</string>
+    <string name="app_icon_variant_textblock">З голосу в текст</string>
+    <string name="app_icon_variant_monogram">Монограма AV</string>
+    <string name="app_icon_variant_capsule">Розірване голосове</string>
+    <string name="app_icon_variant_mutebar">Смуга тиші</string>
 
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Налаштування для додатків</string>

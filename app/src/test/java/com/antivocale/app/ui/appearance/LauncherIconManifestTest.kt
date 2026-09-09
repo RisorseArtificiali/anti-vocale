@@ -6,14 +6,16 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.w3c.dom.Document
 import org.w3c.dom.Element
 
 /**
  * Pins the launcher activity-alias block of app/src/main/AndroidManifest.xml
- * (TASK-392), the same way BackendRegistryTest pins the share-target alias
- * literals: four Launcher* aliases, exactly one enabled (LauncherDefault), all
- * exported with a MAIN/LAUNCHER filter pointing at MainActivity, and no other
- * component carrying the LAUNCHER category.
+ * (TASK-392, TASK-473), the same way BackendRegistryTest pins the share-target
+ * alias literals: ten Launcher* aliases (four recolors + derei's six concepts),
+ * exactly one enabled (LauncherDefault), all exported with a MAIN/LAUNCHER
+ * filter pointing at MainActivity, and no other component carrying the LAUNCHER
+ * category.
  *
  * Reads the manifest from disk like StringResourceParityTest: unit tests run
  * with the module directory as working directory, and the repo root is probed
@@ -33,8 +35,7 @@ class LauncherIconManifestTest {
     }
 
     private fun launcherAliases(): List<Element> =
-        DocumentBuilderFactory.newInstance().newDocumentBuilder()
-            .parse(manifestFile())
+        parse(manifestFile())
             .getElementsByTagName("activity-alias")
             .let { nodes -> (0 until nodes.length).map { nodes.item(it) as Element } }
             .filter { it.getAttribute("android:name").startsWith(".Launcher") }
@@ -53,9 +54,13 @@ class LauncherIconManifestTest {
             }
 
     @Test
-    fun `exactly the four curated launcher aliases exist`() {
+    fun `exactly the ten curated launcher aliases exist`() {
         assertEquals(
-            listOf(".LauncherDefault", ".LauncherTeal", ".LauncherInk", ".LauncherAmber"),
+            listOf(
+                ".LauncherDefault", ".LauncherTeal", ".LauncherInk", ".LauncherAmber",
+                ".LauncherWavecut", ".LauncherCrossed", ".LauncherTextblock",
+                ".LauncherMonogram", ".LauncherCapsule", ".LauncherMutebar",
+            ),
             launcherAliases().map { it.getAttribute("android:name") },
         )
     }
@@ -92,14 +97,14 @@ class LauncherIconManifestTest {
         val enabled = launcherAliases().filter { it.getAttribute("android:enabled") == "true" }
         assertEquals(listOf(".LauncherDefault"), enabled.map { it.getAttribute("android:name") })
         assertEquals(
-            3,
+            9,
             launcherAliases().count { it.getAttribute("android:enabled") == "false" },
         )
     }
 
     @Test
     fun `no activity carries a LAUNCHER filter outside the aliases`() {
-        val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(manifestFile())
+        val doc = parse(manifestFile())
         val activities = doc.getElementsByTagName("activity")
         val offenders = (0 until activities.length)
             .map { activities.item(it) as Element }
@@ -119,20 +124,82 @@ class LauncherIconManifestTest {
 
     @Test
     fun `every referenced adaptive icon carries a monochrome layer`() {
-        // Default + the three variants: each alias icon resolves to one
-        // mipmap-anydpi-v26 adaptive XML, which needs <monochrome> for themed
-        // (Android 13+) launcher icons.
+        // Each alias icon resolves to one mipmap-anydpi-v26 adaptive XML, which
+        // needs <monochrome> for themed (Android 13+) launcher icons.
+        adaptiveIconDocs().forEach { (aliasName, icon, doc) ->
+            assertTrue(
+                "$icon ($aliasName) needs a <monochrome> layer for themed icons",
+                doc.getElementsByTagName("monochrome").length > 0,
+            )
+        }
+    }
+
+    /**
+     * Pins the variant-to-artwork seam: every alias's adaptive XML must
+     * reference its own variant's layers. A copy-paste swap between variants
+     * (or between a recolor and a derei concept) compiles and passes every
+     * other test, surfacing only as a wrong icon on a device (found in the
+     * TASK-473 review).
+     */
+    @Test
+    fun `adaptive icons reference their own variant artwork`() {
+        val expectedForeground = mapOf(
+            ".LauncherDefault" to "ic_launcher_foreground",
+            ".LauncherTeal" to "ic_launcher_foreground",
+            ".LauncherInk" to "ic_launcher_foreground",
+            ".LauncherAmber" to "ic_launcher_foreground",
+            ".LauncherWavecut" to "fg_derei_wavecut",
+            ".LauncherCrossed" to "fg_derei_crossed",
+            ".LauncherTextblock" to "fg_derei_textblock",
+            ".LauncherMonogram" to "fg_derei_monogram",
+            ".LauncherCapsule" to "fg_derei_capsule",
+            ".LauncherMutebar" to "fg_derei_mutebar",
+        )
+        adaptiveIconDocs().forEach { (aliasName, icon, doc) ->
+            val fg = expectedForeground[aliasName]
+                ?: error("unmapped alias $aliasName: add it to the artwork pin")
+            layer(doc, "foreground").let {
+                assertTrue("$icon ($aliasName) foreground must be $fg: $it", it.endsWith(fg))
+            }
+            layer(doc, "monochrome").let {
+                assertTrue("$icon ($aliasName) monochrome must match its foreground family: $it",
+                    it.endsWith(fg.removePrefix("fg_")))
+            }
+            if (aliasName !in RECOLOR_ALIASES) {
+                // The recolors and the default keep a plain color background
+                // (the picker renders it behind the shared glyph); only the
+                // derei concepts name a per-variant color.
+                val slug = aliasName.removePrefix(".Launcher").lowercase()
+                layer(doc, "background").let {
+                    assertTrue("$icon ($aliasName) background must be the $slug color: $it",
+                        it.endsWith(slug))
+                }
+            }
+        }
+    }
+
+    private fun adaptiveIconDocs(): List<Triple<String, String, Document>> {
         val resDir = File(manifestFile().parentFile, "res")
-        launcherAliases().forEach { alias ->
+        return launcherAliases().map { alias ->
             val icon = alias.getAttribute("android:icon")
             assertTrue("unexpected icon reference $icon", icon.startsWith("@mipmap/"))
             val xml = File(resDir, "mipmap-anydpi-v26/${icon.removePrefix("@mipmap/")}.xml")
             assertTrue("missing adaptive-icon XML ${xml.path}", xml.exists())
-            val doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(xml)
-            assertTrue(
-                "$icon needs a <monochrome> layer for themed icons",
-                doc.getElementsByTagName("monochrome").length > 0,
-            )
+            Triple(alias.getAttribute("android:name"), icon, parse(xml))
         }
+    }
+
+    private fun layer(doc: Document, tag: String): String {
+        val node = doc.getElementsByTagName(tag).item(0)
+            ?: error("adaptive icon is missing its <$tag> layer")
+        return node.attributes?.getNamedItem("android:drawable")?.nodeValue
+            ?: error("<$tag> layer is missing android:drawable")
+    }
+
+    private fun parse(file: File): Document =
+        DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(file)
+
+    private companion object {
+        val RECOLOR_ALIASES = setOf(".LauncherDefault", ".LauncherTeal", ".LauncherInk", ".LauncherAmber")
     }
 }

@@ -518,6 +518,12 @@
     <string name="app_icon_variant_teal">Turkusowa</string>
     <string name="app_icon_variant_ink">Atramentowa</string>
     <string name="app_icon_variant_amber">Bursztynowa</string>
+    <string name="app_icon_variant_wavecut">Przerwana fala</string>
+    <string name="app_icon_variant_crossed">Przekreślona fala</string>
+    <string name="app_icon_variant_textblock">Z głosu na tekst</string>
+    <string name="app_icon_variant_monogram">Monogram AV</string>
+    <string name="app_icon_variant_capsule">Złamana wiadomość głosowa</string>
+    <string name="app_icon_variant_mutebar">Pasek wyciszenia</string>
 
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Ustawienia per aplikacja</string>

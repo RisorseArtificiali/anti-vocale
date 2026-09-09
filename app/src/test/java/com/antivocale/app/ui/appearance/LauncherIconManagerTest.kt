@@ -92,6 +92,12 @@ class LauncherIconManagerTest {
                 "teal" to "com.antivocale.app.LauncherTeal",
                 "ink" to "com.antivocale.app.LauncherInk",
                 "amber" to "com.antivocale.app.LauncherAmber",
+                "wavecut" to "com.antivocale.app.LauncherWavecut",
+                "crossed" to "com.antivocale.app.LauncherCrossed",
+                "textblock" to "com.antivocale.app.LauncherTextblock",
+                "monogram" to "com.antivocale.app.LauncherMonogram",
+                "capsule" to "com.antivocale.app.LauncherCapsule",
+                "mutebar" to "com.antivocale.app.LauncherMutebar",
             ),
             LauncherIconVariant.entries.associate { it.name.lowercase() to it.aliasComponentName },
         )

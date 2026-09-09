@@ -424,6 +424,12 @@
     <string name="app_icon_variant_teal">Sarcelle</string>
     <string name="app_icon_variant_ink">Encre</string>
     <string name="app_icon_variant_amber">Ambre</string>
+    <string name="app_icon_variant_wavecut">Onde interrompue</string>
+    <string name="app_icon_variant_crossed">Onde barrée</string>
+    <string name="app_icon_variant_textblock">De la voix au texte</string>
+    <string name="app_icon_variant_monogram">Monogramme AV</string>
+    <string name="app_icon_variant_capsule">Message vocal brisé</string>
+    <string name="app_icon_variant_mutebar">Barre muette</string>
     <string name="per_app_settings_title">Paramètres par application</string>
     <string name="per_app_settings_description">Personnalise le comportement des notifications pour chaque application</string>
     <string name="per_app_settings_info">Appuyez sur une application pour configurer ses notifications.</string>

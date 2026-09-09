@@ -486,6 +486,12 @@
     <string name="app_icon_variant_teal">टील</string>
     <string name="app_icon_variant_ink">स्याही</string>
     <string name="app_icon_variant_amber">अंबर</string>
+    <string name="app_icon_variant_wavecut">विच्छिन्न तरंग</string>
+    <string name="app_icon_variant_crossed">काटी हुई तरंग</string>
+    <string name="app_icon_variant_textblock">आवाज़ से पाठ</string>
+    <string name="app_icon_variant_monogram">एवी मोनोग्राम</string>
+    <string name="app_icon_variant_capsule">टूटा वॉइस नोट</string>
+    <string name="app_icon_variant_mutebar">म्यूट पट्टी</string>
 
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">प्रति-ऐप सेटिंग</string>

@@ -496,6 +496,12 @@
     <string name="app_icon_variant_teal">Verde petrolio</string>
     <string name="app_icon_variant_ink">Inchiostro</string>
     <string name="app_icon_variant_amber">Ambra</string>
+    <string name="app_icon_variant_wavecut">Onda interrotta</string>
+    <string name="app_icon_variant_crossed">Onda barrata</string>
+    <string name="app_icon_variant_textblock">Da voce a testo</string>
+    <string name="app_icon_variant_monogram">Monogramma AV</string>
+    <string name="app_icon_variant_capsule">Messaggio vocale spezzato</string>
+    <string name="app_icon_variant_mutebar">Barra muta</string>
 
     <!-- Per-App Settings -->
     <string name="per_app_settings_title">Impostazioni per App</string>
