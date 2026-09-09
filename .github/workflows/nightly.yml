@@ -130,18 +130,30 @@ jobs:
 
       # Replace the assets: drop any same-named assets from the existing
       # nightly release before uploading, so a failed upload can never leave a
-      # stale APK silently paired with a new build.
+      # stale APK silently paired with a new build. The release does not exist
+      # on the first run: gh api then writes the 404 body to stdout, whose
+      # tokens would be treated as asset IDs, so capture the JSON once and
+      # only iterate when the release answered.
       - name: Delete previous nightly assets
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          ASSET_IDS=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/nightly" \
-            --jq '.assets[] | select(.name | startswith("antivocale-nightly-")) | .id' 2>/dev/null || true)
-          for ID in $ASSET_IDS; do
-            echo "deleting old asset $ID"
-            gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/$ID"
-          done
+          ERR=$(mktemp)
+          RELEASE_JSON=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/nightly" 2>"$ERR") || RELEASE_JSON=""
+          if [ -n "$RELEASE_JSON" ]; then
+            ASSET_IDS=$(jq -r '.assets[] | select(.name | startswith("antivocale-nightly-")) | .id' <<<"$RELEASE_JSON")
+            for ID in $ASSET_IDS; do
+              echo "deleting old asset $ID"
+              gh api -X DELETE "repos/${GITHUB_REPOSITORY}/releases/assets/$ID"
+            done
+          else
+            # 404 = the release does not exist yet (first run). Any other
+            # failure (rate limit, 5xx) must fail the step: skipping the
+            # delete silently would let a stale APK survive the upload.
+            grep -q "HTTP 404" "$ERR" || { cat "$ERR" >&2; exit 1; }
+            echo "no existing nightly release; nothing to delete"
+          fi
 
       # Create-or-update the pre-release. softprops updates the existing release
       # for the tag when one is present. GH.Release body: versionName from the
