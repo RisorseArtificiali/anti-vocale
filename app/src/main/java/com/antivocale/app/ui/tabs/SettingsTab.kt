@@ -464,10 +464,12 @@ fun SettingsTab(
                     viewModel.saveSummarizeEnabled(enabled)
                 }
             )
-            SummaryPromptCard(
-                prompt = viewModel.currentSummaryPrompt.collectAsState().value,
-                onSave = { viewModel.saveSummaryPrompt(it) }
-            )
+            if (viewModel.summarizeEnabled.collectAsState().value) {
+                SummaryPromptCard(
+                    prompt = viewModel.currentSummaryPrompt.collectAsState().value,
+                    onSave = { viewModel.saveSummaryPrompt(it) }
+                )
+            }
 
             // Default Prompt Setting Navigation Card
             Card(

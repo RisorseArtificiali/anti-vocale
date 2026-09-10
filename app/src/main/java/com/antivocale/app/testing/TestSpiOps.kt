@@ -90,6 +90,7 @@ internal class TestSpiOps(
             .put("themePreference", preferences.themePreference.first())
             .put("themeMode", preferences.themeMode.first())
             .put("defaultPrompt", preferences.defaultPrompt.first())
+            .put("summaryPrompt", preferences.summaryPrompt.first())
             .put("outputFolderUri", preferences.outputFolderUri.first() ?: JSONObject.NULL)
             .put("externalCatalogUrl", preferences.externalCatalogUrl.first())
             .toString()

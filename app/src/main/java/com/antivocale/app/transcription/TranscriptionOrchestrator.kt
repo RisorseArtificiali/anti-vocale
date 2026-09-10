@@ -507,7 +507,7 @@ class TranscriptionOrchestrator @Inject constructor(
             // saved prompt overrides the built-in, same contract as the
             // punctuation pass (blank = built-in).
             val savedSummaryPrompt = preferencesManager.summaryPrompt.first()
-            val summaryInstruction = savedSummaryPrompt.ifBlank {
+            val summaryInstruction = savedSummaryPrompt.trim().ifBlank {
                 context.getString(R.string.summary_default_prompt)
             }
             val prompt = ChunkPromptPolicy.finalPrompt(summaryInstruction, result.text)

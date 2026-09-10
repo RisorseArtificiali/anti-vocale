@@ -302,7 +302,8 @@ class TestSpiOpsTest {
         val samples = mapOf(
             "punctuation" to "auto", "provider" to "cpu", "swipe_action" to "REVEAL",
             "theme" to "DEFAULT", "theme_mode" to "SYSTEM", "punctuation_prompt" to "p",
-            "default_prompt" to "d", "external_catalog_url" to "https://x",
+            "default_prompt" to "d",
+            "summary_prompt" to "s", "external_catalog_url" to "https://x",
             "output_folder" to "", "keep_alive" to "5", "threads" to "4",
             "backend" to "llm", "language" to "auto", "model_path" to "/m",
             "sherpa_path" to "/m",
