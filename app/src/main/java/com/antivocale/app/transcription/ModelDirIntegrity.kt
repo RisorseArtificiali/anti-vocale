@@ -32,8 +32,9 @@ object ModelDirIntegrity {
 
     /**
      * Verifies [dir] against [variant]. Returns the failures (empty = healthy).
-     * Files with other extensions than .onnx/.txt are existence-checked only,
-     * matching [DownloadedModelIntegrity]'s contract.
+     * Files with extensions other than .onnx/.txt are not content-checked
+     * here; their existence is the completeness layer's job
+     * ([CatalogModelValidator]).
      */
     fun verify(dir: File, variant: CatalogVariant): List<Failure> {
         val structural = DownloadedModelIntegrity.validate(dir).map {
