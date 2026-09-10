@@ -278,6 +278,14 @@ class TestSpiOpsTest {
     }
 
     @Test
+    fun `get exposes the summary prompt override`() = runTest {
+        fake._summaryPrompt.value = "custom"
+
+        val json = JSONObject(ops.handle(TestSpiOps.OP_GET))
+        assertEquals("custom", json.getString("summaryPrompt"))
+    }
+
+    @Test
     fun `get exposes the summary output and ui preferences`() = runTest {
         fake._summarizeEnabled.value = true
         fake._swipeActionMode.value = "IMMEDIATE_DELETE"

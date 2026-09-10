@@ -455,16 +455,17 @@ fun SettingsTab(
             // TASK-121.4: smart-summary toggle. Always shown: with no Gemma model
             // configured the pass silently skips at runtime (same graceful branch
             // as the punctuation pass), so the setting does not hide itself.
+            val summarizeOn by viewModel.summarizeEnabled.collectAsState()
             ToggleSettingCard(
                 icon = Icons.Default.Notes,
                 title = stringResource(R.string.summarize_title),
                 description = stringResource(R.string.summarize_description),
-                checked = viewModel.summarizeEnabled.collectAsState().value,
+                checked = summarizeOn,
                 onCheckedChange = { enabled ->
                     viewModel.saveSummarizeEnabled(enabled)
                 }
             )
-            if (viewModel.summarizeEnabled.collectAsState().value) {
+            if (summarizeOn) {
                 SummaryPromptCard(
                     prompt = viewModel.currentSummaryPrompt.collectAsState().value,
                     onSave = { viewModel.saveSummaryPrompt(it) }

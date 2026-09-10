@@ -28,6 +28,15 @@ object SummaryPolicy {
         PunctuationPolicy.withinContextLimit(transcript)
 
     /**
+     * The pass's effective instruction: the user's saved override, or the
+     * built-in default when the override is blank or whitespace. Mirrors
+     * [PunctuationPolicy.effectivePrompt] as the single named home of the
+     * blank-fallback contract (TASK-483).
+     */
+    fun effectivePrompt(userPrompt: String, builtInDefault: String): String =
+        userPrompt.trim().ifBlank { builtInDefault }
+
+    /**
      * Degenerate-output guard: a summary is SHORTER than its input. Anything
      * below [MIN_SUMMARY_CHARS] is a model stutter, and anything above the
      * transcript scaled by [MAX_SUMMARY_FRACTION] is a rewrite, not a

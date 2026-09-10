@@ -221,4 +221,26 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
             logDao.update(match { it.result == longTranscript && it.summary == null })
         }
     }
+
+    @Test
+    fun `saved override replaces the built-in instruction`() = runTest {
+        // TASK-483: the user's prompt must reach generateText; the built-in
+        // 2-3 sentence default only when the override is blank.
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("Give a one-line TL;DR in Italian.")
+
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("Give a one-line TL;DR in Italian.")
+        stubSwapToLlm()
+        coEvery { llmBackend.generateText(any()) } returns Result.success(summary)
+        stubWholeFileRequest()
+
+        val result = runAudioRequest("summ-custom")
+
+        assertTrue(result.isSuccess)
+        // TASK-483: the override is the instruction the model sees, not the built-in.
+        coVerify {
+            llmBackend.generateText(match { it.contains("TL;DR") && it.contains(longTranscript) })
+        }
+    }
 }
