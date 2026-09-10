@@ -1,9 +1,9 @@
 <en-US>What's new in 1.12.0:
-• New, opt-in: AI summary of long transcriptions, shown in the entry details
-
-• New: choose the app icon from four variants (re-pin it once if it was pinned to the home screen)
-• The language setting now follows the model in use: only supported languages, with a warning when one is forced
-• Fixed: Whisper no longer applies the app language to foreign audio, which could yield a translation instead of a transcript
+• New, opt-in: AI summary of long transcriptions, in the entry details
+• New: app icon picker page with six community-designed concepts (re-pin if pinned)
+• Language setting follows the model: supported languages only, warned when forced
+• Fixed: Whisper translating foreign audio instead of transcribing it
+• Fixed: low memory or a corrupt model now gives a clear message instead of a silent crash
 
 What's new in 1.11.3:
 
@@ -213,11 +213,11 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>Novità della versione 1.12.0:
-• Novità, opzionale: riepilogo AI delle trascrizioni lunghe, mostrato nei dettagli della voce
-
-• Novità: scegli l'icona dell'app tra quattro varianti (se era fissata nella home, fissala di nuovo una volta)
-• L'impostazione lingua segue il modello in uso: solo lingue supportate, con avviso quando una è forzata
-• Corretto: Whisper non applica più la lingua dell'app ad audio in altra lingua, che poteva dare una traduzione invece di una trascrizione
+• Novità, opzionale: riepilogo AI delle trascrizioni lunghe, nei dettagli della voce
+• Novità: pagina di scelta dell'icona, con sei concept della community (riprima il pin se fissata)
+• La lingua segue il modello: solo lingue supportate, avviso quando forzata
+• Corretto: Whisper traduceva l'audio straniero invece di trascriverlo
+• Corretto: memoria insufficiente o modello corrotto ora danno un messaggio chiaro, non un crash silenzioso
 
 Novità della versione 1.11.3:
 
@@ -427,11 +427,11 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>Neuigkeiten in Version 1.12.0:
-• Neu, optional: KI-Zusammenfassung langer Transkripte, in den Details des Eintrags
-
-• Neu: App-Symbol aus vier Varianten wählen (falls angeheftet, einmal neu anheften)
-• Die Spracheinstellung folgt dem aktiven Modell: nur unterstützte Sprachen, mit Warnung bei erzwungener Sprache
-• Behoben: Whisper wendet bei Fremdsprache-Audio nicht mehr still die App-Sprache an, was eine Übersetzung statt einer Transkription liefern konnte
+• Neu, optional: KI-Zusammenfassung langer Transkriptionen, in den Eintragsdetails
+• Neu: Symbol-Auswahlseite mit sechs Community-Designs (bei Pin neu anheften)
+• Sprache folgt dem Modell: nur unterstützte Sprachen, mit Hinweis bei Erzwingung
+• Behoben: Whisper übersetzte fremdsprachige Audio statt sie zu transkribieren
+• Behoben: Zu wenig Speicher oder defektes Modell melden sich jetzt klar, statt still abzustürzen
 
 Neuigkeiten in Version 1.11.3:
 
@@ -461,11 +461,11 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>Novedades de la versión 1.12.0:
-• Nuevo, opcional: resumen con IA de transcripciones largas, en los detalles de la entrada
-
-• Nuevo: elige el icono de la app entre cuatro variantes (si estaba fijado, vuelve a fijarlo una vez)
-• El ajuste de idioma sigue el modelo en uso: solo idiomas admitidos, con aviso al forzar uno
-• Corregido: Whisper ya no aplica el idioma de la app al audio en otro idioma, lo que podía dar una traducción en vez de una transcripción
+• Nuevo, opcional: resumen IA de transcripciones largas, en los detalles de la entrada
+• Nuevo: página de elección de icono, con seis diseños de la comunidad (vuelve a fijar si estaba anclado)
+• El idioma sigue el modelo: solo idiomas admitidos, aviso al forzar uno
+• Corregido: Whisper traducía el audio extranjero en vez de transcribirlo
+• Corregido: poca memoria o modelo corrupto ahora dan un mensaje claro, no un cierre silencioso
 
 Novedades de la versión 1.11.3:
 
@@ -496,10 +496,10 @@ Novedades de la versión 1.11.0:
 
 <fr-FR>Nouveautés de la version 1.12.0 :
 • Nouveau, optionnel : résumé IA des longues transcriptions, dans le détail de l'entrée
-
-• Nouveau : choisissez l'icône parmi quatre variantes (si elle était épinglée, épinglez-la une fois de plus)
-• Le réglage de langue suit le modèle actif : langues prises en charge uniquement, avec avertissement si l'une est forcée
-• Corrigé : Whisper n'applique plus la langue de l'app à l'audio étranger, qui pouvait donner une traduction au lieu d'une transcription
+• Nouveau : page de choix de l'icône, avec six concepts de la communauté (réépinglez si épinglée)
+• La langue suit le modèle : langues prises en charge seulement, avertissement si forcée
+• Corrigé : Whisper traduisait l'audio étranger au lieu de le transcrire
+• Corrigé : mémoire insuffisante ou modèle corrompu donne un message clair, plus de fermeture silencieuse
 
 Nouveautés de la version 1.11.3 :
 
@@ -529,11 +529,11 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>Novidades da versão 1.12.0:
-• Novo, opcional: resumo com IA das transcrições longas, nos detalhes da entrada
-
-• Novo: escolha o ícone do app entre quatro variantes (se estava fixado, fixe novamente uma vez)
-• O ajuste de idioma segue o modelo em uso: só idiomas suportados, com aviso ao forçar um
-• Corrigido: o Whisper não aplica mais o idioma do app a áudio em outro idioma, o que podia gerar uma tradução em vez de uma transcrição
+• Novo, opcional: resumo IA das transcrições longas, nos detalhes do item
+• Novo: página de escolha do ícone, com seis designs da comunidade (fixe de novo se estava fixado)
+• O idioma segue o modelo: só idiomas suportados, aviso ao forçar um
+• Corrigido: o Whisper traduzia áudio estrangeiro em vez de transcrever
+• Corrigido: pouca memória ou modelo corrompido agora dão mensagem clara, não fechamento silencioso
 
 Novidades da versão 1.11.3:
 
@@ -563,11 +563,11 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>Что нового в версии 1.12.0:
-• Новое, опционально: ИИ-резюме длинных расшифровок, в деталях записи
-
-• Новое: выберите иконку приложения из четырёх вариантов (если была закреплена, закрепите заново один раз)
-• Настройка языка следует активной модели: только поддерживаемые языки, с предупреждением при принудительном языке
-• Исправлено: Whisper больше не подставляет язык приложения к записи на другом языке, что могло давать перевод вместо расшифровки
+• Новое, по желанию: ИИ-резюме длинных расшифровок, в деталях записи
+• Новое: страница выбора значка, шесть концепций от сообщества (при закреплении закрепите заново)
+• Язык следует модели: только поддерживаемые языки, предупреждение при принуждении
+• Исправлено: Whisper переводил иностранную запись вместо расшифровки
+• Исправлено: нехватка памяти или повреждённая модель дают ясное сообщение вместо тихого сбоя
 
 Что нового в версии 1.11.3:
 
@@ -597,11 +597,11 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>Sürüm 1.12.0'deki yenilikler:
-• Yeni, isteğe bağlı: uzun transkripsiyonlar için yapay zekâ özeti, giriş ayrıntılarında
-
-• Yeni: uygulama simgesini dört varyanttan seçin (sabitlenmişse bir kez yeniden sabitleyin)
-• Dil ayarı kullanılan modeli izler: yalnızca desteklenen diller, bir dil zorlanınca uyarı
-• Düzeltildi: Whisper, başka dildeki sese artık sessizce uygulama dilini uygulamıyor; bu, transkripsiyon yerine çeviri verebiliyordu
+• Yeni, isteğe bağlı: uzun transkriptlerde yapay zekâ özeti, kayıt ayrıntılarında
+• Yeni: simge seçim sayfası, topluluk tasarımı altı konseptle (sabitlenmişse yeniden sabitleyin)
+• Dil, modeli izler: yalnızca desteklenen diller, zorlamada uyarı
+• Düzeltildi: Whisper yabancı sesi transkript etmek yerine çeviriyordu
+• Düzeltildi: az bellek veya bozuk model artık sessiz çökme yerine net mesaj veriyor
 
 Sürüm 1.11.3'teki yenilikler:
 
@@ -632,10 +632,10 @@ Sürüm 1.11.0'daki yenilikler:
 
 <pl-PL>Nowości w wersji 1.12.0:
 • Nowość, opcjonalnie: podsumowanie AI długich transkrypcji, w szczegółach wpisu
-
-• Nowość: wybierz ikonę aplikacji spośród czterech wariantów (jeśli była przypięta, przypnij ponownie raz)
-• Ustawienie języka podąża za aktywnym modelem: tylko obsługiwane języki, z ostrzeżeniem przy wymuszeniu
-• Poprawione: Whisper nie stosuje już po cichu języka aplikacji do nagrania w innym języku, co mogło dawać tłumaczenie zamiast transkrypcji
+• Nowość: strona wyboru ikony, sześć koncepcji od społeczności (przypnij ponownie, jeśli przypięta)
+• Język podąża za modelem: tylko obsługiwane języki, ostrzeżenie przy wymuszeniu
+• Naprawiono: Whisper tłumaczył obce nagranie zamiast je transkrybować
+• Naprawiono: mało pamięci lub uszkodzony model dają jasny komunikat, nie ciche crashowanie
 
 Nowości w wersji 1.11.3:
 
@@ -665,11 +665,11 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>संस्करण 1.12.0 में नया क्या है:
-• नया, वैकल्पिक: लंबी ट्रांस्क्रिप्ट का AI सारांश, प्रविष्टि विवरण में
-
-• नया: चार रूपों में से ऐप का आइकन चुनें (होम पर पिन था तो एक बार फिर पिन करें)
-• भाषा सेटिंग चालू मॉडल के अनुसार चलती है: केवल समर्थित भाषाएँ, बाध्य करने पर चेतावनी
-• सुधार: Whisper अब दूसरी भाषा के ऑडियो पर चुपचाप ऐप की भाषा नहीं अपनाता, जिससे ट्रांस्क्रिप्ट की जगह अनुवाद बन सकता था
+• नया, वैकल्पिक: लंबे ट्रांसक्रिप्ट का AI सारांश, प्रविष्टि विवरण में
+• नया: आइकन चुनने का पेज, समुदाय के छह डिज़ाइन सहित (पिन हो तो फिर पिन करें)
+• भाषा मॉडल के साथ चलती है: केवल समर्थित भाषाएँ, ज़बरदस्ती पर चेतावनी
+• ठीक किया: Whisper दूसरी भाषा के ऑडियो को ट्रांसक्रिब्ट करने की जगह अनुवाद कर रहा था
+• ठीक किया: कम मेमोरी या दूषित मॉडल पर अब साफ़ संदेश मिलता है, चुपचाप क्रैश नहीं
 
 संस्करण 1.11.3 में नया क्या है:
 
