@@ -15,10 +15,12 @@ import kotlin.math.sqrt
  * Calibrated per family (TASK-475): TRANSDUCER from the desktop VmHWM sweep
  * (Parakeet TDT, 2026-08-29: OVERHEAD ~ 888 MiB, rounded to 900; verified on
  * device 2026-09-09 at ~912 MiB); WHISPER from the RMX3853 measurement
- * 2026-09-10 (whisper-small 358 MB peaked at 2974 MiB total, ~2320 MiB
- * overhead: cross-attention is far heavier than a transducer's). The original
- * one-size 900 MiB under-protected the whisper family by 2.5x and would
- * false-block tiny on exactly the sub-2GB phones it serves.
+ * 2026-09-10 (whisper-small 358 MB peaked at 2974 MiB total,
+ * ~2322 MiB decode overhead after subtracting the model and app baseline:
+ * cross-attention is far heavier than a transducer's). The original one-size
+ * 900 MiB under-protected the whisper family by 2.5x; a one-size 2320 would
+ * false-block tiny on exactly the sub-2GB phones it serves, hence the
+ * size-scaled ratio.
  *
  * FRAME (TASK-472 review): the calibration compared peak RSS against PRE-load
  * free RAM. Callers here read availability AFTER the model is resident, so the
@@ -65,9 +67,6 @@ object TranscriptionMemoryPolicy {
     private const val TRANSDUCER_OVERHEAD_MIB = 900.0
     private const val WHISPER_OVERHEAD_RATIO = 6.5
 
-    /** Default for families without a measured overhead: the transducer value. */
-    internal val OVERHEAD_MIB = TRANSDUCER_OVERHEAD_MIB
-
     /** Quadratic attention growth per chunk-second squared (MiB/s^2). */
     internal const val K_MIB_PER_S2 = 0.030
 
@@ -86,8 +85,8 @@ object TranscriptionMemoryPolicy {
      * either input is unknown: the same fail-open stance as
      * [effectiveChunkSeconds] and the orchestrator's load pre-flight. TASK-472.
      *
-     * [modelSizeBytes] no longer enters the arithmetic (see the FRAME note above)
-     * but still gates fail-open: an unknown model size means an unknown picture.
+     * [modelSizeBytes] gates fail-open (unknown size, unknown picture) and,
+     * for the WHISPER family, scales the overhead (see Family.WHISPER).
      */
     fun canServeMinimumChunk(
         availableBytes: Long,

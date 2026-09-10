@@ -64,6 +64,9 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
 
     @Volatile private var configuredFamily: ModelFamily? = null
 
+    /** The loaded external record's family, for memory-policy dispatch (TASK-475). */
+    val memoryFamily: ModelFamily? get() = configuredFamily
+
     /** Test seam: sets the configured family without the full native init path. */
     @androidx.annotation.VisibleForTesting
     fun configureForTest(record: ExternalModelRecord) {

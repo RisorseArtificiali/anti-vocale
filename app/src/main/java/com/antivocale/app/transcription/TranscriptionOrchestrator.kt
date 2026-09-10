@@ -848,8 +848,14 @@ class TranscriptionOrchestrator @Inject constructor(
             // architecture: whisper's cross-attention needs ~2320 MiB vs a
             // transducer's ~900 (both calibrated on device). Unknown types
             // keep the conservative transducer value.
+            // Resolve from the BACKEND (not BundledCatalog: external imports
+            // carry external: ids absent from the built-in catalog). Built-in
+            // whisper backends are the known id; externals expose their family
+            // through the ExternalSherpaBackend's configured family.
             val memoryFamily = when {
-                BundledCatalog.byId(backend.id)?.modelType?.contains("whisper", ignoreCase = true) == true ->
+                backend.id == "whisper" -> TranscriptionMemoryPolicy.Family.WHISPER
+                backend is ExternalSherpaBackend &&
+                    backend.memoryFamily == com.antivocale.app.data.ModelFamily.WHISPER ->
                     TranscriptionMemoryPolicy.Family.WHISPER
                 else -> TranscriptionMemoryPolicy.Family.TRANSDUCER
             }
@@ -869,7 +875,7 @@ class TranscriptionOrchestrator @Inject constructor(
             ) {
                 // minimumDecodeBaselineBytes already carries the headroom:
                 // this IS the compared bar, byte for byte.
-                val requiredBytes = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes(memoryFamily)
+                val requiredBytes = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes(memoryFamily, modelSize)
                 Log.w(
                     TAG,
                     "Refusing ${backend.id}: post-load avail=${availBytes / MB}MB cannot hold " +
