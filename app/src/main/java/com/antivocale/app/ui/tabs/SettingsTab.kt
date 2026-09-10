@@ -822,18 +822,8 @@ fun SettingsTab(
                     SettingsDropdown(
                         currentValue = swipeActionMode,
                         options = PreferencesManager.SWIPE_ACTION_MODES,
-                        currentValueDisplay = when (swipeActionMode) {
-                            "REVEAL" -> stringResource(R.string.swipe_action_reveal)
-                            "IMMEDIATE_DELETE" -> stringResource(R.string.swipe_action_immediate_delete)
-                            else -> swipeActionMode
-                        },
-                        optionDisplay = { mode ->
-                            when (mode) {
-                                "REVEAL" -> stringResource(R.string.swipe_action_reveal)
-                                "IMMEDIATE_DELETE" -> stringResource(R.string.swipe_action_immediate_delete)
-                                else -> mode
-                            }
-                        },
+                        currentValueDisplay = swipeActionMode.swipeActionLabel(),
+                        optionDisplay = { mode -> mode.swipeActionLabel() },
                         onOptionSelected = { viewModel.saveSwipeActionMode(it) },
                         label = stringResource(R.string.swipe_action_title),
                         enabled = !uiState.isSaving

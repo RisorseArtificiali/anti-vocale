@@ -1385,7 +1385,7 @@ private fun LogEntryWithSwipe(
     compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS
 ) {
     val context = LocalContext.current
-    if (swipeActionMode == "REVEAL") {
+    if (SwipeActionMode.from(swipeActionMode) == SwipeActionMode.REVEAL) {
         val revealState = rememberSwipeToRevealState()
 
         LaunchedEffect(log.id, revealState.isRevealed) {
