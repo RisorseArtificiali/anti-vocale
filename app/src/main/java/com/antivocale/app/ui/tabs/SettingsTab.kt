@@ -1956,7 +1956,7 @@ private fun SummaryPromptCard(
     onSave = onSave,
     titleRes = R.string.summary_prompt_title,
     descriptionRes = R.string.summary_prompt_description,
-    placeholderRes = R.string.summary_prompt_placeholder,
+    placeholderRes = R.string.summary_default_prompt,
 )
 
 /**

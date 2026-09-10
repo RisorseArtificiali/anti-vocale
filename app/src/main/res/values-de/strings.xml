@@ -427,7 +427,6 @@
     <string name="punctuation_prompt_placeholder">Eingebauter Prompt</string>
     <string name="summary_prompt_title">Zusammenfassungsprompt</string>
     <string name="summary_prompt_description">Eigene Anweisung für die KI-Zusammenfassung. Leer verwendet den integrierten Standard (zwei bis drei Sätze).</string>
-    <string name="summary_prompt_placeholder">Integrierter Prompt</string>
     <string name="punctuation_default_prompt">Füge dieser Transkription Zeichensetzung und Großschreibung hinzu. Behalte jedes Wort genau wie geschrieben; korrigiere, übersetze, ergänze oder entferne nichts. Gib nur die korrigierte Transkription aus.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Lange Transkriptionen zusammenfassen</string>

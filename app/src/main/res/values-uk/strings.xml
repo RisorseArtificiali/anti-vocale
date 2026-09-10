@@ -460,7 +460,6 @@
     <string name="punctuation_prompt_placeholder">Вбудований промпт</string>
     <string name="summary_prompt_title">Промпт підсумку</string>
     <string name="summary_prompt_description">Власна інструкція для ШІ-підсумку. Порожньо означає вбудований промпт (два-три речення).</string>
-    <string name="summary_prompt_placeholder">Вбудований промпт</string>
     <string name="punctuation_default_prompt">Додай пунктуацію та великі літери до цієї розшифровки. Збережи кожне слово точно як написано; нічого не виправляй, не перекладай, не додавай і не видаляй. Виведи лише виправлену розшифровку.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Резюмувати довгі розшифровки</string>

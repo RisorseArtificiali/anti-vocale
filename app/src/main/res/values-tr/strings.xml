@@ -450,7 +450,6 @@
     <string name="punctuation_prompt_placeholder">Yerleşik istem</string>
     <string name="summary_prompt_title">Özet istemi</string>
     <string name="summary_prompt_description">Yapay zekâ özeti talimatını değiştirin. Boş bırakılırsa yerleşik istem (iki-üç cümle) kullanılır.</string>
-    <string name="summary_prompt_placeholder">Yerleşik istem</string>
     <string name="punctuation_default_prompt">Bu transkripte noktalama ve büyük harfler ekle. Her kelimeyi tam yazıldığı gibi koru; hiçbir şeyi düzeltme, çevirme, ekleme veya çıkarma. Yalnızca düzeltilmiş transkripti yaz.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Uzun transkriptleri özetle</string>

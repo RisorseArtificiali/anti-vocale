@@ -447,7 +447,6 @@
     <string name="punctuation_prompt_placeholder">Built-in prompt</string>
     <string name="summary_prompt_title">Summary prompt</string>
     <string name="summary_prompt_description">Override the AI summary instruction. Blank uses the built-in two-to-three-sentence prompt.</string>
-    <string name="summary_prompt_placeholder">Built-in prompt</string>
     <string name="punctuation_default_prompt">Add punctuation and capitalization to this transcript. Keep every word exactly as written; do not fix, translate, add, or remove anything. Output only the corrected transcript.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Summarize Long Transcriptions</string>

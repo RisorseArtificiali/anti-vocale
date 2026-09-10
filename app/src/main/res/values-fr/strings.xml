@@ -374,7 +374,6 @@
     <string name="punctuation_prompt_placeholder">Prompt intégré</string>
     <string name="summary_prompt_title">Invite du résumé</string>
     <string name="summary_prompt_description">Instruction personnalisée pour le résumé IA. Vide utilise l\'invite intégrée (deux ou trois phrases).</string>
-    <string name="summary_prompt_placeholder">Invite intégrée</string>
     <string name="punctuation_default_prompt">Ajoute la ponctuation et les majuscules à cette transcription. Garde chaque mot exactement comme écrit ; ne corrige, traduis, ajoute ni retire rien. Renvoie uniquement la transcription corrigée.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Résumer les longues transcriptions</string>
