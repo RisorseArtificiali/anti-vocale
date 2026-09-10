@@ -6,8 +6,12 @@
       "runtime": "offline",
       "modelType": "nemo_transducer",
       "family": "TRANSDUCER",
-      "display": { "resourceKey": "parakeet_name" },
-      "description": { "resourceKey": "parakeet_description" },
+      "display": {
+        "resourceKey": "parakeet_name"
+      },
+      "description": {
+        "resourceKey": "parakeet_description"
+      },
       "noteKey": "model_info_best_for_parakeet",
       "shareAlias": "com.antivocale.app.ShareParakeet",
       "storageDir": "parakeet-tdt",
@@ -15,27 +19,105 @@
         "defaultVariant": "smoothquant",
         "tailPadSeconds": 1,
         "chunkDurationSeconds": 60,
-        "metaKeys": ["vocab_size", "subsampling_factor", "model_type"]
+        "metaKeys": [
+          "vocab_size",
+          "subsampling_factor",
+          "model_type"
+        ]
       },
-      "languages": ["de", "en", "es", "fr", "it", "nl", "pl", "pt", "ro", "ru", "sv", "tr", "uk", "cs", "bg", "hr", "da", "fi", "el", "hu", "no", "sk", "sl", "et", "lv"],
+      "languages": [
+        "de",
+        "en",
+        "es",
+        "fr",
+        "it",
+        "nl",
+        "pl",
+        "pt",
+        "ro",
+        "ru",
+        "sv",
+        "tr",
+        "uk",
+        "cs",
+        "bg",
+        "hr",
+        "da",
+        "fi",
+        "el",
+        "hu",
+        "no",
+        "sk",
+        "sl",
+        "et",
+        "lv"
+      ],
       "variants": [
         {
           "name": "smoothquant",
-          "title": { "resourceKey": "parakeet_smoothquant_title" },
-          "description": { "resourceKey": "parakeet_smoothquant_description" },
+          "title": {
+            "resourceKey": "parakeet_smoothquant_title"
+          },
+          "description": {
+            "resourceKey": "parakeet_smoothquant_description"
+          },
           "dirName": "parakeet-tdt-0.6b-v3-smoothquant",
           "estimatedSizeMB": 862,
-          "source": { "kind": "huggingface", "repo": "pantinor/parakeet-tdt-0.6b-v3-smoothquant" },
-          "files": ["encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"]
+          "source": {
+            "kind": "huggingface",
+            "repo": "pantinor/parakeet-tdt-0.6b-v3-smoothquant"
+          },
+          "files": [
+            {
+              "name": "encoder.int8.onnx",
+              "sha256": "1db13b37849829eecce166bf2e1c7d4d334ceed9e3b9b95c515188dd870301ae"
+            },
+            {
+              "name": "decoder.int8.onnx",
+              "sha256": "0018457edb28af7715cfd86ae47a6d67775492d7d32de58a41e7aa09305121e1"
+            },
+            {
+              "name": "joiner.int8.onnx",
+              "sha256": "3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3"
+            },
+            {
+              "name": "tokens.txt",
+              "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d"
+            }
+          ]
         },
         {
           "name": "stock-int8",
-          "title": { "resourceKey": "parakeet_stock_title" },
-          "description": { "resourceKey": "parakeet_stock_description" },
+          "title": {
+            "resourceKey": "parakeet_stock_title"
+          },
+          "description": {
+            "resourceKey": "parakeet_stock_description"
+          },
           "dirName": "parakeet-tdt-0.6b-v3-int8",
           "estimatedSizeMB": 640,
-          "source": { "kind": "huggingface", "repo": "csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8" },
-          "files": ["encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"]
+          "source": {
+            "kind": "huggingface",
+            "repo": "csukuangfj/sherpa-onnx-nemo-parakeet-tdt-0.6b-v3-int8"
+          },
+          "files": [
+            {
+              "name": "encoder.int8.onnx",
+              "sha256": "acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247"
+            },
+            {
+              "name": "decoder.int8.onnx",
+              "sha256": "179e50c43d1a9de79c8a24149a2f9bac6eb5981823f2a2ed88d655b24248db4e"
+            },
+            {
+              "name": "joiner.int8.onnx",
+              "sha256": "3164c13fc2821009440d20fcb5fdc78bff28b4db2f8d0f0b329101719c0948b3"
+            },
+            {
+              "name": "tokens.txt",
+              "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d"
+            }
+          ]
         }
       ]
     },
@@ -44,8 +126,12 @@
       "runtime": "offline",
       "modelType": "whisper",
       "family": "ENCODER_DECODER",
-      "display": { "resourceKey": "whisper_title" },
-      "description": { "resourceKey": "whisper_description" },
+      "display": {
+        "resourceKey": "whisper_title"
+      },
+      "description": {
+        "resourceKey": "whisper_description"
+      },
       "speedComparison": true,
       "shareAlias": "com.antivocale.app.ShareWhisper",
       "storageDir": "whisper",
@@ -60,44 +146,396 @@
       "variants": [
         {
           "name": "turbo",
-          "title": { "resourceKey": "whisper_turbo_title" },
-          "description": { "resourceKey": "whisper_turbo_description" },
+          "title": {
+            "resourceKey": "whisper_turbo_title"
+          },
+          "description": {
+            "resourceKey": "whisper_turbo_description"
+          },
           "dirName": "sherpa-onnx-whisper-turbo",
           "estimatedSizeMB": 988,
-          "languages": ["af", "am", "ar", "as", "az", "ba", "be", "bg", "bn", "bo", "br", "bs", "ca", "cs", "cy", "da", "de", "el", "en", "eo", "es", "et", "eu", "fa", "fi", "fo", "fr", "gl", "gu", "ha", "haw", "he", "hi", "hr", "ht", "hu", "hy", "id", "is", "it", "ja", "jw", "ka", "kk", "km", "kn", "ko", "la", "lb", "ln", "lo", "lt", "lv", "mg", "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my", "ne", "nl", "nn", "no", "oc", "pa", "pl", "ps", "pt", "ro", "ru", "sa", "sd", "si", "sk", "sl", "sn", "so", "sq", "sr", "su", "sv", "sw", "ta", "te", "tg", "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz", "vi", "yi", "yo", "zh"],
-          "source": { "kind": "huggingface", "repo": "pantinor/sherpa-onnx-whisper-turbo" },
-          "files": ["turbo-encoder.int8.onnx", "turbo-decoder.int8.onnx", "turbo-tokens.txt"]
+          "languages": [
+            "af",
+            "am",
+            "ar",
+            "as",
+            "az",
+            "ba",
+            "be",
+            "bg",
+            "bn",
+            "bo",
+            "br",
+            "bs",
+            "ca",
+            "cs",
+            "cy",
+            "da",
+            "de",
+            "el",
+            "en",
+            "eo",
+            "es",
+            "et",
+            "eu",
+            "fa",
+            "fi",
+            "fo",
+            "fr",
+            "gl",
+            "gu",
+            "ha",
+            "haw",
+            "he",
+            "hi",
+            "hr",
+            "ht",
+            "hu",
+            "hy",
+            "id",
+            "is",
+            "it",
+            "ja",
+            "jw",
+            "ka",
+            "kk",
+            "km",
+            "kn",
+            "ko",
+            "la",
+            "lb",
+            "ln",
+            "lo",
+            "lt",
+            "lv",
+            "mg",
+            "mi",
+            "mk",
+            "ml",
+            "mn",
+            "mr",
+            "ms",
+            "mt",
+            "my",
+            "ne",
+            "nl",
+            "nn",
+            "no",
+            "oc",
+            "pa",
+            "pl",
+            "ps",
+            "pt",
+            "ro",
+            "ru",
+            "sa",
+            "sd",
+            "si",
+            "sk",
+            "sl",
+            "sn",
+            "so",
+            "sq",
+            "sr",
+            "su",
+            "sv",
+            "sw",
+            "ta",
+            "te",
+            "tg",
+            "th",
+            "tk",
+            "tl",
+            "tr",
+            "tt",
+            "ug",
+            "uk",
+            "ur",
+            "uz",
+            "vi",
+            "yi",
+            "yo",
+            "zh"
+          ],
+          "source": {
+            "kind": "huggingface",
+            "repo": "pantinor/sherpa-onnx-whisper-turbo"
+          },
+          "files": [
+            "turbo-encoder.int8.onnx",
+            "turbo-decoder.int8.onnx",
+            "turbo-tokens.txt"
+          ]
         },
         {
           "name": "medium",
-          "title": { "resourceKey": "whisper_medium_title" },
-          "description": { "resourceKey": "whisper_medium_description" },
+          "title": {
+            "resourceKey": "whisper_medium_title"
+          },
+          "description": {
+            "resourceKey": "whisper_medium_description"
+          },
           "dirName": "sherpa-onnx-whisper-medium",
           "estimatedSizeMB": 903,
-          "languages": ["af", "am", "ar", "as", "az", "ba", "be", "bg", "bn", "bo", "br", "bs", "ca", "cs", "cy", "da", "de", "el", "en", "eo", "es", "et", "eu", "fa", "fi", "fo", "fr", "gl", "gu", "ha", "haw", "he", "hi", "hr", "ht", "hu", "hy", "id", "is", "it", "ja", "jw", "ka", "kk", "km", "kn", "ko", "la", "lb", "ln", "lo", "lt", "lv", "mg", "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my", "ne", "nl", "nn", "no", "oc", "pa", "pl", "ps", "pt", "ro", "ru", "sa", "sd", "si", "sk", "sl", "sn", "so", "sq", "sr", "su", "sv", "sw", "ta", "te", "tg", "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz", "vi", "yi", "yo", "zh"],
-          "source": { "kind": "huggingface", "repo": "pantinor/sherpa-onnx-whisper-medium" },
-          "files": ["medium-encoder.int8.onnx", "medium-decoder.int8.onnx", "medium-tokens.txt"]
+          "languages": [
+            "af",
+            "am",
+            "ar",
+            "as",
+            "az",
+            "ba",
+            "be",
+            "bg",
+            "bn",
+            "bo",
+            "br",
+            "bs",
+            "ca",
+            "cs",
+            "cy",
+            "da",
+            "de",
+            "el",
+            "en",
+            "eo",
+            "es",
+            "et",
+            "eu",
+            "fa",
+            "fi",
+            "fo",
+            "fr",
+            "gl",
+            "gu",
+            "ha",
+            "haw",
+            "he",
+            "hi",
+            "hr",
+            "ht",
+            "hu",
+            "hy",
+            "id",
+            "is",
+            "it",
+            "ja",
+            "jw",
+            "ka",
+            "kk",
+            "km",
+            "kn",
+            "ko",
+            "la",
+            "lb",
+            "ln",
+            "lo",
+            "lt",
+            "lv",
+            "mg",
+            "mi",
+            "mk",
+            "ml",
+            "mn",
+            "mr",
+            "ms",
+            "mt",
+            "my",
+            "ne",
+            "nl",
+            "nn",
+            "no",
+            "oc",
+            "pa",
+            "pl",
+            "ps",
+            "pt",
+            "ro",
+            "ru",
+            "sa",
+            "sd",
+            "si",
+            "sk",
+            "sl",
+            "sn",
+            "so",
+            "sq",
+            "sr",
+            "su",
+            "sv",
+            "sw",
+            "ta",
+            "te",
+            "tg",
+            "th",
+            "tk",
+            "tl",
+            "tr",
+            "tt",
+            "ug",
+            "uk",
+            "ur",
+            "uz",
+            "vi",
+            "yi",
+            "yo",
+            "zh"
+          ],
+          "source": {
+            "kind": "huggingface",
+            "repo": "pantinor/sherpa-onnx-whisper-medium"
+          },
+          "files": [
+            "medium-encoder.int8.onnx",
+            "medium-decoder.int8.onnx",
+            "medium-tokens.txt"
+          ]
         },
         {
           "name": "small",
-          "title": { "resourceKey": "whisper_small_title" },
-          "description": { "resourceKey": "whisper_small_description" },
+          "title": {
+            "resourceKey": "whisper_small_title"
+          },
+          "description": {
+            "resourceKey": "whisper_small_description"
+          },
           "dirName": "sherpa-onnx-whisper-small",
           "estimatedSizeMB": 358,
-          "languages": ["af", "am", "ar", "as", "az", "ba", "be", "bg", "bn", "bo", "br", "bs", "ca", "cs", "cy", "da", "de", "el", "en", "eo", "es", "et", "eu", "fa", "fi", "fo", "fr", "gl", "gu", "ha", "haw", "he", "hi", "hr", "ht", "hu", "hy", "id", "is", "it", "ja", "jw", "ka", "kk", "km", "kn", "ko", "la", "lb", "ln", "lo", "lt", "lv", "mg", "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my", "ne", "nl", "nn", "no", "oc", "pa", "pl", "ps", "pt", "ro", "ru", "sa", "sd", "si", "sk", "sl", "sn", "so", "sq", "sr", "su", "sv", "sw", "ta", "te", "tg", "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz", "vi", "yi", "yo", "zh"],
-          "source": { "kind": "huggingface", "repo": "pantinor/sherpa-onnx-whisper-small" },
-          "files": ["small-encoder.int8.onnx", "small-decoder.int8.onnx", "small-tokens.txt"]
+          "languages": [
+            "af",
+            "am",
+            "ar",
+            "as",
+            "az",
+            "ba",
+            "be",
+            "bg",
+            "bn",
+            "bo",
+            "br",
+            "bs",
+            "ca",
+            "cs",
+            "cy",
+            "da",
+            "de",
+            "el",
+            "en",
+            "eo",
+            "es",
+            "et",
+            "eu",
+            "fa",
+            "fi",
+            "fo",
+            "fr",
+            "gl",
+            "gu",
+            "ha",
+            "haw",
+            "he",
+            "hi",
+            "hr",
+            "ht",
+            "hu",
+            "hy",
+            "id",
+            "is",
+            "it",
+            "ja",
+            "jw",
+            "ka",
+            "kk",
+            "km",
+            "kn",
+            "ko",
+            "la",
+            "lb",
+            "ln",
+            "lo",
+            "lt",
+            "lv",
+            "mg",
+            "mi",
+            "mk",
+            "ml",
+            "mn",
+            "mr",
+            "ms",
+            "mt",
+            "my",
+            "ne",
+            "nl",
+            "nn",
+            "no",
+            "oc",
+            "pa",
+            "pl",
+            "ps",
+            "pt",
+            "ro",
+            "ru",
+            "sa",
+            "sd",
+            "si",
+            "sk",
+            "sl",
+            "sn",
+            "so",
+            "sq",
+            "sr",
+            "su",
+            "sv",
+            "sw",
+            "ta",
+            "te",
+            "tg",
+            "th",
+            "tk",
+            "tl",
+            "tr",
+            "tt",
+            "ug",
+            "uk",
+            "ur",
+            "uz",
+            "vi",
+            "yi",
+            "yo",
+            "zh"
+          ],
+          "source": {
+            "kind": "huggingface",
+            "repo": "pantinor/sherpa-onnx-whisper-small"
+          },
+          "files": [
+            "small-encoder.int8.onnx",
+            "small-decoder.int8.onnx",
+            "small-tokens.txt"
+          ]
         },
         {
           "name": "distil-large-v3-it",
-          "title": { "resourceKey": "whisper_distil_large_v3_title" },
-          "description": { "resourceKey": "whisper_distil_large_v3_description" },
+          "title": {
+            "resourceKey": "whisper_distil_large_v3_title"
+          },
+          "description": {
+            "resourceKey": "whisper_distil_large_v3_description"
+          },
           "badgeKey": "best_italian_badge",
           "dirName": "sherpa-onnx-whisper-distil-large-v3-it",
           "estimatedSizeMB": 938,
-          "languages": ["it"],
-          "source": { "kind": "huggingface", "repo": "pantinor/sherpa-onnx-whisper-distil-large-v3-it" },
-          "files": ["distil-large-v3-it-encoder.int8.onnx", "distil-large-v3-it-decoder.int8.onnx", "distil-large-v3-it-tokens.txt"]
+          "languages": [
+            "it"
+          ],
+          "source": {
+            "kind": "huggingface",
+            "repo": "pantinor/sherpa-onnx-whisper-distil-large-v3-it"
+          },
+          "files": [
+            "distil-large-v3-it-encoder.int8.onnx",
+            "distil-large-v3-it-decoder.int8.onnx",
+            "distil-large-v3-it-tokens.txt"
+          ]
         }
       ]
     },
@@ -106,8 +544,12 @@
       "runtime": "offline",
       "modelType": "qwen3_asr",
       "family": "ENCODER_ONLY_CTC",
-      "display": { "resourceKey": "qwen3_asr_title" },
-      "description": { "resourceKey": "qwen3_asr_description" },
+      "display": {
+        "resourceKey": "qwen3_asr_title"
+      },
+      "description": {
+        "resourceKey": "qwen3_asr_description"
+      },
       "shareAlias": "com.antivocale.app.ShareQwen3",
       "storageDir": "qwen3-asr",
       "flags": {
@@ -117,16 +559,90 @@
         "chunkDurationSeconds": 30,
         "maxAudioDurationSeconds": 30
       },
-      "languages": ["af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "cs", "cy", "da", "de", "el", "en", "es", "et", "eu", "fa", "fi", "fr", "gl", "gu", "he", "hi", "hr", "hu", "id", "it", "ja", "jv", "ka", "kk", "ko", "lt", "lv", "mk", "ml", "ms", "nl", "no", "pl", "pt", "ro", "ru", "sk", "sl", "sq", "sr", "sv", "sw", "ta", "th", "tr", "uk", "ur", "uz", "vi", "zh"],
+      "languages": [
+        "af",
+        "am",
+        "ar",
+        "az",
+        "be",
+        "bg",
+        "bn",
+        "bs",
+        "ca",
+        "cs",
+        "cy",
+        "da",
+        "de",
+        "el",
+        "en",
+        "es",
+        "et",
+        "eu",
+        "fa",
+        "fi",
+        "fr",
+        "gl",
+        "gu",
+        "he",
+        "hi",
+        "hr",
+        "hu",
+        "id",
+        "it",
+        "ja",
+        "jv",
+        "ka",
+        "kk",
+        "ko",
+        "lt",
+        "lv",
+        "mk",
+        "ml",
+        "ms",
+        "nl",
+        "no",
+        "pl",
+        "pt",
+        "ro",
+        "ru",
+        "sk",
+        "sl",
+        "sq",
+        "sr",
+        "sv",
+        "sw",
+        "ta",
+        "th",
+        "tr",
+        "uk",
+        "ur",
+        "uz",
+        "vi",
+        "zh"
+      ],
       "variants": [
         {
           "name": "0.6b-int8",
-          "title": { "resourceKey": "qwen3_asr_0_6b_title" },
-          "description": { "resourceKey": "qwen3_asr_0_6b_description" },
+          "title": {
+            "resourceKey": "qwen3_asr_0_6b_title"
+          },
+          "description": {
+            "resourceKey": "qwen3_asr_0_6b_description"
+          },
           "dirName": "sherpa-onnx-qwen3-asr-0.6b-int8",
           "estimatedSizeMB": 938,
-          "source": { "kind": "huggingface", "repo": "pantinor/sherpa-onnx-qwen3-asr-0.6b-int8" },
-          "files": ["conv_frontend.onnx", "encoder.int8.onnx", "decoder.int8.onnx", "tokenizer/merges.txt", "tokenizer/tokenizer_config.json", "tokenizer/vocab.json"]
+          "source": {
+            "kind": "huggingface",
+            "repo": "pantinor/sherpa-onnx-qwen3-asr-0.6b-int8"
+          },
+          "files": [
+            "conv_frontend.onnx",
+            "encoder.int8.onnx",
+            "decoder.int8.onnx",
+            "tokenizer/merges.txt",
+            "tokenizer/tokenizer_config.json",
+            "tokenizer/vocab.json"
+          ]
         }
       ]
     },
@@ -135,24 +651,86 @@
       "runtime": "online",
       "modelType": "",
       "family": "TRANSDUCER",
-      "display": { "resourceKey": "nemotron_name" },
-      "description": { "resourceKey": "nemotron_description" },
+      "display": {
+        "resourceKey": "nemotron_name"
+      },
+      "description": {
+        "resourceKey": "nemotron_description"
+      },
       "shareAlias": "com.antivocale.app.ShareNemotron",
       "storageDir": "nemotron",
       "flags": {
         "languageOption": true,
         "tailPadSeconds": 1.5,
-        "metaKeys": ["vocab_size"]
+        "metaKeys": [
+          "vocab_size"
+        ]
       },
-      "languages": ["en", "es", "zh", "hi", "ar", "fr", "de", "ja", "ru", "pt", "ko", "it", "nl", "pl", "tr", "uk", "ro", "el", "cs", "hu", "sv", "da", "fi", "no", "sk", "hr", "bg", "lt", "th", "vi", "id", "ms", "bn", "ur", "fa", "ta", "sw", "af", "et", "lv", "sl", "he", "az", "ka", "uz"],
+      "languages": [
+        "en",
+        "es",
+        "zh",
+        "hi",
+        "ar",
+        "fr",
+        "de",
+        "ja",
+        "ru",
+        "pt",
+        "ko",
+        "it",
+        "nl",
+        "pl",
+        "tr",
+        "uk",
+        "ro",
+        "el",
+        "cs",
+        "hu",
+        "sv",
+        "da",
+        "fi",
+        "no",
+        "sk",
+        "hr",
+        "bg",
+        "lt",
+        "th",
+        "vi",
+        "id",
+        "ms",
+        "bn",
+        "ur",
+        "fa",
+        "ta",
+        "sw",
+        "af",
+        "et",
+        "lv",
+        "sl",
+        "he",
+        "az",
+        "ka",
+        "uz"
+      ],
       "variants": [
         {
           "name": "1120ms-int8",
-          "title": { "resourceKey": "nemotron_name" },
+          "title": {
+            "resourceKey": "nemotron_name"
+          },
           "dirName": "nemotron-3.5-asr-streaming-0.6b-1120ms-int8",
           "estimatedSizeMB": 640,
-          "source": { "kind": "huggingface", "repo": "csukuangfj2/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-1120ms-int8-2026-06-11" },
-          "files": ["encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt"]
+          "source": {
+            "kind": "huggingface",
+            "repo": "csukuangfj2/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-1120ms-int8-2026-06-11"
+          },
+          "files": [
+            "encoder.int8.onnx",
+            "decoder.int8.onnx",
+            "joiner.int8.onnx",
+            "tokens.txt"
+          ]
         }
       ]
     },
@@ -161,8 +739,12 @@
       "runtime": "offline",
       "modelType": "nemo_transducer",
       "family": "TRANSDUCER",
-      "display": { "resourceKey": "gigaam_name" },
-      "description": { "resourceKey": "gigaam_description" },
+      "display": {
+        "resourceKey": "gigaam_name"
+      },
+      "description": {
+        "resourceKey": "gigaam_description"
+      },
       "noteKey": "model_info_best_for_gigaam",
       "shareAlias": "com.antivocale.app.ShareGigaam",
       "storageDir": "gigaam-v3",
@@ -170,21 +752,44 @@
         "tailPadSeconds": 1,
         "chunkDurationSeconds": 30,
         "maxAudioDurationSeconds": 200,
-        "metaKeys": ["vocab_size", "subsampling_factor", "model_type"]
+        "metaKeys": [
+          "vocab_size",
+          "subsampling_factor",
+          "model_type"
+        ]
       },
-      "languages": ["ru"],
+      "languages": [
+        "ru"
+      ],
       "variants": [
         {
           "name": "v3",
-          "title": { "resourceKey": "gigaam_name" },
+          "title": {
+            "resourceKey": "gigaam_name"
+          },
           "dirName": "gigaam-v3",
           "estimatedSizeMB": 326,
-          "source": { "kind": "huggingface", "repo": "pantinor/gigaam-v3" },
+          "source": {
+            "kind": "huggingface",
+            "repo": "pantinor/gigaam-v3"
+          },
           "files": [
-            { "name": "gigaam_v3_e2e_rnnt_encoder_int8.onnx", "sha256": "2cac62d0c270bd128f898f2be1a2d34780d524a6e9483888ebac7b00f97410f1" },
-            { "name": "gigaam_v3_e2e_rnnt_decoder.onnx", "sha256": "781971998e6a355d6a714f6932a30eab295e7ba0d14fd7e0f78c83b87e811860" },
-            { "name": "gigaam_v3_e2e_rnnt_joint.onnx", "sha256": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c" },
-            { "name": "gigaam_v3_e2e_rnnt_tokens.txt", "sha256": "7ddf22514c42c531358182c81446a8159771e9921019f09ae743ea622d40221d" }
+            {
+              "name": "gigaam_v3_e2e_rnnt_encoder_int8.onnx",
+              "sha256": "2cac62d0c270bd128f898f2be1a2d34780d524a6e9483888ebac7b00f97410f1"
+            },
+            {
+              "name": "gigaam_v3_e2e_rnnt_decoder.onnx",
+              "sha256": "781971998e6a355d6a714f6932a30eab295e7ba0d14fd7e0f78c83b87e811860"
+            },
+            {
+              "name": "gigaam_v3_e2e_rnnt_joint.onnx",
+              "sha256": "602ff7017a93311aad34df1437c8d7f49911353c13d6eae7a6ee7b041339465c"
+            },
+            {
+              "name": "gigaam_v3_e2e_rnnt_tokens.txt",
+              "sha256": "7ddf22514c42c531358182c81446a8159771e9921019f09ae743ea622d40221d"
+            }
           ]
         }
       ]
