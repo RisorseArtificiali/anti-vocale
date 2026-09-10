@@ -218,6 +218,7 @@
     <string name="transcription_partial_chip">Неполная</string>
     <string name="transcription_failed">Не удалось выполнить распознавание</string>
     <string name="error_model_load">Файл модели может быть повреждён или иметь неверный формат. Попробуйте скачать его заново на вкладке «Модель».</string>
+    <string name="error_model_corrupt_healed">Некоторые файлы модели оказались повреждены и были удалены. Откройте вкладку Модели и скачайте модель заново.</string>
     <string name="error_native">Во время распознавания произошла внутренняя ошибка. Если это повторяется, попробуйте другую модель.</string>
     <string name="error_not_initialized">Модель не загружена. Откройте вкладку «Модель», чтобы скачать или выбрать модель.</string>
     <string name="error_model_unavailable">Выбранная модель больше недоступна. Откройте вкладку «Модель» и выберите другую.</string>

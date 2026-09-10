@@ -228,6 +228,7 @@
     <string name="transcription_partial_chip">Неповна</string>
     <string name="transcription_failed">Розшифровка не вдалася</string>
     <string name="error_model_load">Файл моделі може бути пошкоджений або мати хибний формат. Спробуйте завантажити його знову на вкладці «Модель».</string>
+    <string name="error_model_corrupt_healed">Деякі файли моделі були пошкоджені, і їх видалено. Відкрийте вкладку Моделі та завантажте модель знову.</string>
     <string name="error_native">Під час розшифровки сталася внутрішня помилка. Якщо це повторюється, спробуйте іншу модель.</string>
     <string name="error_not_initialized">Модель не завантажено. Відкрийте вкладку «Модель», щоб завантажити або вибрати модель.</string>
     <string name="error_model_unavailable">Вибрана модель більше недоступна. Відкрийте вкладку «Модель» і виберіть іншу.</string>

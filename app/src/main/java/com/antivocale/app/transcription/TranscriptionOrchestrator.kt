@@ -78,7 +78,14 @@ class TranscriptionOrchestrator @Inject constructor(
         internal fun userFacingErrorMessage(context: Context, error: Throwable): String {
             return when (error) {
                 is TranscriptionException.ModelLoadError ->
-                    context.getString(R.string.error_model_load)
+                    // The heal path (TASK-479) carries the actionable
+                    // "corrupt files removed, re-download" instruction;
+                    // every other load error keeps the generic string.
+                    if (error.message?.startsWith("corrupt model files") == true) {
+                        context.getString(R.string.error_model_corrupt_healed)
+                    } else {
+                        context.getString(R.string.error_model_load)
+                    }
                 is TranscriptionException.InsufficientMemory ->
                     // The exception already carries the localized low-memory message with the
                     // measured numbers; surface it directly instead of the generic model-load string.

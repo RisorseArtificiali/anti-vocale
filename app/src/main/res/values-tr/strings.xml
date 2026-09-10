@@ -222,6 +222,7 @@
     <string name="transcription_partial_chip">Eksik</string>
     <string name="transcription_failed">Metin çıkarma başarısız</string>
     <string name="error_model_load">Model dosyası bozuk veya yanlış biçimde olabilir. Model sekmesinden yeniden indirmeyi deneyin.</string>
+    <string name="error_model_corrupt_healed">Modelin bazı dosyaları bozuktu ve kaldırıldı. Modeller sekmesini açıp modeli yeniden indirin.</string>
     <string name="error_native">Metin çıkarma sırasında bir iç hata oluştu. Sorun sürerse farklı bir model deneyin.</string>
     <string name="error_not_initialized">Yüklü model yok. Model sekmesini açıp bir model indirin veya seçin.</string>
     <string name="error_model_unavailable">Seçili model artık kullanılamıyor. Model sekmesini açıp başka bir model seçin.</string>

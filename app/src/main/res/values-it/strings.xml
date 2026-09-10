@@ -219,6 +219,7 @@
     <string name="transcription_partial_chip">Incompleta</string>
     <string name="transcription_failed">Trascrizione fallita</string>
     <string name="error_model_load">Il file del modello potrebbe essere danneggiato o in un formato errato. Prova a scaricarlo di nuovo dalla scheda Modello.</string>
+    <string name="error_model_corrupt_healed">Alcuni file del modello erano danneggiati e sono stati rimossi. Apri la scheda Modelli e scarica di nuovo il modello.</string>
     <string name="error_native">Si è verificato un errore interno durante la trascrizione. Se persiste, prova un modello diverso.</string>
     <string name="error_not_initialized">Nessun modello caricato. Apri la scheda Modello per scaricarne o selezionarne uno.</string>
     <string name="error_model_unavailable">Il modello selezionato non è più disponibile. Apri la scheda Modello e selezionane un altro.</string>

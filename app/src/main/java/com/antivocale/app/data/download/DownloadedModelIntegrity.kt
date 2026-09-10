@@ -4,7 +4,8 @@ import java.io.File
 
 /**
  * TASK-305: structural post-download validation, the fallback layer under the
- * SHA-256 pins. Most catalog variants ship no checksums (only GigaAM pins them),
+ * SHA-256 pins. GigaAM and both Parakeet variants pin their files; the
+ * remaining variants ship no checksums,
  * so a truncated/corrupt download previously surfaced later as an opaque native
  * model-format error inside OfflineRecognizer. These checks catch it at download
  * time with an actionable message.

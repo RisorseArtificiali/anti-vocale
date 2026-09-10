@@ -387,6 +387,11 @@ class SherpaBackend(
         // actual installed variant, not the default.
         val variant = entry.variantForDirName(dir.name)
         val fileNames = variant.files.map { it.name }
+        // TASK-479 review F1: heal pins only against the variant that ACTUALLY
+        // lives in this dir. variantForDirName falls back to the default on an
+        // unknown dir name; hashing the default's pins against a different
+        // variant's files would delete a healthy install on any pin refresh.
+        val variantMatchesDir = variant.dirName == dir.name
 
         // Completeness: every catalog file must be present (ONNX via .size sidecar).
         if (!CatalogModelValidator.isValidModelDir(dir, fileNames)) {
@@ -428,7 +433,7 @@ class SherpaBackend(
             // files the catalog pins. Failed files are removed with their
             // sidecars so the next attempt is a clean re-download, not
             // another abort.
-            val integrityFailures = ModelDirIntegrity.verify(dir, variant)
+            val integrityFailures = ModelDirIntegrity.verify(dir, variant, verifyPins = variantMatchesDir)
             if (integrityFailures.isNotEmpty()) {
                 Log.e(TAG, "Corrupt model files in $modelDirectory: " +
                     integrityFailures.joinToString { "${it.file.name} (${it.reason})" } +

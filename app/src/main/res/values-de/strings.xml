@@ -209,6 +209,7 @@
     <string name="transcription_partial_chip">Unvollständig</string>
     <string name="transcription_failed">Transkription fehlgeschlagen</string>
     <string name="error_model_load">Die Modelldatei ist möglicherweise beschädigt oder hat das falsche Format. Lade sie im Tab \"Modell\" erneut herunter.</string>
+    <string name="error_model_corrupt_healed">Einige Modelldateien waren beschädigt und wurden entfernt. Öffne den Tab Modelle und lade das Modell erneut herunter.</string>
     <string name="error_native">Beim Transkribieren ist ein interner Fehler aufgetreten. Falls das öfter passiert, versuche ein anderes Modell.</string>
     <string name="error_not_initialized">Kein Modell geladen. Öffne den Tab \"Modell\", um eines herunterzuladen oder auszuwählen.</string>
     <string name="error_model_unavailable">Das ausgewählte Modell ist nicht mehr verfügbar. Öffne den Tab \"Modell\" und wähle ein anderes.</string>

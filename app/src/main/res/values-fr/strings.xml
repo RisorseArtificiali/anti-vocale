@@ -178,6 +178,7 @@
     <string name="transcription_partial_chip">Incomplète</string>
     <string name="transcription_failed">Échec de la transcription</string>
     <string name="error_model_load">Le fichier du modèle est peut-être corrompu ou dans un mauvais format. Re-téléchargez-le depuis l\'onglet Modèle.</string>
+    <string name="error_model_corrupt_healed">Certains fichiers du modèle étaient corrompus et ont été supprimés. Onglet Modèles, télécharge à nouveau le modèle.</string>
     <string name="error_native">Une erreur interne s\'est produite pendant la transcription. Si cela persiste, essayez un autre modèle.</string>
     <string name="error_not_initialized">Aucun modèle chargé. Ouvrez l\'onglet Modèle pour en télécharger ou sélectionner un.</string>
     <string name="error_model_unavailable">Le modèle sélectionné n\'est plus disponible. Ouvrez l\'onglet Modèle et choisissez-en un autre.</string>

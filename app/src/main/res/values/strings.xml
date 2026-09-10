@@ -219,6 +219,7 @@
     <string name="transcription_partial_chip">Incomplete</string>
     <string name="transcription_failed">Transcription failed</string>
     <string name="error_model_load">The model file may be corrupt or the wrong format. Try re-downloading it from the Model tab.</string>
+    <string name="error_model_corrupt_healed">Some model files were corrupt, so the app removed them. Open the Models tab and download the model again.</string>
     <string name="error_native">An internal error occurred during transcription. If this persists, try a different model.</string>
     <string name="error_not_initialized">No model is loaded. Open the Model tab to download or select one.</string>
     <string name="error_model_unavailable">The selected model is no longer available. Open the Model tab and select another one.</string>

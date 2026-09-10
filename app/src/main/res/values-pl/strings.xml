@@ -226,6 +226,7 @@
     <string name="transcription_partial_chip">Niekompletna</string>
     <string name="transcription_failed">Transkrypcja nie powiodła się</string>
     <string name="error_model_load">Plik modelu może być uszkodzony lub w złym formacie. Spróbuj pobrać go ponownie z karty Model.</string>
+    <string name="error_model_corrupt_healed">Niektóre pliki modelu były uszkodzone i zostały usunięte. Otwórz zakładkę Modele i pobierz model ponownie.</string>
     <string name="error_native">Wystąpił błąd wewnętrzny podczas transkrypcji. Jeśli się powtarza, spróbuj innego modelu.</string>
     <string name="error_not_initialized">Nie wczytano żadnego modelu. Otwórz kartę Model, aby pobrać lub wybrać model.</string>
     <string name="error_model_unavailable">Wybrany model nie jest już dostępny. Otwórz kartę Model i wybierz inny.</string>

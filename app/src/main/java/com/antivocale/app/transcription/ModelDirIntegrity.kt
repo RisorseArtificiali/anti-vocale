@@ -13,7 +13,7 @@ import java.io.File
  * corruption: a file whose length matches the sidecar but whose bytes are
  * garbage (interrupted write, bit rot, a bad resume) reaches the native
  * OfflineRecognizer, which aborts the whole process with "Protobuf parsing
- * failed" - and every retry re-aborts on the same file. This object adds the
+ * failed", and every retry re-aborts on the same file. This object adds the
  * content layer on top:
  *
  * - structural checks for every file (ONNX header byte, size floors), shared
@@ -36,10 +36,15 @@ object ModelDirIntegrity {
      * here; their existence is the completeness layer's job
      * ([CatalogModelValidator]).
      */
-    fun verify(dir: File, variant: CatalogVariant): List<Failure> {
-        val structural = DownloadedModelIntegrity.validate(dir).map {
-            Failure(it.file, it.reason)
-        }
+    fun verify(dir: File, variant: CatalogVariant, verifyPins: Boolean = true): List<Failure> {
+        val structural = runCatching {
+            DownloadedModelIntegrity.validate(dir)
+        }.getOrElse { e ->
+            // An unreadable dir at load time is a completeness failure, not a
+            // crash out of the Result contract (review F5).
+            return listOf(Failure(dir, "unreadable: ${e.message}"))
+        }.map { Failure(it.file, it.reason) }
+        if (!verifyPins) return structural.distinctBy { it.file.path }
         val pinned = variant.files
             .filter { it.sha256 != null }
             .mapNotNull { catalogFile ->
@@ -51,7 +56,7 @@ object ModelDirIntegrity {
                     Failure(onDisk, "SHA-256 mismatch (pinned ${catalogFile.sha256})")
                 } else null
             }
-        return structural + pinned
+        return (structural + pinned).distinctBy { it.file.path }
     }
 
     /**
