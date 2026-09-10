@@ -80,6 +80,14 @@
       ],
       "family": "CANARY",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-french.json"
+    },
+    {
+      "name": "Whisper Tiny multilingual (sherpa int8, low-RAM)",
+      "languages": [
+        "multilingual"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/whisper-tiny.json"
     }
   ]
 }

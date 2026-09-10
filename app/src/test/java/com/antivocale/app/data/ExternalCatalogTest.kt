@@ -137,7 +137,7 @@ class ExternalCatalogTest {
         // + german whisper (TASK-404, primeline re-export)
         // + canary flash per language en/de/es/fr (TASK-408, renamed from
         // "NeMo Flash" to NVIDIA's canonical family naming)
-        assertEquals(10, entries.size)
+        assertEquals(11, entries.size)
         val arabic = ExternalCatalog.filter(entries, "arabic")
         assertEquals(1, arabic.size)
         val byCode = ExternalCatalog.filter(entries, "ar")

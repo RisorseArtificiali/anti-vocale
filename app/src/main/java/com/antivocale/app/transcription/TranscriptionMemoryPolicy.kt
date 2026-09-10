@@ -10,22 +10,23 @@ import kotlin.math.sqrt
  * self-attention cost grows with the SQUARE of chunk length and the ONNX graph
  * materializes it, so peak RSS during one chunk's decode is approximately
  *
- *     peak(T) = modelSize + OVERHEAD_MIB + K_MIB_PER_S2 * T^2
+ *     peak(T) = modelSize + familyOverhead + K_MIB_PER_S2 * T^2
  *
- * Calibrated 2026-08-29 from the desktop VmHWM sweep (Parakeet stock int8, 4 threads,
- * one process per duration): measured peak 120s = 1946 MiB, 366s = 5226 MiB with a
- * 640 MiB model, giving OVERHEAD ~ 888 MiB and K ~ 0.028 MiB/s^2; both rounded
- * conservative here. The sweep context: a 6:06 single-pass file (Parakeet's former
- * 380s catalog cap meant one whole-file pass) killed an 8GB phone system-wide
- * (GH #44), while 30s voice messages cost nothing above the loaded-model baseline.
+ * Calibrated per family (TASK-475): TRANSDUCER from the desktop VmHWM sweep
+ * (Parakeet TDT, 2026-08-29: OVERHEAD ~ 888 MiB, rounded to 900; verified on
+ * device 2026-09-09 at ~912 MiB); WHISPER from the RMX3853 measurement
+ * 2026-09-10 (whisper-small 358 MB peaked at 2974 MiB total, ~2320 MiB
+ * overhead: cross-attention is far heavier than a transducer's). The original
+ * one-size 900 MiB under-protected the whisper family by 2.5x and would
+ * false-block tiny on exactly the sub-2GB phones it serves.
  *
- * FRAME (TASK-472 review): the calibration compared peak RSS against PRE-load free
- * RAM. Callers here read availability AFTER the model is resident, so the model
- * term must NOT re-enter the comparison (post-load avail + already-resident model
- * = pre-load avail): every predicate in this object therefore works on the
- * DECODE-side delta alone, [OVERHEAD_MIB] plus the attention term. The original
- * model-inclusive comparison double-counted the model and over-tightened every
- * cap on starved devices; with TASK-472 turning the starved case into a
+ * FRAME (TASK-472 review): the calibration compared peak RSS against PRE-load
+ * free RAM. Callers here read availability AFTER the model is resident, so the
+ * model term must NOT re-enter the comparison (post-load avail + already-resident
+ * model = pre-load avail): every predicate in this object therefore works on the
+ * DECODE-side delta alone, the family overhead plus the attention term. The
+ * original model-inclusive comparison double-counted the model and over-tightened
+ * every cap on starved devices; with TASK-472 turning the starved case into a
  * user-visible refusal, the double count became a false-refusal band.
  *
  * The policy only TIGHTENS the catalog cap; it never raises it. Devices with ample
@@ -37,8 +38,35 @@ import kotlin.math.sqrt
  */
 object TranscriptionMemoryPolicy {
 
-    /** Interpreter + arena + audio buffers beyond the model files themselves (MiB). */
-    internal const val OVERHEAD_MIB = 900.0
+    /**
+     * Interpreter + arena + audio buffers beyond the model files, per model
+     * family (MiB). See the class KDoc for each family's calibration.
+     */
+    enum class Family {
+        /** Roughly constant across transducer sizes (measured at 640 and 326 MB). */
+        TRANSDUCER {
+            override fun overheadMiB(modelSizeMiB: Double) = TRANSDUCER_OVERHEAD_MIB
+        },
+        /**
+         * Scales with model size: whisper-small (358 MB) measured at ~2320 MiB
+         * overhead on the RMX3853 (ratio ~6.5x), the cross-attention cost
+         * scaling with the model dimension squared. Tiny (103 MB) lands at
+         * ~670 MiB, matching the reporter's sub-2GB success. The floor
+         * prevents a degenerate 0 MB model from having no overhead.
+         */
+        WHISPER {
+            override fun overheadMiB(modelSizeMiB: Double) =
+                maxOf(600.0, modelSizeMiB * WHISPER_OVERHEAD_RATIO)
+        };
+
+        abstract fun overheadMiB(modelSizeMiB: Double): Double
+    }
+
+    private const val TRANSDUCER_OVERHEAD_MIB = 900.0
+    private const val WHISPER_OVERHEAD_RATIO = 6.5
+
+    /** Default for families without a measured overhead: the transducer value. */
+    internal val OVERHEAD_MIB = TRANSDUCER_OVERHEAD_MIB
 
     /** Quadratic attention growth per chunk-second squared (MiB/s^2). */
     internal const val K_MIB_PER_S2 = 0.030
@@ -61,9 +89,13 @@ object TranscriptionMemoryPolicy {
      * [modelSizeBytes] no longer enters the arithmetic (see the FRAME note above)
      * but still gates fail-open: an unknown model size means an unknown picture.
      */
-    fun canServeMinimumChunk(availableBytes: Long, modelSizeBytes: Long): Boolean? {
+    fun canServeMinimumChunk(
+        availableBytes: Long,
+        modelSizeBytes: Long,
+        family: Family = Family.TRANSDUCER,
+    ): Boolean? {
         if (availableBytes <= 0 || modelSizeBytes <= 0) return null
-        return decodeFits(availableBytes, minimumDecodeBaselineMiB())
+        return decodeFits(availableBytes, minimumDecodeBaselineMiB(family, modelSizeBytes))
     }
 
     /**
@@ -71,16 +103,22 @@ object TranscriptionMemoryPolicy {
      * Fails open to [catalogCapSeconds] when either memory input is unknown (0),
      * mirroring the load pre-flight's fail-open stance.
      */
-    fun effectiveChunkSeconds(availableBytes: Long, modelSizeBytes: Long, catalogCapSeconds: Int): Int {
+    fun effectiveChunkSeconds(
+        availableBytes: Long,
+        modelSizeBytes: Long,
+        catalogCapSeconds: Int,
+        family: Family = Family.TRANSDUCER,
+    ): Int {
         if (availableBytes <= 0 || modelSizeBytes <= 0) return catalogCapSeconds
         // The floor can never exceed the catalog cap: families below the 30s
         // floor exist (canary caps at 10s, TASK-408) and coerceIn(min, max)
         // throws when min > max; a starved device must clamp to the family's
         // own cap, not to 30s of degenerate decode.
         val floor = minOf(MIN_CHUNK_SECONDS, catalogCapSeconds)
-        if (!decodeFits(availableBytes, OVERHEAD_MIB)) return floor
+        val overhead = family.overheadMiB(modelSizeBytes / (1024.0 * 1024.0))
+        if (!decodeFits(availableBytes, overhead)) return floor
         val budgetMiB = decodeBudgetMiB(availableBytes)
-        val seconds = floor(sqrt((budgetMiB - OVERHEAD_MIB) / K_MIB_PER_S2) / STEP_SECONDS) * STEP_SECONDS
+        val seconds = floor(sqrt((budgetMiB - overhead) / K_MIB_PER_S2) / STEP_SECONDS) * STEP_SECONDS
         return seconds.toInt().coerceIn(floor, catalogCapSeconds)
     }
 
@@ -101,14 +139,22 @@ object TranscriptionMemoryPolicy {
      * overhead plus the attention term at the 30s floor. Families capped below
      * 30s (canary at 10s) are held to this slightly stricter bar.
      */
-    private fun minimumDecodeBaselineMiB(): Double =
-        OVERHEAD_MIB + K_MIB_PER_S2 * MIN_CHUNK_SECONDS * MIN_CHUNK_SECONDS
+    private fun minimumDecodeBaselineMiB(family: Family, modelSizeBytes: Long): Double =
+        family.overheadMiB(modelSizeBytes / (1024.0 * 1024.0)) +
+            K_MIB_PER_S2 * MIN_CHUNK_SECONDS * MIN_CHUNK_SECONDS
 
     /** [minimumDecodeBaselineMiB] plus the system headroom, as bytes: the number the refusal shows. */
-    fun minimumDecodeBaselineBytes(): Long =
-        ((minimumDecodeBaselineMiB() + HEADROOM_MIB) * 1024 * 1024).toLong()
+    fun minimumDecodeBaselineBytes(
+        family: Family = Family.TRANSDUCER,
+        modelSizeBytes: Long = 0L,
+    ): Long =
+        ((minimumDecodeBaselineMiB(family, modelSizeBytes) + HEADROOM_MIB) * 1024 * 1024).toLong()
 
     /** Peak-RSS prediction for the calibration test; same constants as the cap. */
-    internal fun predictedPeakMiB(modelSizeMiB: Long, chunkSeconds: Int): Double =
-        modelSizeMiB + OVERHEAD_MIB + K_MIB_PER_S2 * chunkSeconds * chunkSeconds
+    internal fun predictedPeakMiB(
+        modelSizeMiB: Long,
+        chunkSeconds: Int,
+        family: Family = Family.TRANSDUCER,
+    ): Double =
+        modelSizeMiB + family.overheadMiB(modelSizeMiB.toDouble()) + K_MIB_PER_S2 * chunkSeconds * chunkSeconds
 }

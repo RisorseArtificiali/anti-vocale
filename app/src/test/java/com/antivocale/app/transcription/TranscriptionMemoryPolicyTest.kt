@@ -1,6 +1,7 @@
 package com.antivocale.app.transcription
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -91,6 +92,32 @@ class TranscriptionMemoryPolicyTest {
         assertEquals(false, TranscriptionMemoryPolicy.canServeMinimumChunk(reporterPostLoadAvail, parakeetSmoothquant))
         // A healthy phone: several GB free holds the baseline comfortably.
         assertEquals(true, TranscriptionMemoryPolicy.canServeMinimumChunk(6L * 1024 * MiB, parakeetSmoothquant))
+    }
+
+    @Test
+    fun `whisper family has its own higher decode baseline`() = run {
+        // Whisper-small measured at ~2320 MiB overhead (RMX3853, 2026-09-10);
+        // the transducer constant (900) would under-protect by 2.5x.
+        // The onsets are model-size dependent for whisper; compare at
+        // whisper-small (358 MB, the calibrated measurement).
+        val smallModel = 358L * MiB
+        val onsetWhisper = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes(
+            TranscriptionMemoryPolicy.Family.WHISPER, smallModel)
+        val onsetTransducer = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes(
+            TranscriptionMemoryPolicy.Family.TRANSDUCER)
+        assertTrue(
+            "whisper-small onset ($onsetWhisper) must exceed transducer ($onsetTransducer)",
+            onsetWhisper > onsetTransducer,
+        )
+        // A sub-2GB phone (the 4GB-reporter class, 1900 MiB free): tiny is
+        // SERVED under the whisper family (decode fits), the same model is
+        // also served (the model is resident, only the overhead matters).
+        val reporterFree = 2000L * MiB
+        val tinyModel = 103L * MiB
+        assertEquals(
+            true,
+            TranscriptionMemoryPolicy.canServeMinimumChunk(
+                reporterFree, tinyModel, TranscriptionMemoryPolicy.Family.WHISPER))
     }
 
     @Test

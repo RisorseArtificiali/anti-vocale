@@ -844,6 +844,16 @@ class TranscriptionOrchestrator @Inject constructor(
             val modelSize = if (availBytes <= 0) 0L
                 else modelPathForBackend(backend.id).takeIf { it.isNotBlank() }
                     ?.let { modelSizeBytes(File(it)) } ?: 0L
+            // TASK-475: per-family overhead. The modelType signals the
+            // architecture: whisper's cross-attention needs ~2320 MiB vs a
+            // transducer's ~900 (both calibrated on device). Unknown types
+            // keep the conservative transducer value.
+            val memoryFamily = when {
+                BundledCatalog.byId(backend.id)?.modelType?.contains("whisper", ignoreCase = true) == true ->
+                    TranscriptionMemoryPolicy.Family.WHISPER
+                else -> TranscriptionMemoryPolicy.Family.TRANSDUCER
+            }
+
             // TASK-472a: refuse instead of floor-clamping. When free RAM cannot
             // hold even the minimum-chunk baseline, the old path proceeded at
             // the floor and the process walked into an LMK/OEM kill with no
@@ -855,11 +865,11 @@ class TranscriptionOrchestrator @Inject constructor(
             // required figure is the decode-side bar only; the displayed
             // number is exactly the compared number.
             if (!preferencesManager.forceModelLoad.first() &&
-                TranscriptionMemoryPolicy.canServeMinimumChunk(availBytes, modelSize) == false
+                TranscriptionMemoryPolicy.canServeMinimumChunk(availBytes, modelSize, memoryFamily) == false
             ) {
                 // minimumDecodeBaselineBytes already carries the headroom:
                 // this IS the compared bar, byte for byte.
-                val requiredBytes = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes()
+                val requiredBytes = TranscriptionMemoryPolicy.minimumDecodeBaselineBytes(memoryFamily)
                 Log.w(
                     TAG,
                     "Refusing ${backend.id}: post-load avail=${availBytes / MB}MB cannot hold " +
@@ -870,7 +880,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         R.string.transcribe_low_memory, formatMb(availBytes), formatMb(requiredBytes))
                 ))
             }
-            val effective = TranscriptionMemoryPolicy.effectiveChunkSeconds(availBytes, modelSize, cap)
+            val effective = TranscriptionMemoryPolicy.effectiveChunkSeconds(availBytes, modelSize, cap, memoryFamily)
             if (effective != cap) {
                 Log.i(TAG, "Chunk cap tightened ${cap}s -> ${effective}s for ${backend.id} (RAM-derived)")
             }
