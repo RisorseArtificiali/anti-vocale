@@ -446,6 +446,9 @@
     <string name="punctuation_prompt_title">Промпт пунктуации</string>
     <string name="punctuation_prompt_description">Инструкция для этапа пунктуации. Оставьте пустым, чтобы использовать встроенную.</string>
     <string name="punctuation_prompt_placeholder">Встроенный промпт</string>
+    <string name="summary_prompt_title">Промпт резюме</string>
+    <string name="summary_prompt_description">Своя инструкция для ИИ-резюме. Пусто означает встроенный промпт (два-три предложения).</string>
+    <string name="summary_prompt_placeholder">Встроенный промпт</string>
     <string name="punctuation_default_prompt">Добавь пунктуацию и заглавные буквы в эту расшифровку. Сохрани каждое слово точно как написано; ничего не исправляй, не переводи, не добавляй и не удаляй. Выведи только исправленную расшифровку.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Резюмировать длинные расшифровки</string>

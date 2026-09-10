@@ -464,6 +464,10 @@ fun SettingsTab(
                     viewModel.saveSummarizeEnabled(enabled)
                 }
             )
+            SummaryPromptCard(
+                prompt = viewModel.currentSummaryPrompt.collectAsState().value,
+                onSave = { viewModel.saveSummaryPrompt(it) }
+            )
 
             // Default Prompt Setting Navigation Card
             Card(
@@ -1937,6 +1941,23 @@ private val transcriptionSentinelLabels = mapOf(
 )
 
 /**
+ * TASK-483: editable override of the summary-pass prompt. Same contract as
+ * the punctuation prompt card: blank means the built-in two-to-three-sentence
+ * default, commits on focus loss, 500-char cap.
+ */
+@Composable
+private fun SummaryPromptCard(
+    prompt: String,
+    onSave: (String) -> Unit,
+) = EditablePromptCard(
+    prompt = prompt,
+    onSave = onSave,
+    titleRes = R.string.summary_prompt_title,
+    descriptionRes = R.string.summary_prompt_description,
+    placeholderRes = R.string.summary_prompt_placeholder,
+)
+
+/**
  * TASK-276: editable override of the punctuation-pass prompt. Blank means the
  * localized built-in default. Commits on focus loss so DataStore is not
  * written per keystroke (same 500-char cap as the impl layer).
@@ -1945,17 +1966,32 @@ private val transcriptionSentinelLabels = mapOf(
 private fun PunctuationPromptCard(
     prompt: String,
     onSave: (String) -> Unit,
+) = EditablePromptCard(
+    prompt = prompt,
+    onSave = onSave,
+    titleRes = R.string.punctuation_prompt_title,
+    descriptionRes = R.string.punctuation_prompt_description,
+    placeholderRes = R.string.punctuation_prompt_placeholder,
+)
+
+@Composable
+private fun EditablePromptCard(
+    prompt: String,
+    onSave: (String) -> Unit,
+    titleRes: Int,
+    descriptionRes: Int,
+    placeholderRes: Int,
 ) {
     var text by remember(prompt) { mutableStateOf(prompt) }
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = stringResource(R.string.punctuation_prompt_title),
+                text = stringResource(titleRes),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = stringResource(R.string.punctuation_prompt_description),
+                text = stringResource(descriptionRes),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -1968,7 +2004,7 @@ private fun PunctuationPromptCard(
                     .onFocusChanged { focused ->
                         if (!focused.isFocused && text != prompt) onSave(text)
                     },
-                placeholder = { Text(stringResource(R.string.punctuation_prompt_placeholder)) },
+                placeholder = { Text(stringResource(placeholderRes)) },
                 minLines = 2,
                 supportingText = {
                     Text(stringResource(R.string.default_prompt_chars, text.length))

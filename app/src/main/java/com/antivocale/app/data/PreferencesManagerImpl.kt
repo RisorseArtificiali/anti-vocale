@@ -65,6 +65,7 @@ class PreferencesManagerImpl(
         private val PUNCTUATION_MODE = stringPreferencesKey("punctuation_mode")
         private val PUNCTUATION_PROMPT = stringPreferencesKey("punctuation_prompt")
         private val SUMMARIZE_ENABLED = booleanPreferencesKey("summarize_enabled")
+        private val SUMMARY_PROMPT = stringPreferencesKey("summary_prompt")
         private val THREAD_COUNT = intPreferencesKey("thread_count")
         private val INFERENCE_PROVIDER = stringPreferencesKey("inference_provider")
         private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
@@ -103,6 +104,7 @@ class PreferencesManagerImpl(
         val defaultPrompt: String = PreferencesManager.DEFAULT_PROMPT_VALUE,
         val punctuationMode: String = PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         val punctuationPrompt: String = "",
+        val summaryPrompt: String = "",
         val summarizeEnabled: Boolean = PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         val threadCount: Int = PreferencesManager.DEFAULT_THREAD_COUNT,
         val inferenceProvider: String = PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
@@ -142,6 +144,7 @@ class PreferencesManagerImpl(
         defaultPrompt = this[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE,
         punctuationMode = this[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         punctuationPrompt = this[PUNCTUATION_PROMPT] ?: "",
+        summaryPrompt = this[SUMMARY_PROMPT] ?: "",
         summarizeEnabled = this[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED,
         threadCount = this[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT,
         inferenceProvider = this[INFERENCE_PROVIDER] ?: PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
@@ -377,6 +380,9 @@ class PreferencesManagerImpl(
     override val punctuationPrompt: Flow<String> = dataStore.data.map { it[PUNCTUATION_PROMPT] ?: "" }
         .onStart { emit(cache.get().punctuationPrompt) }
 
+    override val summaryPrompt: Flow<String> = dataStore.data.map { it[SUMMARY_PROMPT] ?: "" }
+        .onStart { emit(cache.get().summaryPrompt) }
+
     override suspend fun savePunctuationPrompt(prompt: String) {
         // Same 500-char cap as the default transcription prompt: one
         // instruction paragraph, not an essay (TASK-276).
@@ -389,6 +395,14 @@ class PreferencesManagerImpl(
 
     override val summarizeEnabled: Flow<Boolean> = dataStore.data.map { it[SUMMARIZE_ENABLED] ?: PreferencesManager.DEFAULT_SUMMARIZE_ENABLED }
         .onStart { emit(cache.get().summarizeEnabled) }
+
+    override suspend fun saveSummaryPrompt(prompt: String) {
+        val truncated = prompt.take(500)
+        dataStore.edit { preferences ->
+            preferences[SUMMARY_PROMPT] = truncated
+        }
+        cache.updateAndGet { it.copy(summaryPrompt = truncated) }
+    }
 
     override suspend fun saveSummarizeEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->

@@ -436,6 +436,9 @@
     <string name="punctuation_prompt_title">Prompt di punteggiatura</string>
     <string name="punctuation_prompt_description">Istruzione per la passata di punteggiatura. Lascia vuoto per usare quella integrata.</string>
     <string name="punctuation_prompt_placeholder">Prompt integrato</string>
+    <string name="summary_prompt_title">Prompt del riepilogo</string>
+    <string name="summary_prompt_description">Sostituisci l\'istruzione per il riepilogo AI. Vuoto usa il prompt integrato (due o tre frasi).</string>
+    <string name="summary_prompt_placeholder">Prompt integrato</string>
     <string name="punctuation_default_prompt">Aggiungi punteggiatura e maiuscole a questa trascrizione. Mantieni ogni parola esattamente come scritta; non correggere, tradurre, aggiungere o rimuovere nulla. Restituisci solo la trascrizione corretta.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Riassumi le trascrizioni lunghe</string>

@@ -503,10 +503,14 @@ class TranscriptionOrchestrator @Inject constructor(
             val llm = backendManager.getActiveBackend() ?: error("LLM backend not active after load")
             // Language-aware by instruction: the curated default tells the
             // model to answer in the transcript's language (the app locale
-            // is deliberately not resolved into the prompt).
-            val prompt = ChunkPromptPolicy.finalPrompt(
-                context.getString(R.string.summary_default_prompt),
-                result.text)
+            // is deliberately not resolved into the prompt). TASK-483: a
+            // saved prompt overrides the built-in, same contract as the
+            // punctuation pass (blank = built-in).
+            val savedSummaryPrompt = preferencesManager.summaryPrompt.first()
+            val summaryInstruction = savedSummaryPrompt.ifBlank {
+                context.getString(R.string.summary_default_prompt)
+            }
+            val prompt = ChunkPromptPolicy.finalPrompt(summaryInstruction, result.text)
             val summary = llm.generateText(prompt).getOrThrow().trim()
             if (!SummaryPolicy.acceptableSummary(summary, result.text)) {
                 error("summary failed the collapse guard " +

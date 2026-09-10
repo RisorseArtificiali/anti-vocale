@@ -41,6 +41,7 @@ internal class FakePreferencesManager : PreferencesManager {
     val _punctuationMode = MutableStateFlow(PreferencesManager.DEFAULT_PUNCTUATION_MODE)
     val _punctuationPrompt = MutableStateFlow("")
     val _summarizeEnabled = MutableStateFlow(PreferencesManager.DEFAULT_SUMMARIZE_ENABLED)
+    val _summaryPrompt = MutableStateFlow("")
     val _defaultPrompt = MutableStateFlow("")
     val _threadCount = MutableStateFlow(PreferencesManager.DEFAULT_THREAD_COUNT)
     val _inferenceProvider = MutableStateFlow("auto")
@@ -78,6 +79,8 @@ internal class FakePreferencesManager : PreferencesManager {
     override val punctuationMode: Flow<String> get() = _punctuationMode
     override val punctuationPrompt: Flow<String> get() = _punctuationPrompt
     override val summarizeEnabled: Flow<Boolean> get() = _summarizeEnabled
+    override val summaryPrompt: Flow<String> get() = _summaryPrompt
+    override suspend fun saveSummaryPrompt(prompt: String) { _summaryPrompt.value = prompt.take(500) }
     override val defaultPrompt: Flow<String> get() = _defaultPrompt
     override val threadCount: Flow<Int> get() = _threadCount
     override val inferenceProvider: Flow<String> get() = _inferenceProvider

@@ -424,6 +424,9 @@
     <string name="punctuation_prompt_title">विराम चिह्न प्रॉम्प्ट</string>
     <string name="punctuation_prompt_description">विराम चिह्न चरण के लिए निर्देश। अंतर्निहित प्रॉम्प्ट के लिए खाली छोड़ें।</string>
     <string name="punctuation_prompt_placeholder">अंतर्निहित प्रॉम्प्ट</string>
+    <string name="summary_prompt_title">सारांश प्रॉम्प्ट</string>
+    <string name="summary_prompt_description">AI सारांश के निर्देश बदलें। खाली छोड़ने पर अंतर्निहित (दो-तीन वाक्य) प्रॉम्प्ट चलेगा।</string>
+    <string name="summary_prompt_placeholder">अंतर्निहित प्रॉम्प्ट</string>
     <string name="punctuation_default_prompt">इस ट्रांसक्रिप्शन में विराम चिह्न और बड़े अक्षर जोड़ें। हर शब्द बिल्कुल वैसा ही रखें जैसा लिखा है; कुछ भी ठीक न करें, अनुवाद न करें, जोड़ें नहीं या हटाएँ नहीं। केवल सुधारी हुई ट्रांसक्रिप्शन ही लिखें।</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">लंबी ट्रांसक्रिप्शन का सारांश बनाएं</string>

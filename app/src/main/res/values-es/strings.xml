@@ -372,6 +372,9 @@
     <string name="punctuation_prompt_title">Prompt de puntuación</string>
     <string name="punctuation_prompt_description">Instrucción para el paso de puntuación. Déjalo vacío para usar el integrado.</string>
     <string name="punctuation_prompt_placeholder">Prompt integrado</string>
+    <string name="summary_prompt_title">Prompt del resumen</string>
+    <string name="summary_prompt_description">Instrucción personalizada para el resumen IA. Vacío usa el integrado (dos o tres frases).</string>
+    <string name="summary_prompt_placeholder">Prompt integrado</string>
     <string name="punctuation_default_prompt">Añade puntuación y mayúsculas a esta transcripción. Mantén cada palabra exactamente como está escrita; no corrijas, traduzcas, añadas ni quites nada. Devuelve solo la transcripción corregida.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Resumir transcripciones largas</string>

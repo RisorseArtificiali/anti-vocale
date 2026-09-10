@@ -39,6 +39,9 @@ interface PreferencesManager {
     val punctuationPrompt: Flow<String>
     /** TASK-121.4 smart-summary pass toggle: attach a Gemma summary to long transcripts. Default off. */
     val summarizeEnabled: Flow<Boolean>
+
+    /** TASK-483: editable override of the summary-pass prompt. Blank = the built-in 2-3 sentence default. */
+    val summaryPrompt: Flow<String>
     val threadCount: Flow<Int>
     val inferenceProvider: Flow<String>
     val transcriptionLanguage: Flow<String>
@@ -76,6 +79,7 @@ interface PreferencesManager {
     suspend fun savePunctuationMode(mode: String)
     suspend fun savePunctuationPrompt(prompt: String)
     suspend fun saveSummarizeEnabled(enabled: Boolean)
+    suspend fun saveSummaryPrompt(prompt: String)
     suspend fun saveThreadCount(threads: Int)
     suspend fun saveInferenceProvider(provider: String)
     suspend fun saveTranscriptionLanguage(language: String)

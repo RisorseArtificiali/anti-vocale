@@ -222,6 +222,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = ""
         )
 
+    /** TASK-483: the summary-pass prompt override; blank = the built-in. */
+    val currentSummaryPrompt: StateFlow<String> = preferencesManager.summaryPrompt
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = ""
+        )
+
     // TASK-121.4: smart-summary pass toggle.
     val summarizeEnabled: StateFlow<Boolean> = preferencesManager.summarizeEnabled
         .stateIn(
@@ -528,6 +536,12 @@ class SettingsViewModel @Inject constructor(
     fun savePunctuationMode(mode: String) {
         viewModelScope.launch {
             preferencesManager.savePunctuationMode(mode)
+        }
+    }
+
+    fun saveSummaryPrompt(prompt: String) {
+        viewModelScope.launch {
+            preferencesManager.saveSummaryPrompt(prompt)
         }
     }
 

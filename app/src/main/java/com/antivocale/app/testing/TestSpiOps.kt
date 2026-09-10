@@ -145,6 +145,7 @@ internal class TestSpiOps(
     private val textKeys: Map<String, suspend (String) -> Unit> = mapOf(
         "punctuation_prompt" to preferences::savePunctuationPrompt,
         "default_prompt" to preferences::saveDefaultPrompt,
+        "summary_prompt" to preferences::saveSummaryPrompt,
         "external_catalog_url" to preferences::saveExternalCatalogUrl,
         // An unset SAF folder is null, not "": blank clears.
         "output_folder" to { preferences.saveOutputFolderUri(it.ifBlank { null }) },

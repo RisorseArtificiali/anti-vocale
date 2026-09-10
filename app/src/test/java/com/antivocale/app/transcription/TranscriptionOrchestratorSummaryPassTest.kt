@@ -106,6 +106,7 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     @Test
     fun `enabled toggle summarizes a long transcript and keeps the delivered text`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
         stubSwapToLlm()
         coEvery { llmBackend.generateText(any()) } returns Result.success(summary)
         stubWholeFileRequest()
@@ -149,6 +150,7 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     @Test
     fun `a short transcript is never summarized`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
         stubSwapToLlm()
         val short = "ciao, ti chiamo dopo due minuti"
         stubPreprocessing(listOf(FloatArray(3) { it.toFloat() }), totalDurationSeconds = 5.0)
@@ -167,6 +169,7 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     @Test
     fun `no gemma model configured skips silently`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
         // Override the base's "/models/gemma": no Gemma path configured.
         every { preferencesManager.modelPath } returns flowOf(null)
         stubSwapToLlm()
@@ -185,6 +188,7 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     @Test
     fun `generation failure degrades to no summary`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
         stubSwapToLlm()
         coEvery { llmBackend.generateText(any()) } returns
             Result.failure(IllegalStateException("liteRT exploded"))
@@ -202,6 +206,7 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     @Test
     fun `a summary that outgrew the transcript is dropped`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
         stubSwapToLlm()
         // Longer than transcript * 1.2: a rewrite, not a summary.
         val rewrite = "x".repeat(longTranscript.length * 2)
