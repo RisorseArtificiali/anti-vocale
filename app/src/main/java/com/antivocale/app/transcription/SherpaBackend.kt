@@ -394,6 +394,7 @@ class SherpaBackend(
                 "missing files in $modelDirectory: ${fileNames.joinToString()}"
             ))
         }
+
         val roles = resolveRoles(variant)
         // Guard against catalog variants whose file names can't resolve a required role
         // (a catalog bug surfaces here at load time, not in the native call).
@@ -417,6 +418,27 @@ class SherpaBackend(
         }
 
         return withContext(Dispatchers.IO) {
+            // TASK-479 / GH #88: content-level validation, first thing on the
+            // IO dispatcher (hashing is pure I/O and no caller convention
+            // should decide that). The completeness check above catches
+            // missing and truncated files; this catches corrupt CONTENT,
+            // which the native loader answers with a process abort
+            // ("Protobuf parsing failed") and every retry re-aborts on the
+            // same bytes. Structural checks run for every file; SHA-256 for
+            // files the catalog pins. Failed files are removed with their
+            // sidecars so the next attempt is a clean re-download, not
+            // another abort.
+            val integrityFailures = ModelDirIntegrity.verify(dir, variant)
+            if (integrityFailures.isNotEmpty()) {
+                Log.e(TAG, "Corrupt model files in $modelDirectory: " +
+                    integrityFailures.joinToString { "${it.file.name} (${it.reason})" } +
+                    " - removing for re-download")
+                ModelDirIntegrity.removeFailed(integrityFailures)
+                return@withContext Result.failure(TranscriptionException.ModelLoadError(
+                    "corrupt model files (removed, re-download from the Models tab): " +
+                    integrityFailures.joinToString { it.file.name })
+                )
+            }
             // Pre-native validation: sherpa-onnx calls exit(255) when the encoder is missing
             // critical metadata, killing the process with no catchable exception. Whisper
             // models carry no vocab_size metadata, so the catalog skips the scan for it.

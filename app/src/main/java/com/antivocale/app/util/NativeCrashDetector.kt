@@ -29,15 +29,18 @@ object NativeCrashDetector {
     /**
      * TASK-472b: the silent-death reasons worth telemetry. LMKD kills surface
      * as [ApplicationExitInfo.REASON_LOW_MEMORY]; OEM killers (MIUI
-     * PowerKeeper, ColorOS UserAwareMgr) as [ApplicationExitInfo.REASON_SIGNALED].
-     * Neither leaves a trace in Crashlytics or Play vitals, which is why the
-     * 4GB crash investigation (GH reporter, TASK-468) had to be reconstructed
-     * statically: these reports close that blind spot.
+     * PowerKeeper, ColorOS UserAwareMgr) as [ApplicationExitInfo.REASON_SIGNALED];
+     * native aborts (sherpa model-load deaths, TASK-479/GH #88) as
+     * [ApplicationExitInfo.REASON_CRASH_NATIVE]. None reach Crashlytics
+     * without this (no NDK SDK), which is why the 4GB crash investigation
+     * (TASK-468) had to be reconstructed statically: these reports close
+     * that blind spot.
      */
     @android.annotation.SuppressLint("InlinedApi") // compile-time-int constants, no runtime field access below API 30
     private val REPORTED_DEATH_REASONS = setOf(
         ApplicationExitInfo.REASON_LOW_MEMORY,
         ApplicationExitInfo.REASON_SIGNALED,
+        ApplicationExitInfo.REASON_CRASH_NATIVE,
     )
 
     /**
@@ -155,6 +158,7 @@ object NativeCrashDetector {
     private fun reasonName(reason: Int): String = when (reason) {
         ApplicationExitInfo.REASON_LOW_MEMORY -> "LOW_MEMORY"
         ApplicationExitInfo.REASON_SIGNALED -> "SIGNALED"
+        ApplicationExitInfo.REASON_CRASH_NATIVE -> "CRASH_NATIVE"
         else -> "reason=$reason"
     }
 

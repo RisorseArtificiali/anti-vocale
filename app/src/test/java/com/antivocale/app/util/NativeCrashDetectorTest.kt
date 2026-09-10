@@ -27,16 +27,18 @@ class NativeCrashDetectorTest {
     fun `unreported keeps only silent-death reasons past the mark, oldest first`() {
         val lowMem = android.app.ApplicationExitInfo.REASON_LOW_MEMORY
         val signaled = android.app.ApplicationExitInfo.REASON_SIGNALED
+        val native = android.app.ApplicationExitInfo.REASON_CRASH_NATIVE
         val anr = android.app.ApplicationExitInfo.REASON_ANR
         val records = listOf(
             NativeCrashDetector.ExitRecord(lowMem, 100L, "lmkd"),
             NativeCrashDetector.ExitRecord(anr, 200L, "user saw a dialog: not silent"),
             NativeCrashDetector.ExitRecord(signaled, 300L, "PowerKeeper"),
+            NativeCrashDetector.ExitRecord(native, 400L, "sherpa model load abort"),
             NativeCrashDetector.ExitRecord(lowMem, 50L, "already reported"),
         )
         val result = NativeCrashDetector.unreported(records, lastReportedTs = 50L)
         assertEquals(
-            listOf(100L, 300L),
+            listOf(100L, 300L, 400L),
             result.map { it.timestamp },
         )
     }
