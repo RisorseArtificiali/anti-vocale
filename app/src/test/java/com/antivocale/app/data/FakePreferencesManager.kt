@@ -80,7 +80,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val punctuationPrompt: Flow<String> get() = _punctuationPrompt
     override val summarizeEnabled: Flow<Boolean> get() = _summarizeEnabled
     override val summaryPrompt: Flow<String> get() = _summaryPrompt
-    override suspend fun saveSummaryPrompt(prompt: String) { _summaryPrompt.value = prompt.take(500) }
+    override suspend fun saveSummaryPrompt(prompt: String) { _summaryPrompt.value = prompt.take(PreferencesManager.PROMPT_CAP) }
     override val defaultPrompt: Flow<String> get() = _defaultPrompt
     override val threadCount: Flow<Int> get() = _threadCount
     override val inferenceProvider: Flow<String> get() = _inferenceProvider
@@ -114,9 +114,9 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveVadAdvisoryDismissed(dismissed: Boolean) { _vadAdvisoryDismissed.value = dismissed }
     override suspend fun saveProgressiveTranscription(enabled: Boolean) { _progressiveTranscription.value = enabled }
     override suspend fun savePunctuationMode(mode: String) { _punctuationMode.value = mode }
-    override suspend fun savePunctuationPrompt(prompt: String) { _punctuationPrompt.value = prompt.take(500) }
+    override suspend fun savePunctuationPrompt(prompt: String) { _punctuationPrompt.value = prompt.take(PreferencesManager.PROMPT_CAP) }
     override suspend fun saveSummarizeEnabled(enabled: Boolean) { _summarizeEnabled.value = enabled }
-    override suspend fun saveDefaultPrompt(prompt: String) { _defaultPrompt.value = prompt.take(500) }
+    override suspend fun saveDefaultPrompt(prompt: String) { _defaultPrompt.value = prompt.take(PreferencesManager.PROMPT_CAP) }
     override suspend fun saveThreadCount(threads: Int) { _threadCount.value = threads }
     override suspend fun saveInferenceProvider(provider: String) { _inferenceProvider.value = provider }
     override suspend fun saveTranscriptionLanguage(language: String) { _transcriptionLanguage.value = language }

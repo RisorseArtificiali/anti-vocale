@@ -31,7 +31,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -70,6 +69,7 @@ import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.viewmodel.LanguageOption
+import com.antivocale.app.ui.components.EditablePromptCard
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1567,7 +1567,6 @@ fun SettingsTab(
             currentLanguage = currentLanguage
         )
 
-
         // Performance Stats Dialog
         if (showPerfStatsDialog) {
             PerformanceStatsDialog(
@@ -1976,47 +1975,6 @@ private fun PunctuationPromptCard(
     descriptionRes = R.string.punctuation_prompt_description,
     placeholderRes = R.string.punctuation_prompt_placeholder,
 )
-
-@Composable
-private fun EditablePromptCard(
-    prompt: String,
-    onSave: (String) -> Unit,
-    titleRes: Int,
-    descriptionRes: Int,
-    placeholderRes: Int,
-) {
-    var text by remember(prompt) { mutableStateOf(prompt) }
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = stringResource(titleRes),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-            Text(
-                text = stringResource(descriptionRes),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            OutlinedTextField(
-                value = text,
-                onValueChange = { text = it.take(500) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onFocusChanged { focused ->
-                        if (!focused.isFocused && text != prompt) onSave(text)
-                    },
-                placeholder = { Text(stringResource(placeholderRes)) },
-                minLines = 2,
-                supportingText = {
-                    Text(stringResource(R.string.default_prompt_chars, text.length))
-                }
-            )
-        }
-    }
-}
-
 
 /** TASK-276: pref value -> localized label, one fallback for unknown values. */
 @Composable

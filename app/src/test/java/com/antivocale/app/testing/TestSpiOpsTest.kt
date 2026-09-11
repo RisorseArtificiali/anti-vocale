@@ -98,6 +98,24 @@ class TestSpiOpsTest {
     }
 
     @Test
+    fun `set on a text key acks the truncated value it will store`() = runTest {
+        // TASK-485: a 600-char prompt send used to ack 600 and read back 500.
+        val long = "x".repeat(600)
+        val json = JSONObject(ops.handle(TestSpiOps.OP_SET, key = "summary_prompt", value = long))
+        assertEquals(500, json.getString("value").length)
+        assertEquals(500, fake._summaryPrompt.value.length)
+
+        val cleared = JSONObject(ops.handle(TestSpiOps.OP_GET))
+        assertEquals(500, cleared.getString("summaryPrompt").length)
+
+        // Only the prompt savers cap: a verbatim text key must ack in full.
+        val url = JSONObject(
+            ops.handle(TestSpiOps.OP_SET, key = "external_catalog_url", value = "u".repeat(600))
+        )
+        assertEquals(600, url.getString("value").length)
+    }
+
+    @Test
     fun `set vad writes through and parses booleans strictly`() = runTest {
         val json = JSONObject(ops.handle(TestSpiOps.OP_SET, key = "vad", value = "true"))
         assertEquals(TestSpiOps.OP_SET, json.getString("op"))

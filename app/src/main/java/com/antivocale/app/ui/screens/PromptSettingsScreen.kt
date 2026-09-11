@@ -34,6 +34,7 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
+import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 import com.antivocale.app.util.ToastCompat
 
@@ -135,7 +136,7 @@ fun PromptSettingsScreen(
         OutlinedTextField(
             value = promptInput,
             onValueChange = { newValue ->
-                if (newValue.length <= 500) {
+                if (newValue.length <= PreferencesManager.PROMPT_CAP) {
                     promptInput = newValue
                 }
             },

@@ -360,7 +360,7 @@ class PreferencesManagerImpl(
         .onStart { emit(cache.get().defaultPrompt) }
 
     override suspend fun saveDefaultPrompt(prompt: String) {
-        val truncated = prompt.take(500)
+        val truncated = prompt.take(PreferencesManager.PROMPT_CAP)
         dataStore.edit { preferences ->
             preferences[DEFAULT_PROMPT] = truncated
         }
@@ -386,7 +386,7 @@ class PreferencesManagerImpl(
     override suspend fun savePunctuationPrompt(prompt: String) {
         // Same 500-char cap as the default transcription prompt: one
         // instruction paragraph, not an essay (TASK-276).
-        val truncated = prompt.take(500)
+        val truncated = prompt.take(PreferencesManager.PROMPT_CAP)
         dataStore.edit { preferences ->
             preferences[PUNCTUATION_PROMPT] = truncated
         }
@@ -397,7 +397,7 @@ class PreferencesManagerImpl(
         .onStart { emit(cache.get().summarizeEnabled) }
 
     override suspend fun saveSummaryPrompt(prompt: String) {
-        val truncated = prompt.take(500)
+        val truncated = prompt.take(PreferencesManager.PROMPT_CAP)
         dataStore.edit { preferences ->
             preferences[SUMMARY_PROMPT] = truncated
         }

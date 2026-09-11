@@ -39,7 +39,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
+import android.graphics.BitmapFactory
+import androidx.compose.ui.platform.LocalContext
+import androidx.annotation.DrawableRes
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -51,6 +56,26 @@ import com.antivocale.app.ui.viewmodel.SettingsViewModel
 
 /** The adaptive-icon layer canvas, in dp (see any adaptive-icon XML). */
 private const val ADAPTIVE_CANVAS = 108f
+
+/**
+ * TASK-489: painterResource caches vectors process-wide but rasters only per
+ * composition, so re-entering this screen re-decoded all seven tiles on the
+ * main thread (~5MB at xxxhdpi). The tiles are seven fixed resources, so a
+ * flat process-level ImageBitmap cache keyed by resource id outlives the
+ * screen; it is only ever touched from the UI thread.
+ */
+private val tileBitmapCache = mutableMapOf<Int, ImageBitmap>()
+
+@Composable
+private fun cachedTileBitmap(@DrawableRes res: Int): ImageBitmap =
+    tileBitmapCache.getOrPut(res) {
+        // Raster-only by contract: BitmapFactory returns null for an XML
+        // vector (a future tile swap must not silently degrade), and a null
+        // here fails loudly at the first render, not deep inside BitmapPainter.
+        requireNotNull(BitmapFactory.decodeResource(LocalContext.current.resources, res)) {
+            "tile resource $res did not decode: launcher tiles must be rasters, not vector drawables"
+        }.asImageBitmap()
+    }
 
 /** The launcher's masked visible zone: the central 72dp of that canvas. */
 private const val SAFE_ZONE = 72f
@@ -156,10 +181,10 @@ fun LauncherIconScreen(
                                     )
                                     .semantics { contentDescription = label },
                             ) {
-                                val painter = variant.foregroundRes?.let { painterResource(it) }
-                                    ?: painterResource(R.mipmap.ic_launcher_foreground)
+                                val bitmap = variant.foregroundRes?.let { cachedTileBitmap(it) }
+                                    ?: cachedTileBitmap(R.mipmap.ic_launcher_foreground)
                                 Image(
-                                    painter = painter,
+                                    painter = BitmapPainter(bitmap),
                                     contentDescription = null,
                                     // Scale the layer so the tile shows the launcher's
                                     // masked crop (the central 72dp of the 108dp canvas),

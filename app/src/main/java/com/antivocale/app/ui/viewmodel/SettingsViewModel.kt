@@ -41,7 +41,9 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -215,11 +217,15 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = PreferencesManager.DEFAULT_PUNCTUATION_MODE
         )
+    // TASK-485: the "" initialValue blanked the editable card for 1-2 frames
+    // on first subscription. The AppModule initialize() warms the DataStore
+    // cache before any UI exists, so a runBlocking first() reads the cached
+    // value with no disk IO - the same one-shot idiom MainActivity uses.
     val currentPunctuationPrompt: StateFlow<String> = preferencesManager.punctuationPrompt
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ""
+            initialValue = runBlocking { preferencesManager.punctuationPrompt.first() }
         )
 
     /** TASK-483: the summary-pass prompt override; blank = the built-in. */
@@ -227,7 +233,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = ""
+            initialValue = runBlocking { preferencesManager.summaryPrompt.first() }
         )
 
     // TASK-121.4: smart-summary pass toggle.

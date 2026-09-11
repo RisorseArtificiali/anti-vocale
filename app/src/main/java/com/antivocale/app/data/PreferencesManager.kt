@@ -111,6 +111,12 @@ interface PreferencesManager {
         const val DEFAULT_VAD_ENABLED = false
         const val DEFAULT_PROGRESSIVE_TRANSCRIPTION = true
         const val DEFAULT_PROMPT_VALUE = ""
+
+        /**
+         * Character cap shared by every prompt editor and saver (TASK-485:
+         * the 500 literal had drifted across 7 unlinked take() sites).
+         */
+        const val PROMPT_CAP = 500
         /** TASK-276: the AUTO mode trusts the per-model punctuatesOutput flag. */
         const val DEFAULT_PUNCTUATION_MODE = "auto"
         /** TASK-121.4: opt-in; a second inference per long transcript must be a choice. */

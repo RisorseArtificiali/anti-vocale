@@ -229,11 +229,25 @@ internal class TestSpiOps(
         return setAck(key, value, entry)
     }
 
+    /**
+     * The three prompt savers persist a capped copy (PROMPT_CAP); every other
+     * text key stores verbatim. The ack must mirror what the store keeps:
+     * echoing a truncated value for a verbatim key would recreate the exact
+     * ack-vs-readback divergence this exists to close (TASK-485).
+     */
+    private val promptCappedKeys = setOf("summary_prompt", "punctuation_prompt", "default_prompt")
     private fun setAck(key: String, value: String, entry: String?): String = JSONObject()
         .put("op", OP_SET)
         .put("key", key)
         .apply { if (key == "sherpa_path") put("entry", entry) }
-        .put("value", value)
+        .put(
+            "value",
+            if (key in promptCappedKeys) {
+                value.take(PreferencesManager.PROMPT_CAP)
+            } else {
+                value
+            }
+        )
         .toString()
 
     /**
