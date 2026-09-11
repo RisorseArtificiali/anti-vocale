@@ -16,6 +16,7 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.NotificationCompat
 import androidx.work.ExistingWorkPolicy
+import androidx.work.OutOfQuotaPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
@@ -559,12 +560,49 @@ class ShareReceiverActivity : Activity() {
             )
         }
 
+        // The text discloses the timed fallback (TASK-378): partial SC 2.2.1
+        // disclosure only - adjust/extend mechanisms remain future scope.
+        // BigTextStyle keeps the disclosure sentence visible in the collapsed
+        // shade and heads-up, where the base template ellipsizes it away.
+        val choiceText = getString(
+            R.string.subtitles_found_text,
+            languageLabel,
+            resources.getQuantityString(
+                R.plurals.timeout_minutes,
+                SUBTITLE_CHOICE_TIMEOUT_MINUTES.toInt(),
+                SUBTITLE_CHOICE_TIMEOUT_MINUTES.toInt(),
+            ),
+        )
+        // Swipe-dismiss means "not interested": cancel the pending fallback
+        // instead of letting it transcribe five minutes after the user
+        // declined the prompt.
+        val dismissIntent = PendingIntent.getBroadcast(
+            this,
+            ("dismiss" + taskId).hashCode(),
+            Intent(this, NotificationActionReceiver::class.java).apply {
+                action = NotificationActionReceiver.ACTION_DISMISS_CHOICE
+                putExtras(baseExtras)
+            },
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        // Body tap opens the app like every other notification here: the
+        // choice itself stays on the explicit buttons, so an accidental
+        // heads-up tap cannot irreversibly start transcription (TASK-378).
+        val contentIntent = PendingIntent.getActivity(
+            this,
+            ("open" + taskId).hashCode(),
+            Intent(this, com.antivocale.app.MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
         val notification = NotificationCompat.Builder(this, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
             .setContentTitle(getString(R.string.subtitles_found_title))
-            .setContentText(getString(R.string.subtitles_found_text, languageLabel))
+            .setContentText(choiceText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(choiceText))
             .setSmallIcon(android.R.drawable.ic_dialog_info)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
+            .setContentIntent(contentIntent)
+            .setDeleteIntent(dismissIntent)
             .addAction(
                 android.R.drawable.ic_menu_edit,
                 getString(R.string.action_use_subtitles),
@@ -594,6 +632,11 @@ class ShareReceiverActivity : Activity() {
     ) {
         val request = OneTimeWorkRequestBuilder<SubtitleChoiceTimeoutWorker>()
             .setInitialDelay(SUBTITLE_CHOICE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
+            // Expedited as the design spec requires: the notification promises
+            // a 5-minute fallback, and a plain request can be deferred far
+            // past that by Doze/App Standby. Under expedited-quota exhaustion
+            // the worker falls back to its normal non-expedited run.
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setInputData(
                 workDataOf(
                     SubtitleChoiceTimeoutWorker.KEY_FILE_PATH to localPath,

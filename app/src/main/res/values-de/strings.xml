@@ -891,7 +891,7 @@
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Untertitel gefunden</string>
-    <string name="subtitles_found_text">Eingebettete Untertitel (%1$s) verwenden oder das Audio transskribieren?</string>
+    <string name="subtitles_found_text">Eingebettete Untertitel (%1$s) verwenden oder das Audio transkribieren? Ohne Auswahl beginnt die Transkription nach %2$s.</string>
     <string name="subtitles_language_unknown">unbekannt</string>
     <string name="action_use_subtitles">Untertitel verwenden</string>
     <string name="action_transcribe_audio">Audio transskribieren</string>

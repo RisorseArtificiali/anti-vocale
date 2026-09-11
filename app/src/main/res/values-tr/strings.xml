@@ -934,7 +934,7 @@
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Altyazılar bulundu</string>
-    <string name="subtitles_found_text">Gömülü altyazılar (%1$s) kullanılsın mı, yoksa ses metne çıkarılsın mı?</string>
+    <string name="subtitles_found_text">Gömülü altyazılar (%1$s) kullanılsın mı yoksa ses metne mi çıkarılsın? Seçim yapılmazsa transkripsiyon %2$s sonra başlar.</string>
     <string name="subtitles_language_unknown">bilinmiyor</string>
     <string name="action_use_subtitles">Altyazıları kullan</string>
     <string name="action_transcribe_audio">Sesi metne çıkar</string>

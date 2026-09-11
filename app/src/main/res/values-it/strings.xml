@@ -908,7 +908,7 @@
 
     <!-- Scelta estrazione sottotitoli (TASK-228) -->
     <string name="subtitles_found_title">Sottotitoli trovati</string>
-    <string name="subtitles_found_text">Usare i sottotitoli incorporati (%1$s) o trascrivere l\'audio?</string>
+    <string name="subtitles_found_text">Usare i sottotitoli incorporati (%1$s) o trascrivere l\'audio? Senza una scelta, la trascrizione parte dopo %2$s.</string>
     <string name="subtitles_language_unknown">sconosciuta</string>
     <string name="action_use_subtitles">Usa sottotitoli</string>
     <string name="action_transcribe_audio">Trascrivi audio</string>

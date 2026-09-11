@@ -784,7 +784,7 @@
     <string name="retranscribe_setting_title">Botón re-transcribir</string>
     <string name="retranscribe_setting_description">Muestra un botón en las transcripciones de audio para reintentar con otro modelo.</string>
     <string name="subtitles_found_title">Subtítulos encontrados</string>
-    <string name="subtitles_found_text">¿Usar los subtítulos integrados (%1$s) o transcribir el audio?</string>
+    <string name="subtitles_found_text">¿Usar los subtítulos incorporados (%1$s) o transcribir el audio? Si no eliges, la transcripción empieza tras %2$s.</string>
     <string name="subtitles_language_unknown">desconocido</string>
     <string name="action_use_subtitles">Usar subtítulos</string>
     <string name="action_transcribe_audio">Transcribir audio</string>

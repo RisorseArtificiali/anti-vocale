@@ -890,7 +890,7 @@
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">सबटाइटल मिले</string>
-    <string name="subtitles_found_text">एम्बेडेड सबटाइटल (%1$s) इस्तेमाल करें, या ऑडियो ट्रांसक्राइब करें?</string>
+    <string name="subtitles_found_text">एम्बेडेड सबटाइटल (%1$s) इस्तेमाल करें या ऑडियो ट्रांसक्राइब करें? चयन न होने पर ट्रांसक्रिप्शन %2$s बाद शुरू होगा।</string>
     <string name="subtitles_language_unknown">अज्ञात</string>
     <string name="action_use_subtitles">सबटाइटल इस्तेमाल करें</string>
     <string name="action_transcribe_audio">ऑडियो ट्रांसक्राइब करें</string>

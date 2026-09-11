@@ -952,7 +952,7 @@
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Знайдено субтитри</string>
-    <string name="subtitles_found_text">Використати вбудовані субтитри (%1$s) чи розшифрувати аудіо?</string>
+    <string name="subtitles_found_text">Використати вбудовані субтитри (%1$s) чи розшифрувати аудіо? Без вибору розшифровка почнеться через %2$s.</string>
     <string name="subtitles_language_unknown">невідома</string>
     <string name="action_use_subtitles">Використати субтитри</string>
     <string name="action_transcribe_audio">Розшифрувати аудіо</string>

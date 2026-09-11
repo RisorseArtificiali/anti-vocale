@@ -931,7 +931,7 @@
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Subtitles found</string>
-    <string name="subtitles_found_text">Use the embedded subtitles (%1$s), or transcribe the audio?</string>
+    <string name="subtitles_found_text">Use the embedded subtitles (%1$s) or transcribe the audio? If you do not choose, transcription starts after %2$s.</string>
     <string name="subtitles_language_unknown">unknown</string>
     <string name="action_use_subtitles">Use subtitles</string>
     <string name="action_transcribe_audio">Transcribe audio</string>

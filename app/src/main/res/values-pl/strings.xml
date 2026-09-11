@@ -950,7 +950,7 @@
 
     <!-- Subtitle extraction choice (TASK-228) -->
     <string name="subtitles_found_title">Znaleziono napisy</string>
-    <string name="subtitles_found_text">Użyć osadzonych napisów (%1$s), czy przepisać audio?</string>
+    <string name="subtitles_found_text">Użyć wbudowanych napisów (%1$s) czy przepisać audio? Bez wyboru transkrypcja rozpocznie się po %2$s.</string>
     <string name="subtitles_language_unknown">nieznany</string>
     <string name="action_use_subtitles">Użyj napisów</string>
     <string name="action_transcribe_audio">Przepisz audio</string>

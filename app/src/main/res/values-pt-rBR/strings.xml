@@ -784,7 +784,7 @@
     <string name="retranscribe_setting_title">Botão re-transcrever</string>
     <string name="retranscribe_setting_description">Mostra um botão nas transcrições de áudio para tentar novamente com outro modelo.</string>
     <string name="subtitles_found_title">Legendas encontradas</string>
-    <string name="subtitles_found_text">Usar as legendas embutidas (%1$s) ou transcrever o áudio?</string>
+    <string name="subtitles_found_text">Usar as legendas incorporadas (%1$s) ou transcrever o áudio? Sem escolha, a transcrição começa após %2$s.</string>
     <string name="subtitles_language_unknown">desconhecido</string>
     <string name="action_use_subtitles">Usar legendas</string>
     <string name="action_transcribe_audio">Transcrever áudio</string>

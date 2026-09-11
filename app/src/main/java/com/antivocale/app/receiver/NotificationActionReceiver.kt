@@ -35,6 +35,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
         const val ACTION_SHARE_BACK = "com.antivocale.app.SHARE_BACK"
         const val ACTION_USE_SUBTITLES = "com.antivocale.app.USE_SUBTITLES"
         const val ACTION_TRANSCRIBE_AUDIO = "com.antivocale.app.TRANSCRIBE_AUDIO"
+        /** Swipe-dismiss of the subtitle-choice prompt: cancel the fallback, start nothing. */
+        const val ACTION_DISMISS_CHOICE = "com.antivocale.app.DISMISS_CHOICE"
         const val EXTRA_TRANSCRIPTION_TEXT = "transcription_text"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
         const val ACTION_PAGE_PREV = "com.antivocale.app.PAGE_PREV"
@@ -55,6 +57,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             ACTION_SHARE_TRANSCRIPTION -> handleShareAction(context, intent)
             ACTION_SHARE_BACK -> handleShareBackAction(context, intent)
             ACTION_USE_SUBTITLES -> handleSubtitleChoice(context, intent, requestType = "subtitles")
+            ACTION_DISMISS_CHOICE -> handleDismissChoice(context, intent)
             ACTION_TRANSCRIBE_AUDIO -> handleSubtitleChoice(context, intent, requestType = "audio")
             ACTION_PAGE_PREV, ACTION_PAGE_NEXT -> handlePageAction(context, intent)
             else -> Log.d(TAG, "Unknown action: ${intent.action}")
@@ -114,6 +117,23 @@ class NotificationActionReceiver : BroadcastReceiver() {
         } catch (e: Exception) {
             Log.e(TAG, "Failed to start InferenceService for subtitle choice '$requestType'", e)
         }
+    }
+
+    /**
+     * Swipe-dismiss of the subtitle-choice prompt (TASK-378): the user
+     * declined the choice, so the pending 5-minute fallback is cancelled and
+     * nothing is transcribed. No service start: a delete intent must be safe
+     * to fire from anywhere.
+     */
+    private fun handleDismissChoice(context: Context, intent: Intent) {
+        val taskId = intent.getStringExtra(com.antivocale.app.receiver.TaskerRequestReceiver.EXTRA_TASK_ID)
+        if (taskId.isNullOrBlank()) {
+            Log.d(TAG, "Dismiss choice without taskId; nothing to cancel")
+            return
+        }
+        WorkManager.getInstance(context)
+            .cancelUniqueWork("subtitle-choice-$taskId")
+        Log.i(TAG, "Subtitle choice dismissed by user; cancelled fallback for taskId=$taskId")
     }
 
     /**
