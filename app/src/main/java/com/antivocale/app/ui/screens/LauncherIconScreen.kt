@@ -37,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -48,14 +49,22 @@ import com.antivocale.app.R
 import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 
+/** The adaptive-icon layer canvas, in dp (see any adaptive-icon XML). */
+private const val ADAPTIVE_CANVAS = 108f
+
+/** The launcher's masked visible zone: the central 72dp of that canvas. */
+private const val SAFE_ZONE = 72f
+
 /**
  * The launcher-icon picker (TASK-473 rework, maintainer decision 2026-09-09):
  * a dedicated sub-page instead of the inline Appearance section, tiles without
  * visible labels so they line up as a regular grid (the localized names live
- * in the content description), Default plus derei's six concepts. The derei
- * glyphs are vectors whose 108dp viewport carries the launcher's safe-zone
- * framing, so a full-bleed render is WYSIWYG; Default keeps the color-plus-
- * shared-foreground composite.
+ * in the content description), Default plus derei's six concepts. The tiles
+ * render what the launcher shows: a launcher masks the 108dp adaptive layer
+ * to the central 72dp circle, so each preview scales its layer by 108/72
+ * inside the clipped tile instead of drawing the whole canvas (the derei
+ * layers keep a safe-zone margin, and Default's foreground does too);
+ * Default keeps the color-plus-shared-foreground composite.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -129,7 +138,7 @@ fun LauncherIconScreen(
                                     .size(64.dp)
                                     .clip(CircleShape)
                                     .then(
-                                        if (variant.glyphRes != null) Modifier.background(dereiGradient)
+                                        if (variant.foregroundRes != null) Modifier.background(dereiGradient)
                                         else Modifier.background(
                                             colorResource(R.color.launcher_icon_default))
                                     )
@@ -147,12 +156,21 @@ fun LauncherIconScreen(
                                     )
                                     .semantics { contentDescription = label },
                             ) {
-                                val painter = variant.glyphRes?.let { painterResource(it) }
+                                val painter = variant.foregroundRes?.let { painterResource(it) }
                                     ?: painterResource(R.mipmap.ic_launcher_foreground)
                                 Image(
                                     painter = painter,
                                     contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
+                                    // Scale the layer so the tile shows the launcher's
+                                    // masked crop (the central 72dp of the 108dp canvas),
+                                    // not the whole bleed area. Inverse of
+                                    // ShareShortcutManager's SAFE_ZONE_FRACTION.
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer {
+                                            scaleX = ADAPTIVE_CANVAS / SAFE_ZONE
+                                            scaleY = ADAPTIVE_CANVAS / SAFE_ZONE
+                                        },
                                 )
                             }
                         }

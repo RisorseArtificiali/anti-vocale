@@ -18,9 +18,12 @@ import javax.inject.Singleton
  * a user still pinned to a removed alias is healed back to Default at
  * startup ([LauncherIconManager.healIfNoAliasEnabled]); the read path
  * alone would show Default in Settings while the launcher showed nothing. The derei concepts
- * are vector glyphs ([glyphRes], safe-zone framing built into the 108dp
- * viewport) over the shared gradient drawable; Default keeps the original
- * color-plus-foreground adaptive icon. The alias component name must keep
+ * are glyph-only raster foreground layers ([foregroundRes], WebP re-exported
+ * from the proposal tiles, maintainer decision 2026-09-11 favoring fidelity
+ * to the shared artwork over the earlier vector redraws) over the shared
+ * gradient drawable; the monochrome layer reuses the foreground's alpha, as
+ * Default does; Default keeps the original color-plus-foreground adaptive
+ * icon. The alias component name must keep
  * the Launcher<Variant> pattern, pinned by tests.
  *
  * The alias component names are a pinned contract mirrored by the
@@ -31,7 +34,7 @@ import javax.inject.Singleton
 enum class LauncherIconVariant(
     val aliasComponentName: String,
     @StringRes val nameRes: Int,
-    @DrawableRes val glyphRes: Int? = null,
+    @DrawableRes val foregroundRes: Int? = null,
 ) {
     DEFAULT(
         aliasComponentName = "com.antivocale.app.LauncherDefault",
@@ -40,32 +43,32 @@ enum class LauncherIconVariant(
     WAVECUT(
         aliasComponentName = "com.antivocale.app.LauncherWavecut",
         nameRes = R.string.app_icon_variant_wavecut,
-        glyphRes = R.drawable.ic_launcher_glyph_derei_wavecut,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_wavecut,
     ),
     CROSSED(
         aliasComponentName = "com.antivocale.app.LauncherCrossed",
         nameRes = R.string.app_icon_variant_crossed,
-        glyphRes = R.drawable.ic_launcher_glyph_derei_crossed,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_crossed,
     ),
     TEXTBLOCK(
         aliasComponentName = "com.antivocale.app.LauncherTextblock",
         nameRes = R.string.app_icon_variant_textblock,
-        glyphRes = R.drawable.ic_launcher_glyph_derei_textblock,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_textblock,
     ),
     MONOGRAM(
         aliasComponentName = "com.antivocale.app.LauncherMonogram",
         nameRes = R.string.app_icon_variant_monogram,
-        glyphRes = R.drawable.ic_launcher_glyph_derei_monogram,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_monogram,
     ),
     CAPSULE(
         aliasComponentName = "com.antivocale.app.LauncherCapsule",
         nameRes = R.string.app_icon_variant_capsule,
-        glyphRes = R.drawable.ic_launcher_glyph_derei_capsule,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_capsule,
     ),
     MUTEBAR(
         aliasComponentName = "com.antivocale.app.LauncherMutebar",
         nameRes = R.string.app_icon_variant_mutebar,
-        glyphRes = R.drawable.ic_launcher_glyph_derei_mutebar,
+        foregroundRes = R.mipmap.ic_launcher_fg_derei_mutebar,
     ),
 }
 

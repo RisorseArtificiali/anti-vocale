@@ -144,15 +144,6 @@ class LauncherIconManifestTest {
      */
     @Test
     fun `adaptive icons reference their own variant artwork`() {
-        val expectedGlyph = mapOf(
-            ".LauncherDefault" to "default",
-            ".LauncherWavecut" to "derei_wavecut",
-            ".LauncherCrossed" to "derei_crossed",
-            ".LauncherTextblock" to "derei_textblock",
-            ".LauncherMonogram" to "derei_monogram",
-            ".LauncherCapsule" to "derei_capsule",
-            ".LauncherMutebar" to "derei_mutebar",
-        )
         adaptiveIconDocs().forEach { (aliasName, icon, doc) ->
             if (aliasName == ".LauncherDefault") {
                 // The original icon: the PNG background the launcher shows and
@@ -167,14 +158,17 @@ class LauncherIconManifestTest {
                     assertTrue("$icon default background: $it", it.endsWith("ic_launcher_background"))
                 }
             } else {
-                val slug = expectedGlyph[aliasName] ?: error("unmapped alias $aliasName")
+                // The slug is the alias name minus its Launcher prefix: the
+                // enum's variant name, lowercased (LauncherIconVariantResourcesTest
+                // pins the same derivation from the other side of the seam).
+                val slug = aliasName.removePrefix(".Launcher").lowercase()
                 layer(doc, "foreground").let {
-                    assertTrue("$icon ($aliasName) foreground must be the $slug glyph: $it",
-                        it.endsWith("glyph_$slug"))
+                    assertTrue("$icon ($aliasName) foreground must be the $slug layer: $it",
+                        it.endsWith("fg_derei_$slug"))
                 }
                 layer(doc, "monochrome").let {
-                    assertTrue("$icon ($aliasName) monochrome must be the same glyph: $it",
-                        it.endsWith("glyph_$slug"))
+                    assertTrue("$icon ($aliasName) monochrome must reuse the foreground's alpha: $it",
+                        it.endsWith("fg_derei_$slug"))
                 }
                 layer(doc, "background").let {
                     assertTrue("$icon ($aliasName) background must be the shared gradient: $it",

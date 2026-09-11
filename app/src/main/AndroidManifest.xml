@@ -95,8 +95,8 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- derei's icon concepts (GH #61, TASK-473): vector glyphs over the
-             shared gradient, one alias per concept. -->
+        <!-- derei's icon concepts (GH #61, TASK-473): raster foreground layers
+             over the shared gradient, one alias per concept. -->
         <activity-alias
             android:name=".LauncherWavecut"
             android:targetActivity=".MainActivity"
