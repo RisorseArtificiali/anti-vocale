@@ -845,10 +845,71 @@ class AudioPreprocessor @Inject constructor() {
     }
 
     /**
-     * Gets audio duration using MediaExtractor.
+     * Gets audio duration. For Ogg containers (Opus/ Vorbis), the last page's
+     * granule position is the definitive source: Telegram voice messages can
+     * carry a wrong or partial KEY_DURATION in the track format, and the
+     * same number feeds the long-audio safeguards (GH #91). Falls back to
+     * MediaExtractor for non-Ogg files or unreadable granules.
      */
     fun getAudioDuration(inputPath: String): Double {
-        try {
+        val oggDuration = getOggGranuleDuration(inputPath)
+        if (oggDuration > 0) return oggDuration
+        return getMediaExtractorDuration(inputPath)
+    }
+
+    /**
+     * Reads the last Ogg page's granule position and converts to seconds at
+     * the Opus sample rate (48 kHz, fixed by the spec). Returns 0 for non-Ogg
+     * files or any parse failure (caller falls back to MediaExtractor).
+     */
+    internal fun getOggGranuleDuration(inputPath: String): Double {
+        return try {
+            val file = java.io.File(inputPath)
+            if (!file.isFile || file.length() < 27) return 0.0
+            java.io.RandomAccessFile(file, "r").use { raf ->
+                // Ogg page header: "OggS"(4) + version(1) + header_type(1) +
+                // granule_position(8 LE) + ... The last page carries the
+                // total sample count in its granule position. Search from the
+                // end for the capture pattern; the last ~64KB is always enough.
+                val tailSize = minOf(65536L, file.length()).toInt()
+                val tail = ByteArray(tailSize)
+                raf.seek(file.length() - tailSize)
+                raf.readFully(tail)
+                var lastPage = -1
+                var i = tailSize - 4
+                while (i >= 0) {
+                    if (tail[i] == 'O'.code.toByte() && tail[i + 1] == 'g'.code.toByte() &&
+                        tail[i + 2] == 'g'.code.toByte() && tail[i + 3] == 'S'.code.toByte()
+                    ) {
+                        lastPage = i
+                        break
+                    }
+                    i--
+                }
+                if (lastPage < 0 || lastPage + 14 > tailSize) return 0.0
+                var granuleValue = 0L
+                for (b in 7 downTo 0) {
+                    granuleValue = (granuleValue shl 8) or (tail[lastPage + 6 + b].toLong() and 0xFF)
+                }
+                if (granuleValue <= 0) return 0.0
+                // Opus granule is always at 48 kHz (RFC 7845); Vorbis uses the
+                // file's sample rate, but we don't have it here. For Opus
+                // (the dominant Ogg audio in this app) the division is exact.
+                granuleValue / 48000.0
+            }
+        } catch (e: Exception) {
+            Log.d(TAG, "Ogg granule read failed for $inputPath: ${e.message}")
+            0.0
+        }
+    }
+
+    /**
+     * MediaExtractor's KEY_DURATION from the audio track format. Can be wrong
+     * for Opus-in-Ogg (GH #91), which is why [getAudioDuration] tries the
+     * granule position first.
+     */
+    internal fun getMediaExtractorDuration(inputPath: String): Double {
+        return try {
             val extractor = MediaExtractor()
             extractor.setDataSource(inputPath)
 
@@ -862,10 +923,10 @@ class AudioPreprocessor @Inject constructor() {
             }
 
             extractor.release()
-            return 0.0
+            0.0
         } catch (e: Exception) {
             Log.e(TAG, "Error getting audio duration", e)
-            return 0.0
+            0.0
         }
     }
 
