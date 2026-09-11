@@ -12,13 +12,16 @@ class OggGranuleDurationTest {
     @get:Rule
     val tmp = TemporaryFolder()
 
-    private fun oggPage(granule: Long): ByteArray {
-        val page = ByteArray(27)
+    private fun oggPage(granule: Long, withOpusHead: Boolean = false): ByteArray {
+        val page = if (withOpusHead) ByteArray(35) else ByteArray(27)
         "OggS".toByteArray().copyInto(page, 0)
         page[4] = 0
         page[5] = 0
         for (i in 0 until 8) {
             page[6 + i] = (granule ushr (i * 8)).toByte()
+        }
+        if (withOpusHead) {
+            "OpusHead".toByteArray().copyInto(page, 27)
         }
         return page
     }
@@ -27,8 +30,8 @@ class OggGranuleDurationTest {
         val dir = tmp.newFolder()
         val file = File(dir, "test.ogg")
         RandomAccessFile(file, "rw").use { raf ->
-            for (g in granules) {
-                raf.write(oggPage(g))
+            granules.forEachIndexed { index, g ->
+                raf.write(oggPage(g, withOpusHead = index == 0))
             }
         }
         return file

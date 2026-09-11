@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.flow
 import java.io.File
+import java.io.RandomAccessFile
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import javax.inject.Inject
@@ -864,9 +865,13 @@ class AudioPreprocessor @Inject constructor() {
      */
     internal fun getOggGranuleDuration(inputPath: String): Double {
         return try {
-            val file = java.io.File(inputPath)
+            val file = File(inputPath)
             if (!file.isFile || file.length() < 27) return 0.0
-            java.io.RandomAccessFile(file, "r").use { raf ->
+            RandomAccessFile(file, "r").use { raf ->
+                // Opus gate: the 48kHz granule division is only valid for Opus
+                // (RFC 7845). Vorbis granules are at the file's own sample
+                // rate; returning 0 lets MediaExtractor handle those correctly.
+                if (!isOpusOgg(raf)) return 0.0
                 // Ogg page header: "OggS"(4) + version(1) + header_type(1) +
                 // granule_position(8 LE) + ... The last page carries the
                 // total sample count in its granule position. Search from the
@@ -879,7 +884,8 @@ class AudioPreprocessor @Inject constructor() {
                 var i = tailSize - 4
                 while (i >= 0) {
                     if (tail[i] == 'O'.code.toByte() && tail[i + 1] == 'g'.code.toByte() &&
-                        tail[i + 2] == 'g'.code.toByte() && tail[i + 3] == 'S'.code.toByte()
+                        tail[i + 2] == 'g'.code.toByte() && tail[i + 3] == 'S'.code.toByte() &&
+                        tail[i + 4] == 0.toByte() // Ogg version is always 0
                     ) {
                         lastPage = i
                         break
@@ -901,6 +907,21 @@ class AudioPreprocessor @Inject constructor() {
             Log.d(TAG, "Ogg granule read failed for $inputPath: ${e.message}")
             0.0
         }
+    }
+
+    /**
+     * Sniffs the first Ogg page's payload for the OpusHead magic (offset 28
+     * in a standard page: 27-byte header + identification header, where the
+     * first 8 payload bytes are the "OpusHead" magic per RFC 7845).
+     */
+    private fun isOpusOgg(raf: RandomAccessFile): Boolean {
+        raf.seek(0)
+        val header = ByteArray(35)
+        if (raf.read(header) < 35) return false
+        if (header[0] != 'O'.code.toByte() || header[1] != 'g'.code.toByte()) return false
+        // "OpusHead" starts at offset 27 (end of the page header)
+        val magic = "OpusHead".toByteArray()
+        return (0 until 8).all { header[27 + it] == magic[it] }
     }
 
     /**
