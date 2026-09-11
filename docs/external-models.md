@@ -151,7 +151,7 @@ Per-family required keys (the app validates these at import time):
 | model_type / family | Required encoder metadata |
 |---|---|
 | `nemo_transducer` | `vocab_size`, `subsampling_factor`, `model_type` |
-| icefall transducer (`""` / zipformer) | `vocab_size`, `model_type` |
+| icefall transducer (`""` / zipformer) | `vocab_size` |
 | `whisper` | `model_type` whose value starts with `whisper` (value-checked, not just key-present) |
 | `nemo_ctc` / `zipformer_ctc` (CTC family) | none (structural discriminators only) |
 
@@ -238,3 +238,18 @@ Every import is verified:
 - Disk space pre-flight before any download or copy
 
 Re-importing the same files (same hashes) updates the existing record instead of creating a duplicate.
+
+
+## Which exports work (and which never will)
+
+The TRANSDUCER family accepts **offline** (non-streaming) transducer exports that
+carry their **original** ONNX metadata (`vocab_size`, and for NeMo-style exports
+`subsampling_factor` + `model_type`): Parakeet TDT, GigaAM, and k2-fsa offline
+zipformers are the known-good sources. Exports with `streaming` in the name
+(sherpa-onnx streaming zipformers) target the online recognizer and are **not
+supported**: they do not carry the offline metadata this app validates, so the
+import fails with a metadata error naming them. A hand-patched encoder that fakes
+the metadata is rejected too (the vocab_size value must be a plausible positive
+integer). If an
+import fails on missing metadata, pick the non-streaming export from the same
+repository; every sherpa release page ships both.

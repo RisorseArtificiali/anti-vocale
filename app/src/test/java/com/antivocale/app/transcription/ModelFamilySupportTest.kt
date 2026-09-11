@@ -5,6 +5,7 @@ import com.antivocale.app.data.ExternalModelSource
 import com.antivocale.app.data.FilePin
 import com.antivocale.app.data.ModelFamily
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -165,6 +166,22 @@ class ModelFamilySupportTest {
         assertEquals("encoder.int8.onnx", support.metadataFileRole())
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), support.metadataKeys("nemo_transducer"))
         assertEquals(listOf("vocab_size"), support.metadataKeys(""))
+    }
+
+    @Test
+    fun `transducer metadata value gate rejects implausible vocab_size`() {
+        // TASK-481: key presence was defeated by a hand-patched encoder; the
+        // value must now be a plausible vocabulary size.
+        TransducerSupport.validateImportedModel(null)   // absent key: presence chain handles it
+        TransducerSupport.validateImportedModel("500")  // plausible: passes
+
+        listOf("0", "1", "-3", "abc", "500.0").forEach { fake ->
+            val e = assertThrows(IllegalArgumentException::class.java) {
+                TransducerSupport.validateImportedModel(fake)
+            }
+            assertTrue("message names the value and the cure: ${e.message}",
+                e.message!!.contains("vocab_size") && e.message!!.contains("offline"))
+        }
     }
 
     @Test

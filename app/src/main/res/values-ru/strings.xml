@@ -887,7 +887,7 @@
     <string name="external_decode_language">Язык распознавания</string>
     <string name="external_decode_auto">Автоопределение</string>
     <string name="external_family">Семейство моделей</string>
-    <string name="external_family_transducer">Transducer (NeMo/Zipformer)</string>
+    <string name="external_family_transducer">Трансдьюсер (офлайн NeMo/Zipformer)</string>
     <string name="external_family_transducer_help">Ожидаются файлы encoder + decoder + joiner + tokens</string>
     <string name="external_family_whisper">Whisper</string>
     <string name="external_family_whisper_help">Ожидаются файлы encoder + decoder + tokens</string>

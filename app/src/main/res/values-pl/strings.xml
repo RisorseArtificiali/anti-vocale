@@ -903,7 +903,7 @@
     <string name="external_decode_language">Język dekodowania</string>
     <string name="external_decode_auto">Wykrywanie automatyczne</string>
     <string name="external_family">Rodzina modelu</string>
-    <string name="external_family_transducer">Transducer (NeMo/Zipformer)</string>
+    <string name="external_family_transducer">Transduktor (offline NeMo/Zipformer)</string>
     <string name="external_family_transducer_help">Oczekuje plików encoder + decoder + joiner + tokens</string>
     <string name="external_family_whisper">Whisper</string>
     <string name="external_family_whisper_help">Oczekuje plików encoder + decoder + tokens</string>

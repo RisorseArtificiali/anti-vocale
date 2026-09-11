@@ -140,7 +140,24 @@ sealed interface ModelFamilySupport {
      */
     fun validateImportedModel(metadataValue: String?) {}
 
+    /**
+     * TASK-481: extra cure text appended to this family's metadata failures
+     * (import time and load time, one definition). Null (default): the
+     * generic corrupt/wrong-family message stands alone.
+     */
+    fun metadataFailureGuidance(): String? = null
+
     companion object {
+        /**
+         * TASK-481: the cure appended to every transducer metadata failure,
+         * at import time (the better moment) and at load time; one
+         * definition so the two moments cannot promise different things.
+         */
+        const val TRANSDUCER_EXPORT_GUIDANCE =
+            "Supported transducer exports are OFFLINE (non-streaming) ones carrying their " +
+                "original vocab_size/subsampling_factor metadata (Parakeet, GigaAM, k2-fsa " +
+                "offline zipformers); exports with 'streaming' in the name are not supported"
+
         /** Error raised when CTC is imported without an explicit modelType (single definition). */
         const val CTC_MODEL_TYPE_REQUIRED =
             "CTC family requires an explicit modelType: nemo_ctc or zipformer_ctc"
@@ -194,6 +211,13 @@ sealed interface ModelFamilySupport {
  * straight through to [OfflineModelConfig.modelType].
  */
 object TransducerSupport : ModelFamilySupport {
+
+    private const val EXPORT_GUIDANCE =
+        "Known-good manual transducer imports are NeMo-style OFFLINE exports carrying " +
+            "their original vocab_size and subsampling_factor metadata (Parakeet, GigaAM). " +
+            "k2-fsa zipformer releases do not carry that metadata, streaming or not, and " +
+            "streaming NeMo exports need the catalog's streaming entry, not the offline importer."
+
     override val family: ModelFamily = ModelFamily.TRANSDUCER
 
     override fun requiredRoles(): List<String> = listOf(
@@ -230,6 +254,35 @@ object TransducerSupport : ModelFamilySupport {
 
     override fun metadataKeys(modelType: String): List<String> =
         SherpaBackend.requiredTransducerMetadataKeys(modelType)
+
+    override fun valueMetadataKey(): String = "vocab_size"
+
+    /**
+     * TASK-481 ground truth (encoder metadata dumps, eval/models): NeMo-style
+     * OFFLINE exports (Parakeet, GigaAM) carry vocab_size/subsampling_factor
+     * and import cleanly; k2-fsa zipformer releases carry NO vocab_size,
+     * streaming or not, so both their variants fail the metadata gate; and a
+     * streaming NeMo export carries full metadata but needs the catalog's
+     * streaming entry, not the offline importer. One text for all three
+     * outcomes, at import and at load.
+     */
+    override fun metadataFailureGuidance(): String = EXPORT_GUIDANCE
+
+    override fun validateImportedModel(metadataValue: String?) {
+        // TASK-481 gate honesty: key presence alone was defeated live by a
+        // hand-patched encoder (a streaming zipformer with fake
+        // vocab_size/subsampling_factor values imported cleanly and died at
+        // transcription). Every other family validates its discriminator
+        // value; the transducer family now does too: a vocab_size that is
+        // not a plausible positive integer is a patched or corrupt export.
+        if (metadataValue == null) return  // absent key stays with the presence chain
+        val vocab = metadataValue.trim().toIntOrNull()
+        require(vocab != null && vocab > 1) {
+            "vocab_size metadata is \"$metadataValue\": not a plausible vocabulary size " +
+                "(expect a number above 1). Hand-patched or corrupt exports fail here " +
+                "on purpose. $EXPORT_GUIDANCE"
+        }
+    }
 
     override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig =
         OfflineModelConfig(

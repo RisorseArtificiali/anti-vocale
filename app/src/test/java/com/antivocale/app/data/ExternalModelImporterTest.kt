@@ -115,6 +115,44 @@ class ExternalModelImporterTest {
     }
 
     @Test
+    fun `missing transducer metadata error carries the export guidance`() = runTest {
+        val src = tmp.newFolder("nometa")
+        File(src, "encoder.onnx").writeBytes(ByteArray(32) { 7 })
+        File(src, "decoder.onnx").writeBytes(ByteArray(8) { 2 })
+        File(src, "joiner.onnx").writeBytes(ByteArray(8) { 3 })
+        File(src, "tokens.txt").writeText("x")
+
+        val result = runCatching { importer.importFromDirectory(src) }
+
+        assertTrue(result.isFailure)
+        assertTrue(
+            "import-time error names the known-good sources (TASK-481): ${result.exceptionOrNull()?.message}",
+            result.exceptionOrNull()?.message!!.contains("Parakeet"))
+    }
+
+    @Test
+    fun `implausible vocab_size fails import with the guidance`() = runTest {
+        // TASK-481: the hand-patched-encoder class. Key present, value junk.
+        val dir = tmp.newFolder("fakevocab")
+        File(dir, "encoder_a.onnx").writeBytes(
+            ByteArray(64) { 1 } +
+                metadataProp("vocab_size", "0") +
+                metadataProp("subsampling_factor", "8") +
+                metadataProp("model_type", "nemo_transducer"))
+        File(dir, "decoder_b.onnx").writeBytes(ByteArray(16) { 2 })
+        File(dir, "joiner_c.onnx").writeBytes(ByteArray(16) { 3 })
+        File(dir, "tokens.txt").writeText("<unk> 0\n. 1\n")
+
+        val result = runCatching { importer.importFromDirectory(dir) }
+
+        assertTrue(result.isFailure)
+        val msg = result.exceptionOrNull()?.message ?: ""
+        assertTrue("names the fake value: $msg", msg.contains("vocab_size"))
+        assertTrue("carries the cure: $msg", msg.contains("Parakeet"))
+        assertEquals(0, store.records().size)
+    }
+
+    @Test
     fun `encoder without metadata fails import cleanly`() = runTest {
         val src = tmp.newFolder("badmeta")
         File(src, "encoder.onnx").writeBytes(ByteArray(32) { 7 })

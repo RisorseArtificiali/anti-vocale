@@ -889,7 +889,7 @@
     <string name="external_decode_language">Kod çözme dili</string>
     <string name="external_decode_auto">Otomatik algıla</string>
     <string name="external_family">Model ailesi</string>
-    <string name="external_family_transducer">Transdüser (NeMo/Zipformer)</string>
+    <string name="external_family_transducer">Transdüser (çevrimdışı NeMo/Zipformer)</string>
     <string name="external_family_transducer_help">Kodlayıcı + kod çözücü + birleştirici + token dosyaları bekler</string>
     <string name="external_family_whisper">Whisper</string>
     <string name="external_family_whisper_help">Kodlayıcı + kod çözücü + token dosyaları bekler</string>

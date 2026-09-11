@@ -847,7 +847,7 @@
     <string name="external_decode_language">डिकोड भाषा</string>
     <string name="external_decode_auto">स्वतः पहचान</string>
     <string name="external_family">मॉडल फ़ैमिली</string>
-    <string name="external_family_transducer">Transducer (NeMo/Zipformer)</string>
+    <string name="external_family_transducer">ट्रांसड्यूसर (ऑफ़लाइन NeMo/Zipformer)</string>
     <string name="external_family_transducer_help">एनकोडर + डिकोडर + जॉइनर + टोकन फ़ाइलें चाहिए</string>
     <string name="external_family_whisper">Whisper</string>
     <string name="external_family_whisper_help">एनकोडर + डिकोडर + टोकन फ़ाइलें चाहिए</string>

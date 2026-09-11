@@ -442,9 +442,13 @@ class ExternalModelImporter(
         val (missingMeta, metadataValue) = SherpaBackend.missingOnnxMetadataAndValue(
             metadataFile, support.metadataKeys(modelType), support.valueMetadataKey())
         if (missingMeta.isNotEmpty()) {
+            // TASK-481: the family's cure (for transducer: which exports are
+            // known good and why k2/streaming ones fail) rides the EARLIEST
+            // failure, import time, not only the load-time echo.
+            val guidance = support.metadataFailureGuidance()?.let { " $it." } ?: ""
             throw IllegalArgumentException(
                 "the ${support.metadataFileRole()} is missing required ONNX metadata ($missingMeta): " +
-                    "the files may be corrupt, an incompatible export, or the wrong family")
+                    "the files may be corrupt, an incompatible export, or the wrong family.$guidance")
         }
         support.validateImportedModel(metadataValue)
 

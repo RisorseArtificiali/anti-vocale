@@ -865,7 +865,7 @@
     <string name="external_decode_language">Lingua di decodifica</string>
     <string name="external_decode_auto">Rilevamento automatico</string>
     <string name="external_family">Famiglia del modello</string>
-    <string name="external_family_transducer">Transducer (NeMo/Zipformer)</string>
+    <string name="external_family_transducer">Transducer (NeMo/Zipformer offline)</string>
     <string name="external_family_transducer_help">Richiede file encoder + decoder + joiner + tokens</string>
     <string name="external_family_whisper">Whisper</string>
     <string name="external_family_whisper_help">Richiede file encoder + decoder + tokens</string>

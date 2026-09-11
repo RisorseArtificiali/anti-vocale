@@ -150,10 +150,11 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                 metadataFile, support.metadataKeys(record.modelType), support.valueMetadataKey())
             if (missingMeta.isNotEmpty()) {
                 Log.e(TAG, "${support.metadataFileRole()} missing required ONNX metadata: $missingMeta")
+                val guidance = support.metadataFailureGuidance()?.let { " $it." } ?: ""
                 return@withContext Result.failure(TranscriptionException.ModelLoadError(
                     "model file is missing required metadata ($missingMeta). " +
-                        "The model may be corrupt, an incompatible export, or the wrong family. " +
-                        "Try re-importing it or correcting its family."))
+                        "The model may be corrupt, an incompatible export, or the wrong family." +
+                        guidance + " Try re-importing it or correcting its family."))
             }
             try {
                 support.validateImportedModel(metadataValue)
