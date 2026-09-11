@@ -767,7 +767,7 @@
     <string name="benchmark_cancel">Отмена</string>
     <string name="benchmark_rerun">Запустить снова</string>
     <string name="benchmark_retry">Повторить попытку</string>
-    <string name="benchmark_speed_label">Скорость</string>
+    <string name="benchmark_speed_label">Время на минуту аудио</string>
     <string name="benchmark_speed_value">%1$.1f с/мин аудио</string>
     <string name="benchmark_time_label">Время вывода</string>
     <string name="benchmark_time_value">%1$d мс</string>
@@ -950,6 +950,8 @@
     <string name="logs_status_processing">Обработка</string>
     <string name="logs_original_label">Оригинал (до пунктуации):</string>
     <string name="logs_summary_label">Краткое содержание:</string>
+    <string name="copy_summary">Копировать резюме</string>
+    <string name="copy_original">Копировать оригинал</string>
     <string name="logs_model_label">Модель: %1$s</string>
     <string name="model_limit_chunked">Без ограничений: длинные записи разбиваются автоматически</string>
     <string name="show_task_details_title">Показывать детали задачи</string>

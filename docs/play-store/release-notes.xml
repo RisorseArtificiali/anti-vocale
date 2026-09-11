@@ -1,7 +1,8 @@
 <en-US>What's new in 1.12.0:
-• New, opt-in: AI summary of long transcriptions, in the entry details
-• New: app icon picker page with six community-designed concepts (re-pin if pinned)
-• Language setting follows the model: supported languages only, warned when forced
+• New, opt-in: AI summary of long transcriptions, in the entry details (copyable)
+• Fixed: wrong duration shown for Telegram voice notes
+• New: app icon picker page with six community-designed concepts
+• Language setting follows the model: supported languages only
 • Fixed: Whisper translating foreign audio instead of transcribing it
 • Fixed: low memory or a corrupt model now gives a clear message instead of a silent crash
 
@@ -213,11 +214,12 @@ What's new since 1.0.3:
 </en-US>
 
 <it-IT>Novità della versione 1.12.0:
-• Novità, opzionale: riepilogo AI delle trascrizioni lunghe, nei dettagli della voce
-• Novità: pagina di scelta dell'icona, con sei concept della community (riprima il pin se fissata)
-• La lingua segue il modello: solo lingue supportate, avviso quando forzata
+• Novità, opzionale: riepilogo AI delle trascrizioni lunghe, nei dettagli della voce (copiabile)
+• Corretto: durata sbagliata sui vocali Telegram
+• Novità: pagina di scelta dell'icona, con sei concept della community
+• La lingua segue il modello: solo lingue supportate
 • Corretto: Whisper traduceva l'audio straniero invece di trascriverlo
-• Corretto: memoria insufficiente o modello corrotto ora danno un messaggio chiaro, non un crash silenzioso
+• Corretto: memoria insufficiente o modello corrotto ora danno un messaggio chiaro
 
 Novità della versione 1.11.3:
 
@@ -427,8 +429,9 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>Neuigkeiten in Version 1.12.0:
-• Neu, optional: KI-Zusammenfassung langer Transkriptionen, in den Eintragsdetails
-• Neu: Symbol-Auswahlseite mit sechs Community-Designs (bei Pin neu anheften)
+• Neu, optional: KI-Zusammenfassung langer Transkriptionen, in den Eintragsdetails (kopierbar)
+• Behoben: falsche Dauer bei Telegram-Nachrichten
+• Neu: Symbol-Auswahlseite mit sechs Community-Designs
 • Sprache folgt dem Modell: nur unterstützte Sprachen, mit Hinweis bei Erzwingung
 • Behoben: Whisper übersetzte fremdsprachige Audio statt sie zu transkribieren
 • Behoben: Zu wenig Speicher oder defektes Modell melden sich jetzt klar, statt still abzustürzen
@@ -461,8 +464,9 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>Novedades de la versión 1.12.0:
-• Nuevo, opcional: resumen IA de transcripciones largas, en los detalles de la entrada
-• Nuevo: página de elección de icono, con seis diseños de la comunidad (vuelve a fijar si estaba anclado)
+• Nuevo, opcional: resumen IA de transcripciones largas, en los detalles de la entrada (copiable)
+• Corregido: duración errónea en vocales Telegram
+• Nuevo: página de elección de icono, seis diseños de la comunidad
 • El idioma sigue el modelo: solo idiomas admitidos, aviso al forzar uno
 • Corregido: Whisper traducía el audio extranjero en vez de transcribirlo
 • Corregido: poca memoria o modelo corrupto ahora dan un mensaje claro, no un cierre silencioso
@@ -495,9 +499,10 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>Nouveautés de la version 1.12.0 :
-• Nouveau, optionnel : résumé IA des longues transcriptions, dans le détail de l'entrée
-• Nouveau : page de choix de l'icône, avec six concepts de la communauté (réépinglez si épinglée)
-• La langue suit le modèle : langues prises en charge seulement, avertissement si forcée
+• Nouveau, optionnel : résumé IA des longues transcriptions, dans le détail de l'entrée (copiable)
+• Corrigé : durée erronée des vocaux Telegram
+• Nouveau : page de choix de l'icône, six concepts de la communauté
+• La langue suit le modèle : langues prises en charge seulement
 • Corrigé : Whisper traduisait l'audio étranger au lieu de le transcrire
 • Corrigé : mémoire insuffisante ou modèle corrompu donne un message clair, plus de fermeture silencieuse
 
@@ -529,8 +534,9 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>Novidades da versão 1.12.0:
-• Novo, opcional: resumo IA das transcrições longas, nos detalhes do item
-• Novo: página de escolha do ícone, com seis designs da comunidade (fixe de novo se estava fixado)
+• Novo, opcional: resumo IA das transcrições longas, nos detalhes do item (copiável)
+• Corrigido: duração errada em mensagens de voz do Telegram
+• Novo: página de escolha do ícone, com seis designs da comunidade
 • O idioma segue o modelo: só idiomas suportados, aviso ao forçar um
 • Corrigido: o Whisper traduzia áudio estrangeiro em vez de transcrever
 • Corrigido: pouca memória ou modelo corrompido agora dão mensagem clara, não fechamento silencioso
@@ -563,9 +569,10 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>Что нового в версии 1.12.0:
-• Новое, по желанию: ИИ-резюме длинных расшифровок, в деталях записи
-• Новое: страница выбора значка, шесть концепций от сообщества (при закреплении закрепите заново)
-• Язык следует модели: только поддерживаемые языки, предупреждение при принуждении
+• Новое, по желанию: ИИ-резюме длинных расшифровок, в деталях записи (можно скопировать)
+• Исправлено: неверная длительность голосовых Telegram-сообщений
+• Новое: страница выбора значка, шесть концепций от сообщества
+• Язык следует модели: только поддерживаемые языки
 • Исправлено: Whisper переводил иностранную запись вместо расшифровки
 • Исправлено: нехватка памяти или повреждённая модель дают ясное сообщение вместо тихого сбоя
 
@@ -597,8 +604,9 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>Sürüm 1.12.0'deki yenilikler:
-• Yeni, isteğe bağlı: uzun transkriptlerde yapay zekâ özeti, kayıt ayrıntılarında
-• Yeni: simge seçim sayfası, topluluk tasarımı altı konseptle (sabitlenmişse yeniden sabitleyin)
+• Yeni, isteğe bağlı: uzun transkriptlerde yapay zekâ özeti, kayıt ayrıntılarında (kopyalanabilir)
+• Düzeltildi: Telegram sesli mesajlarda yanlış süre
+• Yeni: simge seçim sayfası, topluluk tasarımı altı konseptle
 • Dil, modeli izler: yalnızca desteklenen diller, zorlamada uyarı
 • Düzeltildi: Whisper yabancı sesi transkript etmek yerine çeviriyordu
 • Düzeltildi: az bellek veya bozuk model artık sessiz çökme yerine net mesaj veriyor
@@ -631,9 +639,10 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>Nowości w wersji 1.12.0:
-• Nowość, opcjonalnie: podsumowanie AI długich transkrypcji, w szczegółach wpisu
-• Nowość: strona wyboru ikony, sześć koncepcji od społeczności (przypnij ponownie, jeśli przypięta)
-• Język podąża za modelem: tylko obsługiwane języki, ostrzeżenie przy wymuszeniu
+• Nowość, opcjonalnie: podsumowanie AI długich transkrypcji, w szczegółach wpisu (można skopiować)
+• Naprawiono: zła długość wiadomości głosowych Telegrama
+• Nowość: strona wyboru ikony, sześć koncepcji od społeczności
+• Język podąża za modelem: tylko obsługiwane języki
 • Naprawiono: Whisper tłumaczył obce nagranie zamiast je transkrybować
 • Naprawiono: mało pamięci lub uszkodzony model dają jasny komunikat, nie ciche crashowanie
 
@@ -665,7 +674,8 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>संस्करण 1.12.0 में नया क्या है:
-• नया, वैकल्पिक: लंबे ट्रांसक्रिप्ट का AI सारांश, प्रविष्टि विवरण में
+• नया, वैकल्पिक: लंबे ट्रांसक्रिप्ट का AI सारांश, प्रविष्टि विवरण में (कॉपी करने योग्य)
+• ठीक किया: Telegram वॉइस संदेश गलत अवधि दिखा सकते थे
 • नया: आइकन चुनने का पेज, समुदाय के छह डिज़ाइन सहित (पिन हो तो फिर पिन करें)
 • भाषा मॉडल के साथ चलती है: केवल समर्थित भाषाएँ, ज़बरदस्ती पर चेतावनी
 • ठीक किया: Whisper दूसरी भाषा के ऑडियो को ट्रांसक्रिब्ट करने की जगह अनुवाद कर रहा था

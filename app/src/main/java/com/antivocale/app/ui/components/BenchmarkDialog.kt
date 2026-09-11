@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Memory
-import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -175,9 +174,10 @@ private fun BenchmarkResultContent(result: BenchmarkResult) {
             )
         }
 
-        // Inference speed
+        // Inference time normalized per audio minute (lower is better);
+        // distinct from the raw Inference time row below.
         MetricRow(
-            icon = { Icon(Icons.Default.Speed, contentDescription = null) },
+            icon = { Icon(Icons.Default.Timer, contentDescription = null) },
             label = stringResource(R.string.benchmark_speed_label),
             value = stringResource(R.string.benchmark_speed_value, result.secondsPerMinute)
         )

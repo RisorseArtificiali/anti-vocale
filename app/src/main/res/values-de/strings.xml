@@ -740,7 +740,7 @@
     <string name="benchmark_cancel">Abbrechen</string>
     <string name="benchmark_rerun">Erneut ausführen</string>
     <string name="benchmark_retry">Erneut versuchen</string>
-    <string name="benchmark_speed_label">Geschwindigkeit</string>
+    <string name="benchmark_speed_label">Zeit pro Audiominute</string>
     <string name="benchmark_speed_value">%1$.1f s/min Audio</string>
     <string name="benchmark_time_label">Inferenzzeit</string>
     <string name="benchmark_time_value">%1$d ms</string>
@@ -933,6 +933,8 @@
     <string name="logs_status_processing">Verarbeitung</string>
     <string name="logs_original_label">Original (vor der Zeichensetzung):</string>
     <string name="logs_summary_label">Zusammenfassung:</string>
+    <string name="copy_summary">Zusammenfassung kopieren</string>
+    <string name="copy_original">Original kopieren</string>
     <string name="logs_model_label">Modell: %1$s</string>
     <string name="model_limit_chunked">Beliebige Länge: längere Audios werden automatisch aufgeteilt</string>
     <string name="show_task_details_title">Taskdetails anzeigen</string>

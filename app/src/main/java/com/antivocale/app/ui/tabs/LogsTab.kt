@@ -24,6 +24,7 @@ import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
@@ -106,10 +107,14 @@ private fun reportTranscription(context: Context, log: LogEntry) {
 /**
  * Copies transcription text to clipboard and shows a toast.
  */
-private fun copyTranscriptionToClipboard(context: Context, text: String) {
+private fun copyTranscriptionToClipboard(
+    context: Context,
+    text: String,
+    labelRes: Int = R.string.clipboard_label_transcription,
+) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
             as android.content.ClipboardManager
-    val clip = ClipData.newPlainText(context.getString(R.string.clipboard_label_transcription), text)
+    val clip = ClipData.newPlainText(context.getString(labelRes), text)
     clipboard.setPrimaryClip(clip)
     ToastCompat.show(context, context.getString(R.string.copied_to_clipboard))
 }
@@ -1072,6 +1077,7 @@ fun LogEntryItem(
                         log.summary?.let { summary ->
                             LabeledTranscriptBlock(
                                 label = stringResource(R.string.logs_summary_label),
+                                copyLabelRes = R.string.copy_summary,
                                 text = summary,
                                 searchQuery = searchQuery,
                             )
@@ -1083,6 +1089,7 @@ fun LogEntryItem(
                         log.rawTranscript?.let { original ->
                             LabeledTranscriptBlock(
                                 label = stringResource(R.string.logs_original_label),
+                                copyLabelRes = R.string.copy_original,
                                 text = original,
                                 searchQuery = searchQuery,
                             )
@@ -1574,16 +1581,37 @@ private fun groupLogsByConversation(
 /**
  * A labeled secondary transcript block of the expanded log card (summary,
  * pre-punctuation original): labelSmall caption, highlighted body on the
- * subdued surfaceVariant background. Shared so the two blocks cannot drift.
+ * subdued surfaceVariant background, and a copy affordance so the block's
+ * own text is reachable without re-selecting it by hand (GH #72: the
+ * summary is the end result of the two-model pipeline, it must be
+ * copyable). Shared so the two blocks cannot drift.
  */
 @Composable
-private fun LabeledTranscriptBlock(label: String, text: String, searchQuery: String) {
+private fun LabeledTranscriptBlock(
+    label: String,
+    @StringRes copyLabelRes: Int,
+    text: String,
+    searchQuery: String,
+) {
+    val context = LocalContext.current
     Spacer(modifier = Modifier.height(8.dp))
-    Text(
-        text = label,
-        style = MaterialTheme.typography.labelSmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant
-    )
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(modifier = Modifier.weight(1f))
+        // The compact action recipe (48dp target, 18dp icon, localized
+        // description): reuse it so the card's other copy buttons and this
+        // one cannot drift apart.
+        ResultActionButton(
+            compact = true,
+            onClick = { copyTranscriptionToClipboard(context, text, labelRes = copyLabelRes) },
+            icon = Icons.Default.ContentCopy,
+            labelRes = copyLabelRes,
+        )
+    }
     Spacer(modifier = Modifier.height(4.dp))
     Text(
         text = highlightText(text, searchQuery, MaterialTheme.colorScheme.tertiary),

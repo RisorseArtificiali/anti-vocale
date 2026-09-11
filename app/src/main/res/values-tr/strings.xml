@@ -93,6 +93,8 @@
     <string name="logs_status_processing">İşleniyor</string>
     <string name="logs_original_label">Orijinal (noktalamadan önce):</string>
     <string name="logs_summary_label">Özet:</string>
+    <string name="copy_summary">Özeti kopyala</string>
+    <string name="copy_original">Orijinali kopyala</string>
     <string name="logs_model_label">Model: %1$s</string>
     <string name="logs_transcription_cancelled">Metin çıkarma iptal edildi</string>
     <string name="logs_search_placeholder">Kayıtlarda ara…</string>
@@ -767,7 +769,7 @@
     <string name="benchmark_cancel">İptal</string>
     <string name="benchmark_rerun">Yeniden Çalıştır</string>
     <string name="benchmark_retry">Tekrar dene</string>
-    <string name="benchmark_speed_label">Hız</string>
+    <string name="benchmark_speed_label">Dakika başına süre</string>
     <string name="benchmark_speed_value">sesin dakikası başına %1$.1f s</string>
     <string name="benchmark_time_label">Çıkarım süresi</string>
     <string name="benchmark_time_value">%1$d ms</string>

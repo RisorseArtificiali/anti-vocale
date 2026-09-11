@@ -97,6 +97,8 @@
     <string name="logs_status_processing">Обробка</string>
     <string name="logs_original_label">Оригінал (до пунктуації):</string>
     <string name="logs_summary_label">Короткий виклад:</string>
+    <string name="copy_summary">Копіювати резюме</string>
+    <string name="copy_original">Копіювати оригінал</string>
     <string name="logs_model_label">Модель: %1$s</string>
     <string name="logs_transcription_cancelled">Розшифровку скасовано</string>
     <string name="logs_search_placeholder">Пошук записів…</string>
@@ -779,7 +781,7 @@
     <string name="benchmark_cancel">Скасувати</string>
     <string name="benchmark_rerun">Запустити знову</string>
     <string name="benchmark_retry">Повторити спробу</string>
-    <string name="benchmark_speed_label">Швидкість</string>
+    <string name="benchmark_speed_label">Час на хвилину аудіо</string>
     <string name="benchmark_speed_value">%1$.1f с на хв аудіо</string>
     <string name="benchmark_time_label">Час виводу</string>
     <string name="benchmark_time_value">%1$d мс</string>

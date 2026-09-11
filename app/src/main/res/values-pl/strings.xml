@@ -95,6 +95,8 @@
     <string name="logs_status_processing">Przetwarzanie</string>
     <string name="logs_original_label">Oryginał (przed interpunkcją):</string>
     <string name="logs_summary_label">Podsumowanie:</string>
+    <string name="copy_summary">Kopiuj podsumowanie</string>
+    <string name="copy_original">Kopiuj oryginał</string>
     <string name="logs_model_label">Model: %1$s</string>
     <string name="logs_transcription_cancelled">Transkrypcja anulowana</string>
     <string name="logs_search_placeholder">Szukaj wpisów…</string>
@@ -777,7 +779,7 @@
     <string name="benchmark_cancel">Anuluj</string>
     <string name="benchmark_rerun">Uruchom ponownie</string>
     <string name="benchmark_retry">Spróbuj ponownie</string>
-    <string name="benchmark_speed_label">Szybkość</string>
+    <string name="benchmark_speed_label">Czas na minutę audio</string>
     <string name="benchmark_speed_value">%1$.1f s na min audio</string>
     <string name="benchmark_time_label">Czas wnioskowania</string>
     <string name="benchmark_time_value">%1$d ms</string>

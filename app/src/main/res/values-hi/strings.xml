@@ -739,7 +739,7 @@
     <string name="benchmark_cancel">रद्द करें</string>
     <string name="benchmark_rerun">फिर चलाएं</string>
     <string name="benchmark_retry">फिर से कोशिश करें</string>
-    <string name="benchmark_speed_label">गति</string>
+    <string name="benchmark_speed_label">प्रति ऑडियो मिनट समय</string>
     <string name="benchmark_speed_value">%1$.1f सेकंड/मिनट ऑडियो</string>
     <string name="benchmark_time_label">इन्फ़रेंस समय</string>
     <string name="benchmark_time_value">%1$d ms</string>
@@ -932,6 +932,8 @@
     <string name="logs_status_processing">प्रोसेसिंग</string>
     <string name="logs_original_label">मूल (विराम चिह्न से पहले):</string>
     <string name="logs_summary_label">सारांश:</string>
+    <string name="copy_summary">सारांश कॉपी करें</string>
+    <string name="copy_original">मूल कॉपी करें</string>
     <string name="logs_model_label">मॉडल: %1$s</string>
     <string name="model_limit_chunked">कोई सीमा नहीं: लंबी ऑडियो स्वतः विभाजित होती है</string>
     <string name="show_task_details_title">टास्क विवरण दिखाएँ</string>
