@@ -59,6 +59,8 @@ data class LogEntry(
     val rawTranscript: String? = null,
     /** TASK-121.4: the AI summary of a long transcript, when the pass produced one. */
     val summary: String? = null,
+    /** TASK-494: stable token from the entity; rendered localized. */
+    val summarySkipReason: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
     enum class Status { QUEUED, PROCESSING, SUCCESS, ERROR }

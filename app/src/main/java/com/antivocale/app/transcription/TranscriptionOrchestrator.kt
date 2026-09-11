@@ -265,7 +265,8 @@ class TranscriptionOrchestrator @Inject constructor(
                         transcriptionResult.isPartial,
                         transcriptionResult.failedChunkCount,
                         rawTranscript = transcriptionResult.rawTranscript,
-                        summary = transcriptionResult.summary
+                        summary = transcriptionResult.summary,
+                        summarySkipReason = transcriptionResult.summarySkipReason
                     )
                     listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
                         confidence = transcriptionResult.confidence,
@@ -489,11 +490,11 @@ class TranscriptionOrchestrator @Inject constructor(
             if (!SummaryPolicy.needsSummary(result.text)) return@runCatching result
             if (!SummaryPolicy.withinContextLimit(result.text)) {
                 Log.i(TAG, "Summary pass skipped: ${result.text.length} chars exceeds the Gemma context guard")
-                return@runCatching result
+                return@runCatching result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_CONTEXT)
             }
             if (preferencesManager.modelPath.first().isNullOrBlank()) {
                 Log.i(TAG, "Summary pass skipped: no Gemma model configured (delivering transcript without summary)")
-                return@runCatching result
+                return@runCatching result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_NO_MODEL)
             }
             listener.onStatusUpdate(context.getString(R.string.summarize_status))
             // Same swap bracket as the punctuation pass: when it ran, the LLM
@@ -512,19 +513,27 @@ class TranscriptionOrchestrator @Inject constructor(
             val prompt = ChunkPromptPolicy.finalPrompt(summaryInstruction, result.text)
             val summary = llm.generateText(prompt).getOrThrow().trim()
             if (!SummaryPolicy.acceptableSummary(summary, result.text)) {
-                error("summary failed the collapse guard " +
-                    "(${summary.length} chars vs transcript ${result.text.length}); keeping no summary")
+                // TASK-494: not an error; a saved prompt incompatible with
+                // the guards makes this the EXPECTED outcome, and the user
+                // must see why the summary never appears. The reason rides
+                // the result instead of dying in logcat.
+                Log.w(TAG, "Summary rejected by the guards " +
+                    "(${summary.length} chars vs transcript ${result.text.length}); delivering without, reason recorded")
+                return@runCatching result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_GUARDS)
             }
             result.copy(summary = summary)
         }.fold(
             onSuccess = { withSummary ->
-                if (withSummary !== result) {
-                    Log.i(TAG, "Summary pass applied (${result.text.length} chars -> ${withSummary.summary?.length}-char summary)")
+                if (withSummary.summary != null) {
+                    Log.i(TAG, "Summary pass applied (${result.text.length} chars -> ${withSummary.summary.length}-char summary)")
                 }
                 withSummary
             },
             onFailure = { e ->
-                degradeTo(result, "Summary", e)
+                // TASK-494: an attended attempt that died mid-generation is
+                // as invisible as a guard rejection; record it too, then
+                // degrade as before.
+                degradeTo(result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_FAILED), "Summary", e)
             },
         )
     }
@@ -1652,13 +1661,16 @@ class TranscriptionOrchestrator @Inject constructor(
         rawTranscript: String? = null,
         /** TASK-121.4: the AI summary of a long transcript, when generation succeeded. */
         summary: String? = null,
+        /** TASK-494: why an attended summary attempt produced none. */
+        summarySkipReason: String? = null,
     ) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
             status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs,
             isPartial = isPartial, failedChunkCount = failedChunkCount,
             rawTranscript = rawTranscript,
-            summary = summary
+            summary = summary,
+            summarySkipReason = summarySkipReason
         ).toEntity())
         preferencesManager.clearPartialTranscriptionState()
         lastPartialSaveMs = 0L

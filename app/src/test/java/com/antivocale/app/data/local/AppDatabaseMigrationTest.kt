@@ -42,7 +42,7 @@ import java.io.File
 /** Every migration in order: the chain each test walks grows with each release. */
 private val ALL_MIGRATIONS = arrayOf(
     AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4,
-    AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6,
+    AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6, AppDatabase.MIGRATION_6_7,
 )
 
 @RunWith(AndroidJUnit4::class)
@@ -114,9 +114,7 @@ class AppDatabaseMigrationTest {
         // Seed a v2 database, then run the full chain 1->5 on top.
         seedV2Database()
         db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
-            .addMigrations(
-                AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3,
-                AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6)
+            .addMigrations(*ALL_MIGRATIONS)
             .allowMainThreadQueries()
             .build()
 
@@ -142,9 +140,7 @@ class AppDatabaseMigrationTest {
         // Seed a v2 database, then run the full chain 1->6 on top.
         seedV2Database()
         db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
-            .addMigrations(
-                AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3,
-                AppDatabase.MIGRATION_3_4, AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6)
+            .addMigrations(*ALL_MIGRATIONS)
             .allowMainThreadQueries()
             .build()
 
@@ -161,6 +157,27 @@ class AppDatabaseMigrationTest {
         val updated = runBlocking { db!!.logDao().getByTaskId("task-1") }
         assertEquals("Riassunto breve.", updated!!.summary)
         assertEquals("lunghissima trascrizione", updated.result)
+    }
+
+    /** MIGRATION_6_7 (TASK-494) must run, preserve rows, and default null. */
+    @Test
+    fun migrate_6_to_7_preservesRowAndPassesSchemaValidation() {
+        seedV2Database()
+        db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+
+        val row = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertNotNull(row)
+        assertNull("skip reason must default null for pre-v7 rows", row!!.summarySkipReason)
+
+        runBlocking {
+            db!!.logDao().update(row.copy(
+                result = "trascrizione lunga", summarySkipReason = "guards"))
+        }
+        val updated = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertEquals("guards", updated!!.summarySkipReason)
     }
 
     /** A fresh v3 DB (no migration) must also be internally consistent with the entity. */

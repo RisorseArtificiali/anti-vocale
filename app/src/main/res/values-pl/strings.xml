@@ -95,6 +95,10 @@
     <string name="logs_status_processing">Przetwarzanie</string>
     <string name="logs_original_label">Oryginał (przed interpunkcją):</string>
     <string name="logs_summary_label">Podsumowanie:</string>
+    <string name="summary_skipped_context">Pominięto podsumowanie: transkrypcja przekracza długość, jaką podsumowanie potrafi przetworzyć.</string>
+    <string name="summary_skipped_no_model">Pominięto podsumowanie: brak modelu Gemma. Pobierz go w karcie Modele, aby włączyć podsumowania.</string>
+    <string name="summary_skipped_failed">Nie udało się wygenerować podsumowania; transkrypcja jest nienaruszona.</string>
+    <string name="summary_skipped_guard">Pominięto podsumowanie: wygenerowany tekst wyszedł poza limity podsumowania. Niestandardowy prompt żądający bardzo krótkiego lub długiego wyniku zawsze je naruszy.</string>
     <string name="copy_summary">Kopiuj podsumowanie</string>
     <string name="copy_original">Kopiuj oryginał</string>
     <string name="logs_model_label">Model: %1$s</string>

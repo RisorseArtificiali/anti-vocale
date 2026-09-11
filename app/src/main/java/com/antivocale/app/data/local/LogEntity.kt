@@ -35,6 +35,11 @@ data class LogEntity(
     /** TASK-121.4: the AI summary of a long transcript, attached as metadata
      *  (null when the pass never fired or degraded; null on pre-v6 rows). */
     val summary: String? = null,
+    /** TASK-494: stable token for why an attended summary attempt produced
+     *  none: guards, context limit, no model, or generation failure. Null on
+     *  pre-v7 rows, on every clean skip (toggle, short transcript), and on
+     *  success. */
+    val summarySkipReason: String? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -57,7 +62,8 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     failedChunkCount = failedChunkCount,
     modelName = modelName,
     rawTranscript = rawTranscript,
-    summary = summary
+    summary = summary,
+    summarySkipReason = summarySkipReason
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -77,5 +83,6 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     failedChunkCount = failedChunkCount,
     modelName = modelName,
     rawTranscript = rawTranscript,
-    summary = summary
+    summary = summary,
+    summarySkipReason = summarySkipReason
 )

@@ -199,12 +199,16 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
         assertTrue(result.isSuccess)
         assertEquals(longTranscript, result.getOrNull())
         coVerify {
-            logDao.update(match { it.result == longTranscript && it.summary == null })
+            logDao.update(match {
+                it.result == longTranscript && it.summary == null &&
+                    // An exception is a failed attempt, not a guard verdict.
+                    it.summarySkipReason == SummaryPolicy.SKIP_REASON_FAILED
+            })
         }
     }
 
     @Test
-    fun `a summary that outgrew the transcript is dropped`() = runTest {
+    fun `a summary that outgrew the transcript is dropped with the guard reason`() = runTest {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("")
         stubSwapToLlm()
@@ -217,8 +221,33 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
 
         assertTrue(result.isSuccess)
         assertEquals(longTranscript, result.getOrNull())
+        // TASK-494: the entry must NAME the cause, not swallow it.
         coVerify {
-            logDao.update(match { it.result == longTranscript && it.summary == null })
+            logDao.update(match {
+                it.result == longTranscript && it.summary == null &&
+                    it.summarySkipReason == SummaryPolicy.SKIP_REASON_GUARDS
+            })
+        }
+    }
+
+    @Test
+    fun `a stutter-short summary is dropped with the guard reason`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
+        stubSwapToLlm()
+        // Under the 20-char floor: the classic one-word-title prompt output.
+        coEvery { llmBackend.generateText(any()) } returns Result.success("Riassunto.")
+        stubWholeFileRequest()
+
+        val result = runAudioRequest("summ-7")
+
+        assertTrue(result.isSuccess)
+        assertEquals(longTranscript, result.getOrNull())
+        coVerify {
+            logDao.update(match {
+                it.result == longTranscript && it.summary == null &&
+                    it.summarySkipReason == SummaryPolicy.SKIP_REASON_GUARDS
+            })
         }
     }
 

@@ -53,6 +53,14 @@ object SummaryPolicy {
     /** Floor for a plausible summary; see [acceptableSummary]. */
     const val MIN_SUMMARY_CHARS = 20
 
+    /** Stable DB tokens for why an attended summary attempt produced none.
+     *  Rendered localized at the single LogsTab caption mapping; never
+     *  persisted as user text. */
+    const val SKIP_REASON_GUARDS = "guards"
+    const val SKIP_REASON_CONTEXT = "context_limit"
+    const val SKIP_REASON_NO_MODEL = "no_model"
+    const val SKIP_REASON_FAILED = "failed"
+
     /** Ceiling relative to the transcript; see [acceptableSummary]. */
     const val MAX_SUMMARY_FRACTION = 1.2
 }

@@ -798,6 +798,10 @@
     <string name="logs_status_processing">Traitement</string>
     <string name="logs_original_label">Original (avant la ponctuation) :</string>
     <string name="logs_summary_label">Résumé :</string>
+    <string name="summary_skipped_context">Résumé ignoré : la transcription dépasse la longueur traitable par le résumé.</string>
+    <string name="summary_skipped_no_model">Résumé ignoré : aucun modèle Gemma configuré. Téléchargez-le dans l\'onglet Modèles pour activer les résumés.</string>
+    <string name="summary_skipped_failed">Le résumé a échoué à la génération ; la transcription est intacte.</string>
+    <string name="summary_skipped_guard">Résumé ignoré : le texte généré dépassait les limites du résumé. Un prompt personnalisé demandant un résultat très court ou très long les fera toujours échouer.</string>
     <string name="copy_summary">Copier le résumé</string>
     <string name="copy_original">Copier l\'original</string>
     <string name="logs_model_label">Modèle : %1$s</string>

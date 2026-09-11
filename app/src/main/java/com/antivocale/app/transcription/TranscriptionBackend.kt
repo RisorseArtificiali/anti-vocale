@@ -208,7 +208,11 @@ data class TranscriptionResult(
     /** TASK-121.4: the AI summary of a long transcript, attached as metadata
      *  (persisted as the log row's summary). The delivered [text] is never
      *  replaced by it. */
-    val summary: String? = null
+    val summary: String? = null,
+    /** TASK-494: stable token for why an ATTENDED summary attempt produced
+     *  no summary (the guards rejected the output). Rendered localized in
+     *  the entry details; never user text. */
+    val summarySkipReason: String? = null,
 ) {
     companion object {
         private val WHITESPACE = Regex("\\s+")

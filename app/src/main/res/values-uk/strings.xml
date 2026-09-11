@@ -97,6 +97,10 @@
     <string name="logs_status_processing">Обробка</string>
     <string name="logs_original_label">Оригінал (до пунктуації):</string>
     <string name="logs_summary_label">Короткий виклад:</string>
+    <string name="summary_skipped_context">Резюме пропущено: транскрипція перевищує довжину, яку може обробити прохід резюме.</string>
+    <string name="summary_skipped_no_model">Резюме пропущено: модель Gemma не налаштована. Завантажте її на вкладці «Моделі», щоб увімкнути резюме.</string>
+    <string name="summary_skipped_failed">Не вдалося створити резюме; транскрипція не постраждала.</string>
+    <string name="summary_skipped_guard">Резюме пропущено: згенерований текст вийшов за межі обмежень резюме. Власний запит, що вимагає дуже короткого чи довгого результату, завжди порушуватиме їх.</string>
     <string name="copy_summary">Копіювати резюме</string>
     <string name="copy_original">Копіювати оригінал</string>
     <string name="logs_model_label">Модель: %1$s</string>

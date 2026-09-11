@@ -166,4 +166,19 @@ class LogEntityMapperTest {
         assertEquals(original.audioDurationSeconds, result.audioDurationSeconds, 0.001)
         assertEquals(original.sourcePackageName, result.sourcePackageName)
     }
+
+
+    @Test
+    fun `summarySkipReason survives both mapping directions`() {
+        val entity = LogEntity(
+            id = "test-id",
+            timestamp = 1000L,
+            taskId = "task-1",
+            type = "AUDIO",
+            status = "SUCCESS",
+            summarySkipReason = "guards"
+        )
+        assertEquals("guards", entity.toLogEntry().summarySkipReason)
+        assertEquals("guards", entity.toLogEntry().toEntity().summarySkipReason)
+    }
 }

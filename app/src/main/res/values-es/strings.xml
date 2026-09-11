@@ -798,6 +798,10 @@
     <string name="logs_status_processing">Procesando</string>
     <string name="logs_original_label">Original (antes de la puntuación):</string>
     <string name="logs_summary_label">Resumen:</string>
+    <string name="summary_skipped_context">Resumen omitido: la transcripción supera la longitud que el resumen puede procesar.</string>
+    <string name="summary_skipped_no_model">Resumen omitido: no hay modelo Gemma configurado. Descárgalo en la pestaña Modelos para activar resúmenes.</string>
+    <string name="summary_skipped_failed">El resumen falló al generarse; la transcripción está intacta.</string>
+    <string name="summary_skipped_guard">Resumen omitido: el texto generado quedó fuera de los límites del resumen. Un prompt personalizado que pida un resultado muy corto o muy largo siempre los incumplirá.</string>
     <string name="copy_summary">Copiar resumen</string>
     <string name="copy_original">Copiar original</string>
     <string name="logs_model_label">Modelo: %1$s</string>

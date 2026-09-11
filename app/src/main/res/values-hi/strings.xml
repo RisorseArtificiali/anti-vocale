@@ -932,6 +932,10 @@
     <string name="logs_status_processing">प्रोसेसिंग</string>
     <string name="logs_original_label">मूल (विराम चिह्न से पहले):</string>
     <string name="logs_summary_label">सारांश:</string>
+    <string name="summary_skipped_context">सारांश छोड़ा गया: ट्रांसक्रिप्ट सारांश पास की सीमा से लंबा है।</string>
+    <string name="summary_skipped_no_model">सारांश छोड़ा गया: कोई Gemma मॉडल कॉन्फ़िगर नहीं है। सारांश चालू करने के लिए मॉडल्स टैब से डाउनलोड करें।</string>
+    <string name="summary_skipped_failed">सारांश बनाते समय विफलता; ट्रांसक्रिप्ट सुरक्षित है।</string>
+    <string name="summary_skipped_guard">सारांश छोड़ा गया: बनाया गया टेक्स्ट सारांश सीमाओं से बाहर था। बहुत छोटा या बहुत लंबा आउटपुट मांगने वाला कस्टम प्रॉम्प्ट हमेशा उन्हें असफल करेगा।</string>
     <string name="copy_summary">सारांश कॉपी करें</string>
     <string name="copy_original">मूल कॉपी करें</string>
     <string name="logs_model_label">मॉडल: %1$s</string>

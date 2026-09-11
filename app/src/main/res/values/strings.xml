@@ -90,6 +90,10 @@
     <string name="logs_status_processing">Processing</string>
     <string name="logs_original_label">Original (before punctuation):</string>
     <string name="logs_summary_label">Summary:</string>
+    <string name="summary_skipped_context">Summary skipped: the transcript exceeds the length the summary pass can handle.</string>
+    <string name="summary_skipped_no_model">Summary skipped: no Gemma model configured. Download it from the Models tab to enable summaries.</string>
+    <string name="summary_skipped_failed">Summary failed while generating; the transcript is intact.</string>
+    <string name="summary_skipped_guard">Summary skipped: the generated text fell outside the summary limits. A custom prompt asking for very short or very long output will always fail them.</string>
     <string name="copy_summary">Copy summary</string>
     <string name="copy_original">Copy original</string>
     <string name="logs_model_label">Model: %1$s</string>

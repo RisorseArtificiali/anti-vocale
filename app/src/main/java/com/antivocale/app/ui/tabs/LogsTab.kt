@@ -39,6 +39,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.MainActivity
 import com.antivocale.app.R
+import com.antivocale.app.transcription.SummaryPolicy
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.data.PreferencesManager
@@ -1083,6 +1084,21 @@ fun LogEntryItem(
                             )
                         }
 
+                        // TASK-494: an attended summary attempt that produced
+                        // nothing. Silence read as "the app forgot my
+                        // summary"; the caption names the real cause. One
+                        // mapping for every token, so new reasons cannot
+                        // bypass the caption silently.
+                        summarySkipCaptionRes(log.summarySkipReason)?.let { captionRes ->
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = stringResource(captionRes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.transcriptBlockSurface()
+                            )
+                        }
+
                         // TASK-276 AC3: the pre-punctuation original, when the pass
                         // changed the text. Always visible in the expanded card
                         // (the raw ASR output is what the model actually heard).
@@ -1578,6 +1594,26 @@ private fun groupLogsByConversation(
         .sortedByDescending { it.logs.first().timestamp }
 }
 
+/** The shared surface of the expanded card's secondary blocks, so the
+ *  transcript blocks and the skip-note caption cannot drift apart. */
+@Composable
+private fun Modifier.transcriptBlockSurface(
+    color: Color = MaterialTheme.colorScheme.surfaceVariant,
+): Modifier = this
+    .fillMaxWidth()
+    .background(color.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small)
+    .padding(8.dp)
+
+/** The single skip-reason-token to caption mapping (TASK-494); unknown or
+ *  null tokens render nothing, pre-v7 rows stay silent. */
+private fun summarySkipCaptionRes(reason: String?): Int? = when (reason) {
+    SummaryPolicy.SKIP_REASON_GUARDS -> R.string.summary_skipped_guard
+    SummaryPolicy.SKIP_REASON_CONTEXT -> R.string.summary_skipped_context
+    SummaryPolicy.SKIP_REASON_NO_MODEL -> R.string.summary_skipped_no_model
+    SummaryPolicy.SKIP_REASON_FAILED -> R.string.summary_skipped_failed
+    else -> null
+}
+
 /**
  * A labeled secondary transcript block of the expanded log card (summary,
  * pre-punctuation original): labelSmall caption, highlighted body on the
@@ -1617,12 +1653,6 @@ private fun LabeledTranscriptBlock(
         text = highlightText(text, searchQuery, MaterialTheme.colorScheme.tertiary),
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(
-                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
-                shape = MaterialTheme.shapes.small
-            )
-            .padding(8.dp)
+        modifier = Modifier.transcriptBlockSurface()
     )
 }

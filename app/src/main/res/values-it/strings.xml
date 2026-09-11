@@ -90,6 +90,10 @@
     <string name="logs_status_processing">Elaborazione</string>
     <string name="logs_original_label">Originale (prima della punteggiatura):</string>
     <string name="logs_summary_label">Riepilogo:</string>
+    <string name="summary_skipped_context">Riepilogo saltato: la trascrizione supera la lunghezza gestibile dal riepilogo.</string>
+    <string name="summary_skipped_no_model">Riepilogo saltato: nessun modello Gemma configurato. Scaricalo dalla scheda Modelli per attivare i riepiloghi.</string>
+    <string name="summary_skipped_failed">Generazione del riepilogo non riuscita; la trascrizione è intatta.</string>
+    <string name="summary_skipped_guard">Riepilogo saltato: il testo generato era fuori dai limiti del riepilogo. Un prompt personalizzato che chiede un risultato molto breve o molto lungo li farà sempre fallire.</string>
     <string name="copy_summary">Copia riepilogo</string>
     <string name="copy_original">Copia originale</string>
     <string name="logs_model_label">Modello: %1$s</string>
