@@ -50,15 +50,20 @@ object TranscriptionMemoryPolicy {
             override fun overheadMiB(modelSizeMiB: Double) = TRANSDUCER_OVERHEAD_MIB
         },
         /**
-         * Scales with model size: whisper-small (358 MB) measured at ~2320 MiB
-         * overhead on the RMX3853 (ratio ~6.5x), the cross-attention cost
-         * scaling with the model dimension squared. Tiny (103 MB) lands at
-         * ~670 MiB, matching the reporter's sub-2GB success. The floor
-         * prevents a degenerate 0 MB model from having no overhead.
+         * Capped linear scaling: the ratio 6.5x was calibrated from a
+         * CONTAMINATED measurement (VmHWM carried over from a prior Parakeet
+         * run in the same process; corrected 2026-09-11: whisper-medium
+         * peaked at 2992 MiB = ~1800 MiB overhead for a 903 MB model, a
+         * ratio of ~2x). The cap prevents false refusals on 12GB phones
+         * with whisper-medium; without it the linear ratio demands 7120 MiB
+         * where the real cost is ~3050 MiB. The floor keeps tiny (103 MB,
+         * ~670 MiB) serving on sub-2GB phones. A clean per-size calibration
+         * (fresh process per model) is the follow-up that replaces both the
+         * ratio and the cap with measured values.
          */
         WHISPER {
             override fun overheadMiB(modelSizeMiB: Double) =
-                maxOf(600.0, modelSizeMiB * WHISPER_OVERHEAD_RATIO)
+                maxOf(600.0, minOf(modelSizeMiB * WHISPER_OVERHEAD_RATIO, WHISPER_OVERHEAD_CAP_MIB))
         };
 
         abstract fun overheadMiB(modelSizeMiB: Double): Double
@@ -66,6 +71,7 @@ object TranscriptionMemoryPolicy {
 
     private const val TRANSDUCER_OVERHEAD_MIB = 900.0
     private const val WHISPER_OVERHEAD_RATIO = 6.5
+    private const val WHISPER_OVERHEAD_CAP_MIB = 1800.0
 
     /** Quadratic attention growth per chunk-second squared (MiB/s^2). */
     internal const val K_MIB_PER_S2 = 0.030
