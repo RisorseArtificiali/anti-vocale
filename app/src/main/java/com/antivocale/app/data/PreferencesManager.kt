@@ -31,6 +31,14 @@ interface PreferencesManager {
     val outputFolderUri: Flow<String?>
     val vadEnabled: Flow<Boolean>
     val vadAdvisoryDismissed: Flow<Boolean>
+
+    /**
+     * TASK-491: the first-install welcome tour has been completed (or
+     * skipped). NOT version-keyed: an app update must never replay the tour;
+     * it resets only by a fresh install (DataStore cleared) or the explicit
+     * Settings replay row.
+     */
+    val onboardingCompleted: Flow<Boolean>
     val progressiveTranscription: Flow<Boolean>
     val defaultPrompt: Flow<String>
     /** TASK-276 punctuation pass mode: "off" | "auto" | "always"; default "auto". */
@@ -74,6 +82,9 @@ interface PreferencesManager {
     suspend fun saveOutputFolderUri(uri: String?)
     suspend fun saveVadEnabled(enabled: Boolean)
     suspend fun saveVadAdvisoryDismissed(dismissed: Boolean)
+
+    /** TASK-491: marks the welcome tour done; false re-arms it. */
+    suspend fun saveOnboardingCompleted(completed: Boolean)
     suspend fun saveProgressiveTranscription(enabled: Boolean)
     suspend fun saveDefaultPrompt(prompt: String)
     suspend fun savePunctuationMode(mode: String)

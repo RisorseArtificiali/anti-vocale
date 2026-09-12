@@ -72,6 +72,7 @@ class PreferencesManagerImpl(
         private val SWIPE_ACTION_MODE = stringPreferencesKey("swipe_action_mode")
         private val BENCHMARK_RESULTS = stringPreferencesKey("benchmark_results")
         private val VAD_ADVISORY_DISMISSED = booleanPreferencesKey("vad_advisory_dismissed")
+        private val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         private val GROUP_LOGS_BY_CONVERSATION = booleanPreferencesKey("group_logs_by_conversation")
         private val ADVANCED_SHARING_ENABLED = booleanPreferencesKey("advanced_sharing_enabled")
         private val SHOW_RETRANSCRIBE_BUTTON = booleanPreferencesKey("show_retranscribe_button")
@@ -111,6 +112,7 @@ class PreferencesManagerImpl(
         val transcriptionLanguage: String = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
         val swipeActionMode: String = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
         val vadAdvisoryDismissed: Boolean = false,
+        val onboardingCompleted: Boolean = false,
         val groupLogsByConversation: Boolean = PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION,
         val advancedSharingEnabled: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
@@ -151,6 +153,7 @@ class PreferencesManagerImpl(
         transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
         swipeActionMode = this[SWIPE_ACTION_MODE] ?: PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
         vadAdvisoryDismissed = this[VAD_ADVISORY_DISMISSED] ?: false,
+        onboardingCompleted = this[ONBOARDING_COMPLETED] ?: false,
         groupLogsByConversation = this[GROUP_LOGS_BY_CONVERSATION] ?: PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION,
         advancedSharingEnabled = this[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
@@ -344,6 +347,16 @@ class PreferencesManagerImpl(
             preferences[VAD_ADVISORY_DISMISSED] = dismissed
         }
         cache.updateAndGet { it.copy(vadAdvisoryDismissed = dismissed) }
+    }
+
+    override val onboardingCompleted: Flow<Boolean> = dataStore.data.map { it[ONBOARDING_COMPLETED] ?: false }
+        .onStart { emit(cache.get().onboardingCompleted) }
+
+    override suspend fun saveOnboardingCompleted(completed: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[ONBOARDING_COMPLETED] = completed
+        }
+        cache.updateAndGet { it.copy(onboardingCompleted = completed) }
     }
 
     override val progressiveTranscription: Flow<Boolean> = dataStore.data.map { it[PROGRESSIVE_TRANSCRIPTION] ?: PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION }

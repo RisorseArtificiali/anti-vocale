@@ -13,10 +13,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.antivocale.app.R
 import com.antivocale.app.ui.components.PipTranscriptionView
+import com.antivocale.app.ui.onboarding.TourStep
+import com.antivocale.app.ui.onboarding.TourOverlayCard
+import com.antivocale.app.ui.onboarding.tourCardModifier
 import com.antivocale.app.ui.tabs.LogsTab
 import com.antivocale.app.ui.tabs.ModelTab
 import com.antivocale.app.ui.tabs.SettingsTab
 import com.antivocale.app.ui.viewmodel.LogsViewModel
+import com.antivocale.app.ui.viewmodel.SettingsViewModel
+import com.svenjacobs.reveal.Reveal
+import com.svenjacobs.reveal.RevealCanvas
+import com.svenjacobs.reveal.revealable
+import com.svenjacobs.reveal.rememberRevealCanvasState
+import com.svenjacobs.reveal.rememberRevealState
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -35,6 +44,65 @@ fun MainScreen(
     var selectedTabIndex by remember { mutableIntStateOf(if (startOnModelTab) 1 else 0) }
     val viewModel: LogsViewModel = hiltViewModel()
     val highlightTaskId by viewModel.highlightTaskId.collectAsState()
+
+    // TASK-491: the first-install welcome tour (reveal coach marks over the
+    // real UI). The preference is never version-keyed, so an update never
+    // replays it; a transcription starting while the tour is up dismisses
+    // it (AC#3) - the History list underneath keeps working regardless,
+    // the overlay is visual only.
+    val settingsViewModel: SettingsViewModel = hiltViewModel()
+    val onboardingCompleted by settingsViewModel.onboardingCompleted.collectAsState()
+    val revealCanvasState = rememberRevealCanvasState()
+    val revealState = rememberRevealState()
+    var tourStep by remember { mutableStateOf<TourStep?>(null) }
+
+    fun finishTour() {
+        tourStep = null
+        settingsViewModel.setOnboardingCompleted()
+    }
+
+    LaunchedEffect(onboardingCompleted) {
+        if (!onboardingCompleted && tourStep == null) tourStep = TourStep.Welcome
+    }
+
+    // A transcription ARRIVING while the tour is up dismisses it (AC#3).
+    // Transition-gated: only an entry that appears AFTER the tour started
+    // kills it, so a stale PROCESSING/QUEUED row from a previous session
+    // does not flash-kill the replay row or a fresh-install restore.
+    val activeEntry by viewModel.activeTranscription.collectAsState()
+    var tourStartTimeMs by remember { mutableStateOf(0L) }
+    LaunchedEffect(tourStep) {
+        if (tourStep != null && tourStartTimeMs == 0L) {
+            tourStartTimeMs = System.currentTimeMillis()
+        } else if (tourStep == null) {
+            tourStartTimeMs = 0L
+        }
+    }
+    LaunchedEffect(activeEntry?.taskId, tourStep) {
+        val entry = activeEntry ?: return@LaunchedEffect
+        if (tourStep != null && tourStartTimeMs > 0 &&
+            System.currentTimeMillis() - tourStartTimeMs > 1000
+        ) {
+            finishTour()
+        }
+    }
+
+    // Drive the reveal: each step's key revealed on entry; steps that
+    // target a specific tab switch to it first so the revealable exists.
+    LaunchedEffect(tourStep) {
+        when (val step = tourStep) {
+            null -> revealState.hide()
+            TourStep.Welcome -> revealState.reveal(TourStep.Welcome.key)
+            TourStep.ModelsTab -> {
+                selectedTabIndex = 1
+                revealState.reveal(TourStep.ModelsTab.key)
+            }
+            TourStep.HistoryTab, TourStep.BrowseFab -> {
+                selectedTabIndex = 0
+                revealState.reveal(step.key)
+            }
+        }
+    }
 
     // Force Logs tab when a highlight signal arrives
     LaunchedEffect(highlightTaskId) {
@@ -79,41 +147,86 @@ fun MainScreen(
         selectedTabIndex = index
     }
 
-    // Logs tab is first since it's the primary use case (viewing transcription history)
+    // Logs tab is first since it is the primary use case (viewing transcription history)
     val tabs = listOf(
-        TabItem(R.string.logs_tab, Icons.Default.History) { LogsTab(highlightTaskId = highlightTaskId) },
+        TabItem(R.string.logs_tab, Icons.Default.History) { LogsTab(highlightTaskId = highlightTaskId, tourRevealState = revealState) },
         TabItem(R.string.model_tab, Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }, navRequest = modelsNavRequest, onNavConsumed = { modelsNavRequest = null }) },
         TabItem(R.string.settings_tab, Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(1) }, navRequest = settingsNavRequest, onNavConsumed = { settingsNavRequest = null }) }
     )
 
-    Column(modifier = Modifier.fillMaxSize()) {
-        TopAppBar(
-            title = { Text(stringResource(R.string.app_name)) },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.surface
-            )
-        )
-
-        TabRow(
-            selectedTabIndex = selectedTabIndex,
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface
+    RevealCanvas(
+        modifier = Modifier.fillMaxSize(),
+        revealCanvasState = revealCanvasState,
+    ) {
+        Reveal(
+            revealCanvasState = revealCanvasState,
+            revealState = revealState,
+            onOverlayClick = { finishTour() },
+            overlayContent = { key ->
+                val step = TourStep.entries.firstOrNull { it.key == key }
+                if (step != null) {
+                    val isLast = step == TourStep.entries.last()
+                    val nextStep = TourStep.entries.getOrNull(TourStep.entries.indexOf(step) + 1)
+                    TourOverlayCard(
+                        step = step,
+                        isLast = isLast,
+                        modifier = tourCardModifier(this, step),
+                        onNext = {
+                            if (nextStep != null) tourStep = nextStep else finishTour()
+                        },
+                        onSkip = { finishTour() },
+                    )
+                }
+            },
         ) {
-            tabs.forEachIndexed { index, tab ->
-                Tab(
-                    selected = selectedTabIndex == index,
-                    onClick = { selectedTabIndex = index },
-                    text = { Text(stringResource(tab.titleResId)) },
-                    icon = { Icon(tab.icon, contentDescription = stringResource(tab.titleResId)) }
+            Column(modifier = Modifier.fillMaxSize()) {
+                TopAppBar(
+                    title = {
+                        Text(
+                            stringResource(R.string.app_name),
+                            modifier = Modifier.revealable(
+                                key = TourStep.Welcome.key,
+                                state = revealState,
+                            ),
+                        )
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
                 )
-            }
-        }
 
-        Crossfade(
-            targetState = selectedTabIndex,
-            animationSpec = tween(durationMillis = 150)
-        ) { index ->
-            tabs[index].content()
+                TabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ) {
+                    tabs.forEachIndexed { index, tab ->
+                        val tourKey = when (index) {
+                            0 -> TourStep.HistoryTab.key
+                            1 -> TourStep.ModelsTab.key
+                            else -> null
+                        }
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            text = { Text(stringResource(tab.titleResId)) },
+                            icon = { Icon(tab.icon, contentDescription = stringResource(tab.titleResId)) },
+                            modifier = if (tourKey != null) {
+                                Modifier.revealable(key = tourKey, state = revealState)
+                            } else {
+                                Modifier
+                            },
+                        )
+                    }
+                }
+
+                Crossfade(
+                    targetState = selectedTabIndex,
+                    animationSpec = tween(durationMillis = 150)
+                ) { index ->
+                    tabs[index].content()
+                }
+            }
         }
     }
 }

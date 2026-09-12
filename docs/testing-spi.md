@@ -53,6 +53,7 @@ Set keys and value formats:
 | `show_task_details` | `saveShowTaskDetails` | `true` or `false` (strict) |
 | `theme` | `saveThemePreference` | `DEFAULT`, `WHATSAPP`, or `TELEGRAM` (ThemeType names) |
 | `theme_mode` | `saveThemeMode` | `SYSTEM`, `DARK`, or `LIGHT` (ThemeMode names) |
+| `onboarding` | `saveOnboardingCompleted` | `true` or `false` (strict); TASK-491: `false` re-arms the welcome tour |
 | `vad_advisory` | `saveVadAdvisoryDismissed` | `true` or `false` (strict); polarity is inverted: `true` = dismissed |
 | `language` | `saveTranscriptionLanguage` | BCP-47 tag, `system`, or `auto`; written as given, no validation (the Settings picker normally constrains this to the catalog's languages) |
 | `model_path` | `saveModelPath` | path (llm backend's model file) |

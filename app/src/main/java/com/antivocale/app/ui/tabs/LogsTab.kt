@@ -41,6 +41,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.antivocale.app.MainActivity
 import com.antivocale.app.R
+import com.svenjacobs.reveal.revealable
 import com.antivocale.app.transcription.SummaryPolicy
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.SharedAudioHandler
@@ -57,6 +58,7 @@ import com.antivocale.app.ui.components.rememberSwipeToRevealState
 import com.antivocale.app.util.ToastCompat
 import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.ui.viewmodel.LogEntry
+import com.antivocale.app.ui.onboarding.TourStep
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import androidx.compose.runtime.produceState
 import com.antivocale.app.ui.dialogs.LongAudioWarningDialog
@@ -276,7 +278,8 @@ private fun buildSwipeActions(
 @Composable
 fun LogsTab(
     viewModel: LogsViewModel = hiltViewModel(),
-    highlightTaskId: String? = null
+    highlightTaskId: String? = null,
+    tourRevealState: com.svenjacobs.reveal.RevealState,
 ) {
     val logs by viewModel.logs.collectAsState()
     val filteredLogs by viewModel.filteredLogs.collectAsState()
@@ -400,7 +403,12 @@ fun LogsTab(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { browseLauncher.launch(arrayOf("audio/*", "video/*")) },
-                modifier = Modifier.navigationBarsPadding(),
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .revealable(
+                        key = TourStep.BrowseFab.key,
+                        state = tourRevealState,
+                    ),
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,

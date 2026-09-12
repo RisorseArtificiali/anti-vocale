@@ -225,6 +225,11 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.material:material-icons-extended")
 
+    // TASK-491: coach-mark overlays for the first-install welcome tour.
+    // v3.2.x is the line built against OUR compose-bom (2025.01.00); v3.3+
+    // needs a BOM bump (see the task notes before upgrading).
+    implementation("com.svenjacobs.reveal:reveal-core:3.2.2")
+
     // AndroidX Core
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("androidx.appcompat:appcompat:1.6.1")

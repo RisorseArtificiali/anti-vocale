@@ -236,6 +236,23 @@ class SettingsViewModel @Inject constructor(
             initialValue = runBlocking { preferencesManager.summaryPrompt.first() }
         )
 
+    // TASK-491: welcome-tour state; NOT version-keyed (an update never
+    // replays the tour; only a fresh install or the Settings replay row).
+    val onboardingCompleted: StateFlow<Boolean> = preferencesManager.onboardingCompleted
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = true // fail-closed: never flash the tour on a warm start
+        )
+
+    fun setOnboardingCompleted() {
+        viewModelScope.launch { preferencesManager.saveOnboardingCompleted(true) }
+    }
+
+    fun replayOnboardingTour() {
+        viewModelScope.launch { preferencesManager.saveOnboardingCompleted(false) }
+    }
+
     // TASK-121.4: smart-summary pass toggle.
     val summarizeEnabled: StateFlow<Boolean> = preferencesManager.summarizeEnabled
         .stateIn(

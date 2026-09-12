@@ -86,6 +86,7 @@ internal class TestSpiOps(
             .put("showRetranscribeButton", preferences.showRetranscribeButton.first())
             .put("groupLogsByConversation", preferences.groupLogsByConversation.first())
             .put("vadAdvisoryDismissed", preferences.vadAdvisoryDismissed.first())
+            .put("onboardingCompleted", preferences.onboardingCompleted.first())
             .put("swipeActionMode", preferences.swipeActionMode.first())
             .put("themePreference", preferences.themePreference.first())
             .put("themeMode", preferences.themeMode.first())
@@ -120,6 +121,7 @@ internal class TestSpiOps(
         "summarize" to preferences::saveSummarizeEnabled,
         "auto_copy" to preferences::saveAutoCopyEnabled,
         "vad_advisory" to preferences::saveVadAdvisoryDismissed,
+        "onboarding" to preferences::saveOnboardingCompleted,
         "group_logs" to preferences::saveGroupLogsByConversation,
         "advanced_sharing" to preferences::saveAdvancedSharingEnabled,
         "show_retranscribe" to preferences::saveShowRetranscribeButton,

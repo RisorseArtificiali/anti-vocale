@@ -75,6 +75,8 @@ internal class FakePreferencesManager : PreferencesManager {
     override val outputFolderUri: Flow<String?> get() = _outputFolderUri
     override val vadEnabled: Flow<Boolean> get() = _vadEnabled
     override val vadAdvisoryDismissed: Flow<Boolean> get() = _vadAdvisoryDismissed
+    private val _onboardingCompleted = MutableStateFlow(false)
+    override val onboardingCompleted = _onboardingCompleted
     override val progressiveTranscription: Flow<Boolean> get() = _progressiveTranscription
     override val punctuationMode: Flow<String> get() = _punctuationMode
     override val punctuationPrompt: Flow<String> get() = _punctuationPrompt
@@ -112,6 +114,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveOutputFolderUri(uri: String?) { _outputFolderUri.value = uri }
     override suspend fun saveVadEnabled(enabled: Boolean) { _vadEnabled.value = enabled }
     override suspend fun saveVadAdvisoryDismissed(dismissed: Boolean) { _vadAdvisoryDismissed.value = dismissed }
+    override suspend fun saveOnboardingCompleted(completed: Boolean) { _onboardingCompleted.value = completed }
     override suspend fun saveProgressiveTranscription(enabled: Boolean) { _progressiveTranscription.value = enabled }
     override suspend fun savePunctuationMode(mode: String) { _punctuationMode.value = mode }
     override suspend fun savePunctuationPrompt(prompt: String) { _punctuationPrompt.value = prompt.take(PreferencesManager.PROMPT_CAP) }

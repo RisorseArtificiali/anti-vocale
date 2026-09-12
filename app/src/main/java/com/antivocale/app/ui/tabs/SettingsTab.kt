@@ -1628,6 +1628,15 @@ fun SettingsTab(
             }
         }
 
+        // TASK-491: replay the first-install tour on demand (the only
+        // reset path besides a fresh install).
+        OutlinedButton(
+            onClick = { viewModel.replayOnboardingTour() },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Text(stringResource(R.string.settings_replay_tour))
+        }
+
         // Feedback & About section (issue #34 / TASK-341)
         FeedbackSection(
             expandSignal = expandCounters["feedback"] ?: 0,
