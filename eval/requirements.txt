@@ -2,7 +2,7 @@
 # Exact pins = eval/.venv pip freeze, recorded 2026-09-07 (sherpa-onnx-core and
 # cffi install alongside as transitive deps). sherpa-onnx matches the shipped
 # AAR (.sherpa-version) so recognition params line up.
-sherpa-onnx==1.13.5
+sherpa-onnx==1.13.8
 
 # Audio decode + resample to 16 kHz mono (any ffmpeg format: opus/m4a/mp3/wav)
 # via the shared ffmpeg-pipe loader in audio_loader.py, used by run_baseline.py

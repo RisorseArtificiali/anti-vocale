@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-SHERPA_ONNX_VERSION="1.13.5"
+SHERPA_ONNX_VERSION="1.13.8"
 # SYNC: when bumping, also update .sherpa-version (repo root) and the
 # SRCLIB PIN comment in app/build.gradle.kts (issue #38).
 
