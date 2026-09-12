@@ -46,13 +46,6 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
     private val perAppPreferencesManager: PerAppPreferencesManager
 ) : CoroutineWorker(appContext, params) {
 
-    /**
-     * Required for expedited requests on API < 31: if the system cannot run
-     * expedited when the delay elapses, the work runs as a foreground service
-     * with this notification instead of being deferred.
-     */
-    override suspend fun getForegroundInfo(): ForegroundInfo = buildForegroundInfo()
-
     override suspend fun doWork(): Result {
         val filePath = inputData.getString(KEY_FILE_PATH)
         val taskId = inputData.getString(KEY_TASK_ID) ?: "subtitle_timeout_${System.currentTimeMillis()}"

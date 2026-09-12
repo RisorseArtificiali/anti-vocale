@@ -608,11 +608,6 @@ class ShareReceiverActivity : Activity() {
     ) {
         val request = OneTimeWorkRequestBuilder<SubtitleChoiceTimeoutWorker>()
             .setInitialDelay(SUBTITLE_CHOICE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
-            // Expedited as the design spec requires: the notification promises
-            // a 5-minute fallback, and a plain request can be deferred far
-            // past that by Doze/App Standby. Under expedited-quota exhaustion
-            // the worker falls back to its normal non-expedited run.
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setInputData(
                 workDataOf(
                     SubtitleChoiceTimeoutWorker.KEY_FILE_PATH to localPath,
