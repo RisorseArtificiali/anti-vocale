@@ -137,7 +137,14 @@ class ExternalCatalogTest {
         // + german whisper (TASK-404, primeline re-export)
         // + canary flash per language en/de/es/fr (TASK-408, renamed from
         // "NeMo Flash" to NVIDIA's canonical family naming)
-        assertEquals(11, entries.size)
+        // + whisper tiny multilingual (TASK-475, low-RAM) + sense voice
+        // small multilingual (TASK-476, zh/en/yue/ja/ko)
+        assertEquals(12, entries.size)
+        val sense = ExternalCatalog.filter(entries, "sense")
+        assertEquals(1, sense.size)
+        assertEquals(ModelFamily.SENSE_VOICE, sense[0].family)
+        // the reporter's Asian-language path: zh finds it via the language code
+        assertEquals(sense, ExternalCatalog.filter(entries, "zh"))
         val arabic = ExternalCatalog.filter(entries, "arabic")
         assertEquals(1, arabic.size)
         val byCode = ExternalCatalog.filter(entries, "ar")

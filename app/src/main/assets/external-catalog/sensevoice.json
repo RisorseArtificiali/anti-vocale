@@ -1,0 +1,30 @@
+{
+    "name": "SenseVoice Small multilingual int8 (sherpa)",
+    "family": "SENSE_VOICE",
+    "modelType": "",
+    "languages": [
+        "zh",
+        "en",
+        "yue",
+        "ja",
+        "ko"
+    ],
+    "streaming": false,
+    "options": {
+        "sensevoice.itn": "true"
+    },
+    "files": [
+        {
+            "name": "model.int8.onnx",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/resolve/main/model.int8.onnx",
+            "sha256": "12ca1a2ae7ecf3e0019ef2822307ee0b5cadc9196569e379b4c4026f8205276d",
+            "size": 237115547
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-sense-voice-zh-en-ja-ko-yue-int8-2025-09-09/resolve/main/tokens.txt",
+            "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc",
+            "size": 315894
+        }
+    ]
+}

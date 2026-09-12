@@ -88,6 +88,18 @@
       ],
       "family": "WHISPER",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/whisper-tiny.json"
+    },
+    {
+      "name": "SenseVoice Small multilingual int8 (zh/en/yue/ja/ko)",
+      "languages": [
+        "zh",
+        "en",
+        "yue",
+        "ja",
+        "ko"
+      ],
+      "family": "SENSE_VOICE",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/sensevoice.json"
     }
   ]
 }
