@@ -31,12 +31,15 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
+import com.antivocale.app.ui.TestNavigation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -75,7 +78,9 @@ import com.antivocale.app.ui.viewmodel.SettingsViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsTab(
-    onNavigateToModelTab: () -> Unit = {}
+    onNavigateToModelTab: () -> Unit = {},
+    navRequest: TestNavigation.NavRequest? = null,
+    onNavConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -114,6 +119,56 @@ fun SettingsTab(
     val perfStatsScope = rememberCoroutineScope()
     var showPromptSettings by remember { mutableStateOf(false) }
     var showIconSettings by remember { mutableStateOf(false) }
+
+    // TASK-486: TEST_SPI navigation. Sub-pages flip their flag; a section
+    // destination bumps that section's expand counter and scrolls to it via
+    // the offsets captured by each section's onGloballyPositioned.
+    // Offsets are layout-thread writes read only inside the nav effect: a
+    // plain map (no snapshot bookkeeping). Root-space Y of each section minus
+    // the scroll container's own root Y gives the content-space target
+    // animateScrollTo expects.
+    val sectionOffsets = remember { mutableStateMapOf<String, Int>() }
+    var scrollContentRootY by remember { mutableStateOf(0) }
+    val expandCounters = remember { mutableStateMapOf<String, Int>() }
+    val navScope = rememberCoroutineScope()
+    LaunchedEffect(navRequest) {
+        // Debug-only tooling: constant-folded out of release by R8.
+        if (!com.antivocale.app.BuildConfig.DEBUG) return@LaunchedEffect
+        val request = navRequest ?: return@LaunchedEffect
+        // Consume FIRST at the source: a tab re-entry then sees null instead
+        // of replaying (a guard remembered here would die with the tab).
+        onNavConsumed()
+        when (val dest = request.destination) {
+            is TestNavigation.Destination.SettingsSubPage -> {
+                // Exactly one sub-page wins the if/else-if chain: clear the
+                // siblings, or the currently-open screen silently keeps it.
+                showIconSettings = dest.key == "icon_picker"
+                showPromptSettings = dest.key == "prompt"
+                showPerAppSettings = dest.key == "per_app"
+            }
+            is TestNavigation.Destination.SettingsSection -> {
+                // A section target needs the main Column composed: back out
+                // of any open sub-page first or the scroll anchor never lays
+                // out and the expand lands on a hidden screen.
+                showIconSettings = false
+                showPromptSettings = false
+                showPerAppSettings = false
+                expandCounters[dest.key] = (expandCounters[dest.key] ?: 0) + 1
+                // First composition may run before layout delivers offsets:
+                // wait one frame, then scroll if the anchor appeared.
+                var target = sectionOffsets[dest.key]
+                if (target == null) {
+                    withFrameNanos { }
+                    target = sectionOffsets[dest.key]
+                }
+                target?.let { rootY ->
+                    val contentY = rootY - scrollContentRootY
+                    navScope.launch { scrollState.animateScrollTo(maxOf(0, contentY - 32)) }
+                }
+            }
+            else -> Unit
+        }
+    }
 
     // OAuth launcher
     val oauthLauncher = rememberLauncherForActivityResult(
@@ -172,12 +227,17 @@ fun SettingsTab(
             .fillMaxSize()
             .navigationBarsPadding()
             .verticalScroll(scrollState)
+            .onGloballyPositioned { scrollContentRootY = it.positionInRoot().y.toInt() }
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         CollapsibleSection(
             title = stringResource(R.string.settings_section_transcription),
             icon = Icons.Default.Mic,
+            expandSignal = expandCounters["transcription"] ?: 0,
+            modifier = Modifier.onGloballyPositioned {
+                sectionOffsets["transcription"] = it.positionInRoot().y.toInt()
+            },
             initiallyExpanded = true
         ) {
             // Model Status Card (only show for LLM backend)
@@ -628,6 +688,10 @@ fun SettingsTab(
         CollapsibleSection(
             title = stringResource(R.string.settings_section_appearance),
             icon = Icons.Default.Palette,
+            expandSignal = expandCounters["appearance"] ?: 0,
+            modifier = Modifier.onGloballyPositioned {
+                sectionOffsets["appearance"] = it.positionInRoot().y.toInt()
+            },
             initiallyExpanded = true
         ) {
             // Theme Setting
@@ -875,6 +939,10 @@ fun SettingsTab(
         CollapsibleSection(
             title = stringResource(R.string.settings_section_advanced),
             icon = Icons.Default.Settings,
+            expandSignal = expandCounters["advanced"] ?: 0,
+            modifier = Modifier.onGloballyPositioned {
+                sectionOffsets["advanced"] = it.positionInRoot().y.toInt()
+            },
             initiallyExpanded = false
         ) {
             // TASK-336: offer the battery-optimization exemption after a detected
@@ -1562,6 +1630,8 @@ fun SettingsTab(
 
         // Feedback & About section (issue #34 / TASK-341)
         FeedbackSection(
+            expandSignal = expandCounters["feedback"] ?: 0,
+            onPositioned = { sectionOffsets["feedback"] = it },
             activeBackendId = uiState.transcriptionBackend,
             activeModelName = uiState.currentModelName,
             currentLanguage = currentLanguage
@@ -1598,7 +1668,9 @@ fun SettingsTab(
 private fun FeedbackSection(
     activeBackendId: String,
     activeModelName: String?,
-    currentLanguage: String
+    currentLanguage: String,
+    expandSignal: Int = 0,
+    onPositioned: (Int) -> Unit = {},
 ) {
     val context = LocalContext.current
 
@@ -1635,6 +1707,8 @@ private fun FeedbackSection(
     CollapsibleSection(
         title = stringResource(R.string.settings_section_feedback),
         icon = Icons.Default.Mail,
+        expandSignal = expandSignal,
+        modifier = Modifier.onGloballyPositioned { onPositioned(it.positionInRoot().y.toInt()) },
         initiallyExpanded = false
     ) {
         Card(modifier = Modifier.fillMaxWidth()) {

@@ -51,6 +51,29 @@ fun MainScreen(
         }
     }
 
+    // TASK-486: the debug-SPI navigation signal (consumed exactly once; the
+    // settings-scoped remainder is handed to the Settings tab).
+    val testNav by TestNavigation.pending.collectAsState()
+    var settingsNavRequest by remember { mutableStateOf<TestNavigation.NavRequest?>(null) }
+    var modelsNavRequest by remember { mutableStateOf<TestNavigation.NavRequest?>(null) }
+    LaunchedEffect(testNav) {
+        val dest = testNav ?: return@LaunchedEffect
+        TestNavigation.pending.value = null
+        when (val parsed = TestNavigation.parse(dest)) {
+            is TestNavigation.Destination.Tab -> selectedTabIndex = parsed.index
+            is TestNavigation.Destination.ModelTarget -> {
+                selectedTabIndex = 1
+                modelsNavRequest = TestNavigation.NavRequest.next(parsed)
+            }
+            is TestNavigation.Destination.SettingsSubPage,
+            is TestNavigation.Destination.SettingsSection -> {
+                selectedTabIndex = 2
+                settingsNavRequest = TestNavigation.NavRequest.next(parsed)
+            }
+            null -> Unit
+        }
+    }
+
     // Navigation callback to switch tabs
     fun navigateToTab(index: Int) {
         selectedTabIndex = index
@@ -59,8 +82,8 @@ fun MainScreen(
     // Logs tab is first since it's the primary use case (viewing transcription history)
     val tabs = listOf(
         TabItem(R.string.logs_tab, Icons.Default.History) { LogsTab(highlightTaskId = highlightTaskId) },
-        TabItem(R.string.model_tab, Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }) },
-        TabItem(R.string.settings_tab, Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(1) }) }
+        TabItem(R.string.model_tab, Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }, navRequest = modelsNavRequest, onNavConsumed = { modelsNavRequest = null }) },
+        TabItem(R.string.settings_tab, Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(1) }, navRequest = settingsNavRequest, onNavConsumed = { settingsNavRequest = null }) }
     )
 
     Column(modifier = Modifier.fillMaxSize()) {

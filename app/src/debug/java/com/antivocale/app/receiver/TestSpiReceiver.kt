@@ -59,6 +59,41 @@ class TestSpiReceiver : BroadcastReceiver() {
 
         /** Catalog entry id; required by op=set key=sherpa_path. */
         const val EXTRA_ENTRY = "entry"
+
+        /** TASK-486: navigation destination; required by op=nav. */
+        const val EXTRA_DEST = "dest"
+    }
+
+    /**
+     * TASK-486: op=nav dest=<token>. Starts MainActivity (singleTop) with the
+     * debug-gated navigation extra; MainActivity routes the token to the tab
+     * bar, a Settings sub-page, or a Settings section (expand + scroll).
+     * Dest tokens are pinned by TestNavigationTest.
+     */
+    private fun handleNav(context: Context, dest: String?): String {
+        // Same envelope as the ops engine: every outcome - including a
+        // startActivity failure - answers with JSON on both channels.
+        // JSONObject acks like the engine's: a dest with quotes/backslashes
+        // must not produce malformed JSON.
+        fun ack(body: org.json.JSONObject.() -> Unit) =
+            org.json.JSONObject().put("op", "nav").apply(body).toString()
+        return runCatching {
+            if (com.antivocale.app.ui.TestNavigation.parse(dest) == null) {
+                return ack {
+                    put("error", "unknown dest '$dest' (expected tab:history|models|settings, " +
+                        "models:import, settings:<section>, or settings:<subpage>)")
+                }
+            }
+            context.startActivity(
+                android.content.Intent(context, com.antivocale.app.MainActivity::class.java).apply {
+                    putExtra(com.antivocale.app.ui.TestNavigation.EXTRA_TEST_NAV, dest)
+                    addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK or android.content.Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                }
+            )
+            ack { put("dest", dest) }
+        }.getOrElse { e ->
+            ack { put("error", "nav failed: ${e.message ?: e.javaClass.simpleName}") }
+        }
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -75,6 +110,7 @@ class TestSpiReceiver : BroadcastReceiver() {
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)
         val entry = intent.getStringExtra(EXTRA_ENTRY)
+        val dest = intent.getStringExtra(EXTRA_DEST)
 
         // ModelPreloadReceiver idiom: goAsync plus a scope per receive,
         // finish() in finally. A local scope (not the @ApplicationScope one,
@@ -83,8 +119,15 @@ class TestSpiReceiver : BroadcastReceiver() {
         val scope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
         scope.launch {
             try {
-                // handle() answers every request with JSON, errors included.
-                val json = ops.handle(op, key, value, entry)
+                // TASK-486: navigation is receiver-side (it needs an activity
+                // start, which the JVM-pure ops engine cannot do). The ack
+                // mirrors the ops JSON shape.
+                val json = if (op == "nav") {
+                    handleNav(context, dest)
+                } else {
+                    // handle() answers every request with JSON, errors included.
+                    ops.handle(op, key, value, entry)
+                }
                 // PendingResult setters, the goAsync-sanctioned API for this
                 // async window: onReceive has already returned and we are on IO.
                 pendingResult.resultCode = Activity.RESULT_OK

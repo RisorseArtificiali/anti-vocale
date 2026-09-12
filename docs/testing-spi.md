@@ -28,6 +28,7 @@ Action: com.antivocale.app.TEST_SPI   (string extras, one op per broadcast)
 |---|---|---|
 | `get` | none | JSON object: `vadEnabled`, `progressiveEnabled`, `punctuationMode`, `punctuationPrompt`, `keepAliveTimeoutMinutes`, `threadCount`, `inferenceProvider`, `transcriptionLanguage`, `transcriptionBackend`, `activeModelPath` (saved path of the current backend: the record's `dir` for `external:` ids, the generic preference for `llm`, the keyed sherpa preference for catalog ids), `paths` mapping every catalog id plus `llm` to its saved path (or `null`), plus the remaining user preferences: `summarizeEnabled`, `summaryPrompt`, `autoCopyEnabled`, `forceModelLoad`, `compactResultActions`, `showTaskDetails`, `advancedSharingEnabled`, `showRetranscribeButton`, `groupLogsByConversation`, `vadAdvisoryDismissed`, `swipeActionMode`, `themePreference`, `themeMode`, `defaultPrompt`, `outputFolderUri` (or `null`), `externalCatalogUrl` |
 | `set` | `key`, `value`, plus `entry` for `sherpa_path` | confirmation JSON echoing `key`/`value` (`entry` too when used), or an error object with `error` and the full `supportedKeys` list |
+| `nav` | `dest` | JSON ack echoing the destination, or an error naming the valid tokens. Starts the app and routes to the destination: `tab:history`, `tab:models`, `tab:settings`, `settings:<section>` (transcription, appearance, advanced, feedback: expands and scrolls), `settings:<subpage>` (icon_picker, prompt, per_app), `models:import` (opens the community-catalog import dialog). One broadcast replaces the swipe-and-dump slog through Settings (TASK-486). |
 | `records` | none | JSON array of the imported external models; each element is the record's persisted JSON plus the derived `backendId`. All records are listed, including dangling ones whose directory no longer exists, because dangling state is precisely what a debugging session needs to see |
 | `help` | none | the op list, the set keys, the usage line, and the `PROCESS_REQUEST` pointer |
 
@@ -66,6 +67,29 @@ Set keys and value formats:
 Paths are written as given and not validated against the filesystem. A test that writes a bogus path and then transcribes will fail at model load; set paths that came out of `op=get` or `op=records`, or a real download directory.
 
 Deliberately NOT reachable through the SPI (kept out on purpose): `partialTranscription*` (transient crash-recovery state) and benchmark results (their own domain, reset from the UI); legacy one-shot markers (`externalMigrationDone`, `customTransducer*`); the disabled GGUF path (`ggufModelPath`); `externalModelsJson` (read via `op=records`, written by the import pipeline).
+
+## Ready-to-paste: navigation
+
+```bash
+# straight to the launcher-icon picker (one broadcast, then one dump):
+adb shell am broadcast --allow-background-activity-starts \
+  -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver \
+  -a com.antivocale.app.TEST_SPI --es op nav --es dest settings:icon_picker
+# straight to the community-catalog import dialog:
+adb shell am broadcast --allow-background-activity-starts \
+  -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver \
+  -a com.antivocale.app.TEST_SPI --es op nav --es dest models:import
+# to the Appearance section (expands + scrolls):
+adb shell am broadcast --allow-background-activity-starts \
+  -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver \
+  -a com.antivocale.app.TEST_SPI --es op nav --es dest settings:appearance
+```
+
+One nav at a time: await each broadcast's ack before the next (the handoff is
+conflating; a second token before the UI consumed the first is lost). The
+`--allow-background-activity-starts` flag matters when the app is not already
+foregrounded: without it Android may silently block the activity start while
+the ack still says success.
 
 ## Reading responses
 

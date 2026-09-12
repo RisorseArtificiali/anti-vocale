@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -39,9 +40,14 @@ fun CollapsibleSection(
     icon: ImageVector,
     modifier: Modifier = Modifier,
     initiallyExpanded: Boolean = true,
+    /** TASK-486: bumps open the section regardless of user state (nav). */
+    expandSignal: Int = 0,
     content: @Composable () -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
+    LaunchedEffect(expandSignal) {
+        if (expandSignal > 0) expanded = true
+    }
     val stateDescriptionText = stringResource(
         if (expanded) R.string.a11y_collapse else R.string.a11y_expand
     )

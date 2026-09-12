@@ -26,6 +26,7 @@ import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.MainScreen
+import com.antivocale.app.ui.TestNavigation
 import com.antivocale.app.ui.theme.AntiVocaleTheme
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.ThemeType
@@ -77,6 +78,7 @@ class MainActivity : AppCompatActivity() {
 
         val startOnModelTab = intent.getBooleanExtra(EXTRA_NAVIGATE_TO_MODEL_TAB, false)
         if (startOnModelTab) intent.removeExtra(EXTRA_NAVIGATE_TO_MODEL_TAB)
+        captureTestNavigation(intent)
 
         // If the previous process died from a native crash (e.g. sherpa-onnx
         // exit(255) from a corrupt model) or a low-memory kill, explain what happened.
@@ -174,6 +176,21 @@ class MainActivity : AppCompatActivity() {
         setIntent(intent)
         intent.getStringExtra(EXTRA_HIGHLIGHT_TASK_ID)?.let {
             logsViewModel.highlightLogEntry(it)
+        }
+        captureTestNavigation(intent)
+    }
+
+    /**
+     * TASK-486: the debug-only TEST_SPI navigation bridge. The receiver
+     * (debug source set) starts this activity with [TestNavigation.EXTRA_TEST_NAV];
+     * release builds never see the extra, and this read is compiled out of
+     * them entirely (BuildConfig.DEBUG is a constant false under R8).
+     */
+    private fun captureTestNavigation(intent: Intent) {
+        if (!BuildConfig.DEBUG) return
+        intent.getStringExtra(TestNavigation.EXTRA_TEST_NAV)?.let {
+            intent.removeExtra(TestNavigation.EXTRA_TEST_NAV)
+            TestNavigation.pending.value = it
         }
     }
 

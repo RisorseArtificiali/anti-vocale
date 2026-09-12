@@ -39,6 +39,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextDecoration
 import com.antivocale.app.R
+import com.antivocale.app.ui.TestNavigation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.ModelDownloader
@@ -93,7 +94,9 @@ private fun <T> filterVariants(
 fun ModelTab(
     viewModel: ModelViewModel = hiltViewModel(),
     benchmarkViewModel: BenchmarkViewModel = hiltViewModel(),
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    navRequest: TestNavigation.NavRequest? = null,
+    onNavConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -496,6 +499,19 @@ fun ModelTab(
         // Advanced section: manual model imports, collapsed by default to hide
         // complexity from users who just want the curated backends above.
         var advancedExpanded by remember { mutableStateOf(false) }
+        // TASK-486: models:import must compose the import UI first: the
+        // Advanced section renders its content only when expanded, so this
+        // effect expands it and the section's own effect opens the catalog
+        // dialog once it exists. Consumption is one-shot at the source (the
+        // request is nulled by the FIRST consumer): a tab re-entry sees null
+        // and cannot replay. Both levels act on the same request on purpose.
+        LaunchedEffect(navRequest) {
+            if (!com.antivocale.app.BuildConfig.DEBUG) return@LaunchedEffect
+            val request = navRequest ?: return@LaunchedEffect
+            if (request.destination is TestNavigation.Destination.ModelTarget) {
+                advancedExpanded = true
+            }
+        }
         Column(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(
                 onClick = { advancedExpanded = !advancedExpanded },
@@ -591,6 +607,8 @@ fun ModelTab(
                 // ONNX (sherpa): the section Card carries the header; no
                 // separate label needed here.
                 ExternalModelsSection(
+            navRequest = navRequest,
+            onNavConsumed = onNavConsumed,
                     viewModel = viewModel,
                     activeBackendId = activeBackendId,
                     folderPicker = { externalFolderPicker.launch(null) },
@@ -1182,6 +1200,8 @@ private fun LanguageEndonymDropdown(
 @Composable
 private fun ExternalModelsSection(
     viewModel: ModelViewModel,
+    navRequest: TestNavigation.NavRequest? = null,
+    onNavConsumed: () -> Unit = {},
     activeBackendId: String,
     folderPicker: () -> Unit,
     selection: ExternalImportUiState,
@@ -1191,6 +1211,18 @@ private fun ExternalModelsSection(
     val records by viewModel.externalModels.collectAsState()
     val importState by viewModel.externalImportState.collectAsState()
     var urlDialogOpen by remember { mutableStateOf(false) }
+    // TASK-486: op=nav models:import opens the catalog dialog directly.
+    // This effect OWNS consumption (the ModelTab-level effect only expands
+    // the section and must stay re-fire-free); consuming here means a later
+    // manual collapse/re-expand of Advanced cannot resurrect the request.
+    LaunchedEffect(navRequest) {
+        if (!com.antivocale.app.BuildConfig.DEBUG) return@LaunchedEffect
+        val request = navRequest ?: return@LaunchedEffect
+        onNavConsumed()
+        if (request.destination is TestNavigation.Destination.ModelTarget) {
+            urlDialogOpen = true
+        }
+    }
     var dropdownExpanded by remember { mutableStateOf(false) }
     var ctcExpanded by remember { mutableStateOf(false) }
 
