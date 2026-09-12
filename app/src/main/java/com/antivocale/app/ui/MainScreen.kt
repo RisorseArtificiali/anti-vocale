@@ -47,9 +47,8 @@ fun MainScreen(
 
     // TASK-491: the first-install welcome tour (reveal coach marks over the
     // real UI). The preference is never version-keyed, so an update never
-    // replays it; a transcription starting while the tour is up dismisses
-    // it (AC#3) - the History list underneath keeps working regardless,
-    // the overlay is visual only.
+    // replays it. The overlay intercepts all taps while visible: a
+    // transcription arriving mid-tour dismisses it (AC#3).
     val settingsViewModel: SettingsViewModel = hiltViewModel()
     val onboardingCompleted by settingsViewModel.onboardingCompleted.collectAsState()
     val revealCanvasState = rememberRevealCanvasState()
@@ -65,24 +64,17 @@ fun MainScreen(
         if (!onboardingCompleted && tourStep == null) tourStep = TourStep.Welcome
     }
 
-    // A transcription ARRIVING while the tour is up dismisses it (AC#3).
-    // Transition-gated: only an entry that appears AFTER the tour started
-    // kills it, so a stale PROCESSING/QUEUED row from a previous session
-    // does not flash-kill the replay row or a fresh-install restore.
+    // A transcription ARRIVING while the tour is up dismisses it (AC#3):
+    // arrival-based, not time-based. Snapshot the active entry's taskId at
+    // tour start; dismiss only when a DIFFERENT taskId appears.
     val activeEntry by viewModel.activeTranscription.collectAsState()
-    var tourStartTimeMs by remember { mutableStateOf(0L) }
+    var tourStartTaskId by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(tourStep) {
-        if (tourStep != null && tourStartTimeMs == 0L) {
-            tourStartTimeMs = System.currentTimeMillis()
-        } else if (tourStep == null) {
-            tourStartTimeMs = 0L
-        }
+        if (tourStep != null) tourStartTaskId = activeEntry?.taskId
     }
     LaunchedEffect(activeEntry?.taskId, tourStep) {
-        val entry = activeEntry ?: return@LaunchedEffect
-        if (tourStep != null && tourStartTimeMs > 0 &&
-            System.currentTimeMillis() - tourStartTimeMs > 1000
-        ) {
+        val entry = activeEntry
+        if (tourStep != null && entry != null && entry.taskId != tourStartTaskId) {
             finishTour()
         }
     }
@@ -92,14 +84,14 @@ fun MainScreen(
     LaunchedEffect(tourStep) {
         when (val step = tourStep) {
             null -> revealState.hide()
-            TourStep.Welcome -> revealState.reveal(TourStep.Welcome.key)
+            TourStep.Welcome -> revealState.tryReveal(TourStep.Welcome.key)
             TourStep.ModelsTab -> {
                 selectedTabIndex = 1
-                revealState.reveal(TourStep.ModelsTab.key)
+                revealState.tryReveal(TourStep.ModelsTab.key)
             }
             TourStep.HistoryTab, TourStep.BrowseFab -> {
                 selectedTabIndex = 0
-                revealState.reveal(step.key)
+                revealState.tryReveal(step.key)
             }
         }
     }
@@ -161,7 +153,18 @@ fun MainScreen(
         Reveal(
             revealCanvasState = revealCanvasState,
             revealState = revealState,
-            onOverlayClick = { finishTour() },
+            onOverlayClick = {
+                // Overlay tap advances to the next step: a dead-end dismissal
+                // (or worse, finishing + persisting) on an accidental tap
+                // would be the most common way to lose the tour.
+                tourStep?.let { step ->
+                    val next = TourStep.entries.getOrNull(
+                        TourStep.entries.indexOf(step) + 1
+                    )
+                    tourStep = next
+                }
+                if (tourStep == null) finishTour()
+            },
             overlayContent = { key ->
                 val step = TourStep.entries.firstOrNull { it.key == key }
                 if (step != null) {
