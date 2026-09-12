@@ -155,77 +155,105 @@ internal class TestSpiOps(
     )
 
     /**
-     * Every key accepted by `op=set`, derived from the dispatch tables plus
-     * the hand-listed [SPECIAL_SET_KEYS]: a key added to one of the tables
-     * cannot go missing from help, but a new `when` branch must be added to
-     * SPECIAL_SET_KEYS too (the completeness test catches the reverse
-     * direction only).
+     * TASK-469: ONE dispatch table for op=set, built from the documented
+     * typed tables plus the four validators that used to ride a hand-listed
+     * SPECIAL_SET_KEYS and a `when` (a new branch could dispatch fine yet
+     * vanish from help: the drift this map deletes by construction). Each
+     * entry validates, writes, and returns an error message or null.
      */
-    val SET_KEYS: List<String> =
-        (booleanKeys.keys + choiceKeys.keys + textKeys.keys + SPECIAL_SET_KEYS).sorted()
-
-    private suspend fun set(key: String?, value: String?, entry: String?): String {
-        if (key == null) return setError("missing key extra")
-        if (value == null) return setError("missing value extra for key '$key'")
-
-        booleanKeys[key]?.let { save ->
-            val enabled = value.toBooleanStrictOrNull()
-                ?: return setError("$key expects true or false, got '$value'")
-            save(enabled)
-            return setAck(key, value, entry)
-        }
-        choiceKeys[key]?.let { (options, save) ->
-            if (value !in options) {
-                return setError("$key expects one of ${options.joinToString(", ")}, got '$value'")
+    private val setDispatch: Map<String, suspend (value: String, entry: String?) -> String?> =
+        buildMap {
+            // Duplicate keys must fail construction, not silently overwrite:
+            // an overlap between the tables would hand the key to whichever
+            // put ran last, inverting the old dispatch precedence with no
+            // signal anywhere (SET_KEYS dedupes, the doc test sees one row).
+            fun putUnique(key: String, handler: suspend (value: String, entry: String?) -> String?) {
+                val previous = putIfAbsent(key, handler)
+                require(previous == null) {
+                    "SPI set key '$key' defined twice; tables must stay disjoint"
+                }
             }
-            save(value)
-            return setAck(key, value, entry)
-        }
-        textKeys[key]?.let { save ->
-            save(value)
-            return setAck(key, value, entry)
-        }
-        when (key) {
+            booleanKeys.forEach { (key, save) ->
+                putUnique(key) { value, _ ->
+                    val enabled = value.toBooleanStrictOrNull()
+                        ?: return@putUnique "$key expects true or false, got '$value'"
+                    save(enabled)
+                    null
+                }
+            }
+            choiceKeys.forEach { (key, spec) ->
+                val (options, save) = spec
+                putUnique(key) { value, _ ->
+                    if (value !in options) {
+                        return@putUnique "$key expects one of ${options.joinToString(", ")}, got '$value'"
+                    }
+                    save(value)
+                    null
+                }
+            }
+            textKeys.forEach { (key, save) ->
+                putUnique(key) { value, _ ->
+                    save(value)
+                    null
+                }
+            }
             // TASK-451: strictly positive; non-positive silently falls back to
             // the default in NativeKeepAlive.setTimeout while get would report
             // the stored value. Values outside the dropdown
             // (SettingsViewModel.timeoutOptions) are accepted on purpose: any
             // positive int is honored downstream, and a timing test may want 3.
-            "keep_alive" -> {
+            putUnique("keep_alive") { value, _ ->
                 val minutes = value.toIntOrNull()
                 if (minutes == null || minutes <= 0) {
-                    return setError("keep_alive expects a positive integer (minutes), got '$value'")
+                    "keep_alive expects a positive integer (minutes), got '$value'"
+                } else {
+                    preferences.saveKeepAliveTimeout(minutes)
+                    null
                 }
-                preferences.saveKeepAliveTimeout(minutes)
             }
-            "threads" -> {
+            putUnique("threads") { value, _ ->
                 // Positive only: sherpa-onnx rejects num_threads < 1 at
                 // recognizer load, and 0 would brick the next cold start.
                 val threads = value.toIntOrNull()
                 if (threads == null || threads <= 0) {
-                    return setError("threads expects a positive integer, got '$value'")
+                    "threads expects a positive integer, got '$value'"
+                } else {
+                    preferences.saveThreadCount(threads)
+                    null
                 }
-                preferences.saveThreadCount(threads)
             }
-            "backend" -> {
+            putUnique("backend") { value, _ ->
                 if (!isKnownBackend(value)) {
-                    return setError(
-                        "unknown backend '$value' (expected a catalog id, '${LlmTranscriptionBackend.BACKEND_ID}' " +
-                            "or '${ExternalModelRecord.BACKEND_ID_PREFIX}<record id>')")
+                    "unknown backend '$value' (expected a catalog id, '${LlmTranscriptionBackend.BACKEND_ID}' " +
+                        "or '${ExternalModelRecord.BACKEND_ID_PREFIX}<record id>')"
+                } else {
+                    preferences.saveTranscriptionBackend(value)
+                    null
                 }
-                preferences.saveTranscriptionBackend(value)
             }
-            "sherpa_path" -> {
+            putUnique("sherpa_path") { value, entry ->
                 if (entry == null || entry !in BuiltInBackendIds.ALL) {
-                    return setError(
-                        "sherpa_path requires entry=<catalog id> " +
-                            "(${BuiltInBackendIds.ALL.joinToString(", ")}); " +
-                            "got '${entry ?: "none"}'")
+                    "sherpa_path requires entry=<catalog id> " +
+                        "(${BuiltInBackendIds.ALL.joinToString(", ")}); got '${entry ?: "none"}'"
+                } else {
+                    preferences.saveSherpaModelPath(entry, value)
+                    null
                 }
-                preferences.saveSherpaModelPath(entry, value)
             }
-            else -> return setError("unknown key '$key'")
         }
+
+    /** Every key accepted by op=set: the dispatch map IS the list (TASK-469). */
+    val SET_KEYS: List<String> = setDispatch.keys.sorted()
+
+    private suspend fun set(key: String?, value: String?, entry: String?): String {
+        if (key == null) return setError("missing key extra")
+        if (value == null) return setError("missing value extra for key '$key'")
+        // Lookup and invocation must stay separate: a found handler whose
+        // validation passes returns null, which must not collapse into the
+        // unknown-key branch.
+        val handler = setDispatch[key] ?: return setError("unknown key '$key'")
+        val error = handler(value, entry)
+        if (error != null) return setError(error)
         return setAck(key, value, entry)
     }
 
@@ -307,9 +335,6 @@ internal class TestSpiOps(
         const val OP_SET = "set"
         const val OP_RECORDS = "records"
         const val OP_HELP = "help"
-
-        /** Keys with per-key parsing or side conditions, dispatched in `set`'s when. */
-        val SPECIAL_SET_KEYS = listOf("keep_alive", "threads", "backend", "sherpa_path")
 
         /** TASK-276: the single source is PunctuationPolicy.MODE_PREFS; the SPI only adds write-time strictness. */
         val PUNCTUATION_MODES = PunctuationPolicy.MODE_PREFS

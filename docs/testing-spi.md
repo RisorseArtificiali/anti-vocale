@@ -43,14 +43,22 @@ Set keys and value formats:
 | `threads` | `saveThreadCount` | integer (for example `4`) |
 | `provider` | `saveInferenceProvider` | `auto`, `nnapi`, `cpu` (the settings dropdown's exact set; anything else is rejected because the app would silently run it as CPU) |
 | `backend` | `saveTranscriptionBackend` | a catalog id (`sherpa-onnx`, `whisper`, `qwen3-asr`, `nemotron-streaming`, `gigaam`), `llm`, or `external:<record id>`; unknown ids are rejected without writing |
+| `advanced_sharing` | `saveAdvancedSharingEnabled` | `true` or `false` (strict) |
+| `auto_copy` | `saveAutoCopyEnabled` | `true` or `false` (strict) |
+| `compact_result_actions` | `saveCompactResultActions` | `true` or `false` (strict) |
+| `force_model_load` | `saveForceModelLoad` | `true` or `false` (strict) |
+| `group_logs` | `saveGroupLogsByConversation` | `true` or `false` (strict) |
+| `show_retranscribe` | `saveShowRetranscribeButton` | `true` or `false` (strict) |
+| `show_task_details` | `saveShowTaskDetails` | `true` or `false` (strict) |
+| `theme` | `saveThemePreference` | `DEFAULT`, `WHATSAPP`, or `TELEGRAM` (ThemeType names) |
+| `theme_mode` | `saveThemeMode` | `SYSTEM`, `DARK`, or `LIGHT` (ThemeMode names) |
+| `vad_advisory` | `saveVadAdvisoryDismissed` | `true` or `false` (strict); polarity is inverted: `true` = dismissed |
 | `language` | `saveTranscriptionLanguage` | BCP-47 tag, `system`, or `auto`; written as given, no validation (the Settings picker normally constrains this to the catalog's languages) |
 | `model_path` | `saveModelPath` | path (llm backend's model file) |
 | `sherpa_path` | `saveSherpaModelPath(entry, path)` | path, with `entry=<catalog id>` naming which backend's keyed preference is written |
 | `summarize` | `saveSummarizeEnabled` | `true` or `false` (strict); the opt-in summary pass over long transcripts (added after the 2026-09-08 memory-measurement session found the SPI could not reach it) |
 | `summary_prompt` | `saveSummaryPrompt` | free text, 500-char cap; blank = the built-in two-to-three-sentence prompt |
-| `auto_copy`, `force_model_load`, `compact_result_actions`, `show_task_details`, `advanced_sharing`, `show_retranscribe`, `group_logs`, `vad_advisory` | the matching `save*Enabled`/`save*` boolean preference | `true` or `false` (strict), same contract as `vad` |
 | `swipe_action` | `saveSwipeActionMode` | `REVEAL` or `IMMEDIATE_DELETE` (the Logs settings dropdown's exact set) |
-| `theme`, `theme_mode` | `saveThemePreference`, `saveThemeMode` | the enum names: `DEFAULT`/`WHATSAPP`/`TELEGRAM` and `SYSTEM`/`DARK`/`LIGHT` |
 | `default_prompt` | `saveDefaultPrompt` | free text, 500-char cap (like `punctuation_prompt`); the Tasker default prompt |
 | `external_catalog_url` | `saveExternalCatalogUrl` | URL of the community-catalog JSON source |
 | `output_folder` | `saveOutputFolderUri` | SAF tree URI; a blank value clears the preference back to unset (`null`). Only URIs the app was granted through the SAF picker work: the SPI stores the string but cannot take the persistable URI grant, so a never-granted tree fails silently at the next auto-save. Set folders that came out of a real picker session |
