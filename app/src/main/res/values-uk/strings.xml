@@ -108,6 +108,7 @@
     <string name="logs_search_placeholder">Пошук записів…</string>
     <string name="logs_search_no_results">Немає відповідних записів</string>
     <string name="logs_search_no_results_hint">Спробуйте інший пошуковий запит</string>
+    <string name="browse_audio_content_description">Вибрати аудіофайл для розшифрування</string>
     <string name="voice_message_duration">голосове повідомлення</string>
     <string name="source_was_video">Джерело: відеофайл</string>
     <string name="processed_in">Оброблено за %1$s</string>

@@ -1,6 +1,7 @@
 package com.antivocale.app.util
 
 import android.content.Context
+import com.antivocale.app.R
 import android.net.Uri
 import android.util.Log
 import android.webkit.MimeTypeMap
@@ -57,6 +58,27 @@ object SharedAudioHandler {
         object Unreadable : CopyResult()
         /** Target storage cannot hold the source plus margin (TASK-432 pre-copy gate). */
         data class OutOfSpace(val neededMb: Int) : CopyResult()
+
+        /**
+         * The localized user message for this outcome (TASK-500): one
+         * definition for every caller - the share receiver's toasts and the
+         * History browse FAB's snackbar - so the wording and the
+         * extension-sanitizing guard cannot drift between them.
+         */
+        fun userMessage(context: Context): String = when (this) {
+            is Success -> error("Success carries no error message")
+            is UnsupportedFormat ->
+                // The extension comes from the sender's URI/MIME; guard
+                // against garbage before interpolating (non-token falls back).
+                if (extension.matches(Regex("^[a-zA-Z0-9]{1,8}$"))) {
+                    context.getString(R.string.unsupported_audio_format, extension)
+                } else {
+                    context.getString(R.string.unknown_audio_format)
+                }
+            UnknownFormat -> context.getString(R.string.unknown_audio_format)
+            Unreadable -> context.getString(R.string.failed_to_process_audio)
+            is OutOfSpace -> context.getString(R.string.error_storage_full, neededMb)
+        }
     }
 
     /** Bytes the target storage must hold for a source of [neededBytes]: source plus margin (10% + 32MB). */

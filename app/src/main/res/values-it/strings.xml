@@ -101,6 +101,7 @@
     <string name="logs_search_placeholder">Cerca voci…</string>
     <string name="logs_search_no_results">Nessuna voce trovata</string>
     <string name="logs_search_no_results_hint">Prova un termine di ricerca diverso</string>
+    <string name="browse_audio_content_description">Scegli un file audio da trascrivere</string>
     <string name="voice_message_duration">messaggio vocale</string>
     <string name="source_was_video">Origine: file video</string>
     <string name="processed_in">Elaborato in %1$s</string>

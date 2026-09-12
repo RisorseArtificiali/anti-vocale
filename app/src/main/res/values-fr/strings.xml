@@ -74,6 +74,7 @@
     <string name="logs_search_placeholder">Rechercher dans les entrées…</string>
     <string name="logs_search_no_results">Aucune entrée correspondante</string>
     <string name="logs_search_no_results_hint">Essayez un autre terme de recherche</string>
+    <string name="browse_audio_content_description">Choisir un fichier audio à transcrire</string>
     <string name="voice_message_duration">message vocal</string>
     <string name="source_was_video">Source : fichier vidéo</string>
     <string name="processed_in">Traité en %1$s</string>

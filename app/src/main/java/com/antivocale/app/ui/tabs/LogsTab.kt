@@ -37,6 +37,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import com.antivocale.app.MainActivity
 import com.antivocale.app.R
 import com.antivocale.app.transcription.SummaryPolicy
@@ -376,10 +378,36 @@ fun LogsTab(
         )
     }
 
+    // TASK-500: browse-audio FAB. The system document picker returns a
+    // content URI with a transient read grant; the ViewModel copies it
+    // through the same shared-audio path as the share receiver and enqueues
+    // transcription, so no storage permission is needed.
+    val browseLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) viewModel.transcribeLocalFile(context, uri)
+    }
+    LaunchedEffect(Unit) {
+        viewModel.browseError.collect {
+            snackbarHostState.showSnackbar(it)
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { browseLauncher.launch(arrayOf("audio/*", "video/*")) },
+                modifier = Modifier.navigationBarsPadding(),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.browse_audio_content_description),
+                )
+            }
+        },
     ) { padding ->
         // Scaffold insets are zeroed above (edge-to-edge list); consume the param
         // explicitly so lint does not flag it as an ignored safety contract.
@@ -518,7 +546,9 @@ fun LogsTab(
                     state = listState,
                     modifier = Modifier.weight(1f),
                     contentPadding = PaddingValues(
-                        bottom = 8.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+                        // TASK-500: FAB clearance so the floating button never
+                        // sits on the last row's action buttons at list end.
+                        bottom = 96.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                     )
                 ) {
                     item(key = "header") {

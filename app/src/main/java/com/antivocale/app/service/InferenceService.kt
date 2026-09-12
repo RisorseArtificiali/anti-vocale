@@ -70,6 +70,9 @@ class InferenceService : Service(), TranscriptionListener {
         const val EXTRA_SOURCE_PACKAGE = "source_package"
         const val SOURCE_SHARE = "share"
 
+        /** TASK-500: the History browse FAB; not a share request. */
+        const val SOURCE_BROWSE = "browse"
+
         const val EXTRA_SHARED_URI = "shared_uri"
         const val EXTRA_MIME_TYPE = "mime_type"
         const val EXTRA_BACKEND_OVERRIDE = "backend_override"

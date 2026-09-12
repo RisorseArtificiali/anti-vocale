@@ -85,6 +85,7 @@
     <string name="logs_search_placeholder">Einträge suchen…</string>
     <string name="logs_search_no_results">Keine passenden Einträge</string>
     <string name="logs_search_no_results_hint">Versuche einen anderen Suchbegriff</string>
+    <string name="browse_audio_content_description">Audiodatei zum Transkribieren auswählen</string>
     <string name="voice_message_duration">Sprachnachricht</string>
     <string name="source_was_video">Quelle: Videodatei</string>
     <string name="processed_in">Verarbeitet in %1$s</string>

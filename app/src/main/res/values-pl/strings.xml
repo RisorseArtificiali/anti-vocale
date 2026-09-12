@@ -106,6 +106,7 @@
     <string name="logs_search_placeholder">Szukaj wpisów…</string>
     <string name="logs_search_no_results">Brak pasujących wpisów</string>
     <string name="logs_search_no_results_hint">Spróbuj innego wyszukiwanego hasła</string>
+    <string name="browse_audio_content_description">Wybierz plik audio do transkrypcji</string>
     <string name="voice_message_duration">wiadomość głosowa</string>
     <string name="source_was_video">Źródło: plik wideo</string>
     <string name="processed_in">Przetworzono w %1$s</string>

@@ -100,7 +100,7 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
                 requestType = "audio",
                 prompt = "",
                 filePath = filePath,
-                source = "share",
+                source = com.antivocale.app.service.InferenceService.SOURCE_SHARE,
                 sourcePackage = sourcePackage,
                 backendOverride = backendOverride,
                 trackIndex = -1,

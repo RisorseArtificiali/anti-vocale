@@ -104,6 +104,7 @@
     <string name="logs_search_placeholder">Kayıtlarda ara…</string>
     <string name="logs_search_no_results">Eşleşen kayıt yok</string>
     <string name="logs_search_no_results_hint">Farklı bir arama terimi deneyin</string>
+    <string name="browse_audio_content_description">Transkript için bir ses dosyası seç</string>
     <string name="voice_message_duration">sesli mesaj</string>
     <string name="source_was_video">Kaynak: video dosyası</string>
     <string name="processed_in">%1$s içinde işlendi</string>

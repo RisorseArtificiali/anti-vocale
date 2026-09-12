@@ -154,7 +154,7 @@ class TranscriptionOrchestrator @Inject constructor(
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope
     ): Result<String> {
-        val isShareRequest = source == "share"
+        val isShareRequest = source == com.antivocale.app.service.InferenceService.SOURCE_SHARE
 
         // Log request start
         markProcessing(taskId)

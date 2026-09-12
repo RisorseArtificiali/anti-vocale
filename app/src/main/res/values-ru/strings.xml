@@ -92,6 +92,7 @@
     <string name="logs_search_placeholder">Поиск записей…</string>
     <string name="logs_search_no_results">Подходящих записей нет</string>
     <string name="logs_search_no_results_hint">Попробуйте другой поисковый запрос</string>
+    <string name="browse_audio_content_description">Выбрать аудиофайл для расшифровки</string>
     <string name="voice_message_duration">голосовое сообщение</string>
     <string name="source_was_video">Источник: видеофайл</string>
     <string name="processed_in">Обработано за %1$s</string>

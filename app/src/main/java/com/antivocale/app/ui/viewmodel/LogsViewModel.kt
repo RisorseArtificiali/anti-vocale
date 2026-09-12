@@ -2,6 +2,7 @@ package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -20,10 +21,12 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.service.InferenceService
+import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -63,6 +66,10 @@ data class LogEntry(
     val summarySkipReason: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
+
+    companion object {
+        private const val TAG = "LogsViewModel"
+    }
     enum class Status { QUEUED, PROCESSING, SUCCESS, ERROR }
 
     /** A final, copyable transcript (mirrors the swipe/menu action gating). */
@@ -88,6 +95,10 @@ class LogsViewModel @Inject constructor(
     private val audioPreprocessor: AudioPreprocessor,
     private val transcriptionCalibrator: TranscriptionCalibrator
 ) : ViewModel() {
+    companion object {
+        private const val TAG = "LogsViewModel"
+    }
+
 
     /**
      * Pending long-audio warning (TASK-432): non-null while the advisory dialog
@@ -172,6 +183,65 @@ class LogsViewModel @Inject constructor(
     fun addLog(entry: LogEntry) {
         viewModelScope.launch {
             logDao.insert(entry.toEntity())
+        }
+    }
+
+    /**
+     * TASK-500: browse errors for the FAB snackbar, as EVENTS: a StateFlow
+     * would conflate an identical consecutive error into silence while the
+     * first snackbar is still showing.
+     */
+    private val _browseError = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val browseError: kotlinx.coroutines.flow.SharedFlow<String> = _browseError
+
+    private fun reportBrowseError(message: String) {
+        _browseError.tryEmit(message)
+    }
+
+    /**
+     * TASK-500: the History browse FAB. Copies the picked file through the
+     * SAME shared-audio path as the share receiver (extension/MIME gate,
+     * free-space pre-copy check, app-storage copy) and enqueues it on the
+     * inference service with source "browse": not a share request, so no
+     * share-back affordances, exactly like a Tasker-initiated local file.
+     */
+    fun transcribeLocalFile(context: Context, uri: Uri) {
+        // The applicationContext, never the Activity: the copy is blocking IO
+        // with no suspension points, so the coroutine can outlive the
+        // Activity's teardown, and nothing here needs the Activity.
+        val appContext = context.applicationContext
+        viewModelScope.launch(Dispatchers.IO) {
+            // copyToAppStorage never throws: every path lands in a
+            // CopyResult variant (the FGS start below is the throwing step).
+            val result = SharedAudioHandler.copyToAppStorage(appContext, uri)
+            val localPath = when (result) {
+                is SharedAudioHandler.CopyResult.Success -> result.path
+                // Every failure variant carries its own localized message
+                // (single definition next to the sealed class).
+                else -> {
+                    reportBrowseError(result.userMessage(appContext))
+                    return@launch
+                }
+            }
+            val intent = Intent(appContext, InferenceService::class.java).apply {
+                putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, UUID.randomUUID().toString())
+                putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
+                putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, localPath)
+                putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_BROWSE)
+            }
+            // API 31+ throws ForegroundServiceStartNotAllowedException when
+            // the app is backgrounded before the copy finishes; the picked
+            // file is already safely in app storage, so the honest outcome
+            // is an error message, not a crash (a retry re-picks cleanly).
+            // Targeted, logged catches - the Tasker receiver's pattern for
+            // the same restriction - so a genuine bug never hides behind
+            // the restriction message.
+            try {
+                ContextCompat.startForegroundService(appContext, intent)
+            } catch (e: Exception) {
+                android.util.Log.w(TAG, "Browse enqueue failed (class=${e.javaClass.simpleName})", e)
+                reportBrowseError(appContext.getString(R.string.failed_to_process_audio))
+            }
         }
     }
 
