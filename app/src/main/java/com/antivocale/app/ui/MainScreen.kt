@@ -23,6 +23,9 @@ import com.antivocale.app.ui.tabs.SettingsTab
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 import com.svenjacobs.reveal.Reveal
+import com.svenjacobs.reveal.effect.dim.DimRevealOverlayEffect
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import com.svenjacobs.reveal.RevealCanvas
 import com.svenjacobs.reveal.revealable
 import com.svenjacobs.reveal.rememberRevealCanvasState
@@ -154,6 +157,12 @@ fun MainScreen(
         Reveal(
             revealCanvasState = revealCanvasState,
             revealState = revealState,
+            // Lighter than the default 80% black: in dark mode that
+            // makes the underlying app almost invisible (maintainer
+            // feedback 2026-09-12).
+            overlayEffect = DimRevealOverlayEffect(
+                color = Color.Black.copy(alpha = 0.55f),
+            ),
             onOverlayClick = {
                 // Overlay tap advances to the next step: a dead-end dismissal
                 // (or worse, finishing + persisting) on an accidental tap
@@ -192,6 +201,11 @@ fun MainScreen(
                             modifier = Modifier.revealable(
                                 key = TourStep.Welcome.key,
                                 state = revealState,
+                                borderStroke = androidx.compose.foundation.BorderStroke(
+                                    width = 2.dp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                ),
+                                padding = androidx.compose.foundation.layout.PaddingValues(12.dp),
                             ),
                         )
                     },
@@ -217,7 +231,15 @@ fun MainScreen(
                             text = { Text(stringResource(tab.titleResId)) },
                             icon = { Icon(tab.icon, contentDescription = stringResource(tab.titleResId)) },
                             modifier = if (tourKey != null) {
-                                Modifier.revealable(key = tourKey, state = revealState)
+                                Modifier.revealable(
+                                    key = tourKey,
+                                    state = revealState,
+                                    borderStroke = androidx.compose.foundation.BorderStroke(
+                                        width = 2.dp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    ),
+                                    padding = androidx.compose.foundation.layout.PaddingValues(12.dp),
+                                )
                             } else {
                                 Modifier
                             },
