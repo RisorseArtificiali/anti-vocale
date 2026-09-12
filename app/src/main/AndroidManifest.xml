@@ -9,6 +9,7 @@
     <!-- Foreground service for inference -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC" />
 
     <!-- Package visibility (Android 11+): see every app that can share audio with us,
          so AppInfoUtils can resolve real app labels for the Logs grouping even after
@@ -578,6 +579,17 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+
+    <!--
+        WorkManager 2.10 SystemForegroundService on Android 14+ requires the
+        dataSync foreground service type to be explicitly declared. The
+        library manifest should carry it, but some OEM skins strip it during
+        merge; this override guarantees it (GH: WorkManager expedited work).
+    -->
+    <service
+        android:name="androidx.work.impl.foreground.SystemForegroundService"
+        android:foregroundServiceType="dataSync"
+        tools:node="merge" />
 
     </application>
 
