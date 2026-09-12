@@ -85,7 +85,6 @@
     <string name="logs_prompt_label">Komut:</string>
     <string name="logs_result_label">Sonuç:</string>
     <string name="logs_error_label">Hata:</string>
-    <string name="logs_task_id">Görev Kimliği: %1$s</string>
     <string name="logs_unknown_error">Bilinmeyen hata</string>
     <string name="logs_status_queued">Kuyrukta</string>
     <string name="logs_status_success">Başarılı</string>
@@ -96,7 +95,7 @@
     <string name="summary_skipped_context">Özet atlandı: transkript, özet geçişinin işleyebileceği uzunluğu aşıyor.</string>
     <string name="summary_skipped_no_model">Özet atlandı: Gemma modeli yapılandırılmamış. Özetleri etkinleştirmek için Modeller sekmesinden indirin.</string>
     <string name="summary_skipped_failed">Özet oluşturulamadı; transkript sağlam.</string>
-    <string name="summary_skipped_guard">Özet atlandı: üretilen metin özet sınırlarının dışında kaldı. Çok kısa veya çok uzun bir sonuç isteyen özel bir komut bunları her zaman başarısız eder.</string>
+    <string name="summary_skipped_guard">Özet atlandı: üretilen özet uzunluk sınırlarının dışında kaldı (bir özet için çok kısa veya çok uzun).</string>
     <string name="copy_summary">Özeti kopyala</string>
     <string name="copy_original">Orijinali kopyala</string>
     <string name="logs_model_label">Model: %1$s</string>
@@ -930,8 +929,6 @@
     <!-- Conversation Grouping -->
     <string name="conversation_grouping_title">Konuşmaya Göre Grupla</string>
     <string name="compact_result_actions_title">Kompakt eylem düğmeleri</string>
-    <string name="show_task_details_title">Görev ayrıntılarını göster</string>
-    <string name="show_task_details_description">Girişlerde görev kimliğini göster. Destekle iletişimde yararlıdır; varsayılan olarak kapalıdır.</string>
     <string name="compact_result_actions_description">Metin çıkarma eylemlerini yalnızca simge olarak, sonuç kartının köşesine yerleştirilmiş şekilde göster. Etiketli düğmeler için kapatın.</string>
     <string name="conversation_grouping_description">Metin çıkarmaları kaynak uygulamaya göre (WhatsApp, Telegram vb.) daraltılabilir bölümlerde gruplandır.</string>
     <plurals name="conversation_group_count">

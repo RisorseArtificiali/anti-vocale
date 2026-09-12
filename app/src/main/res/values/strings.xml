@@ -82,7 +82,6 @@
     <string name="logs_prompt_label">Prompt:</string>
     <string name="logs_result_label">Result:</string>
     <string name="logs_error_label">Error:</string>
-    <string name="logs_task_id">Task ID: %1$s</string>
     <string name="logs_unknown_error">Unknown error</string>
     <string name="logs_status_queued">Queued</string>
     <string name="logs_status_success">Success</string>
@@ -93,7 +92,7 @@
     <string name="summary_skipped_context">Summary skipped: the transcript exceeds the length the summary pass can handle.</string>
     <string name="summary_skipped_no_model">Summary skipped: no Gemma model configured. Download it from the Models tab to enable summaries.</string>
     <string name="summary_skipped_failed">Summary failed while generating; the transcript is intact.</string>
-    <string name="summary_skipped_guard">Summary skipped: the generated text fell outside the summary limits. A custom prompt asking for very short or very long output will always fail them.</string>
+    <string name="summary_skipped_guard">Summary skipped: the generated summary fell outside the length limits (too short or too long to be a summary).</string>
     <string name="copy_summary">Copy summary</string>
     <string name="copy_original">Copy original</string>
     <string name="logs_model_label">Model: %1$s</string>
@@ -927,8 +926,6 @@
     <!-- Conversation Grouping -->
     <string name="conversation_grouping_title">Group by Conversation</string>
     <string name="compact_result_actions_title">Compact action buttons</string>
-    <string name="show_task_details_title">Show task details</string>
-    <string name="show_task_details_description">Show the task ID on entries. Useful when contacting support; off by default.</string>
     <string name="compact_result_actions_description">Show transcription actions as icons only, tucked into the corner of the result card. Turn off for labeled buttons.</string>
     <string name="conversation_grouping_description">Group transcriptions by source app (WhatsApp, Telegram, etc.) into collapsible sections.</string>
     <plurals name="conversation_group_count">

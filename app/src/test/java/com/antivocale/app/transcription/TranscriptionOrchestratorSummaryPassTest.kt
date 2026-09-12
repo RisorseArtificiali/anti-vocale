@@ -1,5 +1,7 @@
 package com.antivocale.app.transcription
 
+import android.content.Context
+import com.antivocale.app.R
 import com.antivocale.app.data.local.LogEntity
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -94,13 +96,13 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
     }
 
     /** Drives one whole-file audio request inside the caller's runTest scope. */
-    private suspend fun CoroutineScope.runAudioRequest(taskId: String) =
+    private suspend fun CoroutineScope.runAudioRequest(taskId: String, context: Context = mockk(relaxed = true)) =
         orchestrator.processRequest(
             taskId = taskId, requestType = "audio", prompt = "",
             filePath = temporaryFolder.newFile("audio.ogg").absolutePath,
             source = null, sourcePackage = null,
             queuePosition = 1, queueTotal = 1,
-            context = mockk(relaxed = true), cacheDir = temporaryFolder.root,
+            context = context, cacheDir = temporaryFolder.root,
             listener = listener, coroutineScope = this)
 
     @Test
@@ -257,9 +259,6 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
         // 2-3 sentence default only when the override is blank.
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("Give a one-line TL;DR in Italian.")
-
-        every { preferencesManager.summarizeEnabled } returns flowOf(true)
-        every { preferencesManager.summaryPrompt } returns flowOf("Give a one-line TL;DR in Italian.")
         stubSwapToLlm()
         coEvery { llmBackend.generateText(any()) } returns Result.success(summary)
         stubWholeFileRequest()
@@ -270,6 +269,143 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
         // TASK-483: the override is the instruction the model sees, not the built-in.
         coVerify {
             llmBackend.generateText(match { it.contains("TL;DR") && it.contains(longTranscript) })
+        }
+    }
+
+    // TASK-498: a custom-prompt attempt that fails retries ONCE with the
+    // built-in instruction on the same loaded backend (no second swap).
+
+    @Test
+    fun `custom prompt rejected by guards retries with built-in and delivers`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("Reply with the single word: done.")
+        stubSwapToLlm()
+        // First call (custom prompt) stutters; retry (built-in) delivers.
+        coEvery { llmBackend.generateText(any()) } returnsMany listOf(
+            Result.success("done"),
+            Result.success(summary),
+        )
+        stubWholeFileRequest()
+
+        val result = runAudioRequest("summ-retry-1")
+
+        assertTrue(result.isSuccess)
+        assertEquals(longTranscript, result.getOrNull())
+        coVerify(exactly = 2) { llmBackend.generateText(any()) }
+        // The retry stays inside the SAME backend bracket: one swap, not two.
+        coVerify(exactly = 1) { backendManager.setActiveBackend(eq(LlmTranscriptionBackend.BACKEND_ID), any(), any()) }
+        coVerify {
+            logDao.update(match { it.summary == summary && it.summarySkipReason == null })
+        }
+    }
+
+    @Test
+    fun `custom prompt generation failure also earns the built-in retry`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("Summarize as a haiku.")
+        stubSwapToLlm()
+        coEvery { llmBackend.generateText(any()) } returnsMany listOf(
+            Result.failure(IllegalStateException("first attempt exploded")),
+            Result.success(summary),
+        )
+        stubWholeFileRequest()
+
+        val result = runAudioRequest("summ-retry-2")
+
+        assertTrue(result.isSuccess)
+        coVerify(exactly = 2) { llmBackend.generateText(any()) }
+        coVerify {
+            logDao.update(match { it.summary == summary && it.summarySkipReason == null })
+        }
+    }
+
+    @Test
+    fun `both attempts rejected by guards records the guards reason`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("Rewrite everything verbatim.")
+        stubSwapToLlm()
+        val rewrite = "x".repeat(longTranscript.length * 2)
+        coEvery { llmBackend.generateText(any()) } returns Result.success(rewrite)
+        stubWholeFileRequest()
+
+        val result = runAudioRequest("summ-retry-3")
+
+        assertTrue(result.isSuccess)
+        assertEquals(longTranscript, result.getOrNull())
+        coVerify(exactly = 2) { llmBackend.generateText(any()) }
+        coVerify {
+            logDao.update(match {
+                it.summary == null && it.summarySkipReason == SummaryPolicy.SKIP_REASON_GUARDS
+            })
+        }
+    }
+
+    @Test
+    fun `a whitespace-only custom prompt runs a single attempt`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("   ")
+        stubSwapToLlm()
+        val rewrite = "x".repeat(longTranscript.length * 2)
+        coEvery { llmBackend.generateText(any()) } returns Result.success(rewrite)
+        stubWholeFileRequest()
+
+        val result = runAudioRequest("summ-retry-5")
+
+        assertTrue(result.isSuccess)
+        // Trims to blank: the built-in IS the first attempt and there is
+        // nothing to retry with (single generation).
+        coVerify(exactly = 1) { llmBackend.generateText(any()) }
+        coVerify {
+            logDao.update(match { it.summarySkipReason == SummaryPolicy.SKIP_REASON_GUARDS })
+        }
+    }
+
+    @Test
+    fun `a saved prompt identical to the built-in text runs a single attempt`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        // The dedup compares against the localized built-in, so the context
+        // must answer a real string (the relaxed default is "").
+        val builtIn = "Summarize the transcript in three sentences."
+        every { preferencesManager.summaryPrompt } returns flowOf(builtIn)
+        val promptContext = mockk<Context>(relaxed = true) {
+            every { getString(R.string.summary_default_prompt) } returns builtIn
+        }
+        stubSwapToLlm()
+        val rewrite = "x".repeat(longTranscript.length * 2)
+        coEvery { llmBackend.generateText(any()) } returns Result.success(rewrite)
+        stubWholeFileRequest()
+
+        val result = runAudioRequest("summ-retry-6", context = promptContext)
+
+        assertTrue(result.isSuccess)
+        // Identical instructions must not run the same generation twice.
+        coVerify(exactly = 1) { llmBackend.generateText(any()) }
+        coVerify {
+            logDao.update(match { it.summarySkipReason == SummaryPolicy.SKIP_REASON_GUARDS })
+        }
+    }
+
+    @Test
+    fun `retry generation failure after a rejected custom attempt degrades with failed reason`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("One word: summary.")
+        stubSwapToLlm()
+        // First attempt stutters (rejected), the built-in retry THROWS: the
+        // last attempt's nature decides the reason (generation = failed).
+        coEvery { llmBackend.generateText(any()) } returnsMany listOf(
+            Result.success("done"),
+            Result.failure(IllegalStateException("retry exploded")),
+        )
+        stubWholeFileRequest()
+
+        val result = runAudioRequest("summ-retry-4")
+
+        assertTrue(result.isSuccess)
+        assertEquals(longTranscript, result.getOrNull())
+        coVerify {
+            logDao.update(match {
+                it.summary == null && it.summarySkipReason == SummaryPolicy.SKIP_REASON_FAILED
+            })
         }
     }
 }

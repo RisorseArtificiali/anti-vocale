@@ -79,7 +79,6 @@
     <string name="logs_prompt_label">Prompt:</string>
     <string name="logs_result_label">Ergebnis:</string>
     <string name="logs_error_label">Fehler:</string>
-    <string name="logs_task_id">Aufgaben-ID: %1$s</string>
     <string name="logs_unknown_error">Unbekannter Fehler</string>
     <string name="logs_transcription_cancelled">Transkription abgebrochen</string>
     <string name="logs_search_placeholder">Einträge suchen…</string>
@@ -951,13 +950,11 @@
     <string name="summary_skipped_context">Zusammenfassung übersprungen: Die Transkription übersteigt die Länge, die der Zusammenfassungslauf verarbeiten kann.</string>
     <string name="summary_skipped_no_model">Zusammenfassung übersprungen: kein Gemma-Modell konfiguriert. Lade es im Tab Modelle herunter, um Zusammenfassungen zu aktivieren.</string>
     <string name="summary_skipped_failed">Zusammenfassung scheiterte bei der Erzeugung; die Transkription ist unversehrt.</string>
-    <string name="summary_skipped_guard">Zusammenfassung übersprungen: Der erzeugte Text lag außerhalb der Zusammenfassungsgrenzen. Ein eigener Prompt mit sehr kurzem oder sehr langem Ergebnis scheitert immer daran.</string>
+    <string name="summary_skipped_guard">Zusammenfassung übersprungen: Die erzeugte Zusammenfassung lag außerhalb der Längengrenzen (zu kurz oder zu lang für eine Zusammenfassung).</string>
     <string name="copy_summary">Zusammenfassung kopieren</string>
     <string name="copy_original">Original kopieren</string>
     <string name="logs_model_label">Modell: %1$s</string>
     <string name="model_limit_chunked">Beliebige Länge: längere Audios werden automatisch aufgeteilt</string>
-    <string name="show_task_details_title">Taskdetails anzeigen</string>
-    <string name="show_task_details_description">Zeigt die Task-ID in den Einträgen. Nützlich beim Kontakt zum Support; standardmäßig aus.</string>
 
     <!-- TASK-336: background-kill remediation card -->
     <string name="battery_exemption_title">Hintergrundbetrieb erlauben</string>

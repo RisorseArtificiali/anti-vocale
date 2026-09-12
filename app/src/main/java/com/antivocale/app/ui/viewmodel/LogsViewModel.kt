@@ -348,16 +348,6 @@ class LogsViewModel @Inject constructor(
     val compactResultActions: StateFlow<Boolean> = preferencesManager.compactResultActions
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS)
 
-    /** GH #45 follow-up: reveal the task-id detail line. Default off. */
-    val showTaskDetails: StateFlow<Boolean> = preferencesManager.showTaskDetails
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_SHOW_TASK_DETAILS)
-
-    fun saveShowTaskDetails(enabled: Boolean) {
-        viewModelScope.launch {
-            preferencesManager.saveShowTaskDetails(enabled)
-        }
-    }
-
     fun saveGroupLogsByConversation(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveGroupLogsByConversation(enabled)

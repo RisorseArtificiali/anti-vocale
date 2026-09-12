@@ -507,21 +507,56 @@ class TranscriptionOrchestrator @Inject constructor(
             // is deliberately not resolved into the prompt). TASK-483: a
             // saved prompt overrides the built-in, same contract as the
             // punctuation pass (blank = built-in).
-            val savedSummaryPrompt = preferencesManager.summaryPrompt.first()
-            val summaryInstruction = SummaryPolicy.effectivePrompt(
-                savedSummaryPrompt, context.getString(R.string.summary_default_prompt))
-            val prompt = ChunkPromptPolicy.finalPrompt(summaryInstruction, result.text)
-            val summary = llm.generateText(prompt).getOrThrow().trim()
-            if (!SummaryPolicy.acceptableSummary(summary, result.text)) {
-                // TASK-494: not an error; a saved prompt incompatible with
-                // the guards makes this the EXPECTED outcome, and the user
-                // must see why the summary never appears. The reason rides
-                // the result instead of dying in logcat.
-                Log.w(TAG, "Summary rejected by the guards " +
-                    "(${summary.length} chars vs transcript ${result.text.length}); delivering without, reason recorded")
-                return@runCatching result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_GUARDS)
+            val builtInInstruction = context.getString(R.string.summary_default_prompt)
+            val customInstruction = preferencesManager.summaryPrompt.first().trim()
+            // TASK-498: a custom-prompt attempt that fails (guard rejection
+            // or a thrown generation error) retries ONCE with the built-in
+            // instruction on the same loaded backend: the user still gets a
+            // real recap instead of a caption. With no custom prompt the
+            // built-in IS the first attempt and a failure stays one-shot.
+            val instructions = buildList {
+                add(SummaryPolicy.effectivePrompt(customInstruction, builtInInstruction))
+                // A saved prompt identical to the built-in text must not run
+                // the same generation twice.
+                if (customInstruction.isNotEmpty() && customInstruction != builtInInstruction) {
+                    add(builtInInstruction)
+                }
             }
-            result.copy(summary = summary)
+            var summary: String? = null
+            var generationFailure: Throwable? = null
+            var lastCandidateChars = -1
+            for ((attempt, instruction) in instructions.withIndex()) {
+                if (attempt > 0) {
+                    Log.i(TAG, "Custom summary prompt did not produce an acceptable summary; retrying with the built-in prompt")
+                }
+                val generated = llm.generateText(
+                    ChunkPromptPolicy.finalPrompt(instruction, result.text)
+                ).map { it.trim() }
+                // Log every thrown attempt when it happens: the loop below
+                // overwrites generationFailure, and a first crash the retry
+                // rescued must not vanish from logcat.
+                generated.exceptionOrNull()?.let {
+                    Log.w(TAG, "Summary generation attempt ${attempt + 1} of ${instructions.size} failed", it)
+                }
+                val candidate = generated.getOrNull()
+                if (candidate != null) lastCandidateChars = candidate.length
+                if (candidate != null && SummaryPolicy.acceptableSummary(candidate, result.text)) {
+                    summary = candidate
+                    break
+                }
+                generationFailure = generated.exceptionOrNull()
+            }
+            if (summary != null) return@runCatching result.copy(summary = summary)
+            // A thrown generation error on the LAST attempt is a failed
+            // pass (the outer fold degrades with SKIP_REASON_FAILED); a
+            // completed-but-rejected output is the guards verdict.
+            generationFailure?.let { throw it }
+            // TASK-494: not an error; the reason rides the result instead
+            // of dying in logcat. The length detail separates a stutter-short
+            // rejection from a rewrite-long one during triage.
+            Log.w(TAG, "Summary rejected by the guards after ${instructions.size} attempt(s) " +
+                "(last candidate $lastCandidateChars chars vs transcript ${result.text.length}); delivering without, reason recorded")
+            return@runCatching result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_GUARDS)
         }.fold(
             onSuccess = { withSummary ->
                 if (withSummary.summary != null) {

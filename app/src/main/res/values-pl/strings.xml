@@ -87,7 +87,6 @@
     <string name="logs_prompt_label">Podpowiedź:</string>
     <string name="logs_result_label">Wynik:</string>
     <string name="logs_error_label">Błąd:</string>
-    <string name="logs_task_id">Identyfikator zadania: %1$s</string>
     <string name="logs_unknown_error">Nieznany błąd</string>
     <string name="logs_status_queued">W kolejce</string>
     <string name="logs_status_success">Zakończono</string>
@@ -98,7 +97,7 @@
     <string name="summary_skipped_context">Pominięto podsumowanie: transkrypcja przekracza długość, jaką podsumowanie potrafi przetworzyć.</string>
     <string name="summary_skipped_no_model">Pominięto podsumowanie: brak modelu Gemma. Pobierz go w karcie Modele, aby włączyć podsumowania.</string>
     <string name="summary_skipped_failed">Nie udało się wygenerować podsumowania; transkrypcja jest nienaruszona.</string>
-    <string name="summary_skipped_guard">Pominięto podsumowanie: wygenerowany tekst wyszedł poza limity podsumowania. Niestandardowy prompt żądający bardzo krótkiego lub długiego wyniku zawsze je naruszy.</string>
+    <string name="summary_skipped_guard">Pominięto podsumowanie: wygenerowane podsumowanie wyszło poza limity długości (za krótkie lub za długie na podsumowanie).</string>
     <string name="copy_summary">Kopiuj podsumowanie</string>
     <string name="copy_original">Kopiuj oryginał</string>
     <string name="logs_model_label">Model: %1$s</string>
@@ -944,8 +943,6 @@
     <!-- Conversation Grouping -->
     <string name="conversation_grouping_title">Grupuj według rozmów</string>
     <string name="compact_result_actions_title">Kompaktowe przyciski działań</string>
-    <string name="show_task_details_title">Pokazuj szczegóły zadania</string>
-    <string name="show_task_details_description">Pokazuj identyfikator zadania we wpisach. Przydatne przy kontakcie ze wsparciem; domyślnie wyłączone.</string>
     <string name="compact_result_actions_description">Pokazuj działania transkrypcji tylko jako ikony, wpuszczone w róg karty wyniku. Wyłącz dla przycisków z etykietami.</string>
     <string name="conversation_grouping_description">Grupuj transkrypcje według aplikacji źródłowej (WhatsApp, Telegram itd.) w zwijanych sekcjach.</string>
     <plurals name="conversation_group_count">

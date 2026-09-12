@@ -68,7 +68,7 @@ The Logs tab *is* the list: every transcription appears there with a status (pen
 
 ### Where do I see which model was used and how long it took?
 
-In the **Logs** tab: each entry shows "Processed in Xs" under the transcript, along with the timestamp and the audio duration. The model name is being added there, and a settings toggle will optionally surface a details row (model, time, task id) on result entries as well ([#45](https://github.com/RisorseArtificiali/anti-vocale/issues/45)).
+In the **Logs** tab: expand an entry and the metadata row under the transcript shows the timestamp, the processing time, and the model name that produced it ([#45](https://github.com/RisorseArtificiali/anti-vocale/issues/45); the optional task-id line that toggle used to reveal was removed, since the task id now travels in the feedback email when you report an entry).
 
 ### How do I delete or manage log entries?
 

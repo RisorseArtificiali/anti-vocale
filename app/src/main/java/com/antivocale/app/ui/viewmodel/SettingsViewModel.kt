@@ -266,14 +266,6 @@ class SettingsViewModel @Inject constructor(
     private val _backgroundKills = MutableStateFlow(0)
     val backgroundKills: StateFlow<Int> = _backgroundKills.asStateFlow()
 
-    // GH #45 follow-up: opt-in task-id detail line on log entries
-    val showTaskDetails: StateFlow<Boolean> = preferencesManager.showTaskDetails
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = PreferencesManager.DEFAULT_SHOW_TASK_DETAILS
-        )
-
     fun refreshBackgroundKills() {
         viewModelScope.launch {
             // Look back 30 days: enough history to matter, bounded so the card
@@ -282,12 +274,6 @@ class SettingsViewModel @Inject constructor(
             _backgroundKills.value = runCatching {
                 logDao.countInterruptedSince(since)
             }.getOrDefault(0)
-        }
-    }
-
-    fun saveShowTaskDetails(enabled: Boolean) {
-        viewModelScope.launch {
-            preferencesManager.saveShowTaskDetails(enabled)
         }
     }
 

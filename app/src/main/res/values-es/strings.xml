@@ -68,7 +68,6 @@
     <string name="logs_prompt_label">Prompt:</string>
     <string name="logs_result_label">Resultado:</string>
     <string name="logs_error_label">Error:</string>
-    <string name="logs_task_id">ID de tarea: %1$s</string>
     <string name="logs_unknown_error">Error desconocido</string>
     <string name="logs_transcription_cancelled">Transcripción cancelada</string>
     <string name="logs_search_placeholder">Buscar entradas…</string>
@@ -816,13 +815,11 @@
     <string name="summary_skipped_context">Resumen omitido: la transcripción supera la longitud que el resumen puede procesar.</string>
     <string name="summary_skipped_no_model">Resumen omitido: no hay modelo Gemma configurado. Descárgalo en la pestaña Modelos para activar resúmenes.</string>
     <string name="summary_skipped_failed">El resumen falló al generarse; la transcripción está intacta.</string>
-    <string name="summary_skipped_guard">Resumen omitido: el texto generado quedó fuera de los límites del resumen. Un prompt personalizado que pida un resultado muy corto o muy largo siempre los incumplirá.</string>
+    <string name="summary_skipped_guard">Resumen omitido: el resumen generado quedó fuera de los límites de longitud (demasiado corto o demasiado largo para ser un resumen).</string>
     <string name="copy_summary">Copiar resumen</string>
     <string name="copy_original">Copiar original</string>
     <string name="logs_model_label">Modelo: %1$s</string>
     <string name="model_limit_chunked">Sin límite: los audios largos se dividen automáticamente</string>
-    <string name="show_task_details_title">Mostrar detalles de la tarea</string>
-    <string name="show_task_details_description">Muestra el ID de tarea en las entradas. Útil para contactar con soporte; desactivado por defecto.</string>
 
     <!-- TASK-336 -->
     <string name="battery_exemption_title">Permitir funcionamiento en segundo plano</string>

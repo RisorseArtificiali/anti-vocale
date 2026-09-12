@@ -45,6 +45,7 @@ import com.svenjacobs.reveal.revealable
 import com.antivocale.app.transcription.SummaryPolicy
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.SharedAudioHandler
+import com.antivocale.app.util.formatProcessingTime
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.service.InferenceService
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -287,7 +288,6 @@ fun LogsTab(
     val context = LocalContext.current
     val swipeActionMode by viewModel.swipeActionMode
         .collectAsState(initial = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE)
-    val showTaskDetails by viewModel.showTaskDetails.collectAsState()
     val showVadAdvisory by viewModel.showVadAdvisory.collectAsState()
     val groupByConversation by viewModel.groupLogsByConversation.collectAsState()
 
@@ -652,7 +652,6 @@ fun LogsTab(
                                         searchQuery = searchQuery,
                                         isExpanded = log.taskId in expandedTaskIds,
                                         swipeActionMode = swipeActionMode,
-                                        showTaskDetails = showTaskDetails,
                                         revealedLogId = revealedLogId,
                                         onRevealedLogIdChange = { revealedLogId = it },
                                         onExpandChange = { expanded ->
@@ -690,7 +689,6 @@ fun LogsTab(
                                     searchQuery = searchQuery,
                                     isExpanded = log.taskId in expandedTaskIds,
                                     swipeActionMode = swipeActionMode,
-                                    showTaskDetails = showTaskDetails,
                                     revealedLogId = revealedLogId,
                                     onRevealedLogIdChange = { revealedLogId = it },
                                     onExpandChange = { expanded ->
@@ -856,13 +854,12 @@ private fun PartialTranscriptionBanner(failedChunkCount: Int) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 fun LogEntryItem(
     log: LogEntry,
     searchQuery: String = "",
     expanded: Boolean = false,
-    showTaskDetails: Boolean = false,
     onExpandChange: (Boolean) -> Unit = {},
     onRetranscribe: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
@@ -1149,11 +1146,15 @@ fun LogEntryItem(
                             )
                         }
 
-                        // Metadata row
+                        // Metadata row. FlowRow, not Row: the model name is
+                        // unbounded, so at large font scales the block wraps
+                        // to new lines instead of collapsing the name to a
+                        // zero-width sliver after the fixed siblings.
                         Spacer(modifier = Modifier.height(8.dp))
-                        Row(
+                        FlowRow(
                             modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             // Timestamp
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -1187,26 +1188,16 @@ fun LogEntryItem(
                                     )
                                 }
                             }
-                            // Model that produced the transcription (GH #45); null on pre-v4 rows
+                            // Model that produced the transcription (GH #45); null on pre-v4
+                            // rows. Long external-import names wrap (TASK-495) instead of
+                            // ellipsizing their tail.
                             log.modelName?.let { name ->
                                 Text(
                                     text = stringResource(R.string.logs_model_label, name),
                                     style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                        }
-
-                        // Task ID: opt-in detail (GH #45 follow-up, default off)
-                        if (showTaskDetails) {
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = stringResource(R.string.logs_task_id, log.taskId.take(8)),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         }
 
                         // Action buttons: compact icon-only actions tucked into the
@@ -1375,15 +1366,6 @@ private fun formatFullTimestamp(timestamp: Long, context: Context): String {
     }
 }
 
-// Format processing time: 2300ms -> "2.3s", 500ms -> "0.5s"
-private fun formatProcessingTime(durationMs: Long): String {
-    return if (durationMs >= 1000) {
-        String.format("%.1fs", durationMs / 1000.0)
-    } else {
-        "${durationMs}ms"
-    }
-}
-
 // Get preview text with ellipsis
 private fun getPreviewText(text: String, maxLength: Int = 50): String {
     if (text.length <= maxLength) return text
@@ -1434,7 +1416,6 @@ private fun LogEntryWithSwipe(
     searchQuery: String,
     isExpanded: Boolean,
     swipeActionMode: String,
-    showTaskDetails: Boolean,
     revealedLogId: String?,
     onRevealedLogIdChange: (String?) -> Unit,
     onExpandChange: (Boolean) -> Unit,
@@ -1484,7 +1465,6 @@ private fun LogEntryWithSwipe(
                 log = log,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
-                showTaskDetails = showTaskDetails,
                 onExpandChange = { expanded ->
                     if (revealState.isRevealed) {
                         revealState.reset()
@@ -1538,7 +1518,6 @@ private fun LogEntryWithSwipe(
                 log = log,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
-                showTaskDetails = showTaskDetails,
                 onExpandChange = onExpandChange,
                 onRetranscribe = onRetranscribe,
                 onCancel = { cancelTask(context, log.taskId) },

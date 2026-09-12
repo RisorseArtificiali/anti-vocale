@@ -28,6 +28,7 @@ import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.ProgressThrottler
 import com.antivocale.app.util.TranscriptFileSaver
+import com.antivocale.app.util.formatProcessingTime
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -461,7 +462,7 @@ class InferenceService : Service(), TranscriptionListener {
 
     private fun formatTimingText(etaText: String, durationSeconds: Int): String = when {
         etaText.isNotEmpty() -> etaText
-        durationSeconds > 0 -> formatDuration(durationSeconds)
+        durationSeconds > 0 -> formatProcessingTime(durationSeconds * 1000L)
         else -> ""
     }
 
@@ -719,7 +720,7 @@ class InferenceService : Service(), TranscriptionListener {
         if (subText != null) {
             builder.setSubText(subText)
         } else if (durationSeconds > 0) {
-            builder.setSubText(formatDuration(durationSeconds))
+            builder.setSubText(formatProcessingTime(durationSeconds * 1000L))
         }
 
         return builder.build()
@@ -908,17 +909,6 @@ class InferenceService : Service(), TranscriptionListener {
             this, requestCode, openIntent,
             android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
         )
-    }
-
-    private fun formatDuration(seconds: Int): String {
-        val hours = seconds / 3600
-        val minutes = (seconds % 3600) / 60
-        val secs = seconds % 60
-        return if (hours > 0) {
-            String.format("%d:%02d:%02d", hours, minutes, secs)
-        } else {
-            String.format("%d:%02d", minutes, secs)
-        }
     }
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }

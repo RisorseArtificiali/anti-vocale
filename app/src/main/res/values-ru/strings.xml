@@ -86,7 +86,6 @@
     <string name="logs_prompt_label">Запрос:</string>
     <string name="logs_result_label">Результат:</string>
     <string name="logs_error_label">Ошибка:</string>
-    <string name="logs_task_id">ID задачи: %1$s</string>
     <string name="logs_unknown_error">Неизвестная ошибка</string>
     <string name="logs_transcription_cancelled">Распознавание отменено</string>
     <string name="logs_search_placeholder">Поиск записей…</string>
@@ -968,13 +967,11 @@
     <string name="summary_skipped_context">Резюме пропущено: транскрипция превышает длину, которую проход резюме может обработать.</string>
     <string name="summary_skipped_no_model">Резюме пропущено: модель Gemma не настроена. Скачайте её на вкладке «Модели», чтобы включить резюме.</string>
     <string name="summary_skipped_failed">Не удалось создать резюме; транскрипция не пострадала.</string>
-    <string name="summary_skipped_guard">Резюме пропущено: сгенерированный текст вышел за пределы ограничений резюме. Пользовательский запрос, требующий очень короткого или очень длинного результата, всегда будет нарушать их.</string>
+    <string name="summary_skipped_guard">Резюме пропущено: сгенерированное резюме вышло за пределы ограничений по длине (слишком короткое или слишком длинное для резюме).</string>
     <string name="copy_summary">Копировать резюме</string>
     <string name="copy_original">Копировать оригинал</string>
     <string name="logs_model_label">Модель: %1$s</string>
     <string name="model_limit_chunked">Без ограничений: длинные записи разбиваются автоматически</string>
-    <string name="show_task_details_title">Показывать детали задачи</string>
-    <string name="show_task_details_description">Показывать ID задачи в записях. Пригодится при обращении в поддержку. По умолчанию выключено</string>
 
     <!-- TASK-336: background-kill remediation card -->
     <string name="battery_exemption_title">Разрешить работу в фоне</string>

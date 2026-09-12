@@ -78,7 +78,6 @@ class PreferencesManagerImpl(
         private val SHOW_RETRANSCRIBE_BUTTON = booleanPreferencesKey("show_retranscribe_button")
         private val FORCE_MODEL_LOAD = booleanPreferencesKey("force_model_load")
         private val COMPACT_RESULT_ACTIONS = booleanPreferencesKey("compact_result_actions")
-        private val SHOW_TASK_DETAILS = booleanPreferencesKey("show_task_details")
         private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
         private val PARTIAL_TRANSCRIPTION_TIMESTAMP = longPreferencesKey("partial_transcription_timestamp")
         private val EXTERNAL_MODELS_JSON = stringPreferencesKey("external_models_json")
@@ -118,7 +117,6 @@ class PreferencesManagerImpl(
         val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         val forceModelLoad: Boolean = PreferencesManager.DEFAULT_FORCE_MODEL_LOAD,
         val compactResultActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
-        val showTaskDetails: Boolean = PreferencesManager.DEFAULT_SHOW_TASK_DETAILS,
         val externalModelsJson: String? = null
     )
 
@@ -159,7 +157,6 @@ class PreferencesManagerImpl(
         showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         forceModelLoad = this[FORCE_MODEL_LOAD] ?: PreferencesManager.DEFAULT_FORCE_MODEL_LOAD,
         compactResultActions = this[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
-        showTaskDetails = this[SHOW_TASK_DETAILS] ?: PreferencesManager.DEFAULT_SHOW_TASK_DETAILS,
         externalModelsJson = this[EXTERNAL_MODELS_JSON]
     )
 
@@ -561,15 +558,6 @@ class PreferencesManagerImpl(
 
     override val compactResultActions: Flow<Boolean> = dataStore.data.map { it[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS }
         .onStart { emit(cache.get().compactResultActions) }
-    override val showTaskDetails: Flow<Boolean> = dataStore.data.map { it[SHOW_TASK_DETAILS] ?: PreferencesManager.DEFAULT_SHOW_TASK_DETAILS }
-        .onStart { emit(cache.get().showTaskDetails) }
-
-    override suspend fun saveShowTaskDetails(enabled: Boolean) {
-        dataStore.edit { preferences ->
-            preferences[SHOW_TASK_DETAILS] = enabled
-        }
-        cache.updateAndGet { it.copy(showTaskDetails = enabled) }
-    }
     override suspend fun saveCompactResultActions(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[COMPACT_RESULT_ACTIONS] = enabled

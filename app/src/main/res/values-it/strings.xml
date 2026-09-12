@@ -82,7 +82,6 @@
     <string name="logs_prompt_label">Prompt:</string>
     <string name="logs_result_label">Risultato:</string>
     <string name="logs_error_label">Errore:</string>
-    <string name="logs_task_id">ID Task: %1$s</string>
     <string name="logs_unknown_error">Errore sconosciuto</string>
     <string name="logs_status_queued">In coda</string>
     <string name="logs_status_success">Successo</string>
@@ -93,7 +92,7 @@
     <string name="summary_skipped_context">Riepilogo saltato: la trascrizione supera la lunghezza gestibile dal riepilogo.</string>
     <string name="summary_skipped_no_model">Riepilogo saltato: nessun modello Gemma configurato. Scaricalo dalla scheda Modelli per attivare i riepiloghi.</string>
     <string name="summary_skipped_failed">Generazione del riepilogo non riuscita; la trascrizione è intatta.</string>
-    <string name="summary_skipped_guard">Riepilogo saltato: il testo generato era fuori dai limiti del riepilogo. Un prompt personalizzato che chiede un risultato molto breve o molto lungo li farà sempre fallire.</string>
+    <string name="summary_skipped_guard">Riepilogo saltato: il riepilogo generato era fuori dai limiti di lunghezza (troppo breve o troppo lungo per essere un riepilogo).</string>
     <string name="copy_summary">Copia riepilogo</string>
     <string name="copy_original">Copia originale</string>
     <string name="logs_model_label">Modello: %1$s</string>
@@ -903,8 +902,6 @@
 
     <!-- Raggruppamento conversazioni -->
     <string name="conversation_grouping_title">Raggruppa per conversazione</string>
-    <string name="show_task_details_title">Mostra dettagli task</string>
-    <string name="show_task_details_description">Mostra l\'ID task nelle voci. Utile per contattare l\'assistenza; disattivato per impostazione predefinita.</string>
     <string name="compact_result_actions_title">Azioni compatte</string>
     <string name="compact_result_actions_description">Mostra le azioni sulla trascrizione come sole icone nell\'angolo della card. Disattiva per i pulsanti con etichetta.</string>
     <string name="conversation_grouping_description">Raggruppa le trascrizioni per app di origine (WhatsApp, Telegram, ecc.) in sezioni comprimibili.</string>

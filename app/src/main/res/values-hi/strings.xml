@@ -78,7 +78,6 @@
     <string name="logs_prompt_label">प्रॉम्प्ट:</string>
     <string name="logs_result_label">नतीजा:</string>
     <string name="logs_error_label">गड़बड़ी:</string>
-    <string name="logs_task_id">टास्क ID: %1$s</string>
     <string name="logs_unknown_error">अनजानी गड़बड़ी</string>
     <string name="logs_transcription_cancelled">ट्रांसक्रिप्शन रद्द किया गया</string>
     <string name="logs_search_placeholder">एंट्री खोजें…</string>
@@ -950,13 +949,11 @@
     <string name="summary_skipped_context">सारांश छोड़ा गया: ट्रांसक्रिप्ट सारांश पास की सीमा से लंबा है।</string>
     <string name="summary_skipped_no_model">सारांश छोड़ा गया: कोई Gemma मॉडल कॉन्फ़िगर नहीं है। सारांश चालू करने के लिए मॉडल्स टैब से डाउनलोड करें।</string>
     <string name="summary_skipped_failed">सारांश बनाते समय विफलता; ट्रांसक्रिप्ट सुरक्षित है।</string>
-    <string name="summary_skipped_guard">सारांश छोड़ा गया: बनाया गया टेक्स्ट सारांश सीमाओं से बाहर था। बहुत छोटा या बहुत लंबा आउटपुट मांगने वाला कस्टम प्रॉम्प्ट हमेशा उन्हें असफल करेगा।</string>
+    <string name="summary_skipped_guard">सारांश छोड़ा गया: बनाया गया सारांश लंबाई सीमाओं से बाहर था (सारांश के लिए बहुत छोटा या बहुत लंबा)।</string>
     <string name="copy_summary">सारांश कॉपी करें</string>
     <string name="copy_original">मूल कॉपी करें</string>
     <string name="logs_model_label">मॉडल: %1$s</string>
     <string name="model_limit_chunked">कोई सीमा नहीं: लंबी ऑडियो स्वतः विभाजित होती है</string>
-    <string name="show_task_details_title">टास्क विवरण दिखाएँ</string>
-    <string name="show_task_details_description">एंट्री पर टास्क ID दिखाएं। सपोर्ट से संपर्क में काम आएगा; डिफ़ॉल्ट रूप से बंद।</string>
 
     <!-- TASK-336: background-kill remediation card -->
     <string name="battery_exemption_title">बैकग्राउंड में चलने की अनुमति दें</string>

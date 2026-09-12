@@ -89,7 +89,6 @@
     <string name="logs_prompt_label">Запит:</string>
     <string name="logs_result_label">Результат:</string>
     <string name="logs_error_label">Помилка:</string>
-    <string name="logs_task_id">Ідентифікатор завдання: %1$s</string>
     <string name="logs_unknown_error">Невідома помилка</string>
     <string name="logs_status_queued">У черзі</string>
     <string name="logs_status_success">Успішно</string>
@@ -100,7 +99,7 @@
     <string name="summary_skipped_context">Резюме пропущено: транскрипція перевищує довжину, яку може обробити прохід резюме.</string>
     <string name="summary_skipped_no_model">Резюме пропущено: модель Gemma не налаштована. Завантажте її на вкладці «Моделі», щоб увімкнути резюме.</string>
     <string name="summary_skipped_failed">Не вдалося створити резюме; транскрипція не постраждала.</string>
-    <string name="summary_skipped_guard">Резюме пропущено: згенерований текст вийшов за межі обмежень резюме. Власний запит, що вимагає дуже короткого чи довгого результату, завжди порушуватиме їх.</string>
+    <string name="summary_skipped_guard">Резюме пропущено: згенероване резюме вийшло за межі обмежень довжини (занадто коротке чи задовге для резюме).</string>
     <string name="copy_summary">Копіювати резюме</string>
     <string name="copy_original">Копіювати оригінал</string>
     <string name="logs_model_label">Модель: %1$s</string>
@@ -946,8 +945,6 @@
     <!-- Conversation Grouping -->
     <string name="conversation_grouping_title">Групувати за розмовами</string>
     <string name="compact_result_actions_title">Компактні кнопки дій</string>
-    <string name="show_task_details_title">Показувати деталі завдання</string>
-    <string name="show_task_details_description">Показувати ідентифікатор завдання в записах журналу. Корисно при повідомленні про проблеми; типово вимкнено.</string>
     <string name="compact_result_actions_description">Показувати дії з текстом лише як значки, заховані в кутку картки результату. Вимкніть для кнопок з підписами.</string>
     <string name="conversation_grouping_description">Групувати записи за вихідним додатком (WhatsApp, Telegram тощо) у розгортних розділах.</string>
     <plurals name="conversation_group_count">

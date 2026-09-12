@@ -68,7 +68,6 @@
     <string name="logs_prompt_label">Invite :</string>
     <string name="logs_result_label">Résultat :</string>
     <string name="logs_error_label">Erreur :</string>
-    <string name="logs_task_id">ID de tâche : %1$s</string>
     <string name="logs_unknown_error">Erreur inconnue</string>
     <string name="logs_transcription_cancelled">Transcription annulée</string>
     <string name="logs_search_placeholder">Rechercher dans les entrées…</string>
@@ -816,13 +815,11 @@
     <string name="summary_skipped_context">Résumé ignoré : la transcription dépasse la longueur traitable par le résumé.</string>
     <string name="summary_skipped_no_model">Résumé ignoré : aucun modèle Gemma configuré. Téléchargez-le dans l\'onglet Modèles pour activer les résumés.</string>
     <string name="summary_skipped_failed">Le résumé a échoué à la génération ; la transcription est intacte.</string>
-    <string name="summary_skipped_guard">Résumé ignoré : le texte généré dépassait les limites du résumé. Un prompt personnalisé demandant un résultat très court ou très long les fera toujours échouer.</string>
+    <string name="summary_skipped_guard">Résumé ignoré : le résumé généré dépassait les limites de longueur (trop court ou trop long pour être un résumé).</string>
     <string name="copy_summary">Copier le résumé</string>
     <string name="copy_original">Copier l\'original</string>
     <string name="logs_model_label">Modèle : %1$s</string>
     <string name="model_limit_chunked">Durée illimitée : les audios longs sont découpés automatiquement</string>
-    <string name="show_task_details_title">Afficher les détails de la tâche</string>
-    <string name="show_task_details_description">Affiche l\'ID de tâche dans les entrées. Utile pour contacter le support ; désactivé par défaut.</string>
 
     <!-- TASK-336 -->
     <string name="battery_exemption_title">Autoriser le fonctionnement en arrière-plan</string>
