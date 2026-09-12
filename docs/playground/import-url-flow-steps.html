@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import from URL — flusso passo dopo passo (TASK-401 debug)</title>
+<style>
+  :root { --bg:#0f1115; --panel:#161a21; --panel2:#1c212b; --border:#2a3140; --text:#d7dde8; --dim:#8b94a7; --accent:#5b9dff; --green:#3ecf8e; --amber:#e8b451; --red:#e8695b; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; padding:24px; max-width:1240px; margin:0 auto; }
+  h1 { font-size:21px; font-weight:650; margin-bottom:4px; }
+  .sub { color:var(--dim); font-size:13px; margin-bottom:16px; }
+  .layout { display:grid; grid-template-columns: 300px 1fr; gap:20px; align-items:start; }
+  @media (max-width:1000px){ .layout{ grid-template-columns:1fr; } }
+  .ctrl { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px; position:sticky; top:20px; }
+  .ctrl h3 { font-size:13px; margin-bottom:8px; }
+  .seg { display:flex; border:1px solid var(--border); border-radius:8px; overflow:hidden; margin-bottom:10px; }
+  .seg button { flex:1; background:transparent; color:var(--dim); border:0; padding:8px 4px; font-size:12.5px; cursor:pointer; margin:0; border-radius:0; font-weight:600; }
+  .seg button.on { background:#17202e; color:var(--accent); }
+  .steps { margin-top:6px; }
+  .stepbtn { display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:var(--panel2); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:9px 11px; font-size:12.5px; cursor:pointer; margin:0 0 6px 0; }
+  .stepbtn.done { opacity:.55; }
+  .stepbtn.cur { border-color:var(--accent); background:#17202e; }
+  .stepbtn .n { background:var(--accent); color:#0d1117; min-width:20px; height:20px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; }
+  .stepbtn.done .n { background:#2b6a45; color:#c9f2dd; }
+  .reset { background:transparent; border:1px solid var(--border); color:var(--dim); padding:6px 12px; font-size:12px; border-radius:7px; cursor:pointer; margin-top:6px; }
+  .stage { display:grid; grid-template-columns: 360px 1fr; gap:18px; align-items:start; }
+  @media (max-width:1400px){ .stage{ grid-template-columns:1fr; } }
+  .phone { background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:14px; }
+  .phone .head { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.8px; margin:2px 0 10px; text-align:center; }
+  .scr { background:#0b0d11; border:1px solid var(--border); border-radius:12px; padding:14px 12px; min-height:520px; font-size:13px; }
+  .dlg-title { font-size:15px; font-weight:650; margin-bottom:10px; }
+  .lbl { color:var(--dim); font-size:12px; margin:10px 0 4px; }
+  .fld { background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:9px 11px; color:var(--text); font-size:13px; }
+  .fld.focus { border-color:var(--accent); }
+  .fld .ph { color:#5a6375; }
+  .fld .sel { color:var(--accent); }
+  .caret { display:inline-block; width:2px; height:14px; background:var(--accent); vertical-align:-2px; margin-left:1px; }
+  .list { margin-top:8px; background:#12161d; border:1px solid var(--border); border-radius:10px; overflow:hidden; max-height:210px; overflow-y:auto; }
+  .item { padding:9px 12px; border-bottom:1px solid #1d2330; }
+  .item:last-child { border-bottom:0; }
+  .item .nm { font-size:12.5px; font-weight:600; }
+  .item .mt { color:var(--dim); font-size:11px; margin-top:1px; }
+  .item.dim { opacity:.55; }
+  .sep { padding:5px 12px; background:#171b22; color:var(--dim); font-size:10.5px; text-transform:uppercase; letter-spacing:.6px; }
+  .dd { margin-top:8px; background:#12161d; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .dd .o { padding:8px 12px; border-bottom:1px solid #1d2330; font-size:12.5px; }
+  .dd .o.on { color:var(--accent); background:#17202e; }
+  .btnrow { display:flex; justify-content:flex-end; gap:14px; margin-top:14px; padding-top:10px; border-top:1px solid #1d2330; }
+  .tb { font-size:13px; padding:6px 10px; }
+  .tb.primary { color:var(--accent); font-weight:640; }
+  .tb.primary.off { color:#3a4356; }
+  .hidden { display:none; }
+  .why { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:14px 16px; }
+  .why h3 { font-size:13px; margin-bottom:8px; }
+  .flowbox { font:12.5px/1.7 ui-monospace,monospace; color:#b9c4d8; background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:12px; white-space:pre-wrap; }
+  .ev { padding:7px 10px; border-left:2px solid var(--border); margin-bottom:6px; font-size:12.5px; line-height:1.5; color:#b9c4d8; background:var(--panel2); border-radius:0 8px 8px 0; }
+  .ev.now { border-left-color:var(--amber); background:#231d10; }
+  .ev.past { opacity:.5; }
+  .ev b { color:var(--text); }
+  .flag { background:#3a1d1d; border-left:3px solid var(--red); border-radius:6px; padding:9px 11px; font-size:12.5px; margin:10px 0; line-height:1.5; }
+  .flag b { color:#f0a99f; }
+  .note { background:#17202e; border-left:3px solid var(--accent); border-radius:6px; padding:9px 11px; font-size:12.5px; margin:8px 0; line-height:1.5; color:#b9c4d8; }
+</style>
+</head>
+<body>
+<h1>Import from URL — flusso di esecuzione, passo dopo passo</h1>
+<div class="sub">Ricostruzione fedele del dialog così com'è implementato (ebdf800), con le varianti per ogni scelta. Avanza coi passi a sinistra e indica dove l'ordine ti suona sbagliato; il pannello a destra mostra lo stato del dialog e la catena degli eventi.</div>
+
+<div class="layout">
+<div class="ctrl">
+  <h3>Layout del dialog</h3>
+  <div class="seg" id="layoutseg">
+    <button data-l="impl" class="on">Implementato</button>
+    <button data-l="langfirst">Lingua per prima</button>
+  </div>
+  <h3>Scenario</h3>
+  <div class="seg" id="scenseg">
+    <button data-s="discover" class="on">Scoperta per lingua</button>
+    <button data-s="paste">Ho già l'URL</button>
+    <button data-s="text">Cerco per testo</button>
+  </div>
+  <h3>Passi</h3>
+  <div class="steps" id="steps"></div>
+  <button class="reset" id="reset">↺ Ricomincia</button>
+</div>
+
+<div>
+<div class="stage">
+  <div class="phone"><div class="head" id="phhead">Dialog</div><div class="scr" id="scr"></div></div>
+  <div class="why">
+    <h3>Catena degli eventi</h3>
+    <div id="events"></div>
+    <div id="analysis"></div>
+  </div>
+</div>
+</div>
+</div>
+
+<script>
+const ENTRIES = [
+  { nm:'Whisper v3 Turbo Swiss German int8', mt:'de, de-CH, gsw', langs:['de','gsw'] },
+  { nm:'Kroko Community Zipformer German', mt:'de · streaming', langs:['de'] },
+  { nm:'Whisper Large v3 Turbo Arabic Dialectal', mt:'ar', langs:['ar'] },
+  { nm:'Zipformer Russian int8', mt:'ru', langs:['ru'] },
+  { nm:'Kroko Community Zipformer Spanish', mt:'es · streaming', langs:['es'] },
+];
+const SCEN = {
+  discover: [
+    { id:'open',   t:'Apro il dialog (Import from URL)', st:{url:'', lang:''} },
+    { id:'langdd', t:'Apro il dropdown lingua', st:{url:'', lang:'', dd:true} },
+    { id:'pick',   t:'Scelgo Deutsch · de', st:{url:'', lang:'de'} },
+    { id:'tap',    t:'Tocco la suggest svizzera', st:{url:'https://raw...swiss-german.json', lang:'de', tapped:true} },
+    { id:'import', t:'Premo Import', st:{url:'https://raw...swiss-german.json', lang:'de', importing:true} },
+  ],
+  paste: [
+    { id:'open',   t:'Apro il dialog', st:{url:'', lang:''} },
+    { id:'focus',  t:'Tocco il campo URL', st:{url:'', lang:'', focus:true} },
+    { id:'paste',  t:'Incollo il link', st:{url:'https://raw...swiss-german.json', lang:''} },
+    { id:'import', t:'Premo Import', st:{url:'https://raw...swiss-german.json', lang:'', importing:true} },
+  ],
+  text: [
+    { id:'open',   t:'Apro il dialog', st:{url:'', lang:''} },
+    { id:'type',   t:'Digito "zipformer"', st:{url:'zipformer', lang:''} },
+    { id:'tap',    t:'Tocco la suggest Kroko German', st:{url:'https://raw...german-small.json', lang:'', tapped:true} },
+    { id:'import', t:'Premo Import', st:{url:'https://raw...german-small.json', lang:'', importing:true} },
+  ],
+};
+const EV = {
+  open:   [ '<b>onDismissRequest</b> legato; urlText=""; catalogLanguage="" (All languages)',
+            'urlText non inizia per "http" → suggest VISIBILI, filtro testo vuoto = tutte, partizione disattivata (lingua bianca)' ],
+  langdd: [ 'menuAnchor apre ExposedDropdownMenu del solo dropdown lingua' ],
+  pick:   [ 'onSelect("de") → catalogLanguage="de" → ricomposizione: partitionByLanguage(suggest, "de")',
+            'le entry con de/gsw/de-CH vanno in cima; ar/ru/es sotto il separatore "Other languages"' ],
+  tap:    [ 'onTap(entry): urlText = entryUrl  E  onSelectionChange(family=WHISPER)',
+            'urlText ora inizia per "http" → suggest e separatore SPARISCONO; il dropdown lingua resta ma non ha più effetto',
+            'Import si abilita (urlText non blank)' ],
+  focus:  [ 'focus sul campo URL; keyboard sale' ],
+  paste:  [ 'onValueChange(link): inizia per "http" → suggest mai mostrate per questo testo; filtro lingua irrilevante',
+            'family NON viene toccata: resta quella della sezione (es. Transducer di default!) — l\'URL .json porta la sua, ma un URL di repo HF userebbe la family della sezione' ],
+  type:   [ 'onValueChange("zipformer"): non inizia per "http" → suggest filtrate per testo su nome+lingue' ],
+  import: [ 'urlDialogOpen=false; viewModel.importExternalFromUrl(urlText.trim(), selection.family, options(), languageCodes())',
+            'classificazione: .json → entry JSON (family/opzioni/tag dalla entry); repo HF → family della sezione + decodeLanguage' ],
+};
+const state = { layout:'impl', scen:'discover', i:0 };
+
+function entriesFor(st) {
+  let list = ENTRIES.filter(e => !st.url || st.url=='zipformer' ? (st.url==='zipformer' ? e.nm.toLowerCase().includes('zipformer') : true) : true);
+  if (st.url && st.url.startsWith('http')) return null;
+  if (!st.lang) return { m:list, o:[] };
+  const m = list.filter(e => e.langs.includes(st.lang));
+  const o = list.filter(e => !e.langs.includes(st.lang));
+  return { m, o };
+}
+function render() {
+  const steps = SCEN[state.scen];
+  const step = steps[Math.min(state.i, steps.length-1)];
+  const st = step.st;
+  const stepsEl = document.getElementById('steps');
+  stepsEl.innerHTML = steps.map((s,i) =>
+    `<button class="stepbtn ${i<state.i?'done':''} ${i===state.i?'cur':''}" data-i="${i}"><span class="n">${i+1}</span>${s.t}</button>`).join('');
+  stepsEl.querySelectorAll('.stepbtn').forEach(b => b.onclick = () => { state.i = +b.dataset.i; render(); });
+
+  // phone
+  const langFirst = state.layout === 'langfirst';
+  const urlFld = `<div class="fld ${st.focus||st.url&&!st.tapped&&st.url.startsWith('http')?'focus':''}">${st.url ? st.url.replace('https://raw...','raw…') : `<span class="ph">https://huggingface.co/owner/repo</span>`}</div>`;
+  const langFld = st.dd
+    ? `<div class="fld sel" style="margin-top:8px;">Lingua ▾</div><div class="dd"><div class="o on">Tutte le lingue</div><div class="o">Italiano · it</div><div class="o">Deutsch · de</div><div class="o">Русский · ru</div><div class="o">+ 49 altre…</div></div>`
+    : `<div class="fld ${st.lang?'sel':''}" style="margin-top:8px;">${st.lang ? 'Deutsch · de' : 'Tutte le lingue'} <span style="float:right;color:#5a6375;">▾</span></div>`;
+  const sug = entriesFor(st);
+  let sugHtml = '';
+  if (sug) {
+    sugHtml = '<div class="list">';
+    if (sug.m.length === 0) sugHtml += `<div class="item dim"><div class="nm" style="color:var(--dim)">Nessuna entry per questa lingua</div><div class="mt">sotto "Other languages" restano tutte le altre</div></div>`;
+    sug.m.forEach(e => sugHtml += `<div class="item ${st.tapped?'':''}"><div class="nm">${e.nm}</div><div class="mt">${e.mt}</div></div>`);
+    if (sug.o.length && st.lang) {
+      sugHtml += `<div class="sep">Other languages</div>`;
+      sug.o.forEach(e => sugHtml += `<div class="item dim"><div class="nm">${e.nm}</div><div class="mt">${e.mt}</div></div>`);
+    }
+    sugHtml += '</div>';
+  }
+  const body = langFirst
+    ? `<div class="lbl">Lingua</div>${langFld.replace('style="margin-top:8px;"','')}<div class="lbl" style="margin-top:12px;">URL</div>${urlFld}${sugHtml}`
+    : `<div class="lbl">URL</div>${urlFld}${langFld}${sugHtml}`;
+  document.getElementById('scr').innerHTML = `<div class="dlg-title">Import external model</div>${body}
+    <div class="btnrow"><span class="tb" style="color:var(--dim)">CANCEL</span><span class="tb primary ${st.url?'':'off'}">IMPORT</span></div>`;
+
+  // events
+  const evEl = document.getElementById('events');
+  let html = '';
+  steps.slice(0, state.i+1).forEach((s,idx) => {
+    (EV[s.id]||[]).forEach(line => {
+      html += `<div class="ev ${idx===state.i?'now':'past'}">${idx===state.i?'▶ ':''}${line}</div>`;
+    });
+  });
+  evEl.innerHTML = html;
+
+  // analysis: flag the order problems
+  const an = document.getElementById('analysis');
+  let a = '';
+  if (state.layout==='impl') {
+    a += `<div class="flag"><b>Ordine implementato:</b> il campo URL è il PRIMO elemento; il dropdown lingua sta in mezzo tra URL e suggest. Visivamente il gesto primario richiesto è "incolla un URL", e la scoperta per lingua — che dovrebbe essere il percorso principale — appare come opzione secondaria sotto. Inoltre aprendo il dialog le suggest partono GIÀ tutte visibili (lingua bianca = tutte): la scelta della lingua arriva DOPO aver già visto l'elenco completo.</div>`;
+    if (state.scen==='discover' && state.i>=2) a += `<div class="flag">Dopo la scelta della lingua l'elenco si riordina sotto i tuoi occhi: le entry non correlate non spariscono, scendono. Chi non nota il separatore "Other languages" legge l'elenco come non filtrato.</div>`;
+  } else {
+    a += `<div class="note"><b>Variante "lingua per prima":</b> il dropdown apre il dialog, le suggest nascono già filtrate, e il campo URL sta sotto per chi ce l'ha già. È l'ordine del mock che avevamo approvato; l'implementazione lo ha invertito mantenendo il campo URL in cima.</div>`;
+  }
+  if (state.scen==='paste' && state.i>=2) a += `<div class="flag"><b>Punto delicato indipendente dal layout:</b> incollare un URL di REPO HF (non .json) usa la family impostata nella sezione sotto (default Transducer): se l'utente non la tocca, l'import parte con family sbagliata. Con gli URL .json nessun problema (la entry impone la sua).</div>`;
+  if (state.scen==='discover' && state.i>=3) a += `<div class="note">Dopo il tap, il dropdown lingua resta visibile ma non ha più alcun effetto (le suggest sono nascoste dall'URL): controllo morto in coda al percorso.</div>`;
+  an.innerHTML = a;
+  document.getElementById('phhead').textContent = (state.layout==='impl'?'Implementato (URL → Lingua → suggest)':'Variante (Lingua → suggest → URL)') + ' · passo ' + (state.i+1) + '/' + steps.length;
+}
+document.querySelectorAll('#layoutseg button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#layoutseg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  state.layout = b.dataset.l; render(); });
+document.querySelectorAll('#scenseg button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#scenseg button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  state.scen = b.dataset.s; state.i = 0; render(); });
+document.getElementById('reset').onclick = () => { state.i = 0; render(); };
+render();
+</script>
+</body>
+</html>

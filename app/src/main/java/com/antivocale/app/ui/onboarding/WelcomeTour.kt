@@ -57,7 +57,7 @@ fun TourOverlayCard(
     Surface(
         modifier = modifier.padding(16.dp),
         shape = MaterialTheme.shapes.medium,
-        color = MaterialTheme.colorScheme.surface,
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 6.dp,
     ) {
         Column(
@@ -67,14 +67,20 @@ fun TourOverlayCard(
             Text(
                 text = stringResource(titleRes),
                 style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Text(
                 text = stringResource(bodyRes),
                 style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurface,
             )
             Column(modifier = Modifier.fillMaxWidth()) {
                 Button(
                     onClick = onNext,
+                    colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
@@ -87,7 +93,10 @@ fun TourOverlayCard(
                     onClick = onSkip,
                     modifier = Modifier.align(Alignment.End),
                 ) {
-                    Text(stringResource(R.string.tour_skip))
+                    Text(
+                        stringResource(R.string.tour_skip),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
                 }
             }
         }

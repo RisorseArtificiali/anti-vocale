@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import esterni: redesign dei campi lingua (TASK-401)</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #161a21; --panel2: #1c212b; --border: #2a3140;
+    --text: #d7dde8; --dim: #8b94a7; --accent: #5b9dff; --green: #3ecf8e; --amber: #e8b451; --red: #e8695b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; padding: 24px; max-width: 1280px; margin: 0 auto; }
+  h1 { font-size: 21px; font-weight: 650; margin-bottom: 4px; }
+  .sub { color: var(--dim); font-size: 13px; margin-bottom: 18px; }
+  .layout { display: grid; grid-template-columns: 230px 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } }
+  .ctrl { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px; position: sticky; top: 20px; }
+  .ctrl h3 { font-size: 13px; font-weight: 650; margin-bottom: 10px; }
+  .opt { display: block; padding: 9px 11px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 13px; line-height: 1.35; }
+  .opt input { margin-right: 8px; accent-color: var(--accent); }
+  .opt.sel { border-color: var(--accent); background: #17202e; }
+  .opt .t { font-weight: 620; display: block; }
+  .opt .d { color: var(--dim); font-size: 11.5px; display: block; margin-top: 2px; }
+  .family { width: 100%; margin-top: 8px; background: var(--panel2); color: var(--text); border: 1px solid var(--border); border-radius: 7px; padding: 7px 9px; font-size: 13px; }
+  .mock-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+  .phone { background: var(--panel); border: 1px solid var(--border); border-radius: 18px; padding: 14px; }
+  .phone .head { font-size: 11px; color: var(--dim); text-transform: uppercase; letter-spacing: .8px; margin: 4px 0 10px; text-align: center; }
+  .phone .scr { background: #0b0d11; border: 1px solid var(--border); border-radius: 12px; padding: 14px 12px; min-height: 430px; font-size: 13px; }
+  .phone.current { opacity: .92; }
+  .badge { display: inline-block; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 999px; margin-bottom: 8px; letter-spacing: .3px; }
+  .badge.now { background: #42202a; color: var(--red); }
+  .badge.rec { background: #16351f; color: var(--green); }
+  .badge.alt { background: #14323f; color: #56c1e0; }
+  .lbl { color: var(--dim); font-size: 12px; margin: 10px 0 4px; }
+  .fld { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 11px; color: var(--text); font-size: 13px; }
+  .fld .ph { color: #5a6375; }
+  .fld small { display: block; color: #5a6375; font-size: 11px; margin-top: 3px; }
+  .dropdown { position: relative; }
+  .dropdown .list { position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: #12161d; border: 1px solid var(--border); border-radius: 8px; z-index: 3; box-shadow: 0 8px 24px rgba(0,0,0,.5); }
+  .dropdown .list div { padding: 7px 11px; font-size: 12.5px; }
+  .dropdown .list div.selrow { background: #17202e; color: var(--accent); }
+  .btnrow { display: flex; gap: 8px; margin-top: 14px; }
+  .btn { flex: 1; text-align: center; padding: 9px 0; border-radius: 8px; font-size: 13px; font-weight: 620; }
+  .btn.primary { background: var(--accent); color: #0d1117; }
+  .btn.outline { border: 1px solid var(--border); color: var(--text); background: transparent; }
+  .btn.tonal { background: #17202e; color: var(--accent); }
+  details { margin-top: 10px; border-top: 1px dashed var(--border); padding-top: 8px; }
+  summary { color: var(--dim); font-size: 12px; cursor: pointer; user-select: none; }
+  .card-prev { margin-top: 14px; background: var(--panel2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; }
+  .card-prev .nm { font-size: 13px; font-weight: 640; }
+  .card-prev .tg { color: var(--dim); font-size: 11.5px; margin-top: 3px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .chip { background: #17202e; border: 1px solid var(--border); border-radius: 999px; padding: 3px 9px; font-size: 11px; color: var(--accent); }
+  .chip .x { color: var(--dim); margin-left: 5px; cursor: pointer; }
+  .note { background: #17202e; border-left: 3px solid var(--accent); border-radius: 6px; padding: 8px 10px; font-size: 12px; color: #b9c4d8; margin-top: 10px; line-height: 1.45; }
+  .prompt-wrap { margin-top: 20px; background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+  .prompt-box { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 12px; font: 12.5px/1.6 ui-monospace, monospace; white-space: pre-wrap; color: #b9c4d8; margin-top: 8px; }
+  button { background: var(--accent); color: #0d1117; border: 0; border-radius: 7px; padding: 7px 14px; font-size: 13px; font-weight: 640; cursor: pointer; margin-top: 9px; }
+  .copied { color: var(--green); font-size: 12px; margin-left: 10px; }
+</style>
+</head>
+<body>
+<h1>Import esterni — redesign dei campi lingua</h1>
+<div class="sub">TASK-401: oggi il form ha "Language" (opzione di decodifica, comportamentale) e "Languages" (tag della scheda, cosmetico) indistinguibili. Scegli un'alternativa a sinistra, il mock cambia dal vivo; copia il prompt in fondo quando hai deciso.</div>
+
+<div class="layout">
+<div class="ctrl">
+  <h3>Alternativa</h3>
+  <label class="opt sel" id="opt-current"><input type="radio" name="alt" value="current" checked><span class="t">0 · Stato attuale</span><span class="d">I due campi gemelli, per confronto</span></label>
+  <label class="opt" id="opt-a"><input type="radio" name="alt" value="a"><span class="t">A · Un solo campo (consigliata)</span><span class="d">Lingua di decodifica via dropdown; i tag derivano da essa</span></label>
+  <label class="opt" id="opt-b"><input type="radio" name="alt" value="b"><span class="t">B · Separazione visibile</span><span class="d">Campo comportamentale in vista; i tag dietro "Avanzate"</span></label>
+  <label class="opt" id="opt-c"><input type="radio" name="alt" value="c"><span class="t">C · Chips guidate</span><span class="d">Una sezione lingua unica con chips multipli e switch decodifica</span></label>
+  <h3 style="margin-top:14px;">Famiglia</h3>
+  <select class="family" id="family">
+    <option value="whisper">Whisper</option>
+    <option value="sense">SenseVoice</option>
+    <option value="trans">Transducer</option>
+  </select>
+</div>
+
+<div>
+  <div class="mock-row" id="mocks"></div>
+  <div class="prompt-wrap">
+    <div style="font-size:13px;font-weight:640;">Prompt per implementare la scelta</div>
+    <div class="prompt-box" id="prompt"></div>
+    <button id="copy">Copia prompt</button><span class="copied" id="copied" hidden>Copiato!</span>
+  </div>
+</div>
+</div>
+
+<script>
+const state = { alt: 'current', family: 'whisper' };
+
+const field = (label, hint, val) => `<div class="lbl">${label}</div><div class="fld">${val ? val : `<span class="ph">${hint}</span>`}${hint && !val ? `<small>${''}</small>` : (hint && val ? `<small>${hint}</small>` : '')}</div>`;
+const dd = (label, open, sel) => `<div class="lbl">${label}</div><div class="fld dropdown" style="padding:0;">${open ? `<div class="list"><div>Auto-detect (nessuna lingua fissata)</div><div class="selrow">Italiano · it</div><div>Deutsch · de</div><div>Русский · ru</div></div>` : `<span style="padding:9px 11px;display:block;">${sel}</span>`}</div>`;
+const btns = `<div class="btnrow"><div class="btn outline">Select folder</div><div class="btn primary">Import from URL</div></div>`;
+
+function render() {
+  const fam = state.family;
+  const behavioral = fam === 'whisper' || fam === 'sense';
+  const mocks = [];
+
+  // CURRENT
+  let cur = `<div class="scr"><span class="badge now">STATO ATTUALE</span>
+    <div class="lbl">Model family</div><div class="fld">Whisper</div>`;
+  if (behavioral) cur += field('Language (optional)', 'e.g. ar, en, it (blank = auto)', '');
+  cur += field('Languages (optional)', 'comma or space separated, e.g. ar, en', '');
+  cur += `<div class="note">Due etichette a una parola di distanza. Il primo campo decide la lingua di decodifica; il secondo è solo cosmetico. L'hint del primo elenca tre codici ma accetta un solo valore.</div>` + btns + `</div>`;
+  mocks.push({ badge: 'now', label: '0 · Confronto', html: cur });
+
+  if (state.alt === 'a') {
+    let a = `<div class="scr"><span class="badge rec">A · CAMPO UNICO</span>
+      <div class="lbl">Model family</div><div class="fld">Whisper</div>`;
+    if (behavioral) a += dd('Decode language', true, '') + `<div class="note">Un solo controllo, con nome onesto: "Decode language". I tag della scheda derivano automaticamente dalla lingua scelta (it → scheda "Italiano").</div>`;
+    else a += `<div class="note">Per famiglie senza opzione lingua (Transducer/CTC) il campo non esiste: auto-detect nativo, tag opzionali dietro Avanzate.</div>`;
+    a += `<div class="card-prev"><div class="nm">Whisper v3 Turbo Swiss German int8</div><div class="tg">Tag derivati: <span class="chip">de</span> <span class="chip">gsw</span></div></div>` + btns + `</div>`;
+    mocks.push({ badge: 'rec', label: 'A · Un solo campo', html: a });
+  }
+  if (state.alt === 'b') {
+    let b = `<div class="scr"><span class="badge alt">B · SEPARAZIONE</span>
+      <div class="lbl">Model family</div><div class="fld">Whisper</div>`;
+    if (behavioral) b += dd('Decode language', false, 'Auto-detect (blank = auto)') ;
+    b += `<details><summary>Avanzate — tag mostrati sulla scheda (non influenzano la trascrizione)</summary>
+      <div style="margin-top:8px;">${field('Card tags', 'de, gsw, de-CH …', '')}</div></details>
+      <div class="note">Il campo comportamentale resta primo cittadino; i tag vivono dietro una sezione dichiaratamente cosmetica.</div>` + btns + `</div>`;
+    mocks.push({ badge: 'alt', label: 'B · Separazione visibile', html: b });
+  }
+  if (state.alt === 'c') {
+    let c = `<div class="scr"><span class="badge alt">C · CHIPS GUIDATE</span>
+      <div class="lbl">Model family</div><div class="fld">Whisper</div>
+      <div class="lbl">Languages</div>
+      <div class="chips"><span class="chip">Italiano · it</span><span class="chip">Deutsch · de <span class="x">×</span></span><span class="chip" style="border-style:dashed;">+ aggiungi</span></div>
+      <div class="lbl" style="margin-top:12px;">Decode language</div>
+      <div class="fld"><span class="ph">Auto-detect</span><small>deriva dalla prima chip se attivi lo switch</small></div>
+      <div class="btnrow"><div class="btn tonal" style="flex:0 0 auto;">Usa la prima lingua per la decodifica: OFF</div></div>
+      <div class="note">Una sola sezione lingua: chips multiple (i tag), più uno switch che lega la decodifica alla prima. Più potente, più concetto da spiegare.</div>` + btns + `</div>`;
+    mocks.push({ badge: 'alt', label: 'C · Chips guidate', html: c });
+  }
+
+  document.getElementById('mocks').innerHTML = mocks.map(m => `
+    <div class="phone ${state.alt === 'current' && m.badge === 'now' ? 'current' : ''}">
+      <div class="head">${m.label}</div>${m.html}
+    </div>`).join('');
+  document.querySelectorAll('.opt').forEach(o => o.classList.toggle('sel', o.id === 'opt-' + state.alt));
+
+  const p = document.getElementById('prompt');
+  const famName = { whisper: 'Whisper', sense: 'SenseVoice', trans: 'Transducer' }[state.family];
+  if (state.alt === 'current') {
+    p.textContent = 'Nessuna modifica: questo è lo stato attuale (Task di riferimento: TASK-401).';
+  } else if (state.alt === 'a') {
+    p.textContent = `Implementa l'alternativa A di TASK-401 nel form di import esterno (${famName}): elimina i due campi gemelli "Language (optional)" e "Languages (optional)". Al loro posto, per le famiglie con opzione lingua (${famName === 'Transducer' ? 'nessuna, in questo caso' : famName + ' e SenseVoice'}), un singolo dropdown "Decode language" alimentato da Language.FILTER_ENTRIES con endonimi nativi (prima voce: Auto-detect, nessuna lingua fissata). La scelta alimenta option ${famName === 'SenseVoice' ? 'sensevoice' : 'whisper'}.language E deriva automaticamente i tag languages del record (un valore = entrambi gli scopi). I tag manuali restano possibili solo via import da entry JSON, dove sono già dichiarati. Correggi anche l'hint fuorviante. Suite + /review-local + /simplify prima del commit.`;
+  } else if (state.alt === 'b') {
+    p.textContent = `Implementa l'alternativa B di TASK-401 (${famName}): il campo comportamentale diventa "Decode language" con dropdown (endonimi, prima voce Auto-detect) e hint corretto; il campo "Languages (optional)" migra dietro una sezione richiudibile "Avanzate" con etichetta esplicita: tag mostrati sulla scheda modello, nessun effetto sulla trascrizione. Nessuna modifica alla semantica dei dati (options vs record.languages). Suite + /review-local + /simplify.`;
+  } else {
+    p.textContent = `Implementa l'alternativa C di TASK-401 (${famName}): un'unica sezione "Languages" con chips multiple selezionate da dropdown (endonimi) che alimentano i tag del record, più uno switch "Usa la prima lingua per la decodifica" che quando attivo scrive option ${famName === 'SenseVoice' ? 'sensevoice' : 'whisper'}.language dalla prima chip. Default: switch off (auto-detect), una chip sola per import manuali semplici. Suite + /review-local + /simplify.`;
+  }
+}
+document.querySelectorAll('input[name=alt]').forEach(r => r.addEventListener('change', () => { state.alt = r.value; render(); }));
+document.getElementById('family').addEventListener('change', e => { state.family = e.target.value; render(); });
+document.getElementById('copy').onclick = () => {
+  navigator.clipboard.writeText(document.getElementById('prompt').textContent).then(()=>{ const c=document.getElementById('copied'); c.hidden=false; setTimeout(()=>c.hidden=true,1500); });
+};
+render();
+</script>
+</body>
+</html>

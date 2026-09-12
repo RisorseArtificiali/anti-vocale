@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>1.11 — Verifiche manuali (utente)</title>
+<style>
+  :root {
+    --bg: #0f1115; --panel: #161a21; --panel2: #1c212b; --border: #2a3140;
+    --text: #d7dde8; --dim: #8b94a7; --accent: #5b9dff; --green: #3ecf8e; --amber: #e8b451; --red: #e8695b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui, -apple-system, sans-serif; padding: 24px; max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 22px; font-weight: 650; margin-bottom: 4px; }
+  .sub { color: var(--dim); font-size: 13px; margin-bottom: 20px; }
+  .layout { display: grid; grid-template-columns: 1.25fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 14px; }
+  .card.done { opacity: 0.72; }
+  .card h3 { font-size: 15px; font-weight: 640; display: flex; align-items: center; gap: 10px; }
+  .card h3 .tag { font-size: 10.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; letter-spacing: .3px; }
+  .tag.gate { background: #3d2b12; color: var(--amber); }
+  .tag.manual { background: #14323f; color: #56c1e0; }
+  .tag.wait { background: #2b1d33; color: #b48ee0; }
+  .card p { color: var(--dim); font-size: 13px; margin: 8px 0 10px; line-height: 1.5; }
+  .card p b { color: var(--text); font-weight: 600; }
+  .meta { font-size: 12px; color: var(--dim); font-family: ui-monospace, monospace; margin-bottom: 8px; }
+  .meta a { color: var(--accent); text-decoration: none; }
+  .check-row { display: flex; align-items: center; gap: 8px; margin-top: 6px; }
+  .check-row input[type=checkbox] { width: 17px; height: 17px; accent-color: var(--green); cursor: pointer; }
+  .check-row label { font-size: 13.5px; cursor: pointer; user-select: none; }
+  textarea { width: 100%; background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font: 13px/1.5 ui-monospace, monospace; padding: 9px 11px; margin-top: 10px; resize: vertical; min-height: 56px; }
+  textarea:focus { outline: 1px solid var(--accent); }
+  textarea::placeholder { color: #5a6375; }
+  .progress-wrap { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; position: sticky; top: 20px; }
+  .progress-bar { height: 7px; background: var(--panel2); border-radius: 999px; overflow: hidden; margin: 10px 0 6px; }
+  .progress-fill { height: 100%; background: var(--green); width: 0%; transition: width .25s; }
+  .progress-label { font-size: 12.5px; color: var(--dim); }
+  .report { margin-top: 14px; }
+  .report-box { background: var(--panel2); border: 1px solid var(--border); border-radius: 8px; padding: 11px 12px; font: 12px/1.6 ui-monospace, monospace; white-space: pre-wrap; max-height: 340px; overflow-y: auto; color: #b9c4d8; }
+  button { background: var(--accent); color: #0d1117; border: 0; border-radius: 7px; padding: 7px 14px; font-size: 13px; font-weight: 640; cursor: pointer; margin-top: 9px; }
+  button.sec { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+  .copied { color: var(--green); font-size: 12px; margin-left: 10px; }
+  .group-title { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin: 22px 0 10px; }
+  .hint { font-size: 12px; color: var(--dim); margin-top: 8px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<h1>Anti-Vocale 1.11 — Verifiche manuali</h1>
+<div class="sub">Le cose che restano a te prima del tag. Spunta ciò che hai fatto, scrivi note su ciò che hai osservato, poi copia il riepilogo e incollalo in chat: valuto io il resto.</div>
+
+<div class="layout">
+<div id="items"></div>
+
+<div>
+  <div class="progress-wrap">
+    <div style="font-weight:650;font-size:14px;">Avanzamento</div>
+    <div class="progress-bar"><div class="progress-fill" id="pfill"></div></div>
+    <div class="progress-label" id="plabel">0 / 0 completate</div>
+    <div class="report">
+      <div style="font-size:13px;font-weight:640;margin-bottom:6px;">Riepilogo per la chat</div>
+      <div class="report-box" id="report"></div>
+      <button id="copy">Copia riepilogo</button><span class="copied" id="copied" hidden>Copiato!</span>
+      <button class="sec" id="export">Salva note (file)</button>
+      <button class="sec" id="reset">Azzera</button>
+      <div class="hint">Lo stato (spunte e note) resta salvato in questo browser. "Salva note" scarica un .txt da allegarmi se preferisci.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+const DATA = [
+  { group: "Gate del tag (bloccanti)",
+    items: [
+    { id: "share", tag: "gate", tagtext: "bloccante",
+      title: "Share da WhatsApp/Telegram sull'app reale",
+      why: "Chiude insieme lo smoke R8 (TASK-335) e il subText auto-copy (TASK-385 pt.3): le due cose che adb non può fare su un'app non debuggable.",
+      meta: "app: com.antivocale.app · auto-copy già ON",
+      checks: ["Condividi un vocale da WhatsApp all'app (Anti-Vocale compare nello share sheet)",
+               "La trascrizione arriva nella notifica con il testo corretto",
+               "In fondo alla notifica compare la riga \"Copied to clipboard\" (subText)",
+               "Il testo è effettivamente negli appunti dopo l'incolla"] },
+    { id: "talkback", tag: "gate", tagtext: "bloccante",
+      title: "Pass TalkBack sul batch accessibilità",
+      why: "TASK-376..386: gli screen reader non sono certificabili da dump testuali. Serve un ascolto reale.",
+      meta: "Attiva TalkBack: Impostazioni, Accessibilità; poi naviga Logs e Settings",
+      checks: ["Logs tab: gli stati (Queued/Processing/Succ/Error) vengono annunciati, non muti",
+               "Clear e i pulsanti delle voci sono annunciati con nome e ruolo",
+               "Notification shade: i pulsanti di navigazione dicono Previous/Next (non triangoli muti)",
+               "Snackbar con azione Settings: l'azione è raggiungibile e annunciata"] },
+  ]},
+  { group: "Decisioni e comunicazioni",
+    items: [
+    { id: "derei", tag: "manual", tagtext: "decisione",
+      title: "Rispondere a derei su #23 (bug Gemma)",
+      why: "Il fix (c36199b) viaggia in 1.11 e derei aveva ragione sui sintomi. La issue si chiude con la reply.",
+      meta: "github.com/RisorseArtificiali/anti-vocale/issues/23",
+      checks: ["Deciso se rispondere ora (fix in arrivo con 1.11) o al tag"] },
+    { id: "dum4g", tag: "wait", tagtext: "in attesa",
+      title: "Dum4G: i due one-liner sulla PR #66",
+      why: "KDoc di LanguageNames.kt e logs_empty_hint in ru. Se risponde in tempo, la PR entra in 1.11; altrimenti slitta a 1.12 senza lavoro perso.",
+      meta: "github.com/RisorseArtificiali/anti-vocale/pull/66",
+      checks: ["Verificata la risposta di Dum4G sulle modifiche richieste"] },
+    { id: "icons", tag: "manual", tagtext: "opinione",
+      title: "Occhio alle proposte icone di derei (#61)",
+      why: "TASK-392 (varianti icona) è nel payload 1.12: le proposte sono i candidati artwork. Serve solo il tuo gusto.",
+      meta: "github.com/RisorseArtificiali/anti-vocale/issues/61",
+      checks: ["Viste le proposte; annota sotto se una ti piace (anche parziale)"] },
+  ]},
+  { group: "Dopo il tag (possono attendere)",
+    items: [
+    { id: "strk", tag: "wait", tagtext: "pre-release",
+      title: "Pre-release APK per strk (Moto G10)",
+      why: "Verifica del two-tier RAM gate (TASK-395) con l'utente reale che ha aperto il caso. Preparo io l'APK quando vuoi: serve solo che glielo mandi e raccolga il responso.",
+      meta: "thread utenti GH · TASK-395",
+      checks: ["Deciso il momento del pre-release (posso prepararlo in mezz'ora)"] },
+    { id: "smoothquant", tag: "manual", tagtext: "consiglio",
+      title: "Ri-scaricare SmoothQuant sull'app reale",
+      why: "Il vecchio download (epoca 1.10) ora viene rifiutato pulitamente dal pre-check metadata. Il file attuale su HF è valido: basta cancellare e riscaricare dal Model tab.",
+      meta: "emerso dallo smoke R8 di oggi · coerente con #44",
+      checks: ["Cancellato il vecchio SmoothQuant e riscaricato (opzionale ma consigliato)"] },
+  ]},
+];
+
+const KEY = 'av111-checklist-v1';
+let state = JSON.parse(localStorage.getItem(KEY) || 'null') || {__inited:false};
+if (!state.__inited) { state = {__inited:true}; DATA.forEach(g => g.items.forEach(it => state[it.id] = { checks: [], note: '' })); }
+
+const itemsEl = document.getElementById('items');
+function build() {
+  itemsEl.innerHTML = '';
+  DATA.forEach(g => {
+    const gt = document.createElement('div'); gt.className='group-title'; gt.textContent = g.group; itemsEl.appendChild(gt);
+    g.items.forEach(it => {
+      const st = state[it.id];
+      const allDone = it.checks.length && it.checks.every((_,i)=>st.checks[i]);
+      const card = document.createElement('div'); card.className = 'card' + (allDone ? ' done' : '');
+      let inner = '<h3><span class="tag ' + it.tag + '">' + it.tagtext + '</span>' + it.title + '</h3>';
+      inner += '<div class="meta">' + it.meta + '</div><p>' + it.why + '</p>';
+      it.checks.forEach((c, i) => {
+        inner += '<div class="check-row"><input type="checkbox" id="' + it.id + '-' + i + '"' + (st.checks[i] ? ' checked' : '') + '><label for="' + it.id + '-' + i + '">' + c + '</label></div>';
+      });
+      inner += '<textarea id="note-' + it.id + '" placeholder="Note / osservazioni / cosa è andato storto…">' + (st.note || '') + '</textarea>';
+      card.innerHTML = inner;
+      itemsEl.appendChild(card);
+      card.querySelectorAll('input[type=checkbox]').forEach(cb => cb.addEventListener('change', () => {
+        const i = +cb.id.split('-').pop();
+        st.checks[i] = cb.checked; save(); update();
+        card.className = 'card' + ((it.checks.length && it.checks.every((_,j)=>st.checks[j])) ? ' done' : '');
+      }));
+      card.querySelector('textarea').addEventListener('input', e => { st.note = e.target.value; save(); update(); });
+    });
+  });
+}
+function save(){ localStorage.setItem(KEY, JSON.stringify(state)); }
+function report(){
+  const lines = ['== 1.11 verifiche manuali: riepilogo ==',''];
+  DATA.forEach(g => {
+    const actives = g.items.filter(it => { const st = state[it.id];
+      return st.checks.some(Boolean) || (st.note && st.note.trim()); });
+    if (!actives.length) return;
+    lines.push('[' + g.group + ']');
+    actives.forEach(it => { const st = state[it.id];
+      const done = it.checks.length && it.checks.every((_,i)=>st.checks[i]);
+      const n = st.checks.filter(Boolean).length;
+      lines.push('- ' + it.title + ': ' + (done ? 'COMPLETO' : (n ? 'parziale (' + n + '/' + it.checks.length + ')' : 'da fare')));
+      if (st.note && st.note.trim()) lines.push('  note: ' + st.note.trim().replace(/\n/g, ' | '));
+    });
+    lines.push('');
+  });
+  return lines.join('\n');
+}
+function update(){
+  let total=0, done=0;
+  DATA.forEach(g=>g.items.forEach(it=>{ total++; if(it.checks.length && state[it.id].checks.length===it.checks.length && it.checks.every((_,i)=>state[it.id].checks[i])) done++; }));
+  document.getElementById('pfill').style.width = (total ? done/total*100 : 0) + '%';
+  document.getElementById('plabel').textContent = done + ' / ' + total + ' completate';
+  document.getElementById('report').textContent = report();
+}
+build(); update();
+document.getElementById('copy').onclick = () => {
+  navigator.clipboard.writeText(report()).then(()=>{ const c=document.getElementById('copied'); c.hidden=false; setTimeout(()=>c.hidden=true,1500); });
+};
+document.getElementById('export').onclick = () => {
+  const blob = new Blob([report()], {type:'text/plain'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = '1.11-verifiche.txt'; a.click();
+};
+document.getElementById('reset').onclick = () => { if(confirm('Azzerare spunte e note?')) { localStorage.removeItem(KEY); location.reload(); } };
+</script>
+</body>
+</html>

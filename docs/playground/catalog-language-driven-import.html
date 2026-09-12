@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Import dal catalogo guidato dalla lingua (TASK-401, flow dell'utente)</title>
+<style>
+  :root { --bg:#0f1115; --panel:#161a21; --panel2:#1c212b; --border:#2a3140; --text:#d7dde8; --dim:#8b94a7; --accent:#5b9dff; --green:#3ecf8e; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font-family:system-ui,-apple-system,sans-serif; padding:24px; max-width:1240px; margin:0 auto; }
+  h1 { font-size:21px; font-weight:650; margin-bottom:4px; }
+  .sub { color:var(--dim); font-size:13px; margin-bottom:18px; }
+  .row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; }
+  @media (max-width:1000px){ .row{ grid-template-columns:1fr; } }
+  .phone { background:var(--panel); border:1px solid var(--border); border-radius:18px; padding:14px; }
+  .phone .head { font-size:11px; color:var(--dim); text-transform:uppercase; letter-spacing:.8px; margin:2px 0 10px; text-align:center; }
+  .scr { background:#0b0d11; border:1px solid var(--border); border-radius:12px; padding:14px 12px; min-height:470px; font-size:13px; position:relative; }
+  .step { position:absolute; top:-8px; left:-8px; background:var(--accent); color:#0d1117; font-size:11px; font-weight:700; width:22px; height:22px; border-radius:999px; display:flex; align-items:center; justify-content:center; }
+  .lbl { color:var(--dim); font-size:12px; margin:10px 0 4px; }
+  .fld { background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:9px 11px; color:var(--text); font-size:13px; }
+  .fld .sel { color:var(--accent); }
+  .list { margin-top:6px; background:#12161d; border:1px solid var(--border); border-radius:10px; overflow:hidden; }
+  .item { padding:10px 12px; border-bottom:1px solid #1d2330; cursor:pointer; }
+  .item:last-child { border-bottom:0; }
+  .item .nm { font-size:13px; font-weight:600; }
+  .item .mt { color:var(--dim); font-size:11.5px; margin-top:2px; }
+  .item .sz { color:var(--green); font-size:11.5px; }
+  .chip { display:inline-block; background:#17202e; border:1px solid var(--border); border-radius:999px; padding:3px 9px; font-size:11px; color:var(--accent); margin:2px 3px 2px 0; }
+  .note { background:#17202e; border-left:3px solid var(--accent); border-radius:6px; padding:8px 10px; font-size:12px; color:#b9c4d8; margin-top:12px; line-height:1.5; }
+  .btnrow { display:flex; gap:8px; margin-top:14px; }
+  .btn { flex:1; text-align:center; padding:9px 0; border-radius:8px; font-size:13px; font-weight:620; }
+  .btn.primary { background:var(--accent); color:#0d1117; }
+  .btn.outline { border:1px solid var(--border); color:var(--text); }
+  .files { margin-top:10px; background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:8px 11px; font:12px/1.7 ui-monospace,monospace; color:#b9c4d8; }
+  .progress { margin-top:10px; background:#12161d; border:1px solid var(--border); border-radius:8px; padding:9px 11px; font-size:12px; }
+  .bar { height:6px; background:var(--panel2); border-radius:999px; margin-top:6px; overflow:hidden; }
+  .fill { height:100%; background:var(--green); width:64%; }
+  .ctrl { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-top:18px; }
+  .ctrl h3 { font-size:13px; margin-bottom:8px; }
+  label { font-size:13px; display:block; margin:6px 0; }
+  .prompt-box { background:var(--panel2); border:1px solid var(--border); border-radius:8px; padding:11px 12px; font:12.5px/1.6 ui-monospace,monospace; white-space:pre-wrap; color:#b9c4d8; margin-top:8px; }
+  button { background:var(--accent); color:#0d1117; border:0; border-radius:7px; padding:7px 14px; font-size:13px; font-weight:640; cursor:pointer; margin-top:9px; }
+  .copied { color:var(--green); font-size:12px; margin-left:10px; }
+</style>
+</head>
+<body>
+<h1>Import guidato dalla lingua — il flow che avevi in mente</h1>
+<div class="sub">La lingua come filtro di scoperta del catalogo, non come campo da compilare. Tre schermate del percorso; sotto, le varianti da decidere e il prompt pronto.</div>
+
+<div class="row">
+  <div class="phone"><div class="head">1 · Scelta lingua</div>
+    <div class="scr"><div class="step">1</div>
+      <div class="lbl">Import from URL — che lingua ti interessa?</div>
+      <div class="fld"><span class="sel">Italiano · it</span> &nbsp;<span style="color:#5a6375;">▾</span></div>
+      <div class="list">
+        <div class="item"><div class="nm">Auto-detect / tutte</div></div>
+        <div class="item"><div class="nm">Italiano · it</div></div>
+        <div class="item"><div class="nm">Deutsch · de</div></div>
+        <div class="item"><div class="nm">Русский · ru</div></div>
+        <div class="item"><div class="nm">+ 49 altre…</div></div>
+      </div>
+      <div class="note">Il dropdown sostituisce il campo URL vuoto come primo gesto. Chi ha già un link può incollarlo subito (il campo URL resta raggiungibile): due strade, un dialog.</div>
+    </div>
+  </div>
+  <div class="phone"><div class="head">2 · Catalogo filtrato</div>
+    <div class="scr"><div class="step">2</div>
+      <div class="lbl">Modelli del catalogo community per: <span class="chip">Deutsch · de</span></div>
+      <div class="list">
+        <div class="item"><div class="nm">Kroko Community Zipformer German <span class="sz">· streaming</span></div><div class="mt">sherpa transducer · CC-BY-SA 4.0 · Banafo/kroko.ai</div></div>
+        <div class="item"><div class="nm">Whisper v3 Turbo Swiss German int8 <span class="sz">· 988 MB</span></div><div class="mt">sherpa whisper · fine-tune Flurin17 · de, de-CH, gsw</div></div>
+      </div>
+      <div class="list" style="margin-top:10px; opacity:.75;">
+        <div class="item"><div class="nm" style="color:var(--dim)">Nessuna entry per la lingua scelta →</div><div class="mt">"Nessun modello del catalogo per questa lingua: importane uno da cartella o URL"</div></div>
+      </div>
+      <div class="note">Le suggest del catalogo oggi filtrano solo sul testo digitato: qui filtrano sulla lingua scelta. L'utente vede un set piccolo e dichiarato; tocca quello che vuole. Family, opzioni e tag arrivano dall'entry JSON, zero campi da compilare.</div>
+    </div>
+  </div>
+  <div class="phone"><div class="head">3 · Conferma e download</div>
+    <div class="scr"><div class="step">3</div>
+      <div class="lbl">Import external model</div>
+      <div class="files">encoder.int8.onnx &nbsp;642,7 MB<br>decoder.int8.onnx &nbsp;355,5 MB<br>tokens.txt &nbsp;816,7 KB<br><span style="color:var(--dim)">family: WHISPER · decode: it · tags: it</span></div>
+      <div class="progress">Importing encoder.int8.onnx (1 of 3) · 64%<div class="bar"><div class="fill"></div></div></div>
+      <div class="btnrow"><div class="btn outline">Cancel</div><div class="btn primary">Import</div></div>
+      <div class="note">La conferma mostra già la lingua ereditata dall'entry. Nessun campo Language/Languages da riempire: muoiono entrambi. Per import manuali da cartella (senza entry), resta il dropdown "Decode language" solo dove la famiglia lo usa (Whisper/SenseVoice).</div>
+    </div>
+  </div>
+</div>
+
+<div class="ctrl">
+  <h3>Da decidere</h3>
+  <label><input type="checkbox" checked> La scelta lingua vive nel dialog URL come passo 1 (mock sopra), non nella sezione import</label>
+  <label><input type="checkbox" checked> Il campo URL resta subito disponibile per chi ha già il link (incolla = salta il passo 1)</label>
+  <label><input type="checkbox" checked> Entry senza lingua dichiarata restano visibili sotto "altre" quando il filtro è attivo</label>
+  <label><input type="checkbox"> Il selettore mostra anche i conteggi ("Italiano · 3 modelli")</label>
+  <div class="prompt-box" id="prompt">Implementa il flow guidato dalla lingua di TASK-401: nel dialog Import-from-URL, passo 1 = dropdown lingua (Language.FILTER_ENTRIES, endonimi nativi, prima voce Auto-detect/tutte) che filtra le suggestioni del catalogo (ExternalCatalog.filter per languages oltre che per testo; le entry senza lingua finiscono in coda sotto un separatore "altre"). Il campo URL resta primo piano: incollare un link salta il filtro. I campi "Language (optional)" e "Languages (optional)" della sezione import vengono rimossi: family/opzioni/tag arrivano dall'entry JSON per gli import da catalogo/URL; per gli import manuali da cartella resta un solo dropdown "Decode language" per Whisper/SenseVoice che alimenta l'opzione di decodifica e deriva i tag del record. Suite + /review-local + /simplify prima del commit.</div>
+  <button id="copy">Copia prompt</button><span class="copied" id="copied" hidden>Copiato!</span>
+</div>
+<script>
+document.getElementById('copy').onclick = () => {
+  navigator.clipboard.writeText(document.getElementById('prompt').textContent).then(()=>{ const c=document.getElementById('copied'); c.hidden=false; setTimeout(()=>c.hidden=true,1500); });
+};
+</script>
+</body>
+</html>

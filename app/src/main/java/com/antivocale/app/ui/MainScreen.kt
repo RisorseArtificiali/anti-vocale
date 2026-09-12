@@ -3,6 +3,7 @@ package com.antivocale.app.ui
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.*
+import androidx.compose.ui.Alignment
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Settings
@@ -84,14 +85,14 @@ fun MainScreen(
     LaunchedEffect(tourStep) {
         when (val step = tourStep) {
             null -> revealState.hide()
-            TourStep.Welcome -> revealState.tryReveal(TourStep.Welcome.key)
+            TourStep.Welcome -> revealState.reveal(TourStep.Welcome.key)
             TourStep.ModelsTab -> {
                 selectedTabIndex = 1
-                revealState.tryReveal(TourStep.ModelsTab.key)
+                revealState.reveal(TourStep.ModelsTab.key)
             }
             TourStep.HistoryTab, TourStep.BrowseFab -> {
                 selectedTabIndex = 0
-                revealState.tryReveal(step.key)
+                revealState.reveal(step.key)
             }
         }
     }
@@ -173,7 +174,8 @@ fun MainScreen(
                     TourOverlayCard(
                         step = step,
                         isLast = isLast,
-                        modifier = tourCardModifier(this, step),
+                        // no alignment: the card renders at the overlay default position
+                        // (modifier removed to debug visibility)
                         onNext = {
                             if (nextStep != null) tourStep = nextStep else finishTour()
                         },
