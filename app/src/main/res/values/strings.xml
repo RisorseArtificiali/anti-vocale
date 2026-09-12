@@ -183,6 +183,8 @@
     <string name="catalog_model_deleted">%1$s deleted</string>
     <string name="catalog_download_confirm_title">Download %1$s?</string>
     <string name="catalog_download_confirm_message">This will download ~%1$dMB.</string>
+    <string name="model_fit_no_fit">This model likely will not run on this device: its RAM is below what the model needs.</string>
+    <string name="model_fit_tight">Heads-up: this model is a tight fit for this device\'s RAM; it may fail under memory pressure.</string>
     <string name="catalog_extract_confirm_title">Extract %1$s?</string>
     <string name="catalog_extract_confirm_message">The model file is already downloaded. This will extract it for use.</string>
 

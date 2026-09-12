@@ -52,6 +52,8 @@ import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.CatalogVariantUi
 import com.antivocale.app.transcription.Language
+import androidx.compose.ui.graphics.Color
+import com.antivocale.app.util.DeviceCompatibility
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.ModelFamilySupport
@@ -220,12 +222,16 @@ fun ModelTab(
         )
     }
 
-    // Gemma download confirmation dialog
+    // Gemma download confirmation dialog. TASK-427: the same pre-download
+    // fit hint as the catalog, on the heaviest models in the app.
     if (downloadUiState.showDownloadDialog) {
         val variant = downloadUiState.selectedVariant
+        val (gemmaHintRes, gemmaHintColor) = variantFitHint(context, variant?.estimatedSizeMB ?: 0L)
         DownloadConfirmationDialog(
             title = stringResource(R.string.gemma_download_confirm_title, variant?.displayName ?: "Gemma"),
             message = stringResource(R.string.gemma_download_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 0),
+            fitHintRes = gemmaHintRes,
+            fitHintColor = gemmaHintColor,
             onConfirm = { viewModel.confirmDownload() },
             onDismiss = { viewModel.dismissDownloadDialog() }
         )
@@ -236,10 +242,13 @@ fun ModelTab(
     // MTP_SPECULATIVE_DECODING_ENABLED build flag is on (see ModelDownloadSection).
     if (downloadUiState.modelToUpdate != null) {
         val variant = downloadUiState.modelToUpdate
+        val (updateHintRes, updateHintColor) = variantFitHint(context, variant?.estimatedSizeMB ?: 0L)
         DownloadConfirmationDialog(
             title = stringResource(R.string.gemma_update_confirm_title, variant?.displayName ?: "Gemma"),
             message = stringResource(R.string.gemma_update_confirm_message, variant?.estimatedSizeMB?.toInt() ?: 0),
             confirmButtonText = stringResource(R.string.model_update_button),
+            fitHintRes = updateHintRes,
+            fitHintColor = updateHintColor,
             onConfirm = { viewModel.confirmUpdateModel() },
             onDismiss = { viewModel.dismissUpdateDialog() }
         )
@@ -950,6 +959,15 @@ private fun CatalogModelSection(
             ?: stringResource(entryTitleResId)
         val isExtract = state.selectedVariant != null && state.variantsNeedingExtraction.contains(state.selectedVariant)
         val sizeMb = state.selectedVariant?.let { CatalogVariantUi.of(entry.id, it).estimatedSizeMB.toInt() } ?: 0
+        // TASK-427: advise before the download, from the same budget the
+        // selection gate uses. Fits renders nothing; unreadable RAM too.
+        // The extract branch would show it as well were that flow live
+        // (it is currently disabled); a compressed tar underestimates the
+        // resident model, same proxy the gate itself uses.
+        // No remember: the dialog recomposes rarely and the underlying
+        // ActivityManager read is one cheap binder call (keying a cache on
+        // sizeMb would just add a staleness trap).
+        val (fitHintRes, fitHintColor) = variantFitHint(context, sizeMb.toLong())
         DownloadConfirmationDialog(
             title = stringResource(
                 if (isExtract) R.string.catalog_extract_confirm_title else R.string.catalog_download_confirm_title,
@@ -960,6 +978,8 @@ private fun CatalogModelSection(
                 sizeMb
             ),
             confirmButtonText = stringResource(if (isExtract) R.string.extract_model else R.string.download),
+            fitHintRes = fitHintRes,
+            fitHintColor = fitHintColor,
             onConfirm = { viewModel.confirmDownload(entry.id) },
             onDismiss = { viewModel.dismissDownloadDialog(entry.id) }
         )
@@ -983,6 +1003,20 @@ private fun CatalogModelSection(
     if (showSpeedComparison) {
         SpeedComparisonDialog(onDismiss = { showSpeedComparison = false })
     }
+}
+
+/** TASK-427: verdict to (hint string, color) for the download dialogs; a
+ *  plain Fits (or unreadable RAM) renders nothing. */
+@Composable
+private fun variantFitHint(
+    context: android.content.Context,
+    sizeMB: Long,
+): Pair<Int?, Color?> = when (DeviceCompatibility.modelFit(context, sizeMB)) {
+    DeviceCompatibility.ModelFit.Tight ->
+        R.string.model_fit_tight to MaterialTheme.colorScheme.onSurfaceVariant
+    DeviceCompatibility.ModelFit.DoesNotFit ->
+        R.string.model_fit_no_fit to MaterialTheme.colorScheme.error
+    else -> null to null
 }
 
 // ==================== External models section (v2a) ====================

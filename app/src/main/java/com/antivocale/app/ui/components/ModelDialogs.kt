@@ -1,11 +1,17 @@
 package com.antivocale.app.ui.components
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
 
 /**
@@ -67,13 +73,29 @@ fun DownloadConfirmationDialog(
     title: String,
     message: String,
     confirmButtonText: String = stringResource(R.string.download),
+    fitHintRes: Int? = null,
+    fitHintColor: Color? = null,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(title) },
-        text = { Text(message) },
+        text = {
+            Column {
+                Text(message)
+                // TASK-427: the pre-download fit hint, shown only when the
+                // verdict is not a plain Fits (and RAM was readable at all).
+                fitHintRes?.let { res ->
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(res),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = fitHintColor ?: MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        },
         confirmButton = {
             TextButton(onClick = onConfirm) {
                 Text(confirmButtonText)

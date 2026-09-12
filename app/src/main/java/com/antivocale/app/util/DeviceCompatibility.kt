@@ -44,6 +44,54 @@ object DeviceCompatibility {
         }
     }
 
+    /** TASK-427 tiered verdict for the pre-download hint; Fits keeps the
+     *  boolean contract of [hasRamForModel]. */
+    sealed class ModelFit {
+        data object Fits : ModelFit()
+        /** Within 25% above the required budget: workable today, fragile
+         *  under memory pressure. Surfaced as a caution, never a block. */
+        data object Tight : ModelFit()
+        data object DoesNotFit : ModelFit()
+    }
+
+    /**
+     * TASK-427: the pre-download hint verdict. Same budget as the selection
+     * gate (one definition): Fits/Tight/DoesNotFit against the model's
+     * estimated size; null when the device RAM is unreadable (fail-open,
+     * rendering nothing). The decode-time TranscriptionMemoryPolicy stays
+     * the runtime authority; this is advice at the download button.
+     */
+    fun modelFit(context: Context, modelSizeMB: Long): ModelFit? {
+        val total = totalRamBytes(context)
+        if (total == Long.MAX_VALUE) return null
+        return modelFitForRam(total, modelSizeMB)
+    }
+
+    /**
+     * The pure tier core (JVM-testable): null on EITHER unreadable form, the
+     * wrapper's negative marker and the platform sentinel Long.MAX_VALUE
+     * that a direct caller could pass.
+     */
+    internal fun modelFitForRam(totalRamBytes: Long, modelSizeMB: Long): ModelFit? {
+        if (totalRamBytes < 0 || totalRamBytes == Long.MAX_VALUE) return null
+        val totalRamMb = totalRamBytes / (1024 * 1024)
+        val required = requiredBudgetMb(modelSizeMB)
+        return when {
+            // Difference form (totalRamMb - required) >= required / 4 is the
+            // Tight-band test without an addition that could overflow at a
+            // saturating budget; saturation then simply reads as DoesNotFit.
+            totalRamMb >= required && (totalRamMb - required) >= required / 4 -> ModelFit.Fits
+            totalRamMb >= required -> ModelFit.Tight
+            else -> ModelFit.DoesNotFit
+        }
+    }
+
+    /** One budget definition, shared by the gate and the hint tiers. */
+    internal fun requiredBudgetMb(modelSizeMB: Long): Long = maxOf(
+        (modelSizeMB * RAM_HEADROOM_FACTOR).toLong(),
+        MIN_MODEL_BUDGET_MB,
+    )
+
     /**
      * TASK-395: per-model RAM check. Called at model-selection time (Model tab,
      * Use/Download) with the model's estimated size in MB. Returns true when the
@@ -51,13 +99,8 @@ object DeviceCompatibility {
      * should surface as a warning (not a block) so the user can still try
      * lighter models. The global [check] remains the hard gate for the app itself.
      */
-    fun hasRamForModel(context: Context, modelSizeMB: Long): Boolean {
-        val totalRamMb = totalRamBytes(context) / (1024 * 1024)
-        val required = maxOf(
-            (modelSizeMB * RAM_HEADROOM_FACTOR).toLong(),
-            MIN_MODEL_BUDGET_MB)
-        return totalRamMb >= required
-    }
+    fun hasRamForModel(context: Context, modelSizeMB: Long): Boolean =
+        modelFit(context, modelSizeMB) != ModelFit.DoesNotFit
 
     private fun totalRamBytes(context: Context): Long =
         // MemoryReadings is the one owner of the platform memory reads; this

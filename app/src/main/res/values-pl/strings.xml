@@ -188,6 +188,8 @@
     <string name="catalog_model_deleted">Usunięto %1$s</string>
     <string name="catalog_download_confirm_title">Pobrać %1$s?</string>
     <string name="catalog_download_confirm_message">To pobierze ok. %1$dMB.</string>
+    <string name="model_fit_no_fit">Ten model prawdopodobnie nie zadziała na tym urządzeniu: RAM jest poniżej wymaganego.</string>
+    <string name="model_fit_tight">Uwaga: ten model ledwo mieści się w RAM tego urządzenia; pod presją pamięci może się nie udać.</string>
     <string name="catalog_extract_confirm_title">Wyodrębnić %1$s?</string>
     <string name="catalog_extract_confirm_message">Plik modelu jest już pobrany. To wyodrębni go do użycia.</string>
 

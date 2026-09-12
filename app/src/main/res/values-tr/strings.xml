@@ -186,6 +186,8 @@
     <string name="catalog_model_deleted">%1$s silindi</string>
     <string name="catalog_download_confirm_title">%1$s indirilsin mi?</string>
     <string name="catalog_download_confirm_message">Bu, yaklaşık %1$dMB indirir.</string>
+    <string name="model_fit_no_fit">Bu model bu cihazda büyük olasılıkla çalışmaz: RAM\'i modelin ihtiyacının altında.</string>
+    <string name="model_fit_tight">Not: bu model bu cihazın RAM\'ine ancak sığıyor; bellek baskısı altında başarısız olabilir.</string>
     <string name="catalog_extract_confirm_title">%1$s ayıklansın mı?</string>
     <string name="catalog_extract_confirm_message">Model dosyası zaten indirildi. Bu, kullanım için dosyayı ayıklar.</string>
 

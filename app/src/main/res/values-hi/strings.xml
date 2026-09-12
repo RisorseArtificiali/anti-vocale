@@ -166,6 +166,8 @@
     <string name="catalog_model_deleted">%1$s मिटाया गया</string>
     <string name="catalog_download_confirm_title">%1$s डाउनलोड करें?</string>
     <string name="catalog_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा।</string>
+    <string name="model_fit_no_fit">यह मॉडल शायद इस डिवाइस पर नहीं चलेगा: RAM आवश्यकता से कम है।</string>
+    <string name="model_fit_tight">चेतावनी: यह मॉडल इस डिवाइस RAM में मुश्किल भर पूरा होता है; मेमरी दबाव में निष्फल हो सकता है।</string>
     <string name="catalog_extract_confirm_title">%1$s निकालें?</string>
     <string name="catalog_extract_confirm_message">मॉडल फ़ाइल पहले से डाउनलोड है। इससे इसे इस्तेमाल के लिए निकाला जाएगा।</string>
 

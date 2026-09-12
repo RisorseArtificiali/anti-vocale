@@ -183,6 +183,8 @@
     <string name="catalog_model_deleted">%1$s eliminato</string>
     <string name="catalog_download_confirm_title">Scaricare %1$s?</string>
     <string name="catalog_download_confirm_message">Verranno scaricati ~%1$dMB.</string>
+    <string name="model_fit_no_fit">Questo modello probabilmente non gira su questo dispositivo: la RAM è inferiore al necessario.</string>
+    <string name="model_fit_tight">Attenzione: questo modello è al limite della RAM di questo dispositivo; potrebbe fallire sotto pressione di memoria.</string>
     <string name="catalog_extract_confirm_title">Estrarre %1$s?</string>
     <string name="catalog_extract_confirm_message">Il file del modello è già stato scaricato. Verrà estratto per l\'uso.</string>
 

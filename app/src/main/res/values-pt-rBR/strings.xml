@@ -142,6 +142,8 @@
     <string name="catalog_model_deleted">%1$s excluído</string>
     <string name="catalog_download_confirm_title">Baixar %1$s?</string>
     <string name="catalog_download_confirm_message">Isso baixará ~%1$d MB.</string>
+    <string name="model_fit_no_fit">Este modelo provavelmente não rodará neste dispositivo: a RAM está abaixo do necessário.</string>
+    <string name="model_fit_tight">Atenção: este modelo está no limite da RAM deste dispositivo; pode falhar sob pressão de memória.</string>
     <string name="catalog_extract_confirm_title">Extrair %1$s?</string>
     <string name="catalog_extract_confirm_message">O arquivo do modelo já foi baixado. Ele será extraído para uso.</string>
     <string name="download_status_downloading">Baixando…</string>

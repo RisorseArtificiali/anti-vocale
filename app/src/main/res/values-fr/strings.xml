@@ -142,6 +142,8 @@
     <string name="catalog_model_deleted">%1$s supprimé</string>
     <string name="catalog_download_confirm_title">Télécharger %1$s ?</string>
     <string name="catalog_download_confirm_message">Cela téléchargera environ %1$d Mo.</string>
+    <string name="model_fit_no_fit">Ce modèle ne fonctionnera probablement pas sur cet appareil : sa RAM est insuffisante.</string>
+    <string name="model_fit_tight">Attention : ce modèle tient juste dans la RAM de cet appareil ; il peut échouer sous pression mémoire.</string>
     <string name="catalog_extract_confirm_title">Extraire %1$s ?</string>
     <string name="catalog_extract_confirm_message">Le fichier du modèle est déjà téléchargé. Il sera extrait pour utilisation.</string>
     <string name="download_status_downloading">Téléchargement…</string>

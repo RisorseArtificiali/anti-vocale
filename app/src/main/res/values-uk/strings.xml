@@ -190,6 +190,8 @@
     <string name="catalog_model_deleted">%1$s видалено</string>
     <string name="catalog_download_confirm_title">Завантажити %1$s?</string>
     <string name="catalog_download_confirm_message">Буде завантажено ~%1$dМБ.</string>
+    <string name="model_fit_no_fit">Ця модель, ймовірно, не запрацює на цьому пристрої: RAM нижче за потрібну.</string>
+    <string name="model_fit_tight">Увага: ця модель на грані RAM пристрою; під тиском пам’яті може зазнати збій.</string>
     <string name="catalog_extract_confirm_title">Розпакувати %1$s?</string>
     <string name="catalog_extract_confirm_message">Файл моделі вже завантажено. Це розпакує його для використання.</string>
 

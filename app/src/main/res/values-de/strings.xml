@@ -167,6 +167,8 @@
     <string name="catalog_model_deleted">%1$s gelöscht</string>
     <string name="catalog_download_confirm_title">%1$s herunterladen?</string>
     <string name="catalog_download_confirm_message">Dies lädt etwa %1$d MB herunter.</string>
+    <string name="model_fit_no_fit">Dieses Modell läuft auf diesem Gerät wahrscheinlich nicht: Der RAM liegt unter dem Bedarf des Modells.</string>
+    <string name="model_fit_tight">Hinweis: Dieses Modell passt knapp in den RAM dieses Geräts; unter Speicherdruck kann es scheitern.</string>
     <string name="catalog_extract_confirm_title">%1$s entpacken?</string>
     <string name="catalog_extract_confirm_message">Die Modelldatei ist bereits heruntergeladen. Sie wird jetzt zur Verwendung entpackt.</string>
 
