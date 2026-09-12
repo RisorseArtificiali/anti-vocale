@@ -1,61 +1,20 @@
 {
   "entries": [
     {
-      "name": "Whisper Large v3 Turbo Arabic Dialectal (sherpa int8)",
-      "languages": [
-        "ar"
-      ],
-      "family": "WHISPER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/arabic.json"
-    },
-    {
-      "name": "Zipformer Russian int8 (Vosk-based, sherpa)",
-      "languages": [
-        "ru"
-      ],
-      "family": "TRANSDUCER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/russian-small.json"
-    },
-    {
-      "name": "Kroko Community Zipformer Spanish (streaming, CC-BY-SA 4.0, Banafo / kroko.ai)",
-      "languages": [
-        "es"
-      ],
-      "family": "TRANSDUCER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/spanish-small.json"
-    },
-    {
-      "name": "Kroko Community Zipformer German (streaming, CC-BY-SA 4.0, Banafo / kroko.ai)",
-      "languages": [
-        "de"
-      ],
-      "family": "TRANSDUCER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/german-small.json"
-    },
-    {
-      "name": "Whisper v3 Turbo Swiss German int8 (sherpa, Flurin17 fine-tune)",
-      "languages": [
-        "de",
-        "gsw"
-      ],
-      "family": "WHISPER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/swiss-german.json"
-    },
-    {
-      "name": "Whisper v3 Turbo German int8 (sherpa, primeline fine-tune)",
-      "languages": [
-        "de"
-      ],
-      "family": "WHISPER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/german-whisper.json"
-    },
-    {
       "name": "Canary Flash 180M (English)",
       "languages": [
         "en"
       ],
       "family": "CANARY",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-english.json"
+    },
+    {
+      "name": "Canary Flash 180M (French)",
+      "languages": [
+        "fr"
+      ],
+      "family": "CANARY",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-french.json"
     },
     {
       "name": "Canary Flash 180M (German)",
@@ -74,20 +33,20 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-spanish.json"
     },
     {
-      "name": "Canary Flash 180M (French)",
+      "name": "Kroko Community Zipformer German (streaming, CC-BY-SA 4.0, Banafo / kroko.ai)",
       "languages": [
-        "fr"
+        "de"
       ],
-      "family": "CANARY",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-french.json"
+      "family": "TRANSDUCER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/german-small.json"
     },
     {
-      "name": "Whisper Tiny multilingual (sherpa int8, low-RAM)",
+      "name": "Kroko Community Zipformer Spanish (streaming, CC-BY-SA 4.0, Banafo / kroko.ai)",
       "languages": [
-        "multilingual"
+        "es"
       ],
-      "family": "WHISPER",
-      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/whisper-tiny.json"
+      "family": "TRANSDUCER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/spanish-small.json"
     },
     {
       "name": "SenseVoice Small multilingual int8 (zh/en/yue/ja/ko)",
@@ -100,6 +59,47 @@
       ],
       "family": "SENSE_VOICE",
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/sensevoice.json"
+    },
+    {
+      "name": "Whisper Large v3 Turbo Arabic Dialectal (sherpa int8)",
+      "languages": [
+        "ar"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/arabic.json"
+    },
+    {
+      "name": "Whisper Tiny multilingual (sherpa int8, low-RAM)",
+      "languages": [
+        "multilingual"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/whisper-tiny.json"
+    },
+    {
+      "name": "Whisper v3 Turbo German int8 (sherpa, primeline fine-tune)",
+      "languages": [
+        "de"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/german-whisper.json"
+    },
+    {
+      "name": "Whisper v3 Turbo Swiss German int8 (sherpa, Flurin17 fine-tune)",
+      "languages": [
+        "de",
+        "gsw"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/swiss-german.json"
+    },
+    {
+      "name": "Zipformer Russian int8 (Vosk-based, sherpa)",
+      "languages": [
+        "ru"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/russian-small.json"
     }
   ]
 }

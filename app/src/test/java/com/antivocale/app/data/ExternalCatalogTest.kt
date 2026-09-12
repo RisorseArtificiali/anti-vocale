@@ -159,6 +159,15 @@ class ExternalCatalogTest {
     }
 
     @Test
+    fun `bundled index is alphabetically sorted by display name`() {
+        // Only OUR curated file is held to the rule: parseIndex deliberately
+        // keeps input order so a custom/remote catalog may ship unsorted.
+        val text = java.io.File("src/main/assets/external-catalog/index.json").readText()
+        val names = ExternalCatalog.parseIndex(text).map { it.name }
+        assertEquals(names.sortedBy { it.lowercase() }, names)
+    }
+
+    @Test
     fun `every catalog index entry is listed in the model catalog doc`() {
         // Sync contract: adding an index entry requires its exact name to
         // appear in docs/model-catalog.md, so the user-facing model list
