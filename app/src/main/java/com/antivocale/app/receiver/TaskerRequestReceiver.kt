@@ -47,6 +47,17 @@ class TaskerRequestReceiver : BroadcastReceiver() {
         // Intent extras
         const val EXTRA_REQUEST_TYPE = "request_type"
         const val EXTRA_PROMPT = "prompt"
+
+        /**
+         * The request-type vocabulary every producer must use: the
+         * orchestrator dispatches on these values with a silent fallthrough
+         * to the text branch, so a typo'd literal compiles clean and
+         * "completes" as an empty text transcription.
+         */
+        const val REQUEST_TYPE_TEXT = "text"
+        const val REQUEST_TYPE_AUDIO = "audio"
+        const val REQUEST_TYPE_SUBTITLES = "subtitles"
+
         const val EXTRA_FILE_PATH = "file_path"
         const val EXTRA_TASK_ID = "task_id"
 

@@ -90,7 +90,7 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
             val cacheDir = applicationContext.cacheDir
             val result = orchestrator.processRequest(
                 taskId = taskId,
-                requestType = "audio",
+                requestType = com.antivocale.app.receiver.TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
                 prompt = "",
                 filePath = filePath,
                 source = com.antivocale.app.service.InferenceService.SOURCE_SHARE,

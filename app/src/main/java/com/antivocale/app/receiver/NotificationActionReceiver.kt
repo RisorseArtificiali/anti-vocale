@@ -56,9 +56,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
             ACTION_COPY_TRANSCRIPTION -> handleCopyAction(context, intent)
             ACTION_SHARE_TRANSCRIPTION -> handleShareAction(context, intent)
             ACTION_SHARE_BACK -> handleShareBackAction(context, intent)
-            ACTION_USE_SUBTITLES -> handleSubtitleChoice(context, intent, requestType = "subtitles")
+            ACTION_USE_SUBTITLES -> handleSubtitleChoice(context, intent, requestType = TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES)
             ACTION_DISMISS_CHOICE -> handleDismissChoice(context, intent)
-            ACTION_TRANSCRIBE_AUDIO -> handleSubtitleChoice(context, intent, requestType = "audio")
+            ACTION_TRANSCRIBE_AUDIO -> handleSubtitleChoice(context, intent, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
             ACTION_PAGE_PREV, ACTION_PAGE_NEXT -> handlePageAction(context, intent)
             else -> Log.d(TAG, "Unknown action: ${intent.action}")
         }

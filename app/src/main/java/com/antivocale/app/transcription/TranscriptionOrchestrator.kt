@@ -20,6 +20,7 @@ import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.service.ExtractionService
+import com.antivocale.app.service.InferenceService
 import com.antivocale.app.service.TranscriptionListener
 import com.antivocale.app.ui.viewmodel.LogEntry
 import kotlinx.coroutines.*
@@ -154,7 +155,7 @@ class TranscriptionOrchestrator @Inject constructor(
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope
     ): Result<String> {
-        val isShareRequest = source == com.antivocale.app.service.InferenceService.SOURCE_SHARE
+        val isShareRequest = source == InferenceService.SOURCE_SHARE
 
         // Log request start
         markProcessing(taskId)

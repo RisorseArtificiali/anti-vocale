@@ -428,7 +428,7 @@ class ShareReceiverActivity : Activity() {
         }
 
         // ---- Default ASR path ----
-        val serviceIntent = buildServiceIntent(taskId, localPath, requestType = "audio", trackIndex = -1, backendOverride = backendOverride)
+        val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride)
 
         startForegroundService(serviceIntent)
         Log.i(TAG, "Started InferenceService for taskId: $taskId, source: $sourcePackage")

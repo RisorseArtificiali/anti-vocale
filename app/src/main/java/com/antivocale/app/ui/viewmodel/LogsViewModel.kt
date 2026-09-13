@@ -67,9 +67,6 @@ data class LogEntry(
 ) {
     enum class Type { TEXT, AUDIO }
 
-    companion object {
-        private const val TAG = "LogsViewModel"
-    }
     enum class Status { QUEUED, PROCESSING, SUCCESS, ERROR }
 
     /** A final, copyable transcript (mirrors the swipe/menu action gating). */
@@ -187,15 +184,16 @@ class LogsViewModel @Inject constructor(
     }
 
     /**
-     * TASK-500: browse errors for the FAB snackbar, as EVENTS: a StateFlow
+     * TASK-500: user-facing errors on the History snackbar (browse FAB
+     * failures, and the guarded FGS starts below), as EVENTS: a StateFlow
      * would conflate an identical consecutive error into silence while the
      * first snackbar is still showing.
      */
-    private val _browseError = MutableSharedFlow<String>(extraBufferCapacity = 4)
-    val browseError: kotlinx.coroutines.flow.SharedFlow<String> = _browseError
+    private val _historyError = MutableSharedFlow<String>(extraBufferCapacity = 4)
+    val historyError: kotlinx.coroutines.flow.SharedFlow<String> = _historyError
 
-    private fun reportBrowseError(message: String) {
-        _browseError.tryEmit(message)
+    private fun reportHistoryError(message: String) {
+        _historyError.tryEmit(message)
     }
 
     /**
@@ -219,13 +217,13 @@ class LogsViewModel @Inject constructor(
                 // Every failure variant carries its own localized message
                 // (single definition next to the sealed class).
                 else -> {
-                    reportBrowseError(result.userMessage(appContext))
+                    reportHistoryError(result.userMessage(appContext))
                     return@launch
                 }
             }
             val intent = Intent(appContext, InferenceService::class.java).apply {
                 putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, UUID.randomUUID().toString())
-                putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
+                putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
                 putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, localPath)
                 putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_BROWSE)
             }
@@ -240,7 +238,7 @@ class LogsViewModel @Inject constructor(
                 ContextCompat.startForegroundService(appContext, intent)
             } catch (e: Exception) {
                 android.util.Log.w(TAG, "Browse enqueue failed (class=${e.javaClass.simpleName})", e)
-                reportBrowseError(appContext.getString(R.string.failed_to_process_audio))
+                reportHistoryError(appContext.getString(R.string.failed_to_process_audio))
             }
         }
     }
@@ -488,7 +486,7 @@ class LogsViewModel @Inject constructor(
 
         val intent = Intent(context, InferenceService::class.java).apply {
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, newTaskId)
-            putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
+            putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
             putExtra(TaskerRequestReceiver.EXTRA_PROMPT, originalEntry.prompt)
             putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
             putExtra(InferenceService.EXTRA_SOURCE, "retranscribe")
@@ -497,6 +495,14 @@ class LogsViewModel @Inject constructor(
                 putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, it)
             }
         }
-        ContextCompat.startForegroundService(context, intent)
+        // Same API 31+ guard as the browse path: a retranscribe confirmed
+        // while the app loses foreground would otherwise crash with
+        // ForegroundServiceStartNotAllowedException.
+        try {
+            ContextCompat.startForegroundService(context, intent)
+        } catch (e: Exception) {
+            android.util.Log.w(TAG, "Retranscribe enqueue failed (class=${e.javaClass.simpleName})", e)
+            reportHistoryError(context.getString(R.string.failed_to_process_audio))
+        }
     }
 }

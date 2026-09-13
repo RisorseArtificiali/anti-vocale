@@ -391,7 +391,7 @@ fun LogsTab(
         if (uri != null) viewModel.transcribeLocalFile(context, uri)
     }
     LaunchedEffect(Unit) {
-        viewModel.browseError.collect {
+        viewModel.historyError.collect {
             snackbarHostState.showSnackbar(it)
         }
     }

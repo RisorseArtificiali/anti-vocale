@@ -63,7 +63,7 @@ class BenchmarkActivity : ComponentActivity() {
 
                 val taskId = "bench_${runId}"
                 val serviceIntent = Intent(this@BenchmarkActivity, InferenceService::class.java).apply {
-                    putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
+                    putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
                     putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
                     putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
                     putExtra(TaskerRequestReceiver.EXTRA_PROMPT, "")
