@@ -71,13 +71,20 @@ class NotificationActionReceiver : BroadcastReceiver() {
      * [com.antivocale.app.receiver.ShareReceiverActivity] are passed through verbatim.
      *
      * The notification tap is user-initiated, which on Android 12+ permits starting a
-     * foreground service from this broadcast context. If the OEM still blocks it, the
-     * worst case is the request does not run — the user can re-share. (The timeout worker
-     * is cancelled here precisely so it does not double-run.)
+     * foreground service from this broadcast context; a still-restricted start rides the
+     * InferenceEnqueue trampoline notification, so the request survives either way. (The
+     * timeout worker is cancelled here precisely so it does not double-run.)
      */
     private fun handleSubtitleChoice(context: Context, intent: Intent, requestType: String) {
         val taskId = intent.getStringExtra(TaskerRequestReceiver.EXTRA_TASK_ID)
         if (taskId != null) {
+            // Dual-cancel (code review): the path-derived name this build
+            // arms, plus the legacy per-taskId name a pre-update worker may
+            // still hold (in-window app update, the same window the legacy
+            // notification id below already covers).
+            intent.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)?.let {
+                WorkManager.getInstance(context).cancelUniqueWork(SubtitleChoice.uniqueWorkName(it))
+            }
             WorkManager.getInstance(context).cancelUniqueWork("subtitle-choice-$taskId")
             // Cancel the "Subtitles found" choice notification so it doesn't linger after the
             // user picked an action (its id is derived from taskId, same as ShareReceiverActivity posts).
@@ -106,16 +113,18 @@ class NotificationActionReceiver : BroadcastReceiver() {
             intent.getStringExtra(InferenceService.EXTRA_BACKEND_OVERRIDE)?.let {
                 putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it)
             }
-            if (requestType == "subtitles") {
+            if (requestType == TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES) {
                 putExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, trackIndexFromIntent(intent))
             }
         }
 
-        try {
-            context.startForegroundService(serviceIntent)
-            Log.i(TAG, "Subtitle choice '$requestType' → started InferenceService (taskId=$taskId)")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to start InferenceService for subtitle choice '$requestType'", e)
+        // F6: unified enqueue; start is total (Outcome.Failed instead of throw)
+        when (com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
+            com.antivocale.app.service.InferenceEnqueue.Outcome.Started,
+            com.antivocale.app.service.InferenceEnqueue.Outcome.FallbackNotificationPosted ->
+                Log.i(TAG, "Subtitle choice '$requestType' -> enqueued InferenceService (taskId=$taskId)")
+            is com.antivocale.app.service.InferenceEnqueue.Outcome.Failed ->
+                Log.e(TAG, "Subtitle choice '$requestType' enqueue FAILED (taskId=$taskId): request lost")
         }
     }
 
@@ -131,8 +140,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
             Log.d(TAG, "Dismiss choice without taskId; nothing to cancel")
             return
         }
-        WorkManager.getInstance(context)
-            .cancelUniqueWork("subtitle-choice-$taskId")
+        intent.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)?.let {
+            WorkManager.getInstance(context).cancelUniqueWork(SubtitleChoice.uniqueWorkName(it))
+        }
+        WorkManager.getInstance(context).cancelUniqueWork("subtitle-choice-$taskId")
         Log.i(TAG, "Subtitle choice dismissed by user; cancelled fallback for taskId=$taskId")
     }
 

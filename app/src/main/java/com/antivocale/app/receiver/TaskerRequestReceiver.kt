@@ -1,13 +1,9 @@
 package com.antivocale.app.receiver
 
-import android.app.NotificationManager
-import com.antivocale.app.util.AppNotificationChannel
-import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import com.antivocale.app.R
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.BuiltInBackendIds
@@ -84,7 +80,6 @@ class TaskerRequestReceiver : BroadcastReceiver() {
         // the fallback notification's contentIntent is the SOLE carrier of the
         // pending request, so a collision silently dropped a transcription.
         // A counter repeats only after RANGE concurrent notifications.
-        private val FALLBACK_CHANNEL_ID = AppNotificationChannel.TASKER_FALLBACK.id
         internal const val FALLBACK_NOTIFICATION_ID_BASE = 2201
         internal const val FALLBACK_NOTIFICATION_ID_RANGE = 100
 
@@ -130,20 +125,20 @@ class TaskerRequestReceiver : BroadcastReceiver() {
             putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, backendOverride)
         }
 
-        // Try starting the foreground service directly. This works when:
-        // 1. The app is in the foreground, OR
-        // 2. Battery optimization is disabled for the app (explicit FGS exemption)
-        try {
-            context.startForegroundService(serviceIntent)
-            Log.i(TAG, "Started InferenceService directly for taskId: $taskId")
-        } catch (e: SecurityException) {
-            // Android 12+ background FGS restriction — fall back to user-initiated notification
-            Log.w(TAG, "FGS restricted (${e.javaClass.simpleName}). Posting fallback notification.")
-            postFallbackNotification(context, requestType, prompt, filePath, taskId, backendOverride)
-        } catch (e: IllegalStateException) {
-            // App not in foreground — same fallback
-            Log.w(TAG, "Cannot start from background (${e.javaClass.simpleName}). Posting fallback notification.")
-            postFallbackNotification(context, requestType, prompt, filePath, taskId, backendOverride)
+        // F6: the shared enqueue owns the restriction fallback (trampoline
+        // notification preserving the request); this receiver's inline
+        // postFallbackNotification was the pattern's birthplace and moved
+        // to InferenceEnqueue. Direct start still works when the app is in
+        // the foreground or holds the explicit FGS exemption.
+        when (val outcome = com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
+            com.antivocale.app.service.InferenceEnqueue.Outcome.Started ->
+                Log.i(TAG, "Started InferenceService directly for taskId: $taskId")
+            com.antivocale.app.service.InferenceEnqueue.Outcome.FallbackNotificationPosted ->
+                Log.i(TAG, "Posted fallback notification for taskId: $taskId")
+            is com.antivocale.app.service.InferenceEnqueue.Outcome.Failed -> {
+                Log.e(TAG, "Enqueue failed for taskId: $taskId")
+                sendTaskerReply(context, taskId, STATUS_ERROR, errorMessage = "enqueue failed: ${outcome.exception.message}")
+            }
         }
     }
 
@@ -152,55 +147,6 @@ class TaskerRequestReceiver : BroadcastReceiver() {
     // enforced downstream with a loud ExternalModelUnavailable).
     private fun isKnownBackendId(id: String): Boolean = BuiltInBackendIds.isSelectableBackendId(id)
 
-    /**
-     * Posts a high-priority notification that, when tapped, launches [TaskerTrampolineActivity]
-     * which starts [InferenceService]. The notification tap counts as user-initiated,
-     * satisfying Android 12+ foreground service restrictions.
-     */
-    private fun postFallbackNotification(
-        context: Context,
-        requestType: String,
-        prompt: String,
-        filePath: String?,
-        taskId: String,
-        backendOverride: String?
-    ) {
-        val notificationManager = context.getSystemService(NotificationManager::class.java)
-
-        // Create channel (idempotent — safe to call multiple times)
-        AppNotificationChannel.TASKER_FALLBACK.create(context)
-
-        // Build trampoline intent with all service extras forwarded
-        val trampolineIntent = Intent(context, TaskerTrampolineActivity::class.java).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            putExtra(EXTRA_REQUEST_TYPE, requestType)
-            putExtra(EXTRA_PROMPT, prompt)
-            putExtra(EXTRA_FILE_PATH, filePath)
-            putExtra(EXTRA_TASK_ID, taskId)
-            // TASK-394: the trampoline forwards all extras, so carrying the
-            // override here keeps the fallback path consistent with the direct start.
-            putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, backendOverride)
-        }
-
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            taskId.hashCode(),
-            trampolineIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notification = NotificationCompat.Builder(context, FALLBACK_CHANNEL_ID)
-            .setContentTitle(context.getString(R.string.app_name))
-            .setContentText(context.getString(R.string.tasker_fallback_notification_text))
-            .setSmallIcon(android.R.drawable.ic_media_play)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setContentIntent(pendingIntent)
-            .build()
-
-        notificationManager.notify(fallbackNotificationId(), notification)
-        Log.i(TAG, "Posted fallback notification for taskId: $taskId")
-    }
 
     /**
      * Sends a reply intent back to Tasker.

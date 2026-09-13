@@ -15,11 +15,6 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.app.NotificationCompat
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OutOfQuotaPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.antivocale.app.R
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.receiver.ChooserBroadcastReceiver
@@ -27,18 +22,12 @@ import com.antivocale.app.service.InferenceService
 import com.antivocale.app.service.ResultNotificationFactory
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.SubtitleExtractor
-import com.antivocale.app.transcription.SubtitleTrack
-import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.SharedAudioHandler
-import com.antivocale.app.work.SubtitleChoiceTimeoutWorker
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
-import java.util.concurrent.TimeUnit
 
 /**
  * Transparent activity for receiving shared audio files.
@@ -403,35 +392,27 @@ class ShareReceiverActivity : Activity() {
     /** The subtitle probe branch plus the default ASR path, shared by every entry. */
     private fun dispatch(taskId: String, localPath: String, backendOverride: String?) {
         // ---- Subtitle probe branch ----
-        // If the shared file is a video with readable text subtitle tracks, surface a choice
-        // notification instead of starting ASR. The 5-min timeout worker falls back to ASR
+        // F5: the shared probe+offer (the same code the History browse FAB
+        // runs); when a choice prompt is posted it owns the request and the
+        // share flow ends here. The 5-min timeout worker falls back to ASR
         // if the user ignores the prompt; either tap cancels the worker.
-        if (SharedAudioHandler.isVideoFile(localPath)) {
-            val tracks = try {
-                SubtitleExtractor.probe(localPath)
-            } catch (e: Exception) {
-                Log.w(TAG, "Subtitle probe failed for $localPath — proceeding to ASR", e)
-                emptyList()
-            }
-            if (tracks.isNotEmpty()) {
-                val track = pickBestTrack(tracks)
-                postSubtitleChoiceNotification(taskId, localPath, track, backendOverride)
-                enqueueChoiceTimeoutWorker(taskId, localPath, backendOverride)
-
-                com.antivocale.app.util.ToastCompat.show(this, R.string.subtitles_found_title)
-                Log.i(TAG, "Subtitles found (${tracks.size} tracks) — posted choice notification for taskId: $taskId")
-                cleanup()
-                finish()
-                return
-            }
-            Log.i(TAG, "Video shared but no text subtitle tracks — starting ASR")
+        if (SubtitleChoice.offerIfTracks(
+                this, taskId, localPath,
+                source = InferenceService.SOURCE_SHARE,
+                sourcePackage = sourcePackage,
+                backendOverride = backendOverride)) {
+            com.antivocale.app.util.ToastCompat.show(this, R.string.subtitles_found_title)
+            cleanup()
+            finish()
+            return
         }
 
         // ---- Default ASR path ----
         val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride)
 
-        startForegroundService(serviceIntent)
-        Log.i(TAG, "Started InferenceService for taskId: $taskId, source: $sourcePackage")
+        // F6: unified enqueue (trampoline fallback on the API 31+ restriction)
+        com.antivocale.app.service.InferenceEnqueue.start(this, serviceIntent)
+        Log.i(TAG, "Enqueued InferenceService for taskId: $taskId, source: $sourcePackage")
 
         val toastRes = if (InferenceService.isTranscribing.value)
             R.string.added_to_queue
@@ -461,170 +442,11 @@ class ShareReceiverActivity : Activity() {
         // Don't pass a prompt - let InferenceService use the default from settings
         putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_SHARE)
         backendOverride?.let { putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it) }
-        if (requestType == "subtitles") {
+        if (requestType == TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES) {
             putExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, trackIndex)
         }
     }
 
-    /**
-     * Picks the best subtitle track: the one whose language matches the user's transcription
-     * language preference, else the first track. Languages are matched on the leading
-     * ISO code (e.g. "it" in "it-IT" / "ita").
-     */
-    private fun pickBestTrack(tracks: List<SubtitleTrack>): SubtitleTrack {
-        val preferred = try {
-            val preferencesManager = EntryPointAccessors.fromApplication(
-                applicationContext, SubtitlePrefsEntryPoint::class.java
-            ).preferencesManager
-            runBlocking { preferencesManager.transcriptionLanguage.first() }
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not read transcription language pref, using first track", e)
-            return tracks.first()
-        }
-        if (preferred.isBlank() ||
-            preferred == TranscriptionLanguagePolicy.PREF_AUTO ||
-            preferred == TranscriptionLanguagePolicy.PREF_SYSTEM
-        ) {
-            return tracks.first()
-        }
-        return tracks.firstOrNull { track ->
-            track.language != null && (
-                track.language.equals(preferred, ignoreCase = true) ||
-                track.language.startsWith(preferred, ignoreCase = true) ||
-                preferred.startsWith(track.language, ignoreCase = true)
-            )
-        } ?: tracks.first()
-    }
-
-    /**
-     * Posts the high-priority choice notification with two actions: "Use subtitles" and
-     * "Transcribe audio". Each action broadcasts to [NotificationActionReceiver], which
-     * cancels the timeout worker and starts [InferenceService] with the right request type.
-     */
-    private fun postSubtitleChoiceNotification(
-        taskId: String,
-        localPath: String,
-        track: SubtitleTrack,
-        backendOverride: String?
-    ) {
-        AppNotificationChannel.TRANSCRIPTION_RESULT.create(this)
-
-        val languageLabel = track.language
-            ?.takeIf { it.isNotBlank() }
-            ?: getString(R.string.subtitles_language_unknown)
-
-        val baseExtras = Intent().apply {
-            putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, localPath)
-            putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
-            putExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, track.trackIndex)
-            sourcePackage?.let { putExtra(EXTRA_SOURCE_PACKAGE, it) }
-            putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_SHARE)
-            backendOverride?.let { putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it) }
-        }
-
-        fun choiceAction(action: String): PendingIntent {
-            val actionIntent = Intent(this, NotificationActionReceiver::class.java).apply {
-                this.action = action
-                putExtras(baseExtras)
-            }
-            return PendingIntent.getBroadcast(
-                this,
-                // Unique request codes per (action, taskId) so both actions coexist.
-                (action + taskId).hashCode(),
-                actionIntent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-        }
-
-        // The text discloses the timed fallback (TASK-378): partial SC 2.2.1
-        // disclosure only - adjust/extend mechanisms remain future scope.
-        // BigTextStyle keeps the disclosure sentence visible in the collapsed
-        // shade and heads-up, where the base template ellipsizes it away.
-        val choiceText = getString(
-            R.string.subtitles_found_text,
-            languageLabel,
-            resources.getQuantityString(
-                R.plurals.timeout_minutes,
-                SUBTITLE_CHOICE_TIMEOUT_MINUTES.toInt(),
-                SUBTITLE_CHOICE_TIMEOUT_MINUTES.toInt(),
-            ),
-        )
-        // Swipe-dismiss means "not interested": cancel the pending fallback
-        // instead of letting it transcribe five minutes after the user
-        // declined the prompt.
-        val dismissIntent = PendingIntent.getBroadcast(
-            this,
-            ("dismiss" + taskId).hashCode(),
-            Intent(this, NotificationActionReceiver::class.java).apply {
-                action = NotificationActionReceiver.ACTION_DISMISS_CHOICE
-                putExtras(baseExtras)
-            },
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        // Body tap opens the app like every other notification here: the
-        // choice itself stays on the explicit buttons, so an accidental
-        // heads-up tap cannot irreversibly start transcription (TASK-378).
-        val contentIntent = PendingIntent.getActivity(
-            this,
-            ("open" + taskId).hashCode(),
-            Intent(this, com.antivocale.app.MainActivity::class.java),
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        val notification = NotificationCompat.Builder(this, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
-            .setContentTitle(getString(R.string.subtitles_found_title))
-            .setContentText(choiceText)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(choiceText))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setAutoCancel(true)
-            .setContentIntent(contentIntent)
-            .setDeleteIntent(dismissIntent)
-            .addAction(
-                android.R.drawable.ic_menu_edit,
-                getString(R.string.action_use_subtitles),
-                choiceAction(NotificationActionReceiver.ACTION_USE_SUBTITLES)
-            )
-            .addAction(
-                android.R.drawable.ic_media_play,
-                getString(R.string.action_transcribe_audio),
-                choiceAction(NotificationActionReceiver.ACTION_TRANSCRIBE_AUDIO)
-            )
-            .build()
-
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.notify(choiceNotificationId(taskId), notification)
-        Log.i(TAG, "Posted subtitle choice notification (taskId=$taskId, language=${track.language})")
-    }
-
-    /**
-     * Enqueues the expedited timeout worker that falls back to ASR if the user does not
-     * tap either choice within [SUBTITLE_CHOICE_TIMEOUT_MINUTES]. UNIQUE per taskId so a
-     * re-share replaces the previous pending timeout; cancelled by either notification tap.
-     */
-    private fun enqueueChoiceTimeoutWorker(
-        taskId: String,
-        localPath: String,
-        backendOverride: String?
-    ) {
-        val request = OneTimeWorkRequestBuilder<SubtitleChoiceTimeoutWorker>()
-            .setInitialDelay(SUBTITLE_CHOICE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
-            .setInputData(
-                workDataOf(
-                    SubtitleChoiceTimeoutWorker.KEY_FILE_PATH to localPath,
-                    SubtitleChoiceTimeoutWorker.KEY_TASK_ID to taskId,
-                    SubtitleChoiceTimeoutWorker.KEY_SOURCE_PACKAGE to sourcePackage,
-                    SubtitleChoiceTimeoutWorker.KEY_BACKEND_OVERRIDE to backendOverride
-                )
-            )
-            .build()
-
-        WorkManager.getInstance(this).enqueueUniqueWork(
-            "subtitle-choice-$taskId",
-            ExistingWorkPolicy.REPLACE,
-            request
-        )
-        Log.i(TAG, "Enqueued subtitle choice timeout worker (${SUBTITLE_CHOICE_TIMEOUT_MINUTES} min) for taskId: $taskId")
-    }
 
     private fun cleanup() {
         // Unregister receiver and cancel timeout

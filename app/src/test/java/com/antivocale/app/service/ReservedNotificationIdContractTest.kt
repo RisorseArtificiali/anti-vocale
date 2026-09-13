@@ -66,6 +66,11 @@ class ReservedNotificationIdContractTest {
                 ShareReceiverActivity.CHOICE_ID_BAND_BASE + ShareReceiverActivity.CHOICE_ID_BAND_RANGE),
             "share-error-band" to (ShareReceiverActivity.ERROR_ID_BAND_BASE until
                 ShareReceiverActivity.ERROR_ID_BAND_BASE + ShareReceiverActivity.ERROR_ID_BAND_RANGE),
+            // Code review (TASK-500 F-batch): the History error notification
+            // occupies documented free headroom; registering it here keeps a
+            // future band allocation from colliding while the test passes.
+            "history-error" to (com.antivocale.app.ui.viewmodel.LogsViewModel.HISTORY_ERROR_NOTIFICATION_ID..
+                com.antivocale.app.ui.viewmodel.LogsViewModel.HISTORY_ERROR_NOTIFICATION_ID),
         )
         for (i in intervals.indices) for (j in i + 1 until intervals.size) {
             val (nameA, a) = intervals[i]

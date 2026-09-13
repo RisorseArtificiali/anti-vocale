@@ -19,6 +19,9 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import kotlinx.coroutines.flow.first
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.launch
 import android.content.ClipData
 import android.content.Context
@@ -390,10 +393,19 @@ fun LogsTab(
     ) { uri ->
         if (uri != null) viewModel.transcribeLocalFile(context, uri)
     }
-    LaunchedEffect(Unit) {
-        viewModel.historyError.collect {
-            snackbarHostState.showSnackbar(it)
+    // Lifecycle-aware (code review F1): collect only while RESUMED, so a
+    // failure while the activity is STOPPED finds zero subscribers and the
+    // ViewModel routes it to a notification instead of an invisible host.
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    androidx.compose.runtime.DisposableEffect(lifecycleOwner) {
+        val job = lifecycleOwner.lifecycleScope.launch {
+            lifecycleOwner.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+                viewModel.historyError.collect {
+                    snackbarHostState.showSnackbar(it)
+                }
+            }
         }
+        onDispose { job.cancel() }
     }
 
     Scaffold(
