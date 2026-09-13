@@ -21,6 +21,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.service.InferenceService
+import com.antivocale.app.util.LocaleManager
 import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.BuiltInBackendIds
@@ -208,6 +209,11 @@ class LogsViewModel @Inject constructor(
         // with no suspension points, so the coroutine can outlive the
         // Activity's teardown, and nothing here needs the Activity.
         val appContext = context.applicationContext
+        // User-facing strings resolve through the in-app locale: on API 26-32
+        // setApplicationLocales reaches Activity contexts only, so raw
+        // applicationContext.getString would ignore a pinned app language
+        // (code-review finding 4 on the browse flow).
+        val localizedContext = LocaleManager.updateContextLocale(appContext)
         viewModelScope.launch(Dispatchers.IO) {
             // copyToAppStorage never throws: every path lands in a
             // CopyResult variant (the FGS start below is the throwing step).
@@ -217,7 +223,7 @@ class LogsViewModel @Inject constructor(
                 // Every failure variant carries its own localized message
                 // (single definition next to the sealed class).
                 else -> {
-                    reportHistoryError(result.userMessage(appContext))
+                    reportHistoryError(result.userMessage(localizedContext))
                     return@launch
                 }
             }
@@ -231,14 +237,14 @@ class LogsViewModel @Inject constructor(
             // the app is backgrounded before the copy finishes; the picked
             // file is already safely in app storage, so the honest outcome
             // is an error message, not a crash (a retry re-picks cleanly).
-            // Targeted, logged catches - the Tasker receiver's pattern for
-            // the same restriction - so a genuine bug never hides behind
-            // the restriction message.
+            // The Tasker receiver follows the same targeted, logged catch
+            // pattern for this restriction, so a genuine bug never hides
+            // behind the restriction message.
             try {
                 ContextCompat.startForegroundService(appContext, intent)
             } catch (e: Exception) {
                 android.util.Log.w(TAG, "Browse enqueue failed (class=${e.javaClass.simpleName})", e)
-                reportHistoryError(appContext.getString(R.string.failed_to_process_audio))
+                reportHistoryError(localizedContext.getString(R.string.failed_to_process_audio))
             }
         }
     }
