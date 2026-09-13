@@ -99,6 +99,7 @@
     <string name="voice_message_duration">वॉइस मैसेज</string>
     <string name="source_was_video">स्रोत: वीडियो फ़ाइल</string>
     <string name="processed_in">%1$s में प्रोसेस हुआ</string>
+    <string name="transcript_render_capped">पहले %1$d अक्षर दिखाए गए हैं, %2$d और। पूरा टेक्स्ट देखने के लिए कॉपी करें।</string>
     <string name="today">आज</string>
     <string name="yesterday">कल, %1$s</string>
     <string name="yesterday_label">कल</string>

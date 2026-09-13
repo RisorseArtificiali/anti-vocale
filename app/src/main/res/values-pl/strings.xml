@@ -121,6 +121,7 @@
     <string name="voice_message_duration">wiadomość głosowa</string>
     <string name="source_was_video">Źródło: plik wideo</string>
     <string name="processed_in">Przetworzono w %1$s</string>
+    <string name="transcript_render_capped">Pokazano pierwsze %1$d znaków, jeszcze %2$d. Użyj Kopiuj, aby uzyskać pełny tekst.</string>
     <string name="today">Dzisiaj</string>
     <string name="yesterday">Wczoraj, %1$s</string>
     <string name="yesterday_label">Wczoraj</string>

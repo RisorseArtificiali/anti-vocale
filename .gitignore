@@ -131,6 +131,7 @@ Thumbs.db
 # documented DIY path for catalog exporters, linked from docs and CONTRIBUTING)
 .claude/*
 !.claude/settings.json
+!.claude/hooks/
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/community-model-conversion/

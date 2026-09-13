@@ -5,6 +5,8 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -63,6 +65,9 @@ import com.antivocale.app.util.ToastCompat
 import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.onboarding.TourStep
+import com.antivocale.app.ui.MAX_RENDERED_TRANSCRIPT_CHARS
+import com.antivocale.app.ui.components.CappedTranscriptText
+import com.antivocale.app.ui.components.highlightText
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import androidx.compose.runtime.produceState
 import com.antivocale.app.ui.dialogs.LongAudioWarningDialog
@@ -1102,20 +1107,10 @@ fun LogEntryItem(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = highlightText(
-                                log.result,
-                                searchQuery,
-                                MaterialTheme.colorScheme.tertiary
-                            ),
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .background(
-                                    MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                    shape = MaterialTheme.shapes.small
-                                )
-                                .padding(8.dp)
+                        CappedTranscriptText(
+                            text = log.result,
+                            searchQuery = searchQuery,
+                            container = MaterialTheme.colorScheme.primaryContainer,
                         )
 
                         // TASK-121.4: the AI summary of a long transcript, when the
@@ -1283,20 +1278,13 @@ fun LogEntryItem(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = highlightText(
-                                    log.result,
-                                    searchQuery,
-                                    MaterialTheme.colorScheme.tertiary
-                                ),
-                                style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
-                                        shape = MaterialTheme.shapes.small
-                                    )
-                                    .padding(8.dp)
+                            // TASK-506 /simplify F-A: the interim streaming
+                            // result is the exact surface where a repetition
+                            // loop grows; same cap as the completed result.
+                            CappedTranscriptText(
+                                text = log.result,
+                                searchQuery = searchQuery,
+                                container = MaterialTheme.colorScheme.primaryContainer,
                             )
                         } else {
                             SkeletonTranscriptionCard()
@@ -1382,43 +1370,6 @@ private fun formatFullTimestamp(timestamp: Long, context: Context): String {
 private fun getPreviewText(text: String, maxLength: Int = 50): String {
     if (text.length <= maxLength) return text
     return text.take(maxLength) + "…"
-}
-
-// Highlight all occurrences of query in text (case-insensitive)
-@Composable
-private fun highlightText(
-    text: String,
-    query: String,
-    highlightColor: androidx.compose.ui.graphics.Color
-): AnnotatedString {
-    if (query.isBlank()) return AnnotatedString(text)
-
-    return buildAnnotatedString {
-        var currentIndex = 0
-        val lowerText = text.lowercase()
-        val lowerQuery = query.lowercase()
-
-        while (currentIndex < text.length) {
-            val matchIndex = lowerText.indexOf(lowerQuery, currentIndex)
-            if (matchIndex == -1) {
-                append(text.substring(currentIndex))
-                break
-            }
-            // Append text before the match
-            if (matchIndex > currentIndex) {
-                append(text.substring(currentIndex, matchIndex))
-            }
-            // Append the matched text with highlight
-            withStyle(SpanStyle(
-                color = highlightColor,
-                fontWeight = FontWeight.Bold,
-                background = highlightColor.copy(alpha = 0.15f)
-            )) {
-                append(text.substring(matchIndex, matchIndex + query.length))
-            }
-            currentIndex = matchIndex + query.length
-        }
-    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1643,6 +1594,7 @@ private fun summarySkipCaptionRes(reason: String?): Int? = when (reason) {
     else -> null
 }
 
+
 /**
  * A labeled secondary transcript block of the expanded log card (summary,
  * pre-punctuation original): labelSmall caption, highlighted body on the
@@ -1678,10 +1630,10 @@ private fun LabeledTranscriptBlock(
         )
     }
     Spacer(modifier = Modifier.height(4.dp))
-    Text(
-        text = highlightText(text, searchQuery, MaterialTheme.colorScheme.tertiary),
+    CappedTranscriptText(
+        text = text,
+        searchQuery = searchQuery,
         style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.transcriptBlockSurface()
+        textColor = MaterialTheme.colorScheme.onSurfaceVariant,
     )
 }

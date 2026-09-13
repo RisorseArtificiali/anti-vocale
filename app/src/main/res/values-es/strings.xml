@@ -89,6 +89,7 @@
     <string name="voice_message_duration">mensaje de voz</string>
     <string name="source_was_video">Origen: archivo de video</string>
     <string name="processed_in">Procesado en %1$s</string>
+    <string name="transcript_render_capped">Se muestran los primeros %1$d caracteres, quedan %2$d. Usa Copiar para el texto completo.</string>
     <string name="today">Hoy</string>
     <string name="yesterday">Ayer, %1$s</string>
     <string name="yesterday_label">Ayer</string>

@@ -123,6 +123,7 @@
     <string name="voice_message_duration">голосове повідомлення</string>
     <string name="source_was_video">Джерело: відеофайл</string>
     <string name="processed_in">Оброблено за %1$s</string>
+    <string name="transcript_render_capped">Показано перші %1$d символів, ще %2$d. Використайте «Копіювати», щоб отримати повний текст.</string>
     <string name="today">Сьогодні</string>
     <string name="yesterday">Вчора, %1$s</string>
     <string name="yesterday_label">Вчора</string>

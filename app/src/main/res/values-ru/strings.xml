@@ -107,6 +107,7 @@
     <string name="voice_message_duration">голосовое сообщение</string>
     <string name="source_was_video">Источник: видеофайл</string>
     <string name="processed_in">Обработано за %1$s</string>
+    <string name="transcript_render_capped">Показаны первые %1$d символов, ещё %2$d. Используйте «Копировать», чтобы получить полный текст.</string>
     <string name="today">Сегодня</string>
     <string name="yesterday">Вчера, %1$s</string>
     <string name="yesterday_label">Вчера</string>

@@ -1,6 +1,7 @@
 package com.antivocale.app.ui.components
 
 import androidx.compose.animation.core.RepeatMode
+import com.antivocale.app.ui.MAX_RENDERED_TRANSCRIPT_CHARS
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -132,8 +133,19 @@ fun PipTranscriptionView(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
+                val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
+                val pipRenderCap = remember(displayText, fontScale) {
+                    (MAX_RENDERED_TRANSCRIPT_CHARS / fontScale.coerceAtLeast(1f)).toInt()
+                        .coerceAtLeast(1_000)
+                }
                 Text(
-                    text = displayText,
+                    // TASK-506 /simplify F-B: the SHARED render cap, as
+                    // takeLast so a growing stream keeps its LIVE tail
+                    // (code review: take() froze the oldest prefix and the
+                    // pane stopped following the stream), scaled by
+                    // fontScale so huge accessibility text cannot re-breach
+                    // the 262142px Constraints ceiling in the narrow PiP.
+                    text = displayText.takeLast(pipRenderCap),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier

@@ -116,6 +116,7 @@
     <string name="voice_message_duration">messaggio vocale</string>
     <string name="source_was_video">Origine: file video</string>
     <string name="processed_in">Elaborato in %1$s</string>
+    <string name="transcript_render_capped">Mostrati i primi %1$d caratteri, altri %2$d. Usa Copia per il testo completo.</string>
     <string name="today">Oggi</string>
     <string name="yesterday">Ieri, %1$s</string>
     <string name="yesterday_label">Ieri</string>
