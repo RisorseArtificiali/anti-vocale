@@ -28,6 +28,20 @@ release/
 *.tflite
 !app/src/main/assets/models/*.onnx
 
+# TASK-504 (2026-09-13): the export workspace and scratch files carry secrets
+# or tens of GB and are one `git add -A` from a public commit. temp.md is the
+# maintainer's scratchpad (repo convention: never commit) and has held live
+# credentials; enforce the convention instead of trusting it.
+/temp.md
+/temp_*.md
+*.pt
+/de.wav
+model-export/output/
+model-export/output-clean/
+__pycache__/
+.ccgram-uploads/
+whats-new/
+
 # Gradle files
 .gradle/
 build/
