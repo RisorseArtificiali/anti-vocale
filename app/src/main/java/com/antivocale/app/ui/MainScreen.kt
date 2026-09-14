@@ -15,8 +15,9 @@ import androidx.compose.ui.res.stringResource
 import com.antivocale.app.R
 import com.antivocale.app.ui.components.PipTranscriptionView
 import com.antivocale.app.ui.onboarding.TourStep
-import com.antivocale.app.ui.onboarding.TourOverlayCard
 import com.antivocale.app.ui.onboarding.tourCardModifier
+import com.antivocale.app.ui.onboarding.TourOverlayCard
+import com.antivocale.app.ui.onboarding.tourRevealable
 import com.antivocale.app.ui.tabs.LogsTab
 import com.antivocale.app.ui.tabs.ModelTab
 import com.antivocale.app.ui.tabs.SettingsTab
@@ -183,8 +184,11 @@ fun MainScreen(
                     TourOverlayCard(
                         step = step,
                         isLast = isLast,
-                        // no alignment: the card renders at the overlay default position
-                        // (modifier removed to debug visibility)
+                        // TASK-508: the alignment modifier MUST be passed. It was
+                        // dropped during the TASK-491 debug round and the card
+                        // fell back to the library's default top-start placement,
+                        // covering the tab row the tour teaches the user to tap.
+                        modifier = tourCardModifier(this, step),
                         onNext = {
                             if (nextStep != null) tourStep = nextStep else finishTour()
                         },
@@ -196,26 +200,23 @@ fun MainScreen(
             Column(modifier = Modifier.fillMaxSize()) {
                 TopAppBar(
                     title = {
-                        Text(
-                            stringResource(R.string.app_name),
-                            modifier = Modifier.revealable(
-                                key = TourStep.Welcome.key,
-                                state = revealState,
-                                borderStroke = androidx.compose.foundation.BorderStroke(
-                                    width = 2.dp,
-                                    color = MaterialTheme.colorScheme.primary,
-                                ),
-                                padding = androidx.compose.foundation.layout.PaddingValues(12.dp),
-                            ),
-                        )
+                        Text(stringResource(R.string.app_name))
                     },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 )
 
+                // TASK-508: the Welcome cutout is the WHOLE tab row, not the
+                // app title. The title's cutout sits above the TabRow, so a
+                // card placed "under" it landed on top of the tabs (verified
+                // on device: card y440-1100 covered the tab row y505-575).
+                // Revealing the tab row highlights all three tabs - what the
+                // intro step actually introduces - and Bottom placement then
+                // puts the card safely below them.
                 TabRow(
                     selectedTabIndex = selectedTabIndex,
+                    modifier = Modifier.tourRevealable(TourStep.Welcome.key, revealState),
                     containerColor = MaterialTheme.colorScheme.surface,
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ) {
@@ -230,19 +231,7 @@ fun MainScreen(
                             onClick = { selectedTabIndex = index },
                             text = { Text(stringResource(tab.titleResId)) },
                             icon = { Icon(tab.icon, contentDescription = stringResource(tab.titleResId)) },
-                            modifier = if (tourKey != null) {
-                                Modifier.revealable(
-                                    key = tourKey,
-                                    state = revealState,
-                                    borderStroke = androidx.compose.foundation.BorderStroke(
-                                        width = 2.dp,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    ),
-                                    padding = androidx.compose.foundation.layout.PaddingValues(12.dp),
-                                )
-                            } else {
-                                Modifier
-                            },
+                            modifier = tourKey?.let { Modifier.tourRevealable(it, revealState) } ?: Modifier,
                         )
                     }
                 }

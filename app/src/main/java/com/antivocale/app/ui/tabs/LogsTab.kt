@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -46,7 +47,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.antivocale.app.MainActivity
 import com.antivocale.app.R
-import com.svenjacobs.reveal.revealable
+import com.antivocale.app.ui.onboarding.tourRevealable
 import com.antivocale.app.transcription.SummaryPolicy
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.SharedAudioHandler
@@ -422,10 +423,7 @@ fun LogsTab(
                 onClick = { browseLauncher.launch(arrayOf("audio/*", "video/*")) },
                 modifier = Modifier
                     .navigationBarsPadding()
-                    .revealable(
-                        key = TourStep.BrowseFab.key,
-                        state = tourRevealState,
-                    ),
+                    .tourRevealable(TourStep.BrowseFab.key, tourRevealState),
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
@@ -1329,7 +1327,10 @@ private fun formatAudioDuration(seconds: Double): String {
 // Format relative time: "5 min ago", "Yesterday 14:32", "Mar 2, 14:32"
 private fun formatRelativeTime(timestamp: Long, context: Context): String {
     val now = System.currentTimeMillis()
-    val diff = now - timestamp
+    // Clamp future timestamps (clock skew, imported data) to "now": a negative
+    // diff fell into the seconds branch and rendered raw "-46213s ago"
+    // (maintainer trial 2026-09-13, TASK-507).
+    val diff = (now - timestamp).coerceAtLeast(0)
     val locale = context.resources.configuration.locales.get(0)
     return when {
         diff < 60_000 -> context.getString(R.string.time_seconds_ago, diff / 1000)
@@ -1523,7 +1524,7 @@ private fun ConversationGroupHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                if (expanded) Icons.Default.KeyboardArrowDown else Icons.Default.KeyboardArrowRight,
+                if (expanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
                 tint = MaterialTheme.colorScheme.onSecondaryContainer
@@ -1532,10 +1533,15 @@ private fun ConversationGroupHeader(
             Text(
                 text = appName.ifBlank { stringResource(R.string.conversation_group_unknown) },
                 style = MaterialTheme.typography.labelMedium,
-                // Locale-safe: ellipsize before the count/timestamp column (TASK-345)
+                // Locale-safe: ellipsize before the count/timestamp column (TASK-345).
+                // TASK-507: the ONLY weighted child. The previous pair (this
+                // one fill=false + a weighted spacer) leaked the name's
+                // unused share past the row end under Arrangement.Start, so
+                // the timestamp floated left by (share/2 - nameWidth):
+                // short group names visibly misaligned the times across rows.
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f, fill = false),
+                modifier = Modifier.weight(1f),
                 color = MaterialTheme.colorScheme.onSecondaryContainer,
                 fontWeight = FontWeight.SemiBold
             )
@@ -1545,7 +1551,7 @@ private fun ConversationGroupHeader(
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSecondaryContainer
             )
-            Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = formatRelativeTime(lastTimestamp, context),
                 style = MaterialTheme.typography.labelSmall,
