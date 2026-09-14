@@ -27,6 +27,7 @@ import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
 import com.antivocale.app.transcription.LlmTranscriptionBackend
+import com.antivocale.app.transcription.ModelFamilyDetector
 import com.antivocale.app.transcription.SherpaModelDownloader
 import com.antivocale.app.transcription.SherpaModelManager
 import com.antivocale.app.transcription.cleanOrphanedModelDirs
@@ -58,6 +59,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import javax.inject.Inject
@@ -1488,6 +1490,14 @@ class ModelViewModel @Inject constructor(
         preferencesManager.transcriptionBackend
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000),
                 PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
+
+    /** TASK-513: lists a picked SAF folder and detects the family, so the
+     *  import dialog can prefill it instead of failing a transducer-shaped
+     *  validation on a valid Canary/Whisper/CTC/SenseVoice set. */
+    suspend fun detectExternalFamily(context: Context, treeUri: Uri): ModelFamilyDetector.Result =
+        withContext(Dispatchers.IO) {
+            ModelFamilyDetector.detect(externalModelImporter.listTreeFileNames(context, treeUri))
+        }
 
     /**
      * Folder import (SAF): the primary v2a entry. modelType is NOT passed for

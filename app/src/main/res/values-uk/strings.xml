@@ -999,4 +999,6 @@
     <string name="litertlm_importing">Імпортування…</string>
     <string name="model_ram_warning">%1$s може не вистачити пам\'яті на цьому пристрої. Завантаження може не вдатися; легші моделі надійніші.</string>
     <string name="error_oom_transcription">Недостатньо пам\'яті для розшифровки цього аудіо. Спробуйте коротший файл, меншу модель або закрийте інші застосунки.</string>
+    <string name="external_family_detected">Виявлено: %1$s</string>
+    <string name="external_family_pick_title">До якої сім\'ї належить ця модель?</string>
 </resources>

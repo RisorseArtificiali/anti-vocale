@@ -997,4 +997,6 @@
     <string name="litertlm_importing">Importowanie…</string>
     <string name="model_ram_warning">%1$s może nie mieć wystarczającej pamięci na tym urządzeniu. Ładowanie może się nie powieść; lżejsze modele są bezpieczniejsze.</string>
     <string name="error_oom_transcription">Za mało pamięci, aby transkrybować to audio. Spróbuj krótszego pliku, mniejszego modelu lub zamknij inne aplikacje.</string>
+    <string name="external_family_detected">Wykryto: %1$s</string>
+    <string name="external_family_pick_title">Do której rodziny należy ten model?</string>
 </resources>

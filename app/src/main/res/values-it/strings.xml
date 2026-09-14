@@ -985,4 +985,6 @@
     <string name="litertlm_importing">Importazione in corso…</string>
     <string name="model_ram_warning">%1$s potrebbe non avere memoria sufficiente su questo dispositivo. Potrebbe non caricarsi o crashare; i modelli più leggeri sono più sicuri.</string>
     <string name="error_oom_transcription">Memoria insufficiente per trascrivere questo audio. Prova un file più corto, un modello più piccolo, o chiudi altre app.</string>
+    <string name="external_family_detected">Rilevato: %1$s</string>
+    <string name="external_family_pick_title">A quale famiglia appartiene questo modello?</string>
 </resources>

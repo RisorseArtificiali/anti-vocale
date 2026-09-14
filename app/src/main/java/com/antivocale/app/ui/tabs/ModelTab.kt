@@ -18,6 +18,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.material.icons.Icons
+import android.net.Uri
+import com.antivocale.app.transcription.ModelFamilyDetector
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -117,20 +119,56 @@ fun ModelTab(
     var externalImport by remember { mutableStateOf(ExternalImportUiState()) }
 
     // Folder picker launcher for external-model imports (OpenDocumentTree; SAF copy in the VM).
+    // TASK-513: the picked folder is probed BEFORE importing. One family consumes
+    // every file: auto-select it and report it with the detected chip (the
+    // import fires immediately; the chip documents which family won). A
+    // Whisper/Canary-shaped set is first narrowed by the folder name, and
+    // only a still-ambiguous pick opens the chooser: detect then confirm,
+    // never a silent family guess (GH #93).
+    val externalImportScope = rememberCoroutineScope()
+    var detectedExternalFamily by remember { mutableStateOf<ModelFamily?>(null) }
+    var ambiguousPick by remember { mutableStateOf<AmbiguousFamilyPick?>(null) }
+    fun importFolder(picked: Uri, family: ModelFamily) {
+        externalImport = externalImport.withFamily(family)
+        viewModel.importExternalFromFolder(
+            context, picked, family,
+            ctcModelType = externalImport.ctcModelType,
+            options = externalImport.options(),
+            languages = externalImport.languageCodes(),
+        )
+    }
     val externalFolderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
-        uri?.let {
+        uri?.let { picked ->
             context.contentResolver.takePersistableUriPermission(
-                it,
+                picked,
                 android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
             )
-            viewModel.importExternalFromFolder(
-                context, it, externalImport.family,
-                ctcModelType = externalImport.ctcModelType,
-                options = externalImport.options(),
-                languages = externalImport.languageCodes(),
-            )
+            detectedExternalFamily = null
+            ambiguousPick = null
+            externalImportScope.launch {
+                when (val detection = viewModel.detectExternalFamily(context, picked)) {
+                    is ModelFamilyDetector.Result.Detected -> {
+                        detectedExternalFamily = detection.family
+                        importFolder(picked, detection.family)
+                    }
+                    is ModelFamilyDetector.Result.Ambiguous -> {
+                        // The tree URI's last segment usually carries the
+                        // folder name: "canary-180m" resolves without asking.
+                        val narrowed = ModelFamilyDetector.narrow(
+                            detection.candidates, picked.lastPathSegment)
+                        if (narrowed != null) {
+                            detectedExternalFamily = narrowed
+                            importFolder(picked, narrowed)
+                        } else {
+                            ambiguousPick = AmbiguousFamilyPick(picked, detection.candidates)
+                        }
+                    }
+                    ModelFamilyDetector.Result.Unknown ->
+                        importFolder(picked, externalImport.family)
+                }
+            }
         }
     }
 
@@ -612,10 +650,38 @@ fun ModelTab(
                     viewModel = viewModel,
                     activeBackendId = activeBackendId,
                     folderPicker = { externalFolderPicker.launch(null) },
+                    detectedFamily = detectedExternalFamily,
                     selection = externalImport,
-                    onSelectionChange = { externalImport = it },
+                    onSelectionChange = { externalImport = it; detectedExternalFamily = null },
                     onDeleteRequest = { externalToDelete = it }
                 )
+
+                if (ambiguousPick != null) {
+                    // TASK-513 (GH #93): the folder shape fits more than one
+                    // family and the folder name did not resolve it; the
+                    // user picks, the import runs with the choice.
+                    AlertDialog(
+                        onDismissRequest = { ambiguousPick = null },
+                        title = { Text(stringResource(R.string.external_family_pick_title)) },
+                        text = {
+                            Column {
+                                ambiguousPick?.candidates?.forEach { family ->
+                                    TextButton(onClick = {
+                                        val picked = ambiguousPick?.uri
+                                        ambiguousPick = null
+                                        picked?.let { importFolder(it, family) }
+                                    }) { Text(familyLabel(family)) }
+                                }
+                            }
+                        },
+                        confirmButton = {},
+                        dismissButton = {
+                            TextButton(onClick = { ambiguousPick = null }) {
+                                Text(stringResource(android.R.string.cancel))
+                            }
+                        },
+                    )
+                }
             }
         }
 
@@ -1043,6 +1109,25 @@ private fun variantFitHint(
  * Family selection + conditional options for external-model imports. One immutable
  * holder so both import paths (folder and URL) share a single selection state.
  */
+/** TASK-513: an ambiguous family pick waiting on the user's choice. */
+private data class AmbiguousFamilyPick(val uri: Uri, val candidates: List<ModelFamily>)
+
+/** Family label table (TASK-513 hoisted from the section: compile-time
+ *  constant, shared by the dropdown, the detected chip, and the chooser). */
+private val FAMILY_OPTIONS = listOf(
+    Triple(ModelFamily.TRANSDUCER, R.string.external_family_transducer, R.string.external_family_transducer_help),
+    Triple(ModelFamily.WHISPER, R.string.external_family_whisper, R.string.external_family_whisper_help),
+    Triple(ModelFamily.CTC, R.string.external_family_ctc, R.string.external_family_ctc_help),
+    Triple(ModelFamily.SENSE_VOICE, R.string.external_family_sense_voice, R.string.external_family_sense_voice_help),
+    Triple(ModelFamily.CANARY, R.string.external_family_canary, R.string.external_family_canary_help),
+)
+
+/** One label lookup, loud on a missing row (a family without a label must
+ *  fail, not silently leak the untranslated enum into the UI). */
+@Composable
+private fun familyLabel(family: ModelFamily): String = stringResource(
+    FAMILY_OPTIONS.first { it.first == family }.second)
+
 internal data class ExternalImportUiState(
     val family: ModelFamily = ModelFamily.TRANSDUCER,
     val ctcModelType: String = "nemo_ctc",
@@ -1206,6 +1291,7 @@ private fun ExternalModelsSection(
     folderPicker: () -> Unit,
     selection: ExternalImportUiState,
     onSelectionChange: (ExternalImportUiState) -> Unit,
+    detectedFamily: ModelFamily? = null,
     onDeleteRequest: (ExternalModelRecord) -> Unit,
 ) {
     val records by viewModel.externalModels.collectAsState()
@@ -1228,15 +1314,7 @@ private fun ExternalModelsSection(
 
     // lint AST misresolves this block; it returns List<Triple<...>>
     @SuppressLint("RememberReturnType")
-    val familyOptions = remember {
-        listOf(
-            Triple(ModelFamily.TRANSDUCER, R.string.external_family_transducer, R.string.external_family_transducer_help),
-            Triple(ModelFamily.WHISPER, R.string.external_family_whisper, R.string.external_family_whisper_help),
-            Triple(ModelFamily.CTC, R.string.external_family_ctc, R.string.external_family_ctc_help),
-            Triple(ModelFamily.SENSE_VOICE, R.string.external_family_sense_voice, R.string.external_family_sense_voice_help),
-            Triple(ModelFamily.CANARY, R.string.external_family_canary, R.string.external_family_canary_help),
-        )
-    }
+    val familyOptions = FAMILY_OPTIONS
 
     // Outer section Card matching the curated sections (GigaAM, Nemotron):
     // surfaceVariant background, header with icon + title + description, 16dp padding.
@@ -1272,7 +1350,7 @@ private fun ExternalModelsSection(
                 modifier = Modifier.padding(bottom = 8.dp)
             ) {
                 OutlinedTextField(
-                    value = stringResource(familyOptions.first { it.first == selection.family }.second),
+                    value = familyLabel(selection.family),
                     onValueChange = {},
                     readOnly = true,
                     label = { Text(stringResource(R.string.external_family)) },
@@ -1373,6 +1451,33 @@ private fun ExternalModelsSection(
                 else -> {}
             }
 
+            detectedFamily?.let { detected ->
+                // TASK-513 (GH #93): the detected-family chip. The import
+                // fires immediately; the chip documents which family the
+                // files picked, and clears on the next pick or a manual
+                // family change.
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(16.dp),
+                    )
+                    Text(
+                        text = stringResource(
+                            R.string.external_family_detected,
+                            familyLabel(detected),
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+
             Row(modifier = Modifier.fillMaxWidth()) {
             Button(
                 onClick = folderPicker,
@@ -1390,6 +1495,7 @@ private fun ExternalModelsSection(
                 modifier = Modifier.weight(1f)
             ) { Text(stringResource(R.string.external_import_url)) }
         }
+
 
         when (val st = importState) {
             is ModelViewModel.ExternalImportState.Importing -> Column(

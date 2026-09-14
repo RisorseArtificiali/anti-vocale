@@ -7,6 +7,7 @@ import androidx.documentfile.provider.DocumentFile
 import com.antivocale.app.data.download.DownloadConfig
 import com.antivocale.app.data.download.HashVerifier
 import com.antivocale.app.data.download.ResumeDownloadHelper
+import com.antivocale.app.transcription.ModelFamilyDetector
 import com.antivocale.app.transcription.ModelFamilySupport
 import com.antivocale.app.transcription.SherpaBackend
 import java.io.File
@@ -18,6 +19,8 @@ import javax.inject.Singleton
  * The two import entries the ViewModel drives, as a minimal injectable seam so UI-layer
  * tests can verify argument forwarding without SAF or network machinery (TASK-331 Task 12).
  * Implemented by [ExternalModelImporter] and faked in ModelViewModelExternalImportTest.
+ * TASK-513 adds [listTreeFileNames], a listing concern (family detection in
+ * the import dialog) that rides along rather than a third import entry.
  */
 interface ExternalModelImportOperations {
     suspend fun importFromTreeUri(
@@ -39,6 +42,12 @@ interface ExternalModelImportOperations {
         streaming: Boolean = false,
         onProgress: ExternalImportProgress = NOOP_PROGRESS,
     ): ExternalModelRecord
+
+    /** TASK-513: file names a SAF tree would import (family detection in the
+     *  import dialog). Default unsupported: fakes that never detect need not
+     *  implement it; the real importer overrides. */
+    suspend fun listTreeFileNames(context: Context, treeUri: Uri): List<String> =
+        throw UnsupportedOperationException("listTreeFileNames")
 }
 
 /** Per-file download telemetry for URL imports (TASK-398): (fileIndex, fileCount, fileName, bytes, totalBytes). */
@@ -110,10 +119,20 @@ class ExternalModelImporter(
     internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamily.TRANSDUCER): Map<String, String>? =
         ModelFamilySupport.forFamily(family).buildCopyPlan(files)
 
-    /** Family-named role-set error shared by the local and URL planning sites. */
-    private fun missingRolesError(family: ModelFamily, names: List<String>): IllegalArgumentException =
-        IllegalArgumentException(
-            "missing required files for $family (${ModelFamilySupport.forFamily(family).requiredRoles().joinToString("/")}); found: $names")
+    /** Family-named role-set error shared by the local and URL planning sites. When
+     *  the set matches another family's shape, the error says so and names the
+     *  candidates (TASK-513, GH #93: a Canary set must not fail as "missing
+     *  TRANSDUCER files" with no hint that the family is the wrong knob). */
+    private fun missingRolesError(family: ModelFamily, names: List<String>): IllegalArgumentException {
+        val detected = when (val d = ModelFamilyDetector.detect(names)) {
+            is ModelFamilyDetector.Result.Ambiguous -> d.candidates.joinToString(" or ")
+            is ModelFamilyDetector.Result.Detected -> d.family.name
+            ModelFamilyDetector.Result.Unknown -> null
+        }
+        val looksLike = detected?.let { " The files look like a $it model: pick the $it family and retry." }.orEmpty()
+        return IllegalArgumentException(
+            "missing required files for $family (${ModelFamilySupport.forFamily(family).requiredRoles().joinToString("/")}); found: $names.$looksLike")
+    }
 
     /**
      * Family-aware modelType resolution via the shared table
@@ -163,6 +182,18 @@ class ExternalModelImporter(
     }
 
     /** SAF folder import: the primary v2a entry point. */
+    /** The SAF tree's file children, one definition for the detection
+     *  listing and the import itself (TASK-513; the import re-lists rather
+     *  than reuse a stale detection pass: the user can sit on the chooser). */
+    private fun treeChildren(context: Context, treeUri: Uri): Pair<DocumentFile, List<DocumentFile>> {
+        val tree = DocumentFile.fromTreeUri(context, treeUri)
+            ?: throw IllegalArgumentException("Cannot open the selected folder")
+        return tree to tree.listFiles().filter { it.isFile }
+    }
+
+    override suspend fun listTreeFileNames(context: Context, treeUri: Uri): List<String> =
+        treeChildren(context, treeUri).second.mapNotNull { it.name }
+
     override suspend fun importFromTreeUri(
         context: Context,
         treeUri: Uri,
@@ -172,11 +203,8 @@ class ExternalModelImporter(
         languages: List<String>,
         streaming: Boolean,
     ): ExternalModelRecord {
-        val tree = DocumentFile.fromTreeUri(context, treeUri)
-            ?: throw IllegalArgumentException("Cannot open the selected folder")
-        val children = tree.listFiles()
-            .filter { it.isFile }
-            .map { SafSource(it, context.contentResolver) }
+        val (tree, files) = treeChildren(context, treeUri)
+        val children = files.map { SafSource(it, context.contentResolver) }
         val displayName = tree.name ?: "imported-model"
         return importCore(children, modelType, displayName, family, options, languages, streaming)
     }
