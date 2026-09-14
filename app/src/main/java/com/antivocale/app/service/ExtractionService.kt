@@ -112,7 +112,7 @@ class ExtractionService : Service() {
             val variantName = variant ?: BundledCatalog.byId(modelKey)!!.defaultVariant.name
             return getString(CatalogVariantUi.of(modelKey, variantName).titleResId)
         }
-        if (modelKey == LlmTranscriptionBackend.BACKEND_ID) {
+        if (BuiltInBackendIds.isLlm(modelKey)) {
             return GemmaVariant.fromString(variant).displayName
         }
         return modelKey
@@ -208,7 +208,7 @@ class ExtractionService : Service() {
                     onProgress = {},
                     onStateChange = onStateChange
                 )
-            } else if (modelKey == LlmTranscriptionBackend.BACKEND_ID) {
+            } else if (BuiltInBackendIds.isLlm(modelKey)) {
                 val gemmaVariant = GemmaVariant.fromString(variant)
                 ModelDownloader.downloadModel(
                     context = applicationContext,
@@ -264,7 +264,7 @@ class ExtractionService : Service() {
     private fun cancelDownloaderFor(modelKey: String, variant: String? = null) {
         if (BundledCatalog.byId(modelKey) != null) {
             SherpaModelDownloader.of(modelKey).cancel(variant)
-        } else if (modelKey == LlmTranscriptionBackend.BACKEND_ID) {
+        } else if (BuiltInBackendIds.isLlm(modelKey)) {
             if (variant != null) {
                 ModelDownloader.cancel(GemmaVariant.fromString(variant))
             } else {

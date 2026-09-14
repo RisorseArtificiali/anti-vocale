@@ -104,7 +104,7 @@ internal class TestSpiOps(
     private suspend fun activeModelPath(backend: String): String? = when {
         backend.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX) ->
             externalModels.records().firstOrNull { it.backendId == backend }?.dir
-        backend == LlmTranscriptionBackend.BACKEND_ID -> preferences.modelPath.first()
+        BuiltInBackendIds.isLlm(backend) -> preferences.modelPath.first()
         else -> preferences.sherpaModelPath(backend).first()
     }
 

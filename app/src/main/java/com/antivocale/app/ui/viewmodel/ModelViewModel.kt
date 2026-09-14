@@ -263,7 +263,7 @@ class ModelViewModel @Inject constructor(
             ExtractionService.progressState.collect { progress ->
                 when {
                     BundledCatalog.byId(progress.modelKey) != null -> handleCatalogProgress(progress.modelKey, progress)
-                    progress.modelKey == LlmTranscriptionBackend.BACKEND_ID -> handleServiceProgressGemma(progress)
+                    BuiltInBackendIds.isLlm(progress.modelKey) -> handleServiceProgressGemma(progress)
                 }
             }
         }
@@ -716,7 +716,7 @@ class ModelViewModel @Inject constructor(
                         else -> when (val descriptor = backendRegistry.byBackendId(active.backendId)) {
                             null -> validateModelPath(path)
                             else -> when {
-                                descriptor.backendId == LlmTranscriptionBackend.BACKEND_ID -> validateModelPath(path)
+                                BuiltInBackendIds.isLlm(descriptor.backendId) -> validateModelPath(path)
                                 else -> {
                                     val dir = File(path)
                                     dir.exists() && dir.isDirectory
@@ -725,7 +725,7 @@ class ModelViewModel @Inject constructor(
                         }
                     }
                     val displayName = name ?: path.substringAfterLast("/")
-                    val isLlm = active.backendId == LlmTranscriptionBackend.BACKEND_ID
+                    val isLlm = BuiltInBackendIds.isLlm(active.backendId)
                     _uiState.update {
                         it.copy(
                             modelPath = path,

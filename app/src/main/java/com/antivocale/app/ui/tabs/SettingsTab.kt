@@ -49,6 +49,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
+import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
@@ -199,10 +200,19 @@ fun SettingsTab(
         viewModel.scanAvailableModels()
     }
 
-    // Check if model is currently loaded (only relevant for LLM backend)
-    val isLlmBackend = uiState.transcriptionBackend == PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
+    // Check if model is currently loaded (only relevant for LLM backend).
+    // MUST compare to the LLM's own id, never to DEFAULT_TRANSCRIPTION_BACKEND:
+    // the default was "llm" when this line was written and flipped to
+    // "sherpa-onnx" (Parakeet) in de9b6aac, silently inverting the comparison
+    // for six weeks (found in the 2026-09-13 settings audit; the status card
+    // was rendering for Parakeet users and hiding from Gemma users).
+    val isLlmBackend = BuiltInBackendIds.isLlm(uiState.transcriptionBackend)
     val isModelLoaded by viewModel.llmIsReadyFlow.collectAsState()
     val remainingTime = viewModel.llmRemainingTimeSeconds ?: 0L
+    // TASK-507: the Gemma-pass rows (punctuation, summarize)
+    // expose only when a Gemma model is configured; without one they can
+    // never run and were silent no-ops.
+    val gemmaConfigured by viewModel.gemmaConfigured.collectAsState()
 
     // Show sub-screens or main settings
     if (showPerAppSettings) {
@@ -488,93 +498,143 @@ fun SettingsTab(
                 }
             )
 
-            // TASK-276: punctuation pass mode + prompt override
-            val currentPunctuationMode by viewModel.currentPunctuationMode.collectAsState()
-            SettingsDropdown(
-                currentValue = currentPunctuationMode,
-                options = viewModel.punctuationModeOptions,
-                currentValueDisplay = punctuationModeLabel(currentPunctuationMode),
-                optionDisplay = { punctuationModeLabel(it) },
-                onOptionSelected = { viewModel.savePunctuationMode(it) },
-                label = stringResource(R.string.punctuation_mode_title),
-                enabled = !uiState.isSaving
-            )
-            Text(
-                text = stringResource(R.string.punctuation_mode_description),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            if (currentPunctuationMode != PunctuationPolicy.PREF_OFF) {
-                PunctuationPromptCard(
-                    prompt = viewModel.currentPunctuationPrompt.collectAsState().value,
-                    onSave = { viewModel.savePunctuationPrompt(it) }
-                )
-            }
-
-            // TASK-121.4: smart-summary toggle. Always shown: with no Gemma model
-            // configured the pass silently skips at runtime (same graceful branch
-            // as the punctuation pass), so the setting does not hide itself.
-            val summarizeOn by viewModel.summarizeEnabled.collectAsState()
-            ToggleSettingCard(
-                icon = Icons.Default.Notes,
-                title = stringResource(R.string.summarize_title),
-                description = stringResource(R.string.summarize_description),
-                checked = summarizeOn,
-                onCheckedChange = { enabled ->
-                    viewModel.saveSummarizeEnabled(enabled)
-                }
-            )
-            if (summarizeOn) {
-                SummaryPromptCard(
-                    prompt = viewModel.currentSummaryPrompt.collectAsState().value,
-                    onSave = { viewModel.saveSummaryPrompt(it) }
-                )
-            }
-
-            // Default Prompt Setting Navigation Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(role = Role.Button) { showPromptSettings = true },
-                shape = MaterialTheme.shapes.medium
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            // TASK-276: punctuation pass mode + prompt override. TASK-507: exposed only when the pass can run at all. Runtime
+            // preconditions are a configured Gemma (the pass engine) AND a
+            // non-LLM active backend (LLM output is polished by its own final
+            // pass; double-passing is skipped in the orchestrator). The
+            // dropdown sits in the section's standard Card (icon header +
+            // description + divider), matching every sibling setting; the
+            // TASK-276 bare-dropdown shape read as a foreign element
+            // (maintainer trial, radius mismatch).
+            if (gemmaConfigured && !isLlmBackend) {
+                val currentPunctuationMode by viewModel.currentPunctuationMode.collectAsState()
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    // Locale-safe: weight lets title/description wrap instead of
-                    // displacing the trailing chevron (TASK-345)
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Column {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.FormatQuote,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                             Text(
-                                text = stringResource(R.string.default_prompt_title),
+                                text = stringResource(R.string.punctuation_mode_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
-                            Text(
-                                text = stringResource(R.string.default_prompt_description),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         }
+                        Text(
+                            text = stringResource(R.string.punctuation_mode_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        SettingsDropdown(
+                            currentValue = currentPunctuationMode,
+                            options = viewModel.punctuationModeOptions,
+                            currentValueDisplay = punctuationModeLabel(currentPunctuationMode),
+                            optionDisplay = { punctuationModeLabel(it) },
+                            onOptionSelected = { viewModel.savePunctuationMode(it) },
+                            label = stringResource(R.string.punctuation_mode_title),
+                            enabled = !uiState.isSaving
+                        )
                     }
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = stringResource(R.string.open_prompt_settings),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                // TASK-507 (maintainer): the prompt override text area stays
+                // hidden until the user forces the pass (ALWAYS), mirroring
+                // how the summary prompt only appears behind its enabled
+                // toggle. AUTO can never run it today (see the options note
+                // in SettingsViewModel); the previous condition (mode != off)
+                // kept the box on screen from the untouched AUTO default.
+                if (currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS) {
+                    PunctuationPromptCard(
+                        prompt = viewModel.currentPunctuationPrompt.collectAsState().value,
+                        onSave = { viewModel.savePunctuationPrompt(it) }
                     )
+                }
+            }
+
+            // TASK-121.4: smart-summary toggle. TASK-507: shown
+            // only when a Gemma model is configured (the pass engine); without
+            // one it silently skipped at runtime, so the toggle was a no-op.
+            // Unlike punctuation, it is offered on the LLM backend too: it
+            // summarizes any transcript, including Gemma's own.
+            if (gemmaConfigured) {
+                val summarizeOn by viewModel.summarizeEnabled.collectAsState()
+                ToggleSettingCard(
+                    icon = Icons.Default.Notes,
+                    title = stringResource(R.string.summarize_title),
+                    description = stringResource(R.string.summarize_description),
+                    checked = summarizeOn,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveSummarizeEnabled(enabled)
+                    }
+                )
+                if (summarizeOn) {
+                    SummaryPromptCard(
+                        prompt = viewModel.currentSummaryPrompt.collectAsState().value,
+                        onSave = { viewModel.saveSummaryPrompt(it) }
+                    )
+                }
+            }
+
+            // Default Prompt Setting Navigation Card. TASK-507:
+            // the prompt feeds resolvePrompt -> ChunkPromptPolicy, which only
+            // the LLM backend consumes (ASR models take no instruction), so the
+            // card exposes only on the LLM backend, symmetric with the model
+            // status card at the top of this section.
+            if (isLlmBackend) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { showPromptSettings = true },
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Locale-safe: weight lets title/description wrap instead of
+                        // displacing the trailing chevron (TASK-345)
+                        Row(
+                            modifier = Modifier.weight(1f),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.default_prompt_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = stringResource(R.string.default_prompt_description),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = stringResource(R.string.open_prompt_settings),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -795,7 +855,7 @@ fun SettingsTab(
                         )
                     }
                     Icon(
-                        imageVector = Icons.Default.ChevronRight,
+                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -921,6 +981,17 @@ fun SettingsTab(
                 onCheckedChange = { enabled ->
                     viewModel.saveCompactResultActions(enabled)
                 }
+            )
+
+            // Re-transcribe button on history entries. TASK-507: moved from Advanced; it is History-list behavior,
+            // the same class as grouping/compact/swipe above, and a user
+            // decluttering History never finds it under Advanced.
+            ToggleSettingCard(
+                icon = Icons.Default.Refresh,
+                title = stringResource(R.string.retranscribe_setting_title),
+                description = stringResource(R.string.retranscribe_setting_description),
+                checked = showRetranscribeButton,
+                onCheckedChange = { viewModel.saveShowRetranscribeButton(it) }
             )
 
         }
@@ -1505,15 +1576,6 @@ fun SettingsTab(
                 }
             }
 
-            // Re-transcribe Button Setting
-            ToggleSettingCard(
-                icon = Icons.Default.Refresh,
-                title = stringResource(R.string.retranscribe_setting_title),
-                description = stringResource(R.string.retranscribe_setting_description),
-                checked = showRetranscribeButton,
-                onCheckedChange = { viewModel.saveShowRetranscribeButton(it) }
-            )
-
             // Force model load (bypass the low-memory pre-flight)
             ToggleSettingCard(
                 icon = Icons.Default.Memory,
@@ -1617,22 +1679,14 @@ fun SettingsTab(
             }
         }
 
-        // TASK-491: replay the first-install tour on demand (the only
-        // reset path besides a fresh install).
-        OutlinedButton(
-            onClick = { viewModel.replayOnboardingTour() },
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.settings_replay_tour))
-        }
-
         // Feedback & About section (issue #34 / TASK-341)
         FeedbackSection(
             expandSignal = expandCounters["feedback"] ?: 0,
             onPositioned = { sectionOffsets["feedback"] = it },
             activeBackendId = uiState.transcriptionBackend,
             activeModelName = uiState.currentModelName,
-            currentLanguage = currentLanguage
+            currentLanguage = currentLanguage,
+            onReplayTour = { viewModel.replayOnboardingTour() }
         )
 
         // Performance Stats Dialog
@@ -1669,6 +1723,7 @@ private fun FeedbackSection(
     currentLanguage: String,
     expandSignal: Int = 0,
     onPositioned: (Int) -> Unit = {},
+    onReplayTour: () -> Unit = {},
 ) {
     val context = LocalContext.current
 
@@ -1852,6 +1907,16 @@ private fun FeedbackSection(
                     title = stringResource(R.string.settings_feedback_version_title),
                     value = "${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
                 )
+
+                // Replay the first-install tour on demand (TASK-491; the only
+                // reset path besides a fresh install). TASK-507: moved inside About from a bare button that
+                // floated between the sections.
+                OutlinedButton(
+                    onClick = onReplayTour,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(stringResource(R.string.settings_replay_tour))
+                }
 
                 // Privacy note
                 Text(

@@ -30,4 +30,17 @@ object BuiltInBackendIds {
         id == com.antivocale.app.transcription.LlmTranscriptionBackend.BACKEND_ID ||
             id in ALL ||
             id.startsWith(com.antivocale.app.data.ExternalModelRecord.BACKEND_ID_PREFIX)
+
+    /**
+     * The ONE is-LLM predicate. A raw string compare against BACKEND_ID at a
+     * UI site silently inverted for six weeks when the
+     * DEFAULT_TRANSCRIPTION_BACKEND value it was paired with flipped under it
+     * (de9b6aac, found in the 2026-09-13 settings audit); route every UI
+     * and cross-layer is-LLM check through here so the next id/default
+     * change has one owner to update. Transcription-layer internals may
+     * compare the constant directly (same package as the constant's
+     * owner).
+     */
+    fun isLlm(id: String): Boolean =
+        id == LlmTranscriptionBackend.BACKEND_ID
 }

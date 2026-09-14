@@ -81,6 +81,24 @@ class SettingsViewModel @Inject constructor(
     val llmIsReadyFlow: StateFlow<Boolean> = llmManager.isReadyFlow
     val llmRemainingTimeSeconds: Long? get() = llmManager.getRemainingTimeSeconds()
 
+    /**
+     * True when an LLM (Gemma) model path is configured: the exact
+     * precondition the punctuation and summary passes gate on at runtime
+     * (the orchestrator reads the same preference). Settings rows that can
+     * never run without a Gemma hide behind this flag instead of silently
+     * no-oping (TASK-507).
+     */
+    val gemmaConfigured: StateFlow<Boolean> = preferencesManager.modelPath
+        .map { !it.isNullOrBlank() }
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            // Seeded synchronously from the preference cache (the TASK-485
+            // idiom, see currentPunctuationPrompt): a plain false would flash
+            // the Gemma rows out for a frame on first Settings open.
+            initialValue = runBlocking { !preferencesManager.modelPath.first().isNullOrBlank() }
+        )
+
     // Keep-alive timeout options in minutes
     val timeoutOptions = listOf(1, 2, 5, 10, 15, 30, 60)
 
@@ -210,7 +228,16 @@ class SettingsViewModel @Inject constructor(
         )
 
     // TASK-276: punctuation pass mode + user prompt override.
-    val punctuationModeOptions: List<String> = PunctuationPolicy.MODE_PREFS
+    // TASK-507 review: AUTO is NOT offered. No shippable model sets
+    // punctuatesOutput=false (the GigaAM flip made every descriptor true),
+    // so shouldRun is always false in AUTO and the option was a silent
+    // no-op in the shipped default configuration. The policy still parses
+    // legacy/hand-set "auto" values as Mode.AUTO, which today behaves like
+    // off; NOTE it reactivates silently if a non-punctuating model ever
+    // ships. At that point normalize the stored value at read time, and
+    // return the option the same day.
+    val punctuationModeOptions: List<String> =
+        listOf(PunctuationPolicy.PREF_OFF, PunctuationPolicy.PREF_ALWAYS)
     val currentPunctuationMode: StateFlow<String> = preferencesManager.punctuationMode
         .stateIn(
             scope = viewModelScope,
