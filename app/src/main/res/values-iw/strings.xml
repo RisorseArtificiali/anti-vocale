@@ -73,6 +73,7 @@
     <string name="logs_entry_deleted">רשומת ההיסטוריה נמחקה</string>
     <plurals name="logs_entries_deleted">
         <item quantity="one">נמחקה רשומה אחת</item>
+        <item quantity="two">נמחקו שתי רשומות</item>
         <item quantity="other">נמחקו %d רשומות</item>
     </plurals>
     <string name="logs_undo">בטל</string>
@@ -235,6 +236,7 @@
     <string name="transcription_complete">התמלול הושלם</string>
     <plurals name="transcription_partial">
         <item quantity="one">התמלול לא הושלם (מקטע אחד נכשל)</item>
+        <item quantity="two">התמלול לא הושלם (שני מקטעים נכשלו)</item>
         <item quantity="other">התמלול לא הושלם (%1$d מקטעים נכשלו)</item>
     </plurals>
     <string name="transcription_partial_chip">חלקי</string>
@@ -290,6 +292,7 @@
     <string name="processing_queue_chunk">מעבד מקטע %1$d/%2$d (%3$d מתוך %4$d)…</string>
     <plurals name="queued_count">
         <item quantity="one">%1$d בתור</item>
+        <item quantity="two">2 בתור</item>
         <item quantity="other">%1$d בתור</item>
     </plurals>
     <string name="generating_text">מייצר תשובת טקסט…</string>
@@ -426,6 +429,7 @@
     <string name="timeout_1_hour">שעה אחת</string>
     <plurals name="timeout_minutes">
         <item quantity="one">דקה אחת</item>
+        <item quantity="two">שתי דקות</item>
         <item quantity="other">%1$d דקות</item>
     </plurals>
 
@@ -681,6 +685,7 @@
     <string name="performance_stats_speed">%1$.0fms/s</string>
     <plurals name="performance_stats_samples_count">
         <item quantity="one">דגימה אחת</item>
+        <item quantity="two">שתי דגימות</item>
         <item quantity="other">%1$d דגימות</item>
     </plurals>
     <string name="performance_stats_fastest_badge">המהיר ביותר</string>
@@ -813,6 +818,7 @@
     <string name="model_info_section_performance">טיפים לביצועים</string>
     <plurals name="model_info_languages_count">
         <item quantity="one">שפה אחת</item>
+        <item quantity="two">שתי שפות</item>
         <item quantity="other">%d שפות</item>
     </plurals>
     <string name="model_info_no_languages">תמיכת השפות אינה ידועה</string>
@@ -826,6 +832,7 @@
     <string name="model_info_max_audio_unlimited">ללא הגבלה</string>
     <plurals name="model_info_max_audio_seconds">
         <item quantity="one">שנייה אחת</item>
+        <item quantity="two">שתי שניות</item>
         <item quantity="other">%d שניות</item>
     </plurals>
     <string name="model_info_quantization">קוונטיזציה</string>
@@ -931,6 +938,7 @@
     <string name="conversation_grouping_description">מקבץ תמלולים לפי אפליקציית המקור (WhatsApp, Telegram וכו׳) למקטעים מתקפלים.</string>
     <plurals name="conversation_group_count">
         <item quantity="one">הודעה אחת</item>
+        <item quantity="two">שתי הודעות</item>
         <item quantity="other">%1$d הודעות</item>
     </plurals>
     <string name="conversation_group_unknown">אחר</string>
