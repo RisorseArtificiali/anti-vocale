@@ -1,225 +1,24 @@
-<en-US>What's new in 1.12.0:
-• New, opt-in: AI summary of long transcriptions, in the entry details (copyable)
-• Fixed: wrong duration shown for Telegram voice notes
-• New: app icon picker page with six community-designed concepts
-• Language setting follows the model: supported languages only
-• Fixed: Whisper translating foreign audio instead of transcribing it
-• Fixed: low memory or a corrupt model now gives a clear message instead of a silent crash
-
-What's new in 1.11.3:
-
-• GigaAM v3 (Russian): much better accuracy on recordings longer than a minute (audio is now split into 30 s passes, matching how the model was trained)
-
-What's new in 1.11.2:
-
-• No more 10-minute limit: long recordings now transcribe (up to 2 hours with chunked models; other setups get a limit based on your device's memory)
-• Errors for too-long files now name the real limit instead of a generic message
-• Starting a very long transcription in the app asks first, with a time estimate
-• GigaAM v3 (Russian): recordings past ~3 minutes no longer fail with a native error
-
-What's new in 1.11.1:
-
-• Fixed: crashes when transcribing long, high-quality recordings on low-memory phones
-• Community catalog: Canary entries renamed to NVIDIA's official Canary Flash names
-• From 1.11.0: any audio length with any model; visible, cancellable queue showing model and duration; community catalog with many languages and the Canary tier for lighter phones; native language names; integrity-checked downloads; fixed Qwen3-ASR failing to load
-
-What's new in 1.11.0:
-
-• Any audio length with any model: long recordings are split and stitched automatically
-• Visible queue: items appear instantly, cancellable; each entry shows the model and duration
-• Community catalog, one-tap imports in many languages, plus the new Canary tier (en/de/es/fr) for lighter phones
-• Native language names; integrity-checked downloads
-• Fixed: Qwen3-ASR failing to load
-
-What's new in 1.10.0:
-
-• Import your own models: custom transcription models from a folder or link (Transducer, Whisper fine-tunes, CTC, SenseVoice), verified and each with its own share target
-• Model tab redesigned, honest speed/quality comparison
-• NNAPI acceleration on every device, automatic CPU recovery
-• Fixed: Gemma selection crash (broke 1.9.2 on F-Droid); quantized Parakeet failing to load
-• Engines unified: smaller app, faster updates
-
-What's new in 1.9.2:
-
-• Maintenance release: improved build reproducibility for F-Droid delivery. No user-facing changes.
-
-What's new in 1.9.1:
-
-• Fixed: the Parakeet (quantized) model was crashing silently; model files are now validated before loading, so a broken download is caught instead of crashing
-• Clearer, specific error messages: you now see the actual reason (corrupt model, internal error, no model loaded) instead of a generic "transcription failed"
-• Crash recovery: if a crash happens, the app reopens on the Model tab and points you to re-download the affected model
-• Default transcription engine is now Parakeet TDT (was Gemma), matching the most-downloaded model
-• Removed unused storage permissions (READ_MEDIA_AUDIO, READ_EXTERNAL_STORAGE); all file access uses the system file picker
-• Clearer error when an unsupported audio format is shared
-
-What's new in 1.9.0:
-
-• Fixed: the Parakeet (quantized) model was crashing silently; model files are now validated before loading, so a broken download is caught instead of crashing
-• Typed error handling: transcription failures now show specific messages (corrupt model, internal error, no model loaded) instead of a generic "transcription failed"
-• Crash prevention: invalid model files are detected before loading, preventing silent app crashes
-• Crash recovery: if a native crash occurs, the app guides you to re-download the model on next launch
-• Default backend is now Parakeet TDT (was Gemma), matching the most-downloaded model
-
-What's new in 1.8.5:
-
-• Removed the unused storage permissions (READ_MEDIA_AUDIO, READ_EXTERNAL_STORAGE) - the app never needed them; all file access uses the system file picker. Clearer error message when an unsupported audio format is shared.
-
-What's new in 1.8.4:
-
-• Per-architecture APK splits (smaller downloads) and compressed native libraries
-
-What's new in 1.8.3:
-
-• Maintenance: the sherpa-onnx speech engine is now built from source for F-Droid, and the bundled library is no longer shipped as a committed binary
-
-What's new in 1.8.2:
-
-• Removed unused ad-tracking permissions (AD_ID, ad-services attribution) that Firebase Analytics injected — the app's permission list now genuinely matches its "no tracking, no ads" promise
-• Privacy: dropped Firebase Analytics entirely; crash reporting (Crashlytics) is unaffected
-
-What's new in 1.8.0:
-
-• New: Save transcripts to a folder — auto-save every transcription as a .txt to a folder of your choice (Drive, Syncthing, Dropbox, anything). Great for building your own archive or sync pipeline
-• Fixed: the global Auto-Copy toggle now works for all apps, not just WhatsApp (#13)
-• Fixed: the "transcription was interrupted" dialog no longer appears on normal completion (#11)
-• Fixed: Nemotron no longer cuts off the end of short messages
-• Updated inference engine (sherpa-onnx 1.13.4) with cleaner transcript output formatting
-
-What's new in 1.7.0:
-
-• Detect and extract embedded subtitles from video files before transcribing (closes #9)
-• Accept video files as transcription input (the audio track is transcribed)
-• Navigate completed chunks from the in-progress notification while a long transcription runs
-• Hardened Gemma/LiteRT on multi-chunk audio; fixed a release-only WorkManager crash
-• LiteRT-LM 0.12.0 → 0.13.1 (MTP runtime support); stale .litertlm models prompt re-download
-
-What's new in 1.6.1:
-
-• Nemotron now streams transcription text progressively as it decodes
-• Nemotron now appears in the "retry with another model" picker
-• Fixed the "Active" badge wrapping its last letter in the model card
-• Nemotron info now lists supported languages instead of "unknown"
-
-What's new in 1.6.0:
-
-• New Nemotron 3.5 streaming backend — transcription text appears progressively in real time
-• Parakeet: better quality on long audio via SmoothQuant int8, with automatic fallback to the stock model
-• Per-stream language selection for Nemotron transcriptions
-• Obsolete model folders are cleaned up automatically
-• Updated inference libraries for performance and stability
-
-What's new in 1.5.4:
-
-• Upgraded sherpa-onnx to v1.13.2 for improved ONNX inference
-
-What's new in 1.5.3:
-
-• Fixed long transcriptions silently dropping the last segment on low-memory devices
-• Failed chunks are now retried with memory cleanup before giving up
-• Notification warns when transcription is incomplete (some chunks failed)
-
-What's new in 1.5.2:
-
-• Improved audio resampling for better transcription accuracy
-
-What's new in 1.5.1:
-
-• Improved audio resampling for better transcription accuracy
-
-What's new in 1.5.0:
-
-• Major transcription engine upgrade with new backend options
-• Improved model management and download experience
-• Performance optimizations for faster on-device inference
-
-What's new in 1.4.0:
-
-• Picture-in-Picture mode — see live transcription text in a floating window while using other apps
-• Edge-to-edge display for Android 15+ (SDK 35) with proper system bar handling
-• Concurrent model downloads with per-download progress tracking
-• Swipe-to-reveal actions on log entries (copy, share, delete)
-• Auto-hide Logs tab header on scroll for more reading space
-• Model installation guidance notification when no model is configured
-• Fixed truncated transcriptions with WhisperX-style Cut & Merge chunking
-• Fixed KeyStore corruption recovery for EncryptedSharedPreferences
-• Fixed cancelled transcriptions stuck as PENDING
-• Fixed notification tap not scrolling to the transcribed message
-
-What's new in 1.3.1:
-
-• Complete Italian translation — 28 previously missing strings now translated (Performance Stats, Transcription ETA, Progressive Display, model dialogs)
-• Fixed "Today"/"Yesterday" showing in English in the Logs tab on Italian locale
-• Fixed English strings appearing throughout the Settings tab when using Italian
-• Fixed notification service showing English error and progress messages on Italian locale
-• Fixed accessibility content descriptions not localized (screen reader support)
-• Fixed cancelled transcriptions getting stuck as PENDING instead of being marked as ERROR
-• Fixed notification tap not scrolling to the transcribed message in the Logs tab
-
-What's new in 1.3.0:
-
-• Added Qwen3-ASR as a 4th transcription backend (0.6B int8) for multilingual speech recognition
-• Added Gemma 4 E2B and E4B model support for multimodal on-device transcription
-• Added configurable transcription language setting
-• Added short audio fast-path that skips chunking for better responsiveness
-• Graceful dialog on unsupported devices instead of native crash
-• Centralized model management — deduplicated downloaders, backend IDs, and validation logic
-• Improved model unload button visibility (only shown when a model is loaded)
-• Restored distil-whisper model with correct multilingual metadata
-• Added many new unit and instrumented tests for better reliability
-
-What's new in 1.2.3:
-
-• Fixed Gemma transcription crash ("Conversation is closed") that could occur when the LiteRT-LM session was accessed concurrently
-
-What's new in 1.2.2:
-
-• Fixed crash on startup caused by Android KeyStore corruption (app now recovers automatically — user may need to re-enter their HuggingFace token)
-
-What's new in 1.2.1:
-
-• Fixed crash when sharing audio from older Android versions (Android 11 and below)
-• Updated native libraries for 16 KB memory page size support
-• Upgraded build toolchain (Kotlin 2.2, AGP 8.10, Gradle 8.11.1)
-
-What's new in 1.2.0:
-
-• Whisper model downloads now use individual files from HuggingFace instead of tar.bz2 archives, for faster and more reliable downloads
-• Added Firebase Crashlytics for centralized crash reporting
-
-What's new in 1.1.1:
-
-• Reset per-app notification settings to defaults (individual or all at once)
-• Onboarding tooltip for per-app settings
-• Fixed wasted vertical space in Logs tab header
-• Fixed UI flicker on cold start
-
-What's new in 1.1.0:
-
-• Configurable inference thread count with automatic CPU core detection
-• Queue-aware sharing: toast notification when sharing while transcription is active
-• Adaptive transcription ETA with real-time per-batch feedback
-• Transcription logs now persist in a local database
-• Queue-aware notifications for multiple concurrent transcriptions
-• Settings changes are blocked during active transcription to prevent errors
-
-What's new since 1.0.3:
-
-• VAD-based silence stripping before transcription
-• Parallel transcription of audio chunks for faster processing
-• Distil-Whisper Large v3 Italian model support with speed comparison UI
-• ExtractionService for resilient model downloads with progress tracking
-• HuggingFace authentication with download resume and retry
-• Calibration-based progress ETA and performance stats
-• LiteRT-LM backend for multimodal on-device inference (Gemma models with audio)
+<en-US>
+What's new in 1.12.0:
+• New: first-launch guided tour (replayable from Settings)
+• New: pick audio or video files from the History tab
+• New: AI summary of long transcripts: copyable, retryable, custom prompt
+• New: app icon picker and Hebrew interface
+• Settings reorganized; punctuation pass added
+• Fixed: Telegram voice-note duration
+• Fixed: Whisper translating instead of transcribing
+• Fixed: clearer low-memory and corrupt-model errors
 </en-US>
 
 <it-IT>Novità della versione 1.12.0:
-• Novità, opzionale: riepilogo AI delle trascrizioni lunghe, nei dettagli della voce (copiabile)
-• Corretto: durata sbagliata sui vocali Telegram
-• Novità: pagina di scelta dell'icona, con sei concept della community
-• La lingua segue il modello: solo lingue supportate
-• Corretto: Whisper traduceva l'audio straniero invece di trascriverlo
-• Corretto: memoria insufficiente o modello corrotto ora danno un messaggio chiaro
+• Tour guidato al primo avvio (riutilizzabile dalle Impostazioni)
+• Scegli file audio o video dalla scheda Registro
+• Riepilogo AI delle trascrizioni lunghe: copiabile, ripetibile, prompt personalizzato
+• Scelta icona app e interfaccia in ebraico
+• Impostazioni riorganizzate; aggiunto il pass di punteggiatura
+• Durata dei vocali Telegram corretta
+• Whisper traduceva invece di trascrivere
+• Messaggi chiari per memoria bassa e modello corrotto
 
 Novità della versione 1.11.3:
 
@@ -428,13 +227,16 @@ Novità dalla versione 1.0.3:
 • Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)
 </it-IT>
 
-<de-DE>Neuigkeiten in Version 1.12.0:
-• Neu, optional: KI-Zusammenfassung langer Transkriptionen, in den Eintragsdetails (kopierbar)
-• Behoben: falsche Dauer bei Telegram-Nachrichten
-• Neu: Symbol-Auswahlseite mit sechs Community-Designs
-• Sprache folgt dem Modell: nur unterstützte Sprachen, mit Hinweis bei Erzwingung
-• Behoben: Whisper übersetzte fremdsprachige Audio statt sie zu transkribieren
-• Behoben: Zu wenig Speicher oder defektes Modell melden sich jetzt klar, statt still abzustürzen
+<de-DE>
+Neuigkeiten in Version 1.12.0:
+• Geführte Tour beim ersten Start (wiederholbar)
+• Audio- oder Videodateien im Verlauf auswählen
+• KI-Zusammenfassung langer Transkripte: kopierbar, wiederholbar, eigener Prompt
+• Symbol-Auswahl und hebräische Oberfläche
+• Einstellungen neu geordnet; Satzzeichen-Durchlauf ergänzt
+• Korrigiert: Dauer von Telegram-Sprachnachrichten
+• Korrigiert: Whisper übersetzte statt zu transkribieren
+• Klarere Meldungen bei wenig Speicher und defektem Modell
 
 Neuigkeiten in Version 1.11.3:
 
@@ -463,13 +265,16 @@ Neuigkeiten in Version 1.11.0:
 
 </de-DE>
 
-<es-ES>Novedades de la versión 1.12.0:
-• Nuevo, opcional: resumen IA de transcripciones largas, en los detalles de la entrada (copiable)
-• Corregido: duración errónea en vocales Telegram
-• Nuevo: página de elección de icono, seis diseños de la comunidad
-• El idioma sigue el modelo: solo idiomas admitidos, aviso al forzar uno
-• Corregido: Whisper traducía el audio extranjero en vez de transcribirlo
-• Corregido: poca memoria o modelo corrupto ahora dan un mensaje claro, no un cierre silencioso
+<es-ES>
+Novedades de la versión 1.12.0:
+• Tour guiado en el primer inicio (repetible en Ajustes)
+• Elegir archivos de audio o vídeo desde Historial
+• Resumen IA de transcripciones largas: copiable, reintentable, prompt propio
+• Selector de icono e interfaz en hebreo
+• Ajustes reorganizados; pase de puntuación añadido
+• Corregido: duración de los vocales de Telegram
+• Corregido: Whisper traducía en vez de transcribir
+• Mensajes más claros con poca memoria o modelo dañado
 
 Novedades de la versión 1.11.3:
 
@@ -498,13 +303,16 @@ Novedades de la versión 1.11.0:
 
 </es-ES>
 
-<fr-FR>Nouveautés de la version 1.12.0 :
-• Nouveau, optionnel : résumé IA des longues transcriptions, dans le détail de l'entrée (copiable)
-• Corrigé : durée erronée des vocaux Telegram
-• Nouveau : page de choix de l'icône, six concepts de la communauté
-• La langue suit le modèle : langues prises en charge seulement
-• Corrigé : Whisper traduisait l'audio étranger au lieu de le transcrire
-• Corrigé : mémoire insuffisante ou modèle corrompu donne un message clair, plus de fermeture silencieuse
+<fr-FR>
+Nouveautés de la version 1.12.0 :
+• Visite guidée au premier lancement (rejouable dans les réglages)
+• Choisir des fichiers audio ou vidéo depuis l'onglet Historique
+• Résumé IA des longues transcriptions : copiable, relançable, prompt dédié
+• Choix d'icône et interface en hébreu
+• Réglages réorganisés ; ponctuation ajoutée
+• Corrigé : durée des vocaux Telegram
+• Corrigé : Whisper traduisait au lieu de transcrire
+• Messages plus clairs si mémoire insuffisante ou modèle corrompu
 
 Nouveautés de la version 1.11.3 :
 
@@ -533,13 +341,16 @@ Nouveautés de la version 1.11.0 :
 
 </fr-FR>
 
-<pt-BR>Novidades da versão 1.12.0:
-• Novo, opcional: resumo IA das transcrições longas, nos detalhes do item (copiável)
-• Corrigido: duração errada em mensagens de voz do Telegram
-• Novo: página de escolha do ícone, com seis designs da comunidade
-• O idioma segue o modelo: só idiomas suportados, aviso ao forçar um
-• Corrigido: o Whisper traduzia áudio estrangeiro em vez de transcrever
-• Corrigido: pouca memória ou modelo corrompido agora dão mensagem clara, não fechamento silencioso
+<pt-BR>
+Novidades da versão 1.12.0:
+• Tour guiado na primeira abertura (repetível nos Ajustes)
+• Escolher áudio ou vídeo na aba Histórico
+• Resumo IA de transcrições longas: copiável, retomável, prompt próprio
+• Seletor de ícone e interface em hebraico
+• Ajustes reorganizados; passe de pontuação adicionado
+• Corrigido: duração dos áudios do Telegram
+• Corrigido: Whisper traduzia em vez de transcrever
+• Mensagens mais claras com pouca memória ou modelo corrompido
 
 Novidades da versão 1.11.3:
 
@@ -568,13 +379,16 @@ Novidades da versão 1.11.0:
 
 </pt-BR>
 
-<ru-RU>Что нового в версии 1.12.0:
-• Новое, по желанию: ИИ-резюме длинных расшифровок, в деталях записи (можно скопировать)
-• Исправлено: неверная длительность голосовых Telegram-сообщений
-• Новое: страница выбора значка, шесть концепций от сообщества
-• Язык следует модели: только поддерживаемые языки
-• Исправлено: Whisper переводил иностранную запись вместо расшифровки
-• Исправлено: нехватка памяти или повреждённая модель дают ясное сообщение вместо тихого сбоя
+<ru-RU>
+Что нового в версии 1.12.0:
+• Обучающий тур при первом запуске (повторяется в настройках)
+• Выбор аудио- или видеофайлов на вкладке истории
+• ИИ-резюме длинных расшифровок: копируется, свой промпт
+• Выбор значка и ивритский интерфейс
+• Настройки переработаны; добавлен проход пунктуации
+• Исправлено: длительность голосовых Telegram
+• Исправлено: Whisper переводил вместо расшифровки
+• Яснее сообщения о нехватке памяти и повреждённой модели
 
 Что нового в версии 1.11.3:
 
@@ -603,13 +417,16 @@ Novidades da versão 1.11.0:
 
 </ru-RU>
 
-<tr-TR>Sürüm 1.12.0'deki yenilikler:
-• Yeni, isteğe bağlı: uzun transkriptlerde yapay zekâ özeti, kayıt ayrıntılarında (kopyalanabilir)
-• Düzeltildi: Telegram sesli mesajlarda yanlış süre
-• Yeni: simge seçim sayfası, topluluk tasarımı altı konseptle
-• Dil, modeli izler: yalnızca desteklenen diller, zorlamada uyarı
-• Düzeltildi: Whisper yabancı sesi transkript etmek yerine çeviriyordu
-• Düzeltildi: az bellek veya bozuk model artık sessiz çökme yerine net mesaj veriyor
+<tr-TR>
+Sürüm 1.12.0'deki yenilikler:
+• İlk açılışta rehberli tur (Ayarlar'dan yeniden oynatılabilir)
+• Geçmiş sekmesinden ses veya video seçme
+• Yapay zekâ özeti: kopyalanabilir, yeniden denenebilir, özel istem
+• Simge seçici ve İbranice arayüz
+• Ayarlar yeniden düzenlendi; noktalama eklendi
+• Düzeltildi: Telegram sesli mesaj süresi
+• Düzeltildi: Whisper transkript yerine çeviriyordu
+• Az bellek ve bozuk model uyarıları daha anlaşılır
 
 Sürüm 1.11.3'teki yenilikler:
 
@@ -638,13 +455,16 @@ Sürüm 1.11.0'daki yenilikler:
 
 </tr-TR>
 
-<pl-PL>Nowości w wersji 1.12.0:
-• Nowość, opcjonalnie: podsumowanie AI długich transkrypcji, w szczegółach wpisu (można skopiować)
-• Naprawiono: zła długość wiadomości głosowych Telegrama
-• Nowość: strona wyboru ikony, sześć koncepcji od społeczności
-• Język podąża za modelem: tylko obsługiwane języki
-• Naprawiono: Whisper tłumaczył obce nagranie zamiast je transkrybować
-• Naprawiono: mało pamięci lub uszkodzony model dają jasny komunikat, nie ciche crashowanie
+<pl-PL>
+Nowości w wersji 1.12.0:
+• Przewodnik przy pierwszym uruchomieniu (do ponowienia w Ustawieniach)
+• Wybór plików audio lub wideo z karty Historia
+• Podsumowanie AI: do skopiowania, własny prompt
+• Wybór ikony i interfejs po hebrajsku
+• Ustawienia przeorganizowane; interpunkcja dodana
+• Naprawiono: długość wiadomości Telegrama
+• Naprawiono: Whisper tłumaczył zamiast transkrybować
+• Jaśniejsze komunikaty przy małej pamięci i uszkodzonym modelu
 
 Nowości w wersji 1.11.3:
 
@@ -673,13 +493,16 @@ Nowości w wersji 1.11.0:
 
 </pl-PL>
 
-<hi-IN>संस्करण 1.12.0 में नया क्या है:
-• नया, वैकल्पिक: लंबे ट्रांसक्रिप्ट का AI सारांश, प्रविष्टि विवरण में (कॉपी करने योग्य)
-• ठीक किया: Telegram वॉइस संदेश गलत अवधि दिखा सकते थे
-• नया: आइकन चुनने का पेज, समुदाय के छह डिज़ाइन सहित (पिन हो तो फिर पिन करें)
-• भाषा मॉडल के साथ चलती है: केवल समर्थित भाषाएँ, ज़बरदस्ती पर चेतावनी
-• ठीक किया: Whisper दूसरी भाषा के ऑडियो को ट्रांसक्रिब्ट करने की जगह अनुवाद कर रहा था
-• ठीक किया: कम मेमोरी या दूषित मॉडल पर अब साफ़ संदेश मिलता है, चुपचाप क्रैश नहीं
+<hi-IN>
+संस्करण 1.12.0 में नया क्या है:
+• पहली बार खोलने पर गाइडेड टूर (सेटिंग्स से दोबारा चलाएँ)
+• हिस्ट्री टैब से ऑडियो या वीडियो फ़ाइल चुनें
+• लंबे ट्रांसक्रिप्ट का AI सारांश: कॉपी, कस्टम प्रॉम्प्ट
+• ऐप आइकन चयनकर्ता और हिब्रू इंटरफ़ेस
+• सेटिंग्स पुनर्गठित; विराम-चिह्न पास जोड़ा गया
+• ठीक किया: Telegram वॉइस संदेश की अवधि
+• ठीक किया: Whisper अनुवाद कर रहा था, ट्रांसक्रिप्ट नहीं
+• कम मेमोरी और दूषित मॉडल के स्पष्ट संदेश
 
 संस्करण 1.11.3 में नया क्या है:
 

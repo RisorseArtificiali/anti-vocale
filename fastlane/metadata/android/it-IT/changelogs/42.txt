@@ -1,0 +1,9 @@
+Novità della versione 1.12.0:
+• Tour guidato al primo avvio (riutilizzabile dalle Impostazioni)
+• Scegli file audio o video dalla scheda Registro
+• Riepilogo AI delle trascrizioni lunghe: copiabile, ripetibile, prompt personalizzato
+• Scelta icona app e interfaccia in ebraico
+• Impostazioni riorganizzate; aggiunto il pass di punteggiatura
+• Durata dei vocali Telegram corretta
+• Whisper traduceva invece di trascrivere
+• Messaggi chiari per memoria bassa e modello corrotto

@@ -1,0 +1,9 @@
+What's new in 1.12.0:
+• New: first-launch guided tour (replayable from Settings)
+• New: pick audio or video files from the History tab
+• New: AI summary of long transcripts: copyable, retryable, custom prompt
+• New: app icon picker and Hebrew interface
+• Settings reorganized; punctuation pass added
+• Fixed: Telegram voice-note duration
+• Fixed: Whisper translating instead of transcribing
+• Fixed: clearer low-memory and corrupt-model errors
