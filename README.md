@@ -12,7 +12,7 @@
 
 Android app for transcribing voice messages locally on-device, with no internet required.
 
-Anti-Vocale intercepts shared audio files (from WhatsApp, Telegram, etc.), transcribes them using on-device ASR models, and delivers the result via notification with one-tap copy and share-back actions.
+Anti-Vocale receives shared audio files (from WhatsApp, Telegram, etc.), transcribes them using on-device ASR models, and delivers the result via notification with one-tap copy and share-back actions.
 
 ## Why this app exists
 
@@ -22,7 +22,7 @@ The big messengers transcribe voice messages only partially, or not at all:
 - **Telegram** runs transcription on its own servers and reserves it for paid Premium subscribers; free accounts get at most a small weekly trial quota that Telegram itself can dial down to nothing.
 - **Signal** ships no voice transcription at all.
 
-Anti-Vocale closes that gap with a different trade-off. It runs entirely on your phone, so audio never leaves the device, whatever chat it came from. It works with every messaging app through the standard Android share sheet, not just one platform. It is free. And it transcribes any language the installed models cover, including community fine-tunes imported from the model catalog, so coverage is not decided by a platform vendor.
+Anti-Vocale closes that gap with a different trade-off. It runs entirely on your phone, so audio never leaves the device, whatever chat it came from. Any messaging app can share into it through the standard Android share sheet, and you can also pick an audio or video file straight from storage inside the app. It is free. And it transcribes any language the installed models cover, including community fine-tunes imported from the model catalog, so coverage is not decided by a platform vendor.
 
 ## How this project is built
 
@@ -74,6 +74,7 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 ### Integration & automation
 
 - **Share integration** - Share audio from any messaging app to transcribe
+- **Direct file picker** - Pick any audio or video file from storage in the app, no messaging app needed
 - **Model-specific share targets** - Pick a specific model directly from the Android share sheet
 - **Tasker/automation support** - Trigger transcription via broadcast intents
 - **HuggingFace login** - Authenticate (token or OAuth) for gated model downloads
@@ -219,7 +220,7 @@ See [docs/BUILD.md](docs/BUILD.md) for detailed build instructions.
 
 1. Open Anti-Vocale and go to the **Model** tab
 2. Download a model (Parakeet TDT recommended: fast multilingual, good quality/size ratio)
-3. Go back to your messaging app, long-press a voice message, and share it to Anti-Vocale
+3. Go back to your messaging app, long-press a voice message, and share it to Anti-Vocale (or tap the folder button on the Log tab to pick any audio file directly)
 4. The transcription appears in a notification with Copy and Share actions
 
 ## Architecture
@@ -263,7 +264,7 @@ adb shell am broadcast \
 adb shell am broadcast -a com.antivocale.app.PRELOAD_MODEL
 ```
 
-The app holds no storage permissions, so shared-storage paths like `/sdcard/Download` are NOT readable by it: pass a path inside the app's own storage (how Tasker setups stage files is covered in the guide).
+The app holds no storage permissions, so shared-storage paths like `/sdcard/Download` are NOT readable by it. Pass a path inside the app's own storage instead; how Tasker setups stage files is covered in the guide.
 
 See [docs/TASKER_GUIDE.md](docs/TASKER_GUIDE.md) for detailed automation setup.
 

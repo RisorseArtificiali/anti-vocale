@@ -39,10 +39,10 @@ Android application written in Kotlin for transcribing voice messages locally on
 - `app/src/playStore/` — playStore-flavor source set: `CrashReporter` (Firebase-backed), `AndroidManifest.xml` (Firebase service suppression)
 - `app/src/fdroid/` — fdroid-flavor source set: `CrashReporter` (logcat-only no-op). Firebase-free build for F-Droid.
 - `app/libs/` — Prebuilt AAR (sherpa-onnx, NOT committed since v1.8.3): run `./scripts/fetch-sherpa-aar.sh` once after cloning, or Gradle fails resolving the runtime classpath
-- `.sherpa-version` — Marker file at the repo root (tag + srclib commit hash of the pinned sherpa-onnx). When bumping the sherpa version, update ALL THREE sync points: this file, `SHERPA_ONNX_VERSION` in `scripts/fetch-sherpa-aar.sh`, and the `SRCLIB PIN` comment in `app/build.gradle.kts`. The F-Droid recipe's `sherpa_onnx` srclib pin must match the commit listed here (issue #38).
+- `.sherpa-version` — Marker file at the repo root (tag + srclib commit hash of the pinned sherpa-onnx). When bumping the sherpa version, update ALL FOUR sync points: this file, `SHERPA_ONNX_VERSION` in `scripts/fetch-sherpa-aar.sh`, the `SRCLIB PIN` comment in `app/build.gradle.kts`, and the pin in `eval/requirements.txt` (the eval venv must match the shipped AAR). The F-Droid recipe's `sherpa_onnx` srclib pin must match the commit listed here (issue #38).
 - `docs/` — Build guides, research notes, scout reports
 - `scripts/` — Build/install helpers (`install.sh`)
-- `eval/` (desktop eval harness): `run_baseline.py` (WER/CER/loops via sherpa-onnx Python), `postprocess_score.py` (punctuation-pass scoring), `audio_loader.py` (shared ffmpeg+soundfile loader), `smoke_nemotron.py` (model validation). Uses `eval/.venv` with sherpa-onnx 1.13.5 Python, pinned to match `.sherpa-version` and `eval/requirements.txt`.
+- `eval/` (desktop eval harness): `run_baseline.py` (WER/CER/loops via sherpa-onnx Python), `postprocess_score.py` (punctuation-pass scoring), `audio_loader.py` (shared ffmpeg+soundfile loader), `smoke_nemotron.py` (model validation). Uses `eval/.venv` with sherpa-onnx Python pinned to match `.sherpa-version` and `eval/requirements.txt`.
 - `fastlane/` — Store listing metadata (en-US + it-IT) for F-Droid
 - `metadata/` — F-Droid build recipe (`com.antivocale.app.yml`)
 
@@ -82,7 +82,11 @@ Gotchas:
 - The `external:` prefix is intercepted BEFORE the registry lookup in the orchestrator (cold-start race)
 - `buildCopyPlan` role matching: encoder/decoder by keyword, joiner also matches "joint" (GigaAM), tokens prefers rnnt-hinted and ctc-free `.txt` files
 
-**Notification ids are a reserved-range contract.** The result allocator owns every id from 3000 up; fixed and banded ids (foreground 1001/1003, download band 2001..2100, Tasker 2201..2300, share-choice 2401..2500) stay below it. The table lives on `ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE` and `ReservedNotificationIdContractTest` enforces it. A new notification id outside the contract silently replaces another notification.
+**Notification ids are a reserved-range contract.** The result allocator owns every id from 3000 up; fixed and banded ids (foreground 1001/1003, download band 2001..2100, Tasker 2201..2300, share-choice 2401..2500, history-error 2501) stay below it. The table lives on `ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE` and `ReservedNotificationIdContractTest` enforces it. A new notification id outside the contract silently replaces another notification.
+
+**New transcription-request origin → start from `InferenceEnqueue` (`service/`), never call `startForegroundService` directly.** It is the ONE enqueue path (2026-09-13, TASK-500 review): it owns the API 31+ background-start restriction (the Tasker trampoline fallback preserves the request instead of dropping it) and returns a sealed `Outcome`. The previous six hand-built intent sites were consolidated there. A video-with-subtitles origin routes through `receiver/SubtitleChoice.offerIfTracks`, the shared probe+offer both the share receiver and the History browse FAB consume; the choice prompt and its timeout worker are keyed on the file path (re-offers replace, never stack).
+
+**Transcript rendering → the shared cap (`ui/components/CappedTranscript.kt` + `ui/TranscriptRenderCap.kt`).** A repetition-loop transcript rendered at full intrinsic height exceeds Compose's 262142px Constraints limit and kills the History list on every render, bricking the app for that data (Crashlytics 2026-09-11, TASK-506). Every surface rendering transcript text (result block, summary/original, PROCESSING interim, PiP live view) goes through `CappedTranscriptText`; a new surface copying the pattern inline re-opens the crash class.
 
 **Process-lifetime coroutines use the injected `@ApplicationScope`** (`di/ApplicationScope.kt`, no dispatcher on the scope: launch sites pass their own). Never hand-build a scope for process-lifetime work; the four hand-built ones drifted (one lost the CrashReporter handler) and were consolidated in TASK-438.
 
