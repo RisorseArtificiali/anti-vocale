@@ -47,7 +47,7 @@ Three audiences, three artifacts (learned shipping v1.11.0):
 2. **GitHub release body**: two sections, "For everyone" (user-facing bullets, measurements) and "For developers" (families, policies, docs pointers, closed-issue list). Diff vs the PREVIOUS TAG, not the rc.
 3. **Fastlane changelogs** (`fastlane/metadata/android/<locale>/changelogs/<code>.txt`): F-Droid new-version notes, one file per locale directory that exists, named after the **base** versionCode.
 
-Proof: the XML contains the new version in every locale section; the extractor runs green; the changelog files exist and reference the correct versionCode.
+Proof: the XML contains the new version in every locale section; the extractor runs green (it pins the released versionName against every locale's latest heading: a wording the heading regex does not recognize fails the build instead of silently shipping the previous version's notes, the 2026-09-14 near-miss); the changelog files exist and reference the correct versionCode.
 
 ## Step 3. Commit and push main (build-first: NO tag here)
 

@@ -130,11 +130,56 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Fallback string for en-US when XML has no content",
     )
+    parser.add_argument(
+        "--expect-version",
+        default=None,
+        help=(
+            "The version being released (defaults to versionName from "
+            "app/build.gradle.kts). The heading of every locale's latest "
+            "section must contain it: a heading the version-heading regex "
+            "does not recognize makes the slicer silently ship the PREVIOUS "
+            "version's notes for that locale (near-miss 2026-09-14, an "
+            "it-IT header shortened to 'Novità della 1.12.0' fell outside "
+            "the regex and the slice started at the 1.11.3 heading)"
+        ),
+    )
     return parser
+
+
+def read_version_name() -> str | None:
+    gradle = Path("app/build.gradle.kts")
+    if not gradle.exists():
+        return None
+    m = re.search(r'versionName\s*=\s*"([^"]+)"', gradle.read_text(encoding="utf-8"))
+    return m.group(1) if m else None
 
 
 def main(argv: list[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
+    expected = args.expect_version or read_version_name()
+    if not expected:
+        print(
+            "Error: cannot determine the expected version (no --expect-version "
+            "and app/build.gradle.kts unreadable); the heading pin cannot run",
+            file=sys.stderr,
+        )
+        return 1
+    sections = parse_locale_sections(Path(args.xml_path).read_text(encoding="utf-8"))
+    for locale, content in sorted(sections.items()):
+        latest = extract_latest_version(content)
+        first_line = latest.splitlines()[0] if latest else ""
+        if expected not in first_line:
+            print(
+                f"Error: locale {locale}: the latest section's heading "
+                f"{first_line!r} does not contain the expected version "
+                f"{expected!r}. Either the section for this version is "
+                f"missing, or its heading wording does not match the "
+                f"version-heading regex in extract_latest_version (a "
+                f"non-matching heading silently ships the previous "
+                f"version's notes).",
+                file=sys.stderr,
+            )
+            return 1
     return extract_notes(args.xml_path, args.output_dir, args.fallback)
 
 
