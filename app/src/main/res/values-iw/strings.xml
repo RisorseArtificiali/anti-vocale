@@ -1,0 +1,981 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Anti-Vocale</string>
+
+    <!-- Tab names -->
+    <string name="model_tab">מודלים</string>
+    <string name="logs_tab">היסטוריה</string>
+    <string name="settings_tab">הגדרות</string>
+
+    <!-- Model selection -->
+    <string name="select_model">בחירת קובץ מודל</string>
+    <string name="select_model_from_device">בחירת קובץ</string>
+
+    <!-- Custom transducer model (sideload) -->
+    <string name="load_model">טעינת מודל</string>
+    <string name="unload_model">פריקת מודל</string>
+
+    <!-- Model status -->
+    <string name="model_status">מצב: %1$s</string>
+    <string name="model_path">נתיב: %1$s</string>
+    <string name="no_model_selected">לא נבחר מודל</string>
+    <string name="status_ready">מוכן</string>
+    <string name="status_loading">טוען מודל…</string>
+    <string name="status_error">שגיאה</string>
+    <string name="status_unloaded">נפרק</string>
+    <string name="status_model_selected">מודל נבחר</string>
+    <string name="status_no_model">אין מודל</string>
+
+    <!-- ViewModel status messages -->
+    <string name="parakeet_name">Parakeet TDT</string>
+    <string name="llm_backend_name">Gemma (LiteRT-LM)</string>
+    <string name="backend_model_ready">%1$s מוכן</string>
+    <string name="backend_model_not_found">מודל %1$s לא נמצא</string>
+    <string name="saved_model_found">נמצא מודל שמור</string>
+    <string name="saved_model_not_found">לא נמצא מודל שמור</string>
+    <string name="model_selected">נבחר מודל: %1$s</string>
+    <string name="model_copy_failed">העתקת קובץ המודל נכשלה</string>
+    <string name="model_file_not_found">קובץ מודל לא נמצא בנתיב: %1$s</string>
+    <string name="model_loading">טוען את המודל לזיכרון…</string>
+    <string name="model_ready_inference">המודל מוכן להסקה</string>
+    <string name="model_load_failed">הטעינה נכשלה: %1$s</string>
+    <string name="device_incompatible_title">מכשיר לא נתמך</string>
+    <string name="device_incompatible_arch">האפליקציה הזו דורשת מכשיר ARM64. היא לא תעבוד באימולטורים או במכשירי x86.</string>
+    <string name="device_incompatible_ram">ייתכן שאין במכשיר הזה מספיק זיכרון למודלי AI מקומיים. המודלים הקלים יותר (Parakeet) אמורים לעבוד; הגדולים עלולים להתקשות.</string>
+    <string name="model_unloaded">המודל נפרק</string>
+    <string name="model_auto_unloaded">המודל נפרק עקב חוסר פעילות</string>
+    <string name="model_externally_loaded">המודל מוכן (נטען מבחוץ)</string>
+    <string name="model_deleted_status">המודל נמחק</string>
+    <string name="downloaded_model_selected">נבחר מודל שהורד</string>
+
+    <!-- Settings error messages -->
+    <string name="error_save_settings">שמירת ההגדרות נכשלה</string>
+    <string name="error_save_language">שמירת העדפת השפה נכשלה</string>
+    <string name="error_save_theme">שמירת העדפת העיצוב נכשלה</string>
+    <string name="error_token_empty">הטוקן לא יכול להיות ריק</string>
+    <string name="error_auth_cancelled">האימות בוטל</string>
+
+    <!-- Logs -->
+    <string name="logs_empty">עדיין אין בקשות</string>
+    <string name="request_text">בקשת טקסט</string>
+    <string name="request_audio">בקשת אודיו</string>
+    <string name="logs_recent_requests">רשומות אחרונות (%1$d)</string>
+    <string name="logs_clear">ניקוי</string>
+    <string name="logs_delete_entry">מחיקת רשומה</string>
+    <string name="logs_delete_confirmation">למחוק את הרשומה הזו מההיסטוריה?</string>
+    <string name="logs_delete_selected">מחיקת הנבחרות</string>
+    <string name="logs_clear_confirmation">לנקות את כל ההיסטוריה? לא ניתן לבטל פעולה זו.</string>
+    <string name="logs_select_all">בחירת הכול</string>
+    <string name="logs_deselect_all">ביטול הבחירה</string>
+    <string name="logs_entries_selected">%d נבחרו</string>
+    <string name="logs_no_entries_selected">לא נבחרו רשומות</string>
+    <string name="logs_cleared">ההיסטוריה נוקתה</string>
+    <string name="logs_entry_deleted">רשומת ההיסטוריה נמחקה</string>
+    <plurals name="logs_entries_deleted">
+        <item quantity="one">נמחקה רשומה אחת</item>
+        <item quantity="other">נמחקו %d רשומות</item>
+    </plurals>
+    <string name="logs_undo">בטל</string>
+    <string name="logs_cancel">ביטול</string>
+    <string name="logs_confirm">אישור</string>
+    <string name="logs_empty_hint">שתף הודעה קולית מאפליקציית מסרים והטקסט שלה יופיע כאן</string>
+    <string name="logs_prompt_label">בקשה:</string>
+    <string name="logs_result_label">תוצאה:</string>
+    <string name="logs_error_label">שגיאה:</string>
+    <string name="logs_unknown_error">שגיאה לא מוכרת</string>
+    <string name="logs_status_queued">בתור</string>
+    <string name="logs_status_success">הצלחה</string>
+    <string name="logs_status_error">שגיאה</string>
+    <string name="logs_status_processing">בעיבוד</string>
+    <string name="logs_original_label">מקורי (לפני פיסוק):</string>
+    <string name="logs_summary_label">סיכום:</string>
+    <string name="summary_skipped_context">הסיכום דולג: התמליל חורג מהאורך שעיבוד הסיכום מסוגל להתמודד איתו.</string>
+    <string name="summary_skipped_no_model">הסיכום דולג: לא הוגדר מודל Gemma. הורד אותו מהלשונית מודלים כדי לאפשר סיכומים.</string>
+    <string name="summary_skipped_failed">יצירת הסיכום נכשלה; התמליל עצמו שלם.</string>
+    <string name="summary_skipped_guard">הסיכום דולג: הסיכום שנוצר חרג ממגבלות האורך (קצר מדי או ארוך מדי מכדי להיחשב סיכום).</string>
+    <string name="copy_summary">העתקת הסיכום</string>
+    <string name="copy_original">העתקת המקור</string>
+    <string name="logs_model_label">מודל: %1$s</string>
+    <string name="logs_transcription_cancelled">התמלול בוטל</string>
+    <string name="logs_search_placeholder">חיפוש רשומות…</string>
+    <string name="logs_search_no_results">אין רשומות תואמות</string>
+    <string name="logs_search_no_results_hint">נסה מונח חיפוש אחר</string>
+    <string name="browse_audio_content_description">בחירת קובץ אודיו לתמלול</string>
+    <string name="settings_replay_tour">הפעלה חוזרת של סיור הפתיחה</string>
+    <string name="tour_done">הבנתי</string>
+    <string name="tour_skip">דילוג</string>
+    <string name="tour_next">הבא</string>
+    <string name="tour_body_browse">אין לך הודעה קולית בהישג יד? בחר כל קובץ אודיו מהאחסון שלך בעזרת הכפתור הזה.</string>
+    <string name="tour_title_browse">או לבחור קובץ</string>
+    <string name="tour_body_history">שתף הודעה קולית מכל אפליקציית מסרים. התמליל יופיע כאן, עם התראה כשהוא מוכן.</string>
+    <string name="tour_title_history">שלח הודעה קולית</string>
+    <string name="tour_body_models">קודם הורד מודל תמלול מהלשונית מודלים. Parakeet הוא ברירת המחדל המומלצת. המודלים גדולים, עד כמה גיגהבייט, אבל כל אחד מהם מורד פעם אחת בלבד. עדכוני האפליקציה לעולם לא ידרשו להוריד אותם שוב.</string>
+    <string name="tour_title_models">הורדת מודל</string>
+    <string name="tour_body_welcome">התמלול מתבצע כולו בטלפון הזה; האודיו שלך לא עוזב אותו לעולם. שלוש נקודות קצרות לפני שמתחילים.</string>
+    <string name="tour_title_welcome">ברוכים הבאים ל-Anti-Vocale</string>
+    <string name="voice_message_duration">הודעה קולית</string>
+    <string name="source_was_video">מקור: קובץ וידאו</string>
+    <string name="processed_in">עובד בתוך %1$s</string>
+    <string name="transcript_render_capped">מוצגים %1$d התווים הראשונים, %2$d נוספים מוסתרים. השתמש בהעתקה כדי לקבל את הטקסט המלא.</string>
+    <string name="today">היום</string>
+    <string name="yesterday">אתמול, %1$s</string>
+    <string name="yesterday_label">אתמול</string>
+    <string name="time_seconds_ago">לפני %1$d שנ׳</string>
+    <string name="time_minutes_ago">לפני %1$d דק׳</string>
+    <string name="time_hours_ago">לפני %1$d שע׳</string>
+
+    <!-- Model descriptions -->
+    <string name="model_desc_gemma_4_e2b">2.6GB · מולטימודלי (טקסט + אודיו), הדור החדש ביותר, הטוב ביותר לרוב המכשירים</string>
+    <string name="model_desc_gemma_4_e4b">3.7GB · מולטימודלי (טקסט + אודיו), הדור החדש ביותר, איכות גבוהה יותר</string>
+    <string name="model_desc_gemma_3n_e2b">3.3GB · מולטימודלי (טקסט + אודיו), הטוב ביותר לרוב המכשירים</string>
+    <string name="model_desc_gemma_3n_e4b">4.2GB · מולטימודלי (טקסט + אודיו), איכות גבוהה יותר</string>
+
+    <!-- Parakeet model -->
+    <string name="parakeet_title">Parakeet TDT</string>
+    <string name="parakeet_description">25 שפות • מהיר • מומלץ</string>
+    <string name="parakeet_download">הורדת Parakeet TDT</string>
+    <string name="parakeet_download_confirm_title">להוריד את Parakeet TDT?</string>
+    <string name="parakeet_download_confirm_message">פעולה זו תוריד כ-%1$dMB. Parakeet מהיר יותר אך פחות מדויק מ-Gemma בתמלול.</string>
+    <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
+    <string name="parakeet_smoothquant_description">~862MB • 25 שפות • מומלץ</string>
+    <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
+    <string name="parakeet_stock_description">~640MB • 25 שפות • חלופה קלה יותר</string>
+
+    <!-- Whisper model -->
+    <string name="whisper_title">Whisper</string>
+    <string name="whisper_description">זיהוי דיבור רב-לשוני</string>
+    <string name="whisper_small_title">Whisper Small</string>
+    <string name="whisper_small_description">~358MB • דיוק נמוך יותר, במיוחד באודיו רועש • זיהוי אוטומטי בלתי אמין של השפה (ברירת המחדל היא שפת האפליקציה) • למכשירים חלשים בלבד</string>
+    <string name="whisper_turbo_title">Whisper Turbo</string>
+    <string name="whisper_turbo_description">~988MB • איכות קרובה ל-large-v3 • רב-לשוני מאוזן</string>
+    <string name="whisper_medium_title">Whisper Medium</string>
+    <string name="whisper_medium_description">~903MB • דיוק טוב • רב-לשוני</string>
+    <string name="whisper_distil_large_v3_title">Distil Italian</string>
+    <string name="whisper_distil_large_v3_description">~939MB • 2 שכבות פענוח • המהיר ביותר • מותאם לאיטלקית</string>
+    <string name="whisper_download">הורדת Whisper</string>
+    <string name="whisper_download_confirm_title">להוריד את %1$s?</string>
+    <string name="whisper_download_confirm_message">פעולה זו תוריד כ-%1$dMB. Whisper מספק תמיכה רב-לשונית מצוינת עם פיסוק תקין.</string>
+    <string name="whisper_extract_confirm_title">לחלץ את %1$s?</string>
+    <string name="whisper_extract_confirm_message">קובץ המודל כבר הורד. פעולה זו תחלץ אותו לשימוש.</string>
+
+    <!-- Qwen3-ASR model -->
+    <string name="qwen3_asr_title">Qwen3-ASR (52 שפות)</string>
+    <string name="qwen3_asr_description">52 שפות • דיוק נמוך באיטלקית</string>
+    <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 52 שפות • דיוק נמוך באיטלקית</string>
+    <string name="qwen3_asr_download_confirm_title">להוריד את %1$s?</string>
+    <string name="qwen3_asr_download_confirm_message">פעולה זו תוריד כ-%1$dMB. Qwen3-ASR תומך ב-52 שפות עם דיוק נמוך באיטלקית.</string>
+    <string name="qwen3_asr_download">הורדת Qwen3-ASR</string>
+    <string name="qwen3_asr_delete_message">למחוק את מודל Qwen3-ASR?</string>
+    <string name="qwen3_asr_downloaded">%1$s הורד בהצלחה</string>
+    <string name="qwen3_asr_deleted">%1$s נמחק</string>
+
+    <!-- Nemotron 3.5 streaming model -->
+    <string name="nemotron_name">Nemotron 3.5</string>
+    <string name="nemotron_title">Nemotron 3.5 (סטרימינג)</string>
+    <string name="nemotron_description">~640MB • טרנסדוסר בסטרימינג • איכות איטלקית ניסיונית</string>
+    <string name="nemotron_download_confirm_title">להוריד את %1$s?</string>
+    <string name="nemotron_download_confirm_message">פעולה זו תוריד כ-%1$dMB. Nemotron 3.5 הוא מודל ASR רב-לשוני בסטרימינג.</string>
+    <string name="nemotron_download">הורדת Nemotron</string>
+    <string name="nemotron_delete_message">למחוק את מודל Nemotron 3.5?</string>
+    <string name="nemotron_downloaded">%1$s הורד בהצלחה</string>
+    <string name="nemotron_deleted">%1$s נמחק</string>
+
+    <!-- GigaAM v3 model -->
+    <string name="gigaam_title">GigaAM v3</string>
+    <string name="gigaam_description">~326MB • מהיר • ASR ברוסית עם פיסוק</string>
+    <string name="gigaam_name">GigaAM v3</string>
+    <string name="gigaam_download_confirm_title">להוריד את GigaAM v3?</string>
+    <string name="gigaam_download_confirm_message">פעולה זו תוריד כ-%1$dMB. GigaAM v3 הוא מודל ASR לרוסית בלבד של Sber עם דיוק גבוה ברוסית.</string>
+    <string name="gigaam_download">הורדת GigaAM</string>
+    <string name="gigaam_downloaded">%1$s הורד בהצלחה</string>
+    <string name="gigaam_deleted">%1$s נמחק</string>
+
+    <!-- Generic catalog section (catalog-driven sherpa-onnx models) -->
+    <string name="catalog_model_downloaded">%1$s הורד בהצלחה</string>
+    <string name="catalog_model_deleted">%1$s נמחק</string>
+    <string name="catalog_download_confirm_title">להוריד את %1$s?</string>
+    <string name="catalog_download_confirm_message">פעולה זו תוריד כ-%1$dMB.</string>
+    <string name="model_fit_no_fit">סביר שהמודל הזה לא ירוץ במכשיר זה: זיכרון ה-RAM שלו נמוך ממה שהמודל דורש.</string>
+    <string name="model_fit_tight">שים לב: המודל הזה מתאים בדוחק לזיכרון ה-RAM של המכשיר; הוא עלול להיכשל תחת לחץ זיכרון.</string>
+    <string name="catalog_extract_confirm_title">לחלץ את %1$s?</string>
+    <string name="catalog_extract_confirm_message">קובץ המודל כבר הורד. פעולה זו תחלץ אותו לשימוש.</string>
+
+    <!-- Download status -->
+    <string name="download_status_downloading">מוריד…</string>
+    <string name="download_status_extracting">מחלץ את %1$s…</string>
+    <string name="download_status_extracting_files">מחלץ קבצים…</string>
+    <string name="download_status_copying_file">מעתיק את %1$s…</string>
+    <string name="download_status_copying_files">מעתיק קבצים…</string>
+    <string name="download_status_connecting">מתחבר…</string>
+    <string name="download_status_file_progress">%1$d/%2$d</string>
+    <string name="download_status_checking_access">בודק גישה…</string>
+    <string name="download_status_retrying">מנסה שוב (%1$d/%2$d)…</string>
+    <string name="download_status_resuming">ממשיך הורדה…</string>
+    <string name="model_requires_auth">מודל זה דורש חשבון HuggingFace</string>
+    <string name="settings_action">הגדרות</string>
+
+    <!-- Download rate/ETA/partial -->
+    <string name="download_rate">%1$s/s</string>
+    <string name="download_eta">נותרו %1$s</string>
+    <string name="download_eta_less_than_minute">נותרה פחות מדקה</string>
+    <string name="download_partial">ההורדה הופסקה ב-%1$d%% (%2$s / %3$s)</string>
+    <string name="download_resume">המשך הורדה</string>
+    <string name="download_clear_partial">ניקוי</string>
+    <string name="download_partial_detected">זוהתה הורדה חלקית</string>
+    <string name="gemma_download_confirm_title">להוריד את %1$s?</string>
+    <string name="gemma_download_confirm_message">פעולה זו תוריד כ-%1$dMB. מודלי Gemma הם מודלי LLM מלאים עם יכולות מתקדמות, אך הם תופסים יותר אחסון.</string>
+
+    <!-- Transcription -->
+    <string name="share_transcription">שיתוף</string>
+    <string name="copy_transcription">העתקה ללוח</string>
+    <string name="copied_to_clipboard">הועתק ללוח</string>
+    <string name="transcription_streamed_without_vad">בלי הסרת שקט</string>
+    <string name="audio_received_for_transcription">התקבל אודיו לתמלול</string>
+    <string name="transcription_complete">התמלול הושלם</string>
+    <plurals name="transcription_partial">
+        <item quantity="one">התמלול לא הושלם (מקטע אחד נכשל)</item>
+        <item quantity="other">התמלול לא הושלם (%1$d מקטעים נכשלו)</item>
+    </plurals>
+    <string name="transcription_partial_chip">חלקי</string>
+    <string name="transcription_failed">התמלול נכשל</string>
+    <string name="error_model_load">ייתכן שקובץ המודל פגום או בפורמט שגוי. נסה להוריד אותו מחדש מהלשונית מודלים.</string>
+    <string name="error_model_corrupt_healed">חלק מקבצי המודל היו פגומים, ולכן האפליקציה הסירה אותם. פתח את הלשונית מודלים והורד את המודל מחדש.</string>
+    <string name="error_native">אירעה שגיאה פנימית במהלך התמלול. אם זה חוזר, נסה מודל אחר.</string>
+    <string name="error_not_initialized">לא נטען מודל. פתח את הלשונית מודלים כדי להוריד או לבחור אחד.</string>
+    <string name="error_model_unavailable">המודל שנבחר אינו זמין יותר. פתח את הלשונית מודלים ובחר מודל אחר.</string>
+    <string name="error_audio_too_long_streaming">אודיו שאורכו מעל שעתיים אינו נתמך.</string>
+    <string name="error_audio_too_long_whole_file">האודיו הזה ארוך ממגבלת %1$d הדקות שהמכשיר מסוגל לעבד בהעברה אחת (המגבלה תלויה בזיכרון הזמין). להקלטות ארוכות השתמש במודל שהאפליקציה מפצלת איתו אוטומטית, כש-VAD כבוי.</string>
+    <string name="error_file_too_large">קובצי אודיו גדולים מ-2GB אינם נתמכים.</string>
+    <string name="error_file_not_found">קובץ האודיו לא נמצא</string>
+    <string name="error_invalid_format">לא ניתן לזהות את פורמט האודיו</string>
+    <string name="error_no_audio_track">לא נמצא ערוץ אודיו בקובץ</string>
+    <string name="error_duration_unknown">לא ניתן לקבוע את משך האודיו</string>
+    <string name="error_conversion_failed">ההמרה נכשלה: %1$s</string>
+    <string name="error_chunk_failed">מקטע %1$d נכשל: %2$s</string>
+    <string name="error_storage_full">אין מספיק מקום פנוי לייבוא הקובץ הזה (דרושים כ-%1$d MB).</string>
+    <string name="dialog_long_audio_title">אודיו ארוך</string>
+    <string name="dialog_long_audio_message">משך האודיו הזה %1$d דקות. עם %2$s זה ייקח כ-%3$d דקות. תקבל התראה כשזה יסתיים.</string>
+    <string name="dialog_long_audio_roughly">הערכה גסה: המכשיר עדיין מכייל את עצמו למודל שנבחר.</string>
+    <string name="dialog_long_audio_continue">המשך</string>
+    <string name="dialog_long_audio_cancel">ביטול</string>
+    <string name="native_crash_model_warning">האפליקציה נסגרה באופן בלתי צפוי במהלך התמלול האחרון. אם זה קרה בזמן טעינת מודל, ייתכן שהקובץ פגום. נסה להוריד אותו מחדש מהלשונית מודלים.</string>
+    <string name="oom_crash_title">האפליקציה נסגרה עקב זיכרון נמוך</string>
+    <string name="oom_crash_warning">האפליקציה נסגרה כי הזיכרון במכשיר אזל. נסה לסגור אפליקציות אחרות או להשתמש במודל קטן יותר לפני תמלול חוזר.</string>
+    <string name="native_crash_title">האפליקציה נסגרה באופן בלתי צפוי</string>
+    <string name="native_crash_go_to_model">מעבר ללשונית מודלים</string>
+    <string name="model_load_low_memory">אין מספיק זיכרון פנוי למודל הזה (%1$s זמינים, דרושים כ-%2$s). סגור אפליקציות אחרות או השתמש במודל קטן יותר. טעינה בכפייה זמינה בהגדרות.</string>
+    <string name="transcribe_low_memory">אין מספיק זיכרון פנוי לתמלל עם המודל הזה (כ-%1$s פנויים, דרושים %2$s). סגור אפליקציות אחרות ונסה שוב, או הפעל טעינת מודל בכפייה בהגדרות.</string>
+    <string name="force_model_load">טעינת מודל בכפייה</string>
+    <string name="force_model_load_desc">טוען את המודל גם כשנראה שאין מספיק זיכרון. עלול לסגור את האפליקציה במכשירים עם מעט RAM.</string>
+    <string name="copy">העתקה</string>
+    <string name="share">שיתוף</string>
+    <string name="char_counter">%1$d מתוך %2$d תווים</string>
+    <string name="page_counter">עמוד %1$d מתוך %2$d</string>
+    <string name="detected_language">זוהה: %1$s</string>
+    <string name="confidence_low">וודאות נמוכה</string>
+    <string name="no_audio_file">לא התקבל קובץ אודיו</string>
+    <string name="failed_to_process_audio">עיבוד קובץ האודיו נכשל</string>
+    <string name="unsupported_audio_format">נתמכות הודעות קוליות מאפליקציות מסרים; פורמט .%1$s אינו נתמך.</string>
+    <string name="unknown_audio_format">לא ניתן לזהות את פורמט האודיו. שתף את האודיו מאפליקציית מסרים.</string>
+    <string name="transcription_started">התמלול התחיל…</string>
+    <string name="processing_segment_progress">מקטע %1$d מתוך %2$d…</string>
+    <string name="progressive_initial">מכין טקסט; התוצאה הסופית תהיה זמינה בסיום</string>
+    <string name="added_to_queue">נוסף לתור…</string>
+    <string name="processing_chunk">מעבד מקטע %1$d/%2$d…</string>
+    <string name="processing_audio">מעבד אודיו…</string>
+    <string name="processing_request">מעבד בקשת %1$s…</string>
+    <string name="processing_queue_item">מעבד %1$d מתוך %2$d…</string>
+    <string name="processing_queue_item_audio">מעבד אודיו (%1$d מתוך %2$d)…</string>
+    <string name="processing_queue_chunk">מעבד מקטע %1$d/%2$d (%3$d מתוך %4$d)…</string>
+    <plurals name="queued_count">
+        <item quantity="one">%1$d בתור</item>
+        <item quantity="other">%1$d בתור</item>
+    </plurals>
+    <string name="generating_text">מייצר תשובת טקסט…</string>
+
+    <!-- Model Tab - Download section -->
+    <string name="download_models">מודלי Gemma</string>
+    <string name="gemma_advanced_features_description">מודלי LLM מולטימודליים מלאים עם יכולות מתקדמות: תמלול, עיבוד טקסט והעשרתו.</string>
+    <!-- GH #49: audio-length capability, shown in the model list BEFORE download -->
+    <string name="model_limit_chunked">כל אורך: אודיו ארוך מפוצל אוטומטית</string>
+    <string name="requires_huggingface_token">דורש טוקן של HuggingFace.</string>
+    <string name="add_in_settings">הוספה בהגדרות</string>
+    <string name="recommended">מומלץ</string>
+    <string name="best_italian_badge">הטוב ביותר לאיטלקית</string>
+    <string name="downloading">מוריד…</string>
+    <string name="connecting_to_huggingface">מתחבר ל-HuggingFace…</string>
+    <string name="cancel_download">ביטול הורדה</string>
+    <string name="cancel_extract">ביטול חילוץ</string>
+    <string name="extract_model">חילוץ</string>
+    <string name="use_model">שימוש במודל</string>
+    <string name="active_badge">פעיל</string>
+    <string name="model_selected_message">%1$s נבחר</string>
+    <string name="model_use_missing_files">קבצי המודל של %1$s חסרים או חלקיים. הורד מחדש את הגרסה מהלשונית מודלים.</string>
+    <string name="delete">מחיקה</string>
+    <string name="download">הורדה</string>
+    <string name="model_update_button">עדכון</string>
+    <string name="gemma_update_confirm_title">עדכון %1$s</string>
+    <string name="gemma_update_confirm_message">זמינה גרסה מהירה יותר עם פענוח ספקולטיבי. להוריד מחדש (~%1$d MB)?</string>
+    <string name="view">הצגה</string>
+
+    <!-- Model Tab - Info labels -->
+    <string name="label_filename">שם קובץ</string>
+    <string name="label_supports_audio">תומך באודיו</string>
+    <string name="label_yes_multimodal">כן (מולטימודלי)</string>
+    <string name="label_no_text_only">לא (טקסט בלבד)</string>
+    <string name="label_huggingface">HuggingFace</string>
+    <string name="label_ai_gallery_name">שם ב-AI Gallery</string>
+    <string name="show_less">הצג פחות</string>
+    <string name="show_more">הצג עוד</string>
+
+    <!-- Model Tab - Delete dialog -->
+    <string name="dialog_delete_title">למחוק את המודל?</string>
+    <string name="dialog_delete_message">פעולה זו תסיר את %1$s מהמכשיר לצמיתות. תוכל להוריד אותו שוב מאוחר יותר.</string>
+    <string name="action_delete">מחיקה</string>
+    <string name="action_cancel">ביטול</string>
+    <!-- Chunk navigation in the in-progress notification (TASK-242) -->
+    <string name="chunk_nav_prev">הקודם</string>
+    <string name="chunk_nav_next">הבא</string>
+    <string name="clear_search">ניקוי החיפוש</string>
+    <string name="chunk_nav_live">האחרון</string>
+    <string name="chunk_nav_pinned_subtext">מקטע %1$d מתוך %2$d · בזמן אמת %3$d מתוך %2$d</string>
+    <string name="chunk_nav_live_subtext">בזמן אמת · מקטע %1$d מתוך %2$d</string>
+    <string name="chunk_nav_empty">אין טקסט למקטע זה</string>
+
+    <!-- Settings Tab - Section Titles -->
+    <string name="settings_section_transcription">תמלול</string>
+    <string name="settings_section_appearance">עיצוב</string>
+    <string name="settings_section_advanced">מתקדם</string>
+    <string name="settings_section_feedback">משוב &amp; אודות</string>
+    <string name="settings_feedback_send_title">שליחת משוב / דיווח על בעיה</string>
+    <string name="settings_feedback_send_description">פותח את אפליקציית הדוא״ל שלך עם הפרטים מלאים מראש</string>
+    <string name="settings_feedback_translation_title">דיווח על תרגום שגוי</string>
+    <string name="settings_feedback_translation_description">מספר לנו באיזו שפת אפליקציה אתה משתמש</string>
+    <string name="settings_feedback_source_title">קוד המקור</string>
+    <string name="settings_feedback_license_title">רישיון</string>
+    <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">גרסה</string>
+    <string name="settings_feedback_privacy_note">שום דבר לא נשלח בלי פעולה שלך; את המייל הזה שולחת אפליקציית הדוא״ל שלך.</string>
+    <string name="settings_feedback_address_copied">לא נמצאה אפליקציית דוא״ל. הכתובת הועתקה ללוח: %1$s</string>
+    <string name="settings_feedback_body_version">גרסת האפליקציה</string>
+    <string name="settings_feedback_body_android">Android</string>
+    <string name="settings_feedback_body_device">מכשיר</string>
+    <string name="settings_feedback_body_locale">שפה</string>
+    <string name="settings_feedback_body_model">מודל פעיל</string>
+    <string name="settings_feedback_body_your_message">ההודעה שלך:</string>
+    <string name="settings_feedback_body_note">אפשר להסיר את הפרטים הטכניים שלמעלה אם תעדיף.</string>
+    <string name="oauth_connected">מחובר באמצעות OAuth</string>
+
+    <!-- Settings Tab - Model status -->
+    <string name="model_loaded">מודל נטען</string>
+    <string name="model_not_loaded">המודל נפרק (נטען אוטומטית לפי הצורך)</string>
+    <string name="auto_unload_in">פריקה אוטומטית בעוד: %1$d דק׳ %2$d שנ׳</string>
+    <string name="load_model_from_tab">המודל נטען אוטומטית לפי הצורך. פריקה חוסכת זיכרון.</string>
+
+    <!-- Settings Tab - Active Model -->
+    <string name="active_model">מודל פעיל</string>
+    <string name="no_model_selected_error">לא נבחר מודל</string>
+    <string name="available_models">מודלים זמינים:</string>
+    <string name="no_models_found">לא נמצאו מודלים. הורד מודל או הוסף אחד דרך הלשונית מודלים.</string>
+    <string name="manage_models">ניהול מודלים</string>
+    <string name="source_hf">HF</string>
+    <string name="source_gallery">Gallery</string>
+
+    <!-- Settings Tab - HuggingFace Authentication -->
+    <string name="huggingface_auth">אימות HuggingFace</string>
+    <string name="huggingface_auth_description">נדרש רק להורדת מודלים מ-HuggingFace. מודלים מקומיים עובדים בלי התחברות.</string>
+    <string name="setup_guide">מדריך הגדרה</string>
+    <string name="setup_step1">1. הקש על ״התחברות עם HuggingFace״ למטה</string>
+    <string name="setup_step2">2. התחבר לחשבון ה-HuggingFace שלך</string>
+    <string name="setup_step3">3. אשר את האפליקציה</string>
+    <string name="setup_step4">4. תוחזר לאפליקציה אוטומטית</string>
+    <string name="token_valid">הטוקן תקין</string>
+    <string name="username_label">שם משתמש: %1$s</string>
+    <string name="token_label">טוקן: %1$s</string>
+    <string name="expires_label">תוקף: %1$s</string>
+    <string name="expired">פג תוקף</string>
+    <string name="login_with_huggingface">התחברות עם HuggingFace</string>
+    <string name="oauth_login_description">התחברות מהירה דרך הדפדפן. אם אתה כבר מחובר ל-HuggingFace, האישור לוקח כמה שניות.</string>
+    <string name="create_account_link">אין לך חשבון? אפשר ליצור אחד בכתובת huggingface.co</string>
+    <string name="authenticating">מאמת מול HuggingFace…</string>
+    <string name="logged_in_as">מחובר בשם %1$s</string>
+    <string name="logout">התנתקות</string>
+    <string name="clear_token">ניקוי הטוקן</string>
+
+    <!-- Settings Tab - Manual Token -->
+    <string name="advanced_manual_token">מתקדם: הזנת טוקן ידנית</string>
+    <string name="hide_advanced">הסתרת האפשרות מתקדם: טוקן ידני</string>
+    <string name="manual_token_scope_info">לטוקנים ידניים נדרשת הרשאת read כדי להוריד מודלים.</string>
+    <string name="huggingface_token_label">טוקן HuggingFace</string>
+    <string name="token_placeholder">hf_…</string>
+    <string name="paste_from_clipboard">הדבקה מהלוח</string>
+    <string name="show_token">הצגת הטוקן</string>
+    <string name="hide_token">הסתרת הטוקן</string>
+    <string name="create_token">יצירת טוקן</string>
+    <string name="get_token">קבלת טוקן</string>
+    <string name="retry">נסה שוב</string>
+    <string name="validating">מאמת…</string>
+    <string name="validate_and_save">אימות &amp; שמירה</string>
+    <string name="validating_token">מאמת את הטוקן…</string>
+
+    <!-- Settings Tab - Timeout -->
+    <string name="auto_unload_timeout">פריקה אוטומטית</string>
+    <string name="timeout_description">המודל נפרק לאחר זמן חוסר פעילות וחוזר בשימוש הבא.</string>
+    <string name="timeout_1_minute">דקה אחת</string>
+    <string name="timeout_1_hour">שעה אחת</string>
+    <plurals name="timeout_minutes">
+        <item quantity="one">דקה אחת</item>
+        <item quantity="other">%1$d דקות</item>
+    </plurals>
+
+    <!-- Settings Tab - Thread Count -->
+    <string name="thread_count_title">תהליכוני הסקה</string>
+    <string name="thread_count_description">מספר תהליכוני המעבד המשמשים לתמלול. ערכים גבוהים מזרזים את העיבוד ומעלים את העומס.</string>
+    <string name="thread_count_auto">%1$d (מזוהה אוטומטית)</string>
+    <string name="thread_count_value">%1$d</string>
+
+    <string name="inference_provider_title">מנוע ההסקה</string>
+    <string name="inference_provider_description">מנוע ההרצה של הסקת ONNX. NNAPI עשוי לנצל את ה-NPU/GPU של המכשיר, אך לעיתים הוא איטי מהמעבד במודלים מסוימים.</string>
+    <string name="inference_provider_auto">אוטומטי (מעבד)</string>
+    <string name="inference_provider_nnapi">NNAPI (האצת חומרה)</string>
+    <string name="inference_provider_cpu">מעבד בלבד</string>
+
+    <string name="saving">שומר…</string>
+    <string name="settings_saved">ההגדרות נשמרו</string>
+    <string name="save">שמירה</string>
+
+    <!-- Settings Tab - Auto-Copy -->
+    <string name="auto_copy_title">העתקה אוטומטית</string>
+    <string name="auto_copy_description">מעתיק את הטקסט המוגמן ללוח. העתקה ידנית מההתראה עדיין זמינה.</string>
+
+    <!-- Settings Tab - Output Folder -->
+    <string name="output_folder_title">שמירה אוטומטית לתיקייה</string>
+    <string name="output_folder_description">כל תמלול נשמר כקובץ .txt נפרד בתיקייה שתבחר (למשל Drive או Syncthing).</string>
+    <string name="output_folder_choose">בחירת תיקייה</string>
+    <string name="output_folder_clear">ניקוי התיקייה</string>
+
+    <!-- Settings Tab - VAD -->
+    <!-- Settings Tab - Punctuation (TASK-276) -->
+    <string name="punctuation_status">מעצב עם AI…</string>
+    <string name="punctuation_mode_title">פיסוק ועיצוב</string>
+    <string name="punctuation_mode_description">כותב מחדש תמלילים לא מפוסקים בעזרת מודל Gemma. הרצה אוטומטית חלה רק על מודלים שאינם מפסקים (דורש הורדת Gemma).</string>
+    <string name="punctuation_mode_off">כבוי</string>
+    <string name="punctuation_mode_auto">אוטומטי</string>
+    <string name="punctuation_mode_always">תמיד</string>
+    <string name="punctuation_prompt_title">פרומפט פיסוק</string>
+    <string name="punctuation_prompt_description">הוראה לשלב הפיסוק. השאר ריק כדי להשתמש בפרומפט המובנה.</string>
+    <string name="punctuation_prompt_placeholder">פרומפט מובנה</string>
+    <string name="summary_prompt_title">פרומפט סיכום</string>
+    <string name="summary_prompt_description">מחליף את הוראת הסיכום של ה-AI. ריק משתמש בפרומפט המובנה של שניים עד שלושה משפטים.</string>
+    <string name="punctuation_default_prompt">הוסף פיסוק ואותיות רישיות לתמליל הזה. שמור על כל מילה בדיוק כפי שנכתבה; אל תתקן, תתרגם, תוסיף או תסיר דבר. החזר רק את התמליל המתוקן.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">סיכום תמלולים ארוכים</string>
+    <string name="summarize_description">מוסיף סיכום AI קצר לתמלולים ארוכים בעזרת מודל Gemma (דורש הורדת Gemma).</string>
+    <string name="summarize_status">מסכם עם AI…</string>
+    <string name="summary_default_prompt">סכם את התמלול הזה בשניים עד שלושה משפטים, בשפת התמליל. שמור על שמות ומספרים. החזר רק את הסיכום.</string>
+    <string name="vad_title">הסרת שקט (VAD)</string>
+    <string name="vad_description">מסיר קטעי שקט מהודעות קוליות לפני התמלול. מקצר את זמן העיבוד ומשפר את הדיוק.</string>
+    <string name="progressive_title">הצגה מדורגת</string>
+    <string name="progressive_description">מציג טקסט בזמן שהתמלול מתקדם, במקום לחכות שההקלטה תסתיים.</string>
+
+    <!-- Settings Tab - Default Prompt -->
+    <string name="default_prompt_title">פרומפט ברירת מחדל</string>
+    <string name="default_prompt_description">הוראה שניתנת למודל במהלך התמלול. השאר ריק כדי להשתמש בפרומפט המובנה.</string>
+    <string name="default_prompt_placeholder">לדוגמה: תמלל את הדיבור הזה:</string>
+    <string name="default_prompt_chars">%1$d / 500</string>
+    <string name="default_prompt_compatibility_info">חל רק על מודלי LLM (Gemma). מודלי Whisper ו-Parakeet מתעלמים מהגדרה זו.</string>
+    <string name="current_default_prompt_label">בשימוש כרגע:</string>
+    <string name="default_system_prompt">תמלל את הדיבור הזה:</string>
+    <string name="builtin_default_prompt">תמלל את הדיבור הזה: (ברירת מחדל מובנית)</string>
+    <string name="example_prompts_title">פרומפטים לדוגמה</string>
+    <string name="example_prompts_description">הקש על פרומפט כדי להשתמש בו</string>
+    <string name="example_prompt_transcribe">תמלל את האודיו הזה במדויק, תוך שמירה על השפה המקורית.</string>
+    <string name="example_prompt_summarize">תמלל את האודיו הזה וסכם בקצרה את הנקודות המרכזיות של ההודעה.</string>
+    <string name="example_prompt_formal">תמלל את האודיו הזה בסגנון פורמלי ונקי. הסר מילות מילוי והתחלות שגויות.</string>
+    <string name="example_prompt_translate_en">תמלל את האודיו הזה ותרגם אותו לאנגלית.</string>
+    <string name="example_prompt_translate_it">Trascrivi e traduci questo audio in italiano.</string>
+    <string name="example_prompt_notes">תמלל את האודיו הזה ועצב אותו כרשימת נקודות.</string>
+    <string name="prompt_applied">הפרומפט הוחל</string>
+
+    <!-- Settings Tab - Preload Info -->
+    <string name="preload_title">טעינה אוטומטית &amp; טעינה מוקדמת</string>
+    <string name="preload_description">המודל ייטען אוטומטית כשמתקבלת בקשה והמודל אינו בזיכרון. אפשר גם לטעון את המודל באופן מפורש מראש:</string>
+    <string name="via_tasker">דרך Tasker:</string>
+    <string name="via_adb">דרך ADB:</string>
+
+    <!-- Settings Tab - Language -->
+    <string name="language_title">שפה</string>
+    <string name="language_description">בחר את שפת התצוגה של האפליקציה.</string>
+    <string name="language_system">ברירת המחדל של המערכת</string>
+
+    <!-- Settings Tab - Transcription Language -->
+    <string name="transcription_language_title">שפת התמלול</string>
+    <string name="transcription_language_auto">זיהוי אוטומטי</string>
+    <string name="transcription_language_no_conditioning">המודל הפעיל מזהה את השפה אוטומטית. הגדרה זו חלה על מודלי Whisper ועל המודל בסטרימינג.</string>
+    <string name="transcription_language_unsupported_pin">המודל הפעיל אינו תומך בשפה זו. בחר שפה נתמכת או זיהוי אוטומטי; הבחירה שלך נשמרת עד שתשנה אותה.</string>
+    <string name="transcription_language_forced_hint">כופה את השפה הזו: אודיו בשפה אחרת עלול לצאת ירוד או מתורגם. העדף זיהוי אוטומטי, אלא אם הזיהוי מטעה.</string>
+
+    <!-- Settings Tab - Theme -->
+    <string name="theme_title">ערכת עיצוב</string>
+    <string name="theme_description">בחר את ערכת הצבעים של האפליקציה.</string>
+    <string name="theme_mode_title">מצב עיצוב</string>
+    <string name="theme_mode_description">עוקב אחר הגדרת המערכת, או כופה מצב כהה או בהיר.</string>
+    <string name="theme_default">ברירת מחדל (אינדיגו)</string>
+    <string name="theme_whatsapp">WhatsApp</string>
+    <string name="theme_telegram">Telegram</string>
+
+    <!-- Settings Tab - App icon (TASK-392) -->
+    <string name="app_icon_title">סמל האפליקציה</string>
+    <string name="app_icon_note">החלפה עלולה להסתיר את הסמל לרגע קצר בחלק מהמשגרים; בעמוד החנות נשאר סמל ברירת המחדל.</string>
+    <string name="app_icon_variant_default">ברירת מחדל</string>
+    <string name="app_icon_variant_wavecut">צורת גל קטועה</string>
+    <string name="app_icon_variant_crossed">צורת גל מוצלבת</string>
+    <string name="app_icon_variant_textblock">מצורת גל לטקסט</string>
+    <string name="app_icon_variant_monogram">מונוגרם AV</string>
+    <string name="app_icon_variant_capsule">הודעה קולית שבורה</string>
+    <string name="app_icon_variant_mutebar">סמל השתקה</string>
+
+    <!-- Per-App Settings -->
+    <string name="per_app_settings_title">הגדרות לפי אפליקציה</string>
+    <string name="per_app_settings_description">התאמת התנהגות ההתראות לכל אפליקציה</string>
+    <string name="per_app_settings_info">הקש על אפליקציה כדי להגדיר את ההתראות שלה.</string>
+    <string name="per_app_settings_loading">טוען העדפות...</string>
+    <string name="per_app_settings_manually_added">נוסף ידנית</string>
+    <string name="per_app_settings_add_app">הוספת אפליקציה</string>
+    <string name="per_app_settings_search">חיפוש אפליקציות...</string>
+    <string name="per_app_settings_no_apps">לא נמצאו אפליקציות</string>
+    <string name="per_app_settings_no_matching_apps">אין אפליקציות תואמות</string>
+    <string name="per_app_settings_using_defaults">משתמש בברירות המחדל</string>
+    <string name="per_app_settings_auto_copy_on">העתקה אוטומטית פעילה</string>
+    <string name="per_app_settings_auto_copy_off">העתקה אוטומטית כבויה</string>
+    <string name="per_app_settings_share_on">כפתור שיתוף פעיל</string>
+    <string name="per_app_settings_share_off">כפתור שיתוף כבוי</string>
+    <string name="per_app_settings_sound">צליל: %1$s</string>
+    <string name="per_app_settings_dialog_title">הגדרות עבור %1$s</string>
+    <string name="per_app_settings_auto_copy_title">העתקה אוטומטית</string>
+    <string name="per_app_settings_auto_copy_description">מעתיק את טקסט ההודעה ללוח</string>
+    <string name="per_app_settings_show_share_title">הצגת כפתור שיתוף</string>
+    <string name="per_app_settings_show_share_description">מציג כפתור שיתוף בהתראה</string>
+    <string name="per_app_settings_notification_sound">צליל התראה</string>
+    <string name="per_app_settings_sound_label">צליל</string>
+    <string name="per_app_settings_close">סגירה</string>
+    <string name="per_app_settings_sound_default">ברירת מחדל</string>
+    <string name="per_app_settings_sound_silent">שקט</string>
+    <string name="per_app_settings_sound_chime">פעמונית</string>
+    <string name="per_app_settings_sound_bell">פעמון</string>
+    <string name="per_app_settings_quick_share_back_title">שיתוף חזרה מהיר</string>
+    <string name="per_app_settings_quick_share_back_description">שליחת תמלולים בחזרה לאפליקציה זו בנגיעה אחת</string>
+
+    <!-- Per-App Reset -->
+    <string name="per_app_settings_reset_all">איפוס הכול לברירות המחדל</string>
+    <string name="per_app_settings_reset_all_confirm_title">לאפס את כל ההגדרות?</string>
+    <string name="per_app_settings_reset_all_confirm_message">העדפות ההתראות של כל האפליקציות ישוחזרו לברירות המחדל.</string>
+    <string name="per_app_settings_reset_app">איפוס לברירות המחדל</string>
+    <string name="per_app_settings_reset_app_confirm_title">לאפס את ההגדרות עבור %1$s?</string>
+    <string name="per_app_settings_reset_app_confirm_message">העדפות ההתראות של האפליקציה ישוחזרו לברירות המחדל.</string>
+    <string name="per_app_settings_reset_done">ההגדרות שוחזרו לברירות המחדל</string>
+
+    <!-- Per-App Onboarding Tooltip -->
+    <string name="per_app_onboarding_title">התאמת התנהגות לכל אפליקציה</string>
+    <string name="per_app_onboarding_message">הקש על כל אפליקציה כדי להגדיר העתקה אוטומטית, פעולות שיתוף וצלילי התראה עבור אותה אפליקציה ספציפית.</string>
+    <string name="per_app_onboarding_got_it">הבנתי</string>
+
+    <!-- VAD Advisory (shown in Log tab when Parakeet is active with VAD enabled) -->
+    <string name="vad_advisory_title">VAD לא נחוץ עם Parakeet</string>
+    <string name="vad_advisory_description">עבור Parakeet, הסרת שקט רק מוסיפה זמן עיבוד. אפשר לכבות זאת בהגדרות.</string>
+    <string name="vad_advisory_dismiss">הבנתי</string>
+
+    <!-- Share Back -->
+    <string name="share_back">שיתוף חזרה</string>
+    <string name="send_to_app">שליחה אל %1$s</string>
+
+    <!-- Notification Channels -->
+    <string name="notification_channel_extraction">הורדת מודל</string>
+    <string name="notification_channel_extraction_description">מוריד ומחלץ מודלי ML ברקע</string>
+    <string name="notification_downloading_progress">מוריד… %1$d%%</string>
+    <string name="notification_extracting_progress">מחלץ קבצים… %1$d/%2$d</string>
+    <string name="notification_copying_progress">מעתיק קבצים… %1$d/%2$d</string>
+    <string name="notification_extracting_hint">פעולה זו עשויה להימשך יותר מ-5 דקות</string>
+    <string name="notification_download_complete">ההורדה הושלמה</string>
+    <string name="notification_channel_inference">שירות תמלול</string>
+    <string name="notification_channel_inference_description">עיבוד תמלול אודיו ברקע</string>
+    <string name="notification_channel_result">תוצאת תמלול</string>
+    <string name="notification_channel_result_description">טקסט מוגמר ופעולות</string>
+    <string name="notification_cancelling">מבטל…</string>
+
+    <!-- No-model notification -->
+    <string name="notification_no_model_title">מודל לא מותקן</string>
+    <string name="notification_no_model_message">פתח את האפליקציה והורד מודל</string>
+    <string name="notification_no_model_action">פתיחת האפליקציה</string>
+
+    <!-- Tasker fallback notification -->
+    <string name="notification_channel_tasker_fallback">אוטומציה של Tasker</string>
+    <string name="notification_channel_tasker_fallback_description">הקש כדי להתחיל תמלול כשהוא מופעל מהרקע</string>
+    <string name="tasker_fallback_notification_text">הקש כדי להתחיל תמלול</string>
+
+    <!-- Dismiss -->
+    <string name="dismiss">סגירה</string>
+
+    <!-- Download completion messages -->
+    <string name="parakeet_downloaded">מודל Parakeet הורד בהצלחה</string>
+    <string name="whisper_downloaded">%1$s הורד בהצלחה</string>
+    <string name="parakeet_deleted">מודל Parakeet נמחק</string>
+    <string name="whisper_deleted">%1$s נמחק</string>
+
+    <!-- Speed comparison -->
+    <string name="speed_comparison_title">השוואת מהירות</string>
+    <string name="speed_comparison_subtitle">ביצועים יחסיים בהודעות קוליות טיפוסיות (מעבד)</string>
+    <string name="speed_comparison_header_model">מודל</string>
+    <string name="speed_comparison_header_size">גודל</string>
+    <string name="speed_comparison_header_speed">מהירות</string>
+    <string name="speed_comparison_header_quality">איכות איטלקית</string>
+    <string name="speed_comparison_small_name">Whisper Small</string>
+    <string name="speed_comparison_small_size">~358MB</string>
+    <string name="speed_comparison_small_speed">1.0x</string>
+    <string name="speed_comparison_small_quality">סבירה</string>
+    <string name="speed_comparison_turbo_name">Whisper Turbo</string>
+    <string name="speed_comparison_turbo_size">~988MB</string>
+    <string name="speed_comparison_turbo_speed">1.3x</string>
+    <string name="speed_comparison_turbo_quality">טובה</string>
+    <string name="speed_comparison_medium_name">Whisper Medium</string>
+    <string name="speed_comparison_medium_size">~903MB</string>
+    <string name="speed_comparison_medium_speed">0.5x</string>
+    <string name="speed_comparison_medium_quality">טובה</string>
+    <string name="speed_comparison_distil_it_name">Distil Italian</string>
+    <string name="speed_comparison_distil_it_size">~939MB</string>
+    <string name="speed_comparison_distil_it_speed">~1.8x</string>
+    <string name="speed_comparison_distil_it_quality">הטובה ביותר לאיטלקית</string>
+    <string name="speed_comparison_distil_it_note">הטוב ביותר לאיטלקית</string>
+    <string name="speed_comparison_parakeet_name">Parakeet TDT</string>
+    <string name="speed_comparison_parakeet_size">~640MB</string>
+    <string name="speed_comparison_parakeet_speed">~17x</string>
+    <string name="speed_comparison_parakeet_quality">טובה מאוד</string>
+    <string name="speed_comparison_parakeet_note">מומלץ</string>
+    <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
+    <string name="speed_comparison_qwen3_size">~938MB</string>
+    <string name="speed_comparison_qwen3_speed">~2x</string>
+    <string name="speed_comparison_qwen3_quality">52 שפות, משתנה</string>
+    <string name="speed_comparison_gigaam_name">GigaAM v3</string>
+    <string name="speed_comparison_gigaam_size">~326MB</string>
+    <string name="speed_comparison_gigaam_speed">מהיר</string>
+    <string name="speed_comparison_gigaam_quality">רוסית בלבד</string>
+    <string name="speed_comparison_nemotron_name">Nemotron 3.5</string>
+    <string name="speed_comparison_nemotron_size">~600MB</string>
+    <string name="speed_comparison_nemotron_speed">סטרימינג</string>
+    <string name="speed_comparison_nemotron_quality">ניסיוני</string>
+    <string name="fastest_badge">המהיר ביותר</string>
+    <string name="coming_soon_badge">בקרוב</string>
+
+    <!-- Transcription ETA -->
+    <string name="transcription_eta_calibrating">מכייל מהירות…</string>
+    <string name="transcription_eta_seconds">נותרו כ-%1$d שנ׳</string>
+    <string name="transcription_eta_minutes">נותרו %1$d דק׳ %2$d שנ׳</string>
+    <string name="transcription_eta_hours">נותרו %1$d שע׳ %2$d דק׳</string>
+    <string name="transcription_eta_estimating">מעריך… נותרו כ-%1$d דק׳ %2$d שנ׳</string>
+
+    <!-- Performance Stats -->
+    <string name="performance_stats_title">סטטיסטיקת ביצועים</string>
+    <string name="performance_stats_subtitle">מהירות תמלול אמיתית מהמכשיר שלך</string>
+    <string name="performance_stats_empty">עדיין אין נתונים. תמלל קצת אודיו כדי לראות סטטיסטיקה.</string>
+    <string name="performance_stats_speed">%1$.0fms/s</string>
+    <plurals name="performance_stats_samples_count">
+        <item quantity="one">דגימה אחת</item>
+        <item quantity="other">%1$d דגימות</item>
+    </plurals>
+    <string name="performance_stats_fastest_badge">המהיר ביותר</string>
+    <string name="performance_stats_clear">איפוס הסטטיסטיקה</string>
+    <string name="performance_stats_clear_confirm">לאפס את כל נתוני הביצועים?</string>
+    <string name="performance_stats_just_now">רק עכשיו</string>
+    <string name="performance_stats_minutes_ago">לפני %1$d דק׳</string>
+    <string name="performance_stats_hours_ago">לפני %1$d שע׳</string>
+    <string name="performance_stats_days_ago">לפני %1$d ימים</string>
+    <string name="performance_stats_total_audio">סה״כ: %1$s אודיו שעובד</string>
+
+    <!-- Transcription active protection -->
+    <string name="dialog_transcription_active_title">תמלול בעיצומו</string>
+    <string name="dialog_delete_active_model_message">לא ניתן למחוק את %1$s: המודל משמש כרגע לתמלול. המתן שהוא יסתיים.</string>
+    <string name="dialog_delete_inactive_model_message">תמלול מתבצע כרגע. מחיקת %1$s לא תשפיע עליו, אך המשך בזהירות.</string>
+    <string name="dialog_switch_model_message">תמלול מתבצע כרגע. החלפת מודל עלולה להפריע לו. להמשיך?</string>
+    <string name="action_understood">הבנתי</string>
+    <string name="action_switch_anyway">להחליף בכל זאת</string>
+    <string name="warn_reset_stats_during_transcription">מתבצע זיהוי: הסטטיסטיקה נשמרת, אך נתוני התזמון עלולים להיות חלקיים.</string>
+    <string name="cannot_unload_during_transcription">לא ניתן לפרוק: המודל משמש לתמלול פעיל</string>
+    <string name="dialog_unload_title">לפרוק את המודל?</string>
+    <string name="dialog_unload_message">המודל %1$s ייפרק מהזיכרון. הוא ייטען מחדש אוטומטית בתמלול הבא.</string>
+    <string name="action_unload">פריקה</string>
+
+    <!-- Swipe Action Mode -->
+    <string name="swipe_action_title">פעולת החלקה</string>
+    <string name="swipe_action_description">בחר את הפעולה בהחלקת רשומה שמאלה</string>
+    <string name="swipe_action_reveal">חשיפת פעולות</string>
+    <string name="swipe_action_immediate_delete">מחיקה מיידית</string>
+    <string name="swipe_action_copy_description">העתקת התמלול</string>
+    <string name="swipe_action_share_description">שיתוף התמלול</string>
+    <string name="swipe_action_delete_description">מחיקת רשומה</string>
+    <string name="swipe_action_copied">התמלול הועתק</string>
+
+    <!-- Content descriptions (accessibility) -->
+    <string name="back">חזרה</string>
+    <string name="add_app">הוספת אפליקציה</string>
+    <string name="view_settings">הצגת הגדרות</string>
+    <string name="app_icon">סמל %1$s</string>
+
+    <!-- InferenceService strings -->
+    <string name="error_load_backend">טעינת המנוע נכשלה: %1$s</string>
+    <string name="error_no_active_backend">אין מנוע פעיל</string>
+    <string name="error_no_file_path">לא סופק נתיב קובץ לבקשת האודיו</string>
+    <string name="error_backend_no_audio_support">%1$s אינו תומך בתמלול אודיו. עבור למודל דיבור-לטקסט בהגדרות.</string>
+    <string name="error_no_llm_model">לא הוגדר מודל LLM. פתח את האפליקציה כדי להוריד מודל.</string>
+    <string name="error_no_model_configured">לא הוגדר מודל %1$s. פתח את האפליקציה כדי להוריד מודל.</string>
+    <string name="loading_model">טוען מודל %1$s…</string>
+    <string name="preprocessing_audio">מעבד מקדים את האודיו…</string>
+    <string name="clipboard_label_transcription">תמלול</string>
+
+    <!-- Settings accessibility -->
+    <string name="open_prompt_settings">פתיחת הגדרות פרומפט</string>
+    <string name="open_per_app_settings">פתיחת הגדרות פר אפליקציה</string>
+    <string name="open_performance_stats">פתיחת סטטיסטיקת הביצועים</string>
+    <string name="hide_details">הסתרת הפרטים</string>
+    <string name="show_details">הצגת הפרטים</string>
+    <string name="model_unknown">לא ידוע</string>
+
+    <!-- Picture-in-Picture -->
+    <string name="pip_transcribing">מתמלל…</string>
+    <string name="pip_waiting">ממתין לתמלול…</string>
+    <string name="pip_enter_button">PiP</string>
+    <string name="pip_enter_description">הצגה בחלון תמונה-בתוך-תמונה</string>
+
+    <!-- GGUF model descriptions -->
+    <string name="model_title_gemma4_gguf_q4km">Gemma 4 GGUF (Q4_K_M)</string>
+    <string name="model_desc_gemma4_gguf_q4km">4.9 GB · Apache 2.0 · יצירת טקסט דרך llama.cpp. האיזון הטוב ביותר בין איכות לגודל.</string>
+    <string name="model_title_gemma4_gguf_q5km">Gemma 4 GGUF (Q5_K_M)</string>
+    <string name="model_desc_gemma4_gguf_q5km">5.3 GB · Apache 2.0 · יצירת טקסט באיכות גבוהה יותר דרך llama.cpp.</string>
+    <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
+    <string name="model_desc_gemma4_gguf_q8">7.4 GB · Apache 2.0 · יצירת טקסט באיכות הגבוהה ביותר דרך llama.cpp. דורש 8GB RAM ומעלה.</string>
+    <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
+    <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
+    <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
+    <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
+    <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
+    <string name="gguf_inference_unavailable">הסקת GGUF דורשת את ספריית llama.cpp המקורית. יש לבנות את libllama.so עבור Android ARM64.</string>
+    <string name="gguf_model_download_error">הורדת מודל GGUF נכשלה</string>
+
+    <!-- GGUF model download section -->
+    <string name="gguf_title">Gemma 4 GGUF (יצירת טקסט)</string>
+    <string name="gguf_description">מודל LLM מקומי ליצירת טקסט, ללא תלות בענן. דורש את ספריית llama.cpp המקורית.</string>
+    <string name="gguf_unsupported_arch">לא נתמך במכשיר זה (דורש ARM64).</string>
+    <string name="gguf_download_confirm_title">להוריד את %1$s?</string>
+    <string name="gguf_download_confirm_message">פעולה זו תוריד כ-%1$dMB. מודלי GGUF מאפשרים יצירת טקסט מקומית ללא אינטרנט.</string>
+    <string name="gguf_downloaded">%1$s הורד בהצלחה</string>
+    <string name="gguf_delete_message">למחוק את %1$s? פעולה זו תפנה כ-%2$dMB אחסון.</string>
+    <string name="gguf_deleted">%1$s נמחק</string>
+
+    <!-- Language filter -->
+    <string name="lang_filter_label">סינון לפי שפה</string>
+    <string name="lang_filter_all">כל השפות</string>
+    <string name="lang_filter_no_results">אין שפה תואמת</string>
+    <string name="lang_filter_clear">ניקוי החיפוש</string>
+
+    <!-- Model Benchmark -->
+    <string name="benchmark_title">מדד ביצועים: %1$s</string>
+    <string name="benchmark_preparing">מכין מדד ביצועים…</string>
+    <string name="benchmark_running">מריץ מדד ביצועים…</string>
+    <string name="benchmark_progress">הושלמו %1$d%%</string>
+    <string name="benchmark_cancel">ביטול</string>
+    <string name="benchmark_rerun">הרצה חוזרת</string>
+    <string name="benchmark_retry">נסה שוב</string>
+    <string name="benchmark_speed_label">זמן לדקת אודיו</string>
+    <string name="benchmark_speed_value">%1$.1f s/min</string>
+    <string name="benchmark_time_label">זמן הסקה</string>
+    <string name="benchmark_time_value">%1$d ms</string>
+    <string name="benchmark_memory_label">שיא זיכרון</string>
+    <string name="benchmark_memory_value">%1$.0f MB</string>
+    <string name="benchmark_duration_label">משך הדגימה</string>
+    <string name="benchmark_duration_value">%1$.0f s</string>
+    <string name="benchmark_rating_fast">מהיר</string>
+    <string name="benchmark_rating_good">טוב</string>
+    <string name="benchmark_rating_moderate">בינוני</string>
+    <string name="benchmark_rating_slow">איטי</string>
+    <string name="benchmark_disclaimer">התוצאות עשויות להשתנות בהתאם לעומס על המכשיר ולטמפרטורה.</string>
+    <string name="benchmark_button">מדידת ביצועים</string>
+    <string name="benchmark_cached_result">מדד אחרון: %1$s</string>
+    <string name="benchmark_provider_label">מנוע</string>
+    <string name="benchmark_provider_value">%1$s</string>
+    <string name="transcription_interrupted_title">התמלול הופסק</string>
+    <string name="action_dismiss">סגירה</string>
+
+    <!-- Model Info Overlay -->
+    <string name="model_info_title">פרטי מודל</string>
+    <string name="model_info_section_languages">שפות נתמכות</string>
+    <string name="model_info_section_recommendations">המלצות</string>
+    <string name="model_info_section_technical">פרטים טכניים</string>
+    <string name="model_info_section_performance">טיפים לביצועים</string>
+    <plurals name="model_info_languages_count">
+        <item quantity="one">שפה אחת</item>
+        <item quantity="other">%d שפות</item>
+    </plurals>
+    <string name="model_info_no_languages">תמיכת השפות אינה ידועה</string>
+    <string name="model_info_architecture">ארכיטקטורה</string>
+    <string name="model_info_arch_encoder_decoder">מקודד-מפענח (Whisper)</string>
+    <string name="model_info_arch_transducer">טרנסדוסר (TDT)</string>
+    <string name="model_info_arch_ctc">CTC (Connectionist Temporal Classification)</string>
+    <string name="model_info_arch_llm">מודל שפה גדול</string>
+    <string name="model_info_model_size">גודל המודל</string>
+    <string name="model_info_max_audio">אורך אודיו מקסימלי</string>
+    <string name="model_info_max_audio_unlimited">ללא הגבלה</string>
+    <plurals name="model_info_max_audio_seconds">
+        <item quantity="one">שנייה אחת</item>
+        <item quantity="other">%d שניות</item>
+    </plurals>
+    <string name="model_info_quantization">קוונטיזציה</string>
+    <string name="model_info_recommended_threads">תהליכונים מומלצים</string>
+    <string name="model_info_threads_range">%1$d – %2$d</string>
+    <string name="model_info_arm64_only">למכשירי ARM64 בלבד</string>
+    <string name="model_info_progressive">תמלול מדורג</string>
+    <string name="model_info_vad_recommended">מומלץ עיבוד VAD מקדים</string>
+    <string name="model_info_best_for_whisper_small">מודל רב-לשוני קומפקטי לבדיקה מהירה</string>
+    <string name="model_info_notes_whisper_small">נקודת פתיחה טובה. דיוק מוגבל לעומת מודלים גדולים יותר. זיהוי אוטומטי של השפה אינו אמין; כברירת מחדל נעשה שימוש בשפת האפליקציה במקום זאת.</string>
+    <string name="model_info_best_for_whisper_turbo">ASR רב-לשוני מאוזן עם זיהוי אוטומטי</string>
+    <string name="model_info_notes_whisper_turbo">איכות קרובה ל-large-v3 במהירות בינונית. מתאים למשתמשים רב-לשוניים.</string>
+    <string name="model_info_best_for_whisper_medium">מודל רב-לשוני בינוני</string>
+    <string name="model_info_notes_whisper_medium">איזון טוב בין דיוק לצריכת משאבים.</string>
+    <string name="model_info_best_for_distil_it">דיוק האיטלקית הטוב ביותר (4.3%% WER)</string>
+    <string name="model_info_notes_distil_it">איטלקית בלבד. הדיוק הגבוה ביותר להודעות קוליות באיטלקית. מעדיף דיוק על פני מהירות.</string>
+    <string name="model_info_best_for_qwen3">זיהוי אוטומטי ב-52 שפות</string>
+    <string name="model_info_notes_qwen3">כיסוי השפות הרחב ביותר. שים לב: קוטע אודיו שאורכו מעל 30 שניות. למכשירי ARM64 בלבד.</string>
+    <string name="model_info_best_for_parakeet">התמלול המהיר ביותר (פי 17.6 מהר יותר מ-Whisper, 5.4%% WER)</string>
+    <string name="model_info_notes_parakeet">ללא מגבלת אורך אודיו. VAD אינו נחוץ. הטוב ביותר למי שמעדיף מהירות.</string>
+    <string name="model_info_best_for_gigaam">דיוק הרוסית הטוב ביותר במכשיר</string>
+    <string name="model_info_notes_gigaam">רוסית בלבד. פיסוק ואותיות רישיות מקוריים.</string>
+    <string name="model_info_best_for_nemotron">תמלול בסטרימינג לאודיו ארוך</string>
+    <string name="model_info_notes_nemotron">טרנסדוסר סטרימינג בהשהיה נמוכה. זיהוי רב-לשוני אוטומטי עם אפשרות שפה לכל זרם.</string>
+    <string name="model_info_best_for_gemma">מודל LLM מולטימודלי למשימות טקסט + אודיו</string>
+    <string name="model_info_notes_gemma">לא מותאם ל-ASR טהור. מיועד לתכונות מתקדמות כמו הבנת אודיו בשילוב יצירת טקסט.</string>
+    <string name="model_info_benchmark_wer">אחוז שגיאות מילים (איטלקית): %.1f%%</string>
+    <string name="model_info_relative_speed">מהירות: %s</string>
+    <string name="model_info_close">סגירה</string>
+
+    <!-- Skeleton loading -->
+    <string name="skeleton_loading_content_description">טוען תמלול</string>
+
+    <!-- Share target profiles (appear as separate entries in Android share sheet) -->
+    <string name="share_target_parakeet">Anti-Vocale (Parakeet)</string>
+    <string name="share_target_whisper">Anti-Vocale (Whisper)</string>
+    <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
+    <string name="share_target_gemma">Anti-Vocale (Gemma)</string>
+    <string name="share_target_nemotron">Anti-Vocale (Nemotron)</string>
+    <string name="share_target_gigaam">Anti-Vocale (GigaAM)</string>
+    <string name="share_target_external">Anti-Vocale (חיצוני)</string>
+    <string name="share_shortcut_transcribe_with">תמלול עם %1$s</string>
+    <string name="external_none_imported">לא יובאו מודלים חיצוניים</string>
+    <string name="external_section_title">מודלים חיצוניים</string>
+    <string name="model_advanced_section">מתקדם</string>
+    <string name="model_advanced_description">ייבוא ידני של קובצי מודל</string>
+    <string name="external_import_folder">בחירת תיקייה</string>
+    <string name="external_import_url">ייבוא מכתובת URL</string>
+    <string name="external_url_hint">מאגר HuggingFace או כתובת URL של רשומת קטלוג JSON</string>
+    <string name="external_import">ייבוא</string>
+    <string name="external_importing">מייבא מודל…</string>
+    <string name="external_importing_file">מייבא את %1$s (%2$d מתוך %3$d)…</string>
+    <string name="external_import_failed">הייבוא נכשל: %1$s</string>
+    <string name="external_imported">יובא %1$s</string>
+    <string name="external_delete_confirm">למחוק את המודל החיצוני %1$s?</string>
+    <string name="external_deleted">%1$s נמחק</string>
+        <string name="external_catalog_all">כל השפות</string>
+        <string name="external_catalog_dialog_title">ייבוא מהקטלוג</string>
+    <string name="external_catalog_loading">טוען את הקטלוג…</string>
+    <string name="external_catalog_error">טעינת הקטלוג נכשלה: %1$s</string>
+    <string name="external_catalog_retry">נסה שוב</string>
+    <string name="external_catalog_source">קטלוג</string>
+    <string name="external_catalog_official">קהילה (רשמי)</string>
+    <string name="external_catalog_custom">מקור מותאם אישית</string>
+    <string name="external_catalog_offline">לא מקוון</string>
+    <string name="external_catalog_change">שינוי</string>
+    <string name="external_catalog_url">כתובת URL של אינדקס הקטלוג</string>
+    <string name="external_catalog_apply">החלה</string>
+    <string name="external_catalog_restore">שחזור הקטלוג הרשמי</string>
+    <string name="external_link_advanced">יש לי כבר קישור (מתקדם)</string>
+    <string name="external_catalog_language">שפה</string>
+    <string name="external_catalog_other">שפות אחרות</string>
+    <string name="external_decode_language">שפת פענוח</string>
+    <string name="external_decode_auto">זיהוי אוטומטי (בלי שפה קבועה)</string>
+    <string name="external_family">משפחת מודל</string>
+    <string name="external_family_transducer">טרנסדוסר (NeMo/Zipformer לא מקוון)</string>
+    <string name="external_family_transducer_help">מצפה לקבצי encoder + decoder + joiner + tokens</string>
+    <string name="external_family_whisper">Whisper</string>
+    <string name="external_family_whisper_help">מצפה לקבצי encoder + decoder + tokens</string>
+    <string name="external_family_ctc">CTC</string>
+    <string name="external_family_ctc_help">מצפה לקבצי encoder + tokens</string>
+    <string name="external_family_sense_voice">SenseVoice</string>
+    <string name="external_family_canary">Canary (NeMo)</string>
+    <string name="external_family_sense_voice_help">מצפה לקבצי model + tokens</string>
+    <string name="external_family_canary_help">מצפה לקבצי encoder + decoder + tokens; אנגלית/ספרדית/גרמנית/צרפתית בלבד; דורש חלוקה למקטעים מיושרי שקט (VAD מופעל אוטומטית)</string>
+    <string name="external_option_itn">נרמול טקסט הפוך (ITN)</string>
+    <string name="external_ctc_subtype">תת-סוג CTC</string>
+    <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
+    <string name="external_notice_single_pass">ייתכן שמודלים גדולים לא יעבדו אודיו ארוך מאוד בהעברה אחת. קצר את האודיו או בחר מודל קטן יותר.</string>
+    <string name="external_notice_family">אם התמלול קורס בלי הודעת שגיאה, ייתכן שהארכיטקטורה שגויה: מחק וייבא מחדש את המודל עם ארכיטקטורה אחרת שנבחרה.</string>
+
+    <!-- Advanced sharing settings -->
+    <string name="share_targets_title">מודלים בתפריט השיתוף</string>
+    <string name="share_targets_description">כל מודל שהורד מופיע כאפשרות נפרדת בתפריט המערכת. האודיו מעובד על ידי המודל שנבחר.</string>
+    <string name="advanced_sharing_toggle">הצגת מודלים שהורדו</string>
+    <string name="share_targets_models_info">כל מודל שהורד יופיע כפריט בתפריט השיתוף. מחיקת מודל מסירה אותו מהתפריט.</string>
+
+    <!-- Conversation Grouping -->
+    <string name="conversation_grouping_title">קיבוץ לפי שיחה</string>
+    <string name="compact_result_actions_title">כפתורי פעולה קומפקטיים</string>
+    <string name="compact_result_actions_description">מציג את פעולות התמלול כסמלים בלבד, בפינת כרטיס התוצאה. כבה לקבלת כפתורים עם תוויות.</string>
+    <string name="conversation_grouping_description">מקבץ תמלולים לפי אפליקציית המקור (WhatsApp, Telegram וכו׳) למקטעים מתקפלים.</string>
+    <plurals name="conversation_group_count">
+        <item quantity="one">הודעה אחת</item>
+        <item quantity="other">%1$d הודעות</item>
+    </plurals>
+    <string name="conversation_group_unknown">אחר</string>
+
+    <!-- Re-transcribe -->
+    <string name="retranscribe">נסה שוב</string>
+    <string name="retranscribe_title">תמלול חוזר עם…</string>
+    <string name="retranscribe_subtitle">בחר מודל לתמלול חוזר של האודיו הזה</string>
+    <string name="retranscribe_confirm">תמלול</string>
+    <string name="retranscribe_no_models">לא הוגדרו מודלי אודיו. קודם הורד מודל מהלשונית מודלים.</string>
+    <string name="retranscribe_file_not_found">קובץ האודיו אינו זמין יותר</string>
+    <string name="retranscribe_active_badge">פעיל</string>
+    <string name="retranscribe_setting_title">כפתור תמלול חוזר</string>
+    <string name="retranscribe_setting_description">מציג כפתור על תמלולי אודיו לניסיון חוזר עם מודל אחר.</string>
+
+    <!-- Subtitle extraction choice (TASK-228) -->
+    <string name="subtitles_found_title">נמצאו כתוביות</string>
+    <string name="subtitles_found_text">להשתמש בכתוביות המוטמעות (%1$s) או לתמלל את האודיו? אם לא תבחר, התמלול יתחיל לאחר %2$s.</string>
+    <string name="subtitles_language_unknown">לא ידועה</string>
+    <string name="action_use_subtitles">שימוש בכתוביות</string>
+    <string name="action_transcribe_audio">תמלול האודיו</string>
+    <string name="subtitle_fallback_status">חילוץ הכתוביות נכשל; מתמלל את האודיו</string>
+    <string name="subtitle_choice_notification_text">ממתין לבחירה שלך…</string>
+    <!-- TASK-336: background-kill remediation card -->
+    <string name="battery_exemption_title">אפשר פעולה ברקע</string>
+    <string name="battery_exemption_description">המערכת עצרה את הזיהוי בזמן שהאפליקציה הייתה ברקע. אפשר ל-Anti-Vocale לפעול ברקע כדי שהזיהוי לא יופרע.</string>
+    <string name="battery_exemption_action">פתיחת ההגדרה</string>
+    <!-- TASK-373: litert-lm HF url import -->
+    <string name="litertlm_import_from_url">ייבוא מכתובת URL של Hugging Face</string>
+    <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>
+    <string name="litertlm_pick_file">בחירת קובץ מודל</string>
+    <string name="litertlm_no_models">לא נמצא קובץ .litertlm במאגר זה</string>
+    <!-- TASK-374: per-transcription feedback -->
+    <string name="feedback_report_transcription">דיווח על התמלול</string>
+    <string name="feedback_label_task">משימה</string>
+    <string name="feedback_label_model">מודל</string>
+    <string name="feedback_label_duration">אורך האודיו</string>
+    <string name="feedback_label_time">זמן עיבוד</string>
+    <string name="feedback_label_status">מצב</string>
+    <string name="feedback_label_excerpt">קטע מהתמליל</string>
+    <string name="feedback_label_truncated">קוצר</string>
+    <string name="a11y_expand">הרחבה</string>
+    <string name="a11y_collapse">צמצום</string>
+    <string name="a11y_back">חזרה</string>
+    <string name="litertlm_importing">מייבא…</string>
+    <string name="model_ram_warning">ייתכן שאין ל%1$s מספיק זיכרון במכשיר זה. הטעינה עלולה להיכשל או לקרוס; מודלים קלים יותר בטוחים יותר.</string>
+    <string name="error_oom_transcription">אין מספיק זיכרון לתמלל את האודיו הזה. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות.</string>
+</resources>

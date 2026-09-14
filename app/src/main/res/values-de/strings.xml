@@ -93,7 +93,7 @@
     <string name="tour_title_browse">Oder wähle eine Datei</string>
     <string name="tour_body_history">Teile eine Sprachnachricht aus einem beliebigen Messenger. Die Transkription erscheint hier, mit Benachrichtigung, wenn sie fertig ist.</string>
     <string name="tour_title_history">Sprachnachricht senden</string>
-    <string name="tour_body_models">Lade zuerst ein Transkriptionsmodell im Tab Modelle herunter. Parakeet ist die empfohlene Standardwahl.</string>
+    <string name="tour_body_models">Lade zuerst ein Transkriptionsmodell im Tab Modelle herunter. Parakeet ist die empfohlene Standardwahl. Modelle sind groß, bis zu mehrere GB, aber jedes wird nur einmal heruntergeladen. App-Updates erfordern nie einen erneuten Download.</string>
     <string name="tour_title_models">Modell laden</string>
     <string name="tour_body_welcome">Die Transkription läuft vollständig auf diesem Telefon; deine Audios verlassen es nie. Drei kurze Hinweise vor dem Start.</string>
     <string name="tour_title_welcome">Willkommen bei Anti-Vocale</string>

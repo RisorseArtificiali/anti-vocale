@@ -92,7 +92,7 @@
     <string name="tour_title_browse">या एक फ़ाइल चुनें</string>
     <string name="tour_body_history">किसी भी मैसेंजर से एक वॉइस संदेश साझा करें। ट्रांसक्रिप्ट यहाँ दिखाई देता है, तैयार होने पर सूचना आती है।</string>
     <string name="tour_title_history">एक वॉइस संदेश भेजें</string>
-    <string name="tour_body_models">पहले मॉडल्स टैब से एक ट्रांसक्रिप्शन मॉडल डाउनलोड करें। Parakeet अनुशंसित डिफ़ॉल्ट है।</string>
+    <string name="tour_body_models">पहले मॉडल्स टैब से एक ट्रांसक्रिप्शन मॉडल डाउनलोड करें। Parakeet अनुशंसित डिफ़ॉल्ट है। मॉडल बड़े होते हैं, कई GB तक, लेकिन हर एक केवल एक बार डाउनलोड होता है। ऐप अपडेट के लिए कभी दोबारा डाउनलोड की आवश्यकता नहीं होती।</string>
     <string name="tour_title_models">एक मॉडल डाउनलोड करें</string>
     <string name="tour_body_welcome">ट्रांसक्रिप्शन पूरी तरह इस फ़ोन पर होती है; आपका ऑडियो कभी इसे नहीं छोड़ता। शुरू करने से पहले तीन त्वरित संकेत।</string>
     <string name="tour_title_welcome">Anti-Vocale में आपका स्वागत है</string>

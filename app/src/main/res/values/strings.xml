@@ -109,7 +109,7 @@
     <string name="tour_title_browse">Or pick a file</string>
     <string name="tour_body_history">Share a voice message from any messenger. The transcript appears here, with a notification when it\'s ready.</string>
     <string name="tour_title_history">Send a voice message</string>
-    <string name="tour_body_models">Download a transcription model from the Models tab first. Parakeet is the recommended default.</string>
+    <string name="tour_body_models">Download a transcription model from the Models tab first. Parakeet is the recommended default. Models are large, up to a few GB, but each one is downloaded only once. App updates never require downloading them again.</string>
     <string name="tour_title_models">Get a model</string>
     <string name="tour_body_welcome">Transcription runs entirely on this phone; your audio never leaves it. Three quick pointers before you start.</string>
     <string name="tour_title_welcome">Welcome to Anti-Vocale</string>

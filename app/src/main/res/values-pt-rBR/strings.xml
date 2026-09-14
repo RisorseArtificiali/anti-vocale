@@ -82,7 +82,7 @@
     <string name="tour_title_browse">Ou escolha um arquivo</string>
     <string name="tour_body_history">Compartilhe uma mensagem de voz de qualquer mensageiro. A transcrição aparece aqui, com uma notificação quando estiver pronta.</string>
     <string name="tour_title_history">Envie uma mensagem de voz</string>
-    <string name="tour_body_models">Primeiro baixe um modelo de transcrição na aba Modelos. Parakeet é o padrão recomendado.</string>
+    <string name="tour_body_models">Primeiro baixe um modelo de transcrição na aba Modelos. Parakeet é o padrão recomendado. Os modelos são grandes, até alguns GB, mas cada um é baixado apenas uma vez. Atualizações do app nunca exigem baixá-los de novo.</string>
     <string name="tour_title_models">Baixe um modelo</string>
     <string name="tour_body_welcome">A transcrição acontece inteiramente neste telefone; seu áudio nunca sai dele. Três dicas rápidas antes de começar.</string>
     <string name="tour_title_welcome">Boas-vindas ao Anti-Vocale</string>

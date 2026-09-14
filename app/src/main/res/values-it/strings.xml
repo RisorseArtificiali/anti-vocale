@@ -109,7 +109,7 @@
     <string name="tour_title_browse">Oppure scegli un file</string>
     <string name="tour_body_history">Condividi un vocale da qualunque messenger. La trascrizione appare qui, con una notifica quando è pronta.</string>
     <string name="tour_title_history">Manda un vocale</string>
-    <string name="tour_body_models">Prima scarica un modello di trascrizione dalla scheda Modelli. Parakeet è il consigliato predefinito.</string>
+    <string name="tour_body_models">Prima scarica un modello di trascrizione dalla scheda Modelli. Parakeet è il consigliato predefinito. I modelli sono grandi, fino a qualche GB, ma ognuno si scarica una sola volta. Gli aggiornamenti dell\'app non richiedono mai di scaricarli di nuovo.</string>
     <string name="tour_title_models">Scarica un modello</string>
     <string name="tour_body_welcome">La trascrizione avviene interamente su questo telefono; l\'audio non lo lascia mai. Tre indicazioni prima di iniziare.</string>
     <string name="tour_title_welcome">Benvenuto in Anti-Vocale</string>

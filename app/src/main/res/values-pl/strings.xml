@@ -114,7 +114,7 @@
     <string name="tour_title_browse">Albo wybierz plik</string>
     <string name="tour_body_history">Udostępnij wiadomość głosową z dowolnego komunikatora. Transkrypcja pojawi się tutaj, z powiadomieniem, gdy będzie gotowa.</string>
     <string name="tour_title_history">Wyślij wiadomość głosową</string>
-    <string name="tour_body_models">Najpierw pobierz model transkrypcji z zakładki Modele. Parakeet to zalecana wartość domyślna.</string>
+    <string name="tour_body_models">Najpierw pobierz model transkrypcji z zakładki Modele. Parakeet to zalecana wartość domyślna. Modele są duże, do kilku GB, ale każdy pobiera się tylko raz. Aktualizacje aplikacji nigdy nie wymagają ponownego pobierania.</string>
     <string name="tour_title_models">Pobierz model</string>
     <string name="tour_body_welcome">Transkrypcja działa w całości na tym telefonie; audio nigdy go nie opuszcza. Trzy krótkie wskazówki na start.</string>
     <string name="tour_title_welcome">Witamy w Anti-Vocale</string>

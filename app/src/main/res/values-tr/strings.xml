@@ -112,7 +112,7 @@
     <string name="tour_title_browse">Ya da bir dosya seçin</string>
     <string name="tour_body_history">Herhangi bir messenger\'dan bir sesli mesaj paylaşın. Transkript burada görünür, hazır olunca bildirim gelir.</string>
     <string name="tour_title_history">Bir sesli mesaj gönderin</string>
-    <string name="tour_body_models">Önce Modelle sekmesinden bir transkripsiyon modeli indirin. Parakeet önerilen varsayılılandır.</string>
+    <string name="tour_body_models">Önce Modelle sekmesinden bir transkripsiyon modeli indirin. Parakeet önerilen varsayılılandır. Modeller büyüktür, birkaç GB\'a kadar, ancak her biri yalnızca bir kez indirilir. Uygulama güncellemeleri yeniden indirme gerektirmez.</string>
     <string name="tour_title_models">Bir model indirin</string>
     <string name="tour_body_welcome">Transkripsiyon tamamen bu telefonda çalışır; sesiniz asla telefonu terk etmez. Başlamadan önce üç kısa işaret.</string>
     <string name="tour_title_welcome">Anti-Vocale\'e hoş geldiniz</string>
