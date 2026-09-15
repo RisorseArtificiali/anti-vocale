@@ -119,14 +119,8 @@ object SubtitleChoice {
      * blank preference keeps the first track.
      */
     fun pickBestTrack(context: Context, tracks: List<SubtitleTrack>): SubtitleTrack {
-        val preferred = try {
-            val preferencesManager = EntryPointAccessors.fromApplication(
-                context.applicationContext, SubtitlePrefsEntryPoint::class.java
-            ).preferencesManager
-            runBlocking { preferencesManager.transcriptionLanguage.first() }
-        } catch (e: Exception) {
-            Log.w(TAG, "Could not read transcription language pref, using first track", e)
-            return tracks.first()
+        val preferred = prefRead(context, "") { prefs ->
+            prefs.transcriptionLanguage.first()
         }
         if (preferred.isBlank() ||
             preferred == TranscriptionLanguagePolicy.PREF_AUTO ||
@@ -233,10 +227,10 @@ object SubtitleChoice {
             .build()
 
         // Cancel the previous prompt for the SAME file first: a re-offer
-        // replaces rather than stacks (code-review finding 8).
-        val nm = context.getSystemService(NotificationManager::class.java)
-        nm.cancel(choiceNotificationIdForPath(localPath))
-        nm.notify(choiceNotificationIdForPath(localPath), notification)
+        // replaces rather than stacks (code-review finding 8); via the ONE
+        // cancel owner (round 4: the site had hand-rolled its own cancel).
+        androidx.core.app.NotificationManagerCompat.from(context)
+            .notify(choiceNotificationIdForPath(localPath), notification)
         Log.i(TAG, "Posted subtitle choice notification (taskId=$taskId, language=${track.language}, source=$source)")
     }
 
@@ -278,12 +272,6 @@ object SubtitleChoice {
     fun uniqueWorkName(localPath: String): String = "subtitle-choice-${localPath.hashCode()}"
 
     /**
-     * The choice prompt id, keyed on the FILE (code-review: per-taskId ids
-     * stacked prompts on re-offers of the same video, and the worker-side
-     * per-path fix had left the notification half per-taskId). Same band as
-     * the legacy taskId derivation; cancels issue BOTH ids (update window).
-     */
-    /**
      * TASK-513/515 review round 3: the ONE prompt cancel. The prompt posts
      * under the PATH-keyed id (re-offers replace); the taskId-banded and
      * raw-hash ids are the pre-TASK-440 legacy a prompt from an older build
@@ -301,6 +289,12 @@ object SubtitleChoice {
         }
     }
 
+    /**
+     * The choice prompt id, keyed on the FILE (code-review: per-taskId ids
+     * stacked prompts on re-offers of the same video, and the worker-side
+     * per-path fix had left the notification half per-taskId). Same band as
+     * the legacy taskId derivation; cancels issue BOTH ids (update window).
+     */
     fun choiceNotificationIdForPath(localPath: String): Int =
         com.antivocale.app.service.ResultNotificationFactory.bandedNotificationId(
             localPath.hashCode(), ShareReceiverActivity.CHOICE_ID_BAND_BASE, ShareReceiverActivity.CHOICE_ID_BAND_RANGE)

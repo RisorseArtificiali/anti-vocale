@@ -1312,10 +1312,6 @@ private fun ExternalModelsSection(
     var dropdownExpanded by remember { mutableStateOf(false) }
     var ctcExpanded by remember { mutableStateOf(false) }
 
-    // lint AST misresolves this block; it returns List<Triple<...>>
-    @SuppressLint("RememberReturnType")
-
-
     // Outer section Card matching the curated sections (GigaAM, Nemotron):
     // surfaceVariant background, header with icon + title + description, 16dp padding.
     Card(

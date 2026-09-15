@@ -68,11 +68,15 @@ object ModelFamilyDetector {
         val terminal = hint.trimEnd('/')
             .substringAfterLast('/')
             .lowercase()
-            .replace("-", "")
-            .replace("_", "")
+        // Word-boundary match, symmetric in shape: the candidate splits by
+        // its own enum spelling (SENSE_VOICE -> sense, voice) and matches
+        // when ALL its words appear as terminal tokens. A bare 'ctc' inside
+        // an unrelated word (DetectCore) does not vote; 'sense_voice' and
+        // 'sense-voice' both match SenseVoice. (Round 4.)
+        val tokens = terminal.split(Regex("[^a-z0-9]")).filter { it.isNotEmpty() }
         val matches = candidates.filter { candidate ->
-            val token = candidate.name.lowercase().replace("_", "").replace("-", "")
-            terminal.contains(token)
+            val words = candidate.name.lowercase().split('_')
+            words.all { it in tokens }
         }
         // A terminal name carrying tokens of MULTIPLE candidates (a folder
         // literally named sense-voice-ctc) is a tie the hint cannot break:
