@@ -114,7 +114,20 @@ object SharedAudioHandler {
             }
             Log.d(TAG, "Resolved MIME: $resolvedMimeType")
 
-            val extension = resolveExtension(uri, resolvedMimeType)
+            // TASK-519 (GH #95): when the sender's URI carries no extension
+            // and the MIME type is unhelpful (ACR Phone and other call
+            // recorders share via content:// URIs with no extension and
+            // application/octet-stream), sniff the magic bytes before
+            // rejecting. The sniffed result flows through the SAME path as
+            // a normally-resolved extension: the supported check below and
+            // the copy logic are not duplicated.
+            var extension = resolveExtension(uri, resolvedMimeType)
+            if (extension == null) {
+                extension = sniffExtension(context, uri)
+                if (extension != null) {
+                    Log.i(TAG, "Extension resolved by magic-byte sniffing: $extension")
+                }
+            }
             Log.d(TAG, "Extension: $extension")
 
             if (extension == null) {
@@ -254,6 +267,27 @@ object SharedAudioHandler {
         }
 
         return null
+    }
+
+    /**
+     * TASK-519 (GH #95): magic-byte sniffing for content URIs whose extension
+     * and MIME type both fail to resolve (ACR Phone and other call recorders
+     * share via content:// URIs with no extension and application/octet-stream).
+     * Reads the first bytes of the stream and matches known audio/video
+     * container signatures; returns the extension or null.
+     */
+    private fun sniffExtension(context: Context, uri: Uri): String? {
+        return try {
+            context.contentResolver.openInputStream(uri)?.use { input ->
+                val header = ByteArray(16)
+                val read = input.read(header)
+                if (read <= 0) return null
+                AudioFormatSniffer.detect(header.sliceArray(0 until read))
+            }
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not sniff format from URI: $uri", e)
+            null
+        }
     }
 
     /**

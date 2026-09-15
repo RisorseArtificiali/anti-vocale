@@ -229,7 +229,12 @@ object SubtitleChoice {
         // Cancel the previous prompt for the SAME file first: a re-offer
         // replaces rather than stacks (code-review finding 8); via the ONE
         // cancel owner (round 4: the site had hand-rolled its own cancel).
-        androidx.core.app.NotificationManagerCompat.from(context)
+        // getSystemService, not NotificationManagerCompat: the Compat variant
+        // carries a @RequiresPermission(POST_NOTIFICATIONS) lint annotation;
+        // the system service variant is the same call without it (the prompt
+        // posts in a share flow where the permission may not be granted yet,
+        // and a silently dropped prompt is the accepted degradation).
+        context.getSystemService(NotificationManager::class.java)
             .notify(choiceNotificationIdForPath(localPath), notification)
         Log.i(TAG, "Posted subtitle choice notification (taskId=$taskId, language=${track.language}, source=$source)")
     }
