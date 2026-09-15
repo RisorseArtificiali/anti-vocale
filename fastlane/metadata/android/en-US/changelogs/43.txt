@@ -1,0 +1,6 @@
+What's new in 1.12.1:
+• Fixed: audio shared by call-recorder apps is now recognized
+• New: imported model folders are auto-detected; a chooser appears only when ambiguous
+• New: the subtitle-choice prompt timeout is now a setting (1-10 minutes)
+• Fixed: rejected over-long recordings show their real duration
+• Fixed: faster, safer sharing; rotating during a share no longer duplicates work

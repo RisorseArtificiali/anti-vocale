@@ -1,4 +1,11 @@
 <en-US>
+What's new in 1.12.1:
+• Fixed: audio shared by call-recorder apps is now recognized
+• New: imported model folders are auto-detected; a chooser appears only when ambiguous
+• New: the subtitle-choice prompt timeout is now a setting (1-10 minutes)
+• Fixed: rejected over-long recordings show their real duration
+• Fixed: faster, safer sharing; rotating during a share no longer duplicates work
+
 What's new in 1.12.0:
 • New: first-launch guided tour (replayable from Settings)
 • New: pick audio or video files from the History tab
@@ -10,7 +17,14 @@ What's new in 1.12.0:
 • Fixed: clearer low-memory and corrupt-model errors
 </en-US>
 
-<it-IT>Novità della versione 1.12.0:
+<it-IT>Novità della versione 1.12.1:
+• Corretto: l'audio condiviso dalle app di registrazione chiamate viene riconosciuto
+• I modelli importati da cartella vengono riconosciuti automaticamente; la scelta appare solo se ambiguo
+• Il timeout della richiesta sottotitoli è ora un'impostazione (1-10 minuti)
+• Le registrazioni troppo lunghe rifiutate mostrano la durata reale
+• Condivisione più rapida e sicura; ruotare lo schermo non duplica più la trascrizione
+
+Novità della versione 1.12.0:
 • Tour guidato al primo avvio (riutilizzabile dalle Impostazioni)
 • Scegli file audio o video dalla scheda Registro
 • Riepilogo AI delle trascrizioni lunghe: copiabile, ripetibile, prompt personalizzato
@@ -228,6 +242,13 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.12.1:
+• Behoben: Von Anruf-Recorder-Apps geteiltes Audio wird jetzt erkannt
+• Importierte Modellordner werden automatisch erkannt; eine Auswahl erscheint nur bei Mehrdeutigkeit
+• Die Zeitlimit-Einstellung der Untertitel-Auswahl ist jetzt konfigurierbar (1-10 Minuten)
+• Abgelehnte zu lange Aufnahmen zeigen die echte Dauer
+• Schnelleres, sichereres Teilen; Drehen während des Teilens verdoppelt nichts mehr
+
 Neuigkeiten in Version 1.12.0:
 • Geführte Tour beim ersten Start (wiederholbar)
 • Audio- oder Videodateien im Verlauf auswählen
@@ -266,6 +287,13 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>
+Novedades de la versión 1.12.1:
+• Corregido: el audio compartido por apps de grabación de llamadas ya se reconoce
+• Las carpetas de modelos importados se detectan automáticamente; el selector aparece solo si es ambiguo
+• El tiempo de espera del aviso de subtítulos ya es configurable (1-10 minutos)
+• Las grabaciones demasiado largas rechazadas muestran su duración real
+• Compartir más rápido y seguro; girar la pantalla al compartir ya no duplica el trabajo
+
 Novedades de la versión 1.12.0:
 • Tour guiado en el primer inicio (repetible en Ajustes)
 • Elegir archivos de audio o vídeo desde Historial
@@ -304,6 +332,13 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.12.1 :
+• Corrigé : l'audio partagé par les applis d'enregistrement d'appels est reconnu
+• Les dossiers de modèles importés sont détectés automatiquement ; le sélecteur n'apparaît qu'en cas d'ambiguïté
+• Le délai du choix des sous-titres devient un réglage (1-10 minutes)
+• Les enregistrements trop longs refusés affichent leur durée réelle
+• Partage plus rapide et sûr ; pivoter l'écran pendant un partage ne duplique plus rien
+
 Nouveautés de la version 1.12.0 :
 • Visite guidée au premier lancement (rejouable dans les réglages)
 • Choisir des fichiers audio ou vidéo depuis l'onglet Historique
@@ -342,6 +377,13 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>
+Novidades da versão 1.12.1:
+• Corrigido: áudio compartilhado por gravadores de chamadas agora é reconhecido
+• Pastas de modelos importados são detectadas automaticamente; o seletor aparece só quando ambíguo
+• O tempo limite do aviso de legendas virou configuração (1-10 minutos)
+• Gravações longas demais rejeitadas mostram a duração real
+• Compartilhamento mais rápido e seguro; girar a tela não duplica mais a transcrição
+
 Novidades da versão 1.12.0:
 • Tour guiado na primeira abertura (repetível nos Ajustes)
 • Escolher áudio ou vídeo na aba Histórico
@@ -380,6 +422,13 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>
+Что нового в версии 1.12.1:
+• Исправлено: аудио из приложений записи звонков теперь распознаётся
+• Папки импортированных моделей определяются автоматически; выбор появляется только при неоднозначности
+• Таймаут выбора субтитров теперь настраивается (1-10 минут)
+• Отклонённые слишком длинные записи показывают реальную длительность
+• Быстрая и надёжная отправка; поворот экрана при отправке больше не дублирует работу
+
 Что нового в версии 1.12.0:
 • Обучающий тур при первом запуске (повторяется в настройках)
 • Выбор аудио- или видеофайлов на вкладке истории
@@ -418,6 +467,13 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>
+Sürüm 1.12.1'deki yenilikler:
+• Düzeltildi: çağrı kaydedici uygulamalardan paylaşılan ses artık tanınıyor
+• İçe aktarılan model klasörleri otomatik algılanır; seçici yalnızca belirsizse görünür
+• Altyazı seçimi zaman aşımı artık bir ayar (1-10 dakika)
+• Reddedilen çok uzun kayıtlar gerçek süreyi gösteriyor
+• Daha hızlı ve güvenli paylaşım; paylaşım sırasında ekranı döndürmek artık çoğaltmıyor
+
 Sürüm 1.12.0'deki yenilikler:
 • İlk açılışta rehberli tur (Ayarlar'dan yeniden oynatılabilir)
 • Geçmiş sekmesinden ses veya video seçme
@@ -456,6 +512,13 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.12.1:
+• Naprawiono: dźwięk udostępniany przez rejestratory rozmów jest teraz rozpoznawany
+• Zaimportowane foldery modeli są wykrywane automatycznie; wybór pojawia się tylko przy niejednoznaczności
+• Limit czasu wyboru napisów to teraz ustawienie (1-10 minut)
+• Odrzucone zbyt długie nagrania pokazują rzeczywisty czas trwania
+• Szybsze i bezpieczniejsze udostępnianie; obrót ekranu podczas udostępniania nie duplikuje pracy
+
 Nowości w wersji 1.12.0:
 • Przewodnik przy pierwszym uruchomieniu (do ponowienia w Ustawieniach)
 • Wybór plików audio lub wideo z karty Historia
@@ -494,6 +557,13 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>
+संस्करण 1.12.1 में नया क्या है:
+• सुधार: कॉल-रिकॉर्डर ऐप्स से साझा किया गया ऑडियो अब पहचाना जाता है
+• इंपोर्ट किए गए मॉडल फ़ोल्डर अपने आप पहचाने जाते हैं; विकल्प केवल अस्पष्ट होने पर दिखता है
+• सबटाइटल चयन का टाइमआउट अब एक सेटिंग है (1-10 मिनट)
+• अस्वीकृत बहुत लंबी रिकॉर्डिंग अपनी असली अवधि दिखाती हैं
+• तेज़ और सुरक्षित शेयरिंग; शेयर के दौरान स्क्रीन घुमाने से काम दोबारा नहीं होता
+
 संस्करण 1.12.0 में नया क्या है:
 • पहली बार खोलने पर गाइडेड टूर (सेटिंग्स से दोबारा चलाएँ)
 • हिस्ट्री टैब से ऑडियो या वीडियो फ़ाइल चुनें

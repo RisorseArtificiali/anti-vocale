@@ -1,0 +1,6 @@
+Novità della versione 1.12.1:
+• Corretto: l'audio condiviso dalle app di registrazione chiamate viene riconosciuto
+• I modelli importati da cartella vengono riconosciuti automaticamente; la scelta appare solo se ambiguo
+• Il timeout della richiesta sottotitoli è ora un'impostazione (1-10 minuti)
+• Le registrazioni troppo lunghe rifiutate mostrano la durata reale
+• Condivisione più rapida e sicura; ruotare lo schermo non duplica più la trascrizione
