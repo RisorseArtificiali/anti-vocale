@@ -65,10 +65,19 @@ object ModelFamilyDetector {
         // the terminal segment resolves to that candidate (whisper and
         // canary never share a folder name in practice; if both matched,
         // the chooser is the honest answer). (Code-review round 2, 513.)
-        val terminal = hint.substringAfterLast('/').lowercase().replace("-", "")
-        return candidates.firstOrNull { candidate ->
+        val terminal = hint.trimEnd('/')
+            .substringAfterLast('/')
+            .lowercase()
+            .replace("-", "")
+            .replace("_", "")
+        val matches = candidates.filter { candidate ->
             val token = candidate.name.lowercase().replace("_", "").replace("-", "")
             terminal.contains(token)
         }
+        // A terminal name carrying tokens of MULTIPLE candidates (a folder
+        // literally named sense-voice-ctc) is a tie the hint cannot break:
+        // the chooser decides, not enum order (round 3: firstOrNull picked
+        // CTC for exactly that name, importing with the wrong config).
+        return if (matches.size == 1) matches[0] else null
     }
 }

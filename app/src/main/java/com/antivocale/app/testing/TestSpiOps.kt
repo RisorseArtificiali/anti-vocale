@@ -198,6 +198,8 @@ internal class TestSpiOps(
             val positiveIntKeys = listOf(
                 Triple("subtitle_timeout", "minutes", preferences::saveSubtitleChoiceTimeoutMinutes),
                 Triple("keep_alive", "minutes", preferences::saveKeepAliveTimeout),
+                // sherpa-onnx rejects num_threads < 1 at the native load.
+                Triple("threads", "threads", preferences::saveThreadCount),
             )
             textKeys.forEach { (key, save) ->
                 putUnique(key) { value, _ ->
@@ -222,17 +224,6 @@ internal class TestSpiOps(
                         save(n)
                         null
                     }
-                }
-            }
-            putUnique("threads") { value, _ ->
-                // Positive only: sherpa-onnx rejects num_threads < 1 at
-                // recognizer load, and 0 would brick the next cold start.
-                val threads = value.toIntOrNull()
-                if (threads == null || threads <= 0) {
-                    "threads expects a positive integer, got '$value'"
-                } else {
-                    preferences.saveThreadCount(threads)
-                    null
                 }
             }
             putUnique("backend") { value, _ ->

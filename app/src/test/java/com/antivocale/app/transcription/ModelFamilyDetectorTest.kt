@@ -54,11 +54,30 @@ class ModelFamilyDetectorTest {
     }
 
     @Test
-    fun `narrow matches family tokens in a name or url hint`() {
+    fun `narrow matches family tokens in the terminal segment only`() {
         val candidates = listOf(ModelFamily.WHISPER, ModelFamily.CANARY)
         assertEquals(ModelFamily.CANARY, ModelFamilyDetector.narrow(candidates, "nemo-canary-en-de.zip"))
         assertEquals(ModelFamily.WHISPER, ModelFamilyDetector.narrow(candidates, "whisper-small-hi.onnx"))
         assertNull(ModelFamilyDetector.narrow(candidates, "sherpa-model-v2"))
         assertNull(ModelFamilyDetector.narrow(candidates, null))
+        // Ancestor directories do not vote: the terminal segment is a canary
+        // folder inside a whisper-named parent (round-2 ancestor bug).
+        assertEquals(ModelFamily.CANARY,
+            ModelFamilyDetector.narrow(candidates, "primary:Download/whisper-alternatives/canary-180m"))
+        // Underscore spelling narrows like hyphen spelling.
+        val cs = listOf(ModelFamily.CTC, ModelFamily.SENSE_VOICE)
+        assertEquals(ModelFamily.SENSE_VOICE, ModelFamilyDetector.narrow(cs, "sense_voice"))
+        assertEquals(ModelFamily.SENSE_VOICE, ModelFamilyDetector.narrow(cs, "sense-voice-small"))
+        // Trailing slash does not blank the terminal segment.
+        assertEquals(ModelFamily.SENSE_VOICE, ModelFamilyDetector.narrow(cs, "models/sense_voice/"))
+    }
+
+    @Test
+    fun `narrow returns null on a dual-token tie so the chooser decides`() {
+        // A folder literally naming both families: firstOrNull-by-enum-order
+        // would silently import as CTC with the wrong config (round 3).
+        val cs = listOf(ModelFamily.CTC, ModelFamily.SENSE_VOICE)
+        assertNull(ModelFamilyDetector.narrow(cs, "sense-voice-ctc"))
+        assertNull(ModelFamilyDetector.narrow(listOf(ModelFamily.WHISPER, ModelFamily.CANARY), "canary-from-whisper-distill"))
     }
 }

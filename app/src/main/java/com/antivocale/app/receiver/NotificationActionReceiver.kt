@@ -86,14 +86,12 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 WorkManager.getInstance(context).cancelUniqueWork(SubtitleChoice.uniqueWorkName(it))
             }
             WorkManager.getInstance(context).cancelUniqueWork("subtitle-choice-$taskId")
-            // Cancel the "Subtitles found" choice notification so it doesn't linger after the
-            // user picked an action (its id is derived from taskId, same as ShareReceiverActivity posts).
-            // The legacy raw-hash id too: a prompt posted by a pre-TASK-440 build
-            // survives an in-window app update (the worker does), and without this
-            // the stale prompt's actions could still start a transcription.
-            val notificationManager = androidx.core.app.NotificationManagerCompat.from(context)
-            notificationManager.cancel(ShareReceiverActivity.choiceNotificationId(taskId))
-            notificationManager.cancel(taskId.hashCode())
+            // The ONE prompt cancel (SubtitleChoice.cancelPrompt): the prompt
+            // posts under the PATH-keyed id; the taskId ids are pre-TASK-440
+            // legacy (round 3: this site cancelled only the legacy ids, so
+            // the prompt survived its own tap with live buttons).
+            SubtitleChoice.cancelPrompt(context,
+                intent.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH), taskId)
         }
 
         val serviceIntent = Intent(context, InferenceService::class.java).apply {

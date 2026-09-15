@@ -54,15 +54,28 @@ object SubtitleChoice {
     }
 
     /** The user preference, falling back to the default on any read failure
-     *  (same entry-point pattern as [pickBestTrack]). */
-    private fun timeoutMinutes(context: Context): Int = try {
+     *  (the one shared entry-point read helper: round 3 collapsed the
+     *  verbatim copies of this idiom, [prefRead] below). */
+    private fun timeoutMinutes(context: Context): Int =
+        prefRead(context, PreferencesManager.DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES) { prefs ->
+            prefs.subtitleChoiceTimeoutMinutes.first()
+        }
+
+    /** Context-only blocking preference read with catch-and-default (the
+     *  pattern [pickBestTrack] and [timeoutMinutes] share; one body, so an
+     *  idiom fix cannot land in one copy and miss the other). */
+    private fun <T> prefRead(
+        context: Context,
+        fallback: T,
+        read: suspend (com.antivocale.app.data.PreferencesManager) -> T,
+    ): T = try {
         val preferencesManager = EntryPointAccessors.fromApplication(
             context.applicationContext, SubtitlePrefsEntryPoint::class.java
         ).preferencesManager
-        runBlocking { preferencesManager.subtitleChoiceTimeoutMinutes.first() }
+        runBlocking { read(preferencesManager) }
     } catch (e: Exception) {
-        Log.w(TAG, "Could not read the subtitle timeout pref, using the default", e)
-        PreferencesManager.DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES
+        Log.w(TAG, "Preference read failed, using the fallback", e)
+        fallback
     }
 
     /**
@@ -270,6 +283,24 @@ object SubtitleChoice {
      * per-path fix had left the notification half per-taskId). Same band as
      * the legacy taskId derivation; cancels issue BOTH ids (update window).
      */
+    /**
+     * TASK-513/515 review round 3: the ONE prompt cancel. The prompt posts
+     * under the PATH-keyed id (re-offers replace); the taskId-banded and
+     * raw-hash ids are the pre-TASK-440 legacy a prompt from an older build
+     * may still sit under across an in-window app update. Every site that
+     * resolves the choice (tap action, timeout worker) calls this; the id
+     * scheme cannot diverge again (round 2 fixed the worker and missed the
+     * tap path, exactly the divergence this owner deletes).
+     */
+    fun cancelPrompt(context: Context, filePath: String?, taskId: String?) {
+        val nm = androidx.core.app.NotificationManagerCompat.from(context)
+        filePath?.let { nm.cancel(choiceNotificationIdForPath(it)) }
+        if (taskId != null) {
+            nm.cancel(ShareReceiverActivity.choiceNotificationId(taskId))
+            nm.cancel(taskId.hashCode())
+        }
+    }
+
     fun choiceNotificationIdForPath(localPath: String): Int =
         com.antivocale.app.service.ResultNotificationFactory.bandedNotificationId(
             localPath.hashCode(), ShareReceiverActivity.CHOICE_ID_BAND_BASE, ShareReceiverActivity.CHOICE_ID_BAND_RANGE)

@@ -28,7 +28,7 @@ import kotlinx.coroutines.withContext
  * A [TranscriptionListener] that posts the result/error notifications the same way
  * [InferenceService] does, but without being tied to an Android [android.app.Service].
  *
- * Used by [com.antivocale.app.work.SubtitleChoiceTimeoutWorker] (the 5-minute ASR fallback)
+ * Used by [com.antivocale.app.work.SubtitleChoiceTimeoutWorker] (the timed ASR fallback (user-configured timeout))
  * because a WorkManager Worker cannot call `startForegroundService(InferenceService)` from
  * the background on Android 12+. Instead the Worker runs the orchestrator directly and uses
  * this listener to surface the result to the user.

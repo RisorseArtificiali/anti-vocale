@@ -69,16 +69,7 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
         // a prompt posted by a pre-TASK-440 build survives an in-window app update
         // (this worker does), and a stale prompt with live actions is worse than none.
         try {
-            val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
-            // The prompt posts under the PATH-keyed id (re-offers replace);
-            // the taskId-keyed ids are the pre-TASK-440 legacy, kept so a
-            // prompt posted by an older build still dies on in-window update
-            // (code-review round 2, 513+515: the 1-minute option makes this
-            // path routine, and a stale prompt with live actions next to the
-            // ASR result is exactly the trap the comment above bans).
-            filePath?.let { notificationManager.cancel(SubtitleChoice.choiceNotificationIdForPath(it)) }
-            notificationManager.cancel(ShareReceiverActivity.choiceNotificationId(taskId))
-            notificationManager.cancel(taskId.hashCode())
+            SubtitleChoice.cancelPrompt(applicationContext, filePath, taskId)
         } catch (e: Exception) {
             Log.w(TAG, "Could not cancel choice notification", e)
         }

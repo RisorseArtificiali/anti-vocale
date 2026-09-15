@@ -1314,7 +1314,7 @@ private fun ExternalModelsSection(
 
     // lint AST misresolves this block; it returns List<Triple<...>>
     @SuppressLint("RememberReturnType")
-    val familyOptions = FAMILY_OPTIONS  // TASK-513: hoisted, compile-time
+
 
     // Outer section Card matching the curated sections (GigaAM, Nemotron):
     // surfaceVariant background, header with icon + title + description, 16dp padding.
@@ -1358,7 +1358,7 @@ private fun ExternalModelsSection(
                     modifier = Modifier.fillMaxWidth().menuAnchor()
                 )
                 ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {
-                    familyOptions.forEach { (value, labelRes, helpRes) ->
+                    FAMILY_OPTIONS.forEach { (value, labelRes, helpRes) ->
                         DropdownMenuItem(
                             text = {
                                 Column {
