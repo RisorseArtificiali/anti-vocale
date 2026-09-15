@@ -24,6 +24,10 @@ import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.SubtitleExtractor
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.SharedAudioHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
@@ -390,37 +394,50 @@ class ShareReceiverActivity : Activity() {
 
     /** The subtitle probe branch plus the default ASR path, shared by every entry. */
     private fun dispatch(taskId: String, localPath: String, backendOverride: String?) {
-        // ---- Subtitle probe branch ----
-        // F5: the shared probe+offer (the same code the History browse FAB
-        // runs); when a choice prompt is posted it owns the request and the
-        // share flow ends here. The timed fallback worker (user-configured timeout) falls back to ASR
-        // if the user ignores the prompt; either tap cancels the worker.
-        if (SubtitleChoice.offerIfTracks(
-                this, taskId, localPath,
-                source = InferenceService.SOURCE_SHARE,
-                sourcePackage = sourcePackage,
-                backendOverride = backendOverride)) {
-            com.antivocale.app.util.ToastCompat.show(this, R.string.subtitles_found_title)
+        // TASK-517: the subtitle probe (MediaExtractor on potentially
+        // GB-scale videos) and the preference reads inside offerIfTracks
+        // are blocking IO; they ran on this Activity's MAIN thread, in ANR
+        // territory for large files. The probe now runs on Dispatchers.IO;
+        // the toast/service/finish on the main thread after it resolves.
+        // The activity lives only for this dispatch (both branches call
+        // finish()), so a scope that dies with the method is correct.
+        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+            val offered = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+                SubtitleChoice.offerIfTracks(
+                    this@ShareReceiverActivity, taskId, localPath,
+                    source = InferenceService.SOURCE_SHARE,
+                    sourcePackage = sourcePackage,
+                    backendOverride = backendOverride)
+            }
+
+            if (offered) {
+                // F5: the shared probe+offer (the same code the History browse
+                // FAB runs); when a choice prompt is posted it owns the request
+                // and the share flow ends here. The timed fallback worker
+                // (user-configured timeout) falls back to ASR if the user
+                // ignores the prompt; either tap cancels the worker.
+                com.antivocale.app.util.ToastCompat.show(this@ShareReceiverActivity, R.string.subtitles_found_title)
+                cleanup()
+                finish()
+                return@launch
+            }
+
+            // ---- Default ASR path ----
+            val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride)
+
+            // F6: unified enqueue (trampoline fallback on the API 31+ restriction)
+            com.antivocale.app.service.InferenceEnqueue.start(this@ShareReceiverActivity, serviceIntent)
+            Log.i(TAG, "Enqueued InferenceService for taskId: $taskId, source: $sourcePackage")
+
+            val toastRes = if (InferenceService.isTranscribing.value)
+                R.string.added_to_queue
+            else
+                R.string.transcription_started
+            com.antivocale.app.util.ToastCompat.show(this@ShareReceiverActivity, toastRes)
+
             cleanup()
             finish()
-            return
         }
-
-        // ---- Default ASR path ----
-        val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride)
-
-        // F6: unified enqueue (trampoline fallback on the API 31+ restriction)
-        com.antivocale.app.service.InferenceEnqueue.start(this, serviceIntent)
-        Log.i(TAG, "Enqueued InferenceService for taskId: $taskId, source: $sourcePackage")
-
-        val toastRes = if (InferenceService.isTranscribing.value)
-            R.string.added_to_queue
-        else
-            R.string.transcription_started
-        com.antivocale.app.util.ToastCompat.show(this, toastRes)
-
-        cleanup()
-        finish()
     }
 
     /**
