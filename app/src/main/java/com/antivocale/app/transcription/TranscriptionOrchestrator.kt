@@ -998,6 +998,12 @@ class TranscriptionOrchestrator @Inject constructor(
                 maxHeapBytes = MemoryReadings.maxHeapBytes()
             )
         } catch (e: PreprocessingError) {
+            // TASK-522: DurationTooLong measured the real duration before
+            // rejecting; write it so the History row shows the file's actual
+            // length instead of a misleading 0:00.
+            if (e is PreprocessingError.DurationTooLong && e.durationSeconds > 0.0) {
+                updateAudioDuration(taskId, e.durationSeconds)
+            }
             return Result.failure(e)
         } catch (e: Exception) {
             return Result.failure(IllegalStateException("Audio preprocessing failed: ${e.message}"))

@@ -140,7 +140,7 @@ class AudioPreprocessor @Inject constructor() {
         data object FileNotFound : PreprocessingError("Audio file not found")
         data object FileTooLarge : PreprocessingError("Audio file exceeds 2GB limit")
         data object InvalidFormat : PreprocessingError("Unable to determine audio format")
-        data class DurationTooLong(val ceilingSeconds: Long, val path: AudioDurationPolicy.DecodePath) :
+        data class DurationTooLong(val ceilingSeconds: Long, val path: AudioDurationPolicy.DecodePath, val durationSeconds: Double = 0.0) :
             PreprocessingError("Audio exceeds ${ceilingSeconds / 60} minute limit on this path")
         data object DurationUnknown : PreprocessingError("Could not determine audio duration")
         data class ConversionFailed(val reason: String) : PreprocessingError("Conversion failed: $reason")
@@ -185,7 +185,7 @@ class AudioPreprocessor @Inject constructor() {
         // but that matches the pre-1.12 behavior instead of capping nothing).
         if (duration > ceiling) {
             Log.e(TAG, "Audio too long (post-decode): ${duration}s > ${ceiling}s ceiling")
-            throw PreprocessingError.DurationTooLong(ceiling, AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM)
+            throw PreprocessingError.DurationTooLong(ceiling, AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM, duration)
         }
 
         Log.d(TAG, "Audio duration: ${duration}s")
@@ -742,7 +742,7 @@ class AudioPreprocessor @Inject constructor() {
         if (duration <= 0.0) return
         if (duration > ceilingSeconds) {
             Log.e(TAG, "Audio too long: ${duration}s > ${ceilingSeconds}s ceiling on $path")
-            throw PreprocessingError.DurationTooLong(ceilingSeconds, path)
+            throw PreprocessingError.DurationTooLong(ceilingSeconds, path, duration)
         }
     }
 
