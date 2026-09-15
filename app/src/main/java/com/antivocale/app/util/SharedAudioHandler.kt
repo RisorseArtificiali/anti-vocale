@@ -42,6 +42,10 @@ object SharedAudioHandler {
     // Directory name for shared audio files
     private const val SHARED_AUDIO_DIR = "shared_audio"
 
+    // MimeTypeMap's (and careless senders') generic-binary answer: not a
+    // format signal, so extension resolution treats it as unresolved.
+    private const val GENERIC_BINARY_EXTENSION = "bin"
+
     /**
      * Result of copying a shared audio URI into app storage. Non-Success variants
      * let the share flow show a specific, user-facing message instead of a generic
@@ -220,9 +224,14 @@ object SharedAudioHandler {
             // e.g., "audio/ogg; codecs=opus" -> "audio/ogg"
             val baseMimeType = mimeType.split(";").first().trim()
 
-            // Try MimeTypeMap first
+            // Try MimeTypeMap first. "bin" is its generic-binary answer for
+            // application/octet-stream on modern Android, not a real format
+            // signal; accepting it made the TASK-519 sniffer unreachable
+            // (ACR Phone shares were rejected as UnsupportedFormat("bin")
+            // without the magic bytes ever being read). Treat it as
+            // unresolved so the URI path and the sniffer get their turn.
             val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(baseMimeType)
-            if (!ext.isNullOrBlank()) {
+            if (!ext.isNullOrBlank() && ext.lowercase() != GENERIC_BINARY_EXTENSION) {
                 return ext.lowercase()
             }
 
@@ -257,12 +266,14 @@ object SharedAudioHandler {
             }
         }
 
-        // Fall back to URI path
+        // Fall back to URI path. A ".bin" suffix is the same generic-binary
+        // non-signal as the MIME answer above: the sniffer decides.
         val path = uri.path
         if (!path.isNullOrBlank()) {
             val lastDot = path.lastIndexOf('.')
             if (lastDot >= 0 && lastDot < path.length - 1) {
-                return path.substring(lastDot + 1).lowercase()
+                val pathExt = path.substring(lastDot + 1).lowercase()
+                if (pathExt != GENERIC_BINARY_EXTENSION) return pathExt
             }
         }
 
@@ -280,9 +291,18 @@ object SharedAudioHandler {
         return try {
             context.contentResolver.openInputStream(uri)?.use { input ->
                 val header = ByteArray(16)
-                val read = input.read(header)
-                if (read <= 0) return null
-                AudioFormatSniffer.detect(header.sliceArray(0 until read))
+                var offset = 0
+                // InputStream.read may return fewer bytes than asked; fill
+                // the header buffer to the stream's end so the signatures
+                // that live deeper in the header (WAV's WAVE at offset 8,
+                // ftyp's brand at 8) are not truncated into a null result.
+                while (offset < header.size) {
+                    val read = input.read(header, offset, header.size - offset)
+                    if (read < 0) break
+                    offset += read
+                }
+                if (offset == 0) return null
+                AudioFormatSniffer.detect(header.sliceArray(0 until offset))
             }
         } catch (e: Exception) {
             Log.w(TAG, "Could not sniff format from URI: $uri", e)

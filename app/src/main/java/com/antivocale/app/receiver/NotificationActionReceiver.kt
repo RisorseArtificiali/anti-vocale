@@ -121,8 +121,13 @@ class NotificationActionReceiver : BroadcastReceiver() {
             com.antivocale.app.service.InferenceEnqueue.Outcome.Started,
             com.antivocale.app.service.InferenceEnqueue.Outcome.FallbackNotificationPosted ->
                 Log.i(TAG, "Subtitle choice '$requestType' -> enqueued InferenceService (taskId=$taskId)")
-            is com.antivocale.app.service.InferenceEnqueue.Outcome.Failed ->
+            is com.antivocale.app.service.InferenceEnqueue.Outcome.Failed -> {
+                // The user explicitly tapped an action; a Log.e-only branch
+                // would drop the request exactly as silently as the failure
+                // mode the Outcome gate exists to expose.
                 Log.e(TAG, "Subtitle choice '$requestType' enqueue FAILED (taskId=$taskId): request lost")
+                Toast.makeText(context, context.getString(R.string.transcription_failed), Toast.LENGTH_LONG).show()
+            }
         }
     }
 

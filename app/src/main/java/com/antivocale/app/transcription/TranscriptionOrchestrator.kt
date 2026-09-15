@@ -998,12 +998,10 @@ class TranscriptionOrchestrator @Inject constructor(
                 maxHeapBytes = MemoryReadings.maxHeapBytes()
             )
         } catch (e: PreprocessingError) {
-            // TASK-522: DurationTooLong measured the real duration before
-            // rejecting; write it so the History row shows the file's actual
-            // length instead of a misleading 0:00.
-            if (e is PreprocessingError.DurationTooLong && e.durationSeconds > 0.0) {
-                updateAudioDuration(taskId, e.durationSeconds)
-            }
+            // TASK-522: the failure writeback rule (DurationTooLong's
+            // measured length, else the decoded seconds so far) lives in one
+            // helper shared with the pipeline path's catches.
+            failureWritebackSeconds(e)?.let { updateAudioDuration(taskId, it) }
             return Result.failure(e)
         } catch (e: Exception) {
             return Result.failure(IllegalStateException("Audio preprocessing failed: ${e.message}"))
@@ -1478,13 +1476,14 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             }
         } catch (e: PreprocessingError) {
-            // Same decoded-duration repair as the success path: a mid-stream
-            // failure must not leave the ERROR row at the metadata value (0.0
-            // for metadata-less containers).
-            if (decodedSeconds > 0.0) updateAudioDuration(taskId, decodedSeconds)
+            // Same failure writeback rule as the whole-file path (TASK-522):
+            // DurationTooLong's measured length when the streaming valve
+            // rejects, else the decoded seconds so far, repairing the
+            // metadata-less-container case (0.0 ERROR row).
+            failureWritebackSeconds(e, decodedSeconds)?.let { updateAudioDuration(taskId, it) }
             return Result.failure(e)
         } catch (e: Exception) {
-            if (decodedSeconds > 0.0) updateAudioDuration(taskId, decodedSeconds)
+            failureWritebackSeconds(null, decodedSeconds)?.let { updateAudioDuration(taskId, it) }
             return Result.failure(IllegalStateException("Pipeline failed: ${e.message}"))
         }
 
@@ -1762,6 +1761,20 @@ class TranscriptionOrchestrator @Inject constructor(
     private suspend fun updateAudioDuration(taskId: String, audioDurationSeconds: Double) {
         // TASK-390: column-scoped, see updateInterimResult.
         logDao.updateAudioDuration(taskId, audioDurationSeconds)
+    }
+
+    /**
+     * The duration a preprocessing failure leaves on the row (TASK-522),
+     * shared by every failure catch: DurationTooLong carries the real length
+     * it measured before rejecting (the only true value on the streaming
+     * valve, fired before any chunk decodes); otherwise the decoded seconds
+     * so far repair the metadata value (0.0 for metadata-less containers).
+     * A null error (the generic pipeline catch) reduces to that rule alone.
+     */
+    private fun failureWritebackSeconds(e: PreprocessingError?, decodedSeconds: Double = 0.0): Double? = when {
+        e is PreprocessingError.DurationTooLong && e.durationSeconds > 0.0 -> e.durationSeconds
+        decodedSeconds > 0.0 -> decodedSeconds
+        else -> null
     }
 
     // ---- Chunk Retry ----

@@ -68,7 +68,21 @@ object InferenceEnqueue {
 
     private fun postFallbackNotificationUnchecked(context: Context, serviceIntent: Intent): Outcome {
         val notificationManager = context.getSystemService(NotificationManager::class.java)
+        // create() first: the channel must exist before its importance can
+        // be read. Then the two silent-drop cases: app-level denial
+        // (POST_NOTIFICATIONS off) or the user blocking this specific
+        // channel. Either way notify() discards the notification without an
+        // exception, the trampoline carrying the request never reaches the
+        // user, and reporting success here would lose the request with no
+        // signal at all. Detect both and fail so the caller can surface it.
         AppNotificationChannel.TASKER_FALLBACK.create(context)
+        if (!notificationManager.areNotificationsEnabled() ||
+            notificationManager.getNotificationChannel(AppNotificationChannel.TASKER_FALLBACK.id)
+                ?.importance == NotificationManager.IMPORTANCE_NONE
+        ) {
+            Log.e(TAG, "Cannot post FGS-restricted fallback: notifications disabled or channel blocked")
+            return Outcome.Failed(IllegalStateException("Fallback notification unavailable"))
+        }
 
         val trampolineIntent = Intent(context, TaskerTrampolineActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

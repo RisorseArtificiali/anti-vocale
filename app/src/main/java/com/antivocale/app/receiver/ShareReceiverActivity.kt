@@ -18,10 +18,10 @@ import androidx.core.app.NotificationCompat
 import com.antivocale.app.R
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.receiver.ChooserBroadcastReceiver
+import com.antivocale.app.service.InferenceEnqueue
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.service.ResultNotificationFactory
 import com.antivocale.app.transcription.BackendRegistry
-import com.antivocale.app.transcription.SubtitleExtractor
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.SharedAudioHandler
 import kotlinx.coroutines.CoroutineScope
@@ -65,6 +65,14 @@ interface BackendRegistryEntryPoint {
     fun backendRegistry(): BackendRegistry
     /** The chooser reads valid external records; same no-@AndroidEntryPoint situation. */
     fun externalModelStore(): com.antivocale.app.data.ExternalModelStore
+
+    /**
+     * The process-lifetime scope (TASK-438 rule: no hand-built scopes). The
+     * share flow's copy-and-dispatch work must run to completion even after
+     * this activity finishes, so it outlives the activity by design.
+     */
+    @com.antivocale.app.di.ApplicationScope
+    fun applicationScope(): CoroutineScope
 }
 
 /**
@@ -97,6 +105,11 @@ class ShareReceiverActivity : Activity() {
 
         // Request code of the shortcut flow's SAF audio pick ([launchAudioPicker]).
         private const val REQUEST_PICK_AUDIO = 1
+
+        // Saved-state stamp written by [onSaveInstanceState] once the
+        // copy-and-dispatch coroutine has started: the pid of the process
+        // that started it; see the recreation guard in onCreate.
+        private const val STATE_DISPATCH_PID = "dispatch_pid"
 
         // Reserved-range contract (TASK-440): the subtitle-choice prompt and
         // the share-error notification each own a SUB-BAND of the 2401..2500
@@ -148,6 +161,20 @@ class ShareReceiverActivity : Activity() {
     private var detectionTimeoutHandler: Handler? = null
     private var detectionTimeoutRunnable: Runnable? = null
 
+    /** Set when the copy-and-dispatch coroutine starts; the only state the
+     *  recreation guard needs (see [onSaveInstanceState]). */
+    private var dispatchStarted = false
+
+    /** The app-wide entry point, resolved once per instance; [appScope] and
+     *  the registry/store reads all derive from it. */
+    private val appEntryPoint by lazy {
+        EntryPointAccessors.fromApplication(applicationContext, BackendRegistryEntryPoint::class.java)
+    }
+
+    /** The process-lifetime scope (TASK-438 rule: no hand-built scopes). The
+     *  share flow must run to completion even after finish(). */
+    private val appScope: CoroutineScope get() = appEntryPoint.applicationScope()
+
     /**
      * SAF audio picker for the shortcut flow: the same OpenDocument contract
      * the ModelTab file picker uses, driven via createIntent/parseResult
@@ -171,6 +198,22 @@ class ShareReceiverActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        // A recreation redelivers the share intent to a NEW instance. A
+        // saved stamp from THIS process means the original instance's
+        // copy-and-dispatch coroutine is still alive on the app scope:
+        // re-running would copy and transcribe twice, so end the flow here.
+        // A stamp from ANOTHER process means that process died mid-flow
+        // (its coroutine died with it); re-running the redelivered intent
+        // is the recovery, so the guard lets it through. First launch
+        // (no stamp) and a recreation while the SAF picker merely waits
+        // (nothing dispatched yet) also run the normal flow.
+        val savedPid = savedInstanceState?.getInt(STATE_DISPATCH_PID, -1)
+        if (savedPid == android.os.Process.myPid()) {
+            Log.i(TAG, "Share flow already dispatched by this process; skipping re-dispatch")
+            finish()
+            return
+        }
 
         Log.i(TAG, "Share received: action=${intent?.action}, type=${intent?.type}")
 
@@ -304,66 +347,77 @@ class ShareReceiverActivity : Activity() {
 
     /**
      * The shared copy-and-dispatch flow for both audio sources: an EXTRA_STREAM
-     * share and a shortcut-picker pick. Copies while the URI grant is held,
-     * resolves the alias backend override from the LAUNCH intent's component
-     * (the picker result returns to the same instance, so the shortcut's alias
-     * is still this.intent's component), then routes to the external chooser or
-     * the subtitle/ASR dispatch.
+     * share and a shortcut-picker pick. Copies while the URI grant is held
+     * (on IO: the copy is blocking work on potentially GB-scale videos and
+     * must not sit on the MAIN thread), resolves the alias backend override
+     * from the LAUNCH intent's component (the picker result returns to the
+     * same instance, so the shortcut's alias is still this.intent's
+     * component), then routes to the external chooser or the subtitle/ASR
+     * dispatch. Runs on the process-lifetime @ApplicationScope (TASK-438: no
+     * hand-built scopes; the flow must complete even after finish()).
      */
     private fun processSharedAudio(uri: Uri, mimeType: String?) {
-        // Copy file while Activity has URI permission
-        // Content URI permissions are tied to this Activity instance
-        val result = SharedAudioHandler.copyToAppStorage(
-            applicationContext,
-            uri,
-            mimeType
-        )
-
-        val localPath: String = when (result) {
-            is SharedAudioHandler.CopyResult.Success -> result.path
-            // One message definition for every caller (the History browse FAB
-            // shares it); the copy itself already logged the specific cause.
-            else -> {
-                showErrorToast(result.userMessage(this))
-                cleanup()
-                finish()
-                return
+        dispatchStarted = true
+        appScope.launch(Dispatchers.Main) {
+            val result = withContext(Dispatchers.IO) {
+                SharedAudioHandler.copyToAppStorage(applicationContext, uri, mimeType)
             }
-        }
 
-        Log.i(TAG, "Copied to: $localPath")
-
-        // Start service with file path and detected package
-        val taskId = "share_${System.currentTimeMillis()}"
-
-        // Resolve the backend override once (applies to both the ASR path and the subtitle
-        // choice's "Transcribe audio" action). A share-target alias forces a specific backend.
-        // The entry point is resolved once here and handed to the external chooser, which
-        // needs the same store from the same app-wide singleton.
-        val entryPoint = EntryPointAccessors.fromApplication(applicationContext, BackendRegistryEntryPoint::class.java)
-        val backendOverride: String? = intent?.component?.className?.let { alias ->
-            backendIdForAlias(alias, entryPoint.backendRegistry())?.also { backendId ->
-                Log.i(TAG, "Share target alias detected: $alias -> backend: $backendId")
+            val localPath: String = when (result) {
+                is SharedAudioHandler.CopyResult.Success -> result.path
+                // One message definition for every caller (the History browse FAB
+                // shares it); the copy itself already logged the specific cause.
+                else -> {
+                    showErrorToast(result.userMessage(this@ShareReceiverActivity))
+                    cleanup()
+                    finish()
+                    return@launch
+                }
             }
-        }
 
-        // External-family share target: the sentinel must become a concrete external:<id>
-        // BEFORE any consumer (subtitle branch, timeout worker, service intent) sees it.
-        if (backendOverride == EXTERNAL_FAMILY_BACKEND_ID) {
-            showExternalModelChooser(taskId, localPath, entryPoint.externalModelStore())
-            return
-        }
+            Log.i(TAG, "Copied to: $localPath")
 
-        dispatch(taskId, localPath, backendOverride)
+            // Start service with file path and detected package
+            val taskId = "share_${System.currentTimeMillis()}"
+
+            // Resolve the backend override once (applies to both the ASR path and the subtitle
+            // choice's "Transcribe audio" action). A share-target alias forces a specific backend.
+            val backendOverride: String? = intent?.component?.className?.let { alias ->
+                backendIdForAlias(alias, appEntryPoint.backendRegistry())?.also { backendId ->
+                    Log.i(TAG, "Share target alias detected: $alias -> backend: $backendId")
+                }
+            }
+
+            // External-family share target: the sentinel must become a concrete external:<id>
+            // BEFORE any consumer (subtitle branch, timeout worker, service intent) sees it.
+            if (backendOverride == EXTERNAL_FAMILY_BACKEND_ID) {
+                showExternalModelChooser(taskId, localPath, appEntryPoint.externalModelStore())
+                return@launch
+            }
+
+            dispatch(taskId, localPath, backendOverride)
+        }
     }
 
     /**
      * Chooser for the ShareExternal family alias: a platform AlertDialog (this Activity is
      * deliberately not a ComponentActivity, so no Compose). Blocks until the user picks an
      * imported model, then continues the normal flow with the concrete external backend id.
+     * Suspending: the record read is a DataStore access and must not park the
+     * main thread (the TASK-517 rule); the caller already runs on Main.
      */
-    private fun showExternalModelChooser(taskId: String, localPath: String, store: com.antivocale.app.data.ExternalModelStore) {
-        val records = kotlinx.coroutines.runBlocking { store.validRecords() }
+    private suspend fun showExternalModelChooser(taskId: String, localPath: String, store: com.antivocale.app.data.ExternalModelStore) {
+        // The copy runs on the app scope and can outlive this Activity: a
+        // recreation (or the recreation guard's finish()) between copy and
+        // chooser leaves no window to attach a dialog to. The share is
+        // dropped, but NOT silently: the same toast + error notification as
+        // every other failure path (TASK-385's loss class).
+        if (isFinishing || isDestroyed) {
+            Log.w(TAG, "Activity gone before the external chooser could show; dropping share for $taskId")
+            showErrorToast(getString(R.string.transcription_failed))
+            return
+        }
+        val records = store.validRecords()
 
         if (records.isEmpty()) {
             // Unreachable in production (the alias component is disabled with no records),
@@ -383,7 +437,9 @@ class ShareReceiverActivity : Activity() {
             .setItems(labels) { _, which ->
                 val chosen = records[which]
                 Log.i(TAG, "External model chosen via share chooser: ${chosen.backendId}")
-                dispatch(taskId, localPath, chosen.backendId)
+                appScope.launch(Dispatchers.Main) {
+                    dispatch(taskId, localPath, chosen.backendId)
+                }
             }
             .setOnCancelListener {
                 cleanup()
@@ -392,52 +448,60 @@ class ShareReceiverActivity : Activity() {
             .show()
     }
 
-    /** The subtitle probe branch plus the default ASR path, shared by every entry. */
-    private fun dispatch(taskId: String, localPath: String, backendOverride: String?) {
+    /** The subtitle probe branch plus the default ASR path, shared by every
+     *  entry. Suspending: callers run it inside their own coroutine on Main
+     *  (no nested launch hop). */
+    private suspend fun dispatch(taskId: String, localPath: String, backendOverride: String?) {
         // TASK-517: the subtitle probe (MediaExtractor on potentially
         // GB-scale videos) and the preference reads inside offerIfTracks
         // are blocking IO; they ran on this Activity's MAIN thread, in ANR
-        // territory for large files. The probe now runs on Dispatchers.IO;
+        // territory for large files. The probe runs on Dispatchers.IO;
         // the toast/service/finish on the main thread after it resolves.
-        // The activity lives only for this dispatch (both branches call
-        // finish()), so a scope that dies with the method is correct.
-        kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
-            val offered = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-                SubtitleChoice.offerIfTracks(
-                    this@ShareReceiverActivity, taskId, localPath,
-                    source = InferenceService.SOURCE_SHARE,
-                    sourcePackage = sourcePackage,
-                    backendOverride = backendOverride)
-            }
+        val offered = withContext(Dispatchers.IO) {
+            SubtitleChoice.offerIfTracks(
+                this@ShareReceiverActivity, taskId, localPath,
+                source = InferenceService.SOURCE_SHARE,
+                sourcePackage = sourcePackage,
+                backendOverride = backendOverride)
+        }
 
-            if (offered) {
-                // F5: the shared probe+offer (the same code the History browse
-                // FAB runs); when a choice prompt is posted it owns the request
-                // and the share flow ends here. The timed fallback worker
-                // (user-configured timeout) falls back to ASR if the user
-                // ignores the prompt; either tap cancels the worker.
-                com.antivocale.app.util.ToastCompat.show(this@ShareReceiverActivity, R.string.subtitles_found_title)
-                cleanup()
-                finish()
-                return@launch
-            }
-
-            // ---- Default ASR path ----
-            val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride)
-
-            // F6: unified enqueue (trampoline fallback on the API 31+ restriction)
-            com.antivocale.app.service.InferenceEnqueue.start(this@ShareReceiverActivity, serviceIntent)
-            Log.i(TAG, "Enqueued InferenceService for taskId: $taskId, source: $sourcePackage")
-
-            val toastRes = if (InferenceService.isTranscribing.value)
-                R.string.added_to_queue
-            else
-                R.string.transcription_started
-            com.antivocale.app.util.ToastCompat.show(this@ShareReceiverActivity, toastRes)
-
+        if (offered) {
+            // F5: the shared probe+offer (the same code the History browse
+            // FAB runs); when a choice prompt is posted it owns the request
+            // and the share flow ends here. The timed fallback worker
+            // (user-configured timeout) falls back to ASR if the user
+            // ignores the prompt; either tap cancels the worker.
+            com.antivocale.app.util.ToastCompat.show(this, R.string.subtitles_found_title)
             cleanup()
             finish()
+            return
         }
+
+        // ---- Default ASR path ----
+        val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride)
+
+        // F6: unified enqueue (trampoline fallback on the API 31+
+        // restriction). The Failed branch is the no-signal case (e.g.
+        // FGS restricted AND notifications unavailable): say so instead of
+        // toasting "transcription started" over a lost request.
+        when (InferenceEnqueue.start(this, serviceIntent)) {
+            InferenceEnqueue.Outcome.Started,
+            InferenceEnqueue.Outcome.FallbackNotificationPosted -> {
+                Log.i(TAG, "Enqueued InferenceService for taskId: $taskId, source: $sourcePackage")
+                val toastRes = if (InferenceService.isTranscribing.value)
+                    R.string.added_to_queue
+                else
+                    R.string.transcription_started
+                com.antivocale.app.util.ToastCompat.show(this, toastRes)
+            }
+            is InferenceEnqueue.Outcome.Failed -> {
+                Log.e(TAG, "Could not enqueue transcription for taskId: $taskId")
+                showErrorToast(getString(R.string.transcription_failed))
+            }
+        }
+
+        cleanup()
+        finish()
     }
 
     /**
@@ -472,6 +536,14 @@ class ShareReceiverActivity : Activity() {
         } catch (e: Exception) {
             Log.d(TAG, "Cleanup: receiver already unregistered or never registered")
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // The pid, not a boolean: a relaunch after process death must be
+        // able to tell its stamp (dead coroutine, re-run to recover) from
+        // an in-process recreation's stamp (live coroutine, skip).
+        if (dispatchStarted) outState.putInt(STATE_DISPATCH_PID, android.os.Process.myPid())
     }
 
     override fun onDestroy() {

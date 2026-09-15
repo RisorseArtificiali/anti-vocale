@@ -25,10 +25,48 @@ class AudioFormatSnifferTest {
     }
 
     @Test
+    fun `ADTS AAC maps to the supported aac extension`() {
+        // 0xFF 0xF1 = ADTS (MPEG-4): layer bits 00 are reserved in MPEG
+        // audio but are exactly the ADTS signature
+        val header = byteArrayOf(0xFF.toByte(), 0xF1.toByte(), 0x50.toByte(), 0x80.toByte())
+        assertEquals("aac", AudioFormatSniffer.detect(header))
+        // 0xFF 0xF9 = the MPEG-2 ADTS variant (ID=1, layer 00)
+        val mpeg2 = byteArrayOf(0xFF.toByte(), 0xF9.toByte(), 0x50.toByte(), 0x80.toByte())
+        assertEquals("aac", AudioFormatSniffer.detect(mpeg2))
+    }
+
+    @Test
+    fun `sync word with reserved version bits matches nothing`() {
+        // version bits 01 are reserved; layer bits 01 would otherwise pass
+        val header = byteArrayOf(0xFF.toByte(), 0xEB.toByte(), 0x90.toByte(), 0x00.toByte())
+        assertNull(AudioFormatSniffer.detect(header))
+    }
+
+    @Test
     fun `m4a with ftyp M4A brand`() {
         // bytes 4-7 = "ftyp", bytes 8-11 = "M4A "
         val header = byteArrayOf(0.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) + "ftypM4A ".toByteArray(Charsets.US_ASCII)
         assertEquals("m4a", AudioFormatSniffer.detect(header))
+    }
+
+    @Test
+    fun `mp4 with ordinary video brand is not demoted to audio`() {
+        // isom/mp42 are the brands ordinary MP4 videos carry; classifying
+        // them audio-only (m4a) silently disabled the video branches
+        val header = byteArrayOf(0.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) + "ftypisom".toByteArray(Charsets.US_ASCII)
+        assertEquals("mp4", AudioFormatSniffer.detect(header))
+    }
+
+    @Test
+    fun `m4v brand stays a video extension`() {
+        val header = byteArrayOf(0.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) + "ftypM4V ".toByteArray(Charsets.US_ASCII)
+        assertEquals("mp4", AudioFormatSniffer.detect(header))
+    }
+
+    @Test
+    fun `3gpp2 brand stays a video extension`() {
+        val header = byteArrayOf(0.toByte(), 0.toByte(), 0.toByte(), 0.toByte()) + "ftyp3g2a".toByteArray(Charsets.US_ASCII)
+        assertEquals("3g2", AudioFormatSniffer.detect(header))
     }
 
     @Test
