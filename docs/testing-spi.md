@@ -40,6 +40,7 @@ Set keys and value formats:
 | `punctuation` | `savePunctuationMode` | `off`, `auto`, `always` (the settings dropdown's exact set; anything else is rejected) |
 | `punctuation_prompt` | `savePunctuationPrompt` | free text, 500-char cap; blank = the localized built-in prompt |
 | `keep_alive` | `saveKeepAliveTimeout` | positive integer (minutes); 0/negative rejected (would silently fall back to the default) |
+| `subtitle_timeout` | `saveSubtitleChoiceTimeoutMinutes` | positive integer (minutes); TASK-515: the subtitles-or-transcribe choice timeout |
 | `progressive` | `saveProgressiveTranscription` | `true` or `false` (strict); gates the interim chunk notifications and the chunk nav (added after the 2026-09-04 session burned six UI taps on this toggle) |
 | `threads` | `saveThreadCount` | integer (for example `4`) |
 | `provider` | `saveInferenceProvider` | `auto`, `nnapi`, `cpu` (the settings dropdown's exact set; anything else is rejected because the app would silently run it as CPU) |

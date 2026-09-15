@@ -24,7 +24,7 @@ import kotlinx.coroutines.Dispatchers
 
 /**
  * Expedited one-shot [CoroutineWorker] that fires when the user ignores the subtitle-choice
- * notification for [ShareReceiverActivity.SUBTITLE_CHOICE_TIMEOUT_MINUTES] minutes. It runs
+ * notification for the user-configured timeout (PreferencesManager.subtitleChoiceTimeoutMinutes). It runs
  * the normal ASR path directly through [TranscriptionOrchestrator] (it does NOT call
  * `startForegroundService(InferenceService)`, which is blocked from the background on
  * Android 12+) and posts the result via [TranscriptionNotificationListener].

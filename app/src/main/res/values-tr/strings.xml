@@ -983,4 +983,6 @@
     <string name="error_oom_transcription">Bu sesi transkribe etmek için yeterli bellek yok. Daha kısa bir dosya, daha küccük bir model deneyin veya diğer uygulamaları kapatın.</string>
     <string name="external_family_detected">Algılandı: %1$s</string>
     <string name="external_family_pick_title">Bu model hangi aileden?</string>
+    <string name="subtitle_timeout_title">Otomatik seçim süresi</string>
+    <string name="subtitle_timeout_description">Altyazılı videonun seçim bildirimi kendi kendine transkript başlamadan ne kadar bekler.</string>
 </resources>

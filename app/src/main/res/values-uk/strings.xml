@@ -1001,4 +1001,6 @@
     <string name="error_oom_transcription">Недостатньо пам\'яті для розшифровки цього аудіо. Спробуйте коротший файл, меншу модель або закрийте інші застосунки.</string>
     <string name="external_family_detected">Виявлено: %1$s</string>
     <string name="external_family_pick_title">До якої сім\'ї належить ця модель?</string>
+    <string name="subtitle_timeout_title">Час автоматичного вибору</string>
+    <string name="subtitle_timeout_description">Скільки чекає повідомлення з вибором для відео із субтитрами, перш ніж розпочати розшифровку самостійно.</string>
 </resources>

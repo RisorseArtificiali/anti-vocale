@@ -72,6 +72,7 @@ internal class TestSpiOps(
             .put("punctuationPrompt", preferences.punctuationPrompt.first())
             .put("threadCount", preferences.threadCount.first())
             .put("keepAliveTimeoutMinutes", preferences.keepAliveTimeout.first())
+            .put("subtitleChoiceTimeoutMinutes", preferences.subtitleChoiceTimeoutMinutes.first())
             .put("inferenceProvider", preferences.inferenceProvider.first())
             .put("transcriptionLanguage", preferences.transcriptionLanguage.first())
             .put("transcriptionBackend", backend)
@@ -191,6 +192,13 @@ internal class TestSpiOps(
                     null
                 }
             }
+            // (key, unit suffix for the error message, saver). keep_alive's
+            // TASK-451 rationale applies to all: any positive int honored
+            // downstream, the dropdowns offer the curated sets.
+            val positiveIntKeys = listOf(
+                Triple("subtitle_timeout", "minutes", preferences::saveSubtitleChoiceTimeoutMinutes),
+                Triple("keep_alive", "minutes", preferences::saveKeepAliveTimeout),
+            )
             textKeys.forEach { (key, save) ->
                 putUnique(key) { value, _ ->
                     save(value)
@@ -202,13 +210,18 @@ internal class TestSpiOps(
             // the stored value. Values outside the dropdown
             // (SettingsViewModel.timeoutOptions) are accepted on purpose: any
             // positive int is honored downstream, and a timing test may want 3.
-            putUnique("keep_alive") { value, _ ->
-                val minutes = value.toIntOrNull()
-                if (minutes == null || minutes <= 0) {
-                    "keep_alive expects a positive integer (minutes), got '$value'"
-                } else {
-                    preferences.saveKeepAliveTimeout(minutes)
-                    null
+            // TASK-515 (reuse review): the third positive-int validator
+            // tipped the copy count; one typed table now serves all of them
+            // (the TASK-469 shape: the table IS the dispatch).
+            positiveIntKeys.forEach { (key, unit, save) ->
+                putUnique(key) { value, _ ->
+                    val n = value.toIntOrNull()
+                    if (n == null || n <= 0) {
+                        "$key expects a positive integer ($unit), got '$value'"
+                    } else {
+                        save(n)
+                        null
+                    }
                 }
             }
             putUnique("threads") { value, _ ->

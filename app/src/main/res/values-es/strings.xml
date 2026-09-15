@@ -848,4 +848,6 @@
     <string name="error_oom_transcription">No hay memoria suficiente para transcribir este audio. Prueba un archivo más corto, un modelo más pequeño, o cierra otras apps.</string>
     <string name="external_family_detected">Detectado: %1$s</string>
     <string name="external_family_pick_title">¿De qué familia es este modelo?</string>
+    <string name="subtitle_timeout_title">Tiempo de espera de la elección automática</string>
+    <string name="subtitle_timeout_description">Cuánto espera la notificación de elección de un vídeo con subtítulos antes de transcribir por sí sola.</string>
 </resources>

@@ -152,6 +152,15 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
         )
 
+    // TASK-515: subtitles-or-transcribe choice timeout
+    val subtitleChoiceTimeout: StateFlow<Int> = preferencesManager.subtitleChoiceTimeoutMinutes
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES
+        )
+    val subtitleTimeoutOptions = PreferencesManager.SUBTITLE_CHOICE_TIMEOUT_OPTIONS
+
     // Auto-copy transcription results preference
     val autoCopyEnabled: StateFlow<Boolean> = preferencesManager.autoCopyEnabled
         .stateIn(
@@ -498,6 +507,13 @@ class SettingsViewModel @Inject constructor(
                     errorMessage = e.message ?: getApplication<Application>().getString(R.string.error_save_settings)
                 )}
             }
+        }
+    }
+
+    /** TASK-515: see [subtitleChoiceTimeout]. */
+    fun saveSubtitleChoiceTimeout(minutes: Int) {
+        viewModelScope.launch {
+            preferencesManager.saveSubtitleChoiceTimeoutMinutes(minutes)
         }
     }
 

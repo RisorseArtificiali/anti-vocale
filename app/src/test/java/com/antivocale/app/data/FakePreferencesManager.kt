@@ -20,6 +20,7 @@ internal class FakePreferencesManager : PreferencesManager {
 
     val _modelPath = MutableStateFlow<String?>(null)
     val _keepAliveTimeout = MutableStateFlow(5)
+    val _subtitleChoiceTimeout = MutableStateFlow(5)
     val _themePreference = MutableStateFlow("DEFAULT")
     val _themeMode = MutableStateFlow("SYSTEM")
     val _transcriptionBackend = MutableStateFlow(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
@@ -59,6 +60,7 @@ internal class FakePreferencesManager : PreferencesManager {
 
     override val modelPath: Flow<String?> get() = _modelPath
     override val keepAliveTimeout: Flow<Int> get() = _keepAliveTimeout
+    override val subtitleChoiceTimeoutMinutes: Flow<Int> get() = _subtitleChoiceTimeout
     override val themePreference: Flow<String> get() = _themePreference
     override val themeMode: Flow<String> get() = _themeMode
     override val transcriptionBackend: Flow<String> get() = _transcriptionBackend
@@ -100,6 +102,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveModelPath(path: String) { _modelPath.value = path }
     override suspend fun clearModelPath() { _modelPath.value = null }
     override suspend fun saveKeepAliveTimeout(minutes: Int) { _keepAliveTimeout.value = minutes }
+    override suspend fun saveSubtitleChoiceTimeoutMinutes(minutes: Int) { _subtitleChoiceTimeout.value = minutes }
     override suspend fun saveThemePreference(theme: String) { _themePreference.value = theme }
     override suspend fun saveThemeMode(mode: String) { _themeMode.value = mode }
     override suspend fun saveTranscriptionBackend(backendId: String) { _transcriptionBackend.value = backendId }

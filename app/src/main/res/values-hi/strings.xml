@@ -982,4 +982,6 @@
     <string name="error_oom_transcription">इस ऑडियो को ट्रांसक्रिप्ट करने के लिए पर्याप्त मेमोरी नहीं है। छोटी फ़ाइल, हल्का मॉडल आज़माएं, या अन्य ऐप बंद करें।</string>
     <string name="external_family_detected">पहचाना गया: %1$s</string>
     <string name="external_family_pick_title">यह मॉडल किस परिवार का है?</string>
+    <string name="subtitle_timeout_title">स्वचालित चयन समय-सीमा</string>
+    <string name="subtitle_timeout_description">सबटाइटल वाले वीडियो की चयन सूचना कितनी देर प्रतीक्षा करती है और खुद ट्रांसक्रिप्ट शुरू करती है।</string>
 </resources>

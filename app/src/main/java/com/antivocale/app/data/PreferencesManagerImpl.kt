@@ -29,6 +29,7 @@ class PreferencesManagerImpl(
     companion object {
         private val MODEL_PATH = stringPreferencesKey("model_path")
         private val KEEP_ALIVE_TIMEOUT = intPreferencesKey("keep_alive_timeout_v2")
+        private val SUBTITLE_CHOICE_TIMEOUT = intPreferencesKey("subtitle_choice_timeout")
         private val KEEP_ALIVE_TIMEOUT_LEGACY = stringPreferencesKey("keep_alive_timeout")
         private val LANGUAGE_PREFERENCE = stringPreferencesKey("language_preference")
         private val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
@@ -88,6 +89,7 @@ class PreferencesManagerImpl(
     private data class CachedPreferences(
         val modelPath: String? = null,
         val keepAliveTimeout: Int = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT,
+        val subtitleChoiceTimeout: Int = PreferencesManager.DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES,
         val themePreference: String = PreferencesManager.DEFAULT_THEME,
         val themeMode: String = PreferencesManager.DEFAULT_THEME_MODE,
         val transcriptionBackend: String = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND,
@@ -125,6 +127,8 @@ class PreferencesManagerImpl(
         keepAliveTimeout = this[KEEP_ALIVE_TIMEOUT]
             ?: this[KEEP_ALIVE_TIMEOUT_LEGACY]?.toIntOrNull()
             ?: PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT,
+        subtitleChoiceTimeout = this[SUBTITLE_CHOICE_TIMEOUT]
+            ?: PreferencesManager.DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES,
         themePreference = this[THEME_PREFERENCE] ?: PreferencesManager.DEFAULT_THEME,
         themeMode = this[THEME_MODE] ?: PreferencesManager.DEFAULT_THEME_MODE,
         transcriptionBackend = this[TRANSCRIPTION_BACKEND] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND,
@@ -187,12 +191,23 @@ class PreferencesManagerImpl(
         it[KEEP_ALIVE_TIMEOUT] ?: it[KEEP_ALIVE_TIMEOUT_LEGACY]?.toIntOrNull() ?: PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT
     }.onStart { emit(cache.get().keepAliveTimeout) }
 
+    override val subtitleChoiceTimeoutMinutes: Flow<Int> = dataStore.data.map {
+        it[SUBTITLE_CHOICE_TIMEOUT] ?: PreferencesManager.DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES
+    }.onStart { emit(cache.get().subtitleChoiceTimeout) }
+
     override suspend fun saveKeepAliveTimeout(minutes: Int) {
         dataStore.edit { preferences ->
             preferences[KEEP_ALIVE_TIMEOUT] = minutes
             preferences.remove(KEEP_ALIVE_TIMEOUT_LEGACY)
         }
         cache.updateAndGet { it.copy(keepAliveTimeout = minutes) }
+    }
+
+    override suspend fun saveSubtitleChoiceTimeoutMinutes(minutes: Int) {
+        dataStore.edit { preferences ->
+            preferences[SUBTITLE_CHOICE_TIMEOUT] = minutes
+        }
+        cache.updateAndGet { it.copy(subtitleChoiceTimeout = minutes) }
     }
 
     override suspend fun getLegacyLanguagePreference(): String {

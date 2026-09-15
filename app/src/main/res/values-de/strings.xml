@@ -983,4 +983,6 @@
     <string name="error_oom_transcription">Nicht genug Speicher, um dieses Audio zu transkribieren. Versuche eine kürzere Datei, ein kleineres Modell, oder schließe andere Apps.</string>
     <string name="external_family_detected">Erkannt: %1$s</string>
     <string name="external_family_pick_title">Zu welcher Familie gehört dieses Modell?</string>
+    <string name="subtitle_timeout_title">Automatische Wahlzeit</string>
+    <string name="subtitle_timeout_description">Wie lange die Auswahlbenachrichtigung für ein Video mit Untertiteln wartet, bevor automatisch transkribiert wird.</string>
 </resources>

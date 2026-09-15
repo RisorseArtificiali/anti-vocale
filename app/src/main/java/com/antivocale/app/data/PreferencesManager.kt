@@ -6,6 +6,10 @@ interface PreferencesManager {
 
     val modelPath: Flow<String?>
     val keepAliveTimeout: Flow<Int>
+
+    /** TASK-515: minutes the subtitles-or-transcribe choice waits before the
+     *  timed WorkManager fallback transcribes automatically. */
+    val subtitleChoiceTimeoutMinutes: Flow<Int>
     val themePreference: Flow<String>
     val themeMode: Flow<String>
     val transcriptionBackend: Flow<String>
@@ -66,6 +70,9 @@ interface PreferencesManager {
     suspend fun saveModelPath(path: String)
     suspend fun clearModelPath()
     suspend fun saveKeepAliveTimeout(minutes: Int)
+
+    /** TASK-515: see [subtitleChoiceTimeoutMinutes]. */
+    suspend fun saveSubtitleChoiceTimeoutMinutes(minutes: Int)
     suspend fun saveThemePreference(theme: String)
     suspend fun saveThemeMode(mode: String)
     suspend fun saveTranscriptionBackend(backendId: String)
@@ -114,6 +121,9 @@ interface PreferencesManager {
 
     companion object {
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
+        /** TASK-515: default and the Settings dropdown's offered set. */
+        const val DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES = 5
+        val SUBTITLE_CHOICE_TIMEOUT_OPTIONS = listOf(1, 2, 5, 10)
         val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2).coerceAtMost(8)
         const val DEFAULT_AUTO_COPY_ENABLED = false
         const val DEFAULT_VAD_ENABLED = false

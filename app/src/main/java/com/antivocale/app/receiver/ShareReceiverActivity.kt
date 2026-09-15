@@ -90,7 +90,6 @@ class ShareReceiverActivity : Activity() {
 
         // The choice prompt auto-resolves to ASR after this delay if the user does nothing.
         // Keeps a shared video from silently hanging when the notification is ignored.
-        internal const val SUBTITLE_CHOICE_TIMEOUT_MINUTES = 5L
 
         // Request code of the shortcut flow's SAF audio pick ([launchAudioPicker]).
         private const val REQUEST_PICK_AUDIO = 1
@@ -394,7 +393,7 @@ class ShareReceiverActivity : Activity() {
         // ---- Subtitle probe branch ----
         // F5: the shared probe+offer (the same code the History browse FAB
         // runs); when a choice prompt is posted it owns the request and the
-        // share flow ends here. The 5-min timeout worker falls back to ASR
+        // share flow ends here. The timed fallback worker (user-configured timeout) falls back to ASR
         // if the user ignores the prompt; either tap cancels the worker.
         if (SubtitleChoice.offerIfTracks(
                 this, taskId, localPath,

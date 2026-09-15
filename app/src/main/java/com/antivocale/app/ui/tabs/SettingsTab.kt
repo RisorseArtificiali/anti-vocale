@@ -1576,6 +1576,50 @@ fun SettingsTab(
                 }
             }
 
+            // TASK-515: the subtitles-or-transcribe choice timeout. Next to
+            // the share-targets card it explains: same share flow.
+            val subtitleTimeout by viewModel.subtitleChoiceTimeout.collectAsState()
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Timer,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.subtitle_timeout_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Text(
+                        text = stringResource(R.string.subtitle_timeout_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    SettingsDropdown(
+                        currentValue = subtitleTimeout,
+                        options = viewModel.subtitleTimeoutOptions,
+                        currentValueDisplay = pluralStringResource(
+                            R.plurals.timeout_minutes, subtitleTimeout, subtitleTimeout),
+                        optionDisplay = { minutes ->
+                            pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
+                        },
+                        onOptionSelected = { viewModel.saveSubtitleChoiceTimeout(it) },
+                        label = stringResource(R.string.subtitle_timeout_title),
+                        enabled = !uiState.isSaving
+                    )
+                }
+            }
+
             // Force model load (bypass the low-memory pre-flight)
             ToggleSettingCard(
                 icon = Icons.Default.Memory,

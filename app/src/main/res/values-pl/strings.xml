@@ -999,4 +999,6 @@
     <string name="error_oom_transcription">Za mało pamięci, aby transkrybować to audio. Spróbuj krótszego pliku, mniejszego modelu lub zamknij inne aplikacje.</string>
     <string name="external_family_detected">Wykryto: %1$s</string>
     <string name="external_family_pick_title">Do której rodziny należy ten model?</string>
+    <string name="subtitle_timeout_title">Czas automatycznego wyboru</string>
+    <string name="subtitle_timeout_description">Jak długo powiadomienie z wyborem dla filmu z napisami czeka, zanim samo rozpocznie transkrypcję.</string>
 </resources>

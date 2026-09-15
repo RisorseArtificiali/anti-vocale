@@ -10,6 +10,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.antivocale.app.R
+import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.SubtitleTrack
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
@@ -44,8 +45,24 @@ object SubtitleChoice {
         sourcePackage: String?,
         backendOverride: String?,
     ) {
-        postChoiceNotification(context, taskId, localPath, track, source, sourcePackage, backendOverride)
-        enqueueTimeoutWorker(context, taskId, localPath, source, sourcePackage, backendOverride)
+        // TASK-515: one read feeds both the disclosure text and the worker
+        // delay, so the notification can never promise a different timeout
+        // than the one scheduled (the old constant could drift from the text).
+        val timeout = timeoutMinutes(context)
+        postChoiceNotification(context, taskId, localPath, track, source, sourcePackage, backendOverride, timeout)
+        enqueueTimeoutWorker(context, taskId, localPath, source, sourcePackage, backendOverride, timeout)
+    }
+
+    /** The user preference, falling back to the default on any read failure
+     *  (same entry-point pattern as [pickBestTrack]). */
+    private fun timeoutMinutes(context: Context): Int = try {
+        val preferencesManager = EntryPointAccessors.fromApplication(
+            context.applicationContext, SubtitlePrefsEntryPoint::class.java
+        ).preferencesManager
+        runBlocking { preferencesManager.subtitleChoiceTimeoutMinutes.first() }
+    } catch (e: Exception) {
+        Log.w(TAG, "Could not read the subtitle timeout pref, using the default", e)
+        PreferencesManager.DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES
     }
 
     /**
@@ -127,6 +144,7 @@ object SubtitleChoice {
         source: String,
         sourcePackage: String?,
         backendOverride: String?,
+        timeoutMinutes: Int,
     ) {
         AppNotificationChannel.TRANSCRIPTION_RESULT.create(context)
 
@@ -161,8 +179,8 @@ object SubtitleChoice {
             languageLabel,
             context.resources.getQuantityString(
                 R.plurals.timeout_minutes,
-                ShareReceiverActivity.SUBTITLE_CHOICE_TIMEOUT_MINUTES.toInt(),
-                ShareReceiverActivity.SUBTITLE_CHOICE_TIMEOUT_MINUTES.toInt(),
+                timeoutMinutes,
+                timeoutMinutes,
             ),
         )
         val dismissIntent = PendingIntent.getBroadcast(
@@ -222,9 +240,10 @@ object SubtitleChoice {
         source: String,
         sourcePackage: String?,
         backendOverride: String?,
+        timeoutMinutes: Int,
     ) {
         val request = OneTimeWorkRequestBuilder<SubtitleChoiceTimeoutWorker>()
-            .setInitialDelay(ShareReceiverActivity.SUBTITLE_CHOICE_TIMEOUT_MINUTES, TimeUnit.MINUTES)
+            .setInitialDelay(timeoutMinutes.toLong(), TimeUnit.MINUTES)
             .setInputData(
                 workDataOf(
                     SubtitleChoiceTimeoutWorker.KEY_FILE_PATH to localPath,

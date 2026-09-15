@@ -987,4 +987,6 @@
     <string name="error_oom_transcription">Memoria insufficiente per trascrivere questo audio. Prova un file più corto, un modello più piccolo, o chiudi altre app.</string>
     <string name="external_family_detected">Rilevato: %1$s</string>
     <string name="external_family_pick_title">A quale famiglia appartiene questo modello?</string>
+    <string name="subtitle_timeout_title">Timeout della scelta automatica</string>
+    <string name="subtitle_timeout_description">Quanto aspetta la notifica di scelta per un video con sottotitoli prima di trascrivere da sola.</string>
 </resources>

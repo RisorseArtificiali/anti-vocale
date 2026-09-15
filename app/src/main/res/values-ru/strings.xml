@@ -1000,4 +1000,6 @@
     <string name="error_oom_transcription">Недостаточно памяти для распознавания этого аудио. Попробуйте более короткий файл, более лёгкую модель или закройте другие приложения.</string>
     <string name="external_family_detected">Обнаружено: %1$s</string>
     <string name="external_family_pick_title">К какому семейству относится эта модель?</string>
+    <string name="subtitle_timeout_title">Таймаут автоматического выбора</string>
+    <string name="subtitle_timeout_description">Сколько ждёт уведомление с выбором для видео с субтитрами, прежде чем начать расшифровку самостоятельно.</string>
 </resources>

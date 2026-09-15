@@ -145,6 +145,22 @@ class TestSpiOpsTest {
     }
 
     @Test
+    fun `set subtitle_timeout writes through and rejects non-positive values`() = runTest {
+        // TASK-515: the choice timeout pref drives the worker delay; the SPI
+        // accepts any positive int so a device test can arm a fast timeout.
+        val json = JSONObject(ops.handle(TestSpiOps.OP_SET, key = "subtitle_timeout", value = "2"))
+        assertEquals("subtitle_timeout", json.getString("key"))
+        assertEquals(2, fake._subtitleChoiceTimeout.value)
+
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_SET, key = "subtitle_timeout", value = "0"))
+                .getString("error").contains("subtitle_timeout"))
+        assertTrue(
+            JSONObject(ops.handle(TestSpiOps.OP_SET, key = "subtitle_timeout", value = "5min"))
+                .getString("error").contains("subtitle_timeout"))
+    }
+
+    @Test
     fun `set keep_alive writes through and rejects non-positive values`() = runTest {
         // TASK-451: the keep-alive pref gates the LLM idle timer; zero or
         // negative minutes would fall back to the default silently, so the
@@ -330,7 +346,7 @@ class TestSpiOpsTest {
             "theme" to "DEFAULT", "theme_mode" to "SYSTEM", "punctuation_prompt" to "p",
             "default_prompt" to "d",
             "summary_prompt" to "s", "external_catalog_url" to "https://x",
-            "output_folder" to "", "keep_alive" to "5", "threads" to "4",
+            "output_folder" to "", "keep_alive" to "5", "subtitle_timeout" to "5", "threads" to "4",
             "backend" to "llm", "language" to "auto", "model_path" to "/m",
             "sherpa_path" to "/m",
         )

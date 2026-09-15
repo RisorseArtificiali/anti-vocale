@@ -988,4 +988,6 @@
     <string name="error_oom_transcription">אין מספיק זיכרון לתמלל את האודיו הזה. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות.</string>
     <string name="external_family_detected">זוהה: %1$s</string>
     <string name="external_family_pick_title">לאיזו משפחה שייך המודל?</string>
+    <string name="subtitle_timeout_title">פסק זמן בחירה אוטומטית</string>
+    <string name="subtitle_timeout_description">כמה זמן ממתינה התראת הבחירה לסרטון עם כתוביות לפני שהיא מתמללת מעצמה.</string>
 </resources>
