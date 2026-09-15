@@ -74,6 +74,10 @@ In the **Logs** tab: expand an entry and the metadata row under the transcript s
 
 Swipe an entry to delete it. A standard long-press context menu is being added alongside the gesture ([#52](https://github.com/RisorseArtificiali/anti-vocale/issues/52)), with options like delete, re-transcribe, and copy.
 
+### Can I see who sent a voice message, or what my messaging apps put in their notifications?
+
+Anti-Vocale only knows the app a voice message came from (WhatsApp, Telegram, Signal): the Android share system carries no contact or sender information. If your workflow needs that level of detail, a notification logger shows you what your messaging apps actually put in their notifications, including sender and conversation names: [NotificationLog](https://f-droid.org/en/packages/de.jl.notificationlog/) is a privacy-first, open-source option that stores your full notification history locally.
+
 ## Nightly builds
 
 ### What is the nightly build, and can I install it over my store copy?
