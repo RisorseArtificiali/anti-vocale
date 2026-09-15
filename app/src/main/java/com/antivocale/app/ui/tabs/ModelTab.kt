@@ -1105,10 +1105,6 @@ private fun variantFitHint(
 
 // ==================== External models section (v2a) ====================
 
-/**
- * Family selection + conditional options for external-model imports. One immutable
- * holder so both import paths (folder and URL) share a single selection state.
- */
 /** TASK-513: an ambiguous family pick waiting on the user's choice. */
 private data class AmbiguousFamilyPick(val uri: Uri, val candidates: List<ModelFamily>)
 
@@ -1128,6 +1124,10 @@ private val FAMILY_OPTIONS = listOf(
 private fun familyLabel(family: ModelFamily): String = stringResource(
     FAMILY_OPTIONS.first { it.first == family }.second)
 
+/**
+ * Family selection + conditional options for external-model imports. One immutable
+ * holder so both import paths (folder and URL) share a single selection state.
+ */
 internal data class ExternalImportUiState(
     val family: ModelFamily = ModelFamily.TRANSDUCER,
     val ctcModelType: String = "nemo_ctc",
@@ -1314,7 +1314,7 @@ private fun ExternalModelsSection(
 
     // lint AST misresolves this block; it returns List<Triple<...>>
     @SuppressLint("RememberReturnType")
-    val familyOptions = FAMILY_OPTIONS
+    val familyOptions = FAMILY_OPTIONS  // TASK-513: hoisted, compile-time
 
     // Outer section Card matching the curated sections (GigaAM, Nemotron):
     // surfaceVariant background, header with icon + title + description, 16dp padding.

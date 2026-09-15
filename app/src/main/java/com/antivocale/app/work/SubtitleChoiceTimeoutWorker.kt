@@ -12,6 +12,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.receiver.ShareReceiverActivity
+import com.antivocale.app.receiver.SubtitleChoice
 import com.antivocale.app.service.TranscriptionNotificationListener
 import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.util.AppNotificationChannel
@@ -69,6 +70,13 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
         // (this worker does), and a stale prompt with live actions is worse than none.
         try {
             val notificationManager = applicationContext.getSystemService(NotificationManager::class.java)
+            // The prompt posts under the PATH-keyed id (re-offers replace);
+            // the taskId-keyed ids are the pre-TASK-440 legacy, kept so a
+            // prompt posted by an older build still dies on in-window update
+            // (code-review round 2, 513+515: the 1-minute option makes this
+            // path routine, and a stale prompt with live actions next to the
+            // ASR result is exactly the trap the comment above bans).
+            filePath?.let { notificationManager.cancel(SubtitleChoice.choiceNotificationIdForPath(it)) }
             notificationManager.cancel(ShareReceiverActivity.choiceNotificationId(taskId))
             notificationManager.cancel(taskId.hashCode())
         } catch (e: Exception) {

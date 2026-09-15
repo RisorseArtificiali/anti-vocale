@@ -58,10 +58,17 @@ object ModelFamilyDetector {
      * ("canary", "whisper"...). Null when the hint matches none of them.
      */
     fun narrow(candidates: List<ModelFamily>, hint: String?): ModelFamily? {
-        val h = hint?.lowercase() ?: return null
+        if (hint.isNullOrBlank()) return null
+        // The hint is a path: only the TERMINAL segment names this folder.
+        // Ancestor directories (Download/whisper-alternatives/canary-180m)
+        // must not vote, and neither must ordering: any candidate token in
+        // the terminal segment resolves to that candidate (whisper and
+        // canary never share a folder name in practice; if both matched,
+        // the chooser is the honest answer). (Code-review round 2, 513.)
+        val terminal = hint.substringAfterLast('/').lowercase().replace("-", "")
         return candidates.firstOrNull { candidate ->
-            val token = candidate.name.lowercase().replace("_", "")
-            h.contains(token)
+            val token = candidate.name.lowercase().replace("_", "").replace("-", "")
+            terminal.contains(token)
         }
     }
 }

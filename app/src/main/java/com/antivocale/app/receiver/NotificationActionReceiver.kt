@@ -65,7 +65,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
     }
 
     /**
-     * Handles a subtitle-choice notification tap: cancels the 5-minute timeout worker
+     * Handles a subtitle-choice notification tap: cancels the timed fallback worker
      * (either action resolves the prompt), then forwards the request to [InferenceService]
      * with the chosen [requestType] ("subtitles" or "audio"). All extras set by
      * [com.antivocale.app.receiver.ShareReceiverActivity] are passed through verbatim.
@@ -130,7 +130,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
 
     /**
      * Swipe-dismiss of the subtitle-choice prompt (TASK-378): the user
-     * declined the choice, so the pending 5-minute fallback is cancelled and
+     * declined the choice, so the pending timed fallback is cancelled and
      * nothing is transcribed. No service start: a delete intent must be safe
      * to fire from anywhere.
      */
