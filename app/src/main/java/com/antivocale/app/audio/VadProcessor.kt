@@ -31,7 +31,13 @@ data class VadResult(
         val speechSegments: List<FloatArray>,
         val totalSpeechDurationSeconds: Double,
         val segmentCount: Int,
-        val originalDurationSeconds: Double
+        val originalDurationSeconds: Double,
+        /**
+         * GH #92: the MERGED, padded [start,end) sample ranges each entry of
+         * [speechSegments] was cut from, in the ORIGINAL clip's coordinates.
+         * Empty when VAD detected no speech (full-audio fallback).
+         */
+        val mergedRanges: List<Pair<Int, Int>> = emptyList()
     )
 
     /**
@@ -108,9 +114,12 @@ data class VadResult(
             }
 
             // Apply minimal padding and merge overlapping segments (for progressive display)
-            val finalSegments = if (rawSegments.isEmpty()) {
+            val finalSegments: List<FloatArray>
+            val mergedRanges: List<Pair<Int, Int>>
+            if (rawSegments.isEmpty()) {
                 Log.w(TAG, "VAD detected no speech, falling back to full audio")
-                listOf(pcmSamples)
+                finalSegments = listOf(pcmSamples)
+                mergedRanges = emptyList()
             } else {
                 fun padStart(raw: RawSegment) = maxOf(0, raw.start - SPEECH_PAD_SAMPLES)
                 fun padEnd(raw: RawSegment) = minOf(totalSamples, raw.end + SPEECH_PAD_SAMPLES)
@@ -133,7 +142,8 @@ data class VadResult(
                 }
                 merged.add(curStart to curEnd)
 
-                merged.map { (start, end) -> pcmSamples.copyOfRange(start, end) }
+                mergedRanges = merged
+                finalSegments = merged.map { (start, end) -> pcmSamples.copyOfRange(start, end) }
             }
 
             val totalSpeechDuration = finalSegments.sumOf { it.size }.toDouble() / SAMPLE_RATE
@@ -147,7 +157,8 @@ data class VadResult(
                 speechSegments = finalSegments,
                 totalSpeechDurationSeconds = totalSpeechDuration,
                 segmentCount = finalSegments.size,
-                originalDurationSeconds = originalDurationSeconds
+                originalDurationSeconds = originalDurationSeconds,
+                mergedRanges = mergedRanges
             )
         } finally {
             vad.release()

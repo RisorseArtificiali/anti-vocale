@@ -1,5 +1,7 @@
 package com.antivocale.app.service
 
+import com.antivocale.app.transcription.TimedSegment
+
 /**
  * Callback interface for transcription lifecycle events.
  * Implemented by the Android service layer to handle UI/Android-specific concerns
@@ -57,7 +59,9 @@ interface TranscriptionListener {
         failedChunkCount: Int = 0,
         /** TASK-450: the request was streamed without silence stripping after
          *  the VAD path would have refused it (device memory ceiling). */
-        streamedWithoutVad: Boolean = false
+        streamedWithoutVad: Boolean = false,
+        /** GH #92: the per-chunk cues, empty when no honest timing exists. */
+        segments: List<TimedSegment> = emptyList()
     )
 
     /** Transcription or backend loading failed */

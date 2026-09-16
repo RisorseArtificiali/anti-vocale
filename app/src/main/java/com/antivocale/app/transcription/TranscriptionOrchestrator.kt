@@ -17,6 +17,7 @@ import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.CatalogDisplay
 import com.antivocale.app.data.catalog.CatalogStringKeys
 import com.antivocale.app.data.local.LogDao
+import com.antivocale.app.data.local.TimedSegmentsConverter
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
 import com.antivocale.app.service.ExtractionService
@@ -267,14 +268,16 @@ class TranscriptionOrchestrator @Inject constructor(
                         transcriptionResult.failedChunkCount,
                         rawTranscript = transcriptionResult.rawTranscript,
                         summary = transcriptionResult.summary,
-                        summarySkipReason = transcriptionResult.summarySkipReason
+                        summarySkipReason = transcriptionResult.summarySkipReason,
+                        segments = transcriptionResult.segments
                     )
                     listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
                         confidence = transcriptionResult.confidence,
                         detectedLanguage = transcriptionResult.detectedLanguage,
                         isPartial = transcriptionResult.isPartial,
                         failedChunkCount = transcriptionResult.failedChunkCount,
-                        streamedWithoutVad = transcriptionResult.streamedWithoutVad
+                        streamedWithoutVad = transcriptionResult.streamedWithoutVad,
+                        segments = transcriptionResult.segments
                     )
                 },
                 onFailure = { error ->
@@ -1044,7 +1047,15 @@ class TranscriptionOrchestrator @Inject constructor(
                     val tr = result.getOrNull()!!
                     if (tr.text.isNotBlank()) {
                         recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
-                        Result.success(tr.copy(text = tr.text.trim()))
+                        val trimmed = tr.text.trim()
+                        // GH #92: one VAD segment = one cue carrying the whole text,
+                        // offset from the VAD range (the stripped buffer is window
+                        // arithmetic territory and must not be consulted here).
+                        val vadRanges = preprocessingResult.vadSegmentRangesMs
+                        val segments = if (vadRanges != null && vadRanges.size == 1) {
+                            listOf(TimedSegment(vadRanges[0].first, vadRanges[0].second, trimmed))
+                        } else emptyList()
+                        Result.success(tr.copy(text = trimmed, segments = segments))
                     } else {
                         Result.failure(TranscriptionException.NoTranscriptionProduced())
                     }
@@ -1061,6 +1072,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     taskId = taskId,
                     chunks = preprocessingResult.chunks,
                     sampleRate = preprocessingResult.sampleRate,
+                    segmentRangesMs = preprocessingResult.vadSegmentRangesMs ?: emptyList(),
                     prompt = promptPlan.perChunk,
                     backend = backend,
                     audioDurationSeconds = audioDurationSeconds,
@@ -1077,6 +1089,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 taskId = taskId,
                 chunks = preprocessingResult.chunks,
                 sampleRate = preprocessingResult.sampleRate,
+                segmentRangesMs = preprocessingResult.vadSegmentRangesMs,
+                chunkCapSeconds = maxChunkDuration,
                 prompt = promptPlan.perChunk,
                 backend = backend,
                 audioDurationSeconds = audioDurationSeconds,
@@ -1120,6 +1134,7 @@ class TranscriptionOrchestrator @Inject constructor(
         taskId: String,
         chunks: List<FloatArray>,
         sampleRate: Int,
+        segmentRangesMs: List<Pair<Long, Long>>,
         prompt: String = "",
         backend: TranscriptionBackend,
         audioDurationSeconds: Int,
@@ -1133,6 +1148,7 @@ class TranscriptionOrchestrator @Inject constructor(
         var failedSegments = 0
         var minConfidence: Float? = null
         var detectedLang: String? = null
+        val segments = mutableListOf<TimedSegment>()
 
         for (i in chunks.indices) {
             val segNumber = i + 1
@@ -1147,6 +1163,10 @@ class TranscriptionOrchestrator @Inject constructor(
                         val trimmed = tr.text.trim()
                         if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                         accumulatedText.append(trimmed)
+                        // GH #92: a failed segment leaves no cue (honest gap).
+                        segmentRangesMs.getOrNull(i)?.let { (startMs, endMs) ->
+                            segments.add(TimedSegment(startMs, endMs, trimmed))
+                        }
                         updateInterimResult(taskId, accumulatedText.toString())
                         Log.i(TAG, "Progressive preview: segment ${trimmed.length} chars, total ${accumulatedText.length} chars")
                         listener.onInterimResult(
@@ -1183,7 +1203,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 confidence = minConfidence,
                 detectedLanguage = detectedLang,
                 isPartial = failedSegments > 0,
-                failedChunkCount = failedSegments
+                failedChunkCount = failedSegments,
+                segments = segments
             ))
         }
     }
@@ -1192,6 +1213,10 @@ class TranscriptionOrchestrator @Inject constructor(
         taskId: String,
         chunks: List<FloatArray>,
         sampleRate: Int,
+        /** GH #92: VAD per-chunk offsets, or null when VAD did not segment. */
+        segmentRangesMs: List<Pair<Long, Long>>?,
+        /** GH #92: the EFFECTIVE (RAM-tightened) cap the fixed windows were cut at. */
+        chunkCapSeconds: Int?,
         prompt: String = "",
         backend: TranscriptionBackend,
         audioDurationSeconds: Int,
@@ -1312,6 +1337,30 @@ class TranscriptionOrchestrator @Inject constructor(
         val combinedResult = results.filterNotNull().joinToString(" ")
         Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.filterNotNull().size}/$chunkCount chunks")
 
+        // GH #92: VAD-segmented chunks cue at their VAD ranges (size must match the
+        // chunk count: a single stripped segment window-sliced here carries ONE range
+        // for the whole buffer, so no per-chunk cue exists); without VAD the chunks
+        // are fixed windows at the effective cap. A failed chunk leaves no cue.
+        val segments = when {
+            segmentRangesMs != null && segmentRangesMs.size == chunkCount ->
+                results.mapIndexedNotNull { index, text ->
+                    text?.let {
+                        TimedSegment(segmentRangesMs[index].first, segmentRangesMs[index].second, it)
+                    }
+                }
+            segmentRangesMs == null && chunkCapSeconds != null ->
+                results.mapIndexedNotNull { index, text ->
+                    text?.let {
+                        TimedSegment(
+                            index.toLong() * chunkCapSeconds * 1000L,
+                            (index + 1).toLong() * chunkCapSeconds * 1000L,
+                            it
+                        )
+                    }
+                }
+            else -> emptyList()
+        }
+
         val totalMs = System.currentTimeMillis() - chunkProcessingStartTime
         Log.i(TAG, "PERF: parallel total ${totalMs}ms for ${audioDurationSeconds}s audio, $chunkCount chunks, backend=${backend.id}")
 
@@ -1330,7 +1379,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 confidence = minConfidence,
                 detectedLanguage = detectedLang,
                 isPartial = failedChunks > 0,
-                failedChunkCount = failedChunks
+                failedChunkCount = failedChunks,
+                segments = segments
             ))
         }
     }
@@ -1370,6 +1420,9 @@ class TranscriptionOrchestrator @Inject constructor(
         var failedChunks = 0
         var minConfidence: Float? = null
         var detectedLang: String? = null
+        // GH #92: cue boundaries from the running decoded total (container
+        // durations lie; the accumulated sample counts are the ground truth).
+        val segments = mutableListOf<TimedSegment>()
 
         try {
             audioPreprocessor.prepareAudioStream(
@@ -1393,7 +1446,9 @@ class TranscriptionOrchestrator @Inject constructor(
                     is AudioPreprocessor.StreamEvent.Chunk -> {
                         val chunk = event.chunk
                         processedChunks++
+                        val chunkStartMs = (decodedSeconds * 1000).toLong()
                         decodedSeconds += chunk.samples.size.toDouble() / chunk.sampleRate
+                        val chunkEndMs = (decodedSeconds * 1000).toLong()
                         val chunkReceiveMs = System.currentTimeMillis() - pipelineStartMs
                         if (chunk.chunkIndex == 0) {
                             firstChunkDecodeMs = chunkReceiveMs
@@ -1417,6 +1472,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                     val trimmed = tr.text.trim()
                                     if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                     accumulatedText.append(trimmed)
+                                    segments.add(TimedSegment(chunkStartMs, chunkEndMs, trimmed))
                                     if (progressiveEnabled) {
                                         updateInterimResult(taskId, accumulatedText.toString())
                                         listener.onInterimResult(
@@ -1442,6 +1498,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                             val trimmed = tr.text.trim()
                                             if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                             accumulatedText.append(trimmed)
+                                            segments.add(TimedSegment(chunkStartMs, chunkEndMs, trimmed))
                                             if (progressiveEnabled) {
                                                 updateInterimResult(taskId, accumulatedText.toString())
                                                 listener.onInterimResult(
@@ -1512,7 +1569,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 detectedLanguage = detectedLang,
                 isPartial = failedChunks > 0,
                 failedChunkCount = failedChunks,
-                streamedWithoutVad = streamedWithoutVad
+                streamedWithoutVad = streamedWithoutVad,
+                segments = segments
             ))
         }
     }
@@ -1704,6 +1762,8 @@ class TranscriptionOrchestrator @Inject constructor(
         summary: String? = null,
         /** TASK-494: why an attended summary attempt produced none. */
         summarySkipReason: String? = null,
+        /** GH #92: the chunk cues, stored as JSON on the row. */
+        segments: List<TimedSegment> = emptyList(),
     ) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
@@ -1711,7 +1771,8 @@ class TranscriptionOrchestrator @Inject constructor(
             isPartial = isPartial, failedChunkCount = failedChunkCount,
             rawTranscript = rawTranscript,
             summary = summary,
-            summarySkipReason = summarySkipReason
+            summarySkipReason = summarySkipReason,
+            segments = TimedSegmentsConverter.toJson(segments)
         ).toEntity())
         preferencesManager.clearPartialTranscriptionState()
         lastPartialSaveMs = 0L

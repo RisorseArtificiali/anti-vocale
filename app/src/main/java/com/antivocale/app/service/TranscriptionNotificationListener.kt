@@ -16,6 +16,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.TranscriptFileSaver
 import kotlinx.coroutines.CoroutineScope
@@ -103,14 +104,15 @@ class TranscriptionNotificationListener(
         detectedLanguage: String?,
         isPartial: Boolean,
         failedChunkCount: Int,
-        streamedWithoutVad: Boolean
+        streamedWithoutVad: Boolean,
+        segments: List<TimedSegment>
     ) {
         // The worker has no Tasker reply channel; only the service sends ACTION_TASKER_REPLY.
         // For share requests, mirror the service: auto-copy (if enabled) + post the result.
         if (isShareRequest) {
             coroutineScope.launch {
                 autoCopyIfEnabled(resultText, sourcePackage)
-                saveTranscriptToFileIfEnabled(resultText, sourcePackage)
+                saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
                 showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad)
             }
         }
@@ -159,7 +161,12 @@ class TranscriptionNotificationListener(
 
     // ---- Auto-save to folder (issue #14, mirrors InferenceService) ----
 
-    private suspend fun saveTranscriptToFileIfEnabled(text: String, sourcePackage: String?) {
+    private suspend fun saveTranscriptToFileIfEnabled(
+        text: String,
+        sourcePackage: String?,
+        segments: List<TimedSegment> = emptyList(),
+        failedChunkCount: Int = 0
+    ) {
         val treeUriStr = preferencesManager.outputFolderUri.first() ?: return
         val treeUri = Uri.parse(treeUriStr)
         val name = withContext(Dispatchers.IO) {

@@ -23,6 +23,7 @@ import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.receiver.TaskerRequestReceiver
+import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.util.CrashReporter
@@ -558,7 +559,8 @@ class InferenceService : Service(), TranscriptionListener {
         detectedLanguage: String?,
         isPartial: Boolean,
         failedChunkCount: Int,
-        streamedWithoutVad: Boolean
+        streamedWithoutVad: Boolean,
+        segments: List<TimedSegment>
     ) {
         sendSuccessReply(taskId, resultText)
         // Every completed task moves the model-recency source: re-derive the
@@ -575,7 +577,7 @@ class InferenceService : Service(), TranscriptionListener {
             pendingResultNotifications.add(serviceScope.launch {
                 try {
                     val copied = autoCopyIfEnabled(resultText, sourcePackage)
-                    saveTranscriptToFileIfEnabled(resultText, sourcePackage)
+                    saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
                     showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad)
                 } finally {
                     pendingResultNotifications.remove(coroutineContext[Job])
@@ -662,7 +664,12 @@ class InferenceService : Service(), TranscriptionListener {
 
     // ---- Auto-save to folder (issue #14) ----
 
-    private suspend fun saveTranscriptToFileIfEnabled(text: String, sourcePackage: String?) {
+    private suspend fun saveTranscriptToFileIfEnabled(
+        text: String,
+        sourcePackage: String?,
+        segments: List<TimedSegment> = emptyList(),
+        failedChunkCount: Int = 0
+    ) {
         val treeUriStr = preferencesManager.outputFolderUri.first() ?: return
         val treeUri = Uri.parse(treeUriStr)
         val name = withContext(Dispatchers.IO) {

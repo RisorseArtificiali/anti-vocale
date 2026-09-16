@@ -100,7 +100,15 @@ class AudioPreprocessor @Inject constructor() {
         val sampleRate: Int,
         val totalDurationSeconds: Double,
         val chunkCount: Int,
-        val isVadSegmented: Boolean = false
+        val isVadSegmented: Boolean = false,
+        /**
+         * GH #92: VAD merged-segment offsets in the ORIGINAL clip's coordinates,
+         * in milliseconds, aligned with [chunks] when `size == chunks.size`.
+         * null when VAD did not run; a single-element list on the one-VAD-segment
+         * path (where chunks are window slices of the stripped buffer and the
+         * offsets are NOT per-chunk).
+         */
+        val vadSegmentRangesMs: List<Pair<Long, Long>>? = null
     )
 
     /**
@@ -192,6 +200,8 @@ class AudioPreprocessor @Inject constructor() {
 
         // Apply VAD silence stripping if enabled
         var samplesToProcess: FloatArray
+        // GH #92: VAD merged-segment offsets (original clip coordinates) when VAD ran.
+        var vadRangesMs: List<Pair<Long, Long>>? = null
         if (enableVad && context != null) {
             try {
                 val floatSamples = audioData.samples
@@ -200,6 +210,10 @@ class AudioPreprocessor @Inject constructor() {
                 // as soon as the merged output exists, freeing it while the caller
                 // proceeds (TASK-340 Fix 3).
                 val segments = vadResult.speechSegments.toMutableList()
+                val rangesMs = vadResult.mergedRanges.map { (start, end) ->
+                    (start.toLong() * 1000L / audioData.sampleRate) to
+                        (end.toLong() * 1000L / audioData.sampleRate)
+                }
 
                 // Multiple segments: merge adjacent ones up to the model's per-segment
                 // limit minus a small margin (WhisperX-style; historically 28s for
@@ -208,7 +222,8 @@ class AudioPreprocessor @Inject constructor() {
                 if (segments.size > 1) {
                     val maxMergeSamples = audioData.sampleRate * vadMergeLimitSeconds(maxChunkDurationSeconds)
 
-                    val mergedSegments = mergeVadSegments(segments, maxMergeSamples)
+                    val (mergedSegments, mergedRangesMs) =
+                        mergeVadSegmentGroups(segments, rangesMs, maxMergeSamples, audioData.sampleRate)
                     segments.clear()
 
                     Log.i(TAG, "VAD progressive: ${vadResult.speechSegments.size} raw → ${mergedSegments.size} merged segments, " +
@@ -219,7 +234,8 @@ class AudioPreprocessor @Inject constructor() {
                         sampleRate = audioData.sampleRate,
                         totalDurationSeconds = vadResult.totalSpeechDurationSeconds,
                         chunkCount = mergedSegments.size,
-                        isVadSegmented = true
+                        isVadSegmented = true,
+                        vadSegmentRangesMs = mergedRangesMs
                     )
                 }
 
@@ -238,6 +254,10 @@ class AudioPreprocessor @Inject constructor() {
                         "${"%.1f".format(strippedDuration)}s (${vadResult.segmentCount} segments)")
 
                 samplesToProcess = merged
+                // GH #92: the stripped buffer is window-sliced below, so its chunks do
+                // NOT map to per-chunk ranges; the single VAD range applies to the
+                // whole clip only when the slice count ends up at one.
+                vadRangesMs = rangesMs
             } catch (e: Exception) {
                 Log.e(TAG, "VAD processing failed, using full audio", e)
                 samplesToProcess = audioData.samples
@@ -254,10 +274,12 @@ class AudioPreprocessor @Inject constructor() {
                 chunks = listOf(samplesToProcess),
                 sampleRate = audioData.sampleRate,
                 totalDurationSeconds = processedDuration,
-                chunkCount = 1
+                chunkCount = 1,
+                vadSegmentRangesMs = vadRangesMs
             )
         } else {
-            return chunkFloatAudio(samplesToProcess, audioData.sampleRate, processedDuration, maxChunkDurationSeconds)
+            val chunked = chunkFloatAudio(samplesToProcess, audioData.sampleRate, processedDuration, maxChunkDurationSeconds)
+            return chunked.copy(vadSegmentRangesMs = vadRangesMs)
         }
     }
 
@@ -664,8 +686,24 @@ class AudioPreprocessor @Inject constructor() {
      * allocation instead of an O(N²) chain of intermediate arrays
      * (TASK-340 Fix 3).
      */
-    internal fun mergeVadSegments(segments: List<FloatArray>, maxMergeSamples: Int): List<FloatArray> {
+    internal fun mergeVadSegments(segments: List<FloatArray>, maxMergeSamples: Int): List<FloatArray> =
+        mergeVadSegmentGroups(segments, rangesMs = null, maxMergeSamples, sampleRate = 1).first
+
+    /**
+     * Same grouping as [mergeVadSegments], carried one step further: when [rangesMs]
+     * holds each input segment's original-clip offsets in ms (GH #92), the returned
+     * ranges follow the SAME grouping so output chunk i's cue is output range i.
+     * A group of segments spans first-start to last-end; a split of one long segment
+     * slices that segment's range proportionally. Ranges are null when [rangesMs] is.
+     */
+    internal fun mergeVadSegmentGroups(
+        segments: List<FloatArray>,
+        rangesMs: List<Pair<Long, Long>>?,
+        maxMergeSamples: Int,
+        sampleRate: Int,
+    ): Pair<List<FloatArray>, List<Pair<Long, Long>>?> {
         val merged = mutableListOf<FloatArray>()
+        val mergedRanges = if (rangesMs != null) mutableListOf<Pair<Long, Long>>() else null
         var start = 0
         while (start < segments.size) {
             // Pass 1: find the extent of this group and its total size.
@@ -682,14 +720,21 @@ class AudioPreprocessor @Inject constructor() {
                 // speech): split it at the limit so it cannot bypass the model's
                 // per-segment cap (GH #50 review finding).
                 val seg = segments[start]
+                val segRange = rangesMs?.get(start)
                 var offset = 0
                 while (offset < seg.size) {
                     val len = minOf(maxMergeSamples, seg.size - offset)
                     merged.add(seg.copyOfRange(offset, offset + len))
+                    if (mergedRanges != null && segRange != null) {
+                        val pieceStartMs = segRange.first + offset.toLong() * 1000L / sampleRate
+                        val pieceEndMs = pieceStartMs + len.toLong() * 1000L / sampleRate
+                        mergedRanges.add(pieceStartMs to pieceEndMs)
+                    }
                     offset += len
                 }
             } else if (end == start) {
                 merged.add(segments[start])
+                if (mergedRanges != null) mergedRanges.add(rangesMs!![start])
             } else {
                 val combined = FloatArray(groupSize)
                 var offset = 0
@@ -698,10 +743,13 @@ class AudioPreprocessor @Inject constructor() {
                     offset += segments[i].size
                 }
                 merged.add(combined)
+                if (mergedRanges != null) {
+                    mergedRanges.add(rangesMs!![start].first to rangesMs[end].second)
+                }
             }
             start = end + 1
         }
-        return merged
+        return merged to mergedRanges
     }
 
     private fun validateInputFile(inputPath: String) {
