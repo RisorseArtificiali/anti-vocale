@@ -40,23 +40,31 @@ object TranscriptFileSaver {
         sourcePackage: String? = null,
     ): String? {
         val decision = SubtitleFormatter.resolveExport(selected, transcript, segments, failedChunkCount)
-        return save(context, treeUri, decision.content, sourcePackage, decision.format.extension, decision.format.mime)
+        return save(
+            context, treeUri, decision.content, sourcePackage,
+            decision.format.extension, decision.format.mime,
+            // The "first words" preview must come from the transcript: the
+            // formatted payload opens with timestamps ("WEBVTT", "00:00:01")
+            // and names the file after the clock instead of the words.
+            namePreview = transcript,
+        )
     }
 
     /**
      * Writes [text] to a new file under [treeUri]. [extension] and [mime] come
-     * from the selected export format (GH #92); the naming scheme is unchanged,
-     * only the extension varies.
+     * from the selected export format (GH #92); [namePreview] seeds the
+     * first-words part of the unchanged naming scheme.
      *
      * @return the written file's display name on success, or `null` on any failure.
      */
-    fun save(
+    private fun save(
         context: Context,
         treeUri: Uri,
         text: String,
-        sourcePackage: String? = null,
+        sourcePackage: String?,
         extension: String,
-        mime: String
+        mime: String,
+        namePreview: String
     ): String? {
         return try {
             val tree = DocumentFile.fromTreeUri(context, treeUri) ?: return null
@@ -67,7 +75,7 @@ object TranscriptFileSaver {
             val timestamp = SimpleDateFormat("yyyy-MM-dd_HHmm", Locale.US).format(Date())
             val source = sourcePackage?.substringAfterLast('.')?.replace(".", "_") ?: "transcript"
             // Filename: {source}_{date}_{first words}.{ext}, sortable by source then date.
-            val preview = text.take(30).replace(Regex("[^\\w -]"), "").trim()
+            val preview = namePreview.take(30).replace(Regex("[^\\w -]"), "").trim()
                 .replace(" ", "-").take(20).ifEmpty { "audio" }
             val baseName = "${source}_${timestamp}_${preview}.$extension"
             val name = uniqueName(tree, baseName)
