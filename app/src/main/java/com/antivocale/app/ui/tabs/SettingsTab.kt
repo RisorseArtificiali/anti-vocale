@@ -506,13 +506,11 @@ fun SettingsTab(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                    val formatOptions = SubtitleFormatter.Format.entries
+                    val selectedFormat = SubtitleFormatter.Format.fromStored(transcriptExportFormat)
                     SettingsDropdown(
-                        currentValue = SubtitleFormatter.Format.fromStored(transcriptExportFormat),
-                        options = formatOptions,
-                        currentValueDisplay = transcriptExportFormatLabel(
-                            SubtitleFormatter.Format.fromStored(transcriptExportFormat)
-                        ),
+                        currentValue = selectedFormat,
+                        options = SubtitleFormatter.Format.entries,
+                        currentValueDisplay = transcriptExportFormatLabel(selectedFormat),
                         optionDisplay = { format -> transcriptExportFormatLabel(format) },
                         onOptionSelected = { viewModel.saveTranscriptExportFormat(it.name) },
                         label = stringResource(R.string.transcript_export_format_title),

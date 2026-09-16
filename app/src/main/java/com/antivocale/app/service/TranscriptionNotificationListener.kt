@@ -160,23 +160,25 @@ class TranscriptionNotificationListener(
         }
     }
 
-    // ---- Auto-save to folder (issue #14, mirrors InferenceService) ----
+    // ---- Auto-save to folder (issue #14) ----
+    // Mirrors InferenceService.saveTranscriptToFileIfEnabled: keep the two paths
+    // in sync (the format resolution itself lives in TranscriptFileSaver.saveAuto,
+    // the single owner of the export fail-safe).
 
     private suspend fun saveTranscriptToFileIfEnabled(
         text: String,
         sourcePackage: String?,
-        segments: List<TimedSegment> = emptyList(),
-        failedChunkCount: Int = 0
+        segments: List<TimedSegment>,
+        failedChunkCount: Int
     ) {
         val treeUriStr = preferencesManager.outputFolderUri.first() ?: return
         val treeUri = Uri.parse(treeUriStr)
-        val decision = SubtitleFormatter.resolveExport(
-            SubtitleFormatter.Format.fromStored(preferencesManager.transcriptExportFormat.first()),
-            text, segments, failedChunkCount
-        )
         val name = withContext(Dispatchers.IO) {
-            TranscriptFileSaver.save(appContext, treeUri, decision.content, sourcePackage,
-                decision.format.extension, decision.format.mime)
+            TranscriptFileSaver.saveAuto(
+                appContext, treeUri,
+                SubtitleFormatter.Format.fromStored(preferencesManager.transcriptExportFormat.first()),
+                text, segments, failedChunkCount, sourcePackage,
+            )
         }
         if (name != null) {
             Log.i(TAG, "Saved transcript to output folder: $name")

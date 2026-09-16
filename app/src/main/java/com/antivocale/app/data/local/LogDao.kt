@@ -30,10 +30,25 @@ interface LogDao {
      * 500 = the bounded UI window; the search query below reaches FULL history
      * (SQL LIKE) so the bound does not silently hide older transcripts from search.
      */
-    @Query("SELECT * FROM logs ORDER BY timestamp DESC LIMIT 500")
+    /**
+     * The two queries below list every [LogEntity] column EXCEPT `segments`
+     * (GH #92): the cues JSON re-copies the transcript per timed row, and these
+     * queries re-emit on every table write (including per-chunk interim
+     * updates), so the list paths must not carry it. Room fills the unselected
+     * nullable column with its null default (partial-entity query) and
+     * validates each column name at compile time. When a column is added to
+     * LogEntity, add it to BOTH lists or it silently reads as its default in
+     * the Logs list.
+     */
+    @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
+        "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
+        "modelName, rawTranscript, summary, summarySkipReason FROM logs ORDER BY timestamp DESC LIMIT 500")
     fun getAll(): Flow<List<LogEntity>>
 
-    @Query("SELECT * FROM logs WHERE result LIKE '%' || :query || '%' ORDER BY timestamp DESC LIMIT 500")
+    @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
+        "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
+        "modelName, rawTranscript, summary, summarySkipReason FROM logs WHERE result LIKE '%' || :query || '%' " +
+        "ORDER BY timestamp DESC LIMIT 500")
     fun searchAll(query: String): Flow<List<LogEntity>>
 
     @Query("SELECT * FROM logs WHERE taskId = :taskId LIMIT 1")

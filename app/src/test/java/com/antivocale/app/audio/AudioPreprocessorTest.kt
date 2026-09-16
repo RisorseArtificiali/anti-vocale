@@ -239,7 +239,7 @@ class AudioPreprocessorTest {
             val segments = List(segmentCount) { FloatArray(1 + rng.nextInt(500)) { rng.nextFloat() } }
             val maxMergeSamples = 100 + rng.nextInt(2000)
             val expected = naiveMerge(segments, maxMergeSamples)
-            val actual = preprocessor.mergeVadSegments(segments, maxMergeSamples)
+            val actual = preprocessor.mergeVadSegmentGroups(segments, maxMergeSamples).first
             assertEquals("chunk count (max=$maxMergeSamples, sizes=${segments.map { it.size }})",
                 expected.size, actual.size)
             expected.forEachIndexed { i, exp ->
@@ -251,7 +251,7 @@ class AudioPreprocessorTest {
     @Test
     fun `mergeVadSegments single segment returns it unchanged`() {
         val seg = floatArrayOf(0.5f, -0.5f, 0.25f)
-        val result = preprocessor.mergeVadSegments(listOf(seg), 100)
+        val result = preprocessor.mergeVadSegmentGroups(listOf(seg), 100).first
         assertEquals(1, result.size)
         assertTrue(seg.contentEquals(result[0]))
     }
@@ -260,12 +260,12 @@ class AudioPreprocessorTest {
     fun `mergeVadSegments splits group when adding would exceed limit`() {
         val a = FloatArray(300) { it.toFloat() }
         val b = FloatArray(300) { 1000f + it }
-        val result = preprocessor.mergeVadSegments(listOf(a, b), maxMergeSamples = 500)
+        val result = preprocessor.mergeVadSegmentGroups(listOf(a, b), maxMergeSamples = 500).first
         assertEquals(2, result.size)
         assertTrue(a.contentEquals(result[0]))
         assertTrue(b.contentEquals(result[1]))
         // Limit 500 allows 300+300=600? No: 600 > 500, so split. With 600 it merges.
-        val merged = preprocessor.mergeVadSegments(listOf(a, b), maxMergeSamples = 600)
+        val merged = preprocessor.mergeVadSegmentGroups(listOf(a, b), maxMergeSamples = 600).first
         assertEquals(1, merged.size)
         assertEquals(600, merged[0].size)
         assertTrue(FloatArray(600) { if (it < 300) it.toFloat() else 1000f + (it - 300) }.contentEquals(merged[0]))

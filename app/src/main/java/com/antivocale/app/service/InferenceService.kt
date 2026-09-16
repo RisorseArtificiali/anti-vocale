@@ -668,18 +668,17 @@ class InferenceService : Service(), TranscriptionListener {
     private suspend fun saveTranscriptToFileIfEnabled(
         text: String,
         sourcePackage: String?,
-        segments: List<TimedSegment> = emptyList(),
-        failedChunkCount: Int = 0
+        segments: List<TimedSegment>,
+        failedChunkCount: Int
     ) {
         val treeUriStr = preferencesManager.outputFolderUri.first() ?: return
         val treeUri = Uri.parse(treeUriStr)
-        val decision = SubtitleFormatter.resolveExport(
-            SubtitleFormatter.Format.fromStored(preferencesManager.transcriptExportFormat.first()),
-            text, segments, failedChunkCount
-        )
         val name = withContext(Dispatchers.IO) {
-            TranscriptFileSaver.save(this@InferenceService, treeUri, decision.content, sourcePackage,
-                decision.format.extension, decision.format.mime)
+            TranscriptFileSaver.saveAuto(
+                this@InferenceService, treeUri,
+                SubtitleFormatter.Format.fromStored(preferencesManager.transcriptExportFormat.first()),
+                text, segments, failedChunkCount, sourcePackage,
+            )
         }
         if (name != null) {
             Log.i(TAG, "Saved transcript to output folder: $name")

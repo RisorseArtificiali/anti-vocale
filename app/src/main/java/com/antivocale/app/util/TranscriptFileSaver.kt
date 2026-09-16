@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
+import com.antivocale.app.transcription.TimedSegment
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -20,6 +21,28 @@ object TranscriptFileSaver {
     private const val TAG = "TranscriptFileSaver"
 
     /**
+     * The auto-save entry point (GH #92): applies the fail-safe
+     * ([SubtitleFormatter.resolveExport], the one place that decides whether a
+     * timed format may be written) and writes the resulting content. Both
+     * mirrored save sites call this so the never-write-bogus-timing invariant
+     * has a single owner.
+     *
+     * @return the written file's display name on success, or `null` on any failure.
+     */
+    fun saveAuto(
+        context: Context,
+        treeUri: Uri,
+        selected: SubtitleFormatter.Format,
+        transcript: String,
+        segments: List<TimedSegment>,
+        failedChunkCount: Int,
+        sourcePackage: String? = null,
+    ): String? {
+        val decision = SubtitleFormatter.resolveExport(selected, transcript, segments, failedChunkCount)
+        return save(context, treeUri, decision.content, sourcePackage, decision.format.extension, decision.format.mime)
+    }
+
+    /**
      * Writes [text] to a new file under [treeUri]. [extension] and [mime] come
      * from the selected export format (GH #92); the naming scheme is unchanged,
      * only the extension varies.
@@ -31,8 +54,8 @@ object TranscriptFileSaver {
         treeUri: Uri,
         text: String,
         sourcePackage: String? = null,
-        extension: String = "txt",
-        mime: String = "text/plain"
+        extension: String,
+        mime: String
     ): String? {
         return try {
             val tree = DocumentFile.fromTreeUri(context, treeUri) ?: return null

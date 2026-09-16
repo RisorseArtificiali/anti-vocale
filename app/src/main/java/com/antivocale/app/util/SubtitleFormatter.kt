@@ -1,13 +1,18 @@
 package com.antivocale.app.util
 
+import com.antivocale.app.transcription.SubtitleExtractor.CUE_TIME_SEPARATOR
+import com.antivocale.app.transcription.SubtitleExtractor.MIME_SUBRIP
+import com.antivocale.app.transcription.SubtitleExtractor.MIME_VTT
+import com.antivocale.app.transcription.SubtitleExtractor.VTT_HEADER
 import com.antivocale.app.transcription.TimedSegment
 import java.util.Locale
 
 /**
  * GH #92: renders [TimedSegment] cues as SRT, WebVTT, or timestamped plain text.
  * Pure Kotlin: timestamps are durations from the audio's start, never wall clock.
- * The parse-side vocabulary lives in [SubtitleExtractor]; this object owns the
- * write side.
+ * The subtitle literals (cue separator, VTT header, MIME types) are owned by
+ * [com.antivocale.app.transcription.SubtitleExtractor], the parse side of this
+ * read/write pair, so the emitted shape cannot drift from the recognized shape.
  */
 object SubtitleFormatter {
 
@@ -18,8 +23,8 @@ object SubtitleFormatter {
     enum class Format(val extension: String, val mime: String, val timed: Boolean) {
         TXT("txt", "text/plain", timed = false),
         TXT_TIMED("txt", "text/plain", timed = true),
-        SRT("srt", "application/x-subrip", timed = true),
-        VTT("vtt", "text/vtt", timed = true);
+        SRT("srt", MIME_SUBRIP, timed = true),
+        VTT("vtt", MIME_VTT, timed = true);
 
         companion object {
             /** Unknown stored values fall back to the TXT default. */
@@ -57,46 +62,53 @@ object SubtitleFormatter {
         })
     }
 
-    fun srt(segments: List<TimedSegment>): String = segments.mapIndexed { index, segment ->
-        "${index + 1}\n${srtTime(segment.startMs)} --> ${srtTime(segment.endMs)}\n${segment.text}\n"
-    }.joinToString(SEPARATOR)
+    // One StringBuilder per render: a long file is on the order of the
+    // transcript itself, and a map-then-join would copy every byte twice.
 
-    fun vtt(segments: List<TimedSegment>): String =
-        "WEBVTT\n\n" + segments.joinToString(SEPARATOR) { segment ->
-            "${vttTime(segment.startMs)} --> ${vttTime(segment.endMs)}\n${segment.text}\n"
+    fun srt(segments: List<TimedSegment>): String = with(renderBuffer(segments)) {
+        segments.forEachIndexed { index, segment ->
+            if (index > 0) append('\n')
+            append(index + 1).append('\n')
+            append(fullClock(segment.startMs, ",")).append(' ').append(CUE_TIME_SEPARATOR)
+                .append(' ').append(fullClock(segment.endMs, ",")).append('\n')
+            append(segment.text).append('\n')
         }
-
-    fun timedTxt(segments: List<TimedSegment>): String = segments.joinToString("\n") { segment ->
-        "${shortTime(segment.startMs)}-${shortTime(segment.endMs)} ${segment.text}"
+        toString()
     }
 
-    /** SRT clock: HH:MM:SS,mmm with a comma decimal separator. */
-    private fun srtTime(ms: Long): String =
-        "${clockParts(ms, hoursPadded = true, decimal = ",")}"
-
-    /** WebVTT clock: HH:MM:SS.mmm with a dot decimal separator. */
-    private fun vttTime(ms: Long): String =
-        clockParts(ms, hoursPadded = true, decimal = ".")
-
-    /** Short human clock: m:ss, or h:mm:ss past one hour. */
-    private fun shortTime(ms: Long): String =
-        clockParts(ms, hoursPadded = false, decimal = null)
-
-    private fun clockParts(ms: Long, hoursPadded: Boolean, decimal: String?): String {
-        val totalSeconds = ms.coerceAtLeast(0L) / 1000L
-        val hours = totalSeconds / 3600
-        val minutes = (totalSeconds % 3600) / 60
-        val seconds = totalSeconds % 60
-        val millis = ms.coerceAtLeast(0L) % 1000
-        val hourPart = if (hoursPadded) String.format(Locale.US, "%02d:", hours)
-            else if (hours > 0) "$hours:"
-            else ""
-        val minutePart = if (hoursPadded || hours > 0) String.format(Locale.US, "%02d:", minutes)
-            else "$minutes:"
-        val secondPart = String.format(Locale.US, "%02d", seconds)
-        val millisPart = decimal?.let { "${it}${String.format(Locale.US, "%03d", millis)}" } ?: ""
-        return "$hourPart$minutePart$secondPart$millisPart"
+    fun vtt(segments: List<TimedSegment>): String = with(renderBuffer(segments)) {
+        append(VTT_HEADER).append('\n').append('\n')
+        segments.forEachIndexed { index, segment ->
+            if (index > 0) append('\n')
+            append(fullClock(segment.startMs, ".")).append(' ').append(CUE_TIME_SEPARATOR)
+                .append(' ').append(fullClock(segment.endMs, ".")).append('\n')
+            append(segment.text).append('\n')
+        }
+        toString()
     }
 
-    private const val SEPARATOR = "\n"
+    fun timedTxt(segments: List<TimedSegment>): String = with(renderBuffer(segments)) {
+        segments.forEachIndexed { index, segment ->
+            if (index > 0) append('\n')
+            append(shortTime(segment.startMs)).append('-').append(shortTime(segment.endMs))
+                .append(' ').append(segment.text)
+        }
+        toString()
+    }
+
+    /** SRT and VTT clock: HH:MM:SS with [decimal] (comma or dot) plus milliseconds. */
+    private fun fullClock(ms: Long, decimal: String): String = String.format(
+        Locale.US, "%02d:%02d:%02d%s%03d",
+        ms.coerceAtLeast(0L) / 3_600_000L,
+        ms.coerceAtLeast(0L) / 60_000L % 60L,
+        ms.coerceAtLeast(0L) / 1000L % 60L,
+        decimal,
+        ms.coerceAtLeast(0L) % 1000L,
+    )
+
+    /** Timestamped-txt clock: the shared human duration clock ([AudioDurationFormat]). */
+    private fun shortTime(ms: Long): String = AudioDurationFormat.format(ms / 1000.0)
+
+    private fun renderBuffer(segments: List<TimedSegment>): StringBuilder =
+        StringBuilder(segments.sumOf { it.text.length } + segments.size * 48)
 }

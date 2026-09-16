@@ -17,7 +17,7 @@ class MergeVadSegmentGroupsTest {
         val ranges = listOf(0L to 10L, 20L to 30L)
 
         val (merged, mergedRanges) = AudioPreprocessor().mergeVadSegmentGroups(
-            segments, ranges, maxMergeSamples = 30, sampleRate = sampleRate)
+            segments, maxMergeSamples = 30, rangesMs = ranges, sampleRate = sampleRate)
 
         assertEquals(1, merged.size)
         assertEquals(listOf(0L to 30L), mergedRanges)
@@ -29,7 +29,7 @@ class MergeVadSegmentGroupsTest {
         val ranges = listOf(100L to 170L)
 
         val (merged, mergedRanges) = AudioPreprocessor().mergeVadSegmentGroups(
-            listOf(big), ranges, maxMergeSamples = 30, sampleRate = sampleRate)
+            listOf(big), maxMergeSamples = 30, rangesMs = ranges, sampleRate = sampleRate)
 
         assertEquals(3, merged.size)
         assertEquals(listOf(30, 30, 10), merged.map { it.size })
@@ -42,7 +42,7 @@ class MergeVadSegmentGroupsTest {
         val ranges = listOf(0L to 10L, 20L to 30L)
 
         val (merged, mergedRanges) = AudioPreprocessor().mergeVadSegmentGroups(
-            segments, ranges, maxMergeSamples = 10, sampleRate = sampleRate)
+            segments, maxMergeSamples = 10, rangesMs = ranges, sampleRate = sampleRate)
 
         assertEquals(listOf(10, 10), merged.map { it.size })
         assertEquals(ranges, mergedRanges)
@@ -51,7 +51,7 @@ class MergeVadSegmentGroupsTest {
     @Test
     fun `null ranges stay null`() {
         val (merged, mergedRanges) = AudioPreprocessor().mergeVadSegmentGroups(
-            listOf(FloatArray(10)), null, maxMergeSamples = 30, sampleRate = sampleRate)
+            listOf(FloatArray(10)), maxMergeSamples = 30, rangesMs = null, sampleRate = sampleRate)
 
         assertEquals(1, merged.size)
         assertNull(mergedRanges)

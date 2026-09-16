@@ -50,6 +50,7 @@ import com.antivocale.app.R
 import com.antivocale.app.ui.onboarding.tourRevealable
 import com.antivocale.app.transcription.SummaryPolicy
 import com.antivocale.app.util.AppInfoUtils
+import com.antivocale.app.util.AudioDurationFormat
 import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.util.formatProcessingTime
 import com.antivocale.app.data.PreferencesManager
@@ -966,7 +967,7 @@ fun LogEntryItem(
                     )
                     Spacer(modifier = Modifier.width(4.dp))
                     Text(
-                        text = formatAudioDuration(log.audioDurationSeconds),
+                        text = AudioDurationFormat.format(log.audioDurationSeconds),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -1313,15 +1314,6 @@ fun LogEntryItem(
             }
         }
     }
-}
-
-// Format audio duration: 83.5 -> "1:23", 45.0 -> "0:45"
-private fun formatAudioDuration(seconds: Double): String {
-    if (seconds <= 0) return "0:00"
-    val totalSeconds = seconds.toInt()
-    val minutes = totalSeconds / 60
-    val secs = totalSeconds % 60
-    return "$minutes:${secs.toString().padStart(2, '0')}"
 }
 
 // Format relative time: "5 min ago", "Yesterday 14:32", "Mar 2, 14:32"

@@ -1048,12 +1048,12 @@ class TranscriptionOrchestrator @Inject constructor(
                     if (tr.text.isNotBlank()) {
                         recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
                         val trimmed = tr.text.trim()
-                        // GH #92: one VAD segment = one cue carrying the whole text,
-                        // offset from the VAD range (the stripped buffer is window
-                        // arithmetic territory and must not be consulted here).
-                        val vadRanges = preprocessingResult.vadSegmentRangesMs
-                        val segments = if (vadRanges != null && vadRanges.size == 1) {
-                            listOf(TimedSegment(vadRanges[0].first, vadRanges[0].second, trimmed))
+                        // GH #92: the one positional cue for the one chunk; the
+                        // preprocessor's ranges are aligned with chunks by
+                        // construction, so no per-path offset arithmetic exists here.
+                        val range = preprocessingResult.chunkRangesMs?.firstOrNull()
+                        val segments = if (range != null) {
+                            listOf(TimedSegment(range.first, range.second, trimmed))
                         } else emptyList()
                         Result.success(tr.copy(text = trimmed, segments = segments))
                     } else {
@@ -1072,7 +1072,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     taskId = taskId,
                     chunks = preprocessingResult.chunks,
                     sampleRate = preprocessingResult.sampleRate,
-                    segmentRangesMs = preprocessingResult.vadSegmentRangesMs ?: emptyList(),
+                    segmentRangesMs = preprocessingResult.chunkRangesMs ?: emptyList(),
                     prompt = promptPlan.perChunk,
                     backend = backend,
                     audioDurationSeconds = audioDurationSeconds,
@@ -1089,8 +1089,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 taskId = taskId,
                 chunks = preprocessingResult.chunks,
                 sampleRate = preprocessingResult.sampleRate,
-                segmentRangesMs = preprocessingResult.vadSegmentRangesMs,
-                chunkCapSeconds = maxChunkDuration,
+                segmentRangesMs = preprocessingResult.chunkRangesMs,
                 prompt = promptPlan.perChunk,
                 backend = backend,
                 audioDurationSeconds = audioDurationSeconds,
@@ -1213,10 +1212,8 @@ class TranscriptionOrchestrator @Inject constructor(
         taskId: String,
         chunks: List<FloatArray>,
         sampleRate: Int,
-        /** GH #92: VAD per-chunk offsets, or null when VAD did not segment. */
+        /** GH #92: per-chunk offsets aligned with the chunks, or null when unknown. */
         segmentRangesMs: List<Pair<Long, Long>>?,
-        /** GH #92: the EFFECTIVE (RAM-tightened) cap the fixed windows were cut at. */
-        chunkCapSeconds: Int?,
         prompt: String = "",
         backend: TranscriptionBackend,
         audioDurationSeconds: Int,
@@ -1337,29 +1334,18 @@ class TranscriptionOrchestrator @Inject constructor(
         val combinedResult = results.filterNotNull().joinToString(" ")
         Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.filterNotNull().size}/$chunkCount chunks")
 
-        // GH #92: VAD-segmented chunks cue at their VAD ranges (size must match the
-        // chunk count: a single stripped segment window-sliced here carries ONE range
-        // for the whole buffer, so no per-chunk cue exists); without VAD the chunks
-        // are fixed windows at the effective cap. A failed chunk leaves no cue.
-        val segments = when {
-            segmentRangesMs != null && segmentRangesMs.size == chunkCount ->
-                results.mapIndexedNotNull { index, text ->
-                    text?.let {
-                        TimedSegment(segmentRangesMs[index].first, segmentRangesMs[index].second, it)
-                    }
+        // GH #92: one positional rule for every origin of these chunks (VAD merged
+        // segments, fixed windows, the stripped single span): the preprocessor's
+        // ranges are aligned with the chunks BY CONSTRUCTION, so cue i is range i.
+        // The size guard is defensive only; a failed chunk leaves no cue.
+        val segmentRanges = segmentRangesMs?.takeIf { it.size == chunkCount }
+        val segments = if (segmentRanges != null) {
+            results.mapIndexedNotNull { index, text ->
+                text?.let {
+                    TimedSegment(segmentRanges[index].first, segmentRanges[index].second, it)
                 }
-            segmentRangesMs == null && chunkCapSeconds != null ->
-                results.mapIndexedNotNull { index, text ->
-                    text?.let {
-                        TimedSegment(
-                            index.toLong() * chunkCapSeconds * 1000L,
-                            (index + 1).toLong() * chunkCapSeconds * 1000L,
-                            it
-                        )
-                    }
-                }
-            else -> emptyList()
-        }
+            }
+        } else emptyList()
 
         val totalMs = System.currentTimeMillis() - chunkProcessingStartTime
         Log.i(TAG, "PERF: parallel total ${totalMs}ms for ${audioDurationSeconds}s audio, $chunkCount chunks, backend=${backend.id}")

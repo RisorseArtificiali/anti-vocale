@@ -102,13 +102,14 @@ class AudioPreprocessor @Inject constructor() {
         val chunkCount: Int,
         val isVadSegmented: Boolean = false,
         /**
-         * GH #92: VAD merged-segment offsets in the ORIGINAL clip's coordinates,
-         * in milliseconds, aligned with [chunks] when `size == chunks.size`.
-         * null when VAD did not run; a single-element list on the one-VAD-segment
-         * path (where chunks are window slices of the stripped buffer and the
-         * offsets are NOT per-chunk).
+         * GH #92: per-chunk [start,end) offsets in the ORIGINAL clip's
+         * coordinates, milliseconds, aligned with [chunks] BY CONSTRUCTION
+         * (index i is chunk i's span; VAD paths use merged-segment offsets,
+         * window paths use the slice offsets the chunker already computed).
+         * Consumers build positional cues from this and never re-derive
+         * offsets from chunk indices.
          */
-        val vadSegmentRangesMs: List<Pair<Long, Long>>? = null
+        val chunkRangesMs: List<Pair<Long, Long>>? = null
     )
 
     /**
@@ -200,8 +201,10 @@ class AudioPreprocessor @Inject constructor() {
 
         // Apply VAD silence stripping if enabled
         var samplesToProcess: FloatArray
-        // GH #92: VAD merged-segment offsets (original clip coordinates) when VAD ran.
-        var vadRangesMs: List<Pair<Long, Long>>? = null
+        // GH #92: original-clip offset of samplesToProcess[0]. Zero for the full
+        // decoded audio; the VAD single-segment path strips to one speech span, so
+        // its buffer starts at that span's offset instead.
+        var originMs = 0L
         if (enableVad && context != null) {
             try {
                 val floatSamples = audioData.samples
@@ -223,7 +226,10 @@ class AudioPreprocessor @Inject constructor() {
                     val maxMergeSamples = audioData.sampleRate * vadMergeLimitSeconds(maxChunkDurationSeconds)
 
                     val (mergedSegments, mergedRangesMs) =
-                        mergeVadSegmentGroups(segments, rangesMs, maxMergeSamples, audioData.sampleRate)
+                        mergeVadSegmentGroups(
+                            segments, maxMergeSamples,
+                            rangesMs = rangesMs, sampleRate = audioData.sampleRate,
+                        )
                     segments.clear()
 
                     Log.i(TAG, "VAD progressive: ${vadResult.speechSegments.size} raw → ${mergedSegments.size} merged segments, " +
@@ -235,7 +241,7 @@ class AudioPreprocessor @Inject constructor() {
                         totalDurationSeconds = vadResult.totalSpeechDurationSeconds,
                         chunkCount = mergedSegments.size,
                         isVadSegmented = true,
-                        vadSegmentRangesMs = mergedRangesMs
+                        chunkRangesMs = mergedRangesMs
                     )
                 }
 
@@ -254,10 +260,9 @@ class AudioPreprocessor @Inject constructor() {
                         "${"%.1f".format(strippedDuration)}s (${vadResult.segmentCount} segments)")
 
                 samplesToProcess = merged
-                // GH #92: the stripped buffer is window-sliced below, so its chunks do
-                // NOT map to per-chunk ranges; the single VAD range applies to the
-                // whole clip only when the slice count ends up at one.
-                vadRangesMs = rangesMs
+                // The stripped buffer starts at the (single) speech span's offset, so
+                // window slices below stay in original-clip coordinates.
+                originMs = rangesMs.firstOrNull()?.first ?: 0L
             } catch (e: Exception) {
                 Log.e(TAG, "VAD processing failed, using full audio", e)
                 samplesToProcess = audioData.samples
@@ -275,11 +280,12 @@ class AudioPreprocessor @Inject constructor() {
                 sampleRate = audioData.sampleRate,
                 totalDurationSeconds = processedDuration,
                 chunkCount = 1,
-                vadSegmentRangesMs = vadRangesMs
+                chunkRangesMs = listOf(
+                    originMs to originMs + (processedDuration * 1000).toLong()
+                )
             )
         } else {
-            val chunked = chunkFloatAudio(samplesToProcess, audioData.sampleRate, processedDuration, maxChunkDurationSeconds)
-            return chunked.copy(vadSegmentRangesMs = vadRangesMs)
+            return chunkFloatAudio(samplesToProcess, audioData.sampleRate, processedDuration, maxChunkDurationSeconds, originMs)
         }
     }
 
@@ -686,24 +692,25 @@ class AudioPreprocessor @Inject constructor() {
      * allocation instead of an O(N²) chain of intermediate arrays
      * (TASK-340 Fix 3).
      */
-    internal fun mergeVadSegments(segments: List<FloatArray>, maxMergeSamples: Int): List<FloatArray> =
-        mergeVadSegmentGroups(segments, rangesMs = null, maxMergeSamples, sampleRate = 1).first
-
     /**
-     * Same grouping as [mergeVadSegments], carried one step further: when [rangesMs]
-     * holds each input segment's original-clip offsets in ms (GH #92), the returned
-     * ranges follow the SAME grouping so output chunk i's cue is output range i.
-     * A group of segments spans first-start to last-end; a split of one long segment
-     * slices that segment's range proportionally. Ranges are null when [rangesMs] is.
+     * Groups adjacent VAD segments up to the per-chunk sample limit. When
+     * [rangesMs] holds each input segment's original-clip offsets in ms
+     * (GH #92), the returned ranges follow the SAME grouping so output chunk
+     * i's cue is output range i: a group of segments spans first-start to
+     * last-end, and a split of one long segment slices that segment's range
+     * proportionally. Ranges are null when [rangesMs] is. Range callers omit
+     * [rangesMs] and [sampleRate] (the sample rate only converts split
+     * offsets, never used without ranges).
      */
     internal fun mergeVadSegmentGroups(
         segments: List<FloatArray>,
-        rangesMs: List<Pair<Long, Long>>?,
         maxMergeSamples: Int,
-        sampleRate: Int,
+        rangesMs: List<Pair<Long, Long>>? = null,
+        sampleRate: Int = 1,
     ): Pair<List<FloatArray>, List<Pair<Long, Long>>?> {
         val merged = mutableListOf<FloatArray>()
-        val mergedRanges = if (rangesMs != null) mutableListOf<Pair<Long, Long>>() else null
+        val rs = rangesMs
+        val mergedRanges = if (rs != null) mutableListOf<Pair<Long, Long>>() else null
         var start = 0
         while (start < segments.size) {
             // Pass 1: find the extent of this group and its total size.
@@ -720,21 +727,22 @@ class AudioPreprocessor @Inject constructor() {
                 // speech): split it at the limit so it cannot bypass the model's
                 // per-segment cap (GH #50 review finding).
                 val seg = segments[start]
-                val segRange = rangesMs?.get(start)
+                val segRange = rs?.get(start)
                 var offset = 0
                 while (offset < seg.size) {
                     val len = minOf(maxMergeSamples, seg.size - offset)
                     merged.add(seg.copyOfRange(offset, offset + len))
-                    if (mergedRanges != null && segRange != null) {
+                    if (segRange != null) {
                         val pieceStartMs = segRange.first + offset.toLong() * 1000L / sampleRate
                         val pieceEndMs = pieceStartMs + len.toLong() * 1000L / sampleRate
-                        mergedRanges.add(pieceStartMs to pieceEndMs)
+                        mergedRanges?.add(pieceStartMs to pieceEndMs)
                     }
                     offset += len
                 }
             } else if (end == start) {
                 merged.add(segments[start])
-                if (mergedRanges != null) mergedRanges.add(rangesMs!![start])
+                val segRange = rs?.get(start)
+                if (segRange != null) mergedRanges?.add(segRange)
             } else {
                 val combined = FloatArray(groupSize)
                 var offset = 0
@@ -743,8 +751,8 @@ class AudioPreprocessor @Inject constructor() {
                     offset += segments[i].size
                 }
                 merged.add(combined)
-                if (mergedRanges != null) {
-                    mergedRanges.add(rangesMs!![start].first to rangesMs[end].second)
+                if (rs != null) {
+                    mergedRanges?.add(rs[start].first to rs[end].second)
                 }
             }
             start = end + 1
@@ -888,21 +896,31 @@ class AudioPreprocessor @Inject constructor() {
 
     /**
      * Chunks float audio data into segments of specified duration.
+     * [originMs] is the original-clip offset of `samples[0]` (nonzero when the
+     * buffer is a stripped single VAD span); slice offsets are computed here, in
+     * the slicing loop that already knows them, so the emitted chunk ranges are
+     * exact including the shorter final window (GH #92).
      */
     private fun chunkFloatAudio(
         samples: FloatArray,
         sampleRate: Int,
         duration: Double,
-        maxChunkDurationSeconds: Int
+        maxChunkDurationSeconds: Int,
+        originMs: Long = 0L
     ): PreprocessingResult {
         val samplesPerChunk = sampleRate * maxChunkDurationSeconds
         val chunks = mutableListOf<FloatArray>()
+        val rangesMs = mutableListOf<Pair<Long, Long>>()
         var offset = 0
         var chunkIndex = 0
 
         while (offset < samples.size) {
             val chunkSize = minOf(samplesPerChunk, samples.size - offset)
             chunks.add(samples.copyOfRange(offset, offset + chunkSize))
+            rangesMs.add(
+                (originMs + offset.toLong() * 1000L / sampleRate) to
+                    (originMs + (offset + chunkSize).toLong() * 1000L / sampleRate)
+            )
 
             Log.d(TAG, "Created chunk $chunkIndex: $chunkSize samples")
 
@@ -914,7 +932,8 @@ class AudioPreprocessor @Inject constructor() {
             chunks = chunks,
             sampleRate = sampleRate,
             totalDurationSeconds = duration,
-            chunkCount = chunks.size
+            chunkCount = chunks.size,
+            chunkRangesMs = rangesMs
         )
     }
 
