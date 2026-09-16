@@ -65,6 +65,8 @@ data class LogEntry(
     val summary: String? = null,
     /** TASK-494: stable token from the entity; rendered localized. */
     val summarySkipReason: String? = null,
+    /** GH #92: JSON-serialized timed cues (raw passthrough; see TimedSegmentsConverter). */
+    val segments: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
 

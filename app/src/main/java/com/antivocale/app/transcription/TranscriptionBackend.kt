@@ -213,6 +213,10 @@ data class TranscriptionResult(
      *  no summary (the guards rejected the output). Rendered localized in
      *  the entry details; never user text. */
     val summarySkipReason: String? = null,
+    /** GH #92: per-chunk cues with offsets from the audio start. Empty on the
+     *  single-pass paths and whenever honest timing is unavailable; see the
+     *  assembly paths in TranscriptionOrchestrator. */
+    val segments: List<TimedSegment> = emptyList(),
 ) {
     companion object {
         private val WHITESPACE = Regex("\\s+")

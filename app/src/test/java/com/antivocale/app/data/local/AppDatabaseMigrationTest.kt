@@ -43,6 +43,7 @@ import java.io.File
 private val ALL_MIGRATIONS = arrayOf(
     AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4,
     AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6, AppDatabase.MIGRATION_6_7,
+    AppDatabase.MIGRATION_7_8,
 )
 
 @RunWith(AndroidJUnit4::class)
@@ -178,6 +179,31 @@ class AppDatabaseMigrationTest {
         }
         val updated = runBlocking { db!!.logDao().getByTaskId("task-1") }
         assertEquals("guards", updated!!.summarySkipReason)
+    }
+
+    /** MIGRATION_7_8 (GH #92) must run, preserve rows, and default null. */
+    @Test
+    fun migrate_7_to_8_preservesRowAndPassesSchemaValidation() {
+        seedV2Database()
+        db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+
+        val row = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertNotNull(row)
+        assertNull("segments must default null for pre-v8 rows", row!!.segments)
+
+        runBlocking {
+            db!!.logDao().update(row.copy(
+                result = "trascrizione lunga",
+                segments = "[{\"startMs\":0,\"endMs\":4000,\"text\":\"ciao\"}]"))
+        }
+        val updated = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertEquals(
+            "[{\"startMs\":0,\"endMs\":4000,\"text\":\"ciao\"}]",
+            updated!!.segments
+        )
     }
 
     /** A fresh v3 DB (no migration) must also be internally consistent with the entity. */

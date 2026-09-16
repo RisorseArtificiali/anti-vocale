@@ -40,6 +40,9 @@ data class LogEntity(
      *  pre-v7 rows, on every clean skip (toggle, short transcript), and on
      *  success. */
     val summarySkipReason: String? = null,
+    /** GH #92: JSON-serialized [TimedSegment] cues (see [TimedSegmentsConverter]);
+     *  null when the request produced no honest timing or predates v8. */
+    val segments: String? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -63,7 +66,8 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     modelName = modelName,
     rawTranscript = rawTranscript,
     summary = summary,
-    summarySkipReason = summarySkipReason
+    summarySkipReason = summarySkipReason,
+    segments = segments
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -84,5 +88,6 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     modelName = modelName,
     rawTranscript = rawTranscript,
     summary = summary,
-    summarySkipReason = summarySkipReason
+    summarySkipReason = summarySkipReason,
+    segments = segments
 )
