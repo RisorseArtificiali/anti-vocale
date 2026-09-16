@@ -12,7 +12,10 @@ failures=0
 ok()   { echo "OK   $*"; }
 fail() { echo "FAIL $*"; failures=$((failures+1)); }
 
-for abi in armeabi-v7a arm64-v8a x86_64; do
+# ABI set from the app's gradle when-map (the single owner, TASK-525)
+abi_map=$(sed -n '/val abiCode = when/,/else -> 0/p' app/build.gradle.kts | grep -oE '"[^"]+" -> [0-9]+' || true)
+[ -n "$abi_map" ] || { fail "cannot parse the abiCode when-map from app/build.gradle.kts"; exit 1; }
+for abi in $(awk -F'"' '{print $2}' <<<"$abi_map"); do
   url="https://github.com/$REPO/releases/download/$TAG/app-fdroid-$abi-release.apk"
   code=$(curl -sIL -o /dev/null -w "%{http_code}" "$url")
   [ "$code" = "200" ] && ok "$abi signed reference resolves (200)" || fail "$abi signed reference HTTP $code: $url"

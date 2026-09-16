@@ -78,11 +78,15 @@ done
 [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "tag must look like vX.Y.Z, got '$TAG'"
 [[ "$COMMIT" =~ ^[0-9a-f]{40}$ ]] || fail "--commit must be a full 40-hex SHA, got '$COMMIT'"
 
-# The asset manifest, derived from the ABI triplet the way every other site
-# derives names (workflow stage/sign steps, gate C, pre-push hook): one list,
-# three uses below (presence check, count tripwires, the create call itself).
+# The asset manifest, derived from the app's gradle abiCode when-map (the
+# single owner, TASK-525): one list, three uses below (presence check, count
+# tripwires, the create call itself).
+GRADLE_ABI_MAP="$(sed -n '/val abiCode = when/,/else -> 0/p' "$APP_REPO/app/build.gradle.kts" \
+  | grep -oE '"[^"]+" -> [0-9]+' || true)"
+[ -n "$GRADLE_ABI_MAP" ] || { echo "::error::cannot parse the abiCode when-map from app/build.gradle.kts (the asset manifest needs the ABI list)"; exit 1; }
+mapfile -t ABI_LIST < <(awk -F'"' '{print $2}' <<<"$GRADLE_ABI_MAP")
 ASSETS=()
-for ABI in armeabi-v7a arm64-v8a x86_64; do
+for ABI in "${ABI_LIST[@]}"; do
   ASSETS+=(
     "app-fdroid-$ABI-release-unsigned.apk"
     "app-fdroid-$ABI-release.apk"
@@ -127,8 +131,9 @@ RUN_JSON=$(gh run view "$RUN_ID" -R "$REPO" --json status,conclusion,headSha,job
 RUN_HEAD=$(echo "$RUN_JSON" | jq -r .headSha)
 [ "$RUN_HEAD" = "$COMMIT" ] \
   || fail "run $RUN_ID headSha is $RUN_HEAD, expected the bump commit $COMMIT (stale run id? re-check: gh run list --event workflow_dispatch --limit 3)"
-# Same job selector as verify-github-workflow-before-recipe-push.sh check 1;
-# if the reproducible job is ever renamed, change both (keep the copies aligned).
+# Same job selector as verify-github-workflow-before-recipe-push.sh (twice:
+# the reference-run picker and the in-progress check); three copies total.
+# If the reproducible job is ever renamed, change all of them (keep aligned).
 REPRO=$(echo "$RUN_JSON" | jq -r '[.jobs[] | select(.name | contains("reproducible"))][0].conclusion // empty')
 [ "$REPRO" = "success" ] || fail "run $RUN_ID reproducible job conclusion: '${REPRO:-absent}' (was this a -f commit=<sha> dispatch?)"
 

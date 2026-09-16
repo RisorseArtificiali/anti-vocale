@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# One-command F-Droid reference flow, split in two phases around the ~45 min
-# build. Every phase boundary is a gate that already exists as a script; this
-# orchestrator only chains them and stops at the first red (exit nonzero).
+# One-command F-Droid reference flow, split in two phases around the ~3h
+# build (the sherpa source compile for 3 ABIs measured 3h02m on v1.12.0 and
+# 3h20m on v1.12.1; the old 25-50 min figures were stale). Every phase
+# boundary is a gate that already exists as a script; this orchestrator only
+# chains them and stops at the first red (exit nonzero).
 #
 #   prepare   mirror sync (fetches the fork; gate A validates local state) ->
 #             gate A (pre-dispatch checker) -> stale-asset cleanup -> dispatch
@@ -122,7 +124,7 @@ if [ "$PHASE" = "prepare" ]; then
   else
     run gh workflow run android-release.yml -f tag="$TAG" -R "$REPO"
   fi
-  say "monitor: https://github.com/$REPO/actions (reproducible job: 40-50 min)"
+  say "monitor: https://github.com/$REPO/actions (reproducible job: ~3h, sherpa compiles from source for 3 ABIs)"
   if [ -n "$COMMIT" ]; then
     # Best-effort run-id capture for release-create.sh (its --run-id is
     # explicit because dispatch inputs are not queryable afterwards). The
@@ -153,6 +155,49 @@ fi
 
 say "phase 1/3: gate C (job success, signed URLs, fork==mirror, clean tree)"
 "$HERE/verify-github-workflow-before-recipe-push.sh" "$TAG"
+
+# BOT-FIRST (TASK-525, the v1.12.1 lesson): with build-first ordering the
+# tag and its signed assets appear atomically, so fdroiddata's checkupdates
+# bot can land this release's recipe on master directly (it did: commit
+# 97972ae793 for 1.12.1). When master's recipe content already equals ours,
+# the fork push and the MR are a no-op: skip them instead of pushing a
+# branch nobody needs to merge. A real difference (typically a stale srclib
+# pin copied forward by the bot after a sherpa bump) falls through to the
+# normal push+MR path as the correction.
+#
+# The comparison is ONE raw-file GET (30KB), not a git fetch of fdroiddata
+# master into this checkout: finalize gets re-run while watching pipelines,
+# and each re-run would otherwise pay a full-repo catch-up fetch.
+#
+# Normalization: the two inert lines new-fdroid-version.py strips from NEW
+# blocks (the sdkmanager r27c prebuild line and the dead `zip` apt entry)
+# are cosmetic, and the bot clones blocks VERBATIM, so a bot-landed master
+# keeps carrying them while our generated blocks do not. A raw diff would
+# then never match again; stripping both known-cosmetic patterns from BOTH
+# sides keeps the skip reachable without widening it to version fields or
+# any build-relevant line.
+normalize_recipe() {
+  sed -e "/^[[:space:]]*- sdkmanager 'ndk;r27c'$/d" \
+      -e 's/wget build-essential cmake g++ zip unzip/wget build-essential cmake g++ unzip/'
+}
+MASTER_RAW=""
+# Anonymous API against fdroid/fdroiddata (note: no hyphen; the fork is
+# fdroid-data, the upstream is fdroiddata): the /-/raw/ endpoint answers
+# 403-sign_in to plain curl (bot detection), while the API serves the same
+# bytes anonymously, so no token is needed for this read.
+MASTER_RAW="$(curl -sfL --max-time 30 \
+  "https://gitlab.com/api/v4/projects/fdroid%2Ffdroiddata/repository/files/$(printf '%s' "$RECIPE_REL" | sed 's|/|%2F|g')/raw?ref=master" \
+  || true)"
+if [ -n "$MASTER_RAW" ]; then
+  if diff -q <(normalize_recipe <<<"$MASTER_RAW") \
+             <(normalize_recipe < "$FORK_CHECKOUT/$RECIPE_REL") >/dev/null; then
+    say "fdroiddata master already carries this recipe content (the bot landed it): no fork push, no MR needed"
+    say "watch the fdroiddata master pipeline for the build of $TAG"
+    exit 0
+  fi
+else
+  say "warning: cannot fetch fdroiddata master's recipe for the bot-first check; continuing with the normal push path"
+fi
 
 say "phase 2/3: fork push (only if local recipe commits are pending)"
 BR="$(git -C "$FORK_CHECKOUT" branch --show-current)"

@@ -63,15 +63,38 @@ RUNS_JSON=$(gh run list --workflow=android-release.yml \
 # A run may still be in progress or queued: look for that FIRST, because a
 # completed older run would otherwise mask it (2026-08-31: guard read the
 # previous release's green run while the new one was still building).
-IN_PROGRESS_ID=$(echo "$RUNS_JSON" | jq -r \
-  '[.[] | select(.status == "in_progress" or .status == "queued")][0].databaseId // empty')
+# EXCEPT Play-only dispatches (play-store-track set: reproducible job
+# skipped): their publish job parks at the production-environment approval,
+# which can wait days, and they never produce the signed APKs this gate
+# exists to verify, so they must not block the recipe push (TASK-525; the
+# v1.12.1 finalize was blocked by exactly such a parked run).
+IN_PROGRESS_IDS=$(echo "$RUNS_JSON" | jq -r \
+  '[.[] | select(.status == "in_progress" or .status == "queued") | .databaseId] | join(" ")')
 
-if [ -n "$IN_PROGRESS_ID" ]; then
+for IN_PROGRESS_ID in $IN_PROGRESS_IDS; do
+  # capture-then-judge, never pipe-straight-into-the-verdict: under pipefail
+  # a transient gh failure must surface as a BLOCKING unknown here (fail
+  # closed), not kill the script silently with the diagnosis swallowed.
+  IP_JOBS="$(gh run view "$IN_PROGRESS_ID" --json jobs 2>/dev/null || true)"
+  IP_REPROD="$(jq -r '[.jobs[] | select(.name | contains("reproducible"))][0].conclusion // "none"' \
+    <<<"$IP_JOBS" 2>/dev/null || true)"
+  # jq on EMPTY input (gh failed, captured as "") prints nothing: coerce the
+  # empty string to "none" so an unknown state stays BLOCKING (fail closed)
+  # rather than falling through the skipped-exempt below.
+  IP_REPROD="${IP_REPROD:-none}"
+  # "skipped" marks a Play-only dispatch. A QUEUED run reports no jobs yet
+  # ("none") and stays blocking: a queued reference build must gate, and a
+  # queued Play-only run self-heals into "skipped" within minutes once its
+  # job-level conditions evaluate.
+  if [ "$IP_REPROD" = "skipped" ]; then
+    warn "run ${IN_PROGRESS_ID} is a Play-only dispatch (reproducible skipped); not blocking this gate"
+    continue
+  fi
   warn "Workflow run ${IN_PROGRESS_ID} is STILL IN PROGRESS"
   echo "   Monitor: gh run view ${IN_PROGRESS_ID}"
-  echo "   The sherpa-onnx build takes 40-50 min from dispatch."
+  echo "   The sherpa source build takes ~3h from dispatch (v1.12.0 3h02m, v1.12.1 3h20m)."
   fail "Do not push the recipe until the workflow completes."
-fi
+done
 
 # Reference run = the newest completed dispatch whose reproducible job RAN.
 # A Play-only dispatch (play-store-track) skips that job: binding to the

@@ -42,7 +42,21 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   ver="$(awk '/^  - versionName:/{v=$3} END{print v}' <<<"$recipe")"
   [ -n "$ver" ] || { echo "pre-push: no versionName in the pushed recipe; refusing" >&2; exit 1; }
 
-  for abi in armeabi-v7a arm64-v8a x86_64; do
+  # ABI set from the recipe's OWN newest blocks (the hook may fire from the
+  # fdroid-data checkout with no app repo around, so the gradle single owner
+  # is out of reach; the pushed recipe is the next-best source of truth).
+  abis="$(awk -v v="$ver" '
+    $0 ~ "^  - versionName: "v"$" { inblk=1 }
+    inblk && /output: build\/outputs\/apk\/fdroid\/release\// {
+      if (match($0, /app-fdroid-[a-z0-9_-]+-release-unsigned\.apk/)) {
+        print substr($0, RSTART+11, RLENGTH-11-21)
+      }
+    }
+    /^  - versionName:/ && $3 != v { inblk=0 }
+  ' <<<"$recipe" | sort -u)"
+  [ -n "$abis" ] || { echo "pre-push: cannot derive the ABI set from the pushed recipe's output paths; refusing" >&2; exit 1; }
+
+  for abi in $abis; do
     url="$RELEASE_BASE/v$ver/app-fdroid-$abi-release.apk"
     if ! curl -fsIL --max-time 20 "$url" >/dev/null 2>&1; then
       echo "pre-push: REFUSED: $url does not resolve yet." >&2

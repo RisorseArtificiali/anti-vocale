@@ -28,37 +28,90 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 
 [ -f "$RECIPE" ] || fail "recipe not found at $RECIPE (pass the fdroid-data path)"
 
-# 1. version + codes
-VERSION=$(grep -m1 'versionName = ' app/build.gradle.kts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-BASE=$(grep -m1 'versionCode = ' app/build.gradle.kts | grep -oE '[0-9]+')
-TAG="${TAG:-v$VERSION}"
-echo "== app: $VERSION (base $BASE), checking tag $TAG"
+# 1. version + codes, with a provenance rule: when the TAG exists, VERSION,
+# BASE, the ABI map, and the srclib expectations all come from the TAG's own
+# files (raw.githubusercontent, curl -f: a 404 body must never pose as
+# gradle), so a post-release re-run outlives any main drift (snapshot bump,
+# sherpa bump). When the tag does not exist yet (EXPECT_COMMIT build-first:
+# prepare runs in the bump commit's working tree) or no tag was passed, the
+# local files stand. Mixed provenance fails loudly, never silently.
+if [ -n "$TAG" ] && ! [[ "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  fail "tag '$TAG' is not release-shaped (expected vX.Y.Z); pass no tag to check the gradle versionName instead"
+fi
+TAG_EXISTS=""
+if [ -n "$TAG" ]; then
+  # peeled line first: for an annotated tag, ls-remote lists the plain ref
+  # first and head -1 would return the tag OBJECT sha, not the commit
+  TAG_EXISTS=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG^{}" | awk '{print $1}' | head -1)
+  [ -n "$TAG_EXISTS" ] || TAG_EXISTS=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG" | awk '{print $1}' | head -1)
+fi
+raw_at_tag() { curl -sfL --max-time 20 "https://raw.githubusercontent.com/$REPO/$TAG/$1" || true; }
+if [ -n "$TAG_EXISTS" ]; then
+  SRC_DESC="tag $TAG"
+  TAG_GRADLE="$(raw_at_tag app/build.gradle.kts)"
+  [ -n "$TAG_GRADLE" ] || fail "cannot fetch app/build.gradle.kts at $TAG (raw.githubusercontent)"
+  VERSION="${TAG#v}"
+  BASE=$(grep -m1 'versionCode = ' <<<"$TAG_GRADLE" | grep -oE '[0-9]+' || true)
+  SHERPA_VER_TEXT="$(raw_at_tag .sherpa-version)"
+  [ -n "$SHERPA_VER_TEXT" ] || fail "cannot fetch .sherpa-version at $TAG"
+  AAR_SCRIPT_TEXT="$(raw_at_tag scripts/fetch-sherpa-aar.sh)"
+  [ -n "$AAR_SCRIPT_TEXT" ] || fail "cannot fetch scripts/fetch-sherpa-aar.sh at $TAG"
+else
+  SRC_DESC="working tree"
+  TAG_GRADLE=""
+  SHERPA_VER_TEXT="$(cat .sherpa-version 2>/dev/null || true)"
+  AAR_SCRIPT_TEXT="$(cat scripts/fetch-sherpa-aar.sh 2>/dev/null || true)"
+  if [ -n "${EXPECT_COMMIT:-}" ]; then
+    VERSION="${TAG#v}"
+  else
+    VERSION=$(grep -m1 'versionName = ' app/build.gradle.kts | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+    TAG="v$VERSION"
+  fi
+  BASE=$(grep -m1 'versionCode = ' app/build.gradle.kts | grep -oE '[0-9]+' || true)
+fi
+[ -n "$VERSION" ] || fail "no version resolved from $SRC_DESC"
+[ -n "$BASE" ] || fail "cannot read versionCode from $SRC_DESC"
 
-# 2. tag must exist and its commit identified (peeled for annotated, direct
-# for lightweight). Build-first (EXPECT_COMMIT): the tag does not exist yet;
-# the dispatched SHA stands in for it, and if the tag DOES already exist it
-# must agree (a mistaken re-check after publishing).
+# 1b. ABI set from the app's gradle when-map: the single owner for vercodes
+# and asset names (TASK-525 finding 1: the set was copy-pasted in ~10
+# places), read from the same provenance as the version. An app-side ABI
+# change then fails loudly here, at gate A, instead of drifting green
+# through a stale {1,2,4} copy. (Keep the parse aligned with the copies in
+# release-preflight.sh and new-fdroid-version.py read_abi_codes(): every
+# copy fails loudly when the map stops parsing, so drift fails closed.)
+GRADLE_ABI_MAP="$(sed -n '/val abiCode = when/,/else -> 0/p' \
+  <<<"${TAG_GRADLE:-$(cat app/build.gradle.kts)}" \
+  | grep -oE '"[^"]+" -> [0-9]+' || true)"
+[ -n "$GRADLE_ABI_MAP" ] || fail "cannot parse the abiCode when-map from $SRC_DESC (the vercode single owner)"
+ABI_NAMES="$(awk -F'"' '{print $2}' <<<"$GRADLE_ABI_MAP")"
+ABI_CODES="$(awk -F' -> ' '{print $2}' <<<"$GRADLE_ABI_MAP")"
+ABI_COUNT="$(wc -l <<<"$GRADLE_ABI_MAP")"
+MAX_ABI_CODE=0
+for C in $ABI_CODES; do
+  if [ "$C" -gt "$MAX_ABI_CODE" ]; then MAX_ABI_CODE=$C; fi
+done
+echo "== app: $VERSION (base $BASE, ABIs: $(echo $ABI_NAMES)), from $SRC_DESC"
+
+# 2. tag commit resolution (peeled for annotated, direct for lightweight).
+# Build-first (EXPECT_COMMIT): the tag does not exist yet; the dispatched
+# SHA stands in for it, and if the tag DOES already exist it must agree (a
+# mistaken re-check after publishing).
 if [ -n "${EXPECT_COMMIT:-}" ]; then
-  # Prefer the peeled line like the legacy branch below: for an annotated tag,
-  # ls-remote lists the plain ref first, and head -1 would return the tag
-  # OBJECT sha, not the commit.
-  EXISTING=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG^{}" | awk '{print $1}' | head -1)
-  [ -n "$EXISTING" ] || EXISTING=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG" | awk '{print $1}' | head -1)
-  if [ -n "$EXISTING" ] && [ "$EXISTING" != "$EXPECT_COMMIT" ]; then
-    fail "tag $TAG already exists at $EXISTING, not at EXPECT_COMMIT $EXPECT_COMMIT"
+  if [ -n "$TAG_EXISTS" ] && [ "$TAG_EXISTS" != "$EXPECT_COMMIT" ]; then
+    fail "tag $TAG already exists at $TAG_EXISTS, not at EXPECT_COMMIT $EXPECT_COMMIT"
   fi
   TAG_COMMIT="$EXPECT_COMMIT"
   echo "== build-first: tag $TAG not required, recipe must point at $TAG_COMMIT"
 else
-  TAG_COMMIT=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG^{}" | awk '{print $1}')
-  [ -n "$TAG_COMMIT" ] || TAG_COMMIT=$(git ls-remote "https://github.com/$REPO" "refs/tags/$TAG" | awk '{print $1}')
+  TAG_COMMIT="$TAG_EXISTS"
   [ -n "$TAG_COMMIT" ] || fail "tag $TAG not found on origin"
   echo "== tag $TAG -> $TAG_COMMIT"
 fi
 
-# 3. srclib pin must match .sherpa-version (issue #38 rule)
-PIN_EXPECTED=$(grep -oE '[0-9a-f]{40}' .sherpa-version || true)
-[ -n "$PIN_EXPECTED" ] || fail ".sherpa-version has no srclib commit"
+# 3. srclib pin must match .sherpa-version (issue #38 rule; same provenance
+# as the version: the tag's file when the tag exists)
+PIN_EXPECTED=$(grep -oE '[0-9a-f]{40}' <<<"$SHERPA_VER_TEXT" || true)
+[ -n "$PIN_EXPECTED" ] || fail ".sherpa-version ($SRC_DESC) has no srclib commit"
 # anchored (\$): a substring match would let a prerelease block poison the
 # window (1.10.0-beta.2 matched a check for 1.10.0 and failed the trio count)
 BLOCK_START=$(grep -n "versionName: $VERSION\$" "$RECIPE" | head -1 | cut -d: -f1 || true)
@@ -74,15 +127,17 @@ BLOCK_END=$((LAST_SAME + 40))
 # flaky "missing versionCode" failures of 2026-09-01 were exactly this race).
 TRIO="$(sed -n "${BLOCK_START},${BLOCK_END}p" "$RECIPE")"
 PIN_COUNT=$(grep -cE 'sherpa_onnx@[0-9a-f]{40}' <<<"$TRIO" || true)
-[ "$PIN_COUNT" = "3" ] || fail "expected 3 srclib pins in the $VERSION trio, found $PIN_COUNT"
+[ "$PIN_COUNT" = "$ABI_COUNT" ] || fail "expected $ABI_COUNT srclib pins in the $VERSION trio (one per ABI block), found $PIN_COUNT"
 BAD_PIN=$(grep -oE 'sherpa_onnx@[0-9a-f]{40}' <<<"$TRIO" | cut -d@ -f2 | grep -v "^$PIN_EXPECTED$" | head -1 || true)
-[ -z "$BAD_PIN" ] || fail "srclib pin mismatch in the $VERSION trio: ${BAD_PIN:0:12}, .sherpa-version expects ${PIN_EXPECTED:0:12} (issue #38)"
-echo "== srclib pin OK: all $PIN_COUNT blocks pin ${PIN_EXPECTED:0:12} (matches .sherpa-version)"
+[ -z "$BAD_PIN" ] || fail "srclib pin mismatch in the $VERSION trio: ${BAD_PIN:0:12}, .sherpa-version ($SRC_DESC) expects ${PIN_EXPECTED:0:12} (issue #38)"
+echo "== srclib pin OK: all $PIN_COUNT blocks pin ${PIN_EXPECTED:0:12} (matches .sherpa-version from $SRC_DESC)"
 
-# 3b. the pin must be the sherpa release the AAR script fetches
-SHERPA_VER=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' .sherpa-version | head -1)
-AAR_VER=$(grep -oE 'SHERPA_ONNX_VERSION="[0-9.]+"' scripts/fetch-sherpa-aar.sh | grep -oE '[0-9.]+')
-echo "== sherpa $SHERPA_VER / AAR script $AAR_VER"
+# 3b. the pin must be the sherpa release the AAR script fetches (both from
+# the same provenance as the pin)
+SHERPA_VER=$(grep -oE 'v[0-9]+\.[0-9]+\.[0-9]+' <<<"$SHERPA_VER_TEXT" | head -1)
+AAR_VER=$(grep -oE 'SHERPA_ONNX_VERSION="[0-9.]+"' <<<"$AAR_SCRIPT_TEXT" | grep -oE '[0-9.]+' || true)
+echo "== sherpa $SHERPA_VER / AAR script $AAR_VER (from $SRC_DESC)"
+[ -n "$AAR_VER" ] || fail "cannot read SHERPA_ONNX_VERSION from scripts/fetch-sherpa-aar.sh ($SRC_DESC)"
 [ "v$AAR_VER" = "$SHERPA_VER" ] || fail "fetch-sherpa-aar.sh ($AAR_VER) != .sherpa-version ($SHERPA_VER)"
 
 # 4. recipe commit must equal the tag commit (or, build-first, the dispatched SHA)
@@ -90,17 +145,22 @@ BAD_COMMIT=$(grep -oE 'commit: [0-9a-f]{40}' <<<"$TRIO" | awk '{print $2}' | gre
 [ -z "$BAD_COMMIT" ] || fail "recipe commit mismatch in the $VERSION trio: $BAD_COMMIT != tag commit $TAG_COMMIT"
 echo "== recipe commit OK"
 
-# 5. vercodes must be base*10+{1,2,4} and CurrentVersionCode = MAX (x86_64 code;
-# fdroiddata convention: master has always carried the highest, e.g. 374 for 1.10.0;
-# licaon-corrected on MR 47391 after our runbook wrongly anchored arm64)
-for ABI in 1 2 4; do
+# 5. vercodes must be base*10+{codes} for EVERY ABI the app declares (the
+# parsed ABI set from step 1b), and CurrentVersionCode = the MAX code
+# (fdroiddata convention: master has always carried the highest, e.g. 374
+# for 1.10.0; licaon-corrected on MR 47391 after our runbook wrongly
+# anchored arm64).
+EXPECTED_CODES=""
+for ABI in $ABI_CODES; do
   EXPECTED=$((BASE * 10 + ABI))
+  EXPECTED_CODES="$EXPECTED_CODES $EXPECTED"
   grep -q "versionCode: $EXPECTED" <<<"$TRIO" \
-    || fail "recipe block missing versionCode $EXPECTED (expected base*10+$ABI)"
+    || fail "recipe trio missing versionCode $EXPECTED (base*10+${ABI}; gradle declares ABIs: $(echo $ABI_NAMES))"
 done
 CVC=$(grep -m1 'CurrentVersionCode:' "$RECIPE" | awk '{print $2}' || true)
-[ "$CVC" = "$((BASE * 10 + 4))" ] || fail "CurrentVersionCode $CVC != max code $((BASE * 10 + 4))"
-echo "== vercodes OK ($((BASE*10+1))/$((BASE*10+2))/$((BASE*10+4)), CurrentVersionCode max)"
+CVC_EXPECTED=$((BASE * 10 + MAX_ABI_CODE))
+[ "$CVC" = "$CVC_EXPECTED" ] || fail "CurrentVersionCode $CVC != max code $CVC_EXPECTED (gradle max ABI code $MAX_ABI_CODE)"
+echo "== vercodes OK (${EXPECTED_CODES# }, CurrentVersionCode max=$CVC_EXPECTED; ABI set from build.gradle.kts)"
 
 # 5b. every NDK pin in the recipe must be preinstallable by the reference
 # workflow (2026-08-31: the 1.11.0 trio moved to ndk r28c while the workflow
@@ -133,12 +193,12 @@ echo "== ndk pins OK: ${RECIPE_NDK_PINS} all mapped in origin/main's workflow"
 if [ "${SKIP_BINARY_URLS:-0}" = "1" ]; then
   echo "== binary URLs SKIPPED (pre-dispatch run)"
 else
-for ABI in armeabi-v7a arm64-v8a x86_64; do
+for ABI in $ABI_NAMES; do
   ASSET_URL="https://github.com/$REPO/releases/download/$TAG/app-fdroid-$ABI-release.apk"
   STATUS=$(curl -sIL -o /dev/null -w '%{http_code}' --max-time 20 "$ASSET_URL" || echo 000)
   [ "$STATUS" = "200" ] || fail "binary URL not resolving ($STATUS): $ASSET_URL"
 done
-echo "== binary URLs OK (all 200)"
+echo "== binary URLs OK (all 200, ABI set from build.gradle.kts)"
 fi
 
 # 7. YAML parses with no duplicate top-level keys

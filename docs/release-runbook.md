@@ -197,7 +197,9 @@ Two jobs:
    three per-ABI APKs with `apksigner` (v2/v3 only, `--alignment-preserved`),
    and uploads them as the `fdroid-signed-references` artifact.
 
-This is the slowest step: sherpa-onnx is compiled from source for 3 ABIs (~25-40 min).
+This is the slowest step: sherpa-onnx is compiled from source for 3 ABIs (~3h:
+3h02m on v1.12.0, 3h20m on v1.12.1; the historical 25-40 min figures described
+a prebuilt-AAR era recipe).
 
 Proof: `gh run view <id> --json jobs` shows `reproducible-fdroid` = success and
 the three artifacts present; NOTE the run id (`gh run list --event
@@ -251,8 +253,17 @@ pipeline failed on 404 binary URLs; run it before every recipe push, after
 Step 5b completes (the release must exist by then; in build-first order it
 does, created by the publish act).
 
-**Only after the gate passes, push the fork** (this is what triggers the
-fdroiddata pipeline; until now the signed APKs were not there yet). The push
+**Only after the gate passes, push the fork, UNLESS the bot already did the
+work** (v1.12.1 lesson, now built into `finalize`): with build-first ordering
+the tag and its signed assets appear atomically, so fdroiddata's checkupdates
+bot can land the release's recipe on master directly (for 1.12.1 it committed
+`bot: Update Anti-Vocale to 434` within hours of the tag, content identical to
+ours). `finalize` diffs the fork branch's recipe against upstream master and,
+when they match, skips the push and the MR entirely; a real difference
+(typically a stale srclib pin the bot copied forward after a sherpa bump)
+falls through to the normal push+MR path as the correction. When the push does
+happen it is what triggers the fdroiddata pipeline (until now the signed APKs
+were not there yet). The push
 is NON-FF by design (the branch was reset onto fdroid/master at Step 4), so
 use the lease, and never discard origin-side Builds content (a maintainer's
 edits; the machine-managed CurrentVersion fields are exempt because the
@@ -292,6 +303,14 @@ Proof: GitLab pipeline `success`; the build is marked "verified reproducible".
 
 Trigger the Play Store publish job (AAB), or upload manually. This can run in
 parallel with the F-Droid MR review; it does not block on it.
+
+Two v1.12.1 lessons: (1) a publish-only dispatch MUST pin the release ref,
+`gh workflow run android-release.yml --ref vX.Y.Z -f play-store-track=internal`
+(a bare SHA is rejected with 422, and a main-tip dispatch after the
+post-release snapshot bump fails the notes extractor on the version mismatch);
+(2) the publish job runs in the `production` environment, so it parks at an
+approval until a maintainer grants it in the Actions UI; the AAB itself is
+built and waiting by then.
 
 Proof: Play Console shows the new release in review/published.
 
@@ -344,7 +363,7 @@ download NDKs in that container, and the reference build died ~40 min in).
   Before ANY `workflow_dispatch` of the reproducible job: `diff` the mirror's recipe
   (github.com/paoloantinori/fdroid-data-mirror, branch `av1100-slim`) against the live
   fdroiddata MR HEAD for the app. The workflow guard will fail loudly on drift, but
-  checking first saves a 45-minute build cycle.
+  checking first saves a ~3h build cycle.
 - **Never `[ci skip]` on fdroiddata MRs**: their runners allow 4h; skipping blocks the
   maintainers' verification (learned 2026-08-21).
 - **The reproducible job's guard is the last line of defense**: it fails the build

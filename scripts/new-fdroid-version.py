@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Generate the per-ABI F-Droid recipe blocks for a new release (runbook step 4).
 
-Derives the three blocks (armeabi-v7a, arm64-v8a, x86_64) by cloning the LATEST
-existing version's blocks and renumbering them, instead of hand-editing: the
+Derives the per-ABI blocks (one per ABI in the gradle abiCode map) by cloning
+the LATEST existing version's blocks and renumbering them, instead of hand-editing: the
 hand edit of 2026-08-30 duplicated the file's top-level tail keys
 (AllowedAPKSigningKeys, AutoUpdateMode...) because the block boundary sat at
 CurrentVersion, AFTER those keys, and fdroid's strict parser rejects duplicate
@@ -17,13 +17,13 @@ Usage (from the repo root, after the version bump commit):
 What it does:
   1. reads versionName + versionCode from app/build.gradle.kts,
   2. peels the matching tag from origin to get the source commit,
-  3. finds the newest version's three blocks in the recipe (by max versionCode),
-  4. copies them with the new versionName/versionCodes (base*10+1/2/4), commit,
+  3. finds the newest version's per-ABI blocks in the recipe (by max versionCode),
+  4. copies them with the new versionName/versionCodes (base*10+ABI codes), commit,
      and the sherpa_onnx srclib pin synced from .sherpa-version (issue #38),
   5. inserts them after the last existing build block (BEFORE the top-level tail),
   6. updates CurrentVersion/CurrentVersionCode,
-  7. validates: single occurrence of every top-level key, exactly three new
-     blocks, YAML parses, ABI codes match base*10+{1,2,4}.
+  7. validates: single occurrence of every top-level key, one new block per
+     ABI, YAML parses, ABI codes match base*10+{the gradle abiCode map}.
 
 Prints the diff summary; applies nothing until --write is passed.
 """
@@ -47,6 +47,19 @@ def read_version() -> tuple[str, int]:
     code = re.search(r"versionCode = (\d+)", gradle)
     assert name is not None and code is not None, "versionName/versionCode not in app/build.gradle.kts"
     return name.group(1), int(code.group(1))
+
+
+def read_abi_codes() -> list[int]:
+    """The ABI suffix set from the app's own gradle when-map: the single
+    owner (TASK-525). The generator WRITES the blocks, so deriving the set
+    here (not hardcoding {1,2,4}) is what makes an app-side ABI change fail
+    loudly at generation time instead of silently producing a stale trio."""
+    gradle = open("app/build.gradle.kts").read()
+    when = re.search(r"val abiCode = when(.*?)else -> 0", gradle, re.S)
+    assert when is not None, "abiCode when-map not found in app/build.gradle.kts"
+    codes = [int(m) for m in re.findall(r'"[^"]+" -> (\d+)', when.group(1))]
+    assert codes, "abiCode when-map has no entries"
+    return codes
 
 
 def peel_tag(version: str) -> str:
@@ -106,10 +119,12 @@ def main() -> None:
 
     newest = max(code for code, _ in blocks)
     newest_blocks = sorted((b for b in blocks if b[0] // 10 == newest // 10), key=lambda b: b[0])
-    if len(newest_blocks) != 3:
-        fail(f"expected 3 blocks for the newest version (codes {newest // 10}x), found {len(newest_blocks)}")
+    abi_codes = read_abi_codes()
+    if len(newest_blocks) != len(abi_codes):
+        fail(f"expected {len(abi_codes)} blocks for the newest version (codes {newest // 10}x, "
+             f"gradle declares {len(abi_codes)} ABIs), found {len(newest_blocks)}")
 
-    expected_codes = sorted(base * 10 + s for s in (1, 2, 4))
+    expected_codes = sorted(base * 10 + s for s in abi_codes)
     # Reusing an existing versionCode under a different version name would ship
     # green (fdroid has no duplicate-code lint) and break later: refuse it.
     reused = sorted(set(expected_codes) & {code for code, _ in blocks})
@@ -133,6 +148,18 @@ def main() -> None:
         nb = re.sub(r"commit: [0-9a-f]{40}", f"commit: {commit}", nb)
         if pin_match:
             nb = re.sub(r"sherpa_onnx@[0-9a-f]{40}", f"sherpa_onnx@{pin_match.group(0)}", nb)
+        # TASK-525: strip inert lines from the NEW blocks only (shipped blocks
+        # describe what built their APKs and are never rewritten here):
+        # - `sdkmanager 'ndk;r27c'` downloads a full NDK nothing consumes:
+        #   fdroidserver routes ANDROID_NDK to the ndk: field's r28c, sherpa
+        #   honors $ANDROID_NDK, and the app compiles no native code of its
+        #   own. Verified in the v1.12.1 reference-build log: r27c was
+        #   downloaded by this very line and every compile ran r28c.
+        # - `zip` in the apt list: the build steps use wget/unzip/rm and
+        #   zipalign.py is pure Python.
+        nb = re.sub(r"^[ \t]*- sdkmanager 'ndk;r27c'\n", "", nb, flags=re.M)
+        nb = nb.replace("wget build-essential cmake g++ zip unzip",
+                        "wget build-essential cmake g++ unzip")
         new_blocks.append(nb)
 
     # One canonical blank line between blocks AND before the tail: body already
@@ -146,7 +173,18 @@ def main() -> None:
     body = "\n\n".join(canonical) + "\n\n"
     # tail: bump CurrentVersion/CurrentVersionCode, preserving everything else once
     new_tail = re.sub(r"CurrentVersion: \S+", f"CurrentVersion: {version}", tail, count=1)
-    new_tail = re.sub(r"CurrentVersionCode: \d+", f"CurrentVersionCode: {base * 10 + 4}", new_tail, count=1)
+    new_tail = re.sub(r"CurrentVersionCode: \d+", f"CurrentVersionCode: {base * 10 + max(abi_codes)}", new_tail, count=1)
+    # VercodeOperation is fdroid's OWN vercode derivation for future
+    # auto-updates: it is a stale-prone copy of the ABI set no app-repo gate
+    # reads, so it must be rewritten from the same gradle map (otherwise a
+    # gradle ABI change ships green while fdroid offers wrong codes).
+    vop = "VercodeOperation:\n" + "".join(
+        f"  - '%c * 10 + {c}'\n" for c in sorted(abi_codes))
+    new_tail, vop_n = re.subn(
+        r"VercodeOperation:\n(?:[ ]+- '%c \* 10 \+ \d+'\n)+", vop, new_tail, count=1)
+    if vop_n != 1:
+        fail("VercodeOperation list not found or not rewritten in the tail "
+             "(fdroid's vercode derivation would go stale)")
     out = header + body + new_tail
 
     # --- validation (the duplicate-key class this script exists to prevent) ---
@@ -169,7 +207,7 @@ def main() -> None:
         fail("source commit not injected")
 
     print(f"OK: {version} blocks {expected_codes} -> commit {commit[:12]}")
-    print(f"    build blocks: {len(blocks)} -> {len(blocks) + 3}; CurrentVersionCode -> {base * 10 + 4}")
+    print(f"    build blocks: {len(blocks)} -> {len(blocks) + len(abi_codes)}; CurrentVersionCode -> {base * 10 + max(abi_codes)}")
     if args.write:
         open(args.recipe, "w").write(out)
         print(f"    written to {args.recipe}")

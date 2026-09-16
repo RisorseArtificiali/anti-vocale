@@ -12,14 +12,16 @@
 #   scripts/release-preflight.sh --offline       # skip gh/api/curl checks
 #
 # Checks (each prints OK or FAIL; any FAIL exits non-zero at the end):
-#  1. versionName/versionCode consistent; per-ABI codes = base*10+{1,2,4};
+#  1. versionName/versionCode consistent; per-ABI codes = base*10+{the ABI
+#     set from the gradle abiCode when-map, the single owner};
 #     the `?: N` fallback literal matches the base code.
 #  2. Latest release-notes section per locale is within the Play 500-char limit
 #     (the extractor fails loudly on over-length, so this also fails the build).
 #  3. fastlane changelogs/<base>.txt exist for en-US and it-IT, within 500 chars.
 #  4. app/libs/sherpa-onnx.aar version equals scripts/fetch-sherpa-aar.sh version.
-#  5. Fork recipe (anti-vocale-1.8.2): newest Builds entry commit == tag commit,
-#     its versionCodes == base*10+{1,2,4}, CurrentVersionCode == base*10+4.
+#  5. Fork recipe: newest Builds entry commit == tag commit, its
+#     versionCodes == base*10+{the gradle ABI set} (order-insensitive),
+#     CurrentVersionCode == base*10+{the max ABI code}.
 #  6. Fork recipe sherpa srclib pin == the k2-fsa/sherpa-onnx tag commit that
 #     matches the AAR version (a stale pin ships the F-Droid build with native
 #     bugs the GitHub build already fixed).
@@ -120,13 +122,29 @@ if [ "$OFFLINE" -eq 0 ] && [ -n "$TAG" ]; then
     newest_commit=$(awk '/^[[:space:]]+commit:/{c=$2} END{print c}' "$recipe")
     [ "$newest_commit" = "$tag_commit" ] && ok "recipe newest entry commit == $TAG (local; origin catches up at finalize)" \
       || fail "recipe newest commit $newest_commit != tag $TAG ($tag_commit): run Step 4 (new-fdroid-version.py) locally before dispatching; the fork is pushed only at finalize"
-    newest_codes=$(awk '/^[[:space:]]+versionCode:/{print $2}' "$recipe" | tail -3 | tr '\n' ' ')
-    expected_codes="$((base*10+1)) $((base*10+2)) $((base*10+4)) "
+    # The ABI set comes from the app's own gradle when-map (the single owner,
+    # TASK-525): this gate, the generator, and check-fdroid-release.sh all
+    # derive it there, so an app-side ABI change fails loudly everywhere
+    # instead of drifting through a stale {1,2,4} copy.
+    abi_map=$(sed -n '/val abiCode = when/,/else -> 0/p' "$REPO_DIR/app/build.gradle.kts" | grep -oE '"[^"]+" -> [0-9]+' || true)
+    [ -n "$abi_map" ] || fail "cannot parse the abiCode when-map from app/build.gradle.kts (the vercode single owner)"
+    abi_codes=$(awk -F' -> ' '{print $2}' <<<"$abi_map")
+    abi_count=$(wc -l <<<"$abi_map")
+    max_abi=0
+    for c in $abi_codes; do
+      if [ "$c" -gt "$max_abi" ]; then max_abi=$c; fi
+    done
+    # Order-insensitive compare on both sides: the recipe lists blocks in
+    # file order, the when-map in declaration order, and a no-op reordering
+    # of either must not red a valid recipe (gate C and the generator already
+    # compare per-code/sorted).
+    newest_codes=$(awk '/^[[:space:]]+versionCode:/{print $2}' "$recipe" | tail -"$abi_count" | sort -n | tr '\n' ' ')
+    expected_codes=$(for c in $abi_codes; do echo $((base*10+c)); done | sort -n | tr '\n' ' ')
     [ "$newest_codes" = "$expected_codes" ] && ok "recipe vercodes: $newest_codes" \
       || fail "recipe newest vercodes '$newest_codes' != expected '$expected_codes'"
     cvc=$(awk '/^CurrentVersionCode:/{print $2}' "$recipe")
-    [ "$cvc" = "$((base*10+4))" ] && ok "CurrentVersionCode $cvc == max (base*10+4)" \
-      || fail "CurrentVersionCode is $cvc, expected $((base*10+4))"
+    [ "$cvc" = "$((base*10+max_abi))" ] && ok "CurrentVersionCode $cvc == max (base*10+$max_abi)" \
+      || fail "CurrentVersionCode is $cvc, expected $((base*10+max_abi))"
     pin=$(awk '/^[[:space:]]+- sherpa_onnx@/{print $2}' "$recipe" | tail -1 | sed 's/sherpa_onnx@//')
     [ -n "$pin" ] || fail "could not read sherpa_onnx srclib pin from the recipe"
     if [ -n "$aar_ver" ] && [ -n "$pin" ]; then
