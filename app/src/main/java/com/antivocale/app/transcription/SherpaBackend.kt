@@ -633,7 +633,11 @@ class SherpaBackend(
 
                 // GH #92 probe: token timestamps decide whether sentence-level
                 // subtitle cues are possible for this model (empty = chunk cues only).
+                // durations.size > 0 is the TDT signal that the 700ms pause split
+                // can fire; the log reports both so a model's shape is checkable
+                // from logcat alone.
                 Log.d(TAG, "Token timestamps: ${result.timestamps.size} entries" +
+                    ", durations=${result.durations.size}" +
                     (result.timestamps.firstOrNull()?.let { ", first=%.2fs".format(it) } ?: "") +
                     (result.timestamps.lastOrNull()?.let { ", last=%.2fs".format(it) } ?: ""))
 
@@ -648,6 +652,7 @@ class SherpaBackend(
                         text = transcription,
                         confidence = confidence,
                         detectedLanguage = detectedLang,
+                        tokens = TimedTokens.fromRecognizer(result.tokens, result.timestamps, result.durations),
                     ))
                 }
             } catch (e: Exception) {

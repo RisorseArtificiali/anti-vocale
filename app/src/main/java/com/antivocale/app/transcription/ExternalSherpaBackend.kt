@@ -269,7 +269,8 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                     Result.success(TranscriptionResult(
                         text = transcription,
                         confidence = confidence,
-                        detectedLanguage = detectedLang
+                        detectedLanguage = detectedLang,
+                        tokens = TimedTokens.fromRecognizer(result.tokens, result.timestamps, result.durations),
                     ))
                 }
             } catch (e: Exception) {
