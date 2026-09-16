@@ -10,7 +10,8 @@ import java.util.Date
 import java.util.Locale
 
 /**
- * Writes a completed transcription as a `.txt` file into a user-selected SAF tree.
+ * Writes a completed transcription into a user-selected SAF tree as plain
+ * text or, per the export format (GH #92), SRT/WebVTT.
  *
  * Pure helper: callers ([InferenceService], [com.antivocale.app.service.TranscriptionNotificationListener])
  * already run this on `Dispatchers.IO`. All failures are caught and reported as `null` so the

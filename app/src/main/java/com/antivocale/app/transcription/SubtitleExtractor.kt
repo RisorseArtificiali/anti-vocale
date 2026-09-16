@@ -46,9 +46,9 @@ object SubtitleExtractor {
      * (VobSub `image/x-mpsub`, PGS) are intentionally absent — they do not decode to plain text.
      */
     private val TEXT_SUBTITLE_MIME_HINTS: Set<String> = setOf(
-        "application/x-subrip",
+        MIME_SUBRIP,
         "application/x-srt",
-        "text/vtt",
+        MIME_VTT,
         "application/webvtt",
         // MP4 mov-text family: encoders sometimes report these for the 3GPP TX3G subtitle track.
         "application/x-mpeghtml",

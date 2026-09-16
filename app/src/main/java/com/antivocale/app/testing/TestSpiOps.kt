@@ -9,6 +9,7 @@ import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.ThemeType
+import com.antivocale.app.util.SubtitleFormatter
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import org.json.JSONArray
@@ -142,6 +143,11 @@ internal class TestSpiOps(
         "swipe_action" to Pair(PreferencesManager.SWIPE_ACTION_MODES, preferences::saveSwipeActionMode),
         "theme" to Pair(THEME_TYPES, preferences::saveThemePreference),
         "theme_mode" to Pair(THEME_MODES, preferences::saveThemeMode),
+        // GH #92: device tests flip the auto-save format over adb.
+        "transcript_export_format" to Pair(
+            SubtitleFormatter.Format.entries.map { it.name },
+            preferences::saveTranscriptExportFormat,
+        ),
     )
 
     /** Free-text preferences: written as given, no parse. */

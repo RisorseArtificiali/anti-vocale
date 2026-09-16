@@ -198,7 +198,7 @@ class AudioPreprocessorTest {
         assertEquals(16000, samples.size)
     }
 
-    // ========== mergeVadSegments (TASK-340 Fix 3) ==========
+    // ========== mergeVadSegmentGroups (TASK-340 Fix 3 merge, range-free callers) ==========
 
     /**
      * Naive reference merge: grow a group array one segment at a time. A single
@@ -232,7 +232,7 @@ class AudioPreprocessorTest {
     }
 
     @Test
-    fun `mergeVadSegments matches naive merge across many segments and limits`() {
+    fun `mergeVadSegmentGroups matches naive merge across many segments and limits`() {
         val rng = java.util.Random(42)
         repeat(50) {
             val segmentCount = 2 + rng.nextInt(20)
@@ -249,7 +249,7 @@ class AudioPreprocessorTest {
     }
 
     @Test
-    fun `mergeVadSegments single segment returns it unchanged`() {
+    fun `mergeVadSegmentGroups single segment returns it unchanged`() {
         val seg = floatArrayOf(0.5f, -0.5f, 0.25f)
         val result = preprocessor.mergeVadSegmentGroups(listOf(seg), 100).first
         assertEquals(1, result.size)
@@ -257,7 +257,7 @@ class AudioPreprocessorTest {
     }
 
     @Test
-    fun `mergeVadSegments splits group when adding would exceed limit`() {
+    fun `mergeVadSegmentGroups splits group when adding would exceed limit`() {
         val a = FloatArray(300) { it.toFloat() }
         val b = FloatArray(300) { 1000f + it }
         val result = preprocessor.mergeVadSegmentGroups(listOf(a, b), maxMergeSamples = 500).first

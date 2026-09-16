@@ -214,7 +214,7 @@ data class TranscriptionResult(
      *  the entry details; never user text. */
     val summarySkipReason: String? = null,
     /** GH #92: per-chunk cues with offsets from the audio start. Empty on the
-     *  single-pass paths and whenever honest timing is unavailable; see the
+     *  whole-clip paths that produce no cue data and whenever honest timing is unavailable; see the
      *  assembly paths in TranscriptionOrchestrator. */
     val segments: List<TimedSegment> = emptyList(),
 ) {

@@ -698,9 +698,9 @@ class AudioPreprocessor @Inject constructor() {
      * (GH #92), the returned ranges follow the SAME grouping so output chunk
      * i's cue is output range i: a group of segments spans first-start to
      * last-end, and a split of one long segment slices that segment's range
-     * proportionally. Ranges are null when [rangesMs] is. Range callers omit
-     * [rangesMs] and [sampleRate] (the sample rate only converts split
-     * offsets, never used without ranges).
+     * proportionally. Ranges are null when [rangesMs] is. Callers
+     * without ranges omit [rangesMs] and [sampleRate] (the sample rate only
+     * converts split offsets, so it is never used without ranges).
      */
     internal fun mergeVadSegmentGroups(
         segments: List<FloatArray>,

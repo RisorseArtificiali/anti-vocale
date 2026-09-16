@@ -55,6 +55,7 @@ Set keys and value formats:
 | `theme_mode` | `saveThemeMode` | `SYSTEM`, `DARK`, or `LIGHT` (ThemeMode names) |
 | `onboarding` | `saveOnboardingCompleted` | `true` or `false` (strict); TASK-491: `false` re-arms the welcome tour |
 | `vad_advisory` | `saveVadAdvisoryDismissed` | `true` or `false` (strict); polarity is inverted: `true` = dismissed |
+| `transcript_export_format` | `saveTranscriptExportFormat` | `TXT`, `TXT_TIMED`, `SRT`, or `VTT` (GH #92; the settings dropdown's exact set, anything else rejected) |
 | `language` | `saveTranscriptionLanguage` | BCP-47 tag, `system`, or `auto`; written as given, no validation (the Settings picker normally constrains this to the catalog's languages) |
 | `model_path` | `saveModelPath` | path (llm backend's model file) |
 | `sherpa_path` | `saveSherpaModelPath(entry, path)` | path, with `entry=<catalog id>` naming which backend's keyed preference is written |
