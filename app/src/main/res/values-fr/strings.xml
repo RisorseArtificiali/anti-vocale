@@ -850,4 +850,10 @@
     <string name="external_family_pick_title">De quelle famille ce modèle fait-il partie ?</string>
     <string name="subtitle_timeout_title">Délai de choix automatique</string>
     <string name="subtitle_timeout_description">Combien de temps la notification de choix d\'une vidéo sous-titrée attend avant de transcrire d\'elle-même.</string>
+    <string name="transcript_export_format_title">Format de sauvegarde automatique</string>
+    <string name="transcript_export_format_description">Format des fichiers enregistrés dans le dossier de sauvegarde automatique. Les formats horodatés ne sont écrits que si la transcription a produit des données de temps.</string>
+    <string name="transcript_export_format_txt">Texte brut</string>
+    <string name="transcript_export_format_txt_timed">Texte horodaté (expérimental)</string>
+    <string name="transcript_export_format_srt">Sous-titres SRT (expérimental)</string>
+    <string name="transcript_export_format_vtt">Sous-titres WebVTT (expérimental)</string>
 </resources>

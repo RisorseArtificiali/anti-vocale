@@ -286,6 +286,6 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
 
         assertTrue(result.isSuccess)
         assertEquals("Hello world from pipeline", result.getOrNull())
-        verify { listener.onSuccess(eq("test-pipeline"), eq("Hello world from pipeline"), any(), any(), any()) }
+        verify { listener.onSuccess(eq("test-pipeline"), eq("Hello world from pipeline"), any(), any(), any(), segments = any()) }
     }
 }

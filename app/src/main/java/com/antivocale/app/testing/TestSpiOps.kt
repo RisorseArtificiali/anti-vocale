@@ -93,6 +93,7 @@ internal class TestSpiOps(
             .put("defaultPrompt", preferences.defaultPrompt.first())
             .put("summaryPrompt", preferences.summaryPrompt.first())
             .put("outputFolderUri", preferences.outputFolderUri.first() ?: JSONObject.NULL)
+            .put("transcriptExportFormat", preferences.transcriptExportFormat.first())
             .put("externalCatalogUrl", preferences.externalCatalogUrl.first())
             .toString()
     }

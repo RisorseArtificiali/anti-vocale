@@ -985,4 +985,10 @@
     <string name="external_family_pick_title">Zu welcher Familie gehört dieses Modell?</string>
     <string name="subtitle_timeout_title">Automatische Wahlzeit</string>
     <string name="subtitle_timeout_description">Wie lange die Auswahlbenachrichtigung für ein Video mit Untertiteln wartet, bevor automatisch transkribiert wird.</string>
+    <string name="transcript_export_format_title">Dateiformat für Auto-Speichern</string>
+    <string name="transcript_export_format_description">Format der Dateien im Auto-Speichern-Ordner. Formate mit Zeitstempel werden nur geschrieben, wenn die Transkription Zeitdaten geliefert hat.</string>
+    <string name="transcript_export_format_txt">Einfacher Text</string>
+    <string name="transcript_export_format_txt_timed">Text mit Zeitstempeln (experimentell)</string>
+    <string name="transcript_export_format_srt">SRT-Untertitel (experimentell)</string>
+    <string name="transcript_export_format_vtt">WebVTT-Untertitel (experimentell)</string>
 </resources>

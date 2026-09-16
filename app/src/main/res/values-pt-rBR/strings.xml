@@ -850,4 +850,10 @@
     <string name="external_family_pick_title">A qual família este modelo pertence?</string>
     <string name="subtitle_timeout_title">Prazo da escolha automática</string>
     <string name="subtitle_timeout_description">Quanto tempo a notificação de escolha de um vídeo com legendas espera antes de transcrever sozinha.</string>
+    <string name="transcript_export_format_title">Formato de salvamento automático</string>
+    <string name="transcript_export_format_description">Formato dos arquivos salvos na pasta de salvamento automático. Os formatos com carimbo de tempo só são gravados quando a transcrição gerou dados de tempo.</string>
+    <string name="transcript_export_format_txt">Texto simples</string>
+    <string name="transcript_export_format_txt_timed">Texto com marcações de tempo (experimental)</string>
+    <string name="transcript_export_format_srt">Legendas SRT (experimental)</string>
+    <string name="transcript_export_format_vtt">Legendas WebVTT (experimental)</string>
 </resources>

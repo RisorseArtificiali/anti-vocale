@@ -140,7 +140,7 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
 
         assertTrue("Expected success but got failure: ${result.exceptionOrNull()}", result.isSuccess)
         assertEquals("chunk1 chunk2 chunk3 chunk4", result.getOrNull())
-        verify { listener.onSuccess(eq("test-parallel"), eq("chunk1 chunk2 chunk3 chunk4"), any(), any(), any()) }
+        verify { listener.onSuccess(eq("test-parallel"), eq("chunk1 chunk2 chunk3 chunk4"), any(), any(), any(), segments = any()) }
     }
 
     @Test

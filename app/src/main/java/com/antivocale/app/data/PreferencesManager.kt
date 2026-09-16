@@ -33,6 +33,8 @@ interface PreferencesManager {
     val ggufModelPath: Flow<String?>
     val autoCopyEnabled: Flow<Boolean>
     val outputFolderUri: Flow<String?>
+    /** GH #92: auto-save file format, a [SubtitleFormatter.Format] name. Default TXT. */
+    val transcriptExportFormat: Flow<String>
     val vadEnabled: Flow<Boolean>
     val vadAdvisoryDismissed: Flow<Boolean>
 
@@ -85,6 +87,8 @@ interface PreferencesManager {
     suspend fun clearGgufModelPath()
     suspend fun saveAutoCopyEnabled(enabled: Boolean)
     suspend fun saveOutputFolderUri(uri: String?)
+    /** GH #92: see [transcriptExportFormat]. */
+    suspend fun saveTranscriptExportFormat(format: String)
     suspend fun saveVadEnabled(enabled: Boolean)
     suspend fun saveVadAdvisoryDismissed(dismissed: Boolean)
 
@@ -126,6 +130,8 @@ interface PreferencesManager {
         val SUBTITLE_CHOICE_TIMEOUT_OPTIONS = listOf(1, 2, 5, 10)
         val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2).coerceAtMost(8)
         const val DEFAULT_AUTO_COPY_ENABLED = false
+        /** GH #92: plain .txt is the default; timed formats are strictly opt-in. */
+        const val DEFAULT_TRANSCRIPT_EXPORT_FORMAT = "TXT"
         const val DEFAULT_VAD_ENABLED = false
         const val DEFAULT_PROGRESSIVE_TRANSCRIPTION = true
         const val DEFAULT_PROMPT_VALUE = ""

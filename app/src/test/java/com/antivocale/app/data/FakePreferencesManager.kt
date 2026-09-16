@@ -74,6 +74,8 @@ internal class FakePreferencesManager : PreferencesManager {
     override val ggufModelPath: Flow<String?> get() = _ggufModelPath
     override val autoCopyEnabled: Flow<Boolean> get() = _autoCopyEnabled
     override val outputFolderUri: Flow<String?> get() = _outputFolderUri
+    private val _transcriptExportFormat = MutableStateFlow(PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT)
+    override val transcriptExportFormat: Flow<String> get() = _transcriptExportFormat
     override val vadEnabled: Flow<Boolean> get() = _vadEnabled
     override val vadAdvisoryDismissed: Flow<Boolean> get() = _vadAdvisoryDismissed
     private val _onboardingCompleted = MutableStateFlow(false)
@@ -113,6 +115,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun clearGgufModelPath() { _ggufModelPath.value = null }
     override suspend fun saveAutoCopyEnabled(enabled: Boolean) { _autoCopyEnabled.value = enabled }
     override suspend fun saveOutputFolderUri(uri: String?) { _outputFolderUri.value = uri }
+    override suspend fun saveTranscriptExportFormat(format: String) { _transcriptExportFormat.value = format }
     override suspend fun saveVadEnabled(enabled: Boolean) { _vadEnabled.value = enabled }
     override suspend fun saveVadAdvisoryDismissed(dismissed: Boolean) { _vadAdvisoryDismissed.value = dismissed }
     override suspend fun saveOnboardingCompleted(completed: Boolean) { _onboardingCompleted.value = completed }

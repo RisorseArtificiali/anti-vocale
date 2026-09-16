@@ -28,6 +28,7 @@ import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.ProgressThrottler
+import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.util.TranscriptFileSaver
 import com.antivocale.app.util.formatProcessingTime
 import dagger.hilt.android.AndroidEntryPoint
@@ -672,8 +673,13 @@ class InferenceService : Service(), TranscriptionListener {
     ) {
         val treeUriStr = preferencesManager.outputFolderUri.first() ?: return
         val treeUri = Uri.parse(treeUriStr)
+        val decision = SubtitleFormatter.resolveExport(
+            SubtitleFormatter.Format.fromStored(preferencesManager.transcriptExportFormat.first()),
+            text, segments, failedChunkCount
+        )
         val name = withContext(Dispatchers.IO) {
-            TranscriptFileSaver.save(this@InferenceService, treeUri, text, sourcePackage)
+            TranscriptFileSaver.save(this@InferenceService, treeUri, decision.content, sourcePackage,
+                decision.format.extension, decision.format.mime)
         }
         if (name != null) {
             Log.i(TAG, "Saved transcript to output folder: $name")

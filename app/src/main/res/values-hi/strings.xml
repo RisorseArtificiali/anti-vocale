@@ -984,4 +984,10 @@
     <string name="external_family_pick_title">यह मॉडल किस परिवार का है?</string>
     <string name="subtitle_timeout_title">स्वचालित चयन समय-सीमा</string>
     <string name="subtitle_timeout_description">सबटाइटल वाले वीडियो की चयन सूचना कितनी देर प्रतीक्षा करती है और खुद ट्रांसक्रिप्ट शुरू करती है।</string>
+    <string name="transcript_export_format_title">ऑटो-सेव फ़ाइल प्रारूप</string>
+    <string name="transcript_export_format_description">ऑटो-सेव फ़ोल्डर में सहेजी गई फ़ाइलों का प्रारूप। टाइमस्टैम्प वाले प्रारूप केवल तभी लिखे जाते हैं जब ट्रांसक्रिप्शन से समय संबंधी डेटा मिला हो।</string>
+    <string name="transcript_export_format_txt">सादा टेक्स्ट</string>
+    <string name="transcript_export_format_txt_timed">टाइमस्टैम्प वाला टेक्स्ट (प्रायोगिक)</string>
+    <string name="transcript_export_format_srt">SRT सबटाइटल (प्रायोगिक)</string>
+    <string name="transcript_export_format_vtt">WebVTT सबटाइटल (प्रायोगिक)</string>
 </resources>

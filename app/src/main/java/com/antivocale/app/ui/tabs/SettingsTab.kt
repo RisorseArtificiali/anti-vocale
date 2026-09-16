@@ -71,6 +71,7 @@ import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.util.LanguageNames
+import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.viewmodel.LanguageOption
 import com.antivocale.app.ui.components.EditablePromptCard
@@ -91,6 +92,7 @@ fun SettingsTab(
     val currentTimeout by viewModel.keepAliveTimeout.collectAsState()
     val autoCopyEnabled by viewModel.autoCopyEnabled.collectAsState()
     val outputFolderUri by viewModel.outputFolderUri.collectAsState()
+    val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
     val vadEnabled by viewModel.vadEnabled.collectAsState()
     val progressiveEnabled by viewModel.progressiveTranscription.collectAsState()
     val threadCount by viewModel.threadCount.collectAsState()
@@ -475,6 +477,49 @@ fun SettingsTab(
                 onChoose = { outputFolderLauncher.launch(null) },
                 onClear = { viewModel.saveOutputFolderUri(null) }
             )
+
+            // GH #92: auto-save file format. Meaningful only with a folder chosen,
+            // mirroring the OutputFolderSettingCard enabling rule.
+            Card(modifier = Modifier.fillMaxWidth()) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Subtitles,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.transcript_export_format_title),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.transcript_export_format_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                    val formatOptions = SubtitleFormatter.Format.entries
+                    SettingsDropdown(
+                        currentValue = SubtitleFormatter.Format.fromStored(transcriptExportFormat),
+                        options = formatOptions,
+                        currentValueDisplay = transcriptExportFormatLabel(
+                            SubtitleFormatter.Format.fromStored(transcriptExportFormat)
+                        ),
+                        optionDisplay = { format -> transcriptExportFormatLabel(format) },
+                        onOptionSelected = { viewModel.saveTranscriptExportFormat(it.name) },
+                        label = stringResource(R.string.transcript_export_format_title),
+                        enabled = outputFolderUri != null
+                    )
+                }
+            }
 
             // VAD Silence Stripping Setting
             ToggleSettingCard(
@@ -2163,4 +2208,13 @@ private fun punctuationModeLabel(pref: String): String = when (pref) {
     PunctuationPolicy.PREF_OFF -> stringResource(R.string.punctuation_mode_off)
     PunctuationPolicy.PREF_ALWAYS -> stringResource(R.string.punctuation_mode_always)
     else -> stringResource(R.string.punctuation_mode_auto)
+}
+
+/** GH #92: format -> localized label; the timed formats carry the experimental suffix. */
+@Composable
+private fun transcriptExportFormatLabel(format: SubtitleFormatter.Format): String = when (format) {
+    SubtitleFormatter.Format.TXT -> stringResource(R.string.transcript_export_format_txt)
+    SubtitleFormatter.Format.TXT_TIMED -> stringResource(R.string.transcript_export_format_txt_timed)
+    SubtitleFormatter.Format.SRT -> stringResource(R.string.transcript_export_format_srt)
+    SubtitleFormatter.Format.VTT -> stringResource(R.string.transcript_export_format_vtt)
 }

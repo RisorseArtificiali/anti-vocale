@@ -1002,4 +1002,10 @@
     <string name="external_family_pick_title">К какому семейству относится эта модель?</string>
     <string name="subtitle_timeout_title">Таймаут автоматического выбора</string>
     <string name="subtitle_timeout_description">Сколько ждёт уведомление с выбором для видео с субтитрами, прежде чем начать расшифровку самостоятельно.</string>
+    <string name="transcript_export_format_title">Формат автосохранения</string>
+    <string name="transcript_export_format_description">Формат файлов, сохраняемых в папку автосохранения. Форматы с метками времени записываются, только если расшифровка выдала данные о времени.</string>
+    <string name="transcript_export_format_txt">Простой текст</string>
+    <string name="transcript_export_format_txt_timed">Текст с метками времени (экспериментально)</string>
+    <string name="transcript_export_format_srt">Субтитры SRT (экспериментально)</string>
+    <string name="transcript_export_format_vtt">Субтитры WebVTT (экспериментально)</string>
 </resources>

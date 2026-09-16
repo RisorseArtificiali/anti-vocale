@@ -177,6 +177,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = null
         )
 
+    // GH #92: auto-save file format (TXT | TXT_TIMED | SRT | VTT). Default TXT.
+    val transcriptExportFormat: StateFlow<String> = preferencesManager.transcriptExportFormat
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT
+        )
+
     // VAD silence stripping preference
     val vadEnabled: StateFlow<Boolean> = preferencesManager.vadEnabled
         .stateIn(
@@ -555,6 +563,15 @@ class SettingsViewModel @Inject constructor(
     fun saveOutputFolderUri(uri: String?) {
         viewModelScope.launch {
             preferencesManager.saveOutputFolderUri(uri)
+        }
+    }
+
+    /**
+     * GH #92: saves the auto-save file format (a [SubtitleFormatter.Format] name).
+     */
+    fun saveTranscriptExportFormat(format: String) {
+        viewModelScope.launch {
+            preferencesManager.saveTranscriptExportFormat(format)
         }
     }
 

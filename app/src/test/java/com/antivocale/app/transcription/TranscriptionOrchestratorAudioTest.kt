@@ -117,7 +117,7 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         assertTrue(result.isSuccess)
         assertEquals("Hello world", result.getOrNull())
         verify {
-            listener.onSuccess(eq("test-1"), eq("Hello world"), eq(false), isNull(), any())
+            listener.onSuccess(eq("test-1"), eq("Hello world"), eq(false), isNull(), any(), segments = any())
         }
     }
 

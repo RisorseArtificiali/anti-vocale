@@ -160,7 +160,8 @@ class TranscriptionOrchestratorChunkRetryTest : TranscriptionOrchestratorTestBas
                 confidence = any(),
                 detectedLanguage = any(),
                 isPartial = true,
-                failedChunkCount = 1
+                failedChunkCount = 1,
+                segments = any()
             )
         }
     }
@@ -183,7 +184,8 @@ class TranscriptionOrchestratorChunkRetryTest : TranscriptionOrchestratorTestBas
                 confidence = any(),
                 detectedLanguage = any(),
                 isPartial = false,
-                failedChunkCount = 0
+                failedChunkCount = 0,
+                segments = any()
             )
         }
     }
@@ -216,7 +218,8 @@ class TranscriptionOrchestratorChunkRetryTest : TranscriptionOrchestratorTestBas
                 confidence = any(),
                 detectedLanguage = any(),
                 isPartial = false,
-                failedChunkCount = 0
+                failedChunkCount = 0,
+                segments = any()
             )
         }
     }
@@ -250,7 +253,8 @@ class TranscriptionOrchestratorChunkRetryTest : TranscriptionOrchestratorTestBas
                 confidence = any(),
                 detectedLanguage = any(),
                 isPartial = true,
-                failedChunkCount = eq(1)
+                failedChunkCount = eq(1),
+                segments = any()
             )
         }
     }

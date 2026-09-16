@@ -985,4 +985,10 @@
     <string name="external_family_pick_title">Bu model hangi aileden?</string>
     <string name="subtitle_timeout_title">Otomatik seçim süresi</string>
     <string name="subtitle_timeout_description">Altyazılı videonun seçim bildirimi kendi kendine transkript başlamadan ne kadar bekler.</string>
+    <string name="transcript_export_format_title">Otomatik kayıt dosyası biçimi</string>
+    <string name="transcript_export_format_description">Otomatik kayıt klasörüne kaydedilen dosyaların biçimi. Zaman damgalı biçimler yalnızca transkripsiyon zaman verisi ürettiğinde yazılır.</string>
+    <string name="transcript_export_format_txt">Düz metin</string>
+    <string name="transcript_export_format_txt_timed">Zaman damgalı metin (deneysel)</string>
+    <string name="transcript_export_format_srt">SRT altyazıları (deneysel)</string>
+    <string name="transcript_export_format_vtt">WebVTT altyazıları (deneysel)</string>
 </resources>

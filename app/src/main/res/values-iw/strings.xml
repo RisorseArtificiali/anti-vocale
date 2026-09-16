@@ -990,4 +990,10 @@
     <string name="external_family_pick_title">לאיזו משפחה שייך המודל?</string>
     <string name="subtitle_timeout_title">פסק זמן בחירה אוטומטית</string>
     <string name="subtitle_timeout_description">כמה זמן ממתינה התראת הבחירה לסרטון עם כתוביות לפני שהיא מתמללת מעצמה.</string>
+    <string name="transcript_export_format_title">פורמט שמירה אוטומטית</string>
+    <string name="transcript_export_format_description">הפורמט של הקבצים שנשמרים בתיקיית השמירה האוטומטית. פורמטים עם חותמות זמן נכתבים רק כאשר התמלול הניב נתוני תזמון.</string>
+    <string name="transcript_export_format_txt">טקסט פשוט</string>
+    <string name="transcript_export_format_txt_timed">טקסט עם חותמות זמן (ניסיוני)</string>
+    <string name="transcript_export_format_srt">כתוביות SRT (ניסיוני)</string>
+    <string name="transcript_export_format_vtt">כתוביות WebVTT (ניסיוני)</string>
 </resources>

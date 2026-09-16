@@ -989,4 +989,10 @@
     <string name="external_family_pick_title">A quale famiglia appartiene questo modello?</string>
     <string name="subtitle_timeout_title">Timeout della scelta automatica</string>
     <string name="subtitle_timeout_description">Quanto aspetta la notifica di scelta per un video con sottotitoli prima di trascrivere da sola.</string>
+    <string name="transcript_export_format_title">Formato del salvataggio automatico</string>
+    <string name="transcript_export_format_description">Formato dei file salvati nella cartella di salvataggio automatico. I formati con indicatori temporali vengono scritti solo se la trascrizione ha prodotto dati temporali.</string>
+    <string name="transcript_export_format_txt">Testo semplice</string>
+    <string name="transcript_export_format_txt_timed">Testo con indicatori temporali (sperimentale)</string>
+    <string name="transcript_export_format_srt">Sottotitoli SRT (sperimentale)</string>
+    <string name="transcript_export_format_vtt">Sottotitoli WebVTT (sperimentale)</string>
 </resources>

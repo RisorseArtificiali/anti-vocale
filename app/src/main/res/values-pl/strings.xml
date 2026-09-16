@@ -1001,4 +1001,10 @@
     <string name="external_family_pick_title">Do której rodziny należy ten model?</string>
     <string name="subtitle_timeout_title">Czas automatycznego wyboru</string>
     <string name="subtitle_timeout_description">Jak długo powiadomienie z wyborem dla filmu z napisami czeka, zanim samo rozpocznie transkrypcję.</string>
+    <string name="transcript_export_format_title">Format autozapisu</string>
+    <string name="transcript_export_format_description">Format plików zapisywanych w folderze autozapisu. Formaty ze znacznikami czasu są zapisywane tylko wtedy, gdy transkrypcja wygenerowała dane czasowe.</string>
+    <string name="transcript_export_format_txt">Zwykły tekst</string>
+    <string name="transcript_export_format_txt_timed">Tekst ze znacznikami czasu (eksperymentalny)</string>
+    <string name="transcript_export_format_srt">Napisy SRT (eksperymentalne)</string>
+    <string name="transcript_export_format_vtt">Napisy WebVTT (eksperymentalne)</string>
 </resources>

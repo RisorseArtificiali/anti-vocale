@@ -850,4 +850,10 @@
     <string name="external_family_pick_title">¿De qué familia es este modelo?</string>
     <string name="subtitle_timeout_title">Tiempo de espera de la elección automática</string>
     <string name="subtitle_timeout_description">Cuánto espera la notificación de elección de un vídeo con subtítulos antes de transcribir por sí sola.</string>
+    <string name="transcript_export_format_title">Formato de autoguardado</string>
+    <string name="transcript_export_format_description">Formato de los archivos guardados en la carpeta de autoguardado. Los formatos con marcas de tiempo solo se escriben cuando la transcripción generó datos de tiempo.</string>
+    <string name="transcript_export_format_txt">Texto plano</string>
+    <string name="transcript_export_format_txt_timed">Texto con marcas de tiempo (experimental)</string>
+    <string name="transcript_export_format_srt">Subtítulos SRT (experimental)</string>
+    <string name="transcript_export_format_vtt">Subtítulos WebVTT (experimental)</string>
 </resources>
