@@ -631,6 +631,12 @@ class SherpaBackend(
                 val transcription = result.text
                 val detectedLang = result.lang.ifBlank { null }
 
+                // GH #92 probe: token timestamps decide whether sentence-level
+                // subtitle cues are possible for this model (empty = chunk cues only).
+                Log.d(TAG, "Token timestamps: ${result.timestamps.size} entries" +
+                    (result.timestamps.firstOrNull()?.let { ", first=%.2fs".format(it) } ?: "") +
+                    (result.timestamps.lastOrNull()?.let { ", last=%.2fs".format(it) } ?: ""))
+
                 Log.d(TAG, "Transcription complete: '${transcription.take(100)}...' (${transcription.length} chars)")
 
                 if (transcription.isBlank()) {
