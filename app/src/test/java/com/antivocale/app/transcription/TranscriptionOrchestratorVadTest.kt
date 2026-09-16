@@ -61,7 +61,10 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         coroutineScope = scope
     )
 
-    private fun stubVadPreprocessing(chunks: List<FloatArray>) {
+    private fun stubVadPreprocessing(
+        chunks: List<FloatArray>,
+        rangesMs: List<Pair<Long, Long>>? = null,
+    ) {
         every {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = audioFile.absolutePath,
@@ -78,7 +81,8 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             sampleRate = 16000,
             totalDurationSeconds = 30.0,
             chunkCount = chunks.size,
-            isVadSegmented = true
+            isVadSegmented = true,
+            chunkRangesMs = rangesMs
         )
     }
 
@@ -264,5 +268,63 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
                 processingTimeMs = any()
             )
         }
+    }
+
+    // ---- GH #92: sentence-cue selection on the assembly path ----
+
+    @Test
+    fun `progressive segments prefer sentence cues when tokens are present`() = runTest {
+        stubVadPreprocessing(
+            listOf(FloatArray(100) { 1.0f }, FloatArray(100) { 2.0f }),
+            rangesMs = listOf(0L to 6000L, 6000L to 12000L),
+        )
+
+        // Chunk-relative tokens; each of the two chunks returns the same decode,
+        // so the second chunk's cues must carry its 6000ms offset.
+        val tokens = listOf(
+            TimedToken("▁Prima", 0, 900),
+            TimedToken("frase.", 1000, 1900),
+            TimedToken("▁Seconda", 2000, 2900),
+            TimedToken("frase.", 3000, 3900),
+        )
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success(
+            TranscriptionResult(text = "Prima frase. Seconda frase.", tokens = tokens))
+
+        runProcessRequest(scope = this)
+
+        val segmentsSlot = slot<List<TimedSegment>>()
+        verify { listener.onSuccess(any(), any(), any(), any(), any(), segments = capture(segmentsSlot)) }
+        assertEquals(
+            listOf(
+                TimedSegment(0, 1900, "Prima frase."),
+                TimedSegment(2000, 3900, "Seconda frase."),
+                TimedSegment(6000, 7900, "Prima frase."),
+                TimedSegment(8000, 9900, "Seconda frase."),
+            ),
+            segmentsSlot.captured,
+        )
+    }
+
+    @Test
+    fun `progressive segments fall back to chunk cues without tokens`() = runTest {
+        stubVadPreprocessing(
+            listOf(FloatArray(100) { 1.0f }, FloatArray(100) { 2.0f }),
+            rangesMs = listOf(0L to 6000L, 6000L to 12000L),
+        )
+
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success(
+            TranscriptionResult(text = "plain chunk text"))
+
+        runProcessRequest(scope = this)
+
+        val segmentsSlot = slot<List<TimedSegment>>()
+        verify { listener.onSuccess(any(), any(), any(), any(), any(), segments = capture(segmentsSlot)) }
+        assertEquals(
+            listOf(
+                TimedSegment(0, 6000, "plain chunk text"),
+                TimedSegment(6000, 12000, "plain chunk text"),
+            ),
+            segmentsSlot.captured,
+        )
     }
 }

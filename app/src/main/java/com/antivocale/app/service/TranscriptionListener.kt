@@ -60,7 +60,8 @@ interface TranscriptionListener {
         /** TASK-450: the request was streamed without silence stripping after
          *  the VAD path would have refused it (device memory ceiling). */
         streamedWithoutVad: Boolean = false,
-        /** GH #92: the per-chunk cues, empty when no honest timing exists. */
+        /** GH #92: the subtitle cues (sentence-level when token timing exists,
+         *  else one per chunk), empty when no honest timing exists. */
         segments: List<TimedSegment> = emptyList()
     )
 

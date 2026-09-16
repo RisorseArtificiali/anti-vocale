@@ -1048,14 +1048,17 @@ class TranscriptionOrchestrator @Inject constructor(
                     if (tr.text.isNotBlank()) {
                         recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
                         val trimmed = tr.text.trim()
-                        // GH #92: the one positional cue for the one chunk; the
-                        // preprocessor's ranges are aligned with chunks by
+                        // GH #92: sentence cues when the backend supplied token
+                        // timestamps, else the one positional cue for the one
+                        // chunk; the preprocessor's ranges are aligned with chunks by
                         // construction, so no per-path offset arithmetic exists here.
                         val range = preprocessingResult.chunkRangesMs?.firstOrNull()
                         val segments = if (range != null) {
-                            listOf(TimedSegment(range.first, range.second, trimmed))
+                            cuesForChunk(tr.tokens, trimmed, range.first, range.second)
                         } else emptyList()
-                        Result.success(tr.copy(text = trimmed, segments = segments))
+                        // Tokens are chunk-relative intermediates; the assembled result
+                        // carries cues only, same convention as the other three paths.
+                        Result.success(tr.copy(text = trimmed, segments = segments, tokens = emptyList()))
                     } else {
                         Result.failure(TranscriptionException.NoTranscriptionProduced())
                     }
@@ -1129,6 +1132,22 @@ class TranscriptionOrchestrator @Inject constructor(
                 })
     }
 
+    /**
+     * GH #92: the cue set for one decoded chunk: sentence cues from the
+     * backend's token timestamps when it supplies them, else the chunk-level
+     * cue built positionally from the chunk's range. A token-bearing chunk
+     * whose cues all normalize blank yields no cue (the honest gap for a noise
+     * decode). One owner keeps all four assembly paths in step.
+     */
+    private fun cuesForChunk(
+        tokens: List<TimedToken>,
+        trimmedChunkText: String,
+        startMs: Long,
+        endMs: Long,
+    ): List<TimedSegment> =
+        if (tokens.isNotEmpty()) SentenceCueBuilder.build(tokens, startMs, endMs)
+        else listOf(TimedSegment(startMs, endMs, trimmedChunkText))
+
     private suspend fun processProgressiveSegments(
         taskId: String,
         chunks: List<FloatArray>,
@@ -1164,7 +1183,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         accumulatedText.append(trimmed)
                         // GH #92: a failed segment leaves no cue (honest gap).
                         segmentRangesMs.getOrNull(i)?.let { (startMs, endMs) ->
-                            segments.add(TimedSegment(startMs, endMs, trimmed))
+                            segments.addAll(cuesForChunk(tr.tokens, trimmed, startMs, endMs))
                         }
                         updateInterimResult(taskId, accumulatedText.toString())
                         Log.i(TAG, "Progressive preview: segment ${trimmed.length} chars, total ${accumulatedText.length} chars")
@@ -1230,6 +1249,9 @@ class TranscriptionOrchestrator @Inject constructor(
         val results = arrayOfNulls<String>(chunkCount)
         val chunkConfidences = arrayOfNulls<Float>(chunkCount)
         val chunkLanguages = arrayOfNulls<String>(chunkCount)
+        // GH #92: per-chunk token timestamps for the sentence cues; null when the
+        // chunk failed or the backend supplies no token timing.
+        val chunkTokens = arrayOfNulls<List<TimedToken>>(chunkCount)
 
         Log.i(TAG, "Processing $chunkCount chunks with up to $maxConcurrentChunks concurrent transcriptions")
 
@@ -1289,6 +1311,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         if (tr.text.isNotBlank()) {
                             val trimmed = tr.text.trim()
                             results[index] = trimmed
+                            chunkTokens[index] = tr.tokens
                             chunkConfidences[index] = tr.confidence
                             chunkLanguages[index] = tr.detectedLanguage
                             if (progressiveText != null) {
@@ -1315,6 +1338,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                 if (tr.text.isNotBlank()) {
                                     val trimmed = tr.text.trim()
                                     results[index] = trimmed
+                                    chunkTokens[index] = tr.tokens
                                     chunkConfidences[index] = tr.confidence
                                     chunkLanguages[index] = tr.detectedLanguage
                                 }
@@ -1337,14 +1361,17 @@ class TranscriptionOrchestrator @Inject constructor(
         // GH #92: one positional rule for every origin of these chunks (VAD merged
         // segments, fixed windows, the stripped single span): the preprocessor's
         // ranges are aligned with the chunks BY CONSTRUCTION, so cue i is range i.
-        // The size guard is defensive only; a failed chunk leaves no cue.
+        // The size guard is defensive only; a failed chunk leaves no cue. Token
+        // timestamps, when the backend supplied them, refine each chunk's cue
+        // into sentence cues inside that range.
         val segmentRanges = segmentRangesMs?.takeIf { it.size == chunkCount }
         val segments = if (segmentRanges != null) {
             results.mapIndexedNotNull { index, text ->
                 text?.let {
-                    TimedSegment(segmentRanges[index].first, segmentRanges[index].second, it)
+                    cuesForChunk(chunkTokens[index].orEmpty(), it,
+                        segmentRanges[index].first, segmentRanges[index].second)
                 }
-            }
+            }.flatten()
         } else emptyList()
 
         val totalMs = System.currentTimeMillis() - chunkProcessingStartTime
@@ -1458,7 +1485,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                     val trimmed = tr.text.trim()
                                     if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                     accumulatedText.append(trimmed)
-                                    segments.add(TimedSegment(chunkStartMs, chunkEndMs, trimmed))
+                                    segments.addAll(cuesForChunk(tr.tokens, trimmed, chunkStartMs, chunkEndMs))
                                     if (progressiveEnabled) {
                                         updateInterimResult(taskId, accumulatedText.toString())
                                         listener.onInterimResult(
@@ -1484,7 +1511,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                             val trimmed = tr.text.trim()
                                             if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                             accumulatedText.append(trimmed)
-                                            segments.add(TimedSegment(chunkStartMs, chunkEndMs, trimmed))
+                                            segments.addAll(cuesForChunk(tr.tokens, trimmed, chunkStartMs, chunkEndMs))
                                             if (progressiveEnabled) {
                                                 updateInterimResult(taskId, accumulatedText.toString())
                                                 listener.onInterimResult(
@@ -1748,7 +1775,8 @@ class TranscriptionOrchestrator @Inject constructor(
         summary: String? = null,
         /** TASK-494: why an attended summary attempt produced none. */
         summarySkipReason: String? = null,
-        /** GH #92: the chunk cues, stored as JSON on the row. */
+        /** GH #92: the subtitle cues (sentence-level when token timing exists,
+         *  else chunk-level), stored as JSON on the row. */
         segments: List<TimedSegment> = emptyList(),
     ) {
         val entity = logDao.getByTaskId(taskId) ?: return
