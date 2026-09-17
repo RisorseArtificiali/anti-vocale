@@ -95,6 +95,7 @@
     <string name="export_settings_title">Sauvegarde auto et export</string>
     <string name="export_settings_description">Choisir le dossier et le format des fichiers sauvegardés</string>
     <string name="error_folder_not_writable">Ce dossier ne peut pas recevoir de fichiers. Choisissez un dossier du stockage de l appareil (pas le raccourci Téléchargements).</string>
+    <string name="language_phone_option">Langue du téléphone (%1$s)</string>
     <string name="today">Aujourd\'hui</string>
     <string name="yesterday">Hier, %1$s</string>
     <string name="yesterday_label">Hier</string>

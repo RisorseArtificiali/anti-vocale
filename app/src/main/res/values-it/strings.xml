@@ -122,6 +122,7 @@
     <string name="export_settings_title">Salvataggio automatico ed esportazione</string>
     <string name="export_settings_description">Scegli cartella e formato file per le trascrizioni salvate</string>
     <string name="error_folder_not_writable">Questa cartella non può ricevere file. Scegli una cartella dalla memoria del dispositivo (non dalla scorciatoia Scaricamenti).</string>
+    <string name="language_phone_option">Lingua del telefono (%1$s)</string>
     <string name="today">Oggi</string>
     <string name="yesterday">Ieri, %1$s</string>
     <string name="yesterday_label">Ieri</string>

@@ -95,6 +95,7 @@
     <string name="export_settings_title">Salvamento automático e exportação</string>
     <string name="export_settings_description">Escolher a pasta e o formato dos arquivos salvos</string>
     <string name="error_folder_not_writable">Esta pasta não pode receber arquivos. Escolha uma pasta do armazenamento do dispositivo (não o atalho de Downloads).</string>
+    <string name="language_phone_option">Idioma do telefone (%1$s)</string>
     <string name="today">Hoje</string>
     <string name="yesterday">Ontem, %1$s</string>
     <string name="yesterday_label">Ontem</string>

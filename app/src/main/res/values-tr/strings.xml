@@ -125,6 +125,7 @@
     <string name="export_settings_title">Otomatik kaydet ve dışa aktar</string>
     <string name="export_settings_description">Kaydedilen transkriptler için klasör ve dosya biçimi seçin</string>
     <string name="error_folder_not_writable">Bu klasör dosya alamaz. Cihaz depolama alanından bir klasör seçin (Downloads kısayolu değil).</string>
+    <string name="language_phone_option">Telefon dili (%1$s)</string>
     <string name="today">Bugün</string>
     <string name="yesterday">Dün, %1$s</string>
     <string name="yesterday_label">Dün</string>

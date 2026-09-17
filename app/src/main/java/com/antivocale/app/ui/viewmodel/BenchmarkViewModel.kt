@@ -84,6 +84,7 @@ class BenchmarkViewModel @Inject constructor(
                         modelDir = modelPath,
                         numThreads = threadCount,
                         language = TranscriptionLanguagePolicy.resolveForEntry(
+                        phoneLanguage = java.util.Locale.getDefault().language.takeIf { it.isNotBlank() },
                             entry = entry,
                             preference = lang,
                         ),

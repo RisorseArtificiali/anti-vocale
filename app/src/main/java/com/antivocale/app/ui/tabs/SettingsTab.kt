@@ -2165,6 +2165,13 @@ private fun languageOptionLabel(
     sentinelLabels: Map<String, Int>,
     options: Map<String, LanguageOption>,
 ): String {
+    // TASK-547: the phone sentinel formats with the device locale.
+    if (code == TranscriptionLanguagePolicy.PREF_PHONE) {
+        return stringResource(
+            R.string.language_phone_option,
+            java.util.Locale.getDefault().language,
+        )
+    }
     sentinelLabels[code]?.let { return stringResource(it) }
     return options[code]?.displayName
         ?: LanguageNames.nativeLanguageName(code)

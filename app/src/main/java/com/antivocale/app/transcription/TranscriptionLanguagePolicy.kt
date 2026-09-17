@@ -30,23 +30,41 @@ object TranscriptionLanguagePolicy {
     /** Preference sentinel: explicit model-side auto-detection. */
     const val PREF_AUTO = "auto"
 
+    /**
+     * TASK-547: pin to the phone's locale language. The pre-1.12 behavior
+     * restored as an explicit choice: no install changes its default; users
+     * whose phone matches their speech get the old reliability back by
+     * picking this. Resolves through the same offline/stream mappings, with
+     * the locale code injected by the caller (the policy stays pure Kotlin).
+     */
+    const val PREF_PHONE = "phone"
+
     /** Both sentinels and a blank legacy value mean "no pin" (model-side detection). */
     private fun isAutoDetect(preference: String): Boolean =
         preference == PREF_AUTO || preference == PREF_SYSTEM || preference.isBlank()
 
     /**
      * Offline passLanguage entries (Whisper): no pin maps to "" (model-side
-     * detection); a pinned code passes through.
+     * detection); a pinned code passes through; "phone" resolves to the
+     * caller-supplied locale code ("" when the locale is unreadable, so the
+     * model falls back to detection).
      */
-    fun resolveOffline(preference: String): String =
-        if (isAutoDetect(preference)) "" else preference
+    fun resolveOffline(preference: String, phoneLanguage: String? = null): String = when {
+        isAutoDetect(preference) -> ""
+        preference == PREF_PHONE -> phoneLanguage ?: ""
+        else -> preference
+    }
 
     /**
      * Online languageOption entries (Nemotron): no pin maps to "auto" (the
-     * per-stream auto-detect option), a concrete code passes.
+     * per-stream auto-detect option), a concrete code passes; "phone"
+     * resolves to the locale code (auto when unreadable).
      */
-    fun resolveStream(preference: String): String =
-        if (isAutoDetect(preference)) PREF_AUTO else preference
+    fun resolveStream(preference: String, phoneLanguage: String? = null): String = when {
+        isAutoDetect(preference) -> PREF_AUTO
+        preference == PREF_PHONE -> phoneLanguage ?: PREF_AUTO
+        else -> preference
+    }
 
     /**
      * The per-entry language wiring, shared by every config-builder site (the
@@ -54,10 +72,12 @@ object TranscriptionLanguagePolicy {
      * measures what transcription would actually run with): languageOption
      * (online Nemotron) resolves per-stream, passLanguage (offline Whisper)
      * resolves the offline mapping, everything else gets "".
+     * [phoneLanguage] carries the device locale for the PREF_PHONE sentinel
+     * (null means the locale was unreadable; detection applies).
      */
-    fun resolveForEntry(entry: CatalogEntry, preference: String): String = when {
-        entry.flags.languageOption -> resolveStream(preference)
-        entry.flags.passLanguage -> resolveOffline(preference)
+    fun resolveForEntry(entry: CatalogEntry, preference: String, phoneLanguage: String? = null): String = when {
+        entry.flags.languageOption -> resolveStream(preference, phoneLanguage)
+        entry.flags.passLanguage -> resolveOffline(preference, phoneLanguage)
         else -> ""
     }
 
@@ -99,6 +119,9 @@ object TranscriptionLanguagePolicy {
     fun pinState(preference: String, offered: Set<String>): PinState = when {
         preference == PREF_AUTO || preference == PREF_SYSTEM || preference.isBlank() ->
             PinState.NOT_PINNED
+        // TASK-547: the phone sentinel always resolves (to the locale code at
+        // request time), so it is always a supported pin on language-aware models.
+        preference == PREF_PHONE -> PinState.SUPPORTED_PIN
         preference in offered -> PinState.SUPPORTED_PIN
         else -> PinState.UNSUPPORTED_PIN
     }

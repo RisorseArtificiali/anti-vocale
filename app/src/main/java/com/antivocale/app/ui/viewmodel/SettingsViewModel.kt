@@ -1007,6 +1007,16 @@ internal fun transcriptionPickerFor(
     offered: Set<String>,
     locale: java.util.Locale,
 ): TranscriptionLanguagePicker = TranscriptionLanguagePicker(
-    options = optionsFor(listOf(TranscriptionLanguagePolicy.PREF_AUTO), offered.toList(), locale),
+    // TASK-547: "phone" (pin to the device locale) is offered only where the
+    // model conditions on language (offered is non-empty), between Auto and
+    // the concrete codes.
+    options = optionsFor(
+        if (offered.isNotEmpty()) {
+            listOf(TranscriptionLanguagePolicy.PREF_AUTO, TranscriptionLanguagePolicy.PREF_PHONE)
+        } else {
+            listOf(TranscriptionLanguagePolicy.PREF_AUTO)
+        },
+        offered.toList(), locale,
+    ),
     offeredCodes = offered,
 )
