@@ -1,19 +1,31 @@
 package com.antivocale.app.ui.components
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
@@ -102,23 +114,52 @@ internal fun CappedTranscriptText(
         val rendered = if (capped) text.take(MAX_RENDERED_TRANSCRIPT_CHARS) else text
         highlightText(rendered, searchQuery, highlightColor)
     }
-    val scroll = if (capped) {
-        Modifier
-            .heightIn(max = 320.dp)
-            .verticalScroll(rememberScrollState())
+    val indicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+    if (capped) {
+        // GH #94: position indicator + reading progress on the capped panel.
+        // The indicator modifier self-measures on the panel itself; the
+        // viewport height is captured only for the progress line, which sits
+        // outside the panel and cannot self-measure it. The cap and the 320dp
+        // bound are untouched.
+        val state = rememberScrollState()
+        var viewportPx by remember { mutableIntStateOf(0) }
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 320.dp)
+                .background(container.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small)
+                .transcriptPositionIndicator(state, indicatorColor)
+                .onSizeChanged { viewportPx = it.height }
+        ) {
+            Text(
+                text = annotated,
+                style = style,
+                color = textColor,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp)
+                    .verticalScroll(state),
+            )
+        }
+        ReadingProgressLine(
+            state = state,
+            color = indicatorColor,
+            viewportPx = viewportPx,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 2.dp),
+        )
     } else {
-        Modifier
+        Text(
+            text = annotated,
+            style = style,
+            color = textColor,
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(container.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small)
+                .padding(8.dp),
+        )
     }
-    Text(
-        text = annotated,
-        style = style,
-        color = textColor,
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(container.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small)
-            .padding(8.dp)
-            .then(scroll),
-    )
     if (capped) {
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -131,4 +172,113 @@ internal fun CappedTranscriptText(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
+}
+
+/**
+ * GH #94: pure thumb geometry for the position indicator, unit-tested.
+ * Returns (topOffsetPx, heightPx) on a track of [trackPx] height, or null
+ * when there is nothing to scroll (maxValue <= 0: the indicator is hidden).
+ * The thumb covers the viewport's fraction of the content (viewportPx /
+ * (viewportPx + maxValue)) with a floor of [minThumbPx] so it stays visible,
+ * and never exceeds the track.
+ */
+internal fun thumbGeometry(
+    value: Int,
+    maxValue: Int,
+    viewportPx: Int,
+    trackPx: Int,
+    minThumbPx: Int,
+): Pair<Float, Float>? {
+    if (maxValue <= 0 || trackPx <= 0 || viewportPx <= 0) return null
+    val content = viewportPx + maxValue
+    val h = (trackPx * viewportPx.toFloat() / content).coerceIn(minThumbPx.toFloat(), trackPx.toFloat())
+    // The thumb's travel is what remains of the track after its own height.
+    val travel = trackPx - h
+    val top = travel * (value.toFloat() / maxValue)
+    return top to h
+}
+
+/**
+ * GH #94: pure reading-progress fraction for the progress line, unit-tested.
+ * How much of the content has been SEEN (not where the viewport sits): the
+ * visible span is (value + viewport), so the end state reads as a full line
+ * even though the scroll position tops out earlier. Clamped to [0, 1];
+ * [Float.NaN] when there is nothing to scroll (drawn as an empty track).
+ */
+internal fun progressFraction(
+    value: Int,
+    maxValue: Int,
+    viewportPx: Int,
+): Float {
+    if (maxValue <= 0 || viewportPx <= 0) return Float.NaN
+    return ((value + viewportPx).toFloat() / (maxValue + viewportPx)).coerceIn(0f, 1f)
+}
+
+/** Material norm for an indicative (non-draggable) scrollbar on mobile. */
+private val INDICATOR_WIDTH = 4.dp
+private val INDICATOR_MIN_THUMB = 24.dp
+
+/**
+ * GH #94: draws a position indicator (faint track + rounded thumb) on the
+ * right edge of the modified node's own bounds. Attach it to the scrollable
+ * panel itself: the modifier self-measures, so the node's height IS the
+ * viewport and the thumb fraction is honest by construction. The state reads
+ * live in the draw phase only, so scrolling invalidates the draw pass,
+ * never composition. Pure overlay, not a drag handle: the panel remains the
+ * scrollable.
+ */
+internal fun Modifier.transcriptPositionIndicator(
+    state: ScrollState,
+    color: Color,
+): Modifier = drawWithContent {
+    drawContent()
+    val geo = thumbGeometry(
+        value = state.value,
+        maxValue = state.maxValue,
+        viewportPx = size.height.toInt(),
+        trackPx = size.height.toInt(),
+        minThumbPx = INDICATOR_MIN_THUMB.toPx().toInt(),
+    ) ?: return@drawWithContent
+    val w = INDICATOR_WIDTH.toPx()
+    val x = size.width - w
+    drawRoundRect(
+        color = color.copy(alpha = 0.15f),
+        cornerRadius = CornerRadius(w / 2),
+        topLeft = Offset(x, 0f),
+        size = Size(w, size.height),
+    )
+    drawRoundRect(
+        color = color.copy(alpha = 0.70f),
+        cornerRadius = CornerRadius(w / 2),
+        topLeft = Offset(x, geo.first),
+        size = Size(w, geo.second),
+    )
+}
+
+/**
+ * GH #94: reading-progress line under a capped transcript panel: the
+ * codebase's standard determinate bar (ModelVariantCard, BenchmarkDialog)
+ * fed with the SEEN fraction. The visible span is (value + viewport), so
+ * reaching the end of the content fills the whole width, the unmistakable
+ * end state the issue asks for. [viewportPx] comes from the panel above
+ * (onSizeChanged): the line is 2dp tall and cannot self-measure it.
+ */
+@Composable
+internal fun ReadingProgressLine(
+    state: ScrollState,
+    color: Color,
+    viewportPx: Int,
+    modifier: Modifier = Modifier,
+) {
+    LinearProgressIndicator(
+        progress = {
+            val f = progressFraction(state.value, state.maxValue, viewportPx)
+            if (f.isNaN()) 0f else f
+        },
+        modifier = modifier.height(2.dp),
+        color = color.copy(alpha = 0.50f),
+        trackColor = color.copy(alpha = 0.12f),
+        gapSize = 0.dp,
+        drawStopIndicator = {},
+    )
 }

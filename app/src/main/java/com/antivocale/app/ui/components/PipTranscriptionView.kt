@@ -1,7 +1,6 @@
 package com.antivocale.app.ui.components
 
 import androidx.compose.animation.core.RepeatMode
-import com.antivocale.app.ui.MAX_RENDERED_TRANSCRIPT_CHARS
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -36,14 +35,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.antivocale.app.R
-import com.antivocale.app.ui.viewmodel.LogsViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.antivocale.app.R
+import com.antivocale.app.ui.MAX_RENDERED_TRANSCRIPT_CHARS
+import com.antivocale.app.ui.viewmodel.LogsViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 
 /**
@@ -138,6 +138,12 @@ fun PipTranscriptionView(
                     (MAX_RENDERED_TRANSCRIPT_CHARS / fontScale.coerceAtLeast(1f)).toInt()
                         .coerceAtLeast(1_000)
                 }
+                // GH #94: the position-indicator modifier on the scrollable
+                // text itself; the auto-scroll keeps the thumb on the bottom
+                // while the stream grows, and when the user scrolls back to
+                // read it shows where they are. No reading-progress line here:
+                // the pane is too small and the streaming tail makes "seen"
+                // meaningless.
                 Text(
                     // TASK-506 /simplify F-B: the SHARED render cap, as
                     // takeLast so a growing stream keeps its LIVE tail
@@ -150,7 +156,11 @@ fun PipTranscriptionView(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(scrollState),
+                        .verticalScroll(scrollState)
+                        .transcriptPositionIndicator(
+                            scrollState,
+                            MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
                     lineHeight = 16.sp
                 )
             }
