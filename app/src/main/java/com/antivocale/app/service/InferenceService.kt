@@ -28,7 +28,6 @@ import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.ProgressThrottler
-import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.util.TranscriptFileSaver
 import com.antivocale.app.util.formatProcessingTime
 import dagger.hilt.android.AndroidEntryPoint
@@ -676,7 +675,7 @@ class InferenceService : Service(), TranscriptionListener {
         val name = withContext(Dispatchers.IO) {
             TranscriptFileSaver.saveAuto(
                 this@InferenceService, treeUri,
-                SubtitleFormatter.Format.fromStored(preferencesManager.transcriptExportFormat.first()),
+                preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
             )
         }

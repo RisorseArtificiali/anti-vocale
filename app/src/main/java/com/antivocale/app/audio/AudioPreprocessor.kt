@@ -106,10 +106,10 @@ class AudioPreprocessor @Inject constructor() {
          * coordinates, milliseconds, aligned with [chunks] BY CONSTRUCTION
          * (index i is chunk i's span; VAD paths use merged-segment offsets,
          * window paths use the slice offsets the chunker already computed).
-         * Consumers build positional cues from this and never re-derive
-         * offsets from chunk indices.
+         * Empty when no timing exists. Consumers build positional cues from
+         * this and never re-derive offsets from chunk indices.
          */
-        val chunkRangesMs: List<Pair<Long, Long>>? = null
+        val chunkRangesMs: List<Pair<Long, Long>> = emptyList()
     )
 
     /**
@@ -241,7 +241,10 @@ class AudioPreprocessor @Inject constructor() {
                         totalDurationSeconds = vadResult.totalSpeechDurationSeconds,
                         chunkCount = mergedSegments.size,
                         isVadSegmented = true,
-                        chunkRangesMs = mergedRangesMs
+                        // Ranges input is non-null here (speech was detected), so
+                        // the grouped output is too; empty only if VAD found none,
+                        // which cannot reach this branch.
+                        chunkRangesMs = mergedRangesMs ?: emptyList()
                     )
                 }
 

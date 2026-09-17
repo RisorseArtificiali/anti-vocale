@@ -18,13 +18,14 @@ object SubtitleFormatter {
 
     /**
      * The auto-save file format. [extension] and [mime] drive the SAF file name
-     * and type; [timed] marks the formats that need honest cue data.
+     * and type; the non-txt entries are the ones that need honest cue data
+     * (the resolveExport fail-safe keys on that).
      */
-    enum class Format(val extension: String, val mime: String, val timed: Boolean) {
-        TXT("txt", "text/plain", timed = false),
-        TXT_TIMED("txt", "text/plain", timed = true),
-        SRT("srt", MIME_SUBRIP, timed = true),
-        VTT("vtt", MIME_VTT, timed = true);
+    enum class Format(val extension: String, val mime: String) {
+        TXT("txt", "text/plain"),
+        TXT_TIMED("txt", "text/plain"),
+        SRT("srt", MIME_SUBRIP),
+        VTT("vtt", MIME_VTT);
 
         companion object {
             /** Unknown stored values fall back to the TXT default. */
@@ -57,31 +58,32 @@ object SubtitleFormatter {
         return ExportDecision(selected, when (selected) {
             Format.TXT_TIMED -> timedTxt(segments)
             Format.SRT -> srt(segments)
-            Format.VTT -> vtt(segments)
-            Format.TXT -> transcript
+            else -> vtt(segments)
         })
     }
 
     // One StringBuilder per render: a long file is on the order of the
     // transcript itself, and a map-then-join would copy every byte twice.
 
-    fun srt(segments: List<TimedSegment>): String = with(renderBuffer(segments)) {
-        segments.forEachIndexed { index, segment ->
-            if (index > 0) append('\n')
-            append(index + 1).append('\n')
-            append(fullClock(segment.startMs, ",")).append(' ').append(CUE_TIME_SEPARATOR)
-                .append(' ').append(fullClock(segment.endMs, ",")).append('\n')
-            append(segment.text).append('\n')
-        }
-        toString()
-    }
+    fun srt(segments: List<TimedSegment>): String =
+        renderCues(segments, decimal = ",", header = null, numbered = true)
 
-    fun vtt(segments: List<TimedSegment>): String = with(renderBuffer(segments)) {
-        append(VTT_HEADER).append('\n').append('\n')
+    fun vtt(segments: List<TimedSegment>): String =
+        renderCues(segments, decimal = ".", header = VTT_HEADER, numbered = false)
+
+    /** Shared SRT/VTT body: the two differ only in the decimal mark, the header, and cue numbering. */
+    private fun renderCues(
+        segments: List<TimedSegment>,
+        decimal: String,
+        header: String?,
+        numbered: Boolean,
+    ): String = with(renderBuffer(segments)) {
+        if (header != null) append(header).append('\n').append('\n')
         segments.forEachIndexed { index, segment ->
             if (index > 0) append('\n')
-            append(fullClock(segment.startMs, ".")).append(' ').append(CUE_TIME_SEPARATOR)
-                .append(' ').append(fullClock(segment.endMs, ".")).append('\n')
+            if (numbered) append(index + 1).append('\n')
+            append(fullClock(segment.startMs, decimal)).append(' ').append(CUE_TIME_SEPARATOR)
+                .append(' ').append(fullClock(segment.endMs, decimal)).append('\n')
             append(segment.text).append('\n')
         }
         toString()
@@ -97,14 +99,13 @@ object SubtitleFormatter {
     }
 
     /** SRT and VTT clock: HH:MM:SS with [decimal] (comma or dot) plus milliseconds. */
-    private fun fullClock(ms: Long, decimal: String): String = String.format(
-        Locale.US, "%02d:%02d:%02d%s%03d",
-        ms.coerceAtLeast(0L) / 3_600_000L,
-        ms.coerceAtLeast(0L) / 60_000L % 60L,
-        ms.coerceAtLeast(0L) / 1000L % 60L,
-        decimal,
-        ms.coerceAtLeast(0L) % 1000L,
-    )
+    private fun fullClock(ms: Long, decimal: String): String {
+        val t = ms.coerceAtLeast(0L)
+        return String.format(
+            Locale.US, "%02d:%02d:%02d%s%03d",
+            t / 3_600_000L, t / 60_000L % 60L, t / 1000L % 60L, decimal, t % 1000L,
+        )
+    }
 
     /** Timestamped-txt clock: the shared human duration clock ([AudioDurationFormat]). */
     private fun shortTime(ms: Long): String = AudioDurationFormat.format(ms / 1000.0)

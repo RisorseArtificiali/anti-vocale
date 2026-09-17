@@ -18,7 +18,6 @@ import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.util.AppNotificationChannel
-import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.util.TranscriptFileSaver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -176,7 +175,7 @@ class TranscriptionNotificationListener(
         val name = withContext(Dispatchers.IO) {
             TranscriptFileSaver.saveAuto(
                 appContext, treeUri,
-                SubtitleFormatter.Format.fromStored(preferencesManager.transcriptExportFormat.first()),
+                preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
             )
         }

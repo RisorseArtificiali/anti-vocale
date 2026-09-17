@@ -3,6 +3,7 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import androidx.annotation.VisibleForTesting
+import com.antivocale.app.BuildConfig
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogVariant
@@ -631,15 +632,17 @@ class SherpaBackend(
                 val transcription = result.text
                 val detectedLang = result.lang.ifBlank { null }
 
-                // GH #92 probe: token timestamps decide whether sentence-level
-                // subtitle cues are possible for this model (empty = chunk cues only).
+                // GH #92: token timestamps decide whether sentence-level subtitle
+                // cues are possible for this model (empty = chunk cues only), and
                 // durations.size > 0 is the TDT signal that the 700ms pause split
-                // can fire; the log reports both so a model's shape is checkable
-                // from logcat alone.
-                Log.d(TAG, "Token timestamps: ${result.timestamps.size} entries" +
-                    ", durations=${result.durations.size}" +
-                    (result.timestamps.firstOrNull()?.let { ", first=%.2fs".format(it) } ?: "") +
-                    (result.timestamps.lastOrNull()?.let { ", last=%.2fs".format(it) } ?: ""))
+                // can fire. Debug-only: the format work runs per chunk right at
+                // the post-decode moment.
+                if (BuildConfig.DEBUG) {
+                    Log.d(TAG, "Token timestamps: ${result.timestamps.size} entries" +
+                        ", durations=${result.durations.size}" +
+                        (result.timestamps.firstOrNull()?.let { ", first=%.2fs".format(it) } ?: "") +
+                        (result.timestamps.lastOrNull()?.let { ", last=%.2fs".format(it) } ?: ""))
+                }
 
                 Log.d(TAG, "Transcription complete: '${transcription.take(100)}...' (${transcription.length} chars)")
 

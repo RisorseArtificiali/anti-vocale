@@ -45,13 +45,13 @@ internal object TimedTokens {
         tokens: Array<String>,
         timestamps: FloatArray,
         durations: FloatArray,
-    ): List<TimedToken> = runCatching {
-        if (tokens.isEmpty() || timestamps.size != tokens.size) return@runCatching emptyList()
+    ): List<TimedToken> {
+        if (tokens.isEmpty() || timestamps.size != tokens.size) return emptyList()
         // NaN seconds would poison every downstream offset: reject the whole set.
-        if (timestamps.any { it.isNaN() || it < 0f }) return@runCatching emptyList()
+        if (timestamps.any { it.isNaN() || it < 0f }) return emptyList()
         val durationsUsable = durations.size == timestamps.size &&
             durations.all { !it.isNaN() && it >= 0f }
-        List(tokens.size) { i ->
+        return List(tokens.size) { i ->
             val startMs = (timestamps[i] * 1000).toLong()
             val durationMs = if (durationsUsable) (durations[i] * 1000).toLong() else 0L
             val endMs = when {
@@ -63,5 +63,5 @@ internal object TimedTokens {
             }
             TimedToken(text = tokens[i], startMs = startMs, endMs = endMs)
         }
-    }.getOrElse { emptyList() }
+    }
 }

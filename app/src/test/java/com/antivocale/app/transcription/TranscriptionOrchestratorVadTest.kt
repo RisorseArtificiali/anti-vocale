@@ -82,7 +82,7 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             totalDurationSeconds = 30.0,
             chunkCount = chunks.size,
             isVadSegmented = true,
-            chunkRangesMs = rangesMs
+            chunkRangesMs = rangesMs ?: emptyList()
         )
     }
 

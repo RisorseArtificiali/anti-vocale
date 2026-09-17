@@ -33,13 +33,15 @@ object TranscriptFileSaver {
     fun saveAuto(
         context: Context,
         treeUri: Uri,
-        selected: SubtitleFormatter.Format,
+        storedFormat: String?,
         transcript: String,
         segments: List<TimedSegment>,
         failedChunkCount: Int,
         sourcePackage: String? = null,
     ): String? {
-        val decision = SubtitleFormatter.resolveExport(selected, transcript, segments, failedChunkCount)
+        val decision = SubtitleFormatter.resolveExport(
+            SubtitleFormatter.Format.fromStored(storedFormat), transcript, segments, failedChunkCount,
+        )
         return save(
             context, treeUri, decision.content, sourcePackage,
             decision.format.extension, decision.format.mime,

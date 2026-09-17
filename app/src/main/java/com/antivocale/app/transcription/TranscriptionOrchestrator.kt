@@ -1052,7 +1052,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         // timestamps, else the one positional cue for the one
                         // chunk; the preprocessor's ranges are aligned with chunks by
                         // construction, so no per-path offset arithmetic exists here.
-                        val range = preprocessingResult.chunkRangesMs?.firstOrNull()
+                        val range = preprocessingResult.chunkRangesMs.firstOrNull()
                         val segments = if (range != null) {
                             cuesForChunk(tr.tokens, trimmed, range.first, range.second)
                         } else emptyList()
@@ -1075,7 +1075,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     taskId = taskId,
                     chunks = preprocessingResult.chunks,
                     sampleRate = preprocessingResult.sampleRate,
-                    segmentRangesMs = preprocessingResult.chunkRangesMs ?: emptyList(),
+                    segmentRangesMs = preprocessingResult.chunkRangesMs,
                     prompt = promptPlan.perChunk,
                     backend = backend,
                     audioDurationSeconds = audioDurationSeconds,
@@ -1232,7 +1232,7 @@ class TranscriptionOrchestrator @Inject constructor(
         chunks: List<FloatArray>,
         sampleRate: Int,
         /** GH #92: per-chunk offsets aligned with the chunks, or null when unknown. */
-        segmentRangesMs: List<Pair<Long, Long>>?,
+        segmentRangesMs: List<Pair<Long, Long>>,
         prompt: String = "",
         backend: TranscriptionBackend,
         audioDurationSeconds: Int,
