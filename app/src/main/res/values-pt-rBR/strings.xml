@@ -90,6 +90,8 @@
     <string name="source_was_video">Origem: arquivo de vídeo</string>
     <string name="processed_in">Processado em %1$s</string>
     <string name="transcript_render_capped">Exibindo os primeiros %1$d caracteres, faltam %2$d. Use Copiar para o texto completo.</string>
+    <string name="transcript_capped_autosave_hint">Transcrição completa no salvamento automático: Configurações → Salvar na pasta</string>
+    <string name="transcript_capped_autosave_saved">Transcrição completa salva automaticamente na sua pasta</string>
     <string name="today">Hoje</string>
     <string name="yesterday">Ontem, %1$s</string>
     <string name="yesterday_label">Ontem</string>

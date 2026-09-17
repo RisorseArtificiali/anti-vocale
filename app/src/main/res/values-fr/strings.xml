@@ -90,6 +90,8 @@
     <string name="source_was_video">Source : fichier vidéo</string>
     <string name="processed_in">Traité en %1$s</string>
     <string name="transcript_render_capped">Les %1$d premiers caractères sont affichés, %2$d de plus. Utilisez Copier pour le texte complet.</string>
+    <string name="transcript_capped_autosave_hint">Transcription complète via sauvegarde auto: Paramètres → Dossier de sauvegarde</string>
+    <string name="transcript_capped_autosave_saved">Transcription complète sauvegardée automatiquement dans votre dossier</string>
     <string name="today">Aujourd\'hui</string>
     <string name="yesterday">Hier, %1$s</string>
     <string name="yesterday_label">Hier</string>

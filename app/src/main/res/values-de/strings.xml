@@ -101,6 +101,8 @@
     <string name="source_was_video">Quelle: Videodatei</string>
     <string name="processed_in">Verarbeitet in %1$s</string>
     <string name="transcript_render_capped">Die ersten %1$d Zeichen angezeigt, %2$d weitere. Zum vollständigen Text „Kopieren“ verwenden.</string>
+    <string name="transcript_capped_autosave_hint">Vollständiges Transkript per Auto-Speichern: Einstellungen → Automatisch speichern</string>
+    <string name="transcript_capped_autosave_saved">Vollständiges Transkript automatisch in Ihrem Ordner gespeichert</string>
     <string name="today">Heute</string>
     <string name="yesterday">Gestern, %1$s</string>
     <string name="yesterday_label">Gestern</string>

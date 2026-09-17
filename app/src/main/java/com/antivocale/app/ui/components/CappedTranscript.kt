@@ -176,6 +176,14 @@ internal fun CappedTranscriptText(
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        // GH #94: surface the auto-save feature at the moment of need: the
+        // user is looking at a truncated transcript, which is exactly when
+        // the full-text file export is most useful and least known.
+        Text(
+            text = stringResource(R.string.transcript_capped_autosave_hint),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.primary,
+        )
     }
 }
 

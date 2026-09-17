@@ -120,6 +120,8 @@
     <string name="source_was_video">Kaynak: video dosyası</string>
     <string name="processed_in">%1$s içinde işlendi</string>
     <string name="transcript_render_capped">İlk %1$d karakter gösteriliyor, %2$d karakter daha. Tam metin için Kopyala\'yı kullanın.</string>
+    <string name="transcript_capped_autosave_hint">Tam transkript otomatik kayıtta: Ayarlar → Klasöre kaydet</string>
+    <string name="transcript_capped_autosave_saved">Tam transkript otomatik olarak klasörünüze kaydedildi</string>
     <string name="today">Bugün</string>
     <string name="yesterday">Dün, %1$s</string>
     <string name="yesterday_label">Dün</string>

@@ -117,6 +117,8 @@
     <string name="source_was_video">Origine: file video</string>
     <string name="processed_in">Elaborato in %1$s</string>
     <string name="transcript_render_capped">Mostrati i primi %1$d caratteri, altri %2$d. Usa Copia per il testo completo.</string>
+    <string name="transcript_capped_autosave_hint">Trascrizione completa nel salvataggio automatico: Impostazioni → Salva su cartella</string>
+    <string name="transcript_capped_autosave_saved">Trascrizione completa salvata automaticamente nella tua cartella</string>
     <string name="today">Oggi</string>
     <string name="yesterday">Ieri, %1$s</string>
     <string name="yesterday_label">Ieri</string>
