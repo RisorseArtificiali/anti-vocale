@@ -41,6 +41,13 @@ model-export/output-clean/
 __pycache__/
 .ccgram-uploads/
 whats-new/
+# 2026-09-17 residual: the scratchpad convention is repo-wide, not root-only
+# (a nested temp.md would sail past the anchored patterns), and eval/model
+# flows bring tar archives that the *.zip rule does not cover.
+**/temp.md
+**/temp_*.md
+*.tar.bz2
+*.tar.gz
 
 # Gradle files
 .gradle/
