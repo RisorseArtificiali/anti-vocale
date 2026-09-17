@@ -31,9 +31,10 @@ data class TimedToken(
  * GH #92: maps sherpa's [com.k2fsa.sherpa.onnx.OfflineRecognizerResult] arrays
  * into [TimedToken]s. One owner so the built-in and external sherpa engines
  * produce identical token timing. Cue data is optional and fails closed:
- * empty token arrays, a tokens/timestamps size mismatch, or NaN/negative
- * timestamps yield an empty list instead of failing the transcription. An
- * unusable durations array (size mismatch, NaN, negative, or zeros) only
+ * empty token arrays, a tokens/timestamps size mismatch, or non-finite or
+ * negative timestamps yield an empty list instead of failing the
+ * transcription. An
+ * unusable durations array (size mismatch, non-finite, negative, or zeros) only
  * disables the duration path; ends are then inferred from the successor
  * token's start.
  */
@@ -48,10 +49,12 @@ internal object TimedTokens {
         durations: FloatArray,
     ): List<TimedToken> {
         if (tokens.isEmpty() || timestamps.size != tokens.size) return emptyList()
-        // NaN seconds would poison every downstream offset: reject the whole set.
-        if (timestamps.any { it.isNaN() || it < 0f }) return emptyList()
+        // Non-finite or negative seconds would poison every downstream offset
+        // (+Infinity survives an isNaN check yet toLong() saturates): reject
+        // the whole set.
+        if (timestamps.any { !it.isFinite() || it < 0f }) return emptyList()
         val durationsUsable = durations.size == timestamps.size &&
-            durations.all { !it.isNaN() && it >= 0f }
+            durations.all { it.isFinite() && it >= 0f }
         return List(tokens.size) { i ->
             val startMs = (timestamps[i] * 1000).toLong()
             val durationMs = if (durationsUsable) (durations[i] * 1000).toLong() else 0L

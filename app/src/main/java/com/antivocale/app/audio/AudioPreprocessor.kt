@@ -241,10 +241,7 @@ class AudioPreprocessor @Inject constructor() {
                         totalDurationSeconds = vadResult.totalSpeechDurationSeconds,
                         chunkCount = mergedSegments.size,
                         isVadSegmented = true,
-                        // The grouped ranges carry the input's statically
-                        // non-null type; they are empty only if VAD found no
-                        // speech, which cannot reach this branch.
-                        chunkRangesMs = mergedRangesMs ?: emptyList()
+                        chunkRangesMs = mergedRangesMs
                     )
                 }
 
@@ -701,19 +698,19 @@ class AudioPreprocessor @Inject constructor() {
      * (GH #92), the returned ranges follow the SAME grouping so output chunk
      * i's cue is output range i: a group of segments spans first-start to
      * last-end, and a split of one long segment slices that segment's range
-     * proportionally. Ranges are null when [rangesMs] is. Callers
+     * proportionally. Empty [rangesMs] yields empty grouped ranges. Callers
      * without ranges omit [rangesMs] and [sampleRate] (the sample rate only
      * converts split offsets, so it is never used without ranges).
      */
     internal fun mergeVadSegmentGroups(
         segments: List<FloatArray>,
         maxMergeSamples: Int,
-        rangesMs: List<Pair<Long, Long>>? = null,
+        rangesMs: List<Pair<Long, Long>> = emptyList(),
         sampleRate: Int = 1,
-    ): Pair<List<FloatArray>, List<Pair<Long, Long>>?> {
+    ): Pair<List<FloatArray>, List<Pair<Long, Long>>> {
         val merged = mutableListOf<FloatArray>()
         val rs = rangesMs
-        val mergedRanges = if (rs != null) mutableListOf<Pair<Long, Long>>() else null
+        val mergedRanges = mutableListOf<Pair<Long, Long>>()
         var start = 0
         while (start < segments.size) {
             // Pass 1: find the extent of this group and its total size.
@@ -730,7 +727,7 @@ class AudioPreprocessor @Inject constructor() {
                 // speech): split it at the limit so it cannot bypass the model's
                 // per-segment cap (GH #50 review finding).
                 val seg = segments[start]
-                val segRange = rs?.get(start)
+                val segRange = rs.getOrNull(start)
                 var offset = 0
                 while (offset < seg.size) {
                     val len = minOf(maxMergeSamples, seg.size - offset)
@@ -738,14 +735,14 @@ class AudioPreprocessor @Inject constructor() {
                     if (segRange != null) {
                         val pieceStartMs = segRange.first + offset.toLong() * 1000L / sampleRate
                         val pieceEndMs = pieceStartMs + len.toLong() * 1000L / sampleRate
-                        mergedRanges?.add(pieceStartMs to pieceEndMs)
+                        mergedRanges.add(pieceStartMs to pieceEndMs)
                     }
                     offset += len
                 }
             } else if (end == start) {
                 merged.add(segments[start])
-                val segRange = rs?.get(start)
-                if (segRange != null) mergedRanges?.add(segRange)
+                val segRange = rs.getOrNull(start)
+                if (segRange != null) mergedRanges.add(segRange)
             } else {
                 val combined = FloatArray(groupSize)
                 var offset = 0
@@ -754,9 +751,9 @@ class AudioPreprocessor @Inject constructor() {
                     offset += segments[i].size
                 }
                 merged.add(combined)
-                if (rs != null) {
-                    mergedRanges?.add(rs[start].first to rs[end].second)
-                }
+                // Range-free callers pass an empty list: the ranges pair with
+                // the input segments, so index them only when provided.
+                if (rs.isNotEmpty()) mergedRanges.add(rs[start].first to rs[end].second)
             }
             start = end + 1
         }

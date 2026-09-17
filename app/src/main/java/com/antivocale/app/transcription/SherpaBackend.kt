@@ -3,7 +3,6 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import androidx.annotation.VisibleForTesting
-import com.antivocale.app.BuildConfig
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogVariant
@@ -635,14 +634,13 @@ class SherpaBackend(
                 // GH #92: token timestamps decide whether sentence-level subtitle
                 // cues are possible for this model (empty = chunk cues only), and
                 // durations.size > 0 is the TDT signal that the 700ms pause split
-                // can fire. Debug-only: the format work runs per chunk right at
-                // the post-decode moment.
-                if (BuildConfig.DEBUG) {
-                    Log.d(TAG, "Token timestamps: ${result.timestamps.size} entries" +
-                        ", durations=${result.durations.size}" +
-                        (result.timestamps.firstOrNull()?.let { ", first=%.2fs".format(it) } ?: "") +
-                        (result.timestamps.lastOrNull()?.let { ", last=%.2fs".format(it) } ?: ""))
-                }
+                // can fire. Deliberately NOT debug-gated: release logcat is the
+                // standing field-diagnostic path (F-Droid's CrashReporter is
+                // logcat-only), and the sibling per-chunk logs are ungated too.
+                Log.d(TAG, "Token timestamps: ${result.timestamps.size} entries" +
+                    ", durations=${result.durations.size}" +
+                    (result.timestamps.firstOrNull()?.let { ", first=%.2fs".format(it) } ?: "") +
+                    (result.timestamps.lastOrNull()?.let { ", last=%.2fs".format(it) } ?: ""))
 
                 Log.d(TAG, "Transcription complete: '${transcription.take(100)}...' (${transcription.length} chars)")
 

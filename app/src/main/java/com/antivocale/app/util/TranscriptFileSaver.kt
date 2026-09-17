@@ -32,42 +32,38 @@ object TranscriptFileSaver {
      */
     fun saveAuto(
         context: Context,
-        treeUri: Uri,
+        treeUriString: String?,
         storedFormat: String?,
         transcript: String,
         segments: List<TimedSegment>,
         failedChunkCount: Int,
         sourcePackage: String? = null,
     ): String? {
+        if (treeUriString.isNullOrBlank()) return null
         val decision = SubtitleFormatter.resolveExport(
             SubtitleFormatter.Format.fromStored(storedFormat), transcript, segments, failedChunkCount,
         )
-        return save(
-            context, treeUri, decision.content, sourcePackage,
-            decision.format.extension, decision.format.mime,
-            // The "first words" preview must come from the transcript: the
-            // formatted payload opens with timestamps ("WEBVTT", "00:00:01")
-            // and names the file after the clock instead of the words.
-            namePreview = transcript,
-        )
+        // The "first words" preview must come from the transcript: the
+        // formatted payload opens with timestamps ("WEBVTT", "00:00:01")
+        // and names the file after the clock instead of the words.
+        return save(context, Uri.parse(treeUriString), decision.format, decision.content, sourcePackage, transcript)
     }
 
     /**
-     * Writes [text] to a new file under [treeUri]. [extension] and [mime] come
-     * from the RESOLVED export format, after the fail-safe may have degraded
-     * it (GH #92); [namePreview] seeds the first-words part of the unchanged
-     * naming scheme.
+     * Writes [text] to a new file under [treeUri] in [format]. Taking the
+     * RESOLVED [SubtitleFormatter.Format] (not extension/mime strings) keeps
+     * the fail-safe un-bypassable: a caller cannot smuggle a timed extension
+     * past resolveExport.
      *
      * @return the written file's display name on success, or `null` on any failure.
      */
     private fun save(
         context: Context,
         treeUri: Uri,
+        format: SubtitleFormatter.Format,
         text: String,
         sourcePackage: String?,
-        extension: String,
-        mime: String,
-        namePreview: String
+        namePreview: String,
     ): String? {
         return try {
             val tree = DocumentFile.fromTreeUri(context, treeUri) ?: return null
@@ -80,9 +76,9 @@ object TranscriptFileSaver {
             // Filename: {source}_{date}_{first words}.{ext}, sortable by source then date.
             val preview = namePreview.take(30).replace(Regex("[^\\w -]"), "").trim()
                 .replace(" ", "-").take(20).ifEmpty { "audio" }
-            val baseName = "${source}_${timestamp}_${preview}.$extension"
+            val baseName = "${source}_${timestamp}_${preview}.${format.extension}"
             val name = uniqueName(tree, baseName)
-            val file = tree.createFile(mime, name) ?: run {
+            val file = tree.createFile(format.mime, name) ?: run {
                 Log.w(TAG, "createFile returned null for $name")
                 return null
             }

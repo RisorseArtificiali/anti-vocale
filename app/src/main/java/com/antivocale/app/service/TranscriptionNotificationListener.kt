@@ -170,11 +170,10 @@ class TranscriptionNotificationListener(
         segments: List<TimedSegment>,
         failedChunkCount: Int
     ) {
-        val treeUriStr = preferencesManager.outputFolderUri.first() ?: return
-        val treeUri = Uri.parse(treeUriStr)
         val name = withContext(Dispatchers.IO) {
             TranscriptFileSaver.saveAuto(
-                appContext, treeUri,
+                appContext,
+                preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
             )

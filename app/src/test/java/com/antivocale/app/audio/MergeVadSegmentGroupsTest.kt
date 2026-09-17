@@ -49,11 +49,11 @@ class MergeVadSegmentGroupsTest {
     }
 
     @Test
-    fun `null ranges stay null`() {
+    fun `empty ranges stay empty`() {
         val (merged, mergedRanges) = AudioPreprocessor().mergeVadSegmentGroups(
-            listOf(FloatArray(10)), maxMergeSamples = 30, rangesMs = null, sampleRate = sampleRate)
+            listOf(FloatArray(10)), maxMergeSamples = 30, rangesMs = emptyList(), sampleRate = sampleRate)
 
         assertEquals(1, merged.size)
-        assertNull(mergedRanges)
+        assertEquals(emptyList<Pair<Long, Long>>(), mergedRanges)
     }
 }

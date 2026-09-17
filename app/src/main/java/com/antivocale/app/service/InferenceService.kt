@@ -670,11 +670,10 @@ class InferenceService : Service(), TranscriptionListener {
         segments: List<TimedSegment>,
         failedChunkCount: Int
     ) {
-        val treeUriStr = preferencesManager.outputFolderUri.first() ?: return
-        val treeUri = Uri.parse(treeUriStr)
         val name = withContext(Dispatchers.IO) {
             TranscriptFileSaver.saveAuto(
-                this@InferenceService, treeUri,
+                this@InferenceService,
+                preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
             )

@@ -1364,7 +1364,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // The size guard is defensive only; a failed chunk leaves no cue. Token
         // timestamps, when the backend supplied them, refine each chunk's cue
         // into sentence cues inside that range.
-        val segmentRanges = segmentRangesMs?.takeIf { it.size == chunkCount }
+        val segmentRanges = segmentRangesMs.takeIf { it.size == chunkCount }
         val segments = if (segmentRanges != null) {
             results.mapIndexedNotNull { index, text ->
                 text?.let {
