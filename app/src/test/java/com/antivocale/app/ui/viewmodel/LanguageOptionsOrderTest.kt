@@ -64,10 +64,21 @@ class LanguageOptionsOrderTest {
     @Test
     fun `all entries survive sorting`() {
         assertEquals(9, languageOptionsFor(Locale.ENGLISH).size)
-        // TASK-547: "auto" + "phone" sentinels + every offered entry survive
-        // the picker build (phone offered only when conditioning is available)
+        // TASK-547 (review round 2): the phone sentinel is offered only when
+        // its resolved code is IN the offered set (AC#2: hidden otherwise);
+        // "auto" + every offered entry always survive the picker build.
         val offered = setOf("zh", "de", "it")
-        assertEquals(2 + offered.size, transcriptionPickerFor(offered, Locale.ENGLISH).options.size)
+        assertEquals(
+            2 + offered.size,
+            transcriptionPickerFor(offered, Locale.ENGLISH, phoneLanguage = "de").options.size)
+        // Phone locale outside the offered set: hidden, auto + codes only.
+        assertEquals(
+            1 + offered.size,
+            transcriptionPickerFor(offered, Locale.ENGLISH, phoneLanguage = "ru").options.size)
+        // Unreadable locale: hidden likewise.
+        assertEquals(
+            1 + offered.size,
+            transcriptionPickerFor(offered, Locale.ENGLISH, phoneLanguage = null).options.size)
         // No conditioning: only the auto sentinel, no phone
         assertEquals(1, transcriptionPickerFor(emptySet(), Locale.ENGLISH).options.size)
     }

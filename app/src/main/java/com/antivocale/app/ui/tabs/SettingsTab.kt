@@ -190,19 +190,33 @@ fun SettingsTab(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
         if (uri != null) {
+            // TASK-539: probe the tree for writability BEFORE persisting the
+            // grant. The Downloads quick root yields virtual folders that
+            // pass the pick but silently reject every subsequent write, and
+            // persisting first would leak one of the 128 per-app persisted
+            // grants on every rejected retry (review 2026-09-17). The probe
+            // rides the picker's transient grant, so it needs no persisted
+            // permission.
+            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
+            if (tree?.canWrite() != true) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.error_folder_not_writable),
+                    Toast.LENGTH_LONG
+                ).show()
+                return@rememberLauncherForActivityResult
+            }
             try {
                 context.contentResolver.takePersistableUriPermission(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
             } catch (e: Exception) {
+                // Review round 2: a folder whose grant we cannot persist dies
+                // with the process (reboot revokes the transient grant and
+                // the save silently no-ops downstream); refuse the pick
+                // instead of saving a URI that cannot survive a reboot.
                 Log.w("SettingsTab", "Failed to take persistable URI permission", e)
-            }
-            // TASK-539: probe the tree for writability before saving. The
-            // Downloads quick root yields virtual folders that pass the pick
-            // but silently reject every subsequent write.
-            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
-            if (tree?.canWrite() != true) {
                 Toast.makeText(
                     context,
                     context.getString(R.string.error_folder_not_writable),
@@ -414,7 +428,8 @@ fun SettingsTab(
 
             // Transcription Language Setting
             val transcriptionPinState = TranscriptionLanguagePolicy.pinState(
-                currentTranscriptionLanguage, transcriptionPicker.offeredCodes
+                currentTranscriptionLanguage, transcriptionPicker.offeredCodes,
+                phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(context),
             )
             Card(
                 modifier = Modifier.fillMaxWidth()
@@ -2165,11 +2180,16 @@ private fun languageOptionLabel(
     sentinelLabels: Map<String, Int>,
     options: Map<String, LanguageOption>,
 ): String {
-    // TASK-547: the phone sentinel formats with the device locale.
+    // TASK-547 AC#2: the phone sentinel formats with the resolved language's
+    // NAME (a raw ISO code reads as noise; every sibling row shows a native
+    // name), blank only when the locale is unreadable.
     if (code == TranscriptionLanguagePolicy.PREF_PHONE) {
+        val phone = com.antivocale.app.util.LocaleManager.phoneLanguage(
+            androidx.compose.ui.platform.LocalContext.current
+        )
         return stringResource(
             R.string.language_phone_option,
-            java.util.Locale.getDefault().language,
+            phone?.let { LanguageNames.nativeLanguageName(it) } ?: "",
         )
     }
     sentinelLabels[code]?.let { return stringResource(it) }
@@ -2258,18 +2278,26 @@ fun ExportSettingsScreen(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
         uri?.let {
+            // TASK-539: probe BEFORE persisting (a rejected pick must not
+            // burn one of the 128 persisted-grant slots); the probe rides
+            // the picker's transient grant.
+            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, it)
+            if (tree?.canWrite() != true) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.error_folder_not_writable),
+                    Toast.LENGTH_LONG
+                ).show()
+                return@let
+            }
             try {
                 context.contentResolver.takePersistableUriPermission(
                     it, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-            } catch (e: SecurityException) {
+            } catch (e: Exception) {
+                // Review round 2: same rule as the inline picker: never save
+                // a URI whose grant cannot persist (it dies with the process).
                 android.util.Log.w("ExportSettings", "takePersistableUriPermission failed", e)
-            }
-            // TASK-539: probe the tree for writability before saving. The
-            // Downloads quick root yields virtual folders that pass the pick
-            // but silently reject every subsequent write.
-            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, it)
-            if (tree?.canWrite() != true) {
                 Toast.makeText(
                     context,
                     context.getString(R.string.error_folder_not_writable),

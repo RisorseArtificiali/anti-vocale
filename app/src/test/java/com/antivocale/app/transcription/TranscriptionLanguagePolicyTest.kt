@@ -247,4 +247,35 @@ class TranscriptionLanguagePolicyTest {
             TranscriptionLanguagePolicy.pinState("ru", offered),
         )
     }
+
+    // ---- TASK-547 review fix: the phone pin validates its resolved code ----
+
+    @Test
+    fun `phone pin validates the resolved system code against the offered set`() {
+        val offered = setOf("it", "de")
+        // The resolved code behaves exactly like an explicit pin.
+        assertEquals(
+            TranscriptionLanguagePolicy.PinState.SUPPORTED_PIN,
+            TranscriptionLanguagePolicy.pinState(
+                TranscriptionLanguagePolicy.PREF_PHONE, offered, phoneLanguage = "it"),
+        )
+        // distil-it style single-language variant with a foreign phone locale:
+        // the unsupported note, not a supported hint forcedLanguage overrides.
+        assertEquals(
+            TranscriptionLanguagePolicy.PinState.UNSUPPORTED_PIN,
+            TranscriptionLanguagePolicy.pinState(
+                TranscriptionLanguagePolicy.PREF_PHONE, setOf("it"), phoneLanguage = "en"),
+        )
+        // Unreadable locale: no pin at all (detection applies at request time).
+        assertEquals(
+            TranscriptionLanguagePolicy.PinState.NOT_PINNED,
+            TranscriptionLanguagePolicy.pinState(
+                TranscriptionLanguagePolicy.PREF_PHONE, offered, phoneLanguage = null),
+        )
+        assertEquals(
+            TranscriptionLanguagePolicy.PinState.NOT_PINNED,
+            TranscriptionLanguagePolicy.pinState(
+                TranscriptionLanguagePolicy.PREF_PHONE, offered, phoneLanguage = ""),
+        )
+    }
 }

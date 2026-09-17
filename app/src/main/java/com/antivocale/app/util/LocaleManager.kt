@@ -6,6 +6,7 @@ import android.os.Build
 import android.os.LocaleList
 import android.util.Log
 import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.app.LocaleManagerCompat
 import androidx.core.os.LocaleListCompat
 import java.util.Locale
 
@@ -74,6 +75,27 @@ object LocaleManager {
      * never from a bare Locale.getDefault().
      */
     fun effectiveLocale(): Locale = getCurrentLocale() ?: Locale.getDefault()
+
+    /**
+     * TASK-547 review fix (round 2): the PHONE locale's language, the one
+     * owner for the PREF_PHONE transcription pin. Not [Locale.getDefault]
+     * (updateContextLocale clobbers it with the in-app language via
+     * LocaleList.setDefault) and NOT Resources.getSystem() either: on API 33+
+     * the per-app locale is committed as a process-level configuration
+     * override that reaches the system Resources singleton (AOSP:
+     * LocaleManagerService -> ResourcesManager.applyConfigurationToResources;
+     * androidx's own LocaleManagerCompat abandoned that read at API 33).
+     * [LocaleManagerCompat.getSystemLocales] is the per-app-aware system
+     * read. Null means "unreadable" (blank language, or the plain-JVM
+     * orchestrator tests where the Android APIs are not mocked); callers
+     * treat null as detect.
+     */
+    fun phoneLanguage(context: Context): String? = try {
+        LocaleManagerCompat.getSystemLocales(context)[0]
+            ?.language?.takeIf { it.isNotBlank() }
+    } catch (e: RuntimeException) {
+        null
+    }
 
     /**
      * Updates the context with the current locale for Compose content.

@@ -32,6 +32,9 @@ class BenchmarkViewModel @Inject constructor(
     private val benchmarkManager: BenchmarkManager,
     private val backendManager: TranscriptionBackendManager,
     private val preferencesManager: PreferencesManager,
+    // TASK-547: the phone-locale pin needs the DEVICE locale; the benchmark
+    // must resolve it exactly like the orchestrator load path does.
+    @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context,
 ) : ViewModel() {
 
     private data class BenchmarkTarget(
@@ -84,7 +87,7 @@ class BenchmarkViewModel @Inject constructor(
                         modelDir = modelPath,
                         numThreads = threadCount,
                         language = TranscriptionLanguagePolicy.resolveForEntry(
-                        phoneLanguage = java.util.Locale.getDefault().language.takeIf { it.isNotBlank() },
+                            phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(appContext),
                             entry = entry,
                             preference = lang,
                         ),

@@ -116,13 +116,22 @@ object TranscriptionLanguagePolicy {
      */
     enum class PinState { NOT_PINNED, SUPPORTED_PIN, UNSUPPORTED_PIN }
 
-    fun pinState(preference: String, offered: Set<String>): PinState = when {
-        preference == PREF_AUTO || preference == PREF_SYSTEM || preference.isBlank() ->
-            PinState.NOT_PINNED
-        // TASK-547: the phone sentinel always resolves (to the locale code at
-        // request time), so it is always a supported pin on language-aware models.
-        preference == PREF_PHONE -> PinState.SUPPORTED_PIN
-        preference in offered -> PinState.SUPPORTED_PIN
-        else -> PinState.UNSUPPORTED_PIN
+    fun pinState(
+        preference: String,
+        offered: Set<String>,
+        phoneLanguage: String? = null,
+    ): PinState {
+        // TASK-547 review fix (round 2): pre-resolve the phone pin so it
+        // walks the same arms as a concrete pin (one copy of the matching
+        // rules). An unreadable locale is no pin (detection applies at
+        // request time); a resolved code the model does not offer shows the
+        // unsupported note (distil-it with an English phone must not promise
+        // a pin SherpaBackend.forcedLanguage silently overrides).
+        val resolved = if (preference == PREF_PHONE) phoneLanguage.orEmpty() else preference
+        return when {
+            isAutoDetect(preference) || resolved.isBlank() -> PinState.NOT_PINNED
+            resolved in offered -> PinState.SUPPORTED_PIN
+            else -> PinState.UNSUPPORTED_PIN
+        }
     }
 }

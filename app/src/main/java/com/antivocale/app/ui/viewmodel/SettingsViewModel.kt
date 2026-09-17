@@ -129,6 +129,7 @@ class SettingsViewModel @Inject constructor(
                         entry = BundledCatalog.byId(active.backendId),
                     ),
                     LocaleManager.effectiveLocale(),
+                    phoneLanguage = LocaleManager.phoneLanguage(getApplication()),
                 )
             }
             .stateIn(
@@ -137,6 +138,7 @@ class SettingsViewModel @Inject constructor(
                 initialValue = transcriptionPickerFor(
                     emptySet(),
                     LocaleManager.effectiveLocale(),
+                    phoneLanguage = LocaleManager.phoneLanguage(getApplication()),
                 ),
             )
 
@@ -1006,12 +1008,15 @@ data class TranscriptionLanguagePicker(
 internal fun transcriptionPickerFor(
     offered: Set<String>,
     locale: java.util.Locale,
+    phoneLanguage: String? = null,
 ): TranscriptionLanguagePicker = TranscriptionLanguagePicker(
-    // TASK-547: "phone" (pin to the device locale) is offered only where the
-    // model conditions on language (offered is non-empty), between Auto and
-    // the concrete codes.
+    // TASK-547 AC#2 (review round 2): "phone" (pin to the device locale) is
+    // offered only where it would actually pin: the model conditions on
+    // language AND the resolved phone language is in the offered set (a
+    // distil-it with an English phone must not offer a pin that
+    // forcedLanguage would silently override). Between Auto and the codes.
     options = optionsFor(
-        if (offered.isNotEmpty()) {
+        if (phoneLanguage != null && phoneLanguage in offered) {
             listOf(TranscriptionLanguagePolicy.PREF_AUTO, TranscriptionLanguagePolicy.PREF_PHONE)
         } else {
             listOf(TranscriptionLanguagePolicy.PREF_AUTO)

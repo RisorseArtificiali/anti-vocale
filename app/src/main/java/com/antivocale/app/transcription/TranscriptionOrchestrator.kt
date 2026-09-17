@@ -663,8 +663,9 @@ class TranscriptionOrchestrator @Inject constructor(
         // keeps winning over this resolution.
         val languagePref = preferencesManager.transcriptionLanguage.first()
         val language = TranscriptionLanguagePolicy.resolveForEntry(
-            // TASK-547: the phone-locale pin needs the device locale here.
-            phoneLanguage = java.util.Locale.getDefault().language.takeIf { it.isNotBlank() },
+            // TASK-547: the phone-locale pin needs the DEVICE locale (the
+            // system one, not the app locale); LocaleManager owns that read.
+            phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(context),
             entry = entry,
             preference = languagePref,
         )

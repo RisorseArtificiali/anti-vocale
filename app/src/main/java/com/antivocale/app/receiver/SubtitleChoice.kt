@@ -122,17 +122,23 @@ object SubtitleChoice {
         val preferred = prefRead(context, "") { prefs ->
             prefs.transcriptionLanguage.first()
         }
-        if (preferred.isBlank() ||
-            preferred == TranscriptionLanguagePolicy.PREF_AUTO ||
-            preferred == TranscriptionLanguagePolicy.PREF_SYSTEM
-        ) {
+        // TASK-547 review fix (round 2): the preference-to-code mapping is
+        // the policy's, never a call site's (repo rule: change the mapping
+        // there). resolveOffline collapses the sentinels, the phone pin, and
+        // concrete pins exactly the way the recognizer path does, so the
+        // subtitle track and the pinned language cannot diverge.
+        val resolved = TranscriptionLanguagePolicy.resolveOffline(
+            preferred,
+            com.antivocale.app.util.LocaleManager.phoneLanguage(context),
+        )
+        if (resolved.isBlank()) {
             return tracks.first()
         }
         return tracks.firstOrNull { track ->
             track.language != null && (
-                track.language.equals(preferred, ignoreCase = true) ||
-                    track.language.startsWith(preferred, ignoreCase = true) ||
-                    preferred.startsWith(track.language, ignoreCase = true)
+                track.language.equals(resolved, ignoreCase = true) ||
+                    track.language.startsWith(resolved, ignoreCase = true) ||
+                    resolved.startsWith(track.language, ignoreCase = true)
                 )
         } ?: tracks.first()
     }
