@@ -5,6 +5,7 @@ import android.app.Activity
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.widget.Toast
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,6 +24,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
@@ -135,8 +137,9 @@ fun SettingsTab(
     val expandCounters = remember { mutableStateMapOf<String, Int>() }
     val navScope = rememberCoroutineScope()
     LaunchedEffect(navRequest) {
-        // Debug-only tooling: constant-folded out of release by R8.
-        if (!com.antivocale.app.BuildConfig.DEBUG) return@LaunchedEffect
+        // TASK-543: production code (the auto-save hint) sets navRequest too,
+        // so the BuildConfig.DEBUG gate is removed. The debug-only part is the
+        // TEST_SPI receiver that SETS TestNavigation.pending, not this effect.
         val request = navRequest ?: return@LaunchedEffect
         // Consume FIRST at the source: a tab re-entry then sees null instead
         // of replaying (a guard remembered here would die with the tab).
@@ -182,7 +185,7 @@ fun SettingsTab(
         viewModel.handleOAuthResult(result.data)
     }
 
-    // SAF folder picker for transcript auto-save (issue #14)
+    // SAF folder picker for transcript auto-save (issue #14, TASK-539)
     val outputFolderLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocumentTree()
     ) { uri: Uri? ->
@@ -194,6 +197,18 @@ fun SettingsTab(
                 )
             } catch (e: Exception) {
                 Log.w("SettingsTab", "Failed to take persistable URI permission", e)
+            }
+            // TASK-539: probe the tree for writability before saving. The
+            // Downloads quick root yields virtual folders that pass the pick
+            // but silently reject every subsequent write.
+            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
+            if (tree?.canWrite() != true) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.error_folder_not_writable),
+                    Toast.LENGTH_LONG
+                ).show()
+                return@rememberLauncherForActivityResult
             }
             viewModel.saveOutputFolderUri(uri.toString())
         }
@@ -487,7 +502,7 @@ fun SettingsTab(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { showExportSettings = true },
+                    .clickable(role = Role.Button) { showExportSettings = true },
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -2240,10 +2255,22 @@ fun ExportSettingsScreen(
                 context.contentResolver.takePersistableUriPermission(
                     it, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
                 )
-                viewModel.saveOutputFolderUri(it.toString())
-            } catch (_: Exception) {
-                // Permission already held or revoked; the save is still valid.
+            } catch (e: SecurityException) {
+                android.util.Log.w("ExportSettings", "takePersistableUriPermission failed", e)
             }
+            // TASK-539: probe the tree for writability before saving. The
+            // Downloads quick root yields virtual folders that pass the pick
+            // but silently reject every subsequent write.
+            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, it)
+            if (tree?.canWrite() != true) {
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.error_folder_not_writable),
+                    Toast.LENGTH_LONG
+                ).show()
+                return@let
+            }
+            viewModel.saveOutputFolderUri(it.toString())
         }
     }
     val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
@@ -2265,7 +2292,7 @@ fun ExportSettingsScreen(
         ) {
             IconButton(onClick = onBack) {
                 Icon(
-                    imageVector = Icons.Default.ArrowBack,
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = stringResource(R.string.back),
                     tint = MaterialTheme.colorScheme.onSurface
                 )

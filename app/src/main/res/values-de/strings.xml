@@ -105,6 +105,7 @@
     <string name="transcript_capped_autosave_saved">Vollständiges Transkript automatisch in Ihrem Ordner gespeichert</string>
     <string name="export_settings_title">Auto-Speichern &amp; Export</string>
     <string name="export_settings_description">Ordner und Dateiformat für gespeicherte Transkripte wählen</string>
+    <string name="error_folder_not_writable">Dieser Ordner kann keine Dateien empfangen. Wählen Sie einen Ordner vom Gerätespeicher (nicht den Downloads-Kurzlink).</string>
     <string name="today">Heute</string>
     <string name="yesterday">Gestern, %1$s</string>
     <string name="yesterday_label">Gestern</string>

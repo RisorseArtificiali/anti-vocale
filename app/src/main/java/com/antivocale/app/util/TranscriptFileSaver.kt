@@ -39,7 +39,10 @@ object TranscriptFileSaver {
         failedChunkCount: Int,
         sourcePackage: String? = null,
     ): String? {
-        if (treeUriString.isNullOrBlank()) return null
+        if (treeUriString.isNullOrBlank()) {
+            android.util.Log.w(TAG, "Auto-save skipped: no output folder configured")
+            return null
+        }
         val decision = SubtitleFormatter.resolveExport(
             SubtitleFormatter.Format.fromStored(storedFormat), transcript, segments, failedChunkCount,
         )
@@ -66,7 +69,10 @@ object TranscriptFileSaver {
         namePreview: String,
     ): String? {
         return try {
-            val tree = DocumentFile.fromTreeUri(context, treeUri) ?: return null
+            val tree = DocumentFile.fromTreeUri(context, treeUri) ?: run {
+                Log.w(TAG, "fromTreeUri returned null for $treeUri (revoked or virtual tree?)")
+                return null
+            }
             if (!tree.canWrite()) {
                 Log.w(TAG, "Tree uri not writable (permission revoked?): $treeUri")
                 return null

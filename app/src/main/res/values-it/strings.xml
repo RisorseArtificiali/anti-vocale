@@ -121,6 +121,7 @@
     <string name="transcript_capped_autosave_saved">Trascrizione completa salvata automaticamente nella tua cartella</string>
     <string name="export_settings_title">Salvataggio automatico ed esportazione</string>
     <string name="export_settings_description">Scegli cartella e formato file per le trascrizioni salvate</string>
+    <string name="error_folder_not_writable">Questa cartella non può ricevere file. Scegli una cartella dalla memoria del dispositivo (non dalla scorciatoia Scaricamenti).</string>
     <string name="today">Oggi</string>
     <string name="yesterday">Ieri, %1$s</string>
     <string name="yesterday_label">Ieri</string>

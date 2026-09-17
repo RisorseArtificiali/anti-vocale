@@ -126,6 +126,7 @@
     <string name="transcript_capped_autosave_saved">Pełna transkrypcja zapisana automatycznie do folderu</string>
     <string name="export_settings_title">Autozapis i eksport</string>
     <string name="export_settings_description">Wybierz folder i format pliku zapisanych transkrypcji</string>
+    <string name="error_folder_not_writable">Ten folder nie może odbierać plików. Wybierz folder z pamięci urządzenia (nie skrót Pobrane).</string>
     <string name="today">Dzisiaj</string>
     <string name="yesterday">Wczoraj, %1$s</string>
     <string name="yesterday_label">Wczoraj</string>

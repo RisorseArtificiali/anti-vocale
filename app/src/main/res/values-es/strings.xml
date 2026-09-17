@@ -94,6 +94,7 @@
     <string name="transcript_capped_autosave_saved">Transcripción completa guardada automáticamente en su carpeta</string>
     <string name="export_settings_title">Guardado automático y exportación</string>
     <string name="export_settings_description">Elegir la carpeta y el formato de los archivos guardados</string>
+    <string name="error_folder_not_writable">Esta carpeta no puede recibir archivos. Elija una carpeta del almacenamiento del dispositivo (no el acceso directo de Descargas).</string>
     <string name="today">Hoy</string>
     <string name="yesterday">Ayer, %1$s</string>
     <string name="yesterday_label">Ayer</string>

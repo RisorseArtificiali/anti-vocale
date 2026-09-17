@@ -104,6 +104,7 @@
     <string name="transcript_capped_autosave_saved">पूरा ट्रांसक्रिप्ट आपके फ़ोल्डर में स्वतः सहेजा गया</string>
     <string name="export_settings_title">ऑटो-सेव और एक्सपोर्ट</string>
     <string name="export_settings_description">सहेजी गई ट्रांसक्रिप्ट के लिए फ़ोल्डर और फ़ाइल स्वरूप चुनें</string>
+    <string name="error_folder_not_writable">यह फ़ोल्डर फ़ाइलें प्राप्त नहीं कर सकता। डिवाइस स्टोरेज से फ़ोल्डर चुनें (Downloads शॉर्टकट नहीं)।</string>
     <string name="today">आज</string>
     <string name="yesterday">कल, %1$s</string>
     <string name="yesterday_label">कल</string>

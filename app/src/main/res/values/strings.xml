@@ -121,6 +121,7 @@
     <string name="transcript_capped_autosave_saved">Full transcript auto-saved to your folder</string>
     <string name="export_settings_title">Auto-Save &amp; Export</string>
     <string name="export_settings_description">Choose the folder and file format for saved transcripts</string>
+    <string name="error_folder_not_writable">This folder cannot receive files. Pick a folder from the device storage (not the Downloads shortcut).</string>
     <string name="today">Today</string>
     <string name="yesterday">Yesterday, %1$s</string>
     <string name="yesterday_label">Yesterday</string>

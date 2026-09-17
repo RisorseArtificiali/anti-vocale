@@ -112,6 +112,7 @@
     <string name="transcript_capped_autosave_saved">Полная расшифровка автоматически сохранена в вашей папке</string>
     <string name="export_settings_title">Автосохранение и экспорт</string>
     <string name="export_settings_description">Выберите папку и формат файлов для сохранённых расшифровок</string>
+    <string name="error_folder_not_writable">Эта папка не может получать файлы. Выберите папку из хранилища устройства (не ярлык Загрузок).</string>
     <string name="today">Сегодня</string>
     <string name="yesterday">Вчера, %1$s</string>
     <string name="yesterday_label">Вчера</string>

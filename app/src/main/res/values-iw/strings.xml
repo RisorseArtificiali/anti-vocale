@@ -122,6 +122,7 @@
     <string name="transcript_capped_autosave_saved">התמליל המלא נשמר אוטומטית לתיקייה שלך</string>
     <string name="export_settings_title">שמירה אוטומטית וייצוא</string>
     <string name="export_settings_description">בחר תיקייה ופורמט קובץ לתמלילים שמורים</string>
+    <string name="error_folder_not_writable">תיקייה זו לא יכולה לקבל קבצים. בחר תיקייה מאחסון המכשיר (לא מקיצור הדרך של הורדות).</string>
     <string name="today">היום</string>
     <string name="yesterday">אתמול, %1$s</string>
     <string name="yesterday_label">אתמול</string>
