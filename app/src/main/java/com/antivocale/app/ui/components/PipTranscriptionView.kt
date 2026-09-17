@@ -156,11 +156,15 @@ fun PipTranscriptionView(
                     color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier
                         .fillMaxSize()
-                        .verticalScroll(scrollState)
+                        // GH #94: BEFORE verticalScroll. A draw modifier after
+                        // the scroll sits inside its translated layer: it
+                        // self-measures the content height (not the viewport)
+                        // and the drawing scrolls away with the text.
                         .transcriptPositionIndicator(
                             scrollState,
                             MaterialTheme.colorScheme.onSurfaceVariant,
-                        ),
+                        )
+                        .verticalScroll(scrollState),
                     lineHeight = 16.sp
                 )
             }

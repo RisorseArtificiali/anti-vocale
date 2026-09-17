@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.LinearProgressIndicator
@@ -27,6 +26,8 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
@@ -117,16 +118,20 @@ internal fun CappedTranscriptText(
     val indicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
     if (capped) {
         // GH #94: position indicator + reading progress on the capped panel.
-        // The indicator modifier self-measures on the panel itself; the
-        // viewport height is captured only for the progress line, which sits
-        // outside the panel and cannot self-measure it. The cap and the 320dp
-        // bound are untouched.
+        // The indicator modifier sits on the wrapping Box (outer to the
+        // scroll); the viewport height is captured only for the progress
+        // line, which sits outside the panel and cannot self-measure it.
+        // The scroll viewport keeps its historical 320dp (336dp total with
+        // the padding the viewport now lives inside); the cap is untouched.
         val state = rememberScrollState()
         var viewportPx by remember { mutableIntStateOf(0) }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 320.dp)
+                // 320dp of SCROLL VIEWPORT + the 16dp of padding the viewport
+                // now lives inside (the original bound was on the scroll node,
+                // paddings outside).
+                .heightIn(max = 336.dp)
                 .background(container.copy(alpha = 0.3f), shape = MaterialTheme.shapes.small)
                 .transcriptPositionIndicator(state, indicatorColor)
                 .onSizeChanged { viewportPx = it.height }
@@ -191,7 +196,8 @@ internal fun thumbGeometry(
 ): Pair<Float, Float>? {
     if (maxValue <= 0 || trackPx <= 0 || viewportPx <= 0) return null
     val content = viewportPx + maxValue
-    val h = (trackPx * viewportPx.toFloat() / content).coerceIn(minThumbPx.toFloat(), trackPx.toFloat())
+    val minThumb = minOf(minThumbPx.toFloat(), trackPx.toFloat())
+    val h = (trackPx * viewportPx.toFloat() / content).coerceIn(minThumb, trackPx.toFloat())
     // The thumb's travel is what remains of the track after its own height.
     val travel = trackPx - h
     val top = travel * (value.toFloat() / maxValue)
@@ -220,12 +226,13 @@ private val INDICATOR_MIN_THUMB = 24.dp
 
 /**
  * GH #94: draws a position indicator (faint track + rounded thumb) on the
- * right edge of the modified node's own bounds. Attach it to the scrollable
- * panel itself: the modifier self-measures, so the node's height IS the
- * viewport and the thumb fraction is honest by construction. The state reads
- * live in the draw phase only, so scrolling invalidates the draw pass,
- * never composition. Pure overlay, not a drag handle: the panel remains the
- * scrollable.
+ * right edge of the modified node's own bounds. Attach it OUTER to the
+ * verticalScroll modifier (on the wrapping panel, or before .verticalScroll
+ * in the chain): a draw modifier inner to the scroll measures the CONTENT
+ * height, not the viewport, and its drawing scrolls away with the text.
+ * The state reads live in the draw phase only, so scrolling invalidates
+ * the draw pass, never composition. Pure overlay, not a drag handle: the
+ * panel remains the scrollable.
  */
 internal fun Modifier.transcriptPositionIndicator(
     state: ScrollState,
@@ -270,12 +277,18 @@ internal fun ReadingProgressLine(
     viewportPx: Int,
     modifier: Modifier = Modifier,
 ) {
+    val fraction = progressFraction(state.value, state.maxValue, viewportPx)
     LinearProgressIndicator(
-        progress = {
-            val f = progressFraction(state.value, state.maxValue, viewportPx)
-            if (f.isNaN()) 0f else f
-        },
-        modifier = modifier.height(2.dp),
+        progress = { if (fraction.isNaN()) 0f else fraction },
+        // TASK-384 pattern (ModelVariantCard, BenchmarkDialog): TalkBack reads
+        // the same percentage the bar shows, not a raw range.
+        modifier = modifier
+            .height(2.dp)
+            .semantics {
+                if (!fraction.isNaN()) {
+                    stateDescription = "${(fraction * 100).toInt()}%"
+                }
+            },
         color = color.copy(alpha = 0.50f),
         trackColor = color.copy(alpha = 0.12f),
         gapSize = 0.dp,
