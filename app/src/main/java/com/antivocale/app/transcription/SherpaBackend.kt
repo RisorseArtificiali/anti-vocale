@@ -724,6 +724,11 @@ class SherpaBackend(
 
                 val result = rec.getResult(stream)
                 val transcription = result.text
+                // TASK-540 probe: whether the online JNI fills timestamps for
+                // streaming transducers is unprobed in either direction; empty
+                // arrays close the sentence-cue path for streaming models.
+                Log.d(TAG, "Online token timestamps: ${result.timestamps.size} entries")
+
                 if (transcription.isNotBlank() && transcription != lastEmitted) {
                     onPartial(transcription)
                 }
@@ -739,6 +744,7 @@ class SherpaBackend(
                         text = transcription,
                         confidence = confidence,
                         detectedLanguage = null,
+                        tokens = TimedTokens.fromRecognizer(result.tokens, result.timestamps, FloatArray(0)),
                     ))
                 }
             } catch (e: Exception) {

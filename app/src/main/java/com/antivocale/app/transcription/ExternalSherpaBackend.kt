@@ -305,13 +305,15 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
             while (rec.isReady(stream)) rec.decode(stream)
             stream.inputFinished()
             while (rec.isReady(stream)) rec.decode(stream)
-            val transcription = rec.getResult(stream).text
+            val result = rec.getResult(stream)
+            val transcription = result.text
             if (transcription.isBlank()) {
                 return Result.failure(TranscriptionException.NoTranscriptionProduced())
             }
             return Result.success(TranscriptionResult(
                 text = transcription,
                 confidence = TranscriptionResult.computeConfidence(transcription, samples.size, sampleRate),
+                tokens = TimedTokens.fromRecognizer(result.tokens, result.timestamps, FloatArray(0)),
             ))
         } catch (e: Exception) {
             Log.e(TAG, "External streaming transcription failed", e)
