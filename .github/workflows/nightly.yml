@@ -60,9 +60,12 @@ jobs:
           java-version: '21'
           cache: 'gradle'
 
+      # GITHUB_OUTPUT is mandatory: a bare `date` print never reaches
+      # steps.date.outputs, which shipped every release name as "Nightly ()"
+      # since the workflow exists (found on the 2026-09-17 run).
       - name: Record run date (UTC)
         id: date
-        run: date -u +"%Y-%m-%d"
+        run: echo "date=$(date -u +%F)" >> "$GITHUB_OUTPUT"
 
       # Testers' downloaded models survive an update unless the model
       # download/layout surface changed since the last stable release; the
@@ -205,7 +208,7 @@ jobs:
           body: |
             **Nightly build, generated automatically from main.**
 
-            - versionName: ${{ env.VERSION_NAME }} (the About row in the app shows the same `1.12.0-SNAPSHOT`)
+            - versionName: ${{ env.VERSION_NAME }} (the About row in the app shows the same)
             - commit: ${{ github.sha }}
             - built: ${{ steps.date.outputs.date }} (UTC)
             - models: ${{ steps.models.outputs.note }}
