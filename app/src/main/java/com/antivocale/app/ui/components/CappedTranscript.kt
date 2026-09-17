@@ -19,6 +19,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.CornerRadius
@@ -27,6 +28,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.AnnotatedString
@@ -182,12 +184,31 @@ internal fun CappedTranscriptText(
         // user is looking at a truncated transcript, which is exactly when
         // the full-text file export is most useful and least known.
         // TASK-548 part B: tappable when the caller provides the destination.
-        Text(
-            text = stringResource(R.string.transcript_capped_autosave_hint),
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.primary,
-            modifier = onAutoSaveHintClick?.let { cb -> Modifier.clickable { cb() } } ?: Modifier,
-        )
+        // The click sits on the wrapping Box so the touch target is the full
+        // row at the 48dp minimum, with the label vertically centered in it
+        // (a bare Text with heightIn would top-align the words and leave the
+        // extra band dead). Without a destination the extra modifiers drop
+        // off and the Box renders as the plain label row.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .then(
+                    if (onAutoSaveHintClick != null) {
+                        Modifier
+                            .heightIn(min = 48.dp)
+                            .clickable(role = Role.Button) { onAutoSaveHintClick() }
+                    } else {
+                        Modifier
+                    }
+                ),
+            contentAlignment = Alignment.CenterStart,
+        ) {
+            Text(
+                text = stringResource(R.string.transcript_capped_autosave_hint),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+        }
     }
 }
 

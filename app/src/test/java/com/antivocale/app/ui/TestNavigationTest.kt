@@ -51,15 +51,19 @@ class TestNavigationTest {
         assertEquals(listOf("history", "models", "settings"), TestNavigation.TAB_KEYS)
     }
 
+    /** Dual-path source read (repo root or module subdirectory cwd), shared by the scans below. */
+    private fun sourceOf(relative: String): String =
+        java.io.File(relative)
+            .let { if (it.isFile) it else java.io.File("app/$relative") }
+            .readText()
+
     @Test
     fun `every section key is wired into the Settings UI`() {
         // The parser tables alone cannot promise the UI acts on a key: each
         // section must carry BOTH the expand counter and the scroll-offset
         // capture at its composition site, or a nav silently no-ops. Source
         // scan (same shape as the manifest tests' file reads).
-        val source = java.io.File("src/main/java/com/antivocale/app/ui/tabs/SettingsTab.kt")
-            .let { if (it.isFile) it else java.io.File("app/src/main/java/com/antivocale/app/ui/tabs/SettingsTab.kt") }
-            .readText()
+        val source = sourceOf("src/main/java/com/antivocale/app/ui/tabs/SettingsTab.kt")
         TestNavigation.SECTION_KEYS.forEach { key ->
             assertTrue(
                 "SettingsTab lacks the expand wiring for section '$key' (expandCounters[\"$key\"])",
@@ -69,10 +73,31 @@ class TestNavigationTest {
                 source.contains("sectionOffsets[\"$key\"]"))
         }
         TestNavigation.SUBPAGE_KEYS.forEach { key ->
+            // The export branch is pinned by the shared constant (TASK-548),
+            // so it appears in SettingsTab as the constant reference.
+            val wired = source.contains("\"$key\"") ||
+                (key == TestNavigation.SUBPAGE_KEY_EXPORT &&
+                    source.contains("TestNavigation.SUBPAGE_KEY_EXPORT"))
             assertTrue(
                 "SettingsTab lacks the sub-page branch for '$key'",
-                source.contains("\"$key\""))
+                wired)
         }
+    }
+
+    @Test
+    fun `the export hand-off uses the pinned key constant`() {
+        // TASK-548(B): the auto-save hint is the one PRODUCTION NavRequest
+        // writer (every other destination arrives through the debug-only
+        // pending token). Its SettingsSubPage must be CONSTRUCTED with the
+        // pinned constant so a key rename cannot drift between MainScreen
+        // and the parser tables. The regex pins the constant INSIDE the
+        // constructor call: two independent substring hits would still pass
+        // with a literal hand-off next to an unrelated constant use.
+        val source = sourceOf("src/main/java/com/antivocale/app/ui/MainScreen.kt")
+        assertTrue(
+            "MainScreen's hint hand-off must construct SettingsSubPage with TestNavigation.SUBPAGE_KEY_EXPORT",
+            Regex("SettingsSubPage\\s*\\(\\s*TestNavigation\\.SUBPAGE_KEY_EXPORT")
+                .containsMatchIn(source))
     }
 
     @Test

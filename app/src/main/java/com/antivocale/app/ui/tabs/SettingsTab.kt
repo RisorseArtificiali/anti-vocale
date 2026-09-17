@@ -151,7 +151,7 @@ fun SettingsTab(
                 showIconSettings = dest.key == "icon_picker"
                 showPromptSettings = dest.key == "prompt"
                 showPerAppSettings = dest.key == "per_app"
-                showExportSettings = dest.key == "export"
+                showExportSettings = dest.key == TestNavigation.SUBPAGE_KEY_EXPORT
             }
             is TestNavigation.Destination.SettingsSection -> {
                 // A section target needs the main Column composed: back out

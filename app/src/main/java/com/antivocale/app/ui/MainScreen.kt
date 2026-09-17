@@ -121,6 +121,19 @@ fun MainScreen(
     val testNav by TestNavigation.pending.collectAsState()
     var settingsNavRequest by remember { mutableStateOf<TestNavigation.NavRequest?>(null) }
     var modelsNavRequest by remember { mutableStateOf<TestNavigation.NavRequest?>(null) }
+
+    // One routing rule for settings destinations, shared by the TEST_SPI
+    // effect and production callers (the capped-transcript auto-save hint):
+    // switch to the Settings tab and hand the destination to SettingsTab
+    // through the consume-once NavRequest, never through the pending token
+    // (its write side is debug-only by contract, TestNavigation KDoc). The
+    // tab index DERIVES from TAB_KEYS so inserting a tab cannot silently
+    // reroute every settings navigation.
+    val settingsTabIndex = TestNavigation.TAB_KEYS.indexOf("settings")
+    fun openSettings(destination: TestNavigation.Destination) {
+        selectedTabIndex = settingsTabIndex
+        settingsNavRequest = TestNavigation.NavRequest.next(destination)
+    }
     LaunchedEffect(testNav) {
         val dest = testNav ?: return@LaunchedEffect
         TestNavigation.pending.value = null
@@ -131,10 +144,7 @@ fun MainScreen(
                 modelsNavRequest = TestNavigation.NavRequest.next(parsed)
             }
             is TestNavigation.Destination.SettingsSubPage,
-            is TestNavigation.Destination.SettingsSection -> {
-                selectedTabIndex = 2
-                settingsNavRequest = TestNavigation.NavRequest.next(parsed)
-            }
+            is TestNavigation.Destination.SettingsSection -> openSettings(parsed)
             null -> Unit
         }
     }
@@ -146,10 +156,23 @@ fun MainScreen(
 
     // Logs tab is first since it is the primary use case (viewing transcription history)
     val tabs = listOf(
-        // GH #94: the auto-save hint navigates to the dedicated export
-        // sub-page (TASK-543), where the folder and format cards live.
-        TabItem(R.string.logs_tab, Icons.Default.History) { LogsTab(highlightTaskId = highlightTaskId, tourRevealState = revealState, onNavigateToSettings = { TestNavigation.pending.value = "settings:export" }) },
-        TabItem(R.string.model_tab, Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }, navRequest = modelsNavRequest, onNavConsumed = { modelsNavRequest = null }) },
+        // GH #94 / TASK-548(B): the capped-transcript auto-save hint
+        // navigates to the export sub-page (TASK-543), where the folder
+        // and format cards live.
+        TabItem(R.string.logs_tab, Icons.Default.History) {
+            LogsTab(
+                highlightTaskId = highlightTaskId,
+                tourRevealState = revealState,
+                onNavigateToSettings = {
+                    openSettings(
+                        TestNavigation.Destination.SettingsSubPage(
+                            TestNavigation.SUBPAGE_KEY_EXPORT
+                        )
+                    )
+                },
+            )
+        },
+        TabItem(R.string.model_tab, Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(settingsTabIndex) }, navRequest = modelsNavRequest, onNavConsumed = { modelsNavRequest = null }) },
         TabItem(R.string.settings_tab, Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(1) }, navRequest = settingsNavRequest, onNavConsumed = { settingsNavRequest = null }) }
     )
 
