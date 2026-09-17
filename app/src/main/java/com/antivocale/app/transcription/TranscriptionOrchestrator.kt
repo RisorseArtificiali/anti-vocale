@@ -1231,7 +1231,7 @@ class TranscriptionOrchestrator @Inject constructor(
         taskId: String,
         chunks: List<FloatArray>,
         sampleRate: Int,
-        /** GH #92: per-chunk offsets aligned with the chunks, or null when unknown. */
+        /** GH #92: per-chunk offsets aligned with the chunks; empty when no timing exists. */
         segmentRangesMs: List<Pair<Long, Long>>,
         prompt: String = "",
         backend: TranscriptionBackend,

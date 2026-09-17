@@ -52,8 +52,9 @@ object SentenceCueBuilder {
      * Builds the sentence cues of one chunk. [chunkStartMs]/[chunkEndMs] are the
      * chunk's range on the audio's timeline; token times are relative to the
      * chunk. [chunkText] is the recognizer's own text for this chunk: when the
-     * token sequence aligns to it (whitespace-stripped concatenation matches),
-     * cue texts are cut from it verbatim, preserving the real words. Subword
+     * token sequence aligns to it (whitespace-stripped concatenation matches;
+     * trailing unmatched text counts as padding), cue texts are cut from it
+     * verbatim, preserving the real words. Subword
      * tokenizers without a word-start marker (Parakeet BPE, probe 2026-09-17:
      * "Ihr erstes" decoded as I|hr|er|st|es) would otherwise space-join into
      * "I hr er st es"; null or a mismatch falls back to the token join.
@@ -122,7 +123,8 @@ object SentenceCueBuilder {
 
     /**
      * Character alignment of the token sequence onto [text]: walks both with
-     * whitespace (and word-start markers) ignored, requiring an exact match.
+     * whitespace (and word-start markers) ignored, requiring an exact match
+     * except for trailing unmatched text, which counts as padding.
      * Returns per-token [start, end) indices into the ORIGINAL text, or null
      * when the tokenizer output cannot be aligned losslessly.
      */

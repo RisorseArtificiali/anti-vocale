@@ -241,9 +241,9 @@ class AudioPreprocessor @Inject constructor() {
                         totalDurationSeconds = vadResult.totalSpeechDurationSeconds,
                         chunkCount = mergedSegments.size,
                         isVadSegmented = true,
-                        // Ranges input is non-null here (speech was detected), so
-                        // the grouped output is too; empty only if VAD found none,
-                        // which cannot reach this branch.
+                        // The grouped ranges carry the input's statically
+                        // non-null type; they are empty only if VAD found no
+                        // speech, which cannot reach this branch.
                         chunkRangesMs = mergedRangesMs ?: emptyList()
                     )
                 }

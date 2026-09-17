@@ -33,8 +33,9 @@ data class TimedToken(
  * produce identical token timing. Cue data is optional and fails closed:
  * empty token arrays, a tokens/timestamps size mismatch, or NaN/negative
  * timestamps yield an empty list instead of failing the transcription. An
- * unusable durations array (size mismatch, NaN, negative) only disables the
- * duration path; ends are then inferred from the successor token's start.
+ * unusable durations array (size mismatch, NaN, negative, or zeros) only
+ * disables the duration path; ends are then inferred from the successor
+ * token's start.
  */
 internal object TimedTokens {
 

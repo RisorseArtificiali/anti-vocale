@@ -18,8 +18,8 @@ object SubtitleFormatter {
 
     /**
      * The auto-save file format. [extension] and [mime] drive the SAF file name
-     * and type; the non-txt entries are the ones that need honest cue data
-     * (the resolveExport fail-safe keys on that).
+     * and type; the three non-TXT entries need honest cue data, and the
+     * resolveExport fail-safe degrades them to plain txt when it is missing.
      */
     enum class Format(val extension: String, val mime: String) {
         TXT("txt", "text/plain"),

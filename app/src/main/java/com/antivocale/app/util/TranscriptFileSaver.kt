@@ -54,8 +54,9 @@ object TranscriptFileSaver {
 
     /**
      * Writes [text] to a new file under [treeUri]. [extension] and [mime] come
-     * from the selected export format (GH #92); [namePreview] seeds the
-     * first-words part of the unchanged naming scheme.
+     * from the RESOLVED export format, after the fail-safe may have degraded
+     * it (GH #92); [namePreview] seeds the first-words part of the unchanged
+     * naming scheme.
      *
      * @return the written file's display name on success, or `null` on any failure.
      */
