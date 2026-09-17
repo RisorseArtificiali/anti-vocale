@@ -131,32 +131,46 @@ object SentenceCueBuilder {
         var tokenIdx = 0
         var tokenPos = 0
         var tokenStart = -1
-        for (i in text.indices) {
-            val c = text[i]
-            if (c.isWhitespace() || c == WORD_START_MARKER) continue
-            // Skip the token's leading markers/whitespace to its first real char.
+        var lastEnd = 0
+        // Skip tokens that carry no real character (pure "▁" separators), giving
+        // each a zero-width span at the current position so span indices stay
+        // token-aligned. Aborting here instead (the 2026-09-17 device run)
+        // failed every Parakeet alignment and silently fell back to the
+        // fragmenting token join.
+        fun skipEmptyTokens() {
             while (tokenIdx < tokens.size) {
                 val t = tokens[tokenIdx].text
-                if (tokenPos < t.length && (t[tokenPos].isWhitespace() || t[tokenPos] == WORD_START_MARKER)) tokenPos++
-                else break
-            }
-            if (tokenIdx >= tokens.size || tokenPos >= tokens[tokenIdx].text.length) return null
-            if (tokens[tokenIdx].text[tokenPos] != c) return null
-            if (tokenStart < 0) tokenStart = i
-            tokenPos++
-            if (tokenPos >= tokens[tokenIdx].text.length) {
-                spans.add(tokenStart to i + 1)
+                while (tokenPos < t.length && (t[tokenPos].isWhitespace() || t[tokenPos] == WORD_START_MARKER)) tokenPos++
+                if (tokenPos < t.length) return
+                spans.add(lastEnd to lastEnd)
                 tokenIdx++
                 tokenPos = 0
                 tokenStart = -1
             }
         }
+        for (i in text.indices) {
+            val c = text[i]
+            if (c.isWhitespace() || c == WORD_START_MARKER) continue
+            skipEmptyTokens()
+            if (tokenIdx >= tokens.size) return null
+            if (tokens[tokenIdx].text[tokenPos] != c) return null
+            if (tokenStart < 0) tokenStart = i
+            tokenPos++
+            if (tokenPos >= tokens[tokenIdx].text.length) {
+                spans.add(tokenStart to i + 1)
+                lastEnd = i + 1
+                tokenIdx++
+                tokenPos = 0
+                tokenStart = -1
+            }
+        }
+        skipEmptyTokens()
         // Tokens with characters left unmatched mean the text is not the same
         // sequence; trailing unmatched TEXT is acceptable (padding).
         if (tokenIdx < tokens.size) {
             val rest = tokens.drop(tokenIdx).joinToString("") { it.text }
             if (rest.any { !it.isWhitespace() && it != WORD_START_MARKER }) return null
-            spans.add(tokenStart.coerceAtLeast(0) to text.length)
+            spans.add(tokenStart.coerceAtLeast(lastEnd) to text.length)
         }
         return spans
     }

@@ -191,4 +191,18 @@ class SentenceCueBuilderTest {
         assertEquals(1, cues.size)
         assertEquals("One.", cues[0].text)
     }
+
+    @Test
+    fun pureSeparatorTokens_doNotAbortAlignment() {
+        // Parakeet separates words with bare U+2581 tokens; they carry no
+        // character, so the alignment must skip them (not fail closed) and the
+        // cue text must still come from the chunk text.
+        val tokens = listOf(
+            token("I", 0, 200), token("hr", 200, 400), token("▁", 400, 500),
+            token("war", 600, 900),
+        )
+        val cues = SentenceCueBuilder.build(tokens, 0, 1000, "Ihr war")
+        assertEquals(1, cues.size)
+        assertEquals("Ihr war", cues[0].text)
+    }
 }
