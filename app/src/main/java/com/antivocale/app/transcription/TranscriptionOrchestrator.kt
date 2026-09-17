@@ -1145,7 +1145,7 @@ class TranscriptionOrchestrator @Inject constructor(
         startMs: Long,
         endMs: Long,
     ): List<TimedSegment> =
-        if (tokens.isNotEmpty()) SentenceCueBuilder.build(tokens, startMs, endMs)
+        if (tokens.isNotEmpty()) SentenceCueBuilder.build(tokens, startMs, endMs, trimmedChunkText)
         else listOf(TimedSegment(startMs, endMs, trimmedChunkText))
 
     private suspend fun processProgressiveSegments(

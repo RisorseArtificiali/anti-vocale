@@ -134,4 +134,61 @@ class SentenceCueBuilderTest {
             SentenceCueBuilder.build(emptyList(), chunkStartMs = 0, chunkEndMs = 1000),
         )
     }
+
+    @Test
+    fun alignedChunkText_restoresRealWordsFromSubwordFragments() {
+        // Parakeet BPE probe 2026-09-17: "Ihr erstes war der Slalom." decoded
+        // as marker-less fragments that space-join into "I hr er st es".
+        val tokens = listOf(
+            token("I", 320, 500), token("hr", 500, 700), token("er", 700, 900),
+            token("st", 900, 1100), token("es", 1100, 1300),
+            token("war", 1400, 1700), token("der", 1750, 2000), token("S", 2050, 2200),
+            token("l", 2200, 2300), token("al", 2300, 2450), token("om", 2450, 2600),
+            token(".", 2700, 2800),
+        )
+        val chunkText = "Ihr erstes war der Slalom."
+        val cues = SentenceCueBuilder.build(tokens, 0, 3000, chunkText)
+        assertEquals(1, cues.size)
+        assertEquals("Ihr erstes war der Slalom.", cues[0].text)
+        assertEquals(320, cues[0].startMs)
+        assertEquals(2800, cues[0].endMs)
+    }
+
+    @Test
+    fun pauseSplitTrailingPunctuation_mergesIntoTheSentenceItCloses() {
+        val tokens = listOf(
+            token("Er", 0, 300), token("gebn", 300, 500), token("is", 500, 700),
+            // 2s pause, then the ender arrives as its own token.
+            token(".", 2900, 3000),
+        )
+        val cues = SentenceCueBuilder.build(tokens, 0, 3100, "Ergebnis.")
+        assertEquals(1, cues.size)
+        assertEquals("Ergebnis.", cues[0].text)
+        assertEquals(0, cues[0].startMs)
+        assertEquals(3000, cues[0].endMs)
+    }
+
+    @Test
+    fun leadingWordlessCue_foldsIntoFirstWordedCue() {
+        val tokens = listOf(
+            token("(", 0, 100),
+            token("▁ciao", 200, 600),
+        )
+        val cues = SentenceCueBuilder.build(tokens, 0, 700, "(ciao")
+        assertEquals(1, cues.size)
+        assertEquals("(ciao", cues[0].text)
+        assertEquals(0, cues[0].startMs)
+    }
+
+    @Test
+    fun unalignedChunkText_fallsBackToTokenJoin() {
+        // The text is not the token sequence (extra word): alignment must fail
+        // closed and the join path produce the space-joined tokens.
+        val tokens = listOf(
+            token("One", 0, 300), token(".", 400, 500),
+        )
+        val cues = SentenceCueBuilder.build(tokens, 0, 600, "Something else entirely")
+        assertEquals(1, cues.size)
+        assertEquals("One.", cues[0].text)
+    }
 }

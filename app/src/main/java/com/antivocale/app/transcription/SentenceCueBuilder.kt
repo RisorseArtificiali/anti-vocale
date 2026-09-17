@@ -24,10 +24,12 @@ package com.antivocale.app.transcription
  *    ceiling. A comma-terminated token in the cue's second half wins over the
  *    closest boundary: a clause break reads better than an arbitrary cut.
  *
- * Normalization: sherpa marks word starts with U+2581 (LOWER ONE EIGHTH
- * BLOCK); it becomes a space. A token starting with closing punctuation
- * (. , ! ? ; : )) glues to the previous word without a preceding space; runs
- * of spaces collapse; cues whose text is blank drop. Cues never overlap.
+ * Normalization: cue texts prefer the recognizer's own chunk text (exact
+ * character alignment, whitespace-insensitive); when the token sequence does
+ * not align, tokens join instead: sherpa's U+2581 (LOWER ONE EIGHTH BLOCK)
+ * word-start marker becomes a space, a token starting with closing punctuation
+ * (. , ! ? ; : )) glues to the previous word without a preceding space, runs
+ * of spaces collapse, and cues whose text is blank drop. Cues never overlap.
  */
 object SentenceCueBuilder {
 
@@ -49,15 +51,28 @@ object SentenceCueBuilder {
     /**
      * Builds the sentence cues of one chunk. [chunkStartMs]/[chunkEndMs] are the
      * chunk's range on the audio's timeline; token times are relative to the
-     * chunk.
+     * chunk. [chunkText] is the recognizer's own text for this chunk: when the
+     * token sequence aligns to it (whitespace-stripped concatenation matches),
+     * cue texts are cut from it verbatim, preserving the real words. Subword
+     * tokenizers without a word-start marker (Parakeet BPE, probe 2026-09-17:
+     * "Ihr erstes" decoded as I|hr|er|st|es) would otherwise space-join into
+     * "I hr er st es"; null or a mismatch falls back to the token join.
      */
-    fun build(tokens: List<TimedToken>, chunkStartMs: Long, chunkEndMs: Long): List<TimedSegment> {
+    fun build(
+        tokens: List<TimedToken>,
+        chunkStartMs: Long,
+        chunkEndMs: Long,
+        chunkText: String? = null,
+    ): List<TimedSegment> {
         if (tokens.isEmpty()) return emptyList()
         val lo = minOf(chunkStartMs, chunkEndMs)
         val hi = maxOf(chunkStartMs, chunkEndMs)
+        val aligned = chunkText?.let { text -> alignToText(tokens, text)?.let { spans -> text to spans } }
         val cues = mutableListOf<TimedSegment>()
         for ((first, last) in cueBounds(tokens)) {
-            val text = joinText(tokens, first, last)
+            val text = aligned?.let { (source, spans) ->
+                source.substring(spans[first].first, spans[last].second).trim()
+            } ?: joinText(tokens, first, last)
             if (text.isBlank()) continue
             val start = (chunkStartMs + tokens[first].startMs).coerceIn(lo, hi)
             val end = (chunkStartMs + tokens[last].endMs).coerceIn(lo, hi).coerceAtLeast(start)
@@ -72,7 +87,78 @@ object SentenceCueBuilder {
             }
             cues.add(TimedSegment(start, end, text))
         }
-        return cues
+        return mergePunctuationOnlyCues(cues)
+    }
+
+    /**
+     * A cue whose text carries no word character (a pause-split "." is the
+     * live case) belongs to the sentence it closes: fold it into the previous
+     * cue's text and time span, or the next one when no previous exists.
+     */
+    private fun mergePunctuationOnlyCues(cues: List<TimedSegment>): List<TimedSegment> {
+        val out = mutableListOf<TimedSegment>()
+        for (cue in cues) {
+            val wordless = cue.text.none { it.isLetterOrDigit() }
+            if (!wordless) {
+                out.add(cue)
+            } else if (out.isNotEmpty()) {
+                val previous = out.removeAt(out.size - 1)
+                out.add(previous.copy(endMs = cue.endMs, text = previous.text + cue.text))
+            } else {
+                // Nothing before it yet: keep it; the head fold below merges it
+                // into the first worded cue.
+                out.add(cue)
+            }
+        }
+        val head = out.indexOfFirst { it.text.any { c -> c.isLetterOrDigit() } }
+        if (head > 0) {
+            val leading = out.subList(0, head)
+            val first = out[head]
+            out[head] = first.copy(startMs = leading.first().startMs, text = leading.joinToString("") { it.text } + first.text)
+            repeat(head) { out.removeAt(0) }
+        }
+        return out
+    }
+
+    /**
+     * Character alignment of the token sequence onto [text]: walks both with
+     * whitespace (and word-start markers) ignored, requiring an exact match.
+     * Returns per-token [start, end) indices into the ORIGINAL text, or null
+     * when the tokenizer output cannot be aligned losslessly.
+     */
+    private fun alignToText(tokens: List<TimedToken>, text: String): List<Pair<Int, Int>>? {
+        val spans = mutableListOf<Pair<Int, Int>>()
+        var tokenIdx = 0
+        var tokenPos = 0
+        var tokenStart = -1
+        for (i in text.indices) {
+            val c = text[i]
+            if (c.isWhitespace() || c == WORD_START_MARKER) continue
+            // Skip the token's leading markers/whitespace to its first real char.
+            while (tokenIdx < tokens.size) {
+                val t = tokens[tokenIdx].text
+                if (tokenPos < t.length && (t[tokenPos].isWhitespace() || t[tokenPos] == WORD_START_MARKER)) tokenPos++
+                else break
+            }
+            if (tokenIdx >= tokens.size || tokenPos >= tokens[tokenIdx].text.length) return null
+            if (tokens[tokenIdx].text[tokenPos] != c) return null
+            if (tokenStart < 0) tokenStart = i
+            tokenPos++
+            if (tokenPos >= tokens[tokenIdx].text.length) {
+                spans.add(tokenStart to i + 1)
+                tokenIdx++
+                tokenPos = 0
+                tokenStart = -1
+            }
+        }
+        // Tokens with characters left unmatched mean the text is not the same
+        // sequence; trailing unmatched TEXT is acceptable (padding).
+        if (tokenIdx < tokens.size) {
+            val rest = tokens.drop(tokenIdx).joinToString("") { it.text }
+            if (rest.any { !it.isWhitespace() && it != WORD_START_MARKER }) return null
+            spans.add(tokenStart.coerceAtLeast(0) to text.length)
+        }
+        return spans
     }
 
     /**
