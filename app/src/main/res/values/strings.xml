@@ -122,7 +122,7 @@
     <string name="export_settings_title">Auto-Save &amp; Export</string>
     <string name="export_settings_description">Choose the folder and file format for saved transcripts</string>
     <string name="error_folder_not_writable">This folder cannot receive files. Pick a folder from the device storage (not the Downloads shortcut).</string>
-    <string name="language_phone_option">Phone language (%1)</string>
+    <string name="language_phone_option">Phone language (%1$s)</string>
     <string name="today">Today</string>
     <string name="yesterday">Yesterday, %1$s</string>
     <string name="yesterday_label">Yesterday</string>
