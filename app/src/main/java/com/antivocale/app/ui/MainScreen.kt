@@ -146,7 +146,9 @@ fun MainScreen(
 
     // Logs tab is first since it is the primary use case (viewing transcription history)
     val tabs = listOf(
-        TabItem(R.string.logs_tab, Icons.Default.History) { LogsTab(highlightTaskId = highlightTaskId, tourRevealState = revealState) },
+        // GH #94: the auto-save hint navigates to the dedicated export
+        // sub-page (TASK-543), where the folder and format cards live.
+        TabItem(R.string.logs_tab, Icons.Default.History) { LogsTab(highlightTaskId = highlightTaskId, tourRevealState = revealState, onNavigateToSettings = { TestNavigation.pending.value = "settings:export" }) },
         TabItem(R.string.model_tab, Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(2) }, navRequest = modelsNavRequest, onNavConsumed = { modelsNavRequest = null }) },
         TabItem(R.string.settings_tab, Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(1) }, navRequest = settingsNavRequest, onNavConsumed = { settingsNavRequest = null }) }
     )

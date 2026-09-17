@@ -119,6 +119,8 @@
     <string name="transcript_render_capped">First %1$d characters shown, %2$d more. Use Copy for the full text.</string>
     <string name="transcript_capped_autosave_hint">Full transcript available via auto-save: Settings → Auto-Save to Folder</string>
     <string name="transcript_capped_autosave_saved">Full transcript auto-saved to your folder</string>
+    <string name="export_settings_title">Auto-Save &amp; Export</string>
+    <string name="export_settings_description">Choose the folder and file format for saved transcripts</string>
     <string name="today">Today</string>
     <string name="yesterday">Yesterday, %1$s</string>
     <string name="yesterday_label">Yesterday</string>

@@ -121,6 +121,7 @@ fun SettingsTab(
     val perfStatsScope = rememberCoroutineScope()
     var showPromptSettings by remember { mutableStateOf(false) }
     var showIconSettings by remember { mutableStateOf(false) }
+    var showExportSettings by remember { mutableStateOf(false) }
 
     // TASK-486: TEST_SPI navigation. Sub-pages flip their flag; a section
     // destination bumps that section's expand counter and scrolls to it via
@@ -147,6 +148,7 @@ fun SettingsTab(
                 showIconSettings = dest.key == "icon_picker"
                 showPromptSettings = dest.key == "prompt"
                 showPerAppSettings = dest.key == "per_app"
+                showExportSettings = dest.key == "export"
             }
             is TestNavigation.Destination.SettingsSection -> {
                 // A section target needs the main Column composed: back out
@@ -155,6 +157,7 @@ fun SettingsTab(
                 showIconSettings = false
                 showPromptSettings = false
                 showPerAppSettings = false
+                showExportSettings = false
                 expandCounters[dest.key] = (expandCounters[dest.key] ?: 0) + 1
                 // First composition may run before layout delivers offsets:
                 // wait one frame, then scroll if the anchor appeared.
@@ -226,6 +229,14 @@ fun SettingsTab(
         LauncherIconScreen(
             viewModel = viewModel,
             onBack = { showIconSettings = false }
+        )
+    } else if (showExportSettings) {
+        // TASK-543: the auto-save export config (folder + format) on its
+        // own page, not buried inside the transcription section.
+        ExportSettingsScreen(
+            viewModel = viewModel,
+            outputFolderUri = outputFolderUri,
+            onBack = { showExportSettings = false }
         )
     } else if (showPromptSettings) {
         PromptSettingsScreen(
@@ -471,50 +482,41 @@ fun SettingsTab(
                 }
             )
 
-            // Output Folder auto-save Setting (issue #14)
-            OutputFolderSettingCard(
-                outputFolderUri = outputFolderUri,
-                onChoose = { outputFolderLauncher.launch(null) },
-                onClear = { viewModel.saveOutputFolderUri(null) }
-            )
-
-            // GH #92: auto-save file format. Meaningful only with a folder chosen,
-            // mirroring the OutputFolderSettingCard enabling rule.
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Subtitles,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+            // TASK-543: the two export cards live on their own sub-page now;
+            // this entry card navigates there.
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showExportSettings = true },
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth()
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Save,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = stringResource(R.string.transcript_export_format_title),
+                            text = stringResource(R.string.export_settings_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
+                        Text(
+                            text = stringResource(R.string.export_settings_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-
-                    Text(
-                        text = stringResource(R.string.transcript_export_format_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    val selectedFormat = SubtitleFormatter.Format.fromStored(transcriptExportFormat)
-                    SettingsDropdown(
-                        currentValue = selectedFormat,
-                        options = SubtitleFormatter.Format.entries,
-                        currentValueDisplay = transcriptExportFormatLabel(selectedFormat),
-                        optionDisplay = { format -> transcriptExportFormatLabel(format) },
-                        onOptionSelected = { viewModel.saveTranscriptExportFormat(it.name) },
-                        label = stringResource(R.string.transcript_export_format_title),
-                        enabled = outputFolderUri != null
+                    Icon(
+                        imageVector = Icons.Default.ChevronRight,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -2215,4 +2217,108 @@ private fun transcriptExportFormatLabel(format: SubtitleFormatter.Format): Strin
     SubtitleFormatter.Format.TXT_TIMED -> stringResource(R.string.transcript_export_format_txt_timed)
     SubtitleFormatter.Format.SRT -> stringResource(R.string.transcript_export_format_srt)
     SubtitleFormatter.Format.VTT -> stringResource(R.string.transcript_export_format_vtt)
+}
+
+/**
+ * TASK-543: the auto-save export config (folder + format) on its own page.
+ * Both cards moved here from the inline transcription section; the entry
+ * card in that section navigates here, and the capped-transcript auto-save
+ * hint targets this page via settings:export.
+ */
+@Composable
+fun ExportSettingsScreen(
+    viewModel: SettingsViewModel,
+    outputFolderUri: String?,
+    onBack: () -> Unit,
+) {
+    val context = LocalContext.current
+    val outputFolderLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        uri?.let {
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    it, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+                viewModel.saveOutputFolderUri(it.toString())
+            } catch (_: Exception) {
+                // Permission already held or revoked; the save is still valid.
+            }
+        }
+    }
+    val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp)
+    ) {
+        // Header with back
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp)
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = stringResource(R.string.back),
+                    tint = MaterialTheme.colorScheme.onSurface
+                )
+            }
+            Text(
+                text = stringResource(R.string.export_settings_title),
+                style = MaterialTheme.typography.headlineSmall,
+            )
+        }
+
+        // The two cards, verbatim from the inline transcription section
+        OutputFolderSettingCard(
+            outputFolderUri = outputFolderUri,
+            onChoose = { outputFolderLauncher.launch(null) },
+            onClear = { viewModel.saveOutputFolderUri(null) }
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Card(modifier = Modifier.fillMaxWidth()) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Subtitles,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Text(
+                        text = stringResource(R.string.transcript_export_format_title),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Text(
+                    text = stringResource(R.string.transcript_export_format_description),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                val selectedFormat = SubtitleFormatter.Format.fromStored(transcriptExportFormat)
+                SettingsDropdown(
+                    currentValue = selectedFormat,
+                    options = SubtitleFormatter.Format.entries,
+                    currentValueDisplay = transcriptExportFormatLabel(selectedFormat),
+                    optionDisplay = { format -> transcriptExportFormatLabel(format) },
+                    onOptionSelected = { viewModel.saveTranscriptExportFormat(it.name) },
+                    label = stringResource(R.string.transcript_export_format_title),
+                    enabled = outputFolderUri != null
+                )
+            }
+        }
+    }
 }

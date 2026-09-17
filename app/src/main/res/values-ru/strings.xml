@@ -110,6 +110,8 @@
     <string name="transcript_render_capped">Показаны первые %1$d символов, ещё %2$d. Используйте «Копировать», чтобы получить полный текст.</string>
     <string name="transcript_capped_autosave_hint">Полная расшифровка в автосохранении: Настройки → Сохранить в папку</string>
     <string name="transcript_capped_autosave_saved">Полная расшифровка автоматически сохранена в вашей папке</string>
+    <string name="export_settings_title">Автосохранение и экспорт</string>
+    <string name="export_settings_description">Выберите папку и формат файлов для сохранённых расшифровок</string>
     <string name="today">Сегодня</string>
     <string name="yesterday">Вчера, %1$s</string>
     <string name="yesterday_label">Вчера</string>

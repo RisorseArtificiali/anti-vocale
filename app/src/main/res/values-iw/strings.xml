@@ -120,6 +120,8 @@
     <string name="transcript_render_capped">מוצגים %1$d התווים הראשונים, %2$d נוספים מוסתרים. השתמש בהעתקה כדי לקבל את הטקסט המלא.</string>
     <string name="transcript_capped_autosave_hint">תמליל מלא בשמירה אוטומטית: הגדרות → שמור לתיקייה</string>
     <string name="transcript_capped_autosave_saved">התמליל המלא נשמר אוטומטית לתיקייה שלך</string>
+    <string name="export_settings_title">שמירה אוטומטית וייצוא</string>
+    <string name="export_settings_description">בחר תיקייה ופורמט קובץ לתמלילים שמורים</string>
     <string name="today">היום</string>
     <string name="yesterday">אתמול, %1$s</string>
     <string name="yesterday_label">אתמול</string>

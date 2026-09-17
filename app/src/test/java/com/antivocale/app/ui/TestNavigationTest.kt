@@ -46,7 +46,7 @@ class TestNavigationTest {
         // The four SettingsTab sections and the three sub-screens, pinned so
         // a UI rename without a parser update (or the reverse) fails here.
         assertEquals(setOf("transcription", "appearance", "advanced", "feedback"), TestNavigation.SECTION_KEYS)
-        assertEquals(setOf("icon_picker", "prompt", "per_app"), TestNavigation.SUBPAGE_KEYS)
+        assertEquals(setOf("icon_picker", "prompt", "per_app", "export"), TestNavigation.SUBPAGE_KEYS)
         assertEquals(setOf("import"), TestNavigation.MODEL_KEYS)
         assertEquals(listOf("history", "models", "settings"), TestNavigation.TAB_KEYS)
     }

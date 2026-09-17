@@ -122,6 +122,8 @@
     <string name="transcript_render_capped">İlk %1$d karakter gösteriliyor, %2$d karakter daha. Tam metin için Kopyala\'yı kullanın.</string>
     <string name="transcript_capped_autosave_hint">Tam transkript otomatik kayıtta: Ayarlar → Klasöre kaydet</string>
     <string name="transcript_capped_autosave_saved">Tam transkript otomatik olarak klasörünüze kaydedildi</string>
+    <string name="export_settings_title">Otomatik kaydet ve dışa aktar</string>
+    <string name="export_settings_description">Kaydedilen transkriptler için klasör ve dosya biçimi seçin</string>
     <string name="today">Bugün</string>
     <string name="yesterday">Dün, %1$s</string>
     <string name="yesterday_label">Dün</string>

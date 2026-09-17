@@ -2,6 +2,7 @@ package com.antivocale.app.ui.components
 
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -108,6 +109,7 @@ internal fun CappedTranscriptText(
     container: Color = MaterialTheme.colorScheme.surfaceVariant,
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     textColor: Color = Color.Unspecified,
+    onAutoSaveHintClick: (() -> Unit)? = null,
 ) {
     val highlightColor = MaterialTheme.colorScheme.tertiary
     val capped = text.length > MAX_RENDERED_TRANSCRIPT_CHARS
@@ -179,10 +181,12 @@ internal fun CappedTranscriptText(
         // GH #94: surface the auto-save feature at the moment of need: the
         // user is looking at a truncated transcript, which is exactly when
         // the full-text file export is most useful and least known.
+        // TASK-548 part B: tappable when the caller provides the destination.
         Text(
             text = stringResource(R.string.transcript_capped_autosave_hint),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.primary,
+            modifier = onAutoSaveHintClick?.let { cb -> Modifier.clickable { cb() } } ?: Modifier,
         )
     }
 }

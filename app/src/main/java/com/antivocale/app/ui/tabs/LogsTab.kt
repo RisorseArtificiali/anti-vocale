@@ -288,6 +288,7 @@ private fun buildSwipeActions(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LogsTab(
+    onNavigateToSettings: (() -> Unit)? = null,
     viewModel: LogsViewModel = hiltViewModel(),
     highlightTaskId: String? = null,
     tourRevealState: com.svenjacobs.reveal.RevealState,
@@ -682,7 +683,8 @@ fun LogsTab(
                                         onDeleteLog = { id -> viewModel.deleteLog(id) },
                                         viewModel = viewModel,
                                         onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null,
-                                        compactActions = compactActions
+                                        compactActions = compactActions,
+                                        onNavigateToSettings = onNavigateToSettings,
                                     )
                                     HorizontalDivider(
                                         modifier = Modifier.padding(horizontal = 16.dp),
@@ -719,7 +721,8 @@ fun LogsTab(
                                     onDeleteLog = { id -> viewModel.deleteLog(id) },
                                     viewModel = viewModel,
                                     onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null,
-                                    compactActions = compactActions
+                                    compactActions = compactActions,
+                                    onNavigateToSettings = onNavigateToSettings,
                                 )
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -880,7 +883,8 @@ fun LogEntryItem(
     onRetranscribe: (() -> Unit)? = null,
     onDelete: (() -> Unit)? = null,
     onCancel: (() -> Unit)? = null,
-    compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS
+    compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
+    onNavigateToSettings: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     var contextMenuExpanded by remember { mutableStateOf(false) }
@@ -1110,6 +1114,7 @@ fun LogEntryItem(
                             text = log.result,
                             searchQuery = searchQuery,
                             container = MaterialTheme.colorScheme.primaryContainer,
+                            onAutoSaveHintClick = onNavigateToSettings,
                         )
 
                         // TASK-121.4: the AI summary of a long transcript, when the
@@ -1284,6 +1289,7 @@ fun LogEntryItem(
                                 text = log.result,
                                 searchQuery = searchQuery,
                                 container = MaterialTheme.colorScheme.primaryContainer,
+                                onAutoSaveHintClick = onNavigateToSettings,
                             )
                         } else {
                             SkeletonTranscriptionCard()
@@ -1380,7 +1386,8 @@ private fun LogEntryWithSwipe(
     onDeleteLog: (String) -> Unit,
     viewModel: LogsViewModel,
     onRetranscribe: (() -> Unit)? = null,
-    compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS
+    compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
+    onNavigateToSettings: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     if (SwipeActionMode.from(swipeActionMode) == SwipeActionMode.REVEAL) {
@@ -1431,7 +1438,8 @@ private fun LogEntryWithSwipe(
                 onRetranscribe = onRetranscribe,
                 onCancel = { cancelTask(context, log.taskId) },
                 onDelete = { onDeleted(log); viewModel.deleteLog(log.id) },
-                compactActions = compactActions
+                compactActions = compactActions,
+                onNavigateToSettings = onNavigateToSettings,
             )
         }
     } else {
@@ -1478,7 +1486,8 @@ private fun LogEntryWithSwipe(
                 onRetranscribe = onRetranscribe,
                 onCancel = { cancelTask(context, log.taskId) },
                 onDelete = { onDeleted(log); onDeleteLog(log.id) },
-                compactActions = compactActions
+                compactActions = compactActions,
+                onNavigateToSettings = onNavigateToSettings,
             )
         }
     }
