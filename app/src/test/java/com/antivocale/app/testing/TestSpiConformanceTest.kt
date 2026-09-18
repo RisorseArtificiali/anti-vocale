@@ -1,5 +1,8 @@
 package com.antivocale.app.testing
 
+import com.antivocale.app.data.ExternalModelImportOperations
+import com.antivocale.app.data.ExternalModelRecord
+import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.FakePreferencesManager
 import com.antivocale.app.data.PreferencesManager
@@ -20,7 +23,10 @@ import org.junit.Test
 class TestSpiConformanceTest {
 
     private fun ops(fake: FakePreferencesManager) =
-        TestSpiOps(fake, ExternalModelStore(fake))
+        TestSpiOps(fake, ExternalModelStore(fake), object : ExternalModelImportOperations {
+            override suspend fun importFromTreeUri(context: android.content.Context, treeUri: android.net.Uri, modelType: String?, family: ModelFamily, options: Map<String, String>, languages: List<String>, streaming: Boolean): ExternalModelRecord = throw UnsupportedOperationException()
+            override suspend fun importFromUrl(url: String, modelType: String?, family: ModelFamily, options: Map<String, String>, languages: List<String>, streaming: Boolean, onProgress: com.antivocale.app.data.ExternalImportProgress): ExternalModelRecord = throw UnsupportedOperationException()
+        })
 
     private fun repoRoot(): File =
         listOf(".", "..", "../..").firstOrNull { File(it, "docs/testing-spi.md").isFile }

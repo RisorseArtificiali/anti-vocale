@@ -1,6 +1,7 @@
 package com.antivocale.app.testing
 
 import com.antivocale.app.data.ExternalModelRecord
+import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.BuiltInBackendIds
@@ -35,6 +36,7 @@ import org.json.JSONObject
 internal class TestSpiOps(
     private val preferences: PreferencesManager,
     private val externalModels: ExternalModelStore,
+    private val importer: ExternalModelImportOperations,
 ) {
 
     suspend fun handle(
@@ -42,11 +44,13 @@ internal class TestSpiOps(
         key: String? = null,
         value: String? = null,
         entry: String? = null,
+        url: String? = null,
     ): String = runCatching {
         when (op) {
             OP_GET -> get()
             OP_SET -> set(key, value, entry)
             OP_RECORDS -> records()
+            OP_IMPORT -> importModel(url)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -325,15 +329,36 @@ internal class TestSpiOps(
             .toString()
     }
 
+    /**
+     * TASK-550 device pass: the external-model import, driven without UI. The
+     * importer classifies the url (catalog-entry JSON vs HuggingFace repo),
+     * exactly the path the import dialog uses; the response is the imported
+     * record, so a device test can chain set backend=external:<id> on it.
+     */
+    private suspend fun importModel(url: String?): String {
+        if (url.isNullOrBlank()) {
+            return JSONObject()
+                .put("op", OP_IMPORT)
+                .put("error", "missing 'url' extra")
+                .toString()
+        }
+        val record = importer.importFromUrl(url)
+        return JSONObject()
+            .put("op", OP_IMPORT)
+            .put("record", record.toJson().put("backendId", record.backendId))
+            .toString()
+    }
+
     private fun help(error: String? = null): String = JSONObject()
         .apply { error?.let { put("error", it) } }
         .put("op", OP_HELP)
-        .put("ops", JSONArray(listOf(OP_GET, OP_SET, OP_RECORDS, OP_HELP)))
+        .put("ops", JSONArray(listOf(OP_GET, OP_SET, OP_RECORDS, OP_IMPORT, OP_HELP)))
         .put("setKeys", JSONArray(SET_KEYS))
         .put(
             "usage",
-            "am broadcast -a com.antivocale.app.TEST_SPI --es op=<$OP_GET|$OP_SET|$OP_RECORDS|$OP_HELP> " +
-                "[--es key=<setKey> --es value=<newValue>] [--es entry=<catalogId> (sherpa_path only)]")
+            "am broadcast -a com.antivocale.app.TEST_SPI --es op=<$OP_GET|$OP_SET|$OP_RECORDS|$OP_IMPORT|$OP_HELP> " +
+                "[--es key=<setKey> --es value=<newValue>] [--es entry=<catalogId> (sherpa_path only)] " +
+                "[--es url=<entry-or-repo url> (import only)]")
         .put(
             "transcription",
             "transcription is NOT triggered here: broadcast com.antivocale.app.PROCESS_REQUEST with extras " +
@@ -345,6 +370,7 @@ internal class TestSpiOps(
         const val OP_GET = "get"
         const val OP_SET = "set"
         const val OP_RECORDS = "records"
+        const val OP_IMPORT = "import"
         const val OP_HELP = "help"
 
         /** TASK-276: the single source is PunctuationPolicy.MODE_PREFS; the SPI only adds write-time strictness. */

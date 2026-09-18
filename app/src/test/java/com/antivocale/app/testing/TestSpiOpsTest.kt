@@ -3,6 +3,7 @@ package com.antivocale.app.testing
 import com.antivocale.app.data.ExternalModelListJson
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelSource
+import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.FakePreferencesManager
 import com.antivocale.app.data.FilePin
@@ -28,10 +29,42 @@ class TestSpiOpsTest {
     private lateinit var fake: FakePreferencesManager
     private lateinit var ops: TestSpiOps
 
+    /** Captures the url and answers with a fixture record; no network in unit tests. */
+    private class FakeImporter(
+        var lastUrl: String? = null,
+        val answer: (String) -> ExternalModelRecord,
+    ) : ExternalModelImportOperations {
+        override suspend fun importFromTreeUri(
+            context: android.content.Context,
+            treeUri: android.net.Uri,
+            modelType: String?,
+            family: ModelFamily,
+            options: Map<String, String>,
+            languages: List<String>,
+            streaming: Boolean,
+        ): ExternalModelRecord = answer("tree")
+
+        override suspend fun importFromUrl(
+            url: String,
+            modelType: String?,
+            family: ModelFamily,
+            options: Map<String, String>,
+            languages: List<String>,
+            streaming: Boolean,
+            onProgress: com.antivocale.app.data.ExternalImportProgress,
+        ): ExternalModelRecord {
+            lastUrl = url
+            return answer("fromurl")
+        }
+    }
+
+    private lateinit var fakeImporter: FakeImporter
+
     @Before
     fun setUp() {
         fake = FakePreferencesManager()
-        ops = TestSpiOps(fake, ExternalModelStore(fake))
+        fakeImporter = FakeImporter(answer = { record(it) })
+        ops = TestSpiOps(fake, ExternalModelStore(fake), fakeImporter)
     }
 
     private fun record(id: String = "a1b2c3d4e5f6") = ExternalModelRecord(
@@ -380,7 +413,7 @@ class TestSpiOpsTest {
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "import", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
@@ -391,4 +424,20 @@ class TestSpiOpsTest {
         assertFalse(ops.handle(null).contains("error"))
         assertTrue(ops.handle("bogus").contains("unknown op 'bogus'"))
     }
+
+    @Test
+    fun `import op forwards the url and answers with the imported record`() = runTest {
+        val json = JSONObject(ops.handle("import", url = "http://127.0.0.1:8080/persian-small.json"))
+        assertEquals("import", json.getString("op"))
+        assertEquals("http://127.0.0.1:8080/persian-small.json", fakeImporter.lastUrl)
+        assertEquals("external:fromurl", json.getJSONObject("record").getString("backendId"))
+    }
+
+    @Test
+    fun `import op without a url answers with an error, not a crash`() = runTest {
+        val json = JSONObject(ops.handle("import"))
+        assertEquals("import", json.getString("op"))
+        assertTrue(json.getString("error").contains("url"))
+    }
 }
+

@@ -10,7 +10,10 @@
      docs/research/2026-09-03_tasker-receiver-security-analysis.md. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <application>
+    <application android:usesCleartextTraffic="true">
+
+        <!-- TASK-550 device pass: the SPI import op and the catalog override
+             point at a local http server (adb reverse); debug builds only. -->
 
         <!-- BroadcastReceiver for the debug-only test SPI -->
         <receiver
