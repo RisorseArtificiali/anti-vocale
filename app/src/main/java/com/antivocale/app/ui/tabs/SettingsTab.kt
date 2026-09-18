@@ -45,7 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
-import com.antivocale.app.ui.TestNavigation
+import com.antivocale.app.ui.AppNavigation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -87,7 +87,7 @@ import com.antivocale.app.ui.viewmodel.SettingsViewModel
 @Composable
 fun SettingsTab(
     onNavigateToModelTab: () -> Unit = {},
-    navRequest: TestNavigation.NavRequest? = null,
+    navRequest: AppNavigation.NavRequest? = null,
     onNavConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -149,15 +149,15 @@ fun SettingsTab(
         // of replaying (a guard remembered here would die with the tab).
         onNavConsumed()
         when (val dest = request.destination) {
-            is TestNavigation.Destination.SettingsSubPage -> {
+            is AppNavigation.Destination.SettingsSubPage -> {
                 // Exactly one sub-page wins the if/else-if chain: clear the
                 // siblings, or the currently-open screen silently keeps it.
                 showIconSettings = dest.key == "icon_picker"
                 showPromptSettings = dest.key == "prompt"
                 showPerAppSettings = dest.key == "per_app"
-                showExportSettings = dest.key == TestNavigation.SUBPAGE_KEY_EXPORT
+                showExportSettings = dest.key == AppNavigation.SUBPAGE_KEY_EXPORT
             }
-            is TestNavigation.Destination.SettingsSection -> {
+            is AppNavigation.Destination.SettingsSection -> {
                 // A section target needs the main Column composed: back out
                 // of any open sub-page first or the scroll anchor never lays
                 // out and the expand lands on a hidden screen.

@@ -11,33 +11,33 @@ import org.junit.Test
  * in TabRow order; a key added to the UI without a parser entry (or vice
  * versa) fails here.
  */
-class TestNavigationTest {
+class AppNavigationTest {
 
     @Test
     fun `tabs map by key in TabRow order`() {
-        assertEquals(TestNavigation.Destination.Tab(0), TestNavigation.parse("tab:history"))
-        assertEquals(TestNavigation.Destination.Tab(1), TestNavigation.parse("tab:models"))
-        assertEquals(TestNavigation.Destination.Tab(2), TestNavigation.parse("tab:settings"))
+        assertEquals(AppNavigation.Destination.Tab(0), AppNavigation.parse("tab:history"))
+        assertEquals(AppNavigation.Destination.Tab(1), AppNavigation.parse("tab:models"))
+        assertEquals(AppNavigation.Destination.Tab(2), AppNavigation.parse("tab:settings"))
     }
 
     @Test
     fun `models targets parse with the models prefix`() {
         assertEquals(
-            TestNavigation.Destination.ModelTarget("import"),
-            TestNavigation.parse("models:import"))
+            AppNavigation.Destination.ModelTarget("import"),
+            AppNavigation.parse("models:import"))
     }
 
     @Test
     fun `settings sections and subpages parse with the settings prefix`() {
-        TestNavigation.SECTION_KEYS.forEach { key ->
+        AppNavigation.SECTION_KEYS.forEach { key ->
             assertEquals(
-                TestNavigation.Destination.SettingsSection(key),
-                TestNavigation.parse("settings:$key"))
+                AppNavigation.Destination.SettingsSection(key),
+                AppNavigation.parse("settings:$key"))
         }
-        TestNavigation.SUBPAGE_KEYS.forEach { key ->
+        AppNavigation.SUBPAGE_KEYS.forEach { key ->
             assertEquals(
-                TestNavigation.Destination.SettingsSubPage(key),
-                TestNavigation.parse("settings:$key"))
+                AppNavigation.Destination.SettingsSubPage(key),
+                AppNavigation.parse("settings:$key"))
         }
     }
 
@@ -45,10 +45,10 @@ class TestNavigationTest {
     fun `the key tables match the shipped UI`() {
         // The four SettingsTab sections and the three sub-screens, pinned so
         // a UI rename without a parser update (or the reverse) fails here.
-        assertEquals(setOf("transcription", "appearance", "advanced", "feedback"), TestNavigation.SECTION_KEYS)
-        assertEquals(setOf("icon_picker", "prompt", "per_app", "export"), TestNavigation.SUBPAGE_KEYS)
-        assertEquals(setOf("import"), TestNavigation.MODEL_KEYS)
-        assertEquals(listOf("history", "models", "settings"), TestNavigation.TAB_KEYS)
+        assertEquals(setOf("transcription", "appearance", "advanced", "feedback"), AppNavigation.SECTION_KEYS)
+        assertEquals(setOf("icon_picker", "prompt", "per_app", "export"), AppNavigation.SUBPAGE_KEYS)
+        assertEquals(setOf("import"), AppNavigation.MODEL_KEYS)
+        assertEquals(listOf("history", "models", "settings"), AppNavigation.TAB_KEYS)
     }
 
     /** Dual-path source read (repo root or module subdirectory cwd), shared by the scans below. */
@@ -64,7 +64,7 @@ class TestNavigationTest {
         // capture at its composition site, or a nav silently no-ops. Source
         // scan (same shape as the manifest tests' file reads).
         val source = sourceOf("src/main/java/com/antivocale/app/ui/tabs/SettingsTab.kt")
-        TestNavigation.SECTION_KEYS.forEach { key ->
+        AppNavigation.SECTION_KEYS.forEach { key ->
             assertTrue(
                 "SettingsTab lacks the expand wiring for section '$key' (expandCounters[\"$key\"])",
                 source.contains("expandCounters[\"$key\"]"))
@@ -72,12 +72,12 @@ class TestNavigationTest {
                 "SettingsTab lacks the scroll-anchor capture for section '$key' (sectionOffsets[\"$key\"])",
                 source.contains("sectionOffsets[\"$key\"]"))
         }
-        TestNavigation.SUBPAGE_KEYS.forEach { key ->
+        AppNavigation.SUBPAGE_KEYS.forEach { key ->
             // The export branch is pinned by the shared constant (TASK-548),
             // so it appears in SettingsTab as the constant reference.
             val wired = source.contains("\"$key\"") ||
-                (key == TestNavigation.SUBPAGE_KEY_EXPORT &&
-                    source.contains("TestNavigation.SUBPAGE_KEY_EXPORT"))
+                (key == AppNavigation.SUBPAGE_KEY_EXPORT &&
+                    source.contains("AppNavigation.SUBPAGE_KEY_EXPORT"))
             assertTrue(
                 "SettingsTab lacks the sub-page branch for '$key'",
                 wired)
@@ -95,18 +95,18 @@ class TestNavigationTest {
         // with a literal hand-off next to an unrelated constant use.
         val source = sourceOf("src/main/java/com/antivocale/app/ui/MainScreen.kt")
         assertTrue(
-            "MainScreen's hint hand-off must construct SettingsSubPage with TestNavigation.SUBPAGE_KEY_EXPORT",
-            Regex("SettingsSubPage\\s*\\(\\s*TestNavigation\\.SUBPAGE_KEY_EXPORT")
+            "MainScreen's hint hand-off must construct SettingsSubPage with AppNavigation.SUBPAGE_KEY_EXPORT",
+            Regex("SettingsSubPage\\s*\\(\\s*AppNavigation\\.SUBPAGE_KEY_EXPORT")
                 .containsMatchIn(source))
     }
 
     @Test
     fun `unknown or malformed destinations are rejected, not guessed`() {
-        assertNull(TestNavigation.parse(null))
-        assertNull(TestNavigation.parse(""))
-        assertNull(TestNavigation.parse("tab:nonexistent"))
-        assertNull(TestNavigation.parse("settings:nonexistent"))
-        assertNull(TestNavigation.parse("models:nonexistent"))
-        assertNull(TestNavigation.parse("history")) // bare tab name without prefix
+        assertNull(AppNavigation.parse(null))
+        assertNull(AppNavigation.parse(""))
+        assertNull(AppNavigation.parse("tab:nonexistent"))
+        assertNull(AppNavigation.parse("settings:nonexistent"))
+        assertNull(AppNavigation.parse("models:nonexistent"))
+        assertNull(AppNavigation.parse("history")) // bare tab name without prefix
     }
 }

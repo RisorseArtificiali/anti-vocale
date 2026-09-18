@@ -3,20 +3,21 @@ package com.antivocale.app.ui
 import kotlinx.coroutines.flow.MutableStateFlow
 
 /**
- * TASK-486: the TEST_SPI navigation bridge. The TEST_SPI receiver (debug
- * source set) writes a destination token here via a MainActivity intent
- * extra; [MainScreen] consumes it and drives the tab bar, and [SettingsTab]
- * consumes the settings-scoped part (sub-page or section). Since TASK-548,
- * production UI hands NavRequests to the same consumers: the bridge is
- * debug-WRITE, shared-read.
+ * The TEST_SPI navigation bridge: DEBUG-WRITE, shared-read. The TEST_SPI
+ * receiver (debug source set) starts [com.antivocale.app.MainActivity] with
+ * the [EXTRA_TEST_NAV] extra; MainActivity writes the raw destination token
+ * into [pending]; [com.antivocale.app.ui.MainScreen] consumes it and routes
+ * through [AppNavigation].
+ *
+ * The navigation vocabulary itself (Destination, NavRequest, key tables,
+ * parse) lives in [AppNavigation]: production code depends on that, never on
+ * this bridge (TASK-558: the vocabulary used to sit next to the debug token
+ * and read as test-only tooling while release navigation depended on it).
  *
  * Release posture: the WRITE side (the intent-extra read in MainActivity) is
  * gated on BuildConfig.DEBUG and the receiver does not exist in release, so
- * nothing ever sets [pending] there. The consumer side is NOT debug-gated
- * since TASK-543: production UI (the capped-transcript auto-save hint)
- * hands NavRequests to SettingsTab in release too. The pending-driven
- * machinery that survives in release is the parse tables and inert state.
- * No manifest component, no receiver, no attack surface.
+ * nothing ever sets [pending] there. No manifest component, no receiver, no
+ * attack surface.
  *
  * Debug-build caveat (review 2026-09-12): when a nav cold-starts the task,
  * Android stores the intent as the Recents base intent and a later
@@ -29,67 +30,4 @@ object TestNavigation {
 
     /** One-shot destination token; consumed (nulled) by MainScreen. */
     val pending = MutableStateFlow<String?>(null)
-
-    /**
-     * The export sub-page key (TASK-543), pinned because three sites must
-     * agree: [SUBPAGE_KEYS], SettingsTab's comparison, and MainScreen's
-     * auto-save-hint hand-off. A drifted literal in any of them navigates
-     * nowhere, silently.
-     */
-    const val SUBPAGE_KEY_EXPORT = "export"
-
-    private val seqCounter = java.util.concurrent.atomic.AtomicLong(0)
-
-    /**
-     * A handed-off navigation request: the ALREADY-PARSED destination plus a
-     * sequence number (two identical commands must both fire, and a data
-     * class alone would be structurally equal). Consume-once contract: the
-     * consumer calls [onConsumed] as its first act, which nulls the request
-     * at the source; a tab re-entry therefore sees null, not a stale replay
-     * (a guard remembered inside the consumer would die with the tab under
-     * Crossfade and replay - found by review, 2026-09-12).
-     */
-    data class NavRequest(val destination: Destination, val seq: Long) {
-        companion object {
-            fun next(destination: Destination) = NavRequest(destination, seqCounter.incrementAndGet())
-        }
-    }
-
-    /** Settings sections reachable by key (single source for parser + UI). */
-    val SECTION_KEYS = setOf("transcription", "appearance", "advanced", "feedback")
-
-    /** Settings sub-pages reachable by key. */
-    val SUBPAGE_KEYS = setOf("icon_picker", "prompt", "per_app", SUBPAGE_KEY_EXPORT)
-
-    /** Models-tab targets reachable by key (single source for parser + UI). */
-    val MODEL_KEYS = setOf("import")
-
-    /** Main tabs by key, in TabRow order. */
-    val TAB_KEYS = listOf("history", "models", "settings")
-
-    /** The parsed destination; null when the token is unknown. */
-    sealed interface Destination {
-        data class Tab(val index: Int) : Destination
-        data class SettingsSubPage(val key: String) : Destination
-        data class SettingsSection(val key: String) : Destination
-        data class ModelTarget(val key: String) : Destination
-    }
-
-    fun parse(dest: String?): Destination? {
-        if (dest.isNullOrBlank()) return null
-        if (dest.startsWith("tab:")) {
-            TAB_KEYS.indexOf(dest.removePrefix("tab:")).takeIf { it >= 0 }
-                ?.let { return Destination.Tab(it) }
-        }
-        if (dest.startsWith("models:")) {
-            val key = dest.removePrefix("models:")
-            MODEL_KEYS.firstOrNull { it == key }?.let { return Destination.ModelTarget(it) }
-        }
-        if (dest.startsWith("settings:")) {
-            val key = dest.removePrefix("settings:")
-            SECTION_KEYS.firstOrNull { it == key }?.let { return Destination.SettingsSection(it) }
-            SUBPAGE_KEYS.firstOrNull { it == key }?.let { return Destination.SettingsSubPage(it) }
-        }
-        return null
-    }
 }

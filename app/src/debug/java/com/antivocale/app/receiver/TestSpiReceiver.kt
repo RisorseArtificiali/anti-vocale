@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.antivocale.app.ui.AppNavigation
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.PreferencesManager
@@ -80,7 +81,7 @@ class TestSpiReceiver : BroadcastReceiver() {
         fun ack(body: org.json.JSONObject.() -> Unit) =
             org.json.JSONObject().put("op", "nav").apply(body).toString()
         return runCatching {
-            if (com.antivocale.app.ui.TestNavigation.parse(dest) == null) {
+            if (com.antivocale.app.ui.AppNavigation.parse(dest) == null) {
                 return ack {
                     put("error", "unknown dest '$dest' (expected tab:history|models|settings, " +
                         "models:import, settings:<section>, or settings:<subpage>)")

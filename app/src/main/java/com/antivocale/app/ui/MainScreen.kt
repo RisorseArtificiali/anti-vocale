@@ -119,34 +119,34 @@ fun MainScreen(
     // TASK-486: the debug-SPI navigation signal (consumed exactly once; the
     // settings-scoped remainder is handed to the Settings tab).
     val testNav by TestNavigation.pending.collectAsState()
-    var settingsNavRequest by remember { mutableStateOf<TestNavigation.NavRequest?>(null) }
-    var modelsNavRequest by remember { mutableStateOf<TestNavigation.NavRequest?>(null) }
+    var settingsNavRequest by remember { mutableStateOf<AppNavigation.NavRequest?>(null) }
+    var modelsNavRequest by remember { mutableStateOf<AppNavigation.NavRequest?>(null) }
 
     // One routing rule for settings destinations, shared by the TEST_SPI
     // effect and production callers (the capped-transcript auto-save hint):
     // switch to the Settings tab and hand the destination to SettingsTab
     // through the consume-once NavRequest, never through the pending token
-    // (its write side is debug-only by contract, TestNavigation KDoc). The
+    // (its write side is debug-only by contract, AppNavigation KDoc). The
     // tab index DERIVES from TAB_KEYS so inserting a tab cannot silently
     // reroute every settings navigation. Accepted race (debug-only): a TEST_SPI
     // settings destination landing between a hint tap and SettingsTab's
     // composition overwrites the single in-flight NavRequest slot.
-    val settingsTabIndex = TestNavigation.TAB_KEYS.indexOf("settings")
-    fun openSettings(destination: TestNavigation.Destination) {
+    val settingsTabIndex = AppNavigation.TAB_KEYS.indexOf("settings")
+    fun openSettings(destination: AppNavigation.Destination) {
         selectedTabIndex = settingsTabIndex
-        settingsNavRequest = TestNavigation.NavRequest.next(destination)
+        settingsNavRequest = AppNavigation.NavRequest.next(destination)
     }
     LaunchedEffect(testNav) {
         val dest = testNav ?: return@LaunchedEffect
         TestNavigation.pending.value = null
-        when (val parsed = TestNavigation.parse(dest)) {
-            is TestNavigation.Destination.Tab -> selectedTabIndex = parsed.index
-            is TestNavigation.Destination.ModelTarget -> {
+        when (val parsed = AppNavigation.parse(dest)) {
+            is AppNavigation.Destination.Tab -> selectedTabIndex = parsed.index
+            is AppNavigation.Destination.ModelTarget -> {
                 selectedTabIndex = 1
-                modelsNavRequest = TestNavigation.NavRequest.next(parsed)
+                modelsNavRequest = AppNavigation.NavRequest.next(parsed)
             }
-            is TestNavigation.Destination.SettingsSubPage,
-            is TestNavigation.Destination.SettingsSection -> openSettings(parsed)
+            is AppNavigation.Destination.SettingsSubPage,
+            is AppNavigation.Destination.SettingsSection -> openSettings(parsed)
             null -> Unit
         }
     }
@@ -167,8 +167,8 @@ fun MainScreen(
                 tourRevealState = revealState,
                 onNavigateToSettings = {
                     openSettings(
-                        TestNavigation.Destination.SettingsSubPage(
-                            TestNavigation.SUBPAGE_KEY_EXPORT
+                        AppNavigation.Destination.SettingsSubPage(
+                            AppNavigation.SUBPAGE_KEY_EXPORT
                         )
                     )
                 },

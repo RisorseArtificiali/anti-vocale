@@ -11,7 +11,7 @@ import org.junit.Test
  * crash hit stock-English devices while all 11 translated copies were fine
  * (which is why the unit suite never formatted it).
  *
- * Source scan (same shape as TestNavigationTest's wiring checks): Android
+ * Source scan (same shape as AppNavigationTest's wiring checks): Android
  * positional placeholders are "%N$..."; a "%N" NOT followed by "$" is always
  * a typo in a string resource. Covers the strings.xml of every locale.
  */

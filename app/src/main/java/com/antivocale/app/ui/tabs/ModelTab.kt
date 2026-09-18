@@ -41,7 +41,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.text.style.TextDecoration
 import com.antivocale.app.R
-import com.antivocale.app.ui.TestNavigation
+import com.antivocale.app.ui.AppNavigation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.ModelDownloader
@@ -97,7 +97,7 @@ fun ModelTab(
     viewModel: ModelViewModel = hiltViewModel(),
     benchmarkViewModel: BenchmarkViewModel = hiltViewModel(),
     onNavigateToSettings: () -> Unit = {},
-    navRequest: TestNavigation.NavRequest? = null,
+    navRequest: AppNavigation.NavRequest? = null,
     onNavConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
@@ -546,7 +546,7 @@ fun ModelTab(
         LaunchedEffect(navRequest) {
             if (!com.antivocale.app.BuildConfig.DEBUG) return@LaunchedEffect
             val request = navRequest ?: return@LaunchedEffect
-            if (request.destination is TestNavigation.Destination.ModelTarget) {
+            if (request.destination is AppNavigation.Destination.ModelTarget) {
                 advancedExpanded = true
             }
         }
@@ -1285,7 +1285,7 @@ private fun LanguageEndonymDropdown(
 @Composable
 private fun ExternalModelsSection(
     viewModel: ModelViewModel,
-    navRequest: TestNavigation.NavRequest? = null,
+    navRequest: AppNavigation.NavRequest? = null,
     onNavConsumed: () -> Unit = {},
     activeBackendId: String,
     folderPicker: () -> Unit,
@@ -1305,7 +1305,7 @@ private fun ExternalModelsSection(
         if (!com.antivocale.app.BuildConfig.DEBUG) return@LaunchedEffect
         val request = navRequest ?: return@LaunchedEffect
         onNavConsumed()
-        if (request.destination is TestNavigation.Destination.ModelTarget) {
+        if (request.destination is AppNavigation.Destination.ModelTarget) {
             urlDialogOpen = true
         }
     }
