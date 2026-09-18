@@ -106,6 +106,7 @@ ES = f"{MODELS}/sherpa-onnx-zipformer-streaming-robust-es-v0"
 DE_W = f"{MODELS}/sherpa-onnx-whisper-tiny-de"
 RU = f"{MODELS}/sherpa-onnx-zipformer-ru-int8-2025-04-20"
 FR = f"{MODELS}/sherpa-onnx-streaming-zipformer-fr-kroko-2025-08-06"
+FA = f"{MODELS}/shenava-koochik-v1.5-rnnt"
 
 results = []
 
@@ -144,6 +145,17 @@ run("csukuangfj streaming-zipformer-fr-kroko (fp32)", "fr", True, lambda: sherpa
 run("fr-kroko on de clips (cross-check)", "de", True, lambda: sherpa_onnx.OnlineRecognizer.from_transducer(
     encoder=f"{FR}/encoder.onnx", decoder=f"{FR}/decoder.onnx", joiner=f"{FR}/joiner.onnx",
     tokens=f"{FR}/tokens.txt", num_threads=NUM_THREADS, provider="cpu"))
+
+# TASK-550: the Shenava Persian catalog entry. NeMo FastConformer RNNT, so
+# model_type="nemo_transducer" is REQUIRED (same as Parakeet/GigaAM: the NeMo
+# decoder carries no vocab_size metadata and the plain-transducer decoder-init
+# path exits 255).
+run("shenava-koochik-v1.5-rnnt (int8)", "fa", False, lambda: sherpa_onnx.OfflineRecognizer.from_transducer(
+    encoder=f"{FA}/encoder.int8.onnx",
+    decoder=f"{FA}/decoder.int8.onnx",
+    joiner=f"{FA}/joiner.int8.onnx",
+    tokens=f"{FA}/tokens.txt", num_threads=NUM_THREADS, provider="cpu",
+    model_type="nemo_transducer"))
 
 with open(f"{BASE}/results.json", "w") as f:
     json.dump(results, f, indent=1, ensure_ascii=False)

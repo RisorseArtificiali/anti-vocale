@@ -61,6 +61,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/sensevoice.json"
     },
     {
+      "name": "Shenava Koochik v1.5 Persian (NeMo RNNT int8, Apache-2.0)",
+      "languages": [
+        "fa"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/persian-small.json"
+    },
+    {
       "name": "Whisper Large v3 Turbo Arabic Dialectal (sherpa int8)",
       "languages": [
         "ar"

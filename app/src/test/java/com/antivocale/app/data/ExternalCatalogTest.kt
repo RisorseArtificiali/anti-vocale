@@ -139,7 +139,8 @@ class ExternalCatalogTest {
         // "NeMo Flash" to NVIDIA's canonical family naming)
         // + whisper tiny multilingual (TASK-475, low-RAM) + sense voice
         // small multilingual (TASK-476, zh/en/yue/ja/ko)
-        assertEquals(12, entries.size)
+        // + shenava persian transducer (TASK-550, desktop-validated on FLEURS fa)
+        assertEquals(13, entries.size)
         val sense = ExternalCatalog.filter(entries, "sense")
         assertEquals(1, sense.size)
         assertEquals(ModelFamily.SENSE_VOICE, sense[0].family)
@@ -150,6 +151,13 @@ class ExternalCatalogTest {
         val byCode = ExternalCatalog.filter(entries, "ar")
         assertEquals(arabic, byCode)
         assertEquals(ModelFamily.WHISPER, arabic[0].family)
+        // TASK-550: the fa code surfaces the Persian entry alone. The matcher
+        // prefix-matches name WORDS and language codes: no other entry may
+        // declare fa, and no name word here starts with "ar" or "fa"
+        // (matching "ar" would break the arabic isolation above).
+        val persian = ExternalCatalog.filter(entries, "fa")
+        assertEquals(1, persian.size)
+        assertEquals(ModelFamily.TRANSDUCER, persian[0].family)
         // "ry" is an inner substring of "Canary": word matching keeps it silent
         assertTrue(ExternalCatalog.filter(entries, "ry").isEmpty())
         // a real name word still finds the four flash entries...

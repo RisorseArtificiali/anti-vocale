@@ -1,0 +1,33 @@
+{
+  "name": "Shenava Koochik v1.5 Persian (NeMo RNNT int8, Apache-2.0)",
+  "family": "TRANSDUCER",
+  "modelType": "nemo_transducer",
+  "languages": ["fa"],
+  "options": {},
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/Reza2kn/Shenava-Koochik-v1.5-RNNT-sherpa-onnx/resolve/main/encoder.int8.onnx",
+      "sha256": "b9d975c1af77002f83897017e3adaaa6510148c6ba332df92b8d281369f2fdd3",
+      "size": 131342912
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/Reza2kn/Shenava-Koochik-v1.5-RNNT-sherpa-onnx/resolve/main/decoder.int8.onnx",
+      "sha256": "0adaad326a536dfbb30c67287e909b4e6f0775fccb8c3ca47270890364824947",
+      "size": 3956194
+    },
+    {
+      "name": "joiner.int8.onnx",
+      "url": "https://huggingface.co/Reza2kn/Shenava-Koochik-v1.5-RNNT-sherpa-onnx/resolve/main/joiner.int8.onnx",
+      "sha256": "e441ed265c961ff4a2436aa8bc36638e65849445e7a1f65cf263f0c310593dde",
+      "size": 1408514
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/Reza2kn/Shenava-Koochik-v1.5-RNNT-sherpa-onnx/resolve/main/tokens.txt",
+      "sha256": "8e192963f6e666dfa5721e5cbd4710bc1ef592460a45f08cefc94b2db16a6954",
+      "size": 12236
+    }
+  ]
+}

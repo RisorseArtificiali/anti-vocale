@@ -59,3 +59,23 @@ the regular and the "ort" variant ship phoneme inventories). The working Spanish
 small-class candidate is csukuangfj's streaming-zipformer-es-kroko: ORTHOGRAPHIC BPE
 tokens, **WER 6.8%** on the same 10 FLEURS clips, RTF 0.13. Caveats: fp32 only
 (148 MB; no int8 shipped), CC-BY-SA (license review before any in-app recommendation).
+
+## 2026-09-18 TASK-550: FA covered by Shenava Koochik v1.5 (15.9%)
+
+shenava-koochik-v1.5-rnnt int8 (NeMo FastConformer RNNT, Apache-2.0, ~130 MiB) is
+the first Persian-capable catalog entry. Loaded via OfflineRecognizer.from_transducer
+with model_type="nemo_transducer" (required: the NeMo decoder has no vocab_size
+metadata). fa clips fetched from the fa_ir validation parquet (the datasets-server
+rows API 500s on that config; same method as es).
+
+| Model | Lang | Size | Load | WER | RTF |
+|---|---|---|---|---|---|
+| shenava-koochik-v1.5-rnnt (int8) | fa | 130 MB | OK | 15.9 % | 0.04 |
+
+Persian measurement caveats (the number is honest but pessimistic):
+- FLEURS fa references join words with ZWNJ (U+200C) where the model emits plain
+  spaces; treating ZWNJ as a word separator gives 13.3% on the same clips.
+- The residual is dominated by digits: the references write Persian numerals
+  (۷۰, ۴۱) where the model emits number words (fa_010 alone scores 62% from this).
+RTF 0.04 = ~28x realtime on 4 desktop threads. Desktop-validated only; the catalog
+entry ships pending the on-device import + RTL render pass.
