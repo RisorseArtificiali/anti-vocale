@@ -195,10 +195,13 @@ fun SettingsTab(
     // SAF folder picker for transcript auto-save (issue #14, TASK-539)
     val outputFolderLauncher = rememberOutputFolderPickerLauncher(viewModel, "SettingsTab")
 
-    // Load models on first composition
+    // Load models on first composition; the battery-kill count joins here so
+    // the search filter sees it before the Advanced section ever composes
+    // (that section's content only exists when expanded AND visible).
     LaunchedEffect(Unit) {
         viewModel.loadCurrentModel()
         viewModel.scanAvailableModels()
+        viewModel.refreshBackgroundKills()
     }
 
     // Check if model is currently loaded (only relevant for LLM backend).
@@ -215,13 +218,8 @@ fun SettingsTab(
     // never run and were silent no-ops.
     val gemmaConfigured by viewModel.gemmaConfigured.collectAsState()
     // Collected here (not inside their sections) so the search filter's card
-    // groups can mirror each card's runtime condition exactly. The battery
-    // refresh must also live OUTSIDE the Advanced section: its content only
-    // composes when expanded AND visible, so a refresh down there never runs
-    // on a fresh start and the battery card is unfindable by search exactly
-    // for the user it targets (post-kill re-offer, TASK-336).
+    // groups can mirror each card's runtime condition exactly.
     val backgroundKills by viewModel.backgroundKills.collectAsState()
-    LaunchedEffect(Unit) { viewModel.refreshBackgroundKills() }
     val summarizeOn by viewModel.summarizeEnabled.collectAsState()
     val currentPunctuationMode by viewModel.currentPunctuationMode.collectAsState()
 
@@ -386,12 +384,15 @@ fun SettingsTab(
         }
         val feedbackSearchGroups = remember(context) {
             // One group for one Card: the count reports cards, and the
-            // Feedback rows do not filter individually.
+            // Feedback rows do not filter individually. The replay-tour
+            // button and the privacy note are part of the same card, so their
+            // strings match it too.
             listOf(
                 listOf(
                     R.string.settings_feedback_send_title, R.string.settings_feedback_version_title,
                     R.string.settings_feedback_license_title, R.string.settings_feedback_source_title,
                     R.string.settings_feedback_translation_title,
+                    R.string.settings_replay_tour, R.string.settings_feedback_privacy_note,
                 ).map { context.getString(it) }
             )
         }
