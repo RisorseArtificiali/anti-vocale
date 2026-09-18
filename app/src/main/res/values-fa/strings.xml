@@ -1,0 +1,1011 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Anti-Vocale</string>
+
+    <!-- Tab names -->
+    <string name="model_tab">مدل‌ها</string>
+    <string name="logs_tab">تاریخچه</string>
+    <string name="settings_tab">تنظیمات</string>
+
+    <!-- Model selection -->
+    <string name="select_model">انتخاب فایل مدل</string>
+    <string name="select_model_from_device">انتخاب فایل</string>
+
+    <!-- Custom transducer model (sideload) -->
+    <string name="load_model">بارگذاری مدل</string>
+    <string name="unload_model">تخلیه مدل</string>
+
+    <!-- Model status -->
+    <string name="model_status">وضعیت: %1$s</string>
+    <string name="model_path">مسیر: %1$s</string>
+    <string name="no_model_selected">هیچ مدلی انتخاب نشده است</string>
+    <string name="status_ready">آماده</string>
+    <string name="status_loading">در حال بارگذاری مدل…</string>
+    <string name="status_error">خطا</string>
+    <string name="status_unloaded">تخلیه شد</string>
+    <string name="status_model_selected">مدل انتخاب شد</string>
+    <string name="status_no_model">بدون مدل</string>
+
+    <!-- ViewModel status messages -->
+    <string name="parakeet_name">Parakeet TDT</string>
+    <string name="llm_backend_name">Gemma (LiteRT-LM)</string>
+    <string name="backend_model_ready">%1$s آماده است</string>
+    <string name="backend_model_not_found">مدل %1$s پیدا نشد</string>
+    <string name="saved_model_found">مدل ذخیره‌شده پیدا شد</string>
+    <string name="saved_model_not_found">مدل ذخیره‌شده پیدا نشد</string>
+    <string name="model_selected">مدل انتخاب‌شده: %1$s</string>
+    <string name="model_copy_failed">کپی فایل مدل ناموفق بود</string>
+    <string name="model_file_not_found">فایل مدل در این مسیر پیدا نشد: %1$s</string>
+    <string name="model_loading">در حال بارگذاری مدل در حافظه…</string>
+    <string name="model_ready_inference">مدل برای استنتاج آماده است</string>
+    <string name="model_load_failed">بارگذاری ناموفق بود: %1$s</string>
+    <string name="device_incompatible_title">دستگاه پشتیبانی‌نشده</string>
+    <string name="device_incompatible_arch">این برنامه به دستگاه ARM64 نیاز دارد. روی شبیه‌سازها یا دستگاه‌های x86 کار نمی‌کند.</string>
+    <string name="device_incompatible_ram">ممکن است این دستگاه حافظه کافی برای مدل‌های هوش مصنوعی محلی نداشته باشد. مدل‌های سبک‌تر (Parakeet) باید کار کنند؛ مدل‌های بزرگ‌تر ممکن است دچار مشکل شوند.</string>
+    <string name="model_unloaded">مدل تخلیه شد</string>
+    <string name="model_auto_unloaded">مدل به دلیل بی‌فعالیتی تخلیه شد</string>
+    <string name="model_externally_loaded">مدل آماده است (از بیرون بارگذاری شده)</string>
+    <string name="model_deleted_status">مدل حذف شد</string>
+    <string name="downloaded_model_selected">مدل دانلودشده انتخاب شد</string>
+
+    <!-- Settings error messages -->
+    <string name="error_save_settings">ذخیره تنظیمات ناموفق بود</string>
+    <string name="error_save_language">ذخیره ترجیح زبان ناموفق بود</string>
+    <string name="error_save_theme">ذخیره ترجیح پوسته ناموفق بود</string>
+    <string name="error_token_empty">توکن نمی‌تواند خالی باشد</string>
+    <string name="error_auth_cancelled">احراز هویت لغو شد</string>
+
+    <!-- Logs -->
+    <string name="logs_empty">هنوز درخواستی نیست</string>
+    <string name="request_text">درخواست متنی</string>
+    <string name="request_audio">درخواست صوتی</string>
+    <string name="logs_recent_requests">ورودی‌های اخیر (%1$d)</string>
+    <string name="logs_clear">پاک کردن</string>
+    <string name="logs_delete_entry">حذف ورودی</string>
+    <string name="logs_delete_confirmation">این ورودی حذف شود؟</string>
+    <string name="logs_delete_selected">حذف انتخاب‌شده‌ها</string>
+    <string name="logs_clear_confirmation">کل تاریخچه پاک شود؟ این کار قابل بازگشت نیست.</string>
+    <string name="logs_select_all">انتخاب همه</string>
+    <string name="logs_deselect_all">لغو انتخاب همه</string>
+    <string name="logs_entries_selected">%d مورد انتخاب شد</string>
+    <string name="logs_no_entries_selected">هیچ ورودی‌ای انتخاب نشده است</string>
+    <string name="logs_cleared">تاریخچه پاک شد</string>
+    <string name="logs_entry_deleted">ورودی حذف شد</string>
+    <plurals name="logs_entries_deleted">
+        <item quantity="one">%d ورودی حذف شد</item>
+        <item quantity="other">%d ورودی حذف شد</item>
+    </plurals>
+    <string name="logs_undo">واگردانی</string>
+    <string name="logs_cancel">لغو</string>
+    <string name="logs_confirm">تأیید</string>
+    <string name="logs_empty_hint">یک پیام صوتی را از یک پیام‌رسان هم‌رسانی کنید تا متن آن اینجا ظاهر شود</string>
+    <string name="logs_prompt_label">دستور:</string>
+    <string name="logs_result_label">نتیجه:</string>
+    <string name="logs_error_label">خطا:</string>
+    <string name="logs_unknown_error">خطای ناشناخته</string>
+    <string name="logs_status_queued">در صف</string>
+    <string name="logs_status_success">موفق</string>
+    <string name="logs_status_error">خطا</string>
+    <string name="logs_status_processing">در حال پردازش</string>
+    <string name="logs_original_label">اصل (پیش از نشانه‌گذاری):</string>
+    <string name="logs_summary_label">خلاصه:</string>
+    <string name="summary_skipped_context">خلاصه انجام نشد: متن رونویسی از طولی که مرحله خلاصه می‌تواند مدیریت کند بزرگ‌تر است.</string>
+    <string name="summary_skipped_no_model">خلاصه انجام نشد: هیچ مدل Gemma تنظیم نشده است. برای فعال شدن خلاصه‌ها آن را از زبانه مدل‌ها دانلود کنید.</string>
+    <string name="summary_skipped_failed">تولید خلاصه ناموفق بود؛ متن رونویسی سالم است.</string>
+    <string name="summary_skipped_guard">خلاصه انجام نشد: خلاصه تولیدشده خارج از محدوده طول مجاز بود (برای خلاصه زیادی کوتاه یا زیادی بلند).</string>
+    <string name="copy_summary">کپی خلاصه</string>
+    <string name="copy_original">کپی اصل</string>
+    <string name="logs_model_label">مدل: %1$s</string>
+    <string name="logs_transcription_cancelled">رونویسی لغو شد</string>
+    <string name="logs_search_placeholder">جستجوی ورودی‌ها…</string>
+    <string name="logs_search_no_results">ورودی‌ای پیدا نشد</string>
+    <string name="logs_search_no_results_hint">عبارت جستجوی دیگری را امتحان کنید</string>
+    <string name="browse_audio_content_description">انتخاب یک فایل صوتی برای رونویسی</string>
+    <string name="settings_replay_tour">پخش دوباره تور خوش‌آمدگویی</string>
+    <string name="tour_done">متوجه شدم</string>
+    <string name="tour_skip">رد کردن</string>
+    <string name="tour_next">بعدی</string>
+    <string name="tour_body_browse">پیام صوتی در دسترس ندارید؟ با این دکمه هر فایل صوتی را از حافظه خود انتخاب کنید.</string>
+    <string name="tour_title_browse">یا یک فایل انتخاب کنید</string>
+    <string name="tour_body_history">یک پیام صوتی از هر پیام‌رسانی هم‌رسانی کنید. متن رونویسی اینجا ظاهر می‌شود و وقتی آماده شد اعلان می‌گیرید.</string>
+    <string name="tour_title_history">پیام صوتی بفرستید</string>
+    <string name="tour_body_models">ابتدا یک مدل رونویسی از زبانه مدل‌ها دانلود کنید. Parakeet پیش‌فرض پیشنهادی است. مدل‌ها بزرگند، تا چند گیگابایت، اما هر مدل فقط یک بار دانلود می‌شود. به‌روزرسانی‌های برنامه هرگز نیاز به دانلود دوباره آن‌ها ندارند.</string>
+    <string name="tour_title_models">دانلود یک مدل</string>
+    <string name="tour_body_welcome">رونویسی کاملاً روی همین گوشی انجام می‌شود؛ صدای شما هرگز از آن خارج نمی‌شود. سه نکته کوتاه پیش از شروع.</string>
+    <string name="tour_title_welcome">به Anti-Vocale خوش آمدید</string>
+    <string name="voice_message_duration">پیام صوتی</string>
+    <string name="source_was_video">منبع: فایل ویدیویی</string>
+    <string name="processed_in">در %1$s پردازش شد</string>
+    <string name="transcript_render_capped">%1$d نویسه نخست نمایش داده شده، %2$d نویسه دیگر. برای متن کامل از کپی استفاده کنید.</string>
+    <string name="transcript_capped_autosave_hint">متن کامل رونویسی در ذخیره خودکار: تنظیمات ← ذخیره خودکار در پوشه</string>
+    <string name="transcript_capped_autosave_saved">متن کامل رونویسی به‌طور خودکار در پوشه شما ذخیره شد</string>
+    <string name="export_settings_title">ذخیره خودکار و برون‌بری</string>
+    <string name="export_settings_description">پوشه و قالب فایل رونویسی‌های ذخیره‌شده را انتخاب کنید</string>
+    <string name="error_folder_not_writable">نوشتن در این پوشه ممکن نیست. یک پوشه از حافظه دستگاه انتخاب کنید (نه میان‌بر دانلودها).</string>
+    <string name="language_phone_option">زبان گوشی (%1$s)</string>
+    <string name="today">امروز</string>
+    <string name="yesterday">دیروز، %1$s</string>
+    <string name="yesterday_label">دیروز</string>
+    <string name="time_seconds_ago">%1$d ثانیه پیش</string>
+    <string name="time_minutes_ago">%1$d دقیقه پیش</string>
+    <string name="time_hours_ago">%1$d ساعت پیش</string>
+
+    <!-- Model descriptions -->
+    <string name="model_desc_gemma_4_e2b">2.6GB - چندوجهی (متن + صدا)، نسل جدید، بهترین برای بیشتر دستگاه‌ها</string>
+    <string name="model_desc_gemma_4_e4b">3.7GB - چندوجهی (متن + صدا)، نسل جدید، کیفیت بالاتر</string>
+    <string name="model_desc_gemma_3n_e2b">3.3GB - چندوجهی (متن + صدا)، بهترین برای بیشتر دستگاه‌ها</string>
+    <string name="model_desc_gemma_3n_e4b">4.2GB - چندوجهی (متن + صدا)، کیفیت بالاتر</string>
+
+    <!-- Parakeet model -->
+    <string name="parakeet_title">Parakeet TDT</string>
+    <string name="parakeet_description">25 زبان • سریع • پیشنهادی</string>
+    <string name="parakeet_download">دانلود Parakeet TDT</string>
+    <string name="parakeet_download_confirm_title">Parakeet TDT دانلود شود؟</string>
+    <string name="parakeet_download_confirm_message">حدود %1$dMB دانلود خواهد شد. Parakeet برای رونویسی از Gemma سریع‌تر اما کم‌دقت‌تر است.</string>
+    <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
+    <string name="parakeet_smoothquant_description">~862MB • 25 زبان • پیشنهادی</string>
+    <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
+    <string name="parakeet_stock_description">~640MB • 25 زبان • جایگزین سبک‌تر</string>
+
+    <!-- Whisper model -->
+    <string name="whisper_title">Whisper</string>
+    <string name="whisper_description">تشخیص گفتار چندزبانه</string>
+    <string name="whisper_small_title">Whisper Small</string>
+    <string name="whisper_small_description">~358MB • دقت پایین‌تر، به‌ویژه در صدای دارای نویز • تشخیص خودکار زبان نامعتبر (پیش‌فرض: زبان برنامه) • فقط برای دستگاه‌های کم‌توان</string>
+    <string name="whisper_turbo_title">Whisper Turbo</string>
+    <string name="whisper_turbo_description">~988MB • کیفیتی نزدیک به large-v3 • چندزبانه متوازن</string>
+    <string name="whisper_medium_title">Whisper Medium</string>
+    <string name="whisper_medium_description">~903MB • دقت خوب • چندزبانه</string>
+    <string name="whisper_distil_large_v3_title">Distil Italian</string>
+    <string name="whisper_distil_large_v3_description">~939MB • 2 لایه دیکودر • سریع‌ترین • بهینه‌شده برای ایتالیایی</string>
+    <string name="whisper_download">دانلود Whisper</string>
+    <string name="whisper_download_confirm_title">%1$s دانلود شود؟</string>
+    <string name="whisper_download_confirm_message">حدود %1$dMB دانلود خواهد شد. Whisper پشتیبانی چندزبانه عالی با نشانه‌گذاری درست ارائه می‌دهد.</string>
+    <string name="whisper_extract_confirm_title">%1$s استخراج شود؟</string>
+    <string name="whisper_extract_confirm_message">فایل مدل قبلاً دانلود شده است. برای استفاده استخراج خواهد شد.</string>
+
+    <!-- Qwen3-ASR -->
+    <string name="qwen3_asr_title">Qwen3-ASR (52 زبان)</string>
+    <string name="qwen3_asr_description">52 زبان • دقت ضعیف برای ایتالیایی</string>
+    <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 52 زبان • دقت ضعیف برای ایتالیایی</string>
+    <string name="qwen3_asr_download_confirm_title">%1$s دانلود شود؟</string>
+    <string name="qwen3_asr_download_confirm_message">حدود %1$dMB دانلود خواهد شد. Qwen3-ASR از 52 زبان با دقت ضعیف برای ایتالیایی پشتیبانی می‌کند.</string>
+    <string name="qwen3_asr_download">دانلود Qwen3-ASR</string>
+    <string name="qwen3_asr_delete_message">مدل Qwen3-ASR حذف شود؟</string>
+    <string name="qwen3_asr_downloaded">%1$s دانلود شد</string>
+    <string name="qwen3_asr_deleted">%1$s حذف شد</string>
+
+    <!-- Nemotron 3.5 streaming -->
+    <string name="nemotron_name">Nemotron 3.5</string>
+    <string name="nemotron_title">Nemotron 3.5 (جریانی)</string>
+    <string name="nemotron_description">~640MB • ترنسدیوسر جریانی • کیفیت ایتالیایی آزمایشی</string>
+    <string name="nemotron_download_confirm_title">%1$s دانلود شود؟</string>
+    <string name="nemotron_download_confirm_message">حدود %1$dMB دانلود خواهد شد. Nemotron 3.5 یک مدل ASR چندزبانه جریانی است.</string>
+    <string name="nemotron_download">دانلود Nemotron</string>
+    <string name="nemotron_delete_message">مدل Nemotron 3.5 حذف شود؟</string>
+    <string name="nemotron_downloaded">%1$s دانلود شد</string>
+    <string name="nemotron_deleted">%1$s حذف شد</string>
+
+    <!-- GigaAM v3 -->
+    <string name="gigaam_title">GigaAM v3</string>
+    <string name="gigaam_description">~326MB • سریع • ASR روسی با نشانه‌گذاری</string>
+    <string name="gigaam_name">GigaAM v3</string>
+    <string name="gigaam_download_confirm_title">GigaAM v3 دانلود شود؟</string>
+    <string name="gigaam_download_confirm_message">حدود %1$dMB دانلود خواهد شد. GigaAM v3 یک مدل ASR فقط‌روسی از Sber با دقت عالی روی روسی است.</string>
+    <string name="gigaam_download">دانلود GigaAM</string>
+    <string name="gigaam_downloaded">%1$s دانلود شد</string>
+    <string name="gigaam_deleted">%1$s حذف شد</string>
+
+    <!-- Generic catalog section (catalog-driven sherpa-onnx models) -->
+    <string name="catalog_model_downloaded">%1$s دانلود شد</string>
+    <string name="catalog_model_deleted">%1$s حذف شد</string>
+    <string name="catalog_download_confirm_title">%1$s دانلود شود؟</string>
+    <string name="catalog_download_confirm_message">حدود %1$dMB دانلود خواهد شد.</string>
+    <string name="model_fit_no_fit">این مدل احتمالاً روی این دستگاه اجرا نمی‌شود: رم آن کمتر از مقدار لازم مدل است.</string>
+    <string name="model_fit_tight">هشدار: این مدل درست در محدوده رم این دستگاه جا می‌گیرد؛ زیر فشار حافظه ممکن است از کار بیفتد.</string>
+    <string name="catalog_extract_confirm_title">%1$s استخراج شود؟</string>
+    <string name="catalog_extract_confirm_message">فایل مدل قبلاً دانلود شده است. برای استفاده استخراج خواهد شد.</string>
+
+    <!-- Download status -->
+    <string name="download_status_downloading">در حال دانلود…</string>
+    <string name="download_status_extracting">در حال استخراج %1$s…</string>
+    <string name="download_status_extracting_files">در حال استخراج فایل‌ها…</string>
+    <string name="download_status_copying_file">در حال کپی %1$s…</string>
+    <string name="download_status_copying_files">در حال کپی فایل‌ها…</string>
+    <string name="download_status_connecting">در حال اتصال…</string>
+    <string name="download_status_file_progress">%1$d/%2$d</string>
+    <string name="download_status_checking_access">در حال بررسی دسترسی…</string>
+    <string name="download_status_retrying">تلاش مجدد (%1$d/%2$d)…</string>
+    <string name="download_status_resuming">از سرگیری دانلود…</string>
+    <string name="model_requires_auth">این مدل به حساب HuggingFace نیاز دارد</string>
+    <string name="settings_action">تنظیمات</string>
+
+    <!-- Download rate/ETA/partial -->
+    <string name="download_rate">%1$s/ثانیه</string>
+    <string name="download_eta">%1$s باقی مانده</string>
+    <string name="download_eta_less_than_minute">کمتر از 1 دقیقه باقی مانده</string>
+    <string name="download_partial">دانلود در %1$d%% متوقف شد (%2$s / %3$s)</string>
+    <string name="download_resume">از سرگیری دانلود</string>
+    <string name="download_clear_partial">پاک کردن</string>
+    <string name="download_partial_detected">دانلود نیمه‌کاره شناسایی شد</string>
+    <string name="gemma_download_confirm_title">%1$s دانلود شود؟</string>
+    <string name="gemma_download_confirm_message">حدود %1$dMB دانلود خواهد شد. مدل‌های Gemma LLMهای کاملی با قابلیت‌های پیشرفته هستند اما فضای بیشتری می‌خواهند.</string>
+
+    <!-- Transcription -->
+    <string name="share_transcription">هم‌رسانی</string>
+    <string name="copy_transcription">کپی در کلیپ‌بورد</string>
+    <string name="copied_to_clipboard">در کلیپ‌بورد کپی شد</string>
+    <string name="transcription_streamed_without_vad">بدون حذف سکوت</string>
+    <string name="audio_received_for_transcription">صدا برای رونویسی دریافت شد</string>
+    <string name="transcription_complete">رونویسی کامل شد</string>
+    <plurals name="transcription_partial">
+        <item quantity="one">رونویسی کامل نشد (%1$d قطعه ناموفق)</item>
+        <item quantity="other">رونویسی کامل نشد (%1$d قطعه ناموفق)</item>
+    </plurals>
+    <string name="transcription_partial_chip">ناقص</string>
+    <string name="transcription_failed">رونویسی ناموفق بود</string>
+    <string name="error_model_load">ممکن است فایل مدل خراب باشد یا قالب آن نادرست باشد. دانلود دوباره آن را از زبانه مدل امتحان کنید.</string>
+    <string name="error_model_corrupt_healed">برخی فایل‌های مدل خراب بودند و برنامه آن‌ها را حذف کرد. زبانه مدل‌ها را باز کنید و مدل را دوباره دانلود کنید.</string>
+    <string name="error_native">هنگام رونویسی خطای داخلی رخ داد. اگر ادامه داشت، مدل دیگری را امتحان کنید.</string>
+    <string name="error_not_initialized">هیچ مدلی بارگذاری نشده است. برای دانلود یا انتخاب مدل، زبانه مدل را باز کنید.</string>
+    <string name="error_model_unavailable">مدل انتخاب‌شده دیگر در دسترس نیست. زبانه مدل را باز کنید و مدل دیگری انتخاب کنید.</string>
+    <string name="error_audio_too_long_streaming">صداهای بلندتر از 2 ساعت پشتیبانی نمی‌شوند.</string>
+    <string name="error_audio_too_long_whole_file">این صدا از سقف %1$d دقیقه‌ای که این دستگاه در یک مرحله می‌تواند پردازش کند بلندتر است (سقف به حافظه در دسترس بستگی دارد). برای ضبط‌های طولانی از مدلی استفاده کنید که برنامه صدا را خودکار بخش می‌کند، با VAD خاموش.</string>
+    <string name="error_file_too_large">فایل‌های صوتی بزرگ‌تر از 2GB پشتیبانی نمی‌شوند.</string>
+    <string name="error_file_not_found">فایل صوتی پیدا نشد</string>
+    <string name="error_invalid_format">قالب صدا تعیین نشد</string>
+    <string name="error_no_audio_track">هیچ تراک صوتی در فایل پیدا نشد</string>
+    <string name="error_duration_unknown">مدت صدا تعیین نشد</string>
+    <string name="error_conversion_failed">تبدیل ناموفق بود: %1$s</string>
+    <string name="error_chunk_failed">قطعه %1$d ناموفق بود: %2$s</string>
+    <string name="error_storage_full">فضای آزاد برای وارد کردن این فایل کافی نیست (حدود %1$d MB لازم است).</string>
+    <string name="dialog_long_audio_title">صدای طولانی</string>
+    <string name="dialog_long_audio_message">این صدا %1$d دقیقه است. با %2$s حدود %3$d دقیقه طول می‌کشد. وقتی آماده شد اعلان دریافت می‌کنید.</string>
+    <string name="dialog_long_audio_roughly">تخمین تقریبی: این دستگاه هنوز برای مدل انتخاب‌شده در حال کالیبره شدن است.</string>
+    <string name="dialog_long_audio_continue">ادامه</string>
+    <string name="dialog_long_audio_cancel">لغو</string>
+    <string name="native_crash_model_warning">برنامه در آخرین رونویسی به‌طور غیرمنتظره بسته شد. اگر هنگام بارگذاری مدل اتفاق افتاده باشد، ممکن است فایل خراب باشد. دانلود دوباره آن را از زبانه مدل امتحان کنید.</string>
+    <string name="oom_crash_title">برنامه به دلیل کمبود حافظه بسته شد</string>
+    <string name="oom_crash_warning">برنامه بسته شد چون حافظه آزاد دستگاه کم بود. پیش از رونویسی دوباره، برنامه‌های دیگر را ببندید یا از مدل کوچک‌تری استفاده کنید.</string>
+    <string name="native_crash_title">بسته شدن غیرمنتظره</string>
+    <string name="native_crash_go_to_model">رفتن به زبانه مدل</string>
+    <string name="model_load_low_memory">حافظه آزاد برای این مدل کافی نیست (%1$s موجود، حدود %2$s لازم است). برنامه‌های دیگر را ببندید یا از مدل کوچک‌تری استفاده کنید. بارگذاری اجباری در تنظیمات در دسترس است.</string>
+    <string name="transcribe_low_memory">حافظه آزاد برای رونویسی با این مدل کافی نیست (حدود %1$s آزاد، %2$s لازم است). برنامه‌های دیگر را ببندید و دوباره امتحان کنید، یا بارگذاری اجباری مدل را در تنظیمات روشن کنید.</string>
+    <string name="force_model_load">بارگذاری اجباری مدل</string>
+    <string name="force_model_load_desc">مدل را حتی وقتی حافظه کافی به نظر نمی‌رسد بارگذاری می‌کند. ممکن است روی دستگاه‌های کم‌رم باعث بسته شدن برنامه شود.</string>
+    <string name="copy">کپی</string>
+    <string name="share">هم‌رسانی</string>
+    <string name="char_counter">%1$d از %2$d نویسه</string>
+    <string name="page_counter">صفحه %1$d از %2$d</string>
+    <string name="detected_language">شناسایی‌شده: %1$s</string>
+    <string name="confidence_low">اطمینان کم</string>
+    <string name="no_audio_file">هیچ فایل صوتی دریافت نشد</string>
+    <string name="failed_to_process_audio">پردازش فایل صوتی ناموفق بود</string>
+    <string name="unsupported_audio_format">پیام‌های صوتی پیام‌رسان‌ها پشتیبانی می‌شوند؛ .%1$s قالب پشتیبانی‌شده‌ای نیست.</string>
+    <string name="unknown_audio_format">قالب صدا شناسایی نشد. صدا را از یک پیام‌رسان هم‌رسانی کنید.</string>
+    <string name="transcription_started">رونویسی آغاز شد…</string>
+    <string name="added_to_queue">به صف اضافه شد…</string>
+    <string name="processing_chunk">در حال پردازش قطعه %1$d/%2$d…</string>
+    <string name="processing_audio">در حال پردازش صدا…</string>
+    <string name="processing_request">در حال پردازش درخواست %1$s…</string>
+    <string name="processing_queue_item">در حال پردازش %1$d از %2$d…</string>
+    <string name="processing_queue_item_audio">در حال پردازش صدا (%1$d از %2$d)…</string>
+    <string name="processing_queue_chunk">در حال پردازش قطعه %1$d/%2$d (%3$d از %4$d)…</string>
+    <plurals name="queued_count">
+        <item quantity="one">%1$d در صف</item>
+        <item quantity="other">%1$d در صف</item>
+    </plurals>
+    <string name="generating_text">در حال تولید پاسخ متنی…</string>
+
+    <!-- Model Tab - Download section -->
+    <string name="download_models">مدل‌های Gemma</string>
+    <string name="gemma_advanced_features_description">LLMهای چندوجهی کامل با قابلیت‌های پیشرفته: رونویسی، تبدیل و غنی‌سازی متن.</string>
+    <string name="model_limit_chunked">بدون محدودیت: صدای طولانی‌تر خودکار بخش می‌شود</string>
+    <string name="requires_huggingface_token">به توکن HuggingFace نیاز دارد.</string>
+    <string name="add_in_settings">در تنظیمات اضافه کنید</string>
+    <string name="recommended">پیشنهادی</string>
+    <string name="best_italian_badge">بهترین ایتالیایی</string>
+    <string name="downloading">در حال دانلود…</string>
+    <string name="connecting_to_huggingface">در حال اتصال به HuggingFace…</string>
+    <string name="cancel_download">لغو دانلود</string>
+    <string name="cancel_extract">لغو استخراج</string>
+    <string name="extract_model">استخراج</string>
+    <string name="use_model">استفاده از مدل</string>
+    <string name="active_badge">فعال</string>
+    <string name="model_selected_message">%1$s انتخاب شد</string>
+    <string name="model_use_missing_files">فایل‌های مدل %1$s مفقود یا ناقص‌اند. این نسخه را از زبانه مدل دوباره دانلود کنید.</string>
+    <string name="delete">حذف</string>
+    <string name="download">دانلود</string>
+    <string name="model_update_button">به‌روزرسانی</string>
+    <string name="gemma_update_confirm_title">به‌روزرسانی %1$s</string>
+    <string name="gemma_update_confirm_message">نسخه سریع‌تری با رمزگشایی حدسی در دسترس است. دوباره دانلود شود (~%1$d MB)؟</string>
+    <string name="view">مشاهده</string>
+
+    <!-- Model Tab - Info labels -->
+    <string name="label_filename">نام فایل</string>
+    <string name="label_supports_audio">پشتیبانی از صدا</string>
+    <string name="label_yes_multimodal">بله (چندوجهی)</string>
+    <string name="label_no_text_only">خیر (فقط متن)</string>
+    <string name="label_huggingface">HuggingFace</string>
+    <string name="label_ai_gallery_name">نام AI Gallery</string>
+    <string name="show_less">نمایش کمتر</string>
+    <string name="show_more">نمایش بیشتر</string>
+
+    <!-- Model Tab - Delete dialog -->
+    <string name="dialog_delete_title">مدل حذف شود؟</string>
+    <string name="dialog_delete_message">این کار «%1$s» را برای همیشه از دستگاه شما حذف می‌کند. بعداً می‌توانید دوباره آن را دانلود کنید.</string>
+    <string name="action_delete">حذف</string>
+    <string name="action_cancel">لغو</string>
+    <!-- Chunk navigation in the in-progress notification (TASK-242) -->
+    <string name="chunk_nav_prev">قبلی</string>
+    <string name="chunk_nav_next">بعدی</string>
+    <string name="clear_search">پاک کردن جستجو</string>
+    <string name="chunk_nav_live">آخرین</string>
+    <string name="chunk_nav_pinned_subtext">قطعه %1$d از %2$d · زنده %3$d از %2$d</string>
+    <string name="chunk_nav_live_subtext">زنده · قطعه %1$d از %2$d</string>
+    <string name="chunk_nav_empty">متنی برای این قطعه نیست</string>
+
+    <!-- Settings - Section titles -->
+    <string name="settings_section_transcription">رونویسی</string>
+    <string name="settings_section_appearance">ظاهر</string>
+    <string name="settings_section_advanced">پیشرفته</string>
+    <string name="settings_section_feedback">بازخورد و درباره برنامه</string>
+    <string name="settings_feedback_send_title">ارسال بازخورد / گزارش مشکل</string>
+    <string name="settings_feedback_send_description">برنامه ایمیل شما را با جزئیات از پیش پرشده باز می‌کند</string>
+    <string name="settings_feedback_translation_title">گزارش ترجمه نادرست</string>
+    <string name="settings_feedback_translation_description">زبان برنامه در حال استفاده را به ما می‌گوید</string>
+    <string name="settings_feedback_source_title">کد منبع</string>
+    <string name="settings_feedback_license_title">مجوز</string>
+    <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">نسخه</string>
+    <string name="settings_feedback_privacy_note">بدون اقدام شما چیزی ارسال نمی‌شود؛ این ایمیل را برنامه ایمیل شما می‌فرستد.</string>
+    <string name="settings_feedback_address_copied">برنامه ایمیل پیدا نشد. نشانی در کلیپ‌بورد کپی شد: %1$s</string>
+    <string name="settings_feedback_body_version">نسخه برنامه</string>
+    <string name="settings_feedback_body_android">اندروید</string>
+    <string name="settings_feedback_body_device">دستگاه</string>
+    <string name="settings_feedback_body_locale">زبان</string>
+    <string name="settings_feedback_body_model">مدل فعال</string>
+    <string name="settings_feedback_body_your_message">پیام شما:</string>
+    <string name="settings_feedback_body_note">اگر ترجیح می‌دهید می‌توانید جزئیات فنی بالا را حذف کنید.</string>
+    <string name="oauth_connected">OAuth متصل است</string>
+
+    <!-- Settings Tab - Model status -->
+    <string name="model_loaded">مدل بارگذاری شد</string>
+    <string name="model_not_loaded">مدل تخلیه شده (در صورت نیاز خودکار بارگذاری می‌شود)</string>
+    <string name="auto_unload_in">تخلیه خودکار تا: %1$d دقیقه و %2$d ثانیه</string>
+    <string name="load_model_from_tab">مدل در صورت نیاز خودکار بارگذاری می‌شود. تخلیه آن حافظه آزاد می‌کند.</string>
+
+    <!-- Settings Tab - Active Model -->
+    <string name="active_model">مدل فعال</string>
+    <string name="no_model_selected_error">هیچ مدلی انتخاب نشده است</string>
+    <string name="available_models">مدل‌های در دسترس:</string>
+    <string name="no_models_found">مدلی پیدا نشد. از زبانه مدل یک مدل دانلود کنید یا مدلی اضافه کنید.</string>
+    <string name="manage_models">مدیریت مدل‌ها</string>
+    <string name="source_hf">HF</string>
+    <string name="source_gallery">گالری</string>
+
+    <!-- Settings Tab - HuggingFace Authentication -->
+    <string name="huggingface_auth">احراز هویت HuggingFace</string>
+    <string name="huggingface_auth_description">فقط برای دانلود مدل‌ها از HuggingFace لازم است. مدل‌های محلی بدون ورود کار می‌کنند.</string>
+    <string name="setup_guide">راهنمای راه‌اندازی</string>
+    <string name="setup_step1">1. روی «ورود با HuggingFace» در پایین بزنید</string>
+    <string name="setup_step2">2. به حساب HuggingFace خود وارد شوید</string>
+    <string name="setup_step3">3. به برنامه اجازه دهید</string>
+    <string name="setup_step4">4. به‌طور خودکار بازگردانده می‌شوید</string>
+    <string name="token_valid">توکن معتبر است</string>
+    <string name="username_label">نام کاربری: %1$s</string>
+    <string name="token_label">توکن: %1$s</string>
+    <string name="expires_label">انقضا: %1$s</string>
+    <string name="expired">منقضی شد</string>
+    <string name="login_with_huggingface">ورود با HuggingFace</string>
+    <string name="oauth_login_description">ورود سریع از طریق مرورگر. اگر قبلاً به HuggingFace وارد شده باشید، تأیید فقط چند ثانیه طول می‌کشد.</string>
+    <string name="create_account_link">حساب ندارید؟ در huggingface.co یکی بسازید</string>
+    <string name="authenticating">در حال احراز هویت با HuggingFace…</string>
+    <string name="logged_in_as">وارد شده‌اید به عنوان %1$s</string>
+    <string name="logout">خروج</string>
+    <string name="clear_token">پاک کردن توکن</string>
+
+    <!-- Settings Tab - Manual Token -->
+    <string name="advanced_manual_token">پیشرفته: ورود دستی توکن</string>
+    <string name="hide_advanced">پنهان کردن پیشرفته: توکن دستی</string>
+    <string name="manual_token_scope_info">برای توکن‌های دستی، دامنه «read» برای دانلود مدل‌ها لازم است.</string>
+    <string name="huggingface_token_label">توکن HuggingFace</string>
+    <string name="token_placeholder">hf_…</string>
+    <string name="paste_from_clipboard">چسباندن از کلیپ‌بورد</string>
+    <string name="show_token">نمایش توکن</string>
+    <string name="hide_token">پنهان کردن توکن</string>
+    <string name="create_token">ساخت توکن</string>
+    <string name="get_token">دریافت توکن</string>
+    <string name="retry">تلاش دوباره</string>
+    <string name="validating">در حال اعتبارسنجی…</string>
+    <string name="validate_and_save">اعتبارسنجی و ذخیره</string>
+    <string name="validating_token">در حال اعتبارسنجی توکن…</string>
+
+    <!-- Settings Tab - Timeout -->
+    <string name="auto_unload_timeout">تخلیه خودکار</string>
+    <string name="timeout_description">مدل پس از مدت بی‌کاری تخلیه می‌شود و با استفاده بعدی برمی‌گردد.</string>
+    <string name="timeout_1_minute">1 دقیقه</string>
+    <string name="timeout_1_hour">1 ساعت</string>
+    <plurals name="timeout_minutes">
+        <item quantity="one">%1$d دقیقه</item>
+        <item quantity="other">%1$d دقیقه</item>
+    </plurals>
+
+    <!-- Settings - Inference Threads -->
+    <string name="thread_count_title">رشته‌های استنتاج</string>
+    <string name="thread_count_description">تعداد رشته‌های CPU برای رونویسی. مقادیر بالاتر پردازش را سریع‌تر و بار را بیشتر می‌کند.</string>
+    <string name="thread_count_auto">%1$d (تشخیص خودکار)</string>
+    <string name="thread_count_value">%1$d</string>
+
+    <string name="inference_provider_title">موتور استنتاج</string>
+    <string name="inference_provider_description">پشتیبان اجرا برای استنتاج ONNX. NNAPI ممکن است از NPU/GPU دستگاه استفاده کند، اما برای برخی مدل‌ها از CPU کندتر است.</string>
+    <string name="inference_provider_auto">خودکار (CPU)</string>
+    <string name="inference_provider_nnapi">NNAPI (شتاب سخت‌افزاری)</string>
+    <string name="inference_provider_cpu">فقط CPU</string>
+
+    <string name="saving">در حال ذخیره…</string>
+    <string name="settings_saved">تنظیمات ذخیره شد</string>
+    <string name="save">ذخیره</string>
+
+    <!-- Settings Tab - Auto-Copy -->
+    <string name="auto_copy_title">کپی خودکار</string>
+    <string name="auto_copy_description">متن نهایی را در کلیپ‌بورد کپی می‌کند. کپی دستی از اعلان همچنان در دسترس است.</string>
+
+    <!-- Settings Tab - VAD -->
+    <!-- Settings Tab - Punctuation (TASK-276) -->
+    <string name="punctuation_status">در حال قالب‌بندی با هوش مصنوعی…</string>
+    <string name="punctuation_mode_title">نشانه‌گذاری و قالب‌بندی</string>
+    <string name="punctuation_mode_description">متن رونویسی‌های بدون نشانه‌گذاری را با مدل Gemma بازنویسی می‌کند. حالت خودکار فقط برای مدل‌هایی که نشانه‌گذاری نمی‌کنند اجرا می‌شود (نیازمند دانلود Gemma).</string>
+    <string name="punctuation_mode_off">خاموش</string>
+    <string name="punctuation_mode_auto">خودکار</string>
+    <string name="punctuation_mode_always">همیشه</string>
+    <string name="punctuation_prompt_title">دستور نشانه‌گذاری</string>
+    <string name="punctuation_prompt_description">دستور مرحله نشانه‌گذاری. برای استفاده از دستور داخلی خالی بگذارید.</string>
+    <string name="punctuation_prompt_placeholder">دستور داخلی</string>
+    <string name="summary_prompt_title">دستور خلاصه</string>
+    <string name="summary_prompt_description">دستور خلاصه‌سازی هوش مصنوعی را جایگزین کنید. خالی یعنی دستور داخلی (دو سه جمله).</string>
+    <string name="punctuation_default_prompt">به این رونویسی نشانه‌گذاری و بزرگ‌نویسی حروف اضافه کنید. هر کلمه را دقیقاً همان‌طور که نوشته شده نگه دارید؛ چیزی را تصحیح، ترجمه، اضافه یا حذف نکنید. فقط رونویسی اصلاح‌شده را برگردانید.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">خلاصه‌کردن رونویسی‌های طولانی</string>
+    <string name="summarize_description">با مدل Gemma یک خلاصه کوتاه هوش مصنوعی به رونویسی‌های طولانی اضافه می‌کند (نیازمند دانلود Gemma).</string>
+    <string name="summarize_status">در حال خلاصه‌سازی با هوش مصنوعی…</string>
+    <string name="summary_default_prompt">این رونویسی را در 2 تا 3 جمله، به زبان خودِ رونویسی خلاصه کنید. نام‌ها و اعداد را حفظ کنید. فقط خلاصه را برگردانید.</string>
+    <string name="vad_title">حذف سکوت (VAD)</string>
+    <string name="vad_description">بخش‌های ساکت پیام‌های صوتی را پیش از رونویسی حذف می‌کند. زمان پردازش را کم و دقت را بهتر می‌کند.</string>
+
+    <!-- Settings Tab - Default Prompt -->
+    <string name="default_prompt_title">دستور پیش‌فرض</string>
+    <string name="default_prompt_description">دستوری که هنگام رونویسی به مدل داده می‌شود. اگر خالی باشد، دستور داخلی استفاده می‌شود.</string>
+    <string name="default_prompt_placeholder">مثلاً این گفتار را رونویسی کن:</string>
+    <string name="default_prompt_chars">%1$d / 500</string>
+    <string name="default_prompt_compatibility_info">فقط برای مدل‌های LLM (Gemma) اعمال می‌شود. مدل‌های Whisper و Parakeet این تنظیم را نادیده می‌گیرند.</string>
+    <string name="current_default_prompt_label">در حال حاضر در استفاده:</string>
+    <string name="default_system_prompt">این گفتار را رونویسی کن:</string>
+    <string name="builtin_default_prompt">این گفتار را رونویسی کن: (پیش‌فرض داخلی)</string>
+    <string name="example_prompts_title">دستورهای نمونه</string>
+    <string name="example_prompts_description">برای استفاده، روی یک دستور بزنید</string>
+    <string name="example_prompt_transcribe">این صدا را دقیق و به زبان اصلی رونویسی کن.</string>
+    <string name="example_prompt_summarize">این پیام صوتی را رونویسی و نکات کلیدی آن را کوتاه خلاصه کن.</string>
+    <string name="example_prompt_formal">این صدا را رسمی و تمیز رونویسی کن. کلمات پرکننده و شروع‌های نیمه‌کاره را حذف کن.</string>
+    <string name="example_prompt_translate_en">این صدا را رونویسی و به انگلیسی ترجمه کن.</string>
+    <string name="example_prompt_translate_it">این صدا را رونویسی و به ایتالیایی ترجمه کن.</string>
+    <string name="example_prompt_notes">این صدا را رونویسی و به شکل یادداشت‌های گلوله‌ای قالب‌بندی کن.</string>
+    <string name="prompt_applied">دستور اعمال شد</string>
+
+    <!-- Settings Tab - Preload Info -->
+    <string name="preload_title">بارگذاری خودکار و از پیش</string>
+    <string name="preload_description">مدل وقتی درخواستی می‌رسد و در حافظه نیست، خودکار بارگذاری می‌شود. همچنین می‌توانید مدل را صریحاً از پیش بارگذاری کنید:</string>
+    <string name="via_tasker">از طریق Tasker:</string>
+    <string name="via_adb">از طریق ADB:</string>
+
+    <!-- Settings Tab - Language -->
+    <string name="language_title">زبان</string>
+    <string name="language_description">زبان نمایش برنامه را انتخاب کنید.</string>
+    <string name="language_system">پیش‌فرض سیستم</string>
+
+    <!-- Settings Tab - Transcription Language -->
+    <string name="transcription_language_title">زبان رونویسی</string>
+    <string name="transcription_language_auto">تشخیص خودکار</string>
+    <string name="transcription_language_no_conditioning">مدل فعال زبان را خودکار تشخیص می‌دهد. این تنظیم برای مدل‌های Whisper و مدل جریانی اعمال می‌شود.</string>
+    <string name="transcription_language_unsupported_pin">مدل فعال از این زبان پشتیبانی نمی‌کند. یک زبان پشتیبانی‌شده یا تشخیص خودکار را انتخاب کنید؛ انتخاب شما تا زمان تغییر آن حفظ می‌شود.</string>
+    <string name="transcription_language_forced_hint">این زبان را تحمیل می‌کند: صدای به زبان دیگر ممکن است با افت کیفیت یا به شکل ترجمه‌شده دربیاید. تشخیص خودکار را ترجیح دهید، مگر اینکه بدعمل کند.</string>
+
+    <!-- Settings Tab - Theme -->
+    <string name="theme_title">پوسته</string>
+    <string name="theme_description">پوسته رنگی برنامه را انتخاب کنید.</string>
+    <string name="theme_mode_title">حالت پوسته</string>
+    <string name="theme_mode_description">دنبال تنظیم سیستم بروید، یا تیره یا روشن را اجبار کنید.</string>
+    <string name="theme_default">پیش‌فرض (نیلی)</string>
+    <string name="theme_whatsapp">WhatsApp</string>
+    <string name="theme_telegram">Telegram</string>
+
+    <!-- Settings Tab - App icon (TASK-392) -->
+    <string name="app_icon_title">نماد برنامه</string>
+    <string name="app_icon_note">تغییر نماد ممکن است در برخی لانچرها موقتاً آن را پنهان کند؛ صفحه فروشگاه نماد پیش‌فرض را نگه می‌دارد.</string>
+    <string name="app_icon_variant_default">پیش‌فرض</string>
+    <string name="app_icon_variant_wavecut">موج صوتی قطع‌شده</string>
+    <string name="app_icon_variant_crossed">موج صوتی خط‌خورده</string>
+    <string name="app_icon_variant_textblock">از موج تا متن</string>
+    <string name="app_icon_variant_monogram">تک‌نگاره AV</string>
+    <string name="app_icon_variant_capsule">پیام صوتی شکسته</string>
+    <string name="app_icon_variant_mutebar">نوار بی‌صدا</string>
+
+    <!-- Per-App Settings -->
+    <string name="per_app_settings_title">تنظیمات اختصاصی هر برنامه</string>
+    <string name="per_app_settings_description">رفتار اعلان‌ها را برای هر برنامه شخصی‌سازی کنید</string>
+    <string name="per_app_settings_info">برای پیکربندی اعلان‌های یک برنامه، روی آن بزنید.</string>
+    <string name="per_app_settings_loading">در حال بارگذاری ترجیحات...</string>
+    <string name="per_app_settings_manually_added">به‌صورت دستی اضافه‌شده</string>
+    <string name="per_app_settings_add_app">افزودن برنامه</string>
+    <string name="per_app_settings_search">جستجوی برنامه‌ها...</string>
+    <string name="per_app_settings_no_apps">برنامه‌ای پیدا نشد</string>
+    <string name="per_app_settings_no_matching_apps">برنامه‌ای مطابق نیست</string>
+    <string name="per_app_settings_using_defaults">با پیش‌فرض‌ها</string>
+    <string name="per_app_settings_auto_copy_on">کپی خودکار روشن</string>
+    <string name="per_app_settings_auto_copy_off">کپی خودکار خاموش</string>
+    <string name="per_app_settings_share_on">دکمه هم‌رسانی روشن</string>
+    <string name="per_app_settings_share_off">دکمه هم‌رسانی خاموش</string>
+    <string name="per_app_settings_sound">صدا: %1$s</string>
+    <string name="per_app_settings_dialog_title">تنظیمات %1$s</string>
+    <string name="per_app_settings_auto_copy_title">کپی خودکار</string>
+    <string name="per_app_settings_auto_copy_description">متن پیام را در کلیپ‌بورد کپی می‌کند</string>
+    <string name="per_app_settings_show_share_title">نمایش دکمه هم‌رسانی</string>
+    <string name="per_app_settings_show_share_description">دکمه هم‌رسانی را در اعلان نشان می‌دهد</string>
+    <string name="per_app_settings_notification_sound">صدای اعلان</string>
+    <string name="per_app_settings_sound_label">صدا</string>
+    <string name="per_app_settings_close">بستن</string>
+    <string name="per_app_settings_sound_default">پیش‌فرض</string>
+    <string name="per_app_settings_sound_silent">بی‌صدا</string>
+    <string name="per_app_settings_sound_chime">زنگ کوتاه</string>
+    <string name="per_app_settings_sound_bell">زنگ</string>
+    <string name="per_app_settings_quick_share_back_title">هم‌رسانی سریع بازگشت</string>
+    <string name="per_app_settings_quick_share_back_description">با یک لمس، رونویسی را به این برنامه بفرستید</string>
+
+    <!-- Per-App Reset -->
+    <string name="per_app_settings_reset_all">بازنشانی همه</string>
+    <string name="per_app_settings_reset_all_confirm_title">همه تنظیمات بازنشانی شوند؟</string>
+    <string name="per_app_settings_reset_all_confirm_message">ترجیحات اعلان همه برنامه‌ها به پیش‌فرض بازمی‌گردد.</string>
+    <string name="per_app_settings_reset_app">بازنشانی به پیش‌فرض‌ها</string>
+    <string name="per_app_settings_reset_app_confirm_title">تنظیمات %1$s بازنشانی شود؟</string>
+    <string name="per_app_settings_reset_app_confirm_message">ترجیحات اعلان این برنامه به پیش‌فرض بازمی‌گردد.</string>
+    <string name="per_app_settings_reset_done">تنظیمات بازنشانی شد</string>
+
+    <!-- Per-App Onboarding Tooltip -->
+    <string name="per_app_onboarding_title">شخصی‌سازی اختصاصی هر برنامه</string>
+    <string name="per_app_onboarding_message">روی هر برنامه بزنید تا کپی خودکار، اقدامات هم‌رسانی و صداهای اعلان را برای همان برنامه پیکربندی کنید.</string>
+    <string name="per_app_onboarding_got_it">متوجه شدم</string>
+
+    <!-- VAD Advisory (shown in Log tab when Parakeet is active with VAD enabled) -->
+    <string name="vad_advisory_title">با Parakeet به VAD نیازی نیست</string>
+    <string name="vad_advisory_description">با Parakeet حذف سکوت فقط زمان پردازش را بیشتر می‌کند. می‌توانید آن را در تنظیمات خاموش کنید.</string>
+    <string name="vad_advisory_dismiss">متوجه شدم</string>
+
+    <!-- Share Back -->
+    <string name="share_back">هم‌رسانی بازگشت</string>
+    <string name="send_to_app">ارسال به %1$s</string>
+
+    <!-- Notification Channels -->
+    <string name="notification_channel_extraction">دانلود مدل</string>
+    <string name="notification_channel_extraction_description">مدل‌های یادگیری ماشین را در پس‌زمینه دانلود و استخراج می‌کند</string>
+    <string name="notification_downloading_progress">در حال دانلود… %1$d%%</string>
+    <string name="notification_extracting_progress">در حال استخراج فایل‌ها… %1$d/%2$d</string>
+    <string name="notification_extracting_hint">ممکن است بیش از 5 دقیقه طول بکشد</string>
+    <string name="notification_download_complete">دانلود کامل شد</string>
+    <string name="notification_channel_inference">سرویس رونویسی</string>
+    <string name="notification_channel_inference_description">پردازش رونویسی صدا در پس‌زمینه</string>
+    <string name="notification_channel_result">نتیجه رونویسی</string>
+    <string name="notification_channel_result_description">متن آماده و اقدام‌ها</string>
+    <string name="notification_cancelling">در حال لغو…</string>
+
+    <!-- Dismiss -->
+    <string name="dismiss">بستن</string>
+
+    <!-- Download completion messages -->
+    <string name="parakeet_downloaded">مدل Parakeet دانلود شد</string>
+    <string name="whisper_downloaded">%1$s دانلود شد</string>
+    <string name="parakeet_deleted">مدل Parakeet حذف شد</string>
+    <string name="whisper_deleted">%1$s حذف شد</string>
+
+    <!-- Speed comparison -->
+    <string name="speed_comparison_title">مقایسه سرعت</string>
+    <string name="speed_comparison_subtitle">عملکرد نسبی روی پیام‌های صوتی معمول (CPU)</string>
+    <string name="speed_comparison_header_model">مدل</string>
+    <string name="speed_comparison_header_size">حجم</string>
+    <string name="speed_comparison_header_speed">سرعت</string>
+    <string name="speed_comparison_header_quality">کیفیت ایتالیایی</string>
+    <string name="speed_comparison_small_name">Whisper Small</string>
+    <string name="speed_comparison_small_size">~358MB</string>
+    <string name="speed_comparison_small_speed">1.0x</string>
+    <string name="speed_comparison_small_quality">قابل قبول</string>
+    <string name="speed_comparison_turbo_name">Whisper Turbo</string>
+    <string name="speed_comparison_turbo_size">~988MB</string>
+    <string name="speed_comparison_turbo_speed">1.3x</string>
+    <string name="speed_comparison_turbo_quality">خوب</string>
+    <string name="speed_comparison_medium_name">Whisper Medium</string>
+    <string name="speed_comparison_medium_size">~903MB</string>
+    <string name="speed_comparison_medium_speed">0.5x</string>
+    <string name="speed_comparison_medium_quality">خوب</string>
+    <string name="speed_comparison_distil_it_name">Distil Italian</string>
+    <string name="speed_comparison_distil_it_size">~939MB</string>
+    <string name="speed_comparison_distil_it_speed">~1.8x</string>
+    <string name="speed_comparison_distil_it_quality">بهترین ایتالیایی</string>
+    <string name="speed_comparison_distil_it_note">بهترین ایتالیایی</string>
+    <string name="speed_comparison_parakeet_name">Parakeet TDT</string>
+    <string name="speed_comparison_parakeet_size">~640MB</string>
+    <string name="speed_comparison_parakeet_speed">~17x</string>
+    <string name="speed_comparison_parakeet_quality">خیلی خوب</string>
+    <string name="speed_comparison_parakeet_note">پیشنهادی</string>
+    <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
+    <string name="speed_comparison_qwen3_size">~938MB</string>
+    <string name="speed_comparison_qwen3_speed">~2x</string>
+    <string name="speed_comparison_qwen3_quality">52 زبان، متغیر</string>
+    <string name="speed_comparison_gigaam_name">GigaAM v3</string>
+    <string name="speed_comparison_gigaam_size">~326MB</string>
+    <string name="speed_comparison_gigaam_speed">سریع</string>
+    <string name="speed_comparison_gigaam_quality">فقط روسی</string>
+    <string name="speed_comparison_nemotron_name">Nemotron 3.5</string>
+    <string name="speed_comparison_nemotron_size">~600MB</string>
+    <string name="speed_comparison_nemotron_speed">جریانی</string>
+    <string name="speed_comparison_nemotron_quality">آزمایشی</string>
+    <string name="fastest_badge">سریع‌ترین</string>
+    <string name="coming_soon_badge">به‌زودی</string>
+    <string name="dialog_transcription_active_title">رونویسی در حال انجام است</string>
+    <string name="dialog_delete_active_model_message">«%1$s» حذف نمی‌شود: مدل در حال استفاده برای رونویسی است. تا پایان آن صبر کنید.</string>
+    <string name="dialog_delete_inactive_model_message">یک رونویسی در حال انجام است. حذف «%1$s» آن را قطع نمی‌کند، اما با احتیاط پیش بروید.</string>
+    <string name="dialog_switch_model_message">یک رونویسی در حال انجام است. تغییر مدل ممکن است آن را مختل کند. ادامه می‌دهید؟</string>
+    <string name="action_understood">متوجه شدم</string>
+    <string name="action_switch_anyway">به هر حال تغییر بده</string>
+    <string name="warn_reset_stats_during_transcription">رونویسی در جریان است: آمار حفظ می‌شود، اما داده‌های زمان‌بندی ممکن است ناقص باشند.</string>
+    <string name="cannot_unload_during_transcription">تخلیه ممکن نیست: مدل در حال استفاده برای یک رونویسی فعال است</string>
+
+    <!-- Swipe Action Mode -->
+    <string name="swipe_action_title">اقدام کشیدن</string>
+    <string name="swipe_action_description">اقدام هنگام کشیدن یک ورودی به چپ را انتخاب کنید</string>
+    <string name="swipe_action_reveal">نمایش اقدام‌ها</string>
+    <string name="swipe_action_immediate_delete">حذف فوری</string>
+    <string name="swipe_action_copy_description">کپی رونویسی</string>
+    <string name="swipe_action_share_description">هم‌رسانی رونویسی</string>
+    <string name="swipe_action_delete_description">حذف ورودی</string>
+    <string name="swipe_action_copied">رونویسی کپی شد</string>
+
+    <!-- Progressive Display -->
+    <string name="progressive_title">نمایش تدریجی</string>
+    <string name="progressive_description">متن را همزمان با پیشرفت رونویسی نشان می‌دهد، بدون انتظار برای پایان ضبط.</string>
+    <string name="progressive_initial">در حال آماده‌سازی متن؛ نتیجه نهایی در پایان</string>
+    <string name="processing_segment_progress">قطعه %1$d از %2$d…</string>
+
+    <!-- Transcription ETA -->
+    <string name="transcription_eta_calibrating">در حال کالیبره کردن سرعت…</string>
+    <string name="transcription_eta_estimating">در حال تخمین… حدود %1$d دقیقه و %2$d ثانیه باقی مانده</string>
+    <string name="transcription_eta_seconds">حدود %1$d ثانیه باقی مانده</string>
+    <string name="transcription_eta_minutes">حدود %1$d دقیقه و %2$d ثانیه باقی مانده</string>
+    <string name="transcription_eta_hours">حدود %1$d ساعت و %2$d دقیقه باقی مانده</string>
+
+    <!-- Performance Stats -->
+    <string name="performance_stats_title">آمار عملکرد</string>
+    <string name="performance_stats_subtitle">سرعت واقعی رونویسی از دستگاه شما</string>
+    <string name="performance_stats_empty">هنوز داده‌ای نیست. برای دیدن آمار، چند صدا را رونویسی کنید.</string>
+    <string name="performance_stats_speed">%1$.0fms/s</string>
+    <plurals name="performance_stats_samples_count">
+        <item quantity="one">%1$d نمونه</item>
+        <item quantity="other">%1$d نمونه</item>
+    </plurals>
+    <string name="performance_stats_fastest_badge">سریع‌ترین</string>
+    <string name="performance_stats_clear">بازنشانی آمار</string>
+    <string name="performance_stats_clear_confirm">همه داده‌های عملکرد بازنشانی شوند؟</string>
+    <string name="performance_stats_just_now">همین حالا</string>
+    <string name="performance_stats_minutes_ago">%1$d دقیقه پیش</string>
+    <string name="performance_stats_hours_ago">%1$d ساعت پیش</string>
+    <string name="performance_stats_days_ago">%1$d روز پیش</string>
+    <string name="performance_stats_total_audio">مجموع: %1$s صدا پردازش شد</string>
+
+    <!-- Model unload -->
+    <string name="action_unload">تخلیه</string>
+    <string name="dialog_unload_title">مدل تخلیه شود؟</string>
+    <string name="dialog_unload_message">مدل «%1$s» از حافظه تخلیه می‌شود. در رونویسی بعدی خودکار دوباره بارگذاری می‌شود.</string>
+
+    <!-- No-model notification -->
+    <string name="notification_no_model_title">مدل نصب نیست</string>
+    <string name="notification_no_model_message">برنامه را باز کنید و یک مدل دانلود کنید</string>
+    <string name="notification_no_model_action">باز کردن برنامه</string>
+
+    <!-- Content descriptions (accessibility) -->
+    <string name="back">بازگشت</string>
+    <string name="add_app">افزودن برنامه</string>
+    <string name="view_settings">مشاهده تنظیمات</string>
+    <string name="app_icon">نماد %1$s</string>
+
+    <!-- InferenceService strings -->
+    <string name="error_load_backend">بارگذاری بک‌اند ناموفق بود: %1$s</string>
+    <string name="error_no_active_backend">هیچ بک‌اند فعالی نیست</string>
+    <string name="error_no_file_path">هیچ مسیر فایلی برای درخواست صوتی داده نشده است</string>
+    <string name="error_backend_no_audio_support">%1$s از رونویسی صدا پشتیبانی نمی‌کند. در تنظیمات به یک مدل گفتار به متن تغییر دهید.</string>
+    <string name="error_no_llm_model">هیچ مدل LLM تنظیم نشده است. برای دانلود مدل، برنامه را باز کنید.</string>
+    <string name="error_no_model_configured">هیچ مدل %1$s تنظیم نشده است. برای دانلود مدل، برنامه را باز کنید.</string>
+    <string name="loading_model">در حال بارگذاری مدل %1$s…</string>
+    <string name="preprocessing_audio">در حال پیش‌پردازش صدا…</string>
+    <string name="clipboard_label_transcription">رونویسی</string>
+
+    <!-- Settings accessibility -->
+    <string name="open_prompt_settings">باز کردن تنظیمات دستور</string>
+    <string name="open_per_app_settings">باز کردن تنظیمات اختصاصی برنامه‌ها</string>
+    <string name="open_performance_stats">باز کردن آمار عملکرد</string>
+    <string name="hide_details">پنهان کردن جزئیات</string>
+    <string name="show_details">نمایش جزئیات</string>
+    <string name="model_unknown">ناشناخته</string>
+
+    <!-- Picture-in-Picture -->
+    <string name="pip_transcribing">در حال رونویسی\u2026</string>
+    <string name="pip_waiting">در انتظار رونویسی\u2026</string>
+    <string name="pip_enter_button">PiP</string>
+    <string name="pip_enter_description">نمایش در پنجره تصویر در تصویر</string>
+
+    <!-- GGUF model descriptions -->
+    <string name="model_title_gemma4_gguf_q4km">Gemma 4 GGUF (Q4_K_M)</string>
+    <string name="model_desc_gemma4_gguf_q4km">4.9GB · Apache 2.0 · تولید متن با llama.cpp. بهترین تعادل کیفیت و حجم.</string>
+    <string name="model_title_gemma4_gguf_q5km">Gemma 4 GGUF (Q5_K_M)</string>
+    <string name="model_desc_gemma4_gguf_q5km">5.3GB · Apache 2.0 · تولید متن با کیفیت بالاتر با llama.cpp.</string>
+    <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
+    <string name="model_desc_gemma4_gguf_q8">7.4GB · Apache 2.0 · باکیفیت‌ترین تولید متن با llama.cpp. نیازمند رم 8GB+.</string>
+    <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
+    <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
+    <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
+    <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
+    <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
+    <string name="gguf_inference_unavailable">استنتاج GGUF به کتابخانه بومی llama.cpp نیاز دارد. libllama.so را برای اندروید ARM64 بسازید.</string>
+    <string name="gguf_model_download_error">دانلود مدل GGUF ناموفق بود</string>
+
+    <!-- GGUF model download section -->
+    <string name="gguf_title">Gemma 4 GGUF (تولید متن)</string>
+    <string name="gguf_description">LLM محلی برای تولید متن؛ بدون وابستگی به ابر. نیازمند کتابخانه بومی llama.cpp است.</string>
+    <string name="gguf_unsupported_arch">روی این دستگاه پشتیبانی نمی‌شود (نیازمند ARM64).</string>
+    <string name="gguf_download_confirm_title">%1$s دانلود شود؟</string>
+    <string name="gguf_download_confirm_message">حدود %1$dMB دانلود خواهد شد. مدل‌های GGUF تولید متن محلی بدون اینترنت را ممکن می‌کنند.</string>
+    <string name="gguf_downloaded">%1$s با موفقیت دانلود شد</string>
+    <string name="gguf_delete_message">%1$s حذف شود؟ حدود %2$dMB فضای آزاد می‌شود.</string>
+    <string name="gguf_deleted">%1$s حذف شد</string>
+
+    <!-- Model benchmark -->
+    <string name="benchmark_title">بنچمارک %1$s</string>
+    <string name="benchmark_preparing">در حال آماده‌سازی بنچمارک…</string>
+    <string name="benchmark_running">در حال اجرای بنچمارک…</string>
+    <string name="benchmark_progress">%1$d%% کامل شد</string>
+    <string name="benchmark_cancel">لغو</string>
+    <string name="benchmark_rerun">اجرای دوباره</string>
+    <string name="benchmark_retry">تلاش دوباره</string>
+    <string name="benchmark_speed_label">زمان به ازای هر دقیقه صدا</string>
+    <string name="benchmark_speed_value">%1$.1f ثانیه بر دقیقه صدا</string>
+    <string name="benchmark_time_label">زمان استنتاج</string>
+    <string name="benchmark_time_value">%1$d میلی‌ثانیه</string>
+    <string name="benchmark_memory_label">بیشینه حافظه</string>
+    <string name="benchmark_memory_value">%1$.0f MB</string>
+    <string name="benchmark_duration_label">مدت نمونه</string>
+    <string name="benchmark_duration_value">%1$.0f ثانیه</string>
+    <string name="benchmark_rating_fast">سریع</string>
+    <string name="benchmark_rating_good">خوب</string>
+    <string name="benchmark_rating_moderate">متوسط</string>
+    <string name="benchmark_rating_slow">کند</string>
+    <string name="benchmark_disclaimer">نتایج بسته به بار و دمای دستگاه ممکن است متفاوت باشد.</string>
+    <string name="benchmark_button">بنچمارک</string>
+    <string name="benchmark_cached_result">آخرین بنچمارک: %1$s</string>
+
+    <!-- Model Info Overlay -->
+    <string name="model_info_title">اطلاعات مدل</string>
+    <string name="model_info_section_languages">زبان‌های پشتیبانی‌شده</string>
+    <string name="model_info_section_recommendations">توصیه‌ها</string>
+    <string name="model_info_section_technical">جزئیات فنی</string>
+    <string name="model_info_section_performance">نکته‌های عملکرد</string>
+    <plurals name="model_info_languages_count">
+        <item quantity="one">%d زبان</item>
+        <item quantity="other">%d زبان</item>
+    </plurals>
+    <string name="model_info_no_languages">پشتیبانی از زبان‌ها نامشخص است</string>
+    <string name="model_info_architecture">معماری</string>
+    <string name="model_info_arch_encoder_decoder">Encoder-Decoder (Whisper)</string>
+    <string name="model_info_arch_transducer">Transducer (TDT)</string>
+    <string name="model_info_arch_ctc">CTC (Connectionist Temporal Classification)</string>
+    <string name="model_info_arch_llm">مدل زبانی بزرگ</string>
+    <string name="model_info_model_size">حجم مدل</string>
+    <string name="model_info_max_audio">بیشینه طول صدا</string>
+    <string name="model_info_max_audio_unlimited">نامحدود</string>
+    <plurals name="model_info_max_audio_seconds">
+        <item quantity="one">%d ثانیه</item>
+        <item quantity="other">%d ثانیه</item>
+    </plurals>
+    <string name="model_info_quantization">کوانتیزاسیون</string>
+    <string name="model_info_recommended_threads">رشته‌های پیشنهادی</string>
+    <string name="model_info_threads_range">%1$d – %2$d</string>
+    <string name="model_info_arm64_only">فقط دستگاه‌های ARM64</string>
+    <string name="model_info_progressive">رونویسی تدریجی</string>
+    <string name="model_info_vad_recommended">پیش‌پردازش VAD پیشنهاد می‌شود</string>
+    <string name="model_info_best_for_whisper_small">مدل چندزبانه جمع‌وجور برای آزمون سریع</string>
+    <string name="model_info_notes_whisper_small">نقطه شروع خوب. دقت محدود نسبت به مدل‌های بزرگ‌تر. تشخیص خودکار زبان نامعتبر است؛ به‌طور پیش‌فرض از زبان برنامه استفاده می‌شود.</string>
+    <string name="model_info_best_for_whisper_turbo">ASR چندزبانه متوازن با تشخیص خودکار</string>
+    <string name="model_info_notes_whisper_turbo">کیفیتی نزدیک به large-v3 با سرعتی متوسط. برای کاربران چندزبانه مناسب است.</string>
+    <string name="model_info_best_for_whisper_medium">مدل چندزبانه متوسط</string>
+    <string name="model_info_notes_whisper_medium">تعادل خوب بین دقت و مصرف منابع.</string>
+    <string name="model_info_best_for_distil_it">بهترین دقت ایتالیایی (4.3%% WER)</string>
+    <string name="model_info_notes_distil_it">فقط ایتالیایی. بالاترین دقت برای پیام‌های صوتی ایتالیایی. دقت مهم‌تر از سرعت.</string>
+    <string name="model_info_best_for_qwen3">تشخیص خودکار در 52 زبان</string>
+    <string name="model_info_notes_qwen3">وسیع‌ترین پوشش زبانی. توجه: صداهای بلندتر از 30 ثانیه را قطع می‌کند. فقط دستگاه‌های ARM64.</string>
+    <string name="model_info_best_for_parakeet">سریع‌ترین رونویسی (17.6x سریع‌تر از Whisper، 5.4%% WER)</string>
+    <string name="model_info_notes_parakeet">بدون محدودیت طول صدا. VAD لازم نیست. برای کسانی که سرعت برایشان اولویت است.</string>
+    <string name="model_info_best_for_gigaam">بهترین دقت روسی روی دستگاه</string>
+    <string name="model_info_notes_gigaam">فقط روسی. نشانه‌گذاری و بزرگ‌نویسی بومی.</string>
+    <string name="model_info_best_for_nemotron">رونویسی جریانی برای صداهای طولانی</string>
+    <string name="model_info_notes_nemotron">ترنسدیوسر جریانی با تأخیر کم. تشخیص خودکار چندزبانه با گزینه زبان به ازای هر جریان.</string>
+    <string name="model_info_best_for_gemma">LLM چندوجهی برای کارهای متن + صدا</string>
+    <string name="model_info_notes_gemma">برای ASR خالص بهینه نشده است. برای قابلیت‌های پیشرفته مانند درک صدا همراه با تولید متن استفاده کنید.</string>
+    <string name="model_info_benchmark_wer">نرخ خطای کلمه (ایتالیایی): %.1f%%</string>
+    <string name="model_info_relative_speed">سرعت: %s</string>
+    <string name="model_info_close">بستن</string>
+
+    <!-- Skeleton loading -->
+    <string name="skeleton_loading_content_description">در حال بارگذاری رونویسی</string>
+
+    <!-- Share targets -->
+    <string name="share_target_parakeet">Anti-Vocale (Parakeet)</string>
+    <string name="share_target_whisper">Anti-Vocale (Whisper)</string>
+    <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
+    <string name="share_target_gemma">Anti-Vocale (Gemma)</string>
+    <string name="share_target_nemotron">Anti-Vocale (Nemotron)</string>
+    <string name="share_target_gigaam">Anti-Vocale (GigaAM)</string>
+    <string name="share_target_external">Anti-Vocale (خارجی)</string>
+    <string name="share_shortcut_transcribe_with">رونویسی با %1$s</string>
+    <string name="external_none_imported">هیچ مدل خارجی وارد نشده است</string>
+    <string name="external_section_title">مدل‌های خارجی</string>
+    <string name="model_advanced_section">پیشرفته</string>
+    <string name="model_advanced_description">وارد کردن دستی فایل‌های مدل</string>
+    <string name="external_import_folder">انتخاب پوشه</string>
+    <string name="external_import_url">وارد کردن از نشانی</string>
+    <string name="external_url_hint">نشانی مخزن HuggingFace یا نشانی JSON یک مدخل کاتالوگ</string>
+    <string name="external_import">وارد کردن</string>
+    <string name="external_importing">در حال وارد کردن مدل…</string>
+    <string name="external_importing_file">در حال وارد کردن %1$s (%2$d از %3$d)…</string>
+    <string name="external_import_failed">وارد کردن ناموفق بود: %1$s</string>
+    <string name="external_imported">%1$s وارد شد</string>
+    <string name="external_delete_confirm">مدل خارجی %1$s حذف شود؟</string>
+    <string name="external_deleted">%1$s حذف شد</string>
+    <string name="external_catalog_all">همه زبان‌ها</string>
+    <string name="external_catalog_dialog_title">وارد کردن از کاتالوگ</string>
+    <string name="external_catalog_loading">در حال بارگذاری کاتالوگ…</string>
+    <string name="external_catalog_error">کاتالوگ بارگذاری نشد: %1$s</string>
+    <string name="external_catalog_retry">تلاش دوباره</string>
+    <string name="external_catalog_source">کاتالوگ</string>
+    <string name="external_catalog_official">انجمن (رسمی)</string>
+    <string name="external_catalog_custom">منبع سفارشی</string>
+    <string name="external_catalog_offline">آفلاین</string>
+    <string name="external_catalog_change">تغییر</string>
+    <string name="external_catalog_url">نشانی فهرست کاتالوگ</string>
+    <string name="external_catalog_apply">اعمال</string>
+    <string name="external_catalog_restore">بازگردانی کاتالوگ رسمی</string>
+    <string name="external_link_advanced">از قبل لینک دارم (پیشرفته)</string>
+    <string name="external_catalog_language">زبان</string>
+    <string name="external_catalog_other">سایر زبان‌ها</string>
+    <string name="external_decode_language">زبان رمزگشایی</string>
+    <string name="external_decode_auto">تشخیص خودکار (بدون زبان ثابت)</string>
+    <string name="external_family">خانواده مدل</string>
+    <string name="external_family_transducer">Transducer (NeMo/Zipformer آفلاین)</string>
+    <string name="external_family_transducer_help">فایل‌های encoder + decoder + joiner + tokens لازم دارد</string>
+    <string name="external_family_whisper">Whisper</string>
+    <string name="external_family_whisper_help">فایل‌های encoder + decoder + tokens لازم دارد</string>
+    <string name="external_family_ctc">CTC</string>
+    <string name="external_family_ctc_help">فایل‌های encoder + tokens لازم دارد</string>
+    <string name="external_family_sense_voice">SenseVoice</string>
+    <string name="external_family_canary">Canary (NeMo)</string>
+    <string name="external_family_sense_voice_help">فایل‌های model + tokens لازم دارد</string>
+    <string name="external_family_canary_help">فایل‌های encoder + decoder + tokens لازم دارد؛ فقط en/es/de/fr؛ نیازمند بخش‌بندی هم‌تراز با سکوت (VAD خودکار روشن می‌شود)</string>
+    <string name="external_option_itn">نرمال‌سازی معکوس متن</string>
+    <string name="external_ctc_subtype">زیرنوع CTC</string>
+    <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
+    <string name="external_notice_single_pass">صدای خیلی طولانی ممکن است توسط مدل‌های بزرگ در یک مرحله پردازش نشود. صدا را کوتاه کنید یا مدل کوچک‌تری انتخاب کنید.</string>
+    <string name="external_notice_family">اگر رونویسی بدون خطا نیمه‌کاره بماند، ممکن است معماری درست نباشد: مدل را حذف کنید و با معماری دیگری دوباره وارد کنید.</string>
+    <string name="share_targets_title">مدل‌ها در منوی هم‌رسانی</string>
+    <string name="share_targets_description">هر مدل دانلودشده به شکل گزینه‌ای جدا در منوی سیستم ظاهر می‌شود. صدا توسط مدل انتخاب‌شده پردازش می‌شود.</string>
+    <string name="advanced_sharing_toggle">نمایش مدل‌های دانلودشده</string>
+    <string name="share_targets_models_info">هر مدل دانلودشده به شکل موردی در منوی هم‌رسانی ظاهر می‌شود. با حذف یک مدل، آن از منو برداشته می‌شود.</string>
+
+    <!-- Conversation grouping -->
+    <string name="conversation_grouping_title">گروه‌بندی بر پایه گفتگو</string>
+    <string name="compact_result_actions_title">دکمه‌های اقدام جمع‌وجور</string>
+    <string name="compact_result_actions_description">اقدامات رونویسی را فقط به شکل نماد، در گوشه کارت نتیجه نشان می‌دهد. برای دکمه‌های برچسب‌دار خاموشش کنید.</string>
+    <string name="conversation_grouping_description">رونویسی‌ها را بر پایه برنامه مبدأ (WhatsApp، Telegram و غیره) در بخش‌های جمع‌شونده گروه‌بندی می‌کند.</string>
+    <plurals name="conversation_group_count">
+        <item quantity="one">%1$d پیام</item>
+        <item quantity="other">%1$d پیام</item>
+    </plurals>
+    <string name="conversation_group_unknown">سایر</string>
+
+    <!-- Re-transcription -->
+    <string name="retranscribe">تلاش دوباره</string>
+    <string name="retranscribe_title">رونویسی دوباره با…</string>
+    <string name="retranscribe_subtitle">برای رونویسی دوباره این صدا یک مدل انتخاب کنید</string>
+    <string name="retranscribe_confirm">رونویسی</string>
+    <string name="retranscribe_no_models">هیچ مدل صوتی تنظیم نشده است. ابتدا از زبانه مدل یک مدل دانلود کنید.</string>
+    <string name="retranscribe_file_not_found">فایل صوتی دیگر در دسترس نیست</string>
+    <string name="retranscribe_active_badge">فعال</string>
+    <string name="retranscribe_setting_title">دکمه رونویسی دوباره</string>
+    <string name="retranscribe_setting_description">روی رونویسی‌های صوتی دکمه‌ای نشان می‌دهد تا با مدل دیگری دوباره امتحان کنید.</string>
+
+    <!-- Subtitle extraction choice (TASK-228) -->
+    <string name="subtitles_found_title">زیرنویس پیدا شد</string>
+    <string name="subtitles_found_text">از زیرنویس‌های داخلی (%1$s) استفاده شود یا صدا رونویسی شود؟ اگر انتخابی نکنید، رونویسی پس از %2$s آغاز می‌شود.</string>
+    <string name="subtitles_language_unknown">نامشخص</string>
+    <string name="action_use_subtitles">استفاده از زیرنویس</string>
+    <string name="action_transcribe_audio">رونویسی صدا</string>
+    <string name="subtitle_fallback_status">استخراج زیرنویس ناموفق بود؛ در حال رونویسی صدا</string>
+    <string name="subtitle_choice_notification_text">در انتظار انتخاب شما…</string>
+
+    <!-- TASK-319: keys recovered from the parity audit -->
+
+    <!-- Auto-save folder -->
+    <string name="output_folder_title">ذخیره خودکار در پوشه</string>
+    <string name="output_folder_description">هر رونویسی به شکل فایل .txt جداگانه در پوشه انتخابی ذخیره می‌شود (مثلاً Drive یا Syncthing).</string>
+    <string name="output_folder_choose">انتخاب پوشه</string>
+    <string name="output_folder_clear">حذف پوشه</string>
+
+    <!-- Notifications and system -->
+    <string name="notification_copying_progress">در حال کپی فایل‌ها… %1$d/%2$d</string>
+    <string name="notification_channel_tasker_fallback">خودکارسازی Tasker</string>
+    <string name="notification_channel_tasker_fallback_description">وقتی از پس‌زمینه فعال شد، برای شروع رونویسی بزنید</string>
+    <string name="tasker_fallback_notification_text">برای شروع رونویسی بزنید</string>
+    <string name="transcription_interrupted_title">رونویسی قطع شد</string>
+
+    <!-- Language filter -->
+    <string name="lang_filter_label">پالایش بر پایه زبان</string>
+    <string name="lang_filter_all">همه زبان‌ها</string>
+    <string name="lang_filter_no_results">زبان مطابقی نیست</string>
+    <string name="lang_filter_clear">پاک کردن جستجو</string>
+
+    <!-- Benchmark -->
+    <string name="benchmark_provider_label">موتور</string>
+    <string name="benchmark_provider_value">%1$s</string>
+
+    <!-- Actions -->
+    <string name="action_dismiss">بستن</string>
+
+    <!-- Language names -->
+    <!-- TASK-336: background-kill remediation card -->
+    <string name="battery_exemption_title">اجازه کار در پس‌زمینه</string>
+    <string name="battery_exemption_description">سیستم تشخیص گفتار را هنگام پس‌زمینه بودن برنامه متوقف کرد. به Anti-Vocale اجازه دهید در پس‌زمینه اجرا شود تا رونویسی قطع نشود.</string>
+    <string name="battery_exemption_action">باز کردن تنظیم</string>
+    <!-- TASK-373: litert-lm HF url import -->
+    <string name="litertlm_import_from_url">وارد کردن از نشانی Hugging Face</string>
+    <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>
+    <string name="litertlm_pick_file">انتخاب فایل مدل</string>
+    <string name="litertlm_no_models">هیچ فایل .litertlm در این مخزن پیدا نشد</string>
+    <!-- TASK-374: per-transcription feedback -->
+    <string name="feedback_report_transcription">گزارش رونویسی</string>
+    <string name="feedback_label_task">عملیات</string>
+    <string name="feedback_label_model">مدل</string>
+    <string name="feedback_label_duration">مدت صدا</string>
+    <string name="feedback_label_time">زمان پردازش</string>
+    <string name="feedback_label_status">وضعیت</string>
+    <string name="feedback_label_excerpt">گزیده رونویسی</string>
+    <string name="feedback_label_truncated">کوتاه‌شده</string>
+    <string name="a11y_expand">باز کردن</string>
+    <string name="a11y_collapse">جمع کردن</string>
+    <string name="a11y_back">بازگشت</string>
+    <string name="litertlm_importing">در حال وارد کردن…</string>
+    <string name="model_ram_warning">ممکن است %1$s روی این دستگاه حافظه کافی نداشته باشد. ممکن است بارگذاری نشود یا کرش کند؛ مدل‌های سبک‌تر مطمئن‌ترند.</string>
+    <string name="error_oom_transcription">حافظه برای رونویسی این صدا کافی نیست. فایل کوتاه‌تر یا مدل کوچک‌تری را امتحان کنید، یا برنامه‌های دیگر را ببندید.</string>
+    <string name="external_family_detected">شناسایی‌شده: %1$s</string>
+    <string name="external_family_pick_title">این مدل به کدام خانواده تعلق دارد؟</string>
+    <string name="subtitle_timeout_title">مهلت انتخاب خودکار</string>
+    <string name="subtitle_timeout_description">مدتی که اعلان انتخاب برای ویدیوی دارای زیرنویس منتظر می‌ماند و بعد خودش رونویسی را آغاز می‌کند.</string>
+    <string name="transcript_export_format_title">قالب ذخیره خودکار</string>
+    <string name="transcript_export_format_description">قالب فایل‌های ذخیره‌شده در پوشه ذخیره خودکار. قالب‌های دارای مهر زمانی فقط وقتی نوشته می‌شوند که رونویسی داده زمانی تولید کرده باشد.</string>
+    <string name="transcript_export_format_txt">متن ساده</string>
+    <string name="transcript_export_format_txt_timed">متن با مهر زمانی (آزمایشی)</string>
+    <string name="transcript_export_format_srt">زیرنویس SRT (آزمایشی)</string>
+    <string name="transcript_export_format_vtt">زیرنویس WebVTT (آزمایشی)</string>
+    <string name="settings_search_hint">جستجوی تنظیمات…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d نتیجه</item>
+        <item quantity="other">%1$d نتیجه</item>
+    </plurals>
+    <string name="settings_search_no_results">تنظیماتی پیدا نشد</string>
+    <string name="settings_search_clear">پاک کردن جستجو</string>
+</resources>

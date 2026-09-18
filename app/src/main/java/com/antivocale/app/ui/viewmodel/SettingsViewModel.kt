@@ -962,8 +962,17 @@ class SettingsViewModel @Inject constructor(
 // displayName here is an unused placeholder.
 data class LanguageOption(val code: String, val displayName: String)
 
+// Every locale the app actually ships (values-* dirs). Drift between this
+// list and the res tree hides whole languages from the picker (iw/pl/tr/uk
+// shipped for four releases before being noticed, TASK-561);
+// LanguageOptionsOrderTest guards the two sides against each other. Hebrew
+// uses the canonical "he": Android 15+ (targetSdk 35+) canonicalizes the
+// legacy "iw" away in Locale.forLanguageTag, so a picker keyed "iw" would
+// not round-trip through getCurrentLocaleCode after a restart; the res dir
+// keeps its legacy values-iw name (that is what Android requires) and the
+// test maps the two.
 private val appLanguageCodes =
-    listOf("de", "en", "es", "fr", "hi", "it", "pt-BR", "ru")
+    listOf("de", "en", "es", "fa", "fr", "he", "hi", "it", "pl", "pt-BR", "ru", "tr", "uk")
 
 private fun optionsFor(
     sentinelCodes: List<String>,
