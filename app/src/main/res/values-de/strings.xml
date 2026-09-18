@@ -998,5 +998,9 @@
     <string name="transcript_export_format_srt">SRT-Untertitel (experimentell)</string>
     <string name="transcript_export_format_vtt">WebVTT-Untertitel (experimentell)</string>
     <string name="settings_search_hint">Einstellungen durchsuchen…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d Treffer</item>
+        <item quantity="other">%1$d Treffer</item>
+    </plurals>
     <string name="settings_search_no_results">Keine passenden Einstellungen</string>
-</resources>
+    <string name="settings_search_clear">Suche löschen</string></resources>

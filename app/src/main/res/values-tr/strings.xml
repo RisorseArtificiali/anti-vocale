@@ -998,5 +998,9 @@
     <string name="transcript_export_format_srt">SRT altyazıları (deneysel)</string>
     <string name="transcript_export_format_vtt">WebVTT altyazıları (deneysel)</string>
     <string name="settings_search_hint">Ayarları ara…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d eşleşme</item>
+        <item quantity="other">%1$d eşleşme</item>
+    </plurals>
     <string name="settings_search_no_results">Eşleşen ayar yok</string>
-</resources>
+    <string name="settings_search_clear">Aramayı temizle</string></resources>

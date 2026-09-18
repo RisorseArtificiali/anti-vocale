@@ -214,6 +214,16 @@ fun SettingsTab(
     // expose only when a Gemma model is configured; without one they can
     // never run and were silent no-ops.
     val gemmaConfigured by viewModel.gemmaConfigured.collectAsState()
+    // Collected here (not inside their sections) so the search filter's card
+    // groups can mirror each card's runtime condition exactly. The battery
+    // refresh must also live OUTSIDE the Advanced section: its content only
+    // composes when expanded AND visible, so a refresh down there never runs
+    // on a fresh start and the battery card is unfindable by search exactly
+    // for the user it targets (post-kill re-offer, TASK-336).
+    val backgroundKills by viewModel.backgroundKills.collectAsState()
+    LaunchedEffect(Unit) { viewModel.refreshBackgroundKills() }
+    val summarizeOn by viewModel.summarizeEnabled.collectAsState()
+    val currentPunctuationMode by viewModel.currentPunctuationMode.collectAsState()
 
     // Show sub-screens or main settings
     if (showPerAppSettings) {
@@ -259,7 +269,10 @@ fun SettingsTab(
             trailingIcon = {
                 if (searchQuery.isNotEmpty()) {
                     IconButton(onClick = { searchQuery = "" }) {
-                        Icon(Icons.Default.Close, contentDescription = null)
+                        Icon(
+                            Icons.Default.Close,
+                            contentDescription = stringResource(R.string.settings_search_clear)
+                        )
                     }
                 }
             },
@@ -267,45 +280,145 @@ fun SettingsTab(
             shape = MaterialTheme.shapes.extraLarge,
         )
 
-        // TASK-542: per-section card titles for the live filter. These resolve
-        // to localized strings at composition time; the match is on the RESOLVED
-        // text, so it works in all 12 locales. Keep in sync with the card titles
-        // below (a drifted entry degrades the filter gracefully, never crashes).
-        val transcriptionSearchTitles = listOf(
-            R.string.transcription_language_title, R.string.auto_copy_title,
-            R.string.export_settings_title, R.string.vad_title,
-            R.string.progressive_title, R.string.punctuation_mode_title,
-            R.string.summarize_title, R.string.default_prompt_title,
-            R.string.inference_provider_title, R.string.output_folder_title,
-            R.string.transcript_export_format_title, R.string.thread_count_title,
-            R.string.auto_unload_timeout, R.string.force_model_load,
-        ).map { context.getString(it) }
-        val appearanceSearchTitles = listOf(
-            R.string.theme_title, R.string.language_title,
-            R.string.theme_mode_title, R.string.app_icon_title,
-            R.string.swipe_action_title, R.string.conversation_grouping_title,
-        ).map { context.getString(it) }
-        val advancedSearchTitles = listOf(
-            R.string.advanced_sharing_toggle, R.string.retranscribe_setting_title,
-            R.string.compact_result_actions_title, R.string.per_app_settings_title,
-            R.string.performance_stats_title, R.string.battery_exemption_title,
-            R.string.subtitle_timeout_title, R.string.huggingface_auth,
-        ).map { context.getString(it) }
-        val feedbackSearchTitles = listOf(
-            R.string.settings_feedback_send_title, R.string.settings_feedback_version_title,
-            R.string.settings_feedback_license_title, R.string.settings_feedback_source_title,
-            R.string.settings_feedback_translation_title,
-        ).map { context.getString(it) }
+        // TASK-457/TASK-542: the pin state and the one hint line that renders
+        // for it, hoisted so the search groups and the card below share the
+        // exact same values (the card would otherwise match text it does not
+        // display). Mutually exclusive by design: a model without language
+        // conditioning shows only the no-conditioning explanation, never the
+        // pin notes.
+        val transcriptionPinState = TranscriptionLanguagePolicy.pinState(
+            currentTranscriptionLanguage, transcriptionPicker.offeredCodes,
+            phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(context),
+        )
+        val transcriptionHintRes = when {
+            !transcriptionPicker.conditioningAvailable ->
+                R.string.transcription_language_no_conditioning
+            transcriptionPinState == TranscriptionLanguagePolicy.PinState.SUPPORTED_PIN ->
+                R.string.transcription_language_forced_hint
+            transcriptionPinState == TranscriptionLanguagePolicy.PinState.UNSUPPORTED_PIN ->
+                R.string.transcription_language_unsupported_pin
+            else -> null
+        }
 
-        fun sectionMatches(titles: List<String>): Boolean =
-            searchQuery.isBlank() || titles.any { it.contains(searchQuery, ignoreCase = true) }
+        // TASK-542: card-level live filter. Each group is one card's title +
+        // description resource ids (resolved against the current locale, so
+        // the match works in all 12); a section shows when any of its cards
+        // matches, and the count line reports matching cards. Keep the groups
+        // in sync with the SearchFilterRow wraps below: same ids, same runtime
+        // conditions as the tree applies (a drifted entry degrades the filter
+        // and the count gracefully, never crashes). The Feedback section is
+        // one Card of rows, so it is a single group. remember keeps the ~55
+        // resource lookups off every keystroke; the condition flags are the
+        // keys so the groups still track the runtime state of the cards.
+        val transcriptionSearchGroups = remember(
+            context, isLlmBackend, gemmaConfigured, isModelLoaded,
+            transcriptionHintRes, currentPunctuationMode, summarizeOn,
+        ) {
+            listOfNotNull(
+                if (isLlmBackend) listOf(
+                    // Only the live status title, mirroring the card: listing
+                    // both would count a match the tree never renders.
+                    if (isModelLoaded) R.string.model_loaded
+                    else R.string.model_not_loaded,
+                ) else null,
+                listOf(R.string.active_model),
+                listOfNotNull(
+                    R.string.transcription_language_title,
+                    // At most one hint renders (see transcriptionHintRes); the
+                    // group must not match text the tree does not show.
+                    transcriptionHintRes,
+                ),
+                listOf(R.string.auto_copy_title, R.string.auto_copy_description),
+                listOf(R.string.export_settings_title, R.string.export_settings_description),
+                listOf(R.string.vad_title, R.string.vad_description),
+                listOf(R.string.progressive_title, R.string.progressive_description),
+                if (gemmaConfigured && !isLlmBackend) listOf(
+                    R.string.punctuation_mode_title, R.string.punctuation_mode_description,
+                ) else null,
+                if (gemmaConfigured && !isLlmBackend &&
+                    currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS
+                ) listOf(
+                    R.string.punctuation_prompt_title, R.string.punctuation_prompt_description,
+                ) else null,
+                if (gemmaConfigured) listOf(
+                    R.string.summarize_title, R.string.summarize_description,
+                ) else null,
+                if (gemmaConfigured && summarizeOn) listOf(
+                    R.string.summary_prompt_title, R.string.summary_prompt_description,
+                ) else null,
+                if (isLlmBackend) listOf(
+                    R.string.default_prompt_title, R.string.default_prompt_description,
+                ) else null,
+                listOf(R.string.auto_unload_timeout, R.string.timeout_description),
+            ).map { group -> group.map { context.getString(it) } }
+        }
+        val appearanceSearchGroups = remember(context) {
+            listOf(
+                listOf(
+                    R.string.theme_title, R.string.theme_description,
+                    R.string.theme_mode_title, R.string.theme_mode_description,
+                ),
+                listOf(R.string.app_icon_title),
+                listOf(R.string.language_title, R.string.language_description),
+                listOf(R.string.swipe_action_title, R.string.swipe_action_description),
+                listOf(R.string.conversation_grouping_title, R.string.conversation_grouping_description),
+                listOf(R.string.compact_result_actions_title, R.string.compact_result_actions_description),
+                listOf(R.string.retranscribe_setting_title, R.string.retranscribe_setting_description),
+            ).map { group -> group.map { context.getString(it) } }
+        }
+        val advancedSearchGroups = remember(context, backgroundKills > 0) {
+            listOfNotNull(
+                if (backgroundKills > 0) listOf(
+                    R.string.battery_exemption_title, R.string.battery_exemption_description,
+                ) else null,
+                listOf(R.string.huggingface_auth, R.string.huggingface_auth_description),
+                listOf(R.string.thread_count_title, R.string.thread_count_description),
+                listOf(R.string.inference_provider_title, R.string.inference_provider_description),
+                listOf(
+                    R.string.share_targets_title, R.string.share_targets_description,
+                    R.string.advanced_sharing_toggle,
+                ),
+                listOf(R.string.subtitle_timeout_title, R.string.subtitle_timeout_description),
+                listOf(R.string.force_model_load, R.string.force_model_load_desc),
+                listOf(R.string.per_app_settings_title, R.string.per_app_settings_description),
+                listOf(R.string.performance_stats_title, R.string.performance_stats_subtitle),
+            ).map { group -> group.map { context.getString(it) } }
+        }
+        val feedbackSearchGroups = remember(context) {
+            // One group for one Card: the count reports cards, and the
+            // Feedback rows do not filter individually.
+            listOf(
+                listOf(
+                    R.string.settings_feedback_send_title, R.string.settings_feedback_version_title,
+                    R.string.settings_feedback_license_title, R.string.settings_feedback_source_title,
+                    R.string.settings_feedback_translation_title,
+                ).map { context.getString(it) }
+            )
+        }
 
-        val transcriptionVisible = sectionMatches(transcriptionSearchTitles)
-        val appearanceVisible = sectionMatches(appearanceSearchTitles)
-        val advancedVisible = sectionMatches(advancedSearchTitles)
-        val feedbackVisible = sectionMatches(feedbackSearchTitles)
-        val anyVisible = transcriptionVisible || appearanceVisible || advancedVisible || feedbackVisible
+        val transcriptionVisible = transcriptionSearchGroups.any { matchesQuery(searchQuery, it) }
+        val appearanceVisible = appearanceSearchGroups.any { matchesQuery(searchQuery, it) }
+        val advancedVisible = advancedSearchGroups.any { matchesQuery(searchQuery, it) }
+        val feedbackVisible = feedbackSearchGroups.any { matchesQuery(searchQuery, it) }
         val searchActive = searchQuery.isNotBlank()
+        val searchMatchCount = if (searchActive)
+            transcriptionSearchGroups.count { matchesQuery(searchQuery, it) } +
+                appearanceSearchGroups.count { matchesQuery(searchQuery, it) } +
+                advancedSearchGroups.count { matchesQuery(searchQuery, it) } +
+                feedbackSearchGroups.count { matchesQuery(searchQuery, it) }
+        else 0
+
+        if (searchActive) {
+            Text(
+                text = if (searchMatchCount > 0)
+                    pluralStringResource(
+                        R.plurals.settings_search_matches, searchMatchCount, searchMatchCount)
+                else
+                    stringResource(R.string.settings_search_no_results),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
 
         CollapsibleSection(
             title = stringResource(R.string.settings_section_transcription),
@@ -319,296 +432,75 @@ fun SettingsTab(
         ) {
             // Model Status Card (only show for LLM backend)
             if (isLlmBackend) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = if (isModelLoaded)
-                            MaterialTheme.colorScheme.primaryContainer
-                        else
-                            MaterialTheme.colorScheme.surfaceVariant
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                val modelStatusTitle =
+                    if (isModelLoaded) stringResource(R.string.model_loaded)
+                    else stringResource(R.string.model_not_loaded)
+                SearchFilterRow(searchQuery, modelStatusTitle) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (isModelLoaded)
+                                MaterialTheme.colorScheme.primaryContainer
+                            else
+                                MaterialTheme.colorScheme.surfaceVariant
+                        )
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Icon(
-                                imageVector = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.RemoveCircleOutline,
-                                contentDescription = null,
-                                tint = if (isModelLoaded)
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Text(
-                                text = if (isModelLoaded) stringResource(R.string.model_loaded) else stringResource(R.string.model_not_loaded),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    if (isModelLoaded && remainingTime > 0L) {
-                        val minutes = remainingTime / 60
-                        val seconds = remainingTime % 60
-                        Text(
-                            text = stringResource(R.string.auto_unload_in, minutes, seconds),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    }
-
-                    // Unload button - show when model is loaded
-                    if (isModelLoaded) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        UnloadModelButton(
-                            onClick = { viewModel.unloadModel() },
-                            isTranscribing = isTranscribing
-                        )
-                    }
-
-                    if (!isModelLoaded) {
-                        Text(
-                            text = stringResource(R.string.load_model_from_tab),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-            }
-
-            // Active Model Selection Card
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Storage,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.active_model),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    // Current model display
-                    if (uiState.currentModelPath != null) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircle,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Column {
-                                Text(
-                                    text = uiState.currentModelName ?: stringResource(R.string.model_unknown),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Medium
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.RemoveCircleOutline,
+                                    contentDescription = null,
+                                    tint = if (isModelLoaded)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
-                                    text = uiState.currentModelPath ?: "",
+                                    text = modelStatusTitle,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+
+                            if (isModelLoaded && remainingTime > 0L) {
+                                val minutes = remainingTime / 60
+                                val seconds = remainingTime % 60
+                                Text(
+                                    text = stringResource(R.string.auto_unload_in, minutes, seconds),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+
+                            // Unload button - show when model is loaded
+                            if (isModelLoaded) {
+                                Spacer(modifier = Modifier.height(8.dp))
+                                UnloadModelButton(
+                                    onClick = { viewModel.unloadModel() },
+                                    isTranscribing = isTranscribing
+                                )
+                            }
+
+                            if (!isModelLoaded) {
+                                Text(
+                                    text = stringResource(R.string.load_model_from_tab),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 1
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
-                    } else {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Warning,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = stringResource(R.string.no_model_selected_error),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
                     }
                 }
             }
 
-            // Transcription Language Setting
-            val transcriptionPinState = TranscriptionLanguagePolicy.pinState(
-                currentTranscriptionLanguage, transcriptionPicker.offeredCodes,
-                phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(context),
-            )
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Translate,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.transcription_language_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    // TASK-458: the dropdown offers what the ACTIVE model conditions
-                    // on; backends without language conditioning render it disabled.
-                    SettingsDropdown(
-                        currentValue = currentTranscriptionLanguage,
-                        options = transcriptionPicker.codes,
-                        currentValueDisplay = languageOptionLabel(
-                            currentTranscriptionLanguage,
-                            transcriptionSentinelLabels,
-                            transcriptionPicker.optionByCode
-                        ),
-                        optionDisplay = { code ->
-                            languageOptionLabel(
-                                code,
-                                transcriptionSentinelLabels,
-                                transcriptionPicker.optionByCode
-                            )
-                        },
-                        onOptionSelected = { viewModel.saveTranscriptionLanguage(it) },
-                        label = stringResource(R.string.transcription_language_title),
-                        enabled = transcriptionPicker.conditioningAvailable && !uiState.isSaving
-                    )
-
-                    // TASK-458: one explanatory line per the state of the active
-                    // model vs the stored preference (mutually exclusive by design:
-                    // a model that ignores the setting entirely shows only the
-                    // no-conditioning explanation, never the pin notes).
-                    val hintRes = when {
-                        !transcriptionPicker.conditioningAvailable ->
-                            R.string.transcription_language_no_conditioning
-                        transcriptionPinState == TranscriptionLanguagePolicy.PinState.SUPPORTED_PIN ->
-                            R.string.transcription_language_forced_hint
-                        transcriptionPinState == TranscriptionLanguagePolicy.PinState.UNSUPPORTED_PIN ->
-                            R.string.transcription_language_unsupported_pin
-                        else -> null
-                    }
-                    hintRes?.let {
-                        Text(
-                            text = stringResource(it),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // Auto-Copy Setting
-            ToggleSettingCard(
-                icon = Icons.Default.ContentCopy,
-                title = stringResource(R.string.auto_copy_title),
-                description = stringResource(R.string.auto_copy_description),
-                checked = autoCopyEnabled,
-                onCheckedChange = { enabled ->
-                    viewModel.saveAutoCopyEnabled(enabled)
-                }
-            )
-
-            // TASK-543: the two export cards live on their own sub-page now;
-            // this entry card navigates there.
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(role = Role.Button) { showExportSettings = true },
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier
-                        .padding(16.dp)
-                        .fillMaxWidth()
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Save,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.export_settings_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = stringResource(R.string.export_settings_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Icon(
-                        imageVector = Icons.Default.ChevronRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            // VAD Silence Stripping Setting
-            ToggleSettingCard(
-                icon = Icons.Default.GraphicEq,
-                title = stringResource(R.string.vad_title),
-                description = stringResource(R.string.vad_description),
-                checked = vadEnabled,
-                onCheckedChange = { enabled ->
-                    viewModel.saveVadEnabled(enabled)
-                }
-            )
-
-            // Progressive Transcription Display Setting
-            ToggleSettingCard(
-                icon = Icons.Default.Visibility,
-                title = stringResource(R.string.progressive_title),
-                description = stringResource(R.string.progressive_description),
-                checked = progressiveEnabled,
-                onCheckedChange = { enabled ->
-                    viewModel.saveProgressiveTranscription(enabled)
-                }
-            )
-
-            // TASK-276: punctuation pass mode + prompt override. TASK-507: exposed only when the pass can run at all. Runtime
-            // preconditions are a configured Gemma (the pass engine) AND a
-            // non-LLM active backend (LLM output is polished by its own final
-            // pass; double-passing is skipped in the orchestrator). The
-            // dropdown sits in the section's standard Card (icon header +
-            // description + divider), matching every sibling setting; the
-            // TASK-276 bare-dropdown shape read as a foreign element
-            // (maintainer trial, radius mismatch).
-            if (gemmaConfigured && !isLlmBackend) {
-                val currentPunctuationMode by viewModel.currentPunctuationMode.collectAsState()
+            // Active Model Selection Card
+            SearchFilterRow(searchQuery, stringResource(R.string.active_model)) {
                 Card(
                     modifier = Modifier.fillMaxWidth()
                 ) {
@@ -621,31 +513,279 @@ fun SettingsTab(
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.FormatQuote,
+                                imageVector = Icons.Default.Storage,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary
                             )
                             Text(
-                                text = stringResource(R.string.punctuation_mode_title),
+                                text = stringResource(R.string.active_model),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold
                             )
                         }
-                        Text(
-                            text = stringResource(R.string.punctuation_mode_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+
+                        // Current model display
+                        if (uiState.currentModelPath != null) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Column {
+                                    Text(
+                                        text = uiState.currentModelName ?: stringResource(R.string.model_unknown),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Text(
+                                        text = uiState.currentModelPath ?: "",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1
+                                    )
+                                }
+                            }
+                        } else {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Warning,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.error,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Text(
+                                    text = stringResource(R.string.no_model_selected_error),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Transcription Language Setting (pin state and hint hoisted
+            // above the search groups; see transcriptionHintRes)
+            val transcriptionLanguageTitle = stringResource(R.string.transcription_language_title)
+            SearchFilterRow(
+                searchQuery,
+                transcriptionLanguageTitle,
+                // Only the hint that actually renders (may be null: skipped).
+                transcriptionHintRes?.let { stringResource(it) }
+            ) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Translate,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = transcriptionLanguageTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        // TASK-458: the dropdown offers what the ACTIVE model conditions
+                        // on; backends without language conditioning render it disabled.
                         SettingsDropdown(
-                            currentValue = currentPunctuationMode,
-                            options = viewModel.punctuationModeOptions,
-                            currentValueDisplay = punctuationModeLabel(currentPunctuationMode),
-                            optionDisplay = { punctuationModeLabel(it) },
-                            onOptionSelected = { viewModel.savePunctuationMode(it) },
-                            label = stringResource(R.string.punctuation_mode_title),
-                            enabled = !uiState.isSaving
+                            currentValue = currentTranscriptionLanguage,
+                            options = transcriptionPicker.codes,
+                            currentValueDisplay = languageOptionLabel(
+                                currentTranscriptionLanguage,
+                                transcriptionSentinelLabels,
+                                transcriptionPicker.optionByCode
+                            ),
+                            optionDisplay = { code ->
+                                languageOptionLabel(
+                                    code,
+                                    transcriptionSentinelLabels,
+                                    transcriptionPicker.optionByCode
+                                )
+                            },
+                            onOptionSelected = { viewModel.saveTranscriptionLanguage(it) },
+                            label = transcriptionLanguageTitle,
+                            enabled = transcriptionPicker.conditioningAvailable && !uiState.isSaving
                         )
+
+                        // TASK-458: one explanatory line per the state of the active
+                        // model vs the stored preference; hoisted as
+                        // transcriptionHintRes so the search filter matches the
+                        // same text this card renders.
+                        transcriptionHintRes?.let {
+                            Text(
+                                text = stringResource(it),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Auto-Copy Setting
+            val autoCopyTitle = stringResource(R.string.auto_copy_title)
+            val autoCopyDescription = stringResource(R.string.auto_copy_description)
+            SearchFilterRow(searchQuery, autoCopyTitle, autoCopyDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.ContentCopy,
+                    title = autoCopyTitle,
+                    description = autoCopyDescription,
+                    checked = autoCopyEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveAutoCopyEnabled(enabled)
+                    }
+                )
+            }
+
+            // TASK-543: the two export cards live on their own sub-page now;
+            // this entry card navigates there.
+            SearchFilterRow(
+                searchQuery,
+                stringResource(R.string.export_settings_title),
+                stringResource(R.string.export_settings_description)
+            ) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { showExportSettings = true },
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.export_settings_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = stringResource(R.string.export_settings_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.Default.ChevronRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // VAD Silence Stripping Setting
+            val vadTitle = stringResource(R.string.vad_title)
+            val vadDescription = stringResource(R.string.vad_description)
+            SearchFilterRow(searchQuery, vadTitle, vadDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.GraphicEq,
+                    title = vadTitle,
+                    description = vadDescription,
+                    checked = vadEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveVadEnabled(enabled)
+                    }
+                )
+            }
+
+            // Progressive Transcription Display Setting
+            val progressiveTitle = stringResource(R.string.progressive_title)
+            val progressiveDescription = stringResource(R.string.progressive_description)
+            SearchFilterRow(searchQuery, progressiveTitle, progressiveDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Visibility,
+                    title = progressiveTitle,
+                    description = progressiveDescription,
+                    checked = progressiveEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveProgressiveTranscription(enabled)
+                    }
+                )
+            }
+
+            // TASK-276: punctuation pass mode + prompt override. TASK-507: exposed only when the pass can run at all. Runtime
+            // preconditions are a configured Gemma (the pass engine) AND a
+            // non-LLM active backend (LLM output is polished by its own final
+            // pass; double-passing is skipped in the orchestrator). The
+            // dropdown sits in the section's standard Card (icon header +
+            // description + divider), matching every sibling setting; the
+            // TASK-276 bare-dropdown shape read as a foreign element
+            // (maintainer trial, radius mismatch).
+            if (gemmaConfigured && !isLlmBackend) {
+                val punctuationModeTitle = stringResource(R.string.punctuation_mode_title)
+                SearchFilterRow(
+                    searchQuery,
+                    punctuationModeTitle,
+                    stringResource(R.string.punctuation_mode_description)
+                ) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.FormatQuote,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                                Text(
+                                    text = punctuationModeTitle,
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Text(
+                                text = stringResource(R.string.punctuation_mode_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                            SettingsDropdown(
+                                currentValue = currentPunctuationMode,
+                                options = viewModel.punctuationModeOptions,
+                                currentValueDisplay = punctuationModeLabel(currentPunctuationMode),
+                                optionDisplay = { punctuationModeLabel(it) },
+                                onOptionSelected = { viewModel.savePunctuationMode(it) },
+                                label = punctuationModeTitle,
+                                enabled = !uiState.isSaving
+                            )
+                        }
                     }
                 }
                 // TASK-507 (maintainer): the prompt override text area stays
@@ -654,11 +794,17 @@ fun SettingsTab(
                 // toggle. AUTO can never run it today (see the options note
                 // in SettingsViewModel); the previous condition (mode != off)
                 // kept the box on screen from the untouched AUTO default.
-                if (currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS) {
-                    PunctuationPromptCard(
-                        prompt = viewModel.currentPunctuationPrompt.collectAsState().value,
-                        onSave = { viewModel.savePunctuationPrompt(it) }
-                    )
+                SearchFilterRow(
+                    searchQuery,
+                    stringResource(R.string.punctuation_prompt_title),
+                    stringResource(R.string.punctuation_prompt_description)
+                ) {
+                    if (currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS) {
+                        PunctuationPromptCard(
+                            prompt = viewModel.currentPunctuationPrompt.collectAsState().value,
+                            onSave = { viewModel.savePunctuationPrompt(it) }
+                        )
+                    }
                 }
             }
 
@@ -668,21 +814,30 @@ fun SettingsTab(
             // Unlike punctuation, it is offered on the LLM backend too: it
             // summarizes any transcript, including Gemma's own.
             if (gemmaConfigured) {
-                val summarizeOn by viewModel.summarizeEnabled.collectAsState()
-                ToggleSettingCard(
-                    icon = Icons.Default.Notes,
-                    title = stringResource(R.string.summarize_title),
-                    description = stringResource(R.string.summarize_description),
-                    checked = summarizeOn,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveSummarizeEnabled(enabled)
-                    }
-                )
-                if (summarizeOn) {
-                    SummaryPromptCard(
-                        prompt = viewModel.currentSummaryPrompt.collectAsState().value,
-                        onSave = { viewModel.saveSummaryPrompt(it) }
+                val summarizeTitle = stringResource(R.string.summarize_title)
+                val summarizeDescription = stringResource(R.string.summarize_description)
+                SearchFilterRow(searchQuery, summarizeTitle, summarizeDescription) {
+                    ToggleSettingCard(
+                        icon = Icons.Default.Notes,
+                        title = summarizeTitle,
+                        description = summarizeDescription,
+                        checked = summarizeOn,
+                        onCheckedChange = { enabled ->
+                            viewModel.saveSummarizeEnabled(enabled)
+                        }
                     )
+                }
+                SearchFilterRow(
+                    searchQuery,
+                    stringResource(R.string.summary_prompt_title),
+                    stringResource(R.string.summary_prompt_description)
+                ) {
+                    if (summarizeOn) {
+                        SummaryPromptCard(
+                            prompt = viewModel.currentSummaryPrompt.collectAsState().value,
+                            onSave = { viewModel.saveSummaryPrompt(it) }
+                        )
+                    }
                 }
             }
 
@@ -692,154 +847,163 @@ fun SettingsTab(
             // card exposes only on the LLM backend, symmetric with the model
             // status card at the top of this section.
             if (isLlmBackend) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button) { showPromptSettings = true },
-                    shape = MaterialTheme.shapes.medium
+                SearchFilterRow(
+                    searchQuery,
+                    stringResource(R.string.default_prompt_title),
+                    stringResource(R.string.default_prompt_description)
                 ) {
-                    Row(
+                    Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                            .clickable(role = Role.Button) { showPromptSettings = true },
+                        shape = MaterialTheme.shapes.medium
                     ) {
-                        // Locale-safe: weight lets title/description wrap instead of
-                        // displacing the trailing chevron (TASK-345)
                         Row(
-                            modifier = Modifier.weight(1f),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.default_prompt_title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                            // Locale-safe: weight lets title/description wrap instead of
+                            // displacing the trailing chevron (TASK-345)
+                            Row(
+                                modifier = Modifier.weight(1f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
                                 )
-                                Text(
-                                    text = stringResource(R.string.default_prompt_description),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                                Column {
+                                    Text(
+                                        text = stringResource(R.string.default_prompt_title),
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Text(
+                                        text = stringResource(R.string.default_prompt_description),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = stringResource(R.string.open_prompt_settings),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = stringResource(R.string.open_prompt_settings),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
                     }
                 }
             }
 
             // Keep-Alive Timeout Setting
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+            val timeoutTitle = stringResource(R.string.auto_unload_timeout)
+            SearchFilterRow(searchQuery, timeoutTitle, stringResource(R.string.timeout_description)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Timer,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.auto_unload_timeout),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(R.string.timeout_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    // Timeout dropdown
-                    SettingsDropdown(
-                        currentValue = currentTimeout,
-                        options = viewModel.timeoutOptions,
-                        currentValueDisplay = when (currentTimeout) {
-                            1 -> stringResource(R.string.timeout_1_minute)
-                            60 -> stringResource(R.string.timeout_1_hour)
-                            else -> pluralStringResource(R.plurals.timeout_minutes, currentTimeout, currentTimeout)
-                        },
-                        optionDisplay = { minutes ->
-                            when (minutes) {
-                                1 -> stringResource(R.string.timeout_1_minute)
-                                60 -> stringResource(R.string.timeout_1_hour)
-                                else -> pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
-                            }
-                        },
-                        onOptionSelected = { viewModel.saveKeepAliveTimeout(it) },
-                        label = stringResource(R.string.auto_unload_timeout),
-                        enabled = !uiState.isSaving
-                    )
-
-                    // Saving indicator
-                    if (uiState.isSaving) {
                         Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(20.dp),
-                                strokeWidth = 2.dp
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = stringResource(R.string.saving),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    }
-
-                    // Success indicator
-                    if (uiState.saveSuccess == true) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Check,
+                                imageVector = Icons.Default.Timer,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
+                                tint = MaterialTheme.colorScheme.primary
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = stringResource(R.string.settings_saved),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
+                                text = timeoutTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                    }
 
-                    // Error message
-                    uiState.errorMessage?.let { error ->
                         Text(
-                            text = error,
+                            text = stringResource(R.string.timeout_description),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        // Timeout dropdown
+                        SettingsDropdown(
+                            currentValue = currentTimeout,
+                            options = viewModel.timeoutOptions,
+                            currentValueDisplay = when (currentTimeout) {
+                                1 -> stringResource(R.string.timeout_1_minute)
+                                60 -> stringResource(R.string.timeout_1_hour)
+                                else -> pluralStringResource(R.plurals.timeout_minutes, currentTimeout, currentTimeout)
+                            },
+                            optionDisplay = { minutes ->
+                                when (minutes) {
+                                    1 -> stringResource(R.string.timeout_1_minute)
+                                    60 -> stringResource(R.string.timeout_1_hour)
+                                    else -> pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
+                                }
+                            },
+                            onOptionSelected = { viewModel.saveKeepAliveTimeout(it) },
+                            label = timeoutTitle,
+                            enabled = !uiState.isSaving
+                        )
+
+                        // Saving indicator
+                        if (uiState.isSaving) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(R.string.saving),
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+
+                        // Success indicator
+                        if (uiState.saveSuccess == true) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = stringResource(R.string.settings_saved),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        }
+
+                        // Error message
+                        uiState.errorMessage?.let { error ->
+                            Text(
+                                text = error,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
             }
@@ -856,71 +1020,81 @@ fun SettingsTab(
             initiallyExpanded = true
         ) {
             // Theme Setting
-            Card(
-                modifier = Modifier.fillMaxWidth()
+            val themeTitle = stringResource(R.string.theme_title)
+            val themeModeTitle = stringResource(R.string.theme_mode_title)
+            SearchFilterRow(
+                searchQuery,
+                themeTitle,
+                stringResource(R.string.theme_description),
+                themeModeTitle,
+                stringResource(R.string.theme_mode_description)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Palette,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Palette,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = themeTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Text(
+                            text = stringResource(R.string.theme_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        // Theme dropdown
+                        SettingsDropdown(
+                            currentValue = currentTheme,
+                            options = viewModel.themeOptions,
+                            currentValueDisplay = currentTheme.displayName,
+                            optionDisplay = { it.displayName },
+                            onOptionSelected = { viewModel.saveThemePreference(it) },
+                            label = themeTitle,
+                            enabled = !uiState.isSaving
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = themeModeTitle,
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
                         )
                         Text(
-                            text = stringResource(R.string.theme_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.theme_mode_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        // Theme mode dropdown (System / Dark / Light)
+                        val currentThemeMode by viewModel.currentThemeMode.collectAsState()
+                        SettingsDropdown(
+                            currentValue = currentThemeMode,
+                            options = viewModel.themeModeOptions,
+                            currentValueDisplay = currentThemeMode.displayName,
+                            optionDisplay = { it.displayName },
+                            onOptionSelected = { viewModel.saveThemeMode(it) },
+                            label = themeModeTitle
                         )
                     }
-
-                    Text(
-                        text = stringResource(R.string.theme_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    // Theme dropdown
-                    SettingsDropdown(
-                        currentValue = currentTheme,
-                        options = viewModel.themeOptions,
-                        currentValueDisplay = currentTheme.displayName,
-                        optionDisplay = { it.displayName },
-                        onOptionSelected = { viewModel.saveThemePreference(it) },
-                        label = stringResource(R.string.theme_title),
-                        enabled = !uiState.isSaving
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = stringResource(R.string.theme_mode_title),
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(
-                        text = stringResource(R.string.theme_mode_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    // Theme mode dropdown (System / Dark / Light)
-                    val currentThemeMode by viewModel.currentThemeMode.collectAsState()
-                    SettingsDropdown(
-                        currentValue = currentThemeMode,
-                        options = viewModel.themeModeOptions,
-                        currentValueDisplay = currentThemeMode.displayName,
-                        optionDisplay = { it.displayName },
-                        onOptionSelected = { viewModel.saveThemeMode(it) },
-                        label = stringResource(R.string.theme_mode_title)
-                    )
                 }
             }
 
@@ -928,173 +1102,193 @@ fun SettingsTab(
             // dedicated sub-page (maintainer decision 2026-09-09); the row
             // shows the active variant and opens the picker grid.
             val currentLauncherIcon by viewModel.currentLauncherIcon.collectAsState()
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button) { showIconSettings = true }
-                        .padding(16.dp)
+            SearchFilterRow(searchQuery, stringResource(R.string.app_icon_title)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Apps,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = stringResource(R.string.app_icon_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(role = Role.Button) { showIconSettings = true }
+                            .padding(16.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Apps,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
                         )
-                        Text(
-                            text = stringResource(currentLauncherIcon.nameRes),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.app_icon_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = stringResource(currentLauncherIcon.nameRes),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 
             // Language Setting (App Language)
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+            val languageTitle = stringResource(R.string.language_title)
+            SearchFilterRow(searchQuery, languageTitle, stringResource(R.string.language_description)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Language,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Language,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = languageTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
                         Text(
-                            text = stringResource(R.string.language_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.language_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
 
-                    Text(
-                        text = stringResource(R.string.language_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    // Language dropdown
-                    val appOptionsByCode = viewModel.languageOptions.associateBy { option -> option.code }
-                    SettingsDropdown(
-                        currentValue = currentLanguage,
-                        options = viewModel.languageOptions.map { it.code },
-                        currentValueDisplay = languageOptionLabel(
-                            currentLanguage,
-                            appLanguageSentinelLabels,
-                            appOptionsByCode
-                        ),
-                        optionDisplay = { code ->
-                            languageOptionLabel(
-                                code,
+                        // Language dropdown
+                        val appOptionsByCode = viewModel.languageOptions.associateBy { option -> option.code }
+                        SettingsDropdown(
+                            currentValue = currentLanguage,
+                            options = viewModel.languageOptions.map { it.code },
+                            currentValueDisplay = languageOptionLabel(
+                                currentLanguage,
                                 appLanguageSentinelLabels,
                                 appOptionsByCode
-                            )
-                        },
-                        onOptionSelected = { viewModel.saveLanguagePreference(it) },
-                        label = stringResource(R.string.language_title),
-                        enabled = !uiState.isSaving
-                    )
+                            ),
+                            optionDisplay = { code ->
+                                languageOptionLabel(
+                                    code,
+                                    appLanguageSentinelLabels,
+                                    appOptionsByCode
+                                )
+                            },
+                            onOptionSelected = { viewModel.saveLanguagePreference(it) },
+                            label = languageTitle,
+                            enabled = !uiState.isSaving
+                        )
+                    }
                 }
             }
 
             // Swipe Action Setting
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp)
+            val swipeActionTitle = stringResource(R.string.swipe_action_title)
+            SearchFilterRow(searchQuery, swipeActionTitle, stringResource(R.string.swipe_action_description)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Swipe,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Swipe,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = swipeActionTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
                         Text(
-                            text = stringResource(R.string.swipe_action_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.swipe_action_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        SettingsDropdown(
+                            currentValue = swipeActionMode,
+                            options = PreferencesManager.SWIPE_ACTION_MODES,
+                            currentValueDisplay = swipeActionMode.swipeActionLabel(),
+                            optionDisplay = { mode -> mode.swipeActionLabel() },
+                            onOptionSelected = { viewModel.saveSwipeActionMode(it) },
+                            label = swipeActionTitle,
+                            enabled = !uiState.isSaving
                         )
                     }
-
-                    Text(
-                        text = stringResource(R.string.swipe_action_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    SettingsDropdown(
-                        currentValue = swipeActionMode,
-                        options = PreferencesManager.SWIPE_ACTION_MODES,
-                        currentValueDisplay = swipeActionMode.swipeActionLabel(),
-                        optionDisplay = { mode -> mode.swipeActionLabel() },
-                        onOptionSelected = { viewModel.saveSwipeActionMode(it) },
-                        label = stringResource(R.string.swipe_action_title),
-                        enabled = !uiState.isSaving
-                    )
                 }
             }
 
             // Conversation Grouping Setting
-            ToggleSettingCard(
-                icon = Icons.Default.Forum,
-                title = stringResource(R.string.conversation_grouping_title),
-                description = stringResource(R.string.conversation_grouping_description),
-                checked = groupLogsByConversation,
-                onCheckedChange = { enabled ->
-                    viewModel.saveGroupLogsByConversation(enabled)
-                }
-            )
+            val conversationGroupingTitle = stringResource(R.string.conversation_grouping_title)
+            val conversationGroupingDescription = stringResource(R.string.conversation_grouping_description)
+            SearchFilterRow(searchQuery, conversationGroupingTitle, conversationGroupingDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Forum,
+                    title = conversationGroupingTitle,
+                    description = conversationGroupingDescription,
+                    checked = groupLogsByConversation,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveGroupLogsByConversation(enabled)
+                    }
+                )
+            }
 
             // Compact icon-only actions on result cards
-            ToggleSettingCard(
-                icon = Icons.Default.TouchApp,
-                title = stringResource(R.string.compact_result_actions_title),
-                description = stringResource(R.string.compact_result_actions_description),
-                checked = compactResultActions,
-                onCheckedChange = { enabled ->
-                    viewModel.saveCompactResultActions(enabled)
-                }
-            )
+            val compactResultActionsTitle = stringResource(R.string.compact_result_actions_title)
+            val compactResultActionsDescription = stringResource(R.string.compact_result_actions_description)
+            SearchFilterRow(searchQuery, compactResultActionsTitle, compactResultActionsDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.TouchApp,
+                    title = compactResultActionsTitle,
+                    description = compactResultActionsDescription,
+                    checked = compactResultActions,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveCompactResultActions(enabled)
+                    }
+                )
+            }
 
             // Re-transcribe button on history entries. TASK-507: moved from Advanced; it is History-list behavior,
             // the same class as grouping/compact/swipe above, and a user
             // decluttering History never finds it under Advanced.
-            ToggleSettingCard(
-                icon = Icons.Default.Refresh,
-                title = stringResource(R.string.retranscribe_setting_title),
-                description = stringResource(R.string.retranscribe_setting_description),
-                checked = showRetranscribeButton,
-                onCheckedChange = { viewModel.saveShowRetranscribeButton(it) }
-            )
+            val retranscribeTitle = stringResource(R.string.retranscribe_setting_title)
+            val retranscribeDescription = stringResource(R.string.retranscribe_setting_description)
+            SearchFilterRow(searchQuery, retranscribeTitle, retranscribeDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Refresh,
+                    title = retranscribeTitle,
+                    description = retranscribeDescription,
+                    checked = showRetranscribeButton,
+                    onCheckedChange = { viewModel.saveShowRetranscribeButton(it) }
+                )
+            }
 
         }
 
@@ -1109,394 +1303,407 @@ fun SettingsTab(
             initiallyExpanded = false
         ) {
             // TASK-336: offer the battery-optimization exemption after a detected
-            // background kill (OEM killed the FGS; the sweep recorded the interruption)
-            val backgroundKills by viewModel.backgroundKills.collectAsState()
-            LaunchedEffect(Unit) { viewModel.refreshBackgroundKills() }
+            // background kill (OEM killed the FGS; the sweep recorded the
+            // interruption). The count refresh itself is hoisted to the tab
+            // level: this section's content only composes when expanded AND
+            // visible, and the search filter needs the count before that.
             if (backgroundKills > 0) {
                 val context = LocalContext.current
-                Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.BatteryAlert, contentDescription = null, tint = MaterialTheme.colorScheme.error)
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(stringResource(R.string.battery_exemption_title), style = MaterialTheme.typography.titleMedium)
-                        }
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(stringResource(R.string.battery_exemption_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        TextButton(onClick = {
-                            runCatching {
-                                context.startActivity(android.content.Intent(
-                                    android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
-                                    android.net.Uri.parse("package:" + context.packageName)))
+                SearchFilterRow(
+                    searchQuery,
+                    stringResource(R.string.battery_exemption_title),
+                    stringResource(R.string.battery_exemption_description)
+                ) {
+                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+                        Column(modifier = Modifier.padding(16.dp)) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.BatteryAlert, contentDescription = null, tint = MaterialTheme.colorScheme.error)
+                                Spacer(modifier = Modifier.width(12.dp))
+                                Text(stringResource(R.string.battery_exemption_title), style = MaterialTheme.typography.titleMedium)
                             }
-                        }) { Text(stringResource(R.string.battery_exemption_action)) }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(stringResource(R.string.battery_exemption_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TextButton(onClick = {
+                                runCatching {
+                                    context.startActivity(android.content.Intent(
+                                        android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                                        android.net.Uri.parse("package:" + context.packageName)))
+                                }
+                            }) { Text(stringResource(R.string.battery_exemption_action)) }
+                        }
                     }
                 }
             }
 
             // HuggingFace Token Card
-            Card(
-                modifier = Modifier.fillMaxWidth()
+            SearchFilterRow(
+                searchQuery,
+                stringResource(R.string.huggingface_auth),
+                stringResource(R.string.huggingface_auth_description)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Key,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.huggingface_auth),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(R.string.huggingface_auth_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    // Setup Guide (expandable) - only show when no valid token
-                    if (tokenState !is HuggingFaceTokenManager.TokenState.Valid) {
-                        var showSetupGuide by remember { mutableStateOf(false) }
-                        Card(
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.tertiaryContainer
-                            )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Column(modifier = Modifier.padding(12.dp)) {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    // Locale-safe: weight lets the label wrap instead of
-                                    // pushing the expand button off-card (TASK-345)
-                                    Row(
-                                        modifier = Modifier.weight(1f),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.Default.HelpOutline,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onTertiaryContainer,
-                                            modifier = Modifier.size(18.dp)
-                                        )
-                                        Text(
-                                            stringResource(R.string.setup_guide),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                    }
-                                    // TASK-381: no explicit size, IconButton defaults to 48dp touch target
-                                    IconButton(
-                                        onClick = { showSetupGuide = !showSetupGuide }
-                                    ) {
-                                        Icon(
-                                            if (showSetupGuide) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                            contentDescription = if (showSetupGuide) stringResource(R.string.show_less) else stringResource(R.string.show_more),
-                                            tint = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                    }
-                                }
-                                if (showSetupGuide) {
-                                    Spacer(modifier = Modifier.height(8.dp))
-                                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                                        Text(
-                                            stringResource(R.string.setup_step1),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                        Text(
-                                            stringResource(R.string.setup_step2),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                        Text(
-                                            stringResource(R.string.setup_step3),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                        Text(
-                                            stringResource(R.string.setup_step4),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onTertiaryContainer
-                                        )
-                                    }
-                                }
-                            }
+                            Icon(
+                                imageVector = Icons.Default.Key,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.huggingface_auth),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
-                    }
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    // OAuth Login Section (if configured) - PRIMARY OPTION
-                    if (viewModel.isOAuthConfigured && activity != null) {
-                        OAuthLoginSection(
-                            oauthState = oauthState,
-                            tokenState = tokenState,
-                            onLoginClick = {
-                                try {
-                                    viewModel.huggingFaceAuthManager.startAuthFlow(activity, oauthLauncher)
-                                } catch (e: Exception) {
-                                    viewModel.clearError()
-                                    viewModel.clearOAuthState()
-                                }
-                            },
-                            onLogoutClick = { viewModel.clearToken() },
-                            onDismissError = { viewModel.clearOAuthState() }
+                        Text(
+                            text = stringResource(R.string.huggingface_auth_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
 
-                    // Show token status if valid
-                    when (val currentState = tokenState) {
-                        is HuggingFaceTokenManager.TokenState.Valid -> {
-                            // Already handled by OAuth section or show here for manual tokens
-                            if (currentState.authType == HuggingFaceTokenManager.AuthType.MANUAL) {
-                                var showManualDetails by remember { mutableStateOf(false) }
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable(role = Role.Button) { showManualDetails = !showManualDetails },
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
+                        // Setup Guide (expandable) - only show when no valid token
+                        if (tokenState !is HuggingFaceTokenManager.TokenState.Valid) {
+                            var showSetupGuide by remember { mutableStateOf(false) }
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.tertiaryContainer
+                                )
+                            ) {
+                                Column(modifier = Modifier.padding(12.dp)) {
                                     Row(
-                                        modifier = Modifier.weight(1f),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CheckCircle,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.token_valid),
-                                            style = MaterialTheme.typography.labelLarge,
-                                            color = MaterialTheme.colorScheme.primary
-                                        )
-                                        Icon(
-                                            imageVector = if (showManualDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                            contentDescription = if (showManualDetails) stringResource(R.string.hide_details) else stringResource(R.string.show_details),
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            modifier = Modifier.size(18.dp)
-                                        )
+                                        // Locale-safe: weight lets the label wrap instead of
+                                        // pushing the expand button off-card (TASK-345)
+                                        Row(
+                                            modifier = Modifier.weight(1f),
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                        ) {
+                                            Icon(
+                                                Icons.Default.HelpOutline,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                                modifier = Modifier.size(18.dp)
+                                            )
+                                            Text(
+                                                stringResource(R.string.setup_guide),
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                        }
+                                        // TASK-381: no explicit size, IconButton defaults to 48dp touch target
+                                        IconButton(
+                                            onClick = { showSetupGuide = !showSetupGuide }
+                                        ) {
+                                            Icon(
+                                                if (showSetupGuide) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                                contentDescription = if (showSetupGuide) stringResource(R.string.show_less) else stringResource(R.string.show_more),
+                                                tint = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                        }
                                     }
-                                    IconButton(onClick = { viewModel.clearToken() }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Delete,
-                                            contentDescription = stringResource(R.string.clear_token),
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
-                                    }
-                                }
-                                if (showManualDetails) {
-                                    Column(
-                                        modifier = Modifier.padding(start = 24.dp),
-                                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.username_label, currentState.username),
-                                            style = MaterialTheme.typography.bodyMedium
-                                        )
-                                        Text(
-                                            text = stringResource(R.string.token_label, currentState.maskedToken),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
+                                    if (showSetupGuide) {
+                                        Spacer(modifier = Modifier.height(8.dp))
+                                        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Text(
+                                                stringResource(R.string.setup_step1),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                            Text(
+                                                stringResource(R.string.setup_step2),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                            Text(
+                                                stringResource(R.string.setup_step3),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                            Text(
+                                                stringResource(R.string.setup_step4),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.onTertiaryContainer
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
 
-                        else -> {
-                            // Advanced: Manual Token Section (collapsible)
-                            var showAdvanced by remember { mutableStateOf(false) }
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                            TextButton(
-                                onClick = { showAdvanced = !showAdvanced },
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Icon(
-                                    imageVector = if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                    contentDescription = null
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(if (showAdvanced) stringResource(R.string.hide_advanced) else stringResource(R.string.advanced_manual_token))
-                            }
-
-                            if (!showAdvanced) {
-                                Text(
-                                    text = stringResource(R.string.manual_token_scope_info),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-
-                            if (showAdvanced) {
-                                val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-
-                                when (val innerState = tokenState) {
-                                    is HuggingFaceTokenManager.TokenState.Invalid -> {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            TokenInputField(
-                                                value = tokenInput,
-                                                onValueChange = { viewModel.onTokenInputChanged(it) },
-                                                tokenPasswordVisible = tokenPasswordVisible,
-                                                onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
-                                                clipboardManager = clipboardManager,
-                                                modifier = Modifier.weight(1f),
-                                                isError = true
-                                            )
-                                        }
-                                        Text(
-                                            text = innerState.error,
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.error
-                                        )
-                                        // Fix buttons
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            // Locale-safe: weight(1f) on both buttons so
-                                            // longer labels share the row (TASK-345)
-                                            FilledTonalButton(
-                                                onClick = {
-                                                    val intent = android.content.Intent(
-                                                        android.content.Intent.ACTION_VIEW,
-                                                        android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
-                                                    )
-                                                    context.startActivity(intent)
-                                                },
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                Icon(
-                                                    Icons.AutoMirrored.Filled.OpenInNew,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Spacer(Modifier.width(4.dp))
-                                                Text(stringResource(R.string.create_token))
-                                            }
-                                            OutlinedButton(
-                                                onClick = { viewModel.validateAndSaveToken() },
-                                                enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken,
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                Text(stringResource(R.string.retry))
-                                            }
-                                        }
+                        // OAuth Login Section (if configured) - PRIMARY OPTION
+                        if (viewModel.isOAuthConfigured && activity != null) {
+                            OAuthLoginSection(
+                                oauthState = oauthState,
+                                tokenState = tokenState,
+                                onLoginClick = {
+                                    try {
+                                        viewModel.huggingFaceAuthManager.startAuthFlow(activity, oauthLauncher)
+                                    } catch (e: Exception) {
+                                        viewModel.clearError()
+                                        viewModel.clearOAuthState()
                                     }
+                                },
+                                onLogoutClick = { viewModel.clearToken() },
+                                onDismissError = { viewModel.clearOAuthState() }
+                            )
+                        }
 
-                                    is HuggingFaceTokenManager.TokenState.Validating -> {
+                        // Show token status if valid
+                        when (val currentState = tokenState) {
+                            is HuggingFaceTokenManager.TokenState.Valid -> {
+                                // Already handled by OAuth section or show here for manual tokens
+                                if (currentState.authType == HuggingFaceTokenManager.AuthType.MANUAL) {
+                                    var showManualDetails by remember { mutableStateOf(false) }
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .clickable(role = Role.Button) { showManualDetails = !showManualDetails },
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
                                         Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            TokenInputField(
-                                                value = tokenInput,
-                                                onValueChange = { viewModel.onTokenInputChanged(it) },
-                                                tokenPasswordVisible = tokenPasswordVisible,
-                                                onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
-                                                clipboardManager = clipboardManager,
-                                                modifier = Modifier.weight(1f),
-                                                enabled = false
-                                            )
-                                        }
-                                        Row(
+                                            modifier = Modifier.weight(1f),
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                                         ) {
-                                            CircularProgressIndicator(modifier = Modifier.size(16.dp))
-                                            Text(stringResource(R.string.validating_token))
-                                        }
-                                    }
-
-                                    is HuggingFaceTokenManager.TokenState.Idle -> {
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            TokenInputField(
-                                                value = tokenInput,
-                                                onValueChange = { viewModel.onTokenInputChanged(it) },
-                                                tokenPasswordVisible = tokenPasswordVisible,
-                                                onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
-                                                clipboardManager = clipboardManager,
-                                                modifier = Modifier.weight(1f)
+                                            Icon(
+                                                imageVector = Icons.Default.CheckCircle,
+                                                contentDescription = null,
+                                                tint = MaterialTheme.colorScheme.primary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.token_valid),
+                                                style = MaterialTheme.typography.labelLarge,
+                                                color = MaterialTheme.colorScheme.primary
+                                            )
+                                            Icon(
+                                                imageVector = if (showManualDetails) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                                contentDescription = if (showManualDetails) stringResource(R.string.hide_details) else stringResource(R.string.show_details),
+                                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                modifier = Modifier.size(18.dp)
                                             )
                                         }
-                                        Row(
-                                            modifier = Modifier.fillMaxWidth(),
-                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                                        ) {
-                                            // Locale-safe: weight(1f) on both buttons so
-                                            // longer labels share the row (TASK-345)
-                                            FilledTonalButton(
-                                                onClick = { viewModel.validateAndSaveToken() },
-                                                enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken,
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                if (uiState.isValidatingToken) {
-                                                    CircularProgressIndicator(
-                                                        modifier = Modifier.size(16.dp),
-                                                        strokeWidth = 2.dp
-                                                    )
-                                                } else {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Check,
-                                                        contentDescription = null,
-                                                        modifier = Modifier.size(18.dp)
-                                                    )
-                                                }
-                                                Spacer(modifier = Modifier.width(8.dp))
-                                                Text(if (uiState.isValidatingToken) stringResource(R.string.validating) else stringResource(R.string.validate_and_save))
-                                            }
-                                            // Link to token creation page
-                                            TextButton(
-                                                onClick = {
-                                                    val intent = android.content.Intent(
-                                                        android.content.Intent.ACTION_VIEW,
-                                                        android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
-                                                    )
-                                                    context.startActivity(intent)
-                                                },
-                                                modifier = Modifier.weight(1f)
-                                            ) {
-                                                Icon(
-                                                    imageVector = Icons.AutoMirrored.Filled.OpenInNew,
-                                                    contentDescription = null,
-                                                    modifier = Modifier.size(16.dp)
-                                                )
-                                                Spacer(modifier = Modifier.width(4.dp))
-                                                Text(stringResource(R.string.get_token))
-                                            }
+                                        IconButton(onClick = { viewModel.clearToken() }) {
+                                            Icon(
+                                                imageVector = Icons.Default.Delete,
+                                                contentDescription = stringResource(R.string.clear_token),
+                                                tint = MaterialTheme.colorScheme.error
+                                            )
                                         }
                                     }
+                                    if (showManualDetails) {
+                                        Column(
+                                            modifier = Modifier.padding(start = 24.dp),
+                                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                                        ) {
+                                            Text(
+                                                text = stringResource(R.string.username_label, currentState.username),
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(
+                                                text = stringResource(R.string.token_label, currentState.maskedToken),
+                                                style = MaterialTheme.typography.bodySmall,
+                                                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+                                }
+                            }
 
-                                    is HuggingFaceTokenManager.TokenState.Valid -> {
-                                        // Already handled above
+                            else -> {
+                                // Advanced: Manual Token Section (collapsible)
+                                var showAdvanced by remember { mutableStateOf(false) }
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                                TextButton(
+                                    onClick = { showAdvanced = !showAdvanced },
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                        imageVector = if (showAdvanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                        contentDescription = null
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(if (showAdvanced) stringResource(R.string.hide_advanced) else stringResource(R.string.advanced_manual_token))
+                                }
+
+                                if (!showAdvanced) {
+                                    Text(
+                                        text = stringResource(R.string.manual_token_scope_info),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+
+                                if (showAdvanced) {
+                                    val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+                                    when (val innerState = tokenState) {
+                                        is HuggingFaceTokenManager.TokenState.Invalid -> {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                TokenInputField(
+                                                    value = tokenInput,
+                                                    onValueChange = { viewModel.onTokenInputChanged(it) },
+                                                    tokenPasswordVisible = tokenPasswordVisible,
+                                                    onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
+                                                    clipboardManager = clipboardManager,
+                                                    modifier = Modifier.weight(1f),
+                                                    isError = true
+                                                )
+                                            }
+                                            Text(
+                                                text = innerState.error,
+                                                style = MaterialTheme.typography.bodySmall,
+                                                color = MaterialTheme.colorScheme.error
+                                            )
+                                            // Fix buttons
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                // Locale-safe: weight(1f) on both buttons so
+                                                // longer labels share the row (TASK-345)
+                                                FilledTonalButton(
+                                                    onClick = {
+                                                        val intent = android.content.Intent(
+                                                            android.content.Intent.ACTION_VIEW,
+                                                            android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
+                                                        )
+                                                        context.startActivity(intent)
+                                                    },
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Icon(
+                                                        Icons.AutoMirrored.Filled.OpenInNew,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                    Spacer(Modifier.width(4.dp))
+                                                    Text(stringResource(R.string.create_token))
+                                                }
+                                                OutlinedButton(
+                                                    onClick = { viewModel.validateAndSaveToken() },
+                                                    enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Text(stringResource(R.string.retry))
+                                                }
+                                            }
+                                        }
+
+                                        is HuggingFaceTokenManager.TokenState.Validating -> {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                TokenInputField(
+                                                    value = tokenInput,
+                                                    onValueChange = { viewModel.onTokenInputChanged(it) },
+                                                    tokenPasswordVisible = tokenPasswordVisible,
+                                                    onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
+                                                    clipboardManager = clipboardManager,
+                                                    modifier = Modifier.weight(1f),
+                                                    enabled = false
+                                                )
+                                            }
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                CircularProgressIndicator(modifier = Modifier.size(16.dp))
+                                                Text(stringResource(R.string.validating_token))
+                                            }
+                                        }
+
+                                        is HuggingFaceTokenManager.TokenState.Idle -> {
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                TokenInputField(
+                                                    value = tokenInput,
+                                                    onValueChange = { viewModel.onTokenInputChanged(it) },
+                                                    tokenPasswordVisible = tokenPasswordVisible,
+                                                    onPasswordVisibilityToggle = { tokenPasswordVisible = !tokenPasswordVisible },
+                                                    clipboardManager = clipboardManager,
+                                                    modifier = Modifier.weight(1f)
+                                                )
+                                            }
+                                            Row(
+                                                modifier = Modifier.fillMaxWidth(),
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                            ) {
+                                                // Locale-safe: weight(1f) on both buttons so
+                                                // longer labels share the row (TASK-345)
+                                                FilledTonalButton(
+                                                    onClick = { viewModel.validateAndSaveToken() },
+                                                    enabled = tokenInput.isNotBlank() && !uiState.isValidatingToken,
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    if (uiState.isValidatingToken) {
+                                                        CircularProgressIndicator(
+                                                            modifier = Modifier.size(16.dp),
+                                                            strokeWidth = 2.dp
+                                                        )
+                                                    } else {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Check,
+                                                            contentDescription = null,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
+                                                    }
+                                                    Spacer(modifier = Modifier.width(8.dp))
+                                                    Text(if (uiState.isValidatingToken) stringResource(R.string.validating) else stringResource(R.string.validate_and_save))
+                                                }
+                                                // Link to token creation page
+                                                TextButton(
+                                                    onClick = {
+                                                        val intent = android.content.Intent(
+                                                            android.content.Intent.ACTION_VIEW,
+                                                            android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
+                                                        )
+                                                        context.startActivity(intent)
+                                                    },
+                                                    modifier = Modifier.weight(1f)
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                                                        contentDescription = null,
+                                                        modifier = Modifier.size(16.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(4.dp))
+                                                    Text(stringResource(R.string.get_token))
+                                                }
+                                            }
+                                        }
+
+                                        is HuggingFaceTokenManager.TokenState.Valid -> {
+                                            // Already handled above
+                                        }
                                     }
                                 }
                             }
@@ -1506,175 +1713,188 @@ fun SettingsTab(
             }
 
             // Thread Count Setting
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+            val threadCountTitle = stringResource(R.string.thread_count_title)
+            SearchFilterRow(searchQuery, threadCountTitle, stringResource(R.string.thread_count_description)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Memory,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Memory,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = threadCountTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
                         Text(
-                            text = stringResource(R.string.thread_count_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.thread_count_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        // Thread count dropdown
+                        SettingsDropdown(
+                            currentValue = threadCount,
+                            options = (1..8).toList(),
+                            currentValueDisplay = if (threadCount == autoDetectedThreads)
+                                stringResource(R.string.thread_count_auto, autoDetectedThreads)
+                            else
+                                stringResource(R.string.thread_count_value, threadCount),
+                            optionDisplay = { threads ->
+                                if (threads == autoDetectedThreads)
+                                    stringResource(R.string.thread_count_auto, threads)
+                                else
+                                    stringResource(R.string.thread_count_value, threads)
+                            },
+                            onOptionSelected = { viewModel.saveThreadCount(it) },
+                            label = threadCountTitle
                         )
                     }
-
-                    Text(
-                        text = stringResource(R.string.thread_count_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    // Thread count dropdown
-                    SettingsDropdown(
-                        currentValue = threadCount,
-                        options = (1..8).toList(),
-                        currentValueDisplay = if (threadCount == autoDetectedThreads)
-                            stringResource(R.string.thread_count_auto, autoDetectedThreads)
-                        else
-                            stringResource(R.string.thread_count_value, threadCount),
-                        optionDisplay = { threads ->
-                            if (threads == autoDetectedThreads)
-                                stringResource(R.string.thread_count_auto, threads)
-                            else
-                                stringResource(R.string.thread_count_value, threads)
-                        },
-                        onOptionSelected = { viewModel.saveThreadCount(it) },
-                        label = stringResource(R.string.thread_count_title)
-                    )
                 }
             }
 
             // Inference Provider Setting
-            Card(
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+            val providerTitle = stringResource(R.string.inference_provider_title)
+            SearchFilterRow(searchQuery, providerTitle, stringResource(R.string.inference_provider_description)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Bolt,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Bolt,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = providerTitle,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
                         Text(
-                            text = stringResource(R.string.inference_provider_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.inference_provider_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                    }
 
-                    Text(
-                        text = stringResource(R.string.inference_provider_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    SettingsDropdown(
-                        currentValue = inferenceProvider,
-                        options = InferenceProvider.options,
-                        currentValueDisplay = when (inferenceProvider) {
-                            InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
-                            InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
-                            InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                            else -> inferenceProvider
-                        },
-                        optionDisplay = { option ->
-                            when (option) {
+                        SettingsDropdown(
+                            currentValue = inferenceProvider,
+                            options = InferenceProvider.options,
+                            currentValueDisplay = when (inferenceProvider) {
                                 InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
                                 InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
                                 InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                                else -> option
-                            }
-                        },
-                        onOptionSelected = { viewModel.saveInferenceProvider(it) },
-                        label = stringResource(R.string.inference_provider_title)
-                    )
+                                else -> inferenceProvider
+                            },
+                            optionDisplay = { option ->
+                                when (option) {
+                                    InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
+                                    InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
+                                    InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
+                                    else -> option
+                                }
+                            },
+                            onOptionSelected = { viewModel.saveInferenceProvider(it) },
+                            label = providerTitle
+                        )
+                    }
                 }
             }
 
             // Advanced Sharing Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.medium
+            SearchFilterRow(
+                searchQuery,
+                stringResource(R.string.share_targets_title),
+                stringResource(R.string.share_targets_description),
+                stringResource(R.string.advanced_sharing_toggle)
             ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = MaterialTheme.shapes.medium
                 ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.share_targets_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-
-                    Text(
-                        text = stringResource(R.string.share_targets_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                    // TASK-382: canonical toggleable row; the Switch itself is display-only
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .toggleable(
-                                value = advancedSharingEnabled,
-                                role = Role.Switch,
-                                onValueChange = { viewModel.saveAdvancedSharingEnabled(it) }
-                            ),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Share,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
                             Text(
-                                text = stringResource(R.string.advanced_sharing_toggle),
-                                style = MaterialTheme.typography.bodyMedium
+                                text = stringResource(R.string.share_targets_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
                             )
                         }
-                        Switch(
-                            checked = advancedSharingEnabled,
-                            onCheckedChange = null
-                        )
-                    }
 
-                    if (advancedSharingEnabled) {
                         Text(
-                            text = stringResource(R.string.share_targets_models_info),
+                            text = stringResource(R.string.share_targets_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                        // TASK-382: canonical toggleable row; the Switch itself is display-only
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .toggleable(
+                                    value = advancedSharingEnabled,
+                                    role = Role.Switch,
+                                    onValueChange = { viewModel.saveAdvancedSharingEnabled(it) }
+                                ),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.advanced_sharing_toggle),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                            Switch(
+                                checked = advancedSharingEnabled,
+                                onCheckedChange = null
+                            )
+                        }
+
+                        if (advancedSharingEnabled) {
+                            Text(
+                                text = stringResource(R.string.share_targets_models_info),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -1682,146 +1902,168 @@ fun SettingsTab(
             // TASK-515: the subtitles-or-transcribe choice timeout. Next to
             // the share-targets card it explains: same share flow.
             val subtitleTimeout by viewModel.subtitleChoiceTimeout.collectAsState()
-            Card(modifier = Modifier.fillMaxWidth()) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+            SearchFilterRow(
+                searchQuery,
+                stringResource(R.string.subtitle_timeout_title),
+                stringResource(R.string.subtitle_timeout_description)
+            ) {
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Timer,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Timer,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.subtitle_timeout_title),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                         Text(
-                            text = stringResource(R.string.subtitle_timeout_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.subtitle_timeout_description),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                        SettingsDropdown(
+                            currentValue = subtitleTimeout,
+                            options = viewModel.subtitleTimeoutOptions,
+                            currentValueDisplay = pluralStringResource(
+                                R.plurals.timeout_minutes, subtitleTimeout, subtitleTimeout),
+                            optionDisplay = { minutes ->
+                                pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
+                            },
+                            onOptionSelected = { viewModel.saveSubtitleChoiceTimeout(it) },
+                            label = stringResource(R.string.subtitle_timeout_title),
+                            enabled = !uiState.isSaving
                         )
                     }
-                    Text(
-                        text = stringResource(R.string.subtitle_timeout_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    SettingsDropdown(
-                        currentValue = subtitleTimeout,
-                        options = viewModel.subtitleTimeoutOptions,
-                        currentValueDisplay = pluralStringResource(
-                            R.plurals.timeout_minutes, subtitleTimeout, subtitleTimeout),
-                        optionDisplay = { minutes ->
-                            pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
-                        },
-                        onOptionSelected = { viewModel.saveSubtitleChoiceTimeout(it) },
-                        label = stringResource(R.string.subtitle_timeout_title),
-                        enabled = !uiState.isSaving
-                    )
                 }
             }
 
             // Force model load (bypass the low-memory pre-flight)
-            ToggleSettingCard(
-                icon = Icons.Default.Memory,
-                title = stringResource(R.string.force_model_load),
-                description = stringResource(R.string.force_model_load_desc),
-                checked = forceModelLoad,
-                onCheckedChange = { viewModel.saveForceModelLoad(it) }
-            )
+            val forceModelLoadTitle = stringResource(R.string.force_model_load)
+            val forceModelLoadDescription = stringResource(R.string.force_model_load_desc)
+            SearchFilterRow(searchQuery, forceModelLoadTitle, forceModelLoadDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Memory,
+                    title = forceModelLoadTitle,
+                    description = forceModelLoadDescription,
+                    checked = forceModelLoad,
+                    onCheckedChange = { viewModel.saveForceModelLoad(it) }
+                )
+            }
 
             // Per-App Settings Navigation Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(role = Role.Button) { showPerAppSettings = true },
-                shape = MaterialTheme.shapes.medium
+            SearchFilterRow(
+                searchQuery,
+                stringResource(R.string.per_app_settings_title),
+                stringResource(R.string.per_app_settings_description)
             ) {
-                Row(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .clickable(role = Role.Button) { showPerAppSettings = true },
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Column {
-                            Text(
-                                text = stringResource(R.string.per_app_settings_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
                             )
-                            Text(
-                                text = stringResource(R.string.per_app_settings_description),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.per_app_settings_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = stringResource(R.string.per_app_settings_description),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = stringResource(R.string.open_per_app_settings),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = stringResource(R.string.open_per_app_settings),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
 
             // Performance Stats Card
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(role = Role.Button) {
-                        perfStatsScope.launch {
-                            perfStatsProfiles = viewModel.transcriptionCalibrator.getAllProfiles()
-                            showPerfStatsDialog = true
-                        }
-                    },
-                shape = MaterialTheme.shapes.medium
+            SearchFilterRow(
+                searchQuery,
+                stringResource(R.string.performance_stats_title),
+                stringResource(R.string.performance_stats_subtitle)
             ) {
-                Row(
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                        .clickable(role = Role.Button) {
+                            perfStatsScope.launch {
+                                perfStatsProfiles = viewModel.transcriptionCalibrator.getAllProfiles()
+                                showPerfStatsDialog = true
+                            }
+                        },
+                    shape = MaterialTheme.shapes.medium
                 ) {
                     Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Speed,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Column {
-                            Text(
-                                text = stringResource(R.string.performance_stats_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Speed,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
                             )
-                            Text(
-                                text = stringResource(R.string.performance_stats_subtitle),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.performance_stats_title),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = stringResource(R.string.performance_stats_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = stringResource(R.string.open_performance_stats),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                        contentDescription = stringResource(R.string.open_performance_stats),
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
                 }
             }
         }
@@ -2113,6 +2355,28 @@ private fun InfoRow(icon: ImageVector, title: String, value: String) {
             textAlign = TextAlign.End,
             modifier = Modifier.weight(1f)
         )
+    }
+}
+
+/**
+ * TASK-542: the one matching rule behind the settings search: a blank query
+ * matches everything (the normal tab is unchanged), otherwise any non-null
+ * entry must contain the query, case-insensitive. Null entries are skipped,
+ * so callers can pass optional descriptions unchanged. Both the count line
+ * (via the card groups) and the per-card [SearchFilterRow] gate go through
+ * this function, so they cannot disagree.
+ */
+private fun matchesQuery(query: String, texts: List<String?>): Boolean =
+    query.isBlank() || texts.any { it?.contains(query, ignoreCase = true) == true }
+
+/**
+ * TASK-542: card-level gate for the settings search. Renders [content] only
+ * when [matchesQuery] accepts the query against [matchTexts].
+ */
+@Composable
+private fun SearchFilterRow(query: String, vararg matchTexts: String?, content: @Composable () -> Unit) {
+    if (matchesQuery(query, matchTexts.toList())) {
+        content()
     }
 }
 

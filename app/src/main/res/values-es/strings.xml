@@ -863,5 +863,9 @@
     <string name="transcript_export_format_srt">Subtítulos SRT (experimental)</string>
     <string name="transcript_export_format_vtt">Subtítulos WebVTT (experimental)</string>
     <string name="settings_search_hint">Buscar ajustes…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d coincidencia</item>
+        <item quantity="other">%1$d coincidencias</item>
+    </plurals>
     <string name="settings_search_no_results">No hay ajustes coincidentes</string>
-</resources>
+    <string name="settings_search_clear">Borrar búsqueda</string></resources>

@@ -863,5 +863,9 @@
     <string name="transcript_export_format_srt">Legendas SRT (experimental)</string>
     <string name="transcript_export_format_vtt">Legendas WebVTT (experimental)</string>
     <string name="settings_search_hint">Pesquisar configurações…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d correspondência</item>
+        <item quantity="other">%1$d correspondências</item>
+    </plurals>
     <string name="settings_search_no_results">Nenhuma configuração encontrada</string>
-</resources>
+    <string name="settings_search_clear">Limpar pesquisa</string></resources>

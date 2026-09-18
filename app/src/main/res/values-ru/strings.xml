@@ -1015,5 +1015,11 @@
     <string name="transcript_export_format_srt">Субтитры SRT (экспериментально)</string>
     <string name="transcript_export_format_vtt">Субтитры WebVTT (экспериментально)</string>
     <string name="settings_search_hint">Поиск в настройках…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d совпадение</item>
+        <item quantity="few">%1$d совпадения</item>
+        <item quantity="many">%1$d совпадений</item>
+        <item quantity="other">%1$d совпадения</item>
+    </plurals>
     <string name="settings_search_no_results">Подходящих настроек не найдено</string>
-</resources>
+    <string name="settings_search_clear">Очистить поиск</string></resources>

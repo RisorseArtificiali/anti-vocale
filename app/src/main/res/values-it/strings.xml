@@ -1002,5 +1002,9 @@
     <string name="transcript_export_format_srt">Sottotitoli SRT (sperimentale)</string>
     <string name="transcript_export_format_vtt">Sottotitoli WebVTT (sperimentale)</string>
     <string name="settings_search_hint">Cerca nelle impostazioni…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d risultato</item>
+        <item quantity="other">%1$d risultati</item>
+    </plurals>
     <string name="settings_search_no_results">Nessuna impostazione trovata</string>
-</resources>
+    <string name="settings_search_clear">Cancella ricerca</string></resources>

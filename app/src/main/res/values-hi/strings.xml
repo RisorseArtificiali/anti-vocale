@@ -997,5 +997,9 @@
     <string name="transcript_export_format_srt">SRT सबटाइटल (प्रायोगिक)</string>
     <string name="transcript_export_format_vtt">WebVTT सबटाइटल (प्रायोगिक)</string>
     <string name="settings_search_hint">सेटिंग्स खोजें…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d परिणाम</item>
+        <item quantity="other">%1$d परिणाम</item>
+    </plurals>
     <string name="settings_search_no_results">कोई मेल खाती सेटिंग्स नहीं</string>
-</resources>
+    <string name="settings_search_clear">खोज साफ़ करें</string></resources>

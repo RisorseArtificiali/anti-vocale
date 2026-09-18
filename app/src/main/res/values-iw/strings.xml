@@ -1003,5 +1003,11 @@
     <string name="transcript_export_format_srt">כתוביות SRT (ניסיוני)</string>
     <string name="transcript_export_format_vtt">כתוביות WebVTT (ניסיוני)</string>
     <string name="settings_search_hint">חיפוש בהגדרות…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d התאמה</item>
+        <item quantity="two">%1$d התאמות</item>
+        <item quantity="many">%1$d התאמות</item>
+        <item quantity="other">%1$d התאמות</item>
+    </plurals>
     <string name="settings_search_no_results">אין הגדרות תואמות</string>
-</resources>
+    <string name="settings_search_clear">נקה חיפוש</string></resources>

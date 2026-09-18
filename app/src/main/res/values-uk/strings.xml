@@ -1016,5 +1016,11 @@
     <string name="transcript_export_format_srt">Субтитри SRT (експериментально)</string>
     <string name="transcript_export_format_vtt">Субтитри WebVTT (експериментально)</string>
     <string name="settings_search_hint">Пошук у налаштуваннях…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d збіг</item>
+        <item quantity="few">%1$d збіги</item>
+        <item quantity="many">%1$d збігів</item>
+        <item quantity="other">%1$d збіги</item>
+    </plurals>
     <string name="settings_search_no_results">Немає відповідних налаштувань</string>
-</resources>
+    <string name="settings_search_clear">Очистити пошук</string></resources>

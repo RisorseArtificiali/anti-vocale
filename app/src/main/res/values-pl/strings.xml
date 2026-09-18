@@ -1014,5 +1014,11 @@
     <string name="transcript_export_format_srt">Napisy SRT (eksperymentalne)</string>
     <string name="transcript_export_format_vtt">Napisy WebVTT (eksperymentalne)</string>
     <string name="settings_search_hint">Szukaj w ustawieniach…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d dopasowanie</item>
+        <item quantity="few">%1$d dopasowania</item>
+        <item quantity="many">%1$d dopasowań</item>
+        <item quantity="other">%1$d dopasowania</item>
+    </plurals>
     <string name="settings_search_no_results">Brak pasujących ustawień</string>
-</resources>
+    <string name="settings_search_clear">Wyczyść wyszukiwanie</string></resources>
