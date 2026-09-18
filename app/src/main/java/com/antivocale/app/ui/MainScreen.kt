@@ -128,7 +128,9 @@ fun MainScreen(
     // through the consume-once NavRequest, never through the pending token
     // (its write side is debug-only by contract, TestNavigation KDoc). The
     // tab index DERIVES from TAB_KEYS so inserting a tab cannot silently
-    // reroute every settings navigation.
+    // reroute every settings navigation. Accepted race (debug-only): a TEST_SPI
+    // settings destination landing between a hint tap and SettingsTab's
+    // composition overwrites the single in-flight NavRequest slot.
     val settingsTabIndex = TestNavigation.TAB_KEYS.indexOf("settings")
     fun openSettings(destination: TestNavigation.Destination) {
         selectedTabIndex = settingsTabIndex

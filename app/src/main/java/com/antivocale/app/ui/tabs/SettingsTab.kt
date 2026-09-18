@@ -31,6 +31,10 @@ import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.activity.compose.ManagedActivityResultLauncher
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -186,47 +190,7 @@ fun SettingsTab(
     }
 
     // SAF folder picker for transcript auto-save (issue #14, TASK-539)
-    val outputFolderLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri: Uri? ->
-        if (uri != null) {
-            // TASK-539: probe the tree for writability BEFORE persisting the
-            // grant. The Downloads quick root yields virtual folders that
-            // pass the pick but silently reject every subsequent write, and
-            // persisting first would leak one of the 128 per-app persisted
-            // grants on every rejected retry (review 2026-09-17). The probe
-            // rides the picker's transient grant, so it needs no persisted
-            // permission.
-            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
-            if (tree?.canWrite() != true) {
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.error_folder_not_writable),
-                    Toast.LENGTH_LONG
-                ).show()
-                return@rememberLauncherForActivityResult
-            }
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                )
-            } catch (e: Exception) {
-                // Review round 2: a folder whose grant we cannot persist dies
-                // with the process (reboot revokes the transient grant and
-                // the save silently no-ops downstream); refuse the pick
-                // instead of saving a URI that cannot survive a reboot.
-                Log.w("SettingsTab", "Failed to take persistable URI permission", e)
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.error_folder_not_writable),
-                    Toast.LENGTH_LONG
-                ).show()
-                return@rememberLauncherForActivityResult
-            }
-            viewModel.saveOutputFolderUri(uri.toString())
-        }
-    }
+    val outputFolderLauncher = rememberOutputFolderPickerLauncher(viewModel, "SettingsTab")
 
     // Load models on first composition
     LaunchedEffect(Unit) {
@@ -2267,6 +2231,62 @@ private fun transcriptExportFormatLabel(format: SubtitleFormatter.Format): Strin
  * card in that section navigates here, and the capped-transcript auto-save
  * hint targets this page via settings:export.
  */
+/**
+ * The ONE folder-picker handler for transcript auto-save (TASK-539 + review
+ * rounds 1-2), shared by the inline transcription card and
+ * [ExportSettingsScreen]. Probe the tree for writability BEFORE persisting
+ * (the Downloads quick root passes the pick but rejects every write, and a
+ * persisted-then-rejected pick burns one of the 128 persisted-grant slots;
+ * the probe rides the picker's transient grant); refuse the pick if the
+ * grant cannot persist (it would die with the process and silently no-op
+ * downstream); save only what survives. The probe and the permission call
+ * run on IO (binder calls must not sit on the main thread); toasts marshal
+ * back to Main.
+ */
+@Composable
+internal fun rememberOutputFolderPickerLauncher(
+    viewModel: SettingsViewModel,
+    logTag: String,
+): ManagedActivityResultLauncher<Uri?, Uri?> {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    return rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch(Dispatchers.IO) {
+            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, uri)
+            if (tree?.canWrite() != true) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.error_folder_not_writable),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                return@launch
+            }
+            try {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                )
+            } catch (e: Exception) {
+                Log.w(logTag, "Failed to take persistable URI permission", e)
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.error_folder_not_writable),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+                return@launch
+            }
+            viewModel.saveOutputFolderUri(uri.toString())
+        }
+    }
+}
+
 @Composable
 fun ExportSettingsScreen(
     viewModel: SettingsViewModel,
@@ -2274,40 +2294,7 @@ fun ExportSettingsScreen(
     onBack: () -> Unit,
 ) {
     val context = LocalContext.current
-    val outputFolderLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.OpenDocumentTree()
-    ) { uri ->
-        uri?.let {
-            // TASK-539: probe BEFORE persisting (a rejected pick must not
-            // burn one of the 128 persisted-grant slots); the probe rides
-            // the picker's transient grant.
-            val tree = androidx.documentfile.provider.DocumentFile.fromTreeUri(context, it)
-            if (tree?.canWrite() != true) {
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.error_folder_not_writable),
-                    Toast.LENGTH_LONG
-                ).show()
-                return@let
-            }
-            try {
-                context.contentResolver.takePersistableUriPermission(
-                    it, Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
-                )
-            } catch (e: Exception) {
-                // Review round 2: same rule as the inline picker: never save
-                // a URI whose grant cannot persist (it dies with the process).
-                android.util.Log.w("ExportSettings", "takePersistableUriPermission failed", e)
-                Toast.makeText(
-                    context,
-                    context.getString(R.string.error_folder_not_writable),
-                    Toast.LENGTH_LONG
-                ).show()
-                return@let
-            }
-            viewModel.saveOutputFolderUri(it.toString())
-        }
-    }
+    val outputFolderLauncher = rememberOutputFolderPickerLauncher(viewModel, "ExportSettings")
     val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
 
     Column(
