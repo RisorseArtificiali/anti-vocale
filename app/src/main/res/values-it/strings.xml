@@ -1001,4 +1001,6 @@
     <string name="transcript_export_format_txt_timed">Testo con indicatori temporali (sperimentale)</string>
     <string name="transcript_export_format_srt">Sottotitoli SRT (sperimentale)</string>
     <string name="transcript_export_format_vtt">Sottotitoli WebVTT (sperimentale)</string>
+    <string name="settings_search_hint">Cerca nelle impostazioni…</string>
+    <string name="settings_search_no_results">Nessuna impostazione trovata</string>
 </resources>

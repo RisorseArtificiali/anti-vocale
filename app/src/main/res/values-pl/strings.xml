@@ -1013,4 +1013,6 @@
     <string name="transcript_export_format_txt_timed">Tekst ze znacznikami czasu (eksperymentalny)</string>
     <string name="transcript_export_format_srt">Napisy SRT (eksperymentalne)</string>
     <string name="transcript_export_format_vtt">Napisy WebVTT (eksperymentalne)</string>
+    <string name="settings_search_hint">Szukaj w ustawieniach…</string>
+    <string name="settings_search_no_results">Brak pasujących ustawień</string>
 </resources>

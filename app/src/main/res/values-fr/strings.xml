@@ -862,4 +862,6 @@
     <string name="transcript_export_format_txt_timed">Texte horodaté (expérimental)</string>
     <string name="transcript_export_format_srt">Sous-titres SRT (expérimental)</string>
     <string name="transcript_export_format_vtt">Sous-titres WebVTT (expérimental)</string>
+    <string name="settings_search_hint">Rechercher dans les paramètres…</string>
+    <string name="settings_search_no_results">Aucun paramètre correspondant</string>
 </resources>

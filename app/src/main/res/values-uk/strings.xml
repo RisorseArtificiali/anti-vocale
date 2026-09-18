@@ -1015,4 +1015,6 @@
     <string name="transcript_export_format_txt_timed">Текст з мітками часу (експериментально)</string>
     <string name="transcript_export_format_srt">Субтитри SRT (експериментально)</string>
     <string name="transcript_export_format_vtt">Субтитри WebVTT (експериментально)</string>
+    <string name="settings_search_hint">Пошук у налаштуваннях…</string>
+    <string name="settings_search_no_results">Немає відповідних налаштувань</string>
 </resources>

@@ -1002,4 +1002,6 @@
     <string name="transcript_export_format_txt_timed">טקסט עם חותמות זמן (ניסיוני)</string>
     <string name="transcript_export_format_srt">כתוביות SRT (ניסיוני)</string>
     <string name="transcript_export_format_vtt">כתוביות WebVTT (ניסיוני)</string>
+    <string name="settings_search_hint">חיפוש בהגדרות…</string>
+    <string name="settings_search_no_results">אין הגדרות תואמות</string>
 </resources>

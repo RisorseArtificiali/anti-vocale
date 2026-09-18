@@ -997,4 +997,6 @@
     <string name="transcript_export_format_txt_timed">Zaman damgalı metin (deneysel)</string>
     <string name="transcript_export_format_srt">SRT altyazıları (deneysel)</string>
     <string name="transcript_export_format_vtt">WebVTT altyazıları (deneysel)</string>
+    <string name="settings_search_hint">Ayarları ara…</string>
+    <string name="settings_search_no_results">Eşleşen ayar yok</string>
 </resources>

@@ -1014,4 +1014,6 @@
     <string name="transcript_export_format_txt_timed">Текст с метками времени (экспериментально)</string>
     <string name="transcript_export_format_srt">Субтитры SRT (экспериментально)</string>
     <string name="transcript_export_format_vtt">Субтитры WebVTT (экспериментально)</string>
+    <string name="settings_search_hint">Поиск в настройках…</string>
+    <string name="settings_search_no_results">Подходящих настроек не найдено</string>
 </resources>

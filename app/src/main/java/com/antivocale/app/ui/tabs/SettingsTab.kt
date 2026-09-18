@@ -129,6 +129,9 @@ fun SettingsTab(
     var showIconSettings by remember { mutableStateOf(false) }
     var showExportSettings by remember { mutableStateOf(false) }
 
+    // TASK-542 (GH #98): live settings search. Blank = the normal tab.
+    var searchQuery by remember { mutableStateOf("") }
+
     // TASK-486: TEST_SPI navigation. Sub-pages flip their flag; a section
     // destination bumps that section's expand counter and scrolls to it via
     // the offsets captured by each section's onGloballyPositioned.
@@ -246,10 +249,69 @@ fun SettingsTab(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
+        // TASK-542 (GH #98): search field. Blank = normal tab.
+        OutlinedTextField(
+            value = searchQuery,
+            onValueChange = { searchQuery = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = { Text(stringResource(R.string.settings_search_hint)) },
+            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
+            trailingIcon = {
+                if (searchQuery.isNotEmpty()) {
+                    IconButton(onClick = { searchQuery = "" }) {
+                        Icon(Icons.Default.Close, contentDescription = null)
+                    }
+                }
+            },
+            singleLine = true,
+            shape = MaterialTheme.shapes.extraLarge,
+        )
+
+        // TASK-542: per-section card titles for the live filter. These resolve
+        // to localized strings at composition time; the match is on the RESOLVED
+        // text, so it works in all 12 locales. Keep in sync with the card titles
+        // below (a drifted entry degrades the filter gracefully, never crashes).
+        val transcriptionSearchTitles = listOf(
+            R.string.transcription_language_title, R.string.auto_copy_title,
+            R.string.export_settings_title, R.string.vad_title,
+            R.string.progressive_title, R.string.punctuation_mode_title,
+            R.string.summarize_title, R.string.default_prompt_title,
+            R.string.inference_provider_title, R.string.output_folder_title,
+            R.string.transcript_export_format_title, R.string.thread_count_title,
+            R.string.auto_unload_timeout, R.string.force_model_load,
+        ).map { context.getString(it) }
+        val appearanceSearchTitles = listOf(
+            R.string.theme_title, R.string.language_title,
+            R.string.theme_mode_title, R.string.app_icon_title,
+            R.string.swipe_action_title, R.string.conversation_grouping_title,
+        ).map { context.getString(it) }
+        val advancedSearchTitles = listOf(
+            R.string.advanced_sharing_toggle, R.string.retranscribe_setting_title,
+            R.string.compact_result_actions_title, R.string.per_app_settings_title,
+            R.string.performance_stats_title, R.string.battery_exemption_title,
+            R.string.subtitle_timeout_title, R.string.huggingface_auth,
+        ).map { context.getString(it) }
+        val feedbackSearchTitles = listOf(
+            R.string.settings_feedback_send_title, R.string.settings_feedback_version_title,
+            R.string.settings_feedback_license_title, R.string.settings_feedback_source_title,
+            R.string.settings_feedback_translation_title,
+        ).map { context.getString(it) }
+
+        fun sectionMatches(titles: List<String>): Boolean =
+            searchQuery.isBlank() || titles.any { it.contains(searchQuery, ignoreCase = true) }
+
+        val transcriptionVisible = sectionMatches(transcriptionSearchTitles)
+        val appearanceVisible = sectionMatches(appearanceSearchTitles)
+        val advancedVisible = sectionMatches(advancedSearchTitles)
+        val feedbackVisible = sectionMatches(feedbackSearchTitles)
+        val anyVisible = transcriptionVisible || appearanceVisible || advancedVisible || feedbackVisible
+        val searchActive = searchQuery.isNotBlank()
+
         CollapsibleSection(
             title = stringResource(R.string.settings_section_transcription),
             icon = Icons.Default.Mic,
-            expandSignal = expandCounters["transcription"] ?: 0,
+            expandSignal = (expandCounters["transcription"] ?: 0) + if (searchActive) 1 else 0,
+            visible = transcriptionVisible,
             modifier = Modifier.onGloballyPositioned {
                 sectionOffsets["transcription"] = it.positionInRoot().y.toInt()
             },
@@ -786,7 +848,8 @@ fun SettingsTab(
         CollapsibleSection(
             title = stringResource(R.string.settings_section_appearance),
             icon = Icons.Default.Palette,
-            expandSignal = expandCounters["appearance"] ?: 0,
+            expandSignal = (expandCounters["appearance"] ?: 0) + if (searchActive) 1 else 0,
+            visible = appearanceVisible,
             modifier = Modifier.onGloballyPositioned {
                 sectionOffsets["appearance"] = it.positionInRoot().y.toInt()
             },
@@ -1038,7 +1101,8 @@ fun SettingsTab(
         CollapsibleSection(
             title = stringResource(R.string.settings_section_advanced),
             icon = Icons.Default.Settings,
-            expandSignal = expandCounters["advanced"] ?: 0,
+            expandSignal = (expandCounters["advanced"] ?: 0) + if (searchActive) 1 else 0,
+            visible = advancedVisible,
             modifier = Modifier.onGloballyPositioned {
                 sectionOffsets["advanced"] = it.positionInRoot().y.toInt()
             },
@@ -1763,8 +1827,8 @@ fun SettingsTab(
         }
 
         // Feedback & About section (issue #34 / TASK-341)
-        FeedbackSection(
-            expandSignal = expandCounters["feedback"] ?: 0,
+        if (feedbackVisible) FeedbackSection(
+            expandSignal = (expandCounters["feedback"] ?: 0) + if (searchActive) 1 else 0,
             onPositioned = { sectionOffsets["feedback"] = it },
             activeBackendId = uiState.transcriptionBackend,
             activeModelName = uiState.currentModelName,

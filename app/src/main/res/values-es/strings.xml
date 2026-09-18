@@ -862,4 +862,6 @@
     <string name="transcript_export_format_txt_timed">Texto con marcas de tiempo (experimental)</string>
     <string name="transcript_export_format_srt">Subtítulos SRT (experimental)</string>
     <string name="transcript_export_format_vtt">Subtítulos WebVTT (experimental)</string>
+    <string name="settings_search_hint">Buscar ajustes…</string>
+    <string name="settings_search_no_results">No hay ajustes coincidentes</string>
 </resources>

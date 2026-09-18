@@ -862,4 +862,6 @@
     <string name="transcript_export_format_txt_timed">Texto com marcações de tempo (experimental)</string>
     <string name="transcript_export_format_srt">Legendas SRT (experimental)</string>
     <string name="transcript_export_format_vtt">Legendas WebVTT (experimental)</string>
+    <string name="settings_search_hint">Pesquisar configurações…</string>
+    <string name="settings_search_no_results">Nenhuma configuração encontrada</string>
 </resources>

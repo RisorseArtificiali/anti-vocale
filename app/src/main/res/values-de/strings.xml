@@ -997,4 +997,6 @@
     <string name="transcript_export_format_txt_timed">Text mit Zeitstempeln (experimentell)</string>
     <string name="transcript_export_format_srt">SRT-Untertitel (experimentell)</string>
     <string name="transcript_export_format_vtt">WebVTT-Untertitel (experimentell)</string>
+    <string name="settings_search_hint">Einstellungen durchsuchen…</string>
+    <string name="settings_search_no_results">Keine passenden Einstellungen</string>
 </resources>

@@ -996,4 +996,6 @@
     <string name="transcript_export_format_txt_timed">टाइमस्टैम्प वाला टेक्स्ट (प्रायोगिक)</string>
     <string name="transcript_export_format_srt">SRT सबटाइटल (प्रायोगिक)</string>
     <string name="transcript_export_format_vtt">WebVTT सबटाइटल (प्रायोगिक)</string>
+    <string name="settings_search_hint">सेटिंग्स खोजें…</string>
+    <string name="settings_search_no_results">कोई मेल खाती सेटिंग्स नहीं</string>
 </resources>

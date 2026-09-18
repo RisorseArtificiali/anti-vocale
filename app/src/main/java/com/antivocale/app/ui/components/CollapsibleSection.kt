@@ -42,12 +42,15 @@ fun CollapsibleSection(
     initiallyExpanded: Boolean = true,
     /** TASK-486: bumps open the section regardless of user state (nav). */
     expandSignal: Int = 0,
+    /** TASK-542: when false the section renders nothing (search filter). */
+    visible: Boolean = true,
     content: @Composable () -> Unit
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     LaunchedEffect(expandSignal) {
         if (expandSignal > 0) expanded = true
     }
+    if (!visible) return
     val stateDescriptionText = stringResource(
         if (expanded) R.string.a11y_collapse else R.string.a11y_expand
     )
