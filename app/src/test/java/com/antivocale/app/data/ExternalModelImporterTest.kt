@@ -213,7 +213,7 @@ class ExternalModelImporterTest {
 
         assertTrue(result.isFailure)
         val message = result.exceptionOrNull()!!.message ?: ""
-        assertTrue("error must name the family: $message", message.contains("TRANSDUCER"))
+        assertTrue("error must name the family: $message", message.contains("Transducer"))
         assertEquals(0, store.records().size)
         assertEquals(0, filesRoot.listFiles()!!.size)
     }
@@ -253,7 +253,7 @@ class ExternalModelImporterTest {
         assertTrue(result.isFailure)
         assertTrue(
             "error must name the family: ${result.exceptionOrNull()?.message}",
-            result.exceptionOrNull()?.message?.contains("SENSE_VOICE") == true)
+            result.exceptionOrNull()?.message?.contains("SenseVoice") == true)
         assertEquals(0, store.records().size)
     }
 

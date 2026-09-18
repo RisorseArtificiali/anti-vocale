@@ -162,6 +162,13 @@ sealed interface ModelFamilySupport {
         const val CTC_MODEL_TYPE_REQUIRED =
             "CTC family requires an explicit modelType: nemo_ctc or zipformer_ctc"
 
+        /** The two sherpa CTC config subtypes (single definition for the
+         *  engine mapping above, the import UI defaults, and the family
+         *  chooser; a mismatched pair dies at native load, so every site
+         *  must spell these identically). */
+        const val CTC_TYPE_NEMO = "nemo_ctc"
+        const val CTC_TYPE_ZIPFORMER = "zipformer_ctc"
+
         /** Record option keys, single definition for the supports and the import UI. */
         const val OPTION_WHISPER_LANGUAGE = "whisper.language"
         const val OPTION_WHISPER_TASK = "whisper.task"

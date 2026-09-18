@@ -124,43 +124,78 @@ fun ModelTab(
     // import fires immediately; the chip documents which family won). A
     // Whisper/Canary-shaped set is first narrowed by the folder name, and
     // only a still-ambiguous pick opens the chooser: detect then confirm,
-    // never a silent family guess (GH #93).
+    // never a silent family guess (GH #93). CTC is the one exception to
+    // auto-import: its nemo/zipformer subtype changes the sherpa config and
+    // a wrong pick dies at native load (exit 255, no import-time metadata
+    // check), so a detected CTC opens the chooser for a conscious subtype
+    // pick instead of importing with the stale UI default. (The manual URL
+    // path keeps its subtype dropdown as the conscious pick; the in-flight
+    // import itself is not cancellable, only the detect probe is.)
     val externalImportScope = rememberCoroutineScope()
     var detectedExternalFamily by remember { mutableStateOf<ModelFamily?>(null) }
     var ambiguousPick by remember { mutableStateOf<AmbiguousFamilyPick?>(null) }
-    fun importFolder(picked: Uri, family: ModelFamily) {
-        externalImport = externalImport.withFamily(family)
+    var detectJob by remember { mutableStateOf<kotlinx.coroutines.Job?>(null) }
+    fun importFolder(picked: Uri, family: ModelFamily, ctcSubtype: String? = null) {
+        // A chooser subtype is written back so the section dropdown (and a
+        // follow-up manual import) starts from what the user chose.
+        externalImport = if (ctcSubtype != null)
+            externalImport.withFamily(family).copy(ctcModelType = ctcSubtype)
+        else externalImport.withFamily(family)
         viewModel.importExternalFromFolder(
             context, picked, family,
-            ctcModelType = externalImport.ctcModelType,
+            ctcModelType = ctcSubtype ?: externalImport.ctcModelType,
             options = externalImport.options(),
             languages = externalImport.languageCodes(),
         )
+    }
+    fun routeDetection(picked: Uri, family: ModelFamily) {
+        // The chip shows the detected family in every branch: for CTC it is
+        // the surviving feedback if the user dismisses the subtype chooser.
+        detectedExternalFamily = family
+        if (family == ModelFamily.CTC) {
+            ambiguousPick = AmbiguousFamilyPick(picked, listOf(ModelFamily.CTC))
+        } else {
+            importFolder(picked, family)
+        }
     }
     val externalFolderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
         uri?.let { picked ->
-            context.contentResolver.takePersistableUriPermission(
-                picked,
-                android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
+            // Some third-party/OEM pickers return a grant without the
+            // persistable flag; the unguarded call would throw directly in
+            // the callback (SettingsTab guards the identical call).
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    picked,
+                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+            }.onFailure { android.util.Log.w("ModelTab", "persistable grant failed for $picked", it) }
             detectedExternalFamily = null
             ambiguousPick = null
-            externalImportScope.launch {
-                when (val detection = viewModel.detectExternalFamily(context, picked)) {
-                    is ModelFamilyDetector.Result.Detected -> {
-                        detectedExternalFamily = detection.family
-                        importFolder(picked, detection.family)
-                    }
+            // A rapid re-pick must not race the previous detect probe; the
+            // import phase itself is not cancellable (viewModelScope).
+            detectJob?.cancel()
+            detectJob = externalImportScope.launch {
+                // A broken grant can also fail the SAF listing itself; route
+                // that through the import path so the error surfaces in the
+                // snackbar instead of crashing the coroutine scope.
+                val detection = runCatching {
+                    viewModel.detectExternalFamily(context, picked)
+                }.getOrElse {
+                    android.util.Log.w("ModelTab", "folder detect failed for $picked", it)
+                    ModelFamilyDetector.Result.Unknown
+                }
+                when (detection) {
+                    is ModelFamilyDetector.Result.Detected ->
+                        routeDetection(picked, detection.family)
                     is ModelFamilyDetector.Result.Ambiguous -> {
                         // The tree URI's last segment usually carries the
                         // folder name: "canary-180m" resolves without asking.
                         val narrowed = ModelFamilyDetector.narrow(
                             detection.candidates, picked.lastPathSegment)
                         if (narrowed != null) {
-                            detectedExternalFamily = narrowed
-                            importFolder(picked, narrowed)
+                            routeDetection(picked, narrowed)
                         } else {
                             ambiguousPick = AmbiguousFamilyPick(picked, detection.candidates)
                         }
@@ -659,18 +694,36 @@ fun ModelTab(
                 if (ambiguousPick != null) {
                     // TASK-513 (GH #93): the folder shape fits more than one
                     // family and the folder name did not resolve it; the
-                    // user picks, the import runs with the choice.
+                    // user picks, the import runs with the choice. A CTC
+                    // pick (offered here for detected-CTC sets and
+                    // CTC-bearing ambiguous sets) splits into its two
+                    // sherpa subtypes: the subtype decides the config and a
+                    // wrong guess dies at native load, so it is never taken
+                    // from a default.
                     AlertDialog(
                         onDismissRequest = { ambiguousPick = null },
                         title = { Text(stringResource(R.string.external_family_pick_title)) },
                         text = {
                             Column {
                                 ambiguousPick?.candidates?.forEach { family ->
-                                    TextButton(onClick = {
-                                        val picked = ambiguousPick?.uri
-                                        ambiguousPick = null
-                                        picked?.let { importFolder(it, family) }
-                                    }) { Text(familyLabel(family)) }
+                                    if (family == ModelFamily.CTC) {
+                                        TextButton(onClick = {
+                                            val picked = ambiguousPick?.uri
+                                            ambiguousPick = null
+                                            picked?.let { importFolder(it, family, ModelFamilySupport.CTC_TYPE_NEMO) }
+                                        }) { Text(stringResource(R.string.external_ctc_subtype_nemo)) }
+                                        TextButton(onClick = {
+                                            val picked = ambiguousPick?.uri
+                                            ambiguousPick = null
+                                            picked?.let { importFolder(it, family, ModelFamilySupport.CTC_TYPE_ZIPFORMER) }
+                                        }) { Text(stringResource(R.string.external_ctc_subtype_zipformer)) }
+                                    } else {
+                                        TextButton(onClick = {
+                                            val picked = ambiguousPick?.uri
+                                            ambiguousPick = null
+                                            picked?.let { importFolder(it, family) }
+                                        }) { Text(familyLabel(family)) }
+                                    }
                                 }
                             }
                         },
@@ -1130,7 +1183,7 @@ private fun familyLabel(family: ModelFamily): String = stringResource(
  */
 internal data class ExternalImportUiState(
     val family: ModelFamily = ModelFamily.TRANSDUCER,
-    val ctcModelType: String = "nemo_ctc",
+    val ctcModelType: String = ModelFamilySupport.CTC_TYPE_NEMO,
     /** TASK-401 alternative A: one "Decode language" choice replaces the old twin
      *  free-text fields. It feeds the family's language option AND derives the
      *  record's language tags (one value, both purposes); blank = auto-detect. */
@@ -1418,7 +1471,7 @@ private fun ExternalModelsSection(
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
                     OutlinedTextField(
-                        value = if (selection.ctcModelType == "zipformer_ctc")
+                        value = if (selection.ctcModelType == ModelFamilySupport.CTC_TYPE_ZIPFORMER)
                             stringResource(R.string.external_ctc_subtype_zipformer)
                         else stringResource(R.string.external_ctc_subtype_nemo),
                         onValueChange = {},
@@ -1431,14 +1484,14 @@ private fun ExternalModelsSection(
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.external_ctc_subtype_nemo)) },
                             onClick = {
-                                onSelectionChange(selection.copy(ctcModelType = "nemo_ctc"))
+                                onSelectionChange(selection.copy(ctcModelType = ModelFamilySupport.CTC_TYPE_NEMO))
                                 ctcExpanded = false
                             }
                         )
                         DropdownMenuItem(
                             text = { Text(stringResource(R.string.external_ctc_subtype_zipformer)) },
                             onClick = {
-                                onSelectionChange(selection.copy(ctcModelType = "zipformer_ctc"))
+                                onSelectionChange(selection.copy(ctcModelType = ModelFamilySupport.CTC_TYPE_ZIPFORMER))
                                 ctcExpanded = false
                             }
                         )

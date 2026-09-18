@@ -119,19 +119,26 @@ class ExternalModelImporter(
     internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamily.TRANSDUCER): Map<String, String>? =
         ModelFamilySupport.forFamily(family).buildCopyPlan(files)
 
+    /** Human spelling of a family for diagnostic messages ("SenseVoice",
+     *  not the raw "SENSE_VOICE" enum name; the UI layer's familyLabel is a
+     *  composable and stays there). */
+    private fun familyDisplayName(family: ModelFamily): String =
+        family.name.lowercase().split('_').joinToString("") { it.replaceFirstChar { c -> c.uppercase() } }
+
     /** Family-named role-set error shared by the local and URL planning sites. When
      *  the set matches another family's shape, the error says so and names the
      *  candidates (TASK-513, GH #93: a Canary set must not fail as "missing
      *  TRANSDUCER files" with no hint that the family is the wrong knob). */
     private fun missingRolesError(family: ModelFamily, names: List<String>): IllegalArgumentException {
         val detected = when (val d = ModelFamilyDetector.detect(names)) {
-            is ModelFamilyDetector.Result.Ambiguous -> d.candidates.joinToString(" or ")
-            is ModelFamilyDetector.Result.Detected -> d.family.name
+            is ModelFamilyDetector.Result.Ambiguous ->
+                d.candidates.joinToString(" or ") { familyDisplayName(it) }
+            is ModelFamilyDetector.Result.Detected -> familyDisplayName(d.family)
             ModelFamilyDetector.Result.Unknown -> null
         }
         val looksLike = detected?.let { " The files look like a $it model: pick the $it family and retry." }.orEmpty()
         return IllegalArgumentException(
-            "missing required files for $family (${ModelFamilySupport.forFamily(family).requiredRoles().joinToString("/")}); found: $names.$looksLike")
+            "missing required files for ${familyDisplayName(family)} (${ModelFamilySupport.forFamily(family).requiredRoles().joinToString("/")}); found: $names.$looksLike")
     }
 
     /**
