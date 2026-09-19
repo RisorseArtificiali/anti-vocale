@@ -82,26 +82,6 @@ class DualRefinementPolicyTest {
     }
 
     @Test
-    fun `the delivered-text guard rejects blank and collapsed refinement, keeps short pairs`() {
-        val firstPass = "Ich habe heute eine lange Sprachnachricht geschickt ueber das Wochenende".repeat(3)
-        // Blank refined text: never acceptable with a first pass in hand.
-        assertNullAcceptable("", firstPass)
-        // Collapsed to a sliver of the first pass: the repetition-loop class.
-        assertNullAcceptable("Ja", firstPass)
-        // A healthy refinement passes.
-        org.junit.Assert.assertTrue(
-            DualRefinementPolicy.refinedTextAcceptable(firstPass.replace(" ", "  ") + ".", firstPass))
-        // Short first passes make the ratio noise: accept anything non-blank.
-        org.junit.Assert.assertTrue(DualRefinementPolicy.refinedTextAcceptable("ok", "Hallo"))
-    }
-
-    private fun assertNullAcceptable(refined: String, firstPass: String) {
-        org.junit.Assert.assertFalse(
-            "guard must reject '$refined'",
-            DualRefinementPolicy.refinedTextAcceptable(refined, firstPass))
-    }
-
-    @Test
     fun `skip tokens are stable strings for the persisted context`() {
         // They ride ProcessingContext.refinementSkipReason and the metadata
         // line; renaming one silently orphanes every recorded row.
@@ -109,6 +89,5 @@ class DualRefinementPolicyTest {
         assertEquals("fast_blank", DualRefinementPolicy.SKIP_FAST_BLANK)
         assertEquals("refine_load_failed", DualRefinementPolicy.SKIP_REFINE_LOAD_FAILED)
         assertEquals("refine_inference_failed", DualRefinementPolicy.SKIP_REFINE_INFERENCE_FAILED)
-        assertEquals("refine_collapsed", DualRefinementPolicy.SKIP_REFINE_COLLAPSED)
     }
 }

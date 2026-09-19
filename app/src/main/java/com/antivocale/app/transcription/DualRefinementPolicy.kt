@@ -22,10 +22,6 @@ object DualRefinementPolicy {
     const val SKIP_FAST_BLANK = "fast_blank"
     const val SKIP_REFINE_LOAD_FAILED = "refine_load_failed"
     const val SKIP_REFINE_INFERENCE_FAILED = "refine_inference_failed"
-    /** Design D4's delivered-text guard fired: phase 2 "succeeded" but its
-     *  text collapsed relative to the first pass (the repetition-loop class);
-     *  the first pass is delivered instead. */
-    const val SKIP_REFINE_COLLAPSED = "refine_collapsed"
 
     /**
      * @param requestType the request's type token ("audio" qualifies; text,
@@ -37,26 +33,6 @@ object DualRefinementPolicy {
      * @param streamingBackendId the installed streaming catalog entry, when
      *   one resolves (the fast side). Null when none is installed.
      */
-    /**
-     * The delivered-text guard (design D4): phase 2 completed, but its text
-     * is blank or collapsed to under [MIN_REFINED_FRACTION] of the first
-     * pass (the repetition-loop class the crash reports taught us). True
-     * means: deliver the first pass instead, token SKIP_REFINE_COLLAPSED.
-     * The first pass must be substantial for the ratio to mean anything.
-     */
-    fun refinedTextAcceptable(refined: String, firstPass: String): Boolean {
-        if (refined.isBlank()) return false
-        // A short first pass makes the ratio noise (a word or two); accept.
-        if (firstPass.length < MIN_GUARD_FIRSTPASS_CHARS) return true
-        return refined.length >= firstPass.length * MIN_REFINED_FRACTION
-    }
-
-    /** Below this the first pass is too short for the ratio to mean anything. */
-    const val MIN_GUARD_FIRSTPASS_CHARS = 24
-
-    /** Collapse guard threshold; see [refinedTextAcceptable]. */
-    const val MIN_REFINED_FRACTION = 0.35
-
     fun fastBackendFor(
         requestType: String,
         backendOverride: String?,
