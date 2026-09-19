@@ -1035,4 +1035,6 @@
     <string name="text_scale_small">Piccolo</string>
     <string name="text_scale_large">Grande</string>
     <string name="text_scale_xlarge">Molto grande</string>
+    <string name="logs_first_pass_label">Prima passata (%1$s)</string>
+    <string name="copy_first_pass">Copia prima passata</string>
 </resources>

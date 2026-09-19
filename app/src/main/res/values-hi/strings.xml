@@ -1022,4 +1022,6 @@
     <string name="text_scale_small">छोटा</string>
     <string name="text_scale_large">बड़ा</string>
     <string name="text_scale_xlarge">बहुत बड़ा</string>
+    <string name="logs_first_pass_label">पहला चरण (%1$s)</string>
+    <string name="copy_first_pass">पहला चरण कॉपी करें</string>
 </resources>

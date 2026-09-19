@@ -1028,4 +1028,6 @@
     <string name="text_scale_small">کوچک</string>
     <string name="text_scale_large">بزرگ</string>
     <string name="text_scale_xlarge">بسیار بزرگ</string>
+    <string name="logs_first_pass_label">گذر اول (%1$s)</string>
+    <string name="copy_first_pass">کپی گذر اول</string>
 </resources>

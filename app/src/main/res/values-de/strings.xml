@@ -1023,4 +1023,6 @@
     <string name="text_scale_small">Klein</string>
     <string name="text_scale_large">Groß</string>
     <string name="text_scale_xlarge">Sehr groß</string>
+    <string name="logs_first_pass_label">Erster Durchlauf (%1$s)</string>
+    <string name="copy_first_pass">Ersten Durchlauf kopieren</string>
 </resources>

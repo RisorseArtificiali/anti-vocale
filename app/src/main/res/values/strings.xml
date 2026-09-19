@@ -1028,4 +1028,6 @@
     <string name="text_scale_small">Small</string>
     <string name="text_scale_large">Large</string>
     <string name="text_scale_xlarge">Extra large</string>
+    <string name="logs_first_pass_label">First pass (%1$s)</string>
+    <string name="copy_first_pass">Copy first pass</string>
 </resources>

@@ -52,6 +52,9 @@ data class LogEntity(
      *  chunk coverage, cap, RAM; see ProcessingContextConverter). Null on
      *  pre-v10 rows and on text-only entries. */
     val processingContext: String? = null,
+    /** GH #43: the superseded fast first-pass transcript, when a two-pass
+     *  run refined it (null on single-model rows and pre-v12 rows). */
+    val firstPassTranscript: String? = null,
     /** TASK-546: what the backend reported it heard (null when the model
      *  does not report detection, on text entries, and pre-v11 rows). */
     val detectedLanguage: String? = null,
@@ -86,6 +89,7 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     segments = segments,
     failureContext = failureContext,
     processingContext = processingContext,
+    firstPassTranscript = firstPassTranscript,
     detectedLanguage = detectedLanguage,
     languagePin = languagePin
 )
@@ -112,6 +116,7 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     segments = segments,
     failureContext = failureContext,
     processingContext = processingContext,
+    firstPassTranscript = firstPassTranscript,
     detectedLanguage = detectedLanguage,
     languagePin = languagePin
 )

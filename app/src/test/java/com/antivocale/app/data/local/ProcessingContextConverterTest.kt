@@ -31,6 +31,39 @@ class ProcessingContextConverterTest {
     }
 
     @Test
+    fun `dual-model fields round-trip and render on the metadata line`() {
+        // GH #43 slice 1: the row's context is phase 2's; the fast pass
+        // nests with its own backend id; the skip token rides along.
+        val dual = ProcessingContext(
+            decodePath = "pipeline",
+            backendId = "parakeet",
+            refinementPhase = ProcessingContext(
+                decodePath = "whole_file", backendId = "nemotron-streaming"),
+            refinementSkipReason = null,
+        )
+        assertEquals(dual, ProcessingContextConverter.fromJson(ProcessingContextConverter.toJson(dual)))
+        assertEquals(
+            "pipeline refined=nemotron-streaming",
+            ProcessingContextConverter.render(dual))
+
+        val skipped = ProcessingContext(
+            decodePath = "whole_file",
+            backendId = "parakeet",
+            refinementSkipReason = "fast_load_failed",
+        )
+        assertEquals(
+            "whole_file skip=fast_load_failed",
+            ProcessingContextConverter.render(skipped))
+        // Old JSON (pre-dual) parses with the new fields null.
+        assertEquals(
+            ProcessingContext(decodePath = "pipeline", totalChunks = 157, failedChunks = 3,
+                transcribedSeconds = 4620.0, chunkCapSeconds = 60,
+                availableRamBytes = 5802934272L, vadRequested = true),
+            ProcessingContextConverter.fromJson(
+                """{"decodePath":"pipeline","totalChunks":157,"failedChunks":3,"transcribedSeconds":4620.0,"chunkCapSeconds":60,"availableRamBytes":5802934272,"vadRequested":true}"""))
+    }
+
+    @Test
     fun `null blank and corrupt input degrade to null and clean shapes render bare`() {
         assertNull(ProcessingContextConverter.toJson(null))
         assertNull(ProcessingContextConverter.fromJson(null))

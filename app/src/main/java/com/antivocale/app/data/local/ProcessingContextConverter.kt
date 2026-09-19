@@ -20,6 +20,9 @@ object ProcessingContextConverter {
             c.chunkCapSeconds?.let { put("chunkCapSeconds", it) }
             c.availableRamBytes?.let { put("availableRamBytes", it) }
             c.vadRequested?.let { put("vadRequested", it) }
+            c.backendId?.let { put("backendId", it) }
+            c.refinementPhase?.let { put("refinementPhase", toJson(it)) }
+            c.refinementSkipReason?.let { put("refinementSkipReason", it) }
         }.toString()
     }
 
@@ -37,6 +40,9 @@ object ProcessingContextConverter {
                     chunkCapSeconds = o.optIntOrNull("chunkCapSeconds"),
                     availableRamBytes = o.optLongOrNull("availableRamBytes"),
                     vadRequested = if (o.has("vadRequested") && !o.isNull("vadRequested")) o.getBoolean("vadRequested") else null,
+                    backendId = o.optStringOrNull("backendId"),
+                    refinementPhase = fromJson(o.optStringOrNull("refinementPhase")),
+                    refinementSkipReason = o.optStringOrNull("refinementSkipReason"),
                 )
             }.getOrNull()
         }
@@ -53,6 +59,10 @@ object ProcessingContextConverter {
             // locale-sensitive formatting, no GB/MB drift between surfaces.
             c.availableRamBytes?.let { add("ram=${it / (1024L * 1024L)}MB") }
             c.vadRequested?.let { add("vad=${if (it) "on" else "off"}") }
+            // GH #43: the refinement facts ride the metadata line (and the
+            // report email) without a new field anywhere.
+            c.refinementPhase?.backendId?.let { add("refined=$it") }
+            c.refinementSkipReason?.let { add("skip=$it") }
         }.joinToString(" ")
     }
 }
@@ -65,3 +75,6 @@ private fun org.json.JSONObject.optDoubleOrNull(key: String): Double? =
 
 private fun org.json.JSONObject.optLongOrNull(key: String): Long? =
     if (has(key) && !isNull(key)) getLong(key) else null
+
+private fun org.json.JSONObject.optStringOrNull(key: String): String? =
+    if (has(key) && !isNull(key)) optString(key).takeIf { it.isNotBlank() } else null

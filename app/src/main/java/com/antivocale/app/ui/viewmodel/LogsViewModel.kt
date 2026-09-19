@@ -73,6 +73,8 @@ data class LogEntry(
     /** TASK-512: JSON processing context (raw passthrough; see
      *  ProcessingContextConverter); present on SUCCESS rows since v10. */
     val processingContext: String? = null,
+    /** GH #43: the superseded fast first-pass transcript (two-pass runs). */
+    val firstPassTranscript: String? = null,
     /** TASK-546: backend-reported language (null on old rows and text entries). */
     val detectedLanguage: String? = null,
     /** TASK-546: the policy-resolved pin in force at transcription time. */

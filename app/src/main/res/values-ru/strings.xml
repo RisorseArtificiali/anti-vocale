@@ -1042,4 +1042,6 @@
     <string name="text_scale_small">Маленький</string>
     <string name="text_scale_large">Большой</string>
     <string name="text_scale_xlarge">Очень большой</string>
+    <string name="logs_first_pass_label">Первый проход (%1$s)</string>
+    <string name="copy_first_pass">Копировать первый проход</string>
 </resources>

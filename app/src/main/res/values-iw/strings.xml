@@ -1030,4 +1030,6 @@
     <string name="text_scale_small">קטן</string>
     <string name="text_scale_large">גדול</string>
     <string name="text_scale_xlarge">גדול מאוד</string>
+    <string name="logs_first_pass_label">מעבר ראשון (%1$s)</string>
+    <string name="copy_first_pass">העתק מעבר ראשון</string>
 </resources>

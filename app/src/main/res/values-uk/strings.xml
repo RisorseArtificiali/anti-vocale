@@ -1043,4 +1043,6 @@
     <string name="text_scale_small">Малий</string>
     <string name="text_scale_large">Великий</string>
     <string name="text_scale_xlarge">Дуже великий</string>
+    <string name="logs_first_pass_label">Перший прохід (%1$s)</string>
+    <string name="copy_first_pass">Копіювати перший прохід</string>
 </resources>

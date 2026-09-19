@@ -888,4 +888,6 @@
     <string name="text_scale_small">Petit</string>
     <string name="text_scale_large">Grand</string>
     <string name="text_scale_xlarge">Très grand</string>
+    <string name="logs_first_pass_label">Première passe (%1$s)</string>
+    <string name="copy_first_pass">Copier la première passe</string>
 </resources>

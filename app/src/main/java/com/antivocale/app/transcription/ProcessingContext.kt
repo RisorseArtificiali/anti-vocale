@@ -29,4 +29,14 @@ data class ProcessingContext(
      *  decision is decodePath itself (vad_chunked/windowed ran VAD;
      *  pipeline/streamed_no_vad did not), so the pair is complete. */
     val vadRequested: Boolean? = null,
+    /** GH #43: which backend produced THIS context (the row's context is
+     *  phase 2's; refinementPhase carries phase 1's). */
+    val backendId: String? = null,
+    /** GH #43: the fast first pass's own context, nested on the refined
+     *  row's (phase 2) context; null on single-model runs. */
+    val refinementPhase: ProcessingContext? = null,
+    /** GH #43: stable token when the first pass was skipped or refinement
+     *  failed with text delivered anyway (fast_load_failed, fast_blank,
+     *  refine_load_failed, refine_inference_failed). */
+    val refinementSkipReason: String? = null,
 )

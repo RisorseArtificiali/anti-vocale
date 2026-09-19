@@ -1165,6 +1165,21 @@ fun LogEntryItem(
                             )
                         }
 
+                        // GH #43: the superseded fast first pass, kept copyable
+                        // when refinement replaced it with better text.
+                        log.firstPassTranscript?.let { firstPass ->
+                            LabeledTranscriptBlock(
+                                label = stringResource(
+                                    R.string.logs_first_pass_label,
+                                    ProcessingContextConverter.fromJson(log.processingContext)
+                                        ?.refinementPhase?.backendId ?: "",
+                                ),
+                                copyLabelRes = R.string.copy_first_pass,
+                                text = firstPass,
+                                searchQuery = searchQuery,
+                            )
+                        }
+
                         // Metadata row. FlowRow, not Row: the model name is
                         // unbounded, so at large font scales the block wraps
                         // to new lines instead of collapsing the name to a
