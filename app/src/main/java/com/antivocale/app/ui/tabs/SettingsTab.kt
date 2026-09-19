@@ -63,9 +63,11 @@ import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
+import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.CollapsibleSection
 import com.antivocale.app.ui.components.HF_TOKEN_SETTINGS_URL
 import com.antivocale.app.ui.components.OAuthLoginSection
+import com.antivocale.app.ui.components.SectionCard
 import com.antivocale.app.ui.components.SettingsDropdown
 import com.antivocale.app.ui.components.TokenInputField
 import com.antivocale.app.ui.components.ToggleSettingCard
@@ -437,6 +439,10 @@ fun SettingsTab(
                     if (isModelLoaded) stringResource(R.string.model_loaded)
                     else stringResource(R.string.model_not_loaded)
                 SearchFilterRow(searchQuery, modelStatusTitle) {
+                    // Deliberately NOT SectionCard: this banner is the one
+                    // divider-free compact card (spacedBy 8), and a divider
+                    // over its tinted container would be a redesign, not a
+                    // normalization (TASK-564 review).
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         colors = CardDefaults.cardColors(
@@ -450,25 +456,14 @@ fun SettingsTab(
                             modifier = Modifier.padding(16.dp),
                             verticalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.RemoveCircleOutline,
-                                    contentDescription = null,
-                                    tint = if (isModelLoaded)
-                                        MaterialTheme.colorScheme.primary
-                                    else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                Text(
-                                    text = modelStatusTitle,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-
+                            CardTitleRow(
+                                icon = if (isModelLoaded) Icons.Default.CheckCircle else Icons.Default.RemoveCircleOutline,
+                                title = modelStatusTitle,
+                                iconTint = if (isModelLoaded)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                             if (isModelLoaded && remainingTime > 0L) {
                                 val minutes = remainingTime / 60
                                 val seconds = remainingTime % 60
@@ -479,9 +474,8 @@ fun SettingsTab(
                                 )
                             }
 
-                            // Unload button - show when model is loaded
+                            // Unload button: shown when the model is loaded.
                             if (isModelLoaded) {
-                                Spacer(modifier = Modifier.height(8.dp))
                                 UnloadModelButton(
                                     onClick = { viewModel.unloadModel() },
                                     isTranscribing = isTranscribing
@@ -498,7 +492,6 @@ fun SettingsTab(
                         }
                     }
                 }
-            }
 
             // Active Model Selection Card
             SearchFilterRow(searchQuery, stringResource(R.string.active_model)) {
@@ -509,21 +502,10 @@ fun SettingsTab(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Storage,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.active_model),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        CardTitleRow(
+                            icon = Icons.Default.Storage,
+                            title = stringResource(R.string.active_model)
+                        )
 
                         // Current model display
                         if (uiState.currentModelPath != null) {
@@ -582,64 +564,42 @@ fun SettingsTab(
                 // Only the hint that actually renders (may be null: skipped).
                 transcriptionHintRes?.let { stringResource(it) }
             ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
+                SectionCard(
+                    icon = Icons.Default.Translate,
+                    title = transcriptionLanguageTitle
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Translate,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = transcriptionLanguageTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                        // TASK-458: the dropdown offers what the ACTIVE model conditions
-                        // on; backends without language conditioning render it disabled.
-                        SettingsDropdown(
-                            currentValue = currentTranscriptionLanguage,
-                            options = transcriptionPicker.codes,
-                            currentValueDisplay = languageOptionLabel(
-                                currentTranscriptionLanguage,
+                    // TASK-458: the dropdown offers what the ACTIVE model conditions
+                    // on; backends without language conditioning render it disabled.
+                    SettingsDropdown(
+                        currentValue = currentTranscriptionLanguage,
+                        options = transcriptionPicker.codes,
+                        currentValueDisplay = languageOptionLabel(
+                            currentTranscriptionLanguage,
+                            transcriptionSentinelLabels,
+                            transcriptionPicker.optionByCode
+                        ),
+                        optionDisplay = { code ->
+                            languageOptionLabel(
+                                code,
                                 transcriptionSentinelLabels,
                                 transcriptionPicker.optionByCode
-                            ),
-                            optionDisplay = { code ->
-                                languageOptionLabel(
-                                    code,
-                                    transcriptionSentinelLabels,
-                                    transcriptionPicker.optionByCode
-                                )
-                            },
-                            onOptionSelected = { viewModel.saveTranscriptionLanguage(it) },
-                            label = transcriptionLanguageTitle,
-                            enabled = transcriptionPicker.conditioningAvailable && !uiState.isSaving
-                        )
-
-                        // TASK-458: one explanatory line per the state of the active
-                        // model vs the stored preference; hoisted as
-                        // transcriptionHintRes so the search filter matches the
-                        // same text this card renders.
-                        transcriptionHintRes?.let {
-                            Text(
-                                text = stringResource(it),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        }
+                        },
+                        onOptionSelected = { viewModel.saveTranscriptionLanguage(it) },
+                        label = transcriptionLanguageTitle,
+                        enabled = transcriptionPicker.conditioningAvailable && !uiState.isSaving
+                    )
+
+                    // TASK-458: one explanatory line per the state of the active
+                    // model vs the stored preference; hoisted as
+                    // transcriptionHintRes so the search filter matches the
+                    // same text this card renders.
+                    transcriptionHintRes?.let {
+                        Text(
+                            text = stringResource(it),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -749,44 +709,20 @@ fun SettingsTab(
                     punctuationModeTitle,
                     stringResource(R.string.punctuation_mode_description)
                 ) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth()
+                    SectionCard(
+                        icon = Icons.Default.FormatQuote,
+                        title = punctuationModeTitle,
+                        description = stringResource(R.string.punctuation_mode_description)
                     ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.FormatQuote,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Text(
-                                    text = punctuationModeTitle,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                            }
-                            Text(
-                                text = stringResource(R.string.punctuation_mode_description),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                            SettingsDropdown(
-                                currentValue = currentPunctuationMode,
-                                options = viewModel.punctuationModeOptions,
-                                currentValueDisplay = punctuationModeLabel(currentPunctuationMode),
-                                optionDisplay = { punctuationModeLabel(it) },
-                                onOptionSelected = { viewModel.savePunctuationMode(it) },
-                                label = punctuationModeTitle,
-                                enabled = !uiState.isSaving
-                            )
-                        }
+                        SettingsDropdown(
+                            currentValue = currentPunctuationMode,
+                            options = viewModel.punctuationModeOptions,
+                            currentValueDisplay = punctuationModeLabel(currentPunctuationMode),
+                            optionDisplay = { punctuationModeLabel(it) },
+                            onOptionSelected = { viewModel.savePunctuationMode(it) },
+                            label = punctuationModeTitle,
+                            enabled = !uiState.isSaving
+                        )
                     }
                 }
                 // TASK-507 (maintainer): the prompt override text area stays
@@ -951,72 +887,45 @@ fun SettingsTab(
                 themeModeTitle,
                 stringResource(R.string.theme_mode_description)
             ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
+                SectionCard(
+                    icon = Icons.Default.Palette,
+                    title = themeTitle,
+                    description = stringResource(R.string.theme_description)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Palette,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = themeTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                    // Theme dropdown
+                    SettingsDropdown(
+                        currentValue = currentTheme,
+                        options = viewModel.themeOptions,
+                        currentValueDisplay = currentTheme.displayName,
+                        optionDisplay = { it.displayName },
+                        onOptionSelected = { viewModel.saveThemePreference(it) },
+                        label = themeTitle,
+                        enabled = !uiState.isSaving
+                    )
 
-                        Text(
-                            text = stringResource(R.string.theme_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    Text(
+                        text = themeModeTitle,
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                    Text(
+                        text = stringResource(R.string.theme_mode_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
 
-                        // Theme dropdown
-                        SettingsDropdown(
-                            currentValue = currentTheme,
-                            options = viewModel.themeOptions,
-                            currentValueDisplay = currentTheme.displayName,
-                            optionDisplay = { it.displayName },
-                            onOptionSelected = { viewModel.saveThemePreference(it) },
-                            label = themeTitle,
-                            enabled = !uiState.isSaving
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = themeModeTitle,
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                        Text(
-                            text = stringResource(R.string.theme_mode_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        // Theme mode dropdown (System / Dark / Light)
-                        val currentThemeMode by viewModel.currentThemeMode.collectAsState()
-                        SettingsDropdown(
-                            currentValue = currentThemeMode,
-                            options = viewModel.themeModeOptions,
-                            currentValueDisplay = currentThemeMode.displayName,
-                            optionDisplay = { it.displayName },
-                            onOptionSelected = { viewModel.saveThemeMode(it) },
-                            label = themeModeTitle
-                        )
-                    }
+                    // Theme mode dropdown (System / Dark / Light)
+                    val currentThemeMode by viewModel.currentThemeMode.collectAsState()
+                    SettingsDropdown(
+                        currentValue = currentThemeMode,
+                        options = viewModel.themeModeOptions,
+                        currentValueDisplay = currentThemeMode.displayName,
+                        optionDisplay = { it.displayName },
+                        onOptionSelected = { viewModel.saveThemeMode(it) },
+                        label = themeModeTitle
+                    )
                 }
             }
 
@@ -1065,95 +974,43 @@ fun SettingsTab(
             // Language Setting (App Language)
             val languageTitle = stringResource(R.string.language_title)
             SearchFilterRow(searchQuery, languageTitle, stringResource(R.string.language_description)) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
+                SectionCard(
+                    icon = Icons.Default.Language,
+                    title = languageTitle,
+                    description = stringResource(R.string.language_description)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Language,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = languageTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Text(
-                            text = stringResource(R.string.language_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                        // Language dropdown
-                        val appOptionsByCode = viewModel.languageOptions.associateBy { option -> option.code }
-                        SettingsDropdown(
-                            currentValue = currentLanguage,
-                            options = viewModel.languageOptions.map { it.code },
-                            currentValueDisplay = languageOptionLabel(
-                                currentLanguage,
+                    // Language dropdown
+                    val appOptionsByCode = viewModel.languageOptions.associateBy { option -> option.code }
+                    SettingsDropdown(
+                        currentValue = currentLanguage,
+                        options = viewModel.languageOptions.map { it.code },
+                        currentValueDisplay = languageOptionLabel(
+                            currentLanguage,
+                            appLanguageSentinelLabels,
+                            appOptionsByCode
+                        ),
+                        optionDisplay = { code ->
+                            languageOptionLabel(
+                                code,
                                 appLanguageSentinelLabels,
                                 appOptionsByCode
-                            ),
-                            optionDisplay = { code ->
-                                languageOptionLabel(
-                                    code,
-                                    appLanguageSentinelLabels,
-                                    appOptionsByCode
-                                )
-                            },
-                            onOptionSelected = { viewModel.saveLanguagePreference(it) },
-                            label = languageTitle,
-                            enabled = !uiState.isSaving
-                        )
-                    }
+                            )
+                        },
+                        onOptionSelected = { viewModel.saveLanguagePreference(it) },
+                        label = languageTitle,
+                        enabled = !uiState.isSaving
+                    )
                 }
             }
 
             // Swipe Action Setting
             val swipeActionTitle = stringResource(R.string.swipe_action_title)
             SearchFilterRow(searchQuery, swipeActionTitle, stringResource(R.string.swipe_action_description)) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
+                SectionCard(
+                    icon = Icons.Default.Swipe,
+                    title = swipeActionTitle,
+                    description = stringResource(R.string.swipe_action_description)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Swipe,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = swipeActionTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Text(
-                            text = stringResource(R.string.swipe_action_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
                         SettingsDropdown(
                             currentValue = swipeActionMode,
                             options = PreferencesManager.SWIPE_ACTION_MODES,
@@ -1271,21 +1128,10 @@ fun SettingsTab(
                         modifier = Modifier.padding(16.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Key,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.huggingface_auth),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        CardTitleRow(
+                            icon = Icons.Default.Key,
+                            title = stringResource(R.string.huggingface_auth)
+                        )
 
                         Text(
                             text = stringResource(R.string.huggingface_auth_description),
@@ -1637,113 +1483,59 @@ fun SettingsTab(
             // Thread Count Setting
             val threadCountTitle = stringResource(R.string.thread_count_title)
             SearchFilterRow(searchQuery, threadCountTitle, stringResource(R.string.thread_count_description)) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
+                SectionCard(
+                    icon = Icons.Default.Memory,
+                    title = threadCountTitle,
+                    description = stringResource(R.string.thread_count_description)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Memory,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = threadCountTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Text(
-                            text = stringResource(R.string.thread_count_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                        // Thread count dropdown
-                        SettingsDropdown(
-                            currentValue = threadCount,
-                            options = (1..8).toList(),
-                            currentValueDisplay = if (threadCount == autoDetectedThreads)
-                                stringResource(R.string.thread_count_auto, autoDetectedThreads)
+                    // Thread count dropdown
+                    SettingsDropdown(
+                        currentValue = threadCount,
+                        options = (1..8).toList(),
+                        currentValueDisplay = if (threadCount == autoDetectedThreads)
+                            stringResource(R.string.thread_count_auto, autoDetectedThreads)
+                        else
+                            stringResource(R.string.thread_count_value, threadCount),
+                        optionDisplay = { threads ->
+                            if (threads == autoDetectedThreads)
+                                stringResource(R.string.thread_count_auto, threads)
                             else
-                                stringResource(R.string.thread_count_value, threadCount),
-                            optionDisplay = { threads ->
-                                if (threads == autoDetectedThreads)
-                                    stringResource(R.string.thread_count_auto, threads)
-                                else
-                                    stringResource(R.string.thread_count_value, threads)
-                            },
-                            onOptionSelected = { viewModel.saveThreadCount(it) },
-                            label = threadCountTitle
-                        )
-                    }
+                                stringResource(R.string.thread_count_value, threads)
+                        },
+                        onOptionSelected = { viewModel.saveThreadCount(it) },
+                        label = threadCountTitle
+                    )
                 }
             }
 
             // Inference Provider Setting
             val providerTitle = stringResource(R.string.inference_provider_title)
             SearchFilterRow(searchQuery, providerTitle, stringResource(R.string.inference_provider_description)) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
+                SectionCard(
+                    icon = Icons.Default.Bolt,
+                    title = providerTitle,
+                    description = stringResource(R.string.inference_provider_description)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Bolt,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = providerTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        Text(
-                            text = stringResource(R.string.inference_provider_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                        SettingsDropdown(
-                            currentValue = inferenceProvider,
-                            options = InferenceProvider.options,
-                            currentValueDisplay = when (inferenceProvider) {
+                    SettingsDropdown(
+                        currentValue = inferenceProvider,
+                        options = InferenceProvider.options,
+                        currentValueDisplay = when (inferenceProvider) {
+                            InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
+                            InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
+                            InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
+                            else -> inferenceProvider
+                        },
+                        optionDisplay = { option ->
+                            when (option) {
                                 InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
                                 InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
                                 InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                                else -> inferenceProvider
-                            },
-                            optionDisplay = { option ->
-                                when (option) {
-                                    InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
-                                    InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
-                                    InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                                    else -> option
-                                }
-                            },
-                            onOptionSelected = { viewModel.saveInferenceProvider(it) },
-                            label = providerTitle
-                        )
-                    }
+                                else -> option
+                            }
+                        },
+                        onOptionSelected = { viewModel.saveInferenceProvider(it) },
+                        label = providerTitle
+                    )
                 }
             }
 
@@ -1754,69 +1546,41 @@ fun SettingsTab(
                 stringResource(R.string.share_targets_description),
                 stringResource(R.string.advanced_sharing_toggle)
             ) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = MaterialTheme.shapes.medium
+                SectionCard(
+                    icon = Icons.Default.Share,
+                    title = stringResource(R.string.share_targets_title),
+                    description = stringResource(R.string.share_targets_description)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    // TASK-382: canonical toggleable row; the Switch itself is display-only
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .toggleable(
+                                value = advancedSharingEnabled,
+                                role = Role.Switch,
+                                onValueChange = { viewModel.saveAdvancedSharingEnabled(it) }
+                            ),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Share,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
+                        Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = stringResource(R.string.share_targets_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                text = stringResource(R.string.advanced_sharing_toggle),
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
+                        Switch(
+                            checked = advancedSharingEnabled,
+                            onCheckedChange = null
+                        )
+                    }
 
+                    if (advancedSharingEnabled) {
                         Text(
-                            text = stringResource(R.string.share_targets_description),
+                            text = stringResource(R.string.share_targets_models_info),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                        // TASK-382: canonical toggleable row; the Switch itself is display-only
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .toggleable(
-                                    value = advancedSharingEnabled,
-                                    role = Role.Switch,
-                                    onValueChange = { viewModel.saveAdvancedSharingEnabled(it) }
-                                ),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.advanced_sharing_toggle),
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                            }
-                            Switch(
-                                checked = advancedSharingEnabled,
-                                onCheckedChange = null
-                            )
-                        }
-
-                        if (advancedSharingEnabled) {
-                            Text(
-                                text = stringResource(R.string.share_targets_models_info),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
                     }
                 }
             }
@@ -2231,21 +1995,7 @@ private fun InfoRow(icon: ImageVector, title: String, value: String) {
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        CardTitleRow(icon = icon, title = title)
         // Locale-safe: weighted value wraps under a longer title instead
         // of overflowing the row (TASK-345)
         Text(
@@ -2287,85 +2037,63 @@ private fun TimeoutSettingCard(
     saveSuccess: Boolean?,
     errorMessage: String?,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+    SectionCard(
+        icon = icon,
+        title = title,
+        description = description
+    ) {
+        SettingsDropdown(
+            currentValue = currentValue,
+            options = options,
+            currentValueDisplay = currentValueDisplay,
+            optionDisplay = optionDisplay,
+            onOptionSelected = onOptionSelected,
+            label = title,
+            enabled = enabled
+        )
+        if (isSaving) {
             Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    strokeWidth = 2.dp
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = stringResource(R.string.saving),
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+        }
+        if (saveSuccess == true) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Icon(
-                    imageVector = icon,
+                    imageVector = Icons.Default.Check,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
                 )
+                Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Text(
-                text = description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-            SettingsDropdown(
-                currentValue = currentValue,
-                options = options,
-                currentValueDisplay = currentValueDisplay,
-                optionDisplay = optionDisplay,
-                onOptionSelected = onOptionSelected,
-                label = title,
-                enabled = enabled
-            )
-            if (isSaving) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(20.dp),
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.saving),
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-            if (saveSuccess == true) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = stringResource(R.string.settings_saved),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            errorMessage?.let { error ->
-                Text(
-                    text = error,
+                    text = stringResource(R.string.settings_saved),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
+        }
+        errorMessage?.let { error ->
+            Text(
+                text = error,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
         }
     }
 }
@@ -2418,21 +2146,10 @@ private fun OutputFolderSettingCard(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Folder,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.output_folder_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
+                CardTitleRow(
+                    icon = Icons.Default.Folder,
+                    title = stringResource(R.string.output_folder_title)
+                )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = stringResource(R.string.output_folder_description),
@@ -2666,29 +2383,11 @@ fun ExportSettingsScreen(
 
         Spacer(modifier = Modifier.height(12.dp))
 
-        Card(modifier = Modifier.fillMaxWidth()) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Subtitles,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.transcript_export_format_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.transcript_export_format_description),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+        SectionCard(
+            icon = Icons.Default.Subtitles,
+            title = stringResource(R.string.transcript_export_format_title),
+            description = stringResource(R.string.transcript_export_format_description)
+        ) {
                 val selectedFormat = SubtitleFormatter.Format.fromStored(transcriptExportFormat)
                 SettingsDropdown(
                     currentValue = selectedFormat,
@@ -2699,7 +2398,6 @@ fun ExportSettingsScreen(
                     label = stringResource(R.string.transcript_export_format_title),
                     enabled = outputFolderUri != null
                 )
-            }
         }
     }
 }

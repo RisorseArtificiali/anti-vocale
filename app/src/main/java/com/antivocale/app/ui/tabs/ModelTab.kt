@@ -67,6 +67,7 @@ import com.antivocale.app.transcription.audioLimitForVariants
 import com.antivocale.app.transcription.ModelVariant
 import com.antivocale.app.transcription.SherpaModelDownloader
 import androidx.compose.ui.text.style.TextOverflow
+import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
 import com.antivocale.app.ui.components.InfoIconButton
@@ -626,16 +627,11 @@ fun ModelTab(
                     )
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.Memory,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text("LiteRT-LM", style = MaterialTheme.typography.titleMedium)
-                        }
+                        CardTitleRow(
+                            icon = Icons.Default.Memory,
+                            title = "LiteRT-LM",
+                            iconTint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
 
                         Spacer(modifier = Modifier.height(8.dp))
                         OutlinedButton(
@@ -831,7 +827,8 @@ private fun ModelDownloadSection(
                     Column {
                         Text(
                             text = stringResource(R.string.download_models),
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
                         Text(
                             text = stringResource(R.string.gemma_advanced_features_description),
@@ -989,7 +986,8 @@ private fun CatalogModelSection(
                     Column {
                         Text(
                             text = stringResource(entryTitleResId),
-                            style = MaterialTheme.typography.titleMedium
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                         )
                         if (entryDescriptionResId != null) {
                             Text(
@@ -1366,7 +1364,7 @@ private fun ExternalModelsSection(
     var ctcExpanded by remember { mutableStateOf(false) }
 
     // Outer section Card matching the curated sections (GigaAM, Nemotron):
-    // surfaceVariant background, header with icon + title + description, 16dp padding.
+    // surfaceVariant background, shared card-title header, 16dp padding.
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
@@ -1374,19 +1372,12 @@ private fun ExternalModelsSection(
         )
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header (same shape as GigaAmDownloadSection's header)
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.GraphicEq,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text("ONNX Sherpa", style = MaterialTheme.typography.titleMedium)
-                }
-            }
+            // Section header: the shared card-title idiom.
+            CardTitleRow(
+                icon = Icons.Default.GraphicEq,
+                title = "ONNX Sherpa",
+                iconTint = MaterialTheme.colorScheme.onSurfaceVariant
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -1880,7 +1871,7 @@ private fun ExternalModelCard(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Column {
-                        Text(record.displayName, style = MaterialTheme.typography.titleMedium)
+                        Text(record.displayName, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
                         // TASK-386: plain comma join instead of the middot chain:
                         // " · " was announced as "middle dot" by TalkBack in some locales.
                         Text(
