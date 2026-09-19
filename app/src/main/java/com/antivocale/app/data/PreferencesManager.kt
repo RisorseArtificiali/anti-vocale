@@ -125,9 +125,9 @@ interface PreferencesManager {
 
     companion object {
         const val DEFAULT_KEEP_ALIVE_TIMEOUT = 5
-        /** TASK-515: default and the Settings dropdown's offered set. */
+        /** TASK-515: the stored default; the dropdown's offered set is
+         *  presentation data and lives on SettingsViewModel. */
         const val DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES = 5
-        val SUBTITLE_CHOICE_TIMEOUT_OPTIONS = listOf(1, 2, 5, 10)
         val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2).coerceAtMost(8)
         const val DEFAULT_AUTO_COPY_ENABLED = false
         /** GH #92: plain .txt is the default; timed formats are strictly opt-in. */

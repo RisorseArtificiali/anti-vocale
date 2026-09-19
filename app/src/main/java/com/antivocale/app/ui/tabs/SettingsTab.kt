@@ -904,109 +904,30 @@ fun SettingsTab(
             // Keep-Alive Timeout Setting
             val timeoutTitle = stringResource(R.string.auto_unload_timeout)
             SearchFilterRow(searchQuery, timeoutTitle, stringResource(R.string.timeout_description)) {
-                Card(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Timer,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = timeoutTitle,
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
+                TimeoutSettingCard(
+                    icon = Icons.Default.Timer,
+                    title = timeoutTitle,
+                    description = stringResource(R.string.timeout_description),
+                    currentValue = currentTimeout,
+                    options = viewModel.timeoutOptions,
+                    currentValueDisplay = when (currentTimeout) {
+                        1 -> stringResource(R.string.timeout_1_minute)
+                        60 -> stringResource(R.string.timeout_1_hour)
+                        else -> pluralStringResource(R.plurals.timeout_minutes, currentTimeout, currentTimeout)
+                    },
+                    optionDisplay = { minutes ->
+                        when (minutes) {
+                            1 -> stringResource(R.string.timeout_1_minute)
+                            60 -> stringResource(R.string.timeout_1_hour)
+                            else -> pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
                         }
-
-                        Text(
-                            text = stringResource(R.string.timeout_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
-                        // Timeout dropdown
-                        SettingsDropdown(
-                            currentValue = currentTimeout,
-                            options = viewModel.timeoutOptions,
-                            currentValueDisplay = when (currentTimeout) {
-                                1 -> stringResource(R.string.timeout_1_minute)
-                                60 -> stringResource(R.string.timeout_1_hour)
-                                else -> pluralStringResource(R.plurals.timeout_minutes, currentTimeout, currentTimeout)
-                            },
-                            optionDisplay = { minutes ->
-                                when (minutes) {
-                                    1 -> stringResource(R.string.timeout_1_minute)
-                                    60 -> stringResource(R.string.timeout_1_hour)
-                                    else -> pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
-                                }
-                            },
-                            onOptionSelected = { viewModel.saveKeepAliveTimeout(it) },
-                            label = timeoutTitle,
-                            enabled = !uiState.isSaving
-                        )
-
-                        // Saving indicator
-                        if (uiState.isSaving) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(20.dp),
-                                    strokeWidth = 2.dp
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = stringResource(R.string.saving),
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
-
-                        // Success indicator
-                        if (uiState.saveSuccess == true) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(20.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text(
-                                    text = stringResource(R.string.settings_saved),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        // Error message
-                        uiState.errorMessage?.let { error ->
-                            Text(
-                                text = error,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    }
-                }
+                    },
+                    onOptionSelected = { viewModel.saveKeepAliveTimeout(it) },
+                    enabled = !uiState.isSaving,
+                    isSaving = uiState.isSaving,
+                    saveSuccess = uiState.saveSuccess,
+                    errorMessage = uiState.errorMessage,
+                )
             }
         }
 
@@ -1903,51 +1824,29 @@ fun SettingsTab(
             // TASK-515: the subtitles-or-transcribe choice timeout. Next to
             // the share-targets card it explains: same share flow.
             val subtitleTimeout by viewModel.subtitleChoiceTimeout.collectAsState()
+            val subtitleTimeoutTitle = stringResource(R.string.subtitle_timeout_title)
             SearchFilterRow(
                 searchQuery,
-                stringResource(R.string.subtitle_timeout_title),
+                subtitleTimeoutTitle,
                 stringResource(R.string.subtitle_timeout_description)
             ) {
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Timer,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.subtitle_timeout_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            text = stringResource(R.string.subtitle_timeout_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                        SettingsDropdown(
-                            currentValue = subtitleTimeout,
-                            options = viewModel.subtitleTimeoutOptions,
-                            currentValueDisplay = pluralStringResource(
-                                R.plurals.timeout_minutes, subtitleTimeout, subtitleTimeout),
-                            optionDisplay = { minutes ->
-                                pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
-                            },
-                            onOptionSelected = { viewModel.saveSubtitleChoiceTimeout(it) },
-                            label = stringResource(R.string.subtitle_timeout_title),
-                            enabled = !uiState.isSaving
-                        )
-                    }
-                }
+                TimeoutSettingCard(
+                    icon = Icons.Default.Timer,
+                    title = subtitleTimeoutTitle,
+                    description = stringResource(R.string.subtitle_timeout_description),
+                    currentValue = subtitleTimeout,
+                    options = viewModel.subtitleTimeoutOptions,
+                    currentValueDisplay = pluralStringResource(
+                        R.plurals.timeout_minutes, subtitleTimeout, subtitleTimeout),
+                    optionDisplay = { minutes ->
+                        pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
+                    },
+                    onOptionSelected = { viewModel.saveSubtitleChoiceTimeout(it) },
+                    enabled = !uiState.isSaving,
+                    isSaving = uiState.isSaving,
+                    saveSuccess = uiState.saveSuccess,
+                    errorMessage = uiState.errorMessage,
+                )
             }
 
             // Force model load (bypass the low-memory pre-flight)
@@ -2367,6 +2266,110 @@ private fun InfoRow(icon: ImageVector, title: String, value: String) {
  * (via the card groups) and the per-card [SearchFilterRow] gate go through
  * this function, so they cannot disagree.
  */
+/**
+ * TASK-571: card scaffold shared by the two timeout settings (keep-alive
+ * auto-unload, subtitle choice): icon + title + description + divider +
+ * dropdown, plus the save indicators. Both saves flow through the same
+ * uiState.isSaving path, so both cards show the same feedback.
+ */
+@Composable
+private fun TimeoutSettingCard(
+    icon: ImageVector,
+    title: String,
+    description: String,
+    currentValue: Int,
+    options: List<Int>,
+    currentValueDisplay: String,
+    optionDisplay: @Composable (Int) -> String,
+    onOptionSelected: (Int) -> Unit,
+    enabled: Boolean,
+    isSaving: Boolean,
+    saveSuccess: Boolean?,
+    errorMessage: String?,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Text(
+                text = description,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+            SettingsDropdown(
+                currentValue = currentValue,
+                options = options,
+                currentValueDisplay = currentValueDisplay,
+                optionDisplay = optionDisplay,
+                onOptionSelected = onOptionSelected,
+                label = title,
+                enabled = enabled
+            )
+            if (isSaving) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.saving),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            }
+            if (saveSuccess == true) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.settings_saved),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+            errorMessage?.let { error ->
+                Text(
+                    text = error,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
 private fun matchesQuery(query: String, texts: List<String?>): Boolean =
     query.isBlank() || texts.any { it?.contains(query, ignoreCase = true) == true }
 

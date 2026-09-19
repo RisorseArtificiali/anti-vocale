@@ -161,7 +161,9 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = PreferencesManager.DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES
         )
-    val subtitleTimeoutOptions = PreferencesManager.SUBTITLE_CHOICE_TIMEOUT_OPTIONS
+    // Subtitle-choice timeout options in minutes (the keepAlive precedent:
+    // presentation data lives here, only the default lives in the data layer)
+    val subtitleTimeoutOptions = listOf(1, 2, 5, 10)
 
     // Auto-copy transcription results preference
     val autoCopyEnabled: StateFlow<Boolean> = preferencesManager.autoCopyEnabled
