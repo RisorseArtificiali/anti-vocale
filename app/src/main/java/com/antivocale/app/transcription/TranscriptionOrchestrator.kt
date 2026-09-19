@@ -298,7 +298,24 @@ class TranscriptionOrchestrator @Inject constructor(
                     )
                     if (fastFirstPass == null) phase2
                     else phase2.fold(
-                        onSuccess = { Result.success(it.copy(firstPass = fastFirstPass)) },
+                        onSuccess = { refined ->
+                            // Design D4's delivered-text guard: phase 2
+                            // "succeeded" with blank or collapsed text (the
+                            // repetition-loop class). The first pass wins.
+                            if (!DualRefinementPolicy.refinedTextAcceptable(
+                                    refined.text, fastFirstPass.text)) {
+                                Log.w(TAG, "Refined text collapsed " +
+                                    "(${refined.text.length} vs first pass ${fastFirstPass.text.length} chars); delivering first pass")
+                                recoverFirstPass(
+                                    fastFirstPass,
+                                    IllegalStateException(
+                                        "refined text collapsed relative to the first pass"),
+                                    DualRefinementPolicy.SKIP_REFINE_COLLAPSED,
+                                )
+                            } else {
+                                Result.success(refined.copy(firstPass = fastFirstPass))
+                            }
+                        },
                         onFailure = { failure ->
                             // Design F5: deliver through the same funnel.
                             recoverFirstPass(fastFirstPass, failure,
