@@ -990,7 +990,7 @@
     <string name="a11y_back">חזרה</string>
     <string name="litertlm_importing">מייבא…</string>
     <string name="model_ram_warning">ייתכן שאין ל%1$s מספיק זיכרון במכשיר זה. הטעינה עלולה להיכשל או לקרוס; מודלים קלים יותר בטוחים יותר.</string>
-    <string name="error_oom_transcription">אין מספיק זיכרון לתמלל את האודיו הזה. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות.</string>
+    <string name="error_oom_transcription">אין מספיק זיכרון לתמלל את האודיו הזה. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. אם זה עדיין נכשל, הגדרות > מתקדם > כפה טעינת מודל יכול לדלג על בדיקה זו.</string>
     <string name="external_family_detected">זוהה: %1$s</string>
     <string name="external_family_pick_title">לאיזו משפחה שייך המודל?</string>
     <string name="subtitle_timeout_title">פסק זמן בחירה אוטומטית</string>

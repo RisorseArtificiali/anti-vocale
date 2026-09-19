@@ -850,7 +850,7 @@
     <string name="a11y_back">Retour</string>
     <string name="litertlm_importing">Importation en cours…</string>
     <string name="model_ram_warning">%1$s pourrait manquer de mémoire sur cet appareil. Le chargement pourrait échouer ou planter ; les modèles plus légers sont plus sûrs.</string>
-    <string name="error_oom_transcription">Pas assez de mémoire pour transcrire cet audio. Essayez un fichier plus court, un modèle plus petit, ou fermez d\'autres applications.</string>
+    <string name="error_oom_transcription">Pas assez de mémoire pour transcrire cet audio. Essayez un fichier plus court, un modèle plus petit, ou fermez d\'autres applications. Si ça échoue encore, Paramètres > Avancé > Forcer le chargement du modèle peut contourner cette vérification.</string>
     <string name="external_family_detected">Détecté : %1$s</string>
     <string name="external_family_pick_title">De quelle famille ce modèle fait-il partie ?</string>
     <string name="subtitle_timeout_title">Délai de choix automatique</string>

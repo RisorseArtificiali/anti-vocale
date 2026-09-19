@@ -984,7 +984,7 @@
     <string name="a11y_back">पीछे</string>
     <string name="litertlm_importing">इंपोर्ट हो रहा है…</string>
     <string name="model_ram_warning">इस डिवाइस पर %1$s के लिए पर्याप्त मेमोरी नहीं हो सकती। लोड विफल हो सकता है; हल्के मॉडल सुरक्षित हैं।</string>
-    <string name="error_oom_transcription">इस ऑडियो को ट्रांसक्रिप्ट करने के लिए पर्याप्त मेमोरी नहीं है। छोटी फ़ाइल, हल्का मॉडल आज़माएं, या अन्य ऐप बंद करें।</string>
+    <string name="error_oom_transcription">इस ऑडियो को ट्रांसक्रिप्ट करने के लिए पर्याप्त मेमोरी नहीं है। छोटी फ़ाइल, हल्का मॉडल आज़माएं, या अन्य ऐप बंद करें। यदि फिर भी विफल हो, तो सेटिंग्स > उन्नत > मॉडल लोड बाध्य करें इस जाँच को छोड़ सकता है।</string>
     <string name="external_family_detected">पहचाना गया: %1$s</string>
     <string name="external_family_pick_title">यह मॉडल किस परिवार का है?</string>
     <string name="subtitle_timeout_title">स्वचालित चयन समय-सीमा</string>

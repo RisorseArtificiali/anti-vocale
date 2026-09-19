@@ -985,7 +985,7 @@
     <string name="a11y_back">Zurück</string>
     <string name="litertlm_importing">Import läuft…</string>
     <string name="model_ram_warning">%1$s hat auf diesem Gerät möglicherweise nicht genug Speicher. Das Laden könnte fehlschlagen oder abstürzen; leichtere Modelle sind sicherer.</string>
-    <string name="error_oom_transcription">Nicht genug Speicher, um dieses Audio zu transkribieren. Versuche eine kürzere Datei, ein kleineres Modell, oder schließe andere Apps.</string>
+    <string name="error_oom_transcription">Nicht genug Speicher, um dieses Audio zu transkribieren. Versuche eine kürzere Datei, ein kleineres Modell, oder schließe andere Apps. Wenn es weiterhin fehlschlägt, kann Einstellungen > Erweitert > Modell-Laden erzwingen diese Prüfung umgehen.</string>
     <string name="external_family_detected">Erkannt: %1$s</string>
     <string name="external_family_pick_title">Zu welcher Familie gehört dieses Modell?</string>
     <string name="subtitle_timeout_title">Automatische Wahlzeit</string>

@@ -1002,7 +1002,7 @@
     <string name="a11y_back">Назад</string>
     <string name="litertlm_importing">Импорт…</string>
     <string name="model_ram_warning">У %1$s может не хватить памяти на этом устройстве. Загрузка может завершиться неудачей; более лёгкие модели надёжнее.</string>
-    <string name="error_oom_transcription">Недостаточно памяти для распознавания этого аудио. Попробуйте более короткий файл, более лёгкую модель или закройте другие приложения.</string>
+    <string name="error_oom_transcription">Недостаточно памяти для распознавания этого аудио. Попробуйте более короткий файл, более лёгкую модель или закройте другие приложения. Если не поможет, Настройки > Дополнительно > Принудительная загрузка модели может обойти эту проверку.</string>
     <string name="external_family_detected">Обнаружено: %1$s</string>
     <string name="external_family_pick_title">К какому семейству относится эта модель?</string>
     <string name="subtitle_timeout_title">Таймаут автоматического выбора</string>

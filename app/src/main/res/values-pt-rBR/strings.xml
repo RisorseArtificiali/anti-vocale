@@ -850,7 +850,7 @@
     <string name="a11y_back">Voltar</string>
     <string name="litertlm_importing">Importando…</string>
     <string name="model_ram_warning">%1$s pode não ter memória suficiente neste dispositivo. Pode falhar ao carregar ou fechar; modelos mais leves são mais seguros.</string>
-    <string name="error_oom_transcription">Memória insuficiente para transcrever este áudio. Tente um arquivo mais curto, um modelo menor, ou feche outros apps.</string>
+    <string name="error_oom_transcription">Memória insuficiente para transcrever este áudio. Tente um arquivo mais curto, um modelo menor, ou feche outros apps. Se ainda falhar, Configurações > Avançado > Forçar carregamento do modelo pode ignorar esta verificação.</string>
     <string name="external_family_detected">Detectado: %1$s</string>
     <string name="external_family_pick_title">A qual família este modelo pertence?</string>
     <string name="subtitle_timeout_title">Prazo da escolha automática</string>
