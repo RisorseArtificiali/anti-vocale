@@ -294,7 +294,8 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         // count, cap; the codec itself is unit-tested separately).
         coVerify(atLeast = 1) { logDao.update(match { e ->
             val pc = com.antivocale.app.data.local.ProcessingContextConverter.fromJson(e.processingContext)
-            pc?.decodePath == "pipeline" && pc.totalChunks == 4 && pc.chunkCapSeconds != null
+            pc?.decodePath == "pipeline" && pc.totalChunks == 4 && pc.chunkCapSeconds != null &&
+                pc.vadRequested != null
         }) }
     }
 

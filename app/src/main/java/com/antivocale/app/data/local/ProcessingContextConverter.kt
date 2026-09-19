@@ -19,6 +19,7 @@ object ProcessingContextConverter {
             c.transcribedSeconds?.let { put("transcribedSeconds", it) }
             c.chunkCapSeconds?.let { put("chunkCapSeconds", it) }
             c.availableRamBytes?.let { put("availableRamBytes", it) }
+            c.vadRequested?.let { put("vadRequested", it) }
         }.toString()
     }
 
@@ -35,6 +36,7 @@ object ProcessingContextConverter {
                     transcribedSeconds = o.optDoubleOrNull("transcribedSeconds"),
                     chunkCapSeconds = o.optIntOrNull("chunkCapSeconds"),
                     availableRamBytes = o.optLongOrNull("availableRamBytes"),
+                    vadRequested = if (o.has("vadRequested") && !o.isNull("vadRequested")) o.getBoolean("vadRequested") else null,
                 )
             }.getOrNull()
         }
@@ -50,6 +52,7 @@ object ProcessingContextConverter {
             // Integer MB, the app-wide RAM unit (the low-memory toasts): no
             // locale-sensitive formatting, no GB/MB drift between surfaces.
             c.availableRamBytes?.let { add("ram=${it / (1024L * 1024L)}MB") }
+            c.vadRequested?.let { add("vad=${if (it) "on" else "off"}") }
         }.joinToString(" ")
     }
 }

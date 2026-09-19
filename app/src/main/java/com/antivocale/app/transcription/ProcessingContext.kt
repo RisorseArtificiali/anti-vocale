@@ -25,4 +25,8 @@ data class ProcessingContext(
     val chunkCapSeconds: Int? = null,
     /** Available RAM read at request time. */
     val availableRamBytes: Long? = null,
+    /** TASK-545: the user's VAD toggle at transcription time. The EFFECTIVE
+     *  decision is decodePath itself (vad_chunked/windowed ran VAD;
+     *  pipeline/streamed_no_vad did not), so the pair is complete. */
+    val vadRequested: Boolean? = null,
 )

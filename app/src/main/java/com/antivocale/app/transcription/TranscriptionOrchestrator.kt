@@ -1015,7 +1015,10 @@ class TranscriptionOrchestrator @Inject constructor(
         // backend (mid-word cuts garble Gemma chunks); TASK-408 moved the flag
         // onto the backend interface and canary sets it too (mid-speech cuts
         // make half its chunks decode empty, measured on desktop).
-        val vadEnabled = preferencesManager.vadEnabled.first() || backend.requiresVadAlignedChunking
+        // TASK-545: the raw toggle for the run's processing context (the
+        // effective decision is decodePath; see ProcessingContext).
+        val vadRequested = preferencesManager.vadEnabled.first()
+        val vadEnabled = vadRequested || backend.requiresVadAlignedChunking
         val threadCount = preferencesManager.threadCount.first()
         val providerPref = preferencesManager.inferenceProvider.first()
         val resolvedProvider = InferenceProvider.resolve(providerPref)
@@ -1216,6 +1219,7 @@ class TranscriptionOrchestrator @Inject constructor(
                             // common run: the short voice message).
                             processing = ProcessingContext(
                                 decodePath = "whole_file",
+                                vadRequested = vadRequested,
                                 transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
                                 chunkCapSeconds = maxChunkDuration,
                                 availableRamBytes = availableRamBytes,
@@ -1236,6 +1240,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     taskId = taskId,
                     chunkCapSeconds = maxChunkDuration,
                     availableRamBytes = availableRamBytes,
+                    vadRequested = vadRequested,
                     chunks = preprocessingResult.chunks,
                     sampleRate = preprocessingResult.sampleRate,
                     segmentRangesMs = preprocessingResult.chunkRangesMs,
@@ -1255,6 +1260,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 taskId = taskId,
                 chunkCapSeconds = maxChunkDuration,
                 availableRamBytes = availableRamBytes,
+                vadRequested = vadRequested,
                 vadSegmented = preprocessingResult.isVadSegmented,
                 chunks = preprocessingResult.chunks,
                 sampleRate = preprocessingResult.sampleRate,
@@ -1318,6 +1324,7 @@ class TranscriptionOrchestrator @Inject constructor(
         taskId: String,
         chunkCapSeconds: Int?,
         availableRamBytes: Long?,
+        vadRequested: Boolean,
         chunks: List<FloatArray>,
         sampleRate: Int,
         segmentRangesMs: List<Pair<Long, Long>>,
@@ -1393,6 +1400,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 segments = segments,
                 processing = ProcessingContext(
                     decodePath = "vad_chunked",
+                    vadRequested = vadRequested,
                     totalChunks = chunkCount,
                     failedChunks = failedSegments,
                     transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
@@ -1407,6 +1415,7 @@ class TranscriptionOrchestrator @Inject constructor(
         taskId: String,
         chunkCapSeconds: Int?,
         availableRamBytes: Long?,
+        vadRequested: Boolean,
         vadSegmented: Boolean,
         chunks: List<FloatArray>,
         sampleRate: Int,
@@ -1579,6 +1588,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     // speech span (and the VAD-threw fallback): the chunk
                     // boundaries mean different things.
                     decodePath = if (vadSegmented) "vad_chunked" else "windowed",
+                    vadRequested = vadRequested,
                     totalChunks = chunkCount,
                     failedChunks = failedChunks,
                     transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
@@ -1785,6 +1795,9 @@ class TranscriptionOrchestrator @Inject constructor(
                     transcribedSeconds = totalDurationSeconds.takeIf { it > 0.0 },
                     chunkCapSeconds = maxChunkDurationSeconds,
                     availableRamBytes = availableRamBytes,
+                    // The pipeline never runs VAD (decode overlaps inference);
+                    // the toggle still records what the user asked for.
+                    vadRequested = preferencesManager.vadEnabled.first(),
                 )
             ))
         }

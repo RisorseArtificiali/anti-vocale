@@ -15,6 +15,7 @@ class ProcessingContextConverterTest {
         transcribedSeconds = 4620.0,
         chunkCapSeconds = 60,
         availableRamBytes = 5_800_000_000L,
+        vadRequested = true,
     )
 
     @Test
@@ -25,7 +26,7 @@ class ProcessingContextConverterTest {
     @Test
     fun `render is one line with the observability keys`() {
         assertEquals(
-            "pipeline chunks=157 (failed 3) decoded=4620.0s cap=60s ram=5531MB",
+            "pipeline chunks=157 (failed 3) decoded=4620.0s cap=60s ram=5531MB vad=on",
             ProcessingContextConverter.render(full))
     }
 
