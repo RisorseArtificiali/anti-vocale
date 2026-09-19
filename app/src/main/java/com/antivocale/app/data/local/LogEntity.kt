@@ -43,6 +43,11 @@ data class LogEntity(
     /** GH #92: JSON-serialized [TimedSegment] cues (see [TimedSegmentsConverter]);
      *  null when the request produced no honest timing or predates v8. */
     val segments: String? = null,
+    /** TASK-570: structured failure diagnostics (FailureContextJson):
+     *  error class, backend, provider, app version, chunk coverage,
+     *  metadata-vs-decoded duration at the failure point. Null on
+     *  pre-v9 rows and on every non-ERROR write. */
+    val failureContext: String? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -67,7 +72,8 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     rawTranscript = rawTranscript,
     summary = summary,
     summarySkipReason = summarySkipReason,
-    segments = segments
+    segments = segments,
+    failureContext = failureContext
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -89,5 +95,6 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     rawTranscript = rawTranscript,
     summary = summary,
     summarySkipReason = summarySkipReason,
-    segments = segments
+    segments = segments,
+    failureContext = failureContext
 )

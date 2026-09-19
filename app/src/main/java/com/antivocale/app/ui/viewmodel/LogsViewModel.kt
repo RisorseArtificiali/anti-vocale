@@ -67,6 +67,9 @@ data class LogEntry(
     val summarySkipReason: String? = null,
     /** GH #92: JSON-serialized timed cues (raw passthrough; see TimedSegmentsConverter). */
     val segments: String? = null,
+    /** TASK-570: structured failure diagnostics JSON (raw passthrough; see
+     *  FailureContextJson); present on ERROR rows written since v9. */
+    val failureContext: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
 

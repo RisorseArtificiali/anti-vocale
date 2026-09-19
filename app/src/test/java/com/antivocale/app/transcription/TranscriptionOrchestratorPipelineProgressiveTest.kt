@@ -337,6 +337,14 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         coVerify(exactly = 1) { logDao.updateInterimResult("test-pipeline", "first second", true) }
         // 2000 samples at 16 kHz = 0.125 s decoded at the failure point.
         coVerify(exactly = 1) { logDao.updateFailureDecodedMs("test-pipeline", 125L) }
+        // TASK-570: the structured diagnostics ride the same failure (the
+        // JSON is codec-tested separately; here we pin that it was written
+        // with the chunk coverage and durations of this run).
+        coVerify(exactly = 1) {
+            logDao.updateFailureContext("test-pipeline", match { json ->
+                json!!.contains("\"processedChunks\":2") && json.contains("\"decodedSeconds\":0.125")
+            })
+        }
         // The failure carries the decoded-of-total context for the notification.
         val err = result.exceptionOrNull()
         assertTrue("expected PipelineFailure, got $err",

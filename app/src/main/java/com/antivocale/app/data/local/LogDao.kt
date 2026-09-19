@@ -42,12 +42,12 @@ interface LogDao {
      */
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "modelName, rawTranscript, summary, summarySkipReason FROM logs ORDER BY timestamp DESC LIMIT 500")
+        "modelName, rawTranscript, summary, summarySkipReason, failureContext FROM logs ORDER BY timestamp DESC LIMIT 500")
     fun getAll(): Flow<List<LogEntity>>
 
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "modelName, rawTranscript, summary, summarySkipReason FROM logs WHERE result LIKE '%' || :query || '%' " +
+        "modelName, rawTranscript, summary, summarySkipReason, failureContext FROM logs WHERE result LIKE '%' || :query || '%' " +
         "ORDER BY timestamp DESC LIMIT 500")
     fun searchAll(query: String): Flow<List<LogEntity>>
 
@@ -102,6 +102,11 @@ interface LogDao {
      */
     @Query("UPDATE logs SET durationMs = :durationMs WHERE taskId = :taskId")
     suspend fun updateFailureDecodedMs(taskId: String, durationMs: Long)
+
+    /** TASK-570: structured failure diagnostics, column-scoped (JSON from
+     *  [FailureContextJson]); written once at failure time. */
+    @Query("UPDATE logs SET failureContext = :json WHERE taskId = :taskId")
+    suspend fun updateFailureContext(taskId: String, json: String?)
 
     /** Same TASK-390 contract as [updateInterimResult], for the duration column. */
     @Query("UPDATE logs SET audioDurationSeconds = :seconds WHERE taskId = :taskId")

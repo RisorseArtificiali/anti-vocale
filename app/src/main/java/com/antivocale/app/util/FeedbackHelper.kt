@@ -63,6 +63,9 @@ object FeedbackHelper {
         val excerpt: String,
         /** For ERROR reports: the recorded failure reason, often the most useful fact. */
         val errorMessage: String? = null,
+        /** TASK-570: rendered structured diagnostics (backend/provider/version/
+         *  chunks/durations) when the failure wrote them. */
+        val failureDiagnostics: String? = null,
     )
 
     /** Localized labels for the per-transcription body template. */
@@ -94,6 +97,7 @@ object FeedbackHelper {
         // repeating the label on a second line (which read as a duplicate).
         val errorSuffix = f.errorMessage?.takeIf { it.isNotBlank() }?.let { " ($it)" } ?: ""
         appendLine("${l.status}: ${f.status}$errorSuffix")
+        f.failureDiagnostics?.takeIf { it.isNotBlank() }?.let { appendLine(it) }
         appendLine()
         append("${l.excerpt}: ")
         if (f.excerpt.isEmpty()) {

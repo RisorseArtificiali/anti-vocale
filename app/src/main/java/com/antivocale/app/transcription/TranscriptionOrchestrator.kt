@@ -17,6 +17,8 @@ import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.CatalogDisplay
 import com.antivocale.app.data.catalog.CatalogStringKeys
+import com.antivocale.app.data.local.FailureContext
+import com.antivocale.app.data.local.FailureContextJson
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.data.local.TimedSegmentsConverter
 import com.antivocale.app.data.local.toEntity
@@ -206,6 +208,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 val logMsg = "Failed to load backend: ${error.message}"
                 val duration = System.currentTimeMillis() - startTime
                 val isNoModel = isNoModelConfiguredError(error)
+                persistFailureContext(taskId, error, context)
                 logError(taskId, logMsg, duration)
                 listener.onError(taskId, "BACKEND_LOAD_FAILED", userMsg, isShareRequest, isNoModel, duration)
                 return Result.failure(error)
@@ -292,6 +295,13 @@ class TranscriptionOrchestrator @Inject constructor(
                     // streaming catches) must survive this writeback, so no
                     // elapsed duration here; the notification instead GAINS
                     // the decoded-of-total sentence when the failure carries it.
+                    // The streaming path already persisted the rich context
+                    // (chunks, durations, backend) inside pipelineFailed; a
+                    // second persist here would clobber it with the all-null
+                    // shape, so only non-streaming failures write their own.
+                    if (error !is PipelineFailure) {
+                        persistFailureContext(taskId, error, context)
+                    }
                     logError(taskId, logMsg)
                     var userMsg = userFacingErrorMessage(context, error)
                     if (error is PipelineFailure) {
@@ -317,6 +327,7 @@ class TranscriptionOrchestrator @Inject constructor(
             // string, and bail.
             Log.e(TAG, "Out of memory during transcription", e)
             val duration = System.currentTimeMillis() - startTime
+            persistFailureContext(taskId, e, context)
             logError(taskId, "OutOfMemoryError")
             listener.onError(taskId, "OUT_OF_MEMORY", "OutOfMemoryError", isShareRequest, false, duration)
             return Result.failure(TranscriptionException.InsufficientMemory(
@@ -325,6 +336,7 @@ class TranscriptionOrchestrator @Inject constructor(
             Log.e(TAG, "Error processing request", e)
             val duration = System.currentTimeMillis() - startTime
             val errorMsg = e.message ?: "Unknown error"
+            persistFailureContext(taskId, e, context)
             logError(taskId, errorMsg)
             listener.onError(taskId, "PROCESSING_ERROR", errorMsg, isShareRequest, false, duration)
             return Result.failure(e)
@@ -1563,9 +1575,9 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             }
         } catch (e: PreprocessingError) {
-            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds)
+            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds, processedChunks, failedChunks, context, backend.id)
         } catch (e: Exception) {
-            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds)
+            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds, processedChunks, failedChunks, context, backend.id)
         }
 
         val combinedResult = accumulatedText.toString()
@@ -1891,6 +1903,54 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     /**
+     * TASK-570: one builder for the structured failure context persisted on
+     * the ERROR row (backend, provider, version, chunk coverage, durations).
+     * Every read is runCatching-wrapped: diagnostics must never turn a
+     * failure into a crash.
+     */
+    private suspend fun persistFailureContext(
+        taskId: String,
+        error: Throwable,
+        context: Context,
+        processedChunks: Int? = null,
+        failedChunks: Int? = null,
+        metadataSeconds: Double? = null,
+        decodedSeconds: Double? = null,
+        backendId: String? = null,
+    ) {
+        // Whole body guarded, not just the reads: a JSONException on a
+        // non-finite double or a SQLiteException on a locked DB must never
+        // escape this helper (the OOM catch site calls it; an exception
+        // raised inside a catch block is not caught by the sibling handler
+        // and would abort the service's queue loop).
+        runCatching {
+            val version = runCatching {
+                context.packageManager.getPackageInfo(context.packageName, 0).versionName
+            }.getOrNull()
+            val provider = runCatching {
+                InferenceProvider.resolve(preferencesManager.inferenceProvider.first())
+            }.getOrNull()
+            val resolvedBackend = backendId
+                ?: runCatching { backendManager.getActiveBackend()?.id }.getOrNull()
+            logDao.updateFailureContext(
+                taskId,
+                FailureContextJson.toJson(
+                    FailureContext(
+                        errorClass = (error as? PipelineFailure)?.cause
+                            ?.let { "PipelineFailure(${it::class.simpleName})" }
+                            ?: "${error::class.simpleName}",
+                        backendId = resolvedBackend,
+                        provider = provider,
+                        appVersion = version,
+                        processedChunks = processedChunks,
+                        failedChunks = failedChunks,
+                        metadataSeconds = metadataSeconds,
+                        decodedSeconds = decodedSeconds,
+                    )))
+        }
+    }
+
+    /**
      * TASK-568: carries the failure point out of the streaming loop so the
      * caller can word the error notification as decoded-of-total ("failed
      * after 23 of 77 minutes") instead of a bare error string. The cause is
@@ -1918,8 +1978,17 @@ class TranscriptionOrchestrator @Inject constructor(
         accumulatedText: String,
         decodedSeconds: Double,
         totalDurationSeconds: Double,
+        processedChunks: Int,
+        failedChunks: Int,
+        context: Context,
+        backendId: String?,
     ): Result<Nothing> {
         persistPipelineFailureContext(taskId, accumulatedText, decodedSeconds)
+        persistFailureContext(
+            taskId, cause, context,
+            processedChunks = processedChunks, failedChunks = failedChunks,
+            metadataSeconds = totalDurationSeconds, decodedSeconds = decodedSeconds,
+            backendId = backendId)
         failureWritebackSeconds(cause as? PreprocessingError, decodedSeconds)
             ?.takeIf { it > totalDurationSeconds }
             ?.let { updateAudioDuration(taskId, it) }

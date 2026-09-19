@@ -49,6 +49,7 @@ import com.antivocale.app.MainActivity
 import com.antivocale.app.R
 import com.antivocale.app.ui.onboarding.tourRevealable
 import com.antivocale.app.transcription.SummaryPolicy
+import com.antivocale.app.data.local.FailureContextJson
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.AudioDurationFormat
 import com.antivocale.app.util.DecodedOfTotalFormat
@@ -109,6 +110,8 @@ private fun reportTranscription(context: Context, log: LogEntry) {
                 status = log.status.name,
                 excerpt = log.result,
                 errorMessage = log.errorMessage,
+                failureDiagnostics = FailureContextJson.render(
+                    FailureContextJson.fromJson(log.failureContext)),
             ),
             FeedbackHelper.TranscriptLabels(
                 task = context.getString(R.string.feedback_label_task),
@@ -1303,6 +1306,23 @@ fun LogEntryItem(
                                 )
                                 .padding(8.dp)
                         )
+                        // TASK-570: the structured diagnostics line (backend,
+                        // provider, version, chunk coverage, durations) so a
+                        // screenshot of the failure is actionable alone. The
+                        // JSON parse is remembered: list recompositions are
+                        // frequent (every interim write re-emits the flow).
+                        val renderedDiagnostics = remember(log.failureContext) {
+                            FailureContextJson.render(FailureContextJson.fromJson(log.failureContext))
+                        }
+                        renderedDiagnostics?.let { rendered ->
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = rendered,
+                                style = MaterialTheme.typography.labelSmall.copy(
+                                    fontFamily = FontFamily.Monospace),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                     LogEntry.Status.QUEUED -> {
                         QueuedStatusLabel()

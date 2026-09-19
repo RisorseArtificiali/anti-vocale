@@ -43,7 +43,7 @@ import java.io.File
 private val ALL_MIGRATIONS = arrayOf(
     AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4,
     AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6, AppDatabase.MIGRATION_6_7,
-    AppDatabase.MIGRATION_7_8,
+    AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9,
 )
 
 @RunWith(AndroidJUnit4::class)
@@ -204,6 +204,28 @@ class AppDatabaseMigrationTest {
             "[{\"startMs\":0,\"endMs\":4000,\"text\":\"ciao\"}]",
             updated!!.segments
         )
+    }
+
+    /** MIGRATION_8_9 (TASK-570) must run, preserve rows, and default null. */
+    @Test
+    fun migrate_8_to_9_preservesRowAndPassesSchemaValidation() {
+        seedV2Database()
+        db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+
+        val row = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertNotNull(row)
+        assertNull("failureContext must default null for pre-v9 rows", row!!.failureContext)
+
+        runBlocking {
+            db!!.logDao().update(row.copy(status = "ERROR",
+                failureContext = """{"errorClass":"PipelineFailure","decodedSeconds":1380.0}"""))
+        }
+        val updated = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertEquals("PipelineFailure",
+            FailureContextJson.fromJson(updated!!.failureContext)!!.errorClass)
     }
 
     /** A fresh v3 DB (no migration) must also be internally consistent with the entity. */
