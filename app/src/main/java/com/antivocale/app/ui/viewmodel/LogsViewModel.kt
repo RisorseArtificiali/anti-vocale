@@ -73,6 +73,10 @@ data class LogEntry(
     /** TASK-512: JSON processing context (raw passthrough; see
      *  ProcessingContextConverter); present on SUCCESS rows since v10. */
     val processingContext: String? = null,
+    /** TASK-546: backend-reported language (null on old rows and text entries). */
+    val detectedLanguage: String? = null,
+    /** TASK-546: the policy-resolved pin in force at transcription time. */
+    val languagePin: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
 
@@ -469,6 +473,15 @@ class LogsViewModel @Inject constructor(
 
     val compactResultActions: StateFlow<Boolean> = preferencesManager.compactResultActions
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS)
+
+    /** TASK-546: the detected-language chip toggle (maintainer directive:
+     *  the chip is conditional on a Settings flag). */
+    val languageChipEnabled: StateFlow<Boolean> = preferencesManager.languageChipEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED)
+
+    fun saveLanguageChip(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.saveLanguageChipEnabled(enabled) }
+    }
 
     fun saveGroupLogsByConversation(enabled: Boolean) {
         viewModelScope.launch {

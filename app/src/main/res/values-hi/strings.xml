@@ -1008,4 +1008,10 @@
     <string name="decoded_of_total">%2$s में से %1$s डिकोड हुआ</string>
     
     <string name="decoded_so_far">%1$s डिकोड हुआ</string>
+    <string name="language_chip_setting_title">परिणामों पर भाषा चिप</string>
+    <string name="language_chip_setting_description">हर ट्रांसक्रिप्ट पर पहचानी गई भाषा दिखाएँ; जाँचने या बदलने के लिए उसे छुएँ</string>
+    <string name="language_chip_dialog_title">भाषा</string>
+    <string name="language_chip_detected_body">स्वतः पहचानी गई: %1$s। भाषा गलत है? ट्रांसक्रिप्शन भाषा बदलें और ऑडियो फिर से ट्रांसक्राइब करें।</string>
+    <string name="language_chip_pinned_body">सेट की गई: %1$s। बदलने के लिए ट्रांसक्रिप्शन भाषा सेटिंग खोलें।</string>
+    <string name="language_chip_open_setting">भाषा सेटिंग खोलें</string>
 </resources>

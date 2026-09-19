@@ -52,6 +52,13 @@ data class LogEntity(
      *  chunk coverage, cap, RAM; see ProcessingContextConverter). Null on
      *  pre-v10 rows and on text-only entries. */
     val processingContext: String? = null,
+    /** TASK-546: what the backend reported it heard (null when the model
+     *  does not report detection, on text entries, and pre-v11 rows). */
+    val detectedLanguage: String? = null,
+    /** TASK-546/545: the language pin in force at transcription time,
+     *  policy-resolved ("auto" when the preference was untouched; the
+     *  resolved phone language for the phone pin; the code when pinned). */
+    val languagePin: String? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -78,7 +85,9 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     summarySkipReason = summarySkipReason,
     segments = segments,
     failureContext = failureContext,
-    processingContext = processingContext
+    processingContext = processingContext,
+    detectedLanguage = detectedLanguage,
+    languagePin = languagePin
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -102,5 +111,7 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     summarySkipReason = summarySkipReason,
     segments = segments,
     failureContext = failureContext,
-    processingContext = processingContext
+    processingContext = processingContext,
+    detectedLanguage = detectedLanguage,
+    languagePin = languagePin
 )

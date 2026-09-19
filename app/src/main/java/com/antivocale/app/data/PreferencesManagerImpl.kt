@@ -80,6 +80,7 @@ class PreferencesManagerImpl(
         private val SHOW_RETRANSCRIBE_BUTTON = booleanPreferencesKey("show_retranscribe_button")
         private val FORCE_MODEL_LOAD = booleanPreferencesKey("force_model_load")
         private val COMPACT_RESULT_ACTIONS = booleanPreferencesKey("compact_result_actions")
+        private val LANGUAGE_CHIP_ENABLED = booleanPreferencesKey("language_chip_enabled")
         private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
         private val PARTIAL_TRANSCRIPTION_TIMESTAMP = longPreferencesKey("partial_transcription_timestamp")
         private val EXTERNAL_MODELS_JSON = stringPreferencesKey("external_models_json")
@@ -121,6 +122,7 @@ class PreferencesManagerImpl(
         val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         val forceModelLoad: Boolean = PreferencesManager.DEFAULT_FORCE_MODEL_LOAD,
         val compactResultActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
+        val languageChipEnabled: Boolean = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         val externalModelsJson: String? = null
     )
 
@@ -164,6 +166,7 @@ class PreferencesManagerImpl(
         showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         forceModelLoad = this[FORCE_MODEL_LOAD] ?: PreferencesManager.DEFAULT_FORCE_MODEL_LOAD,
         compactResultActions = this[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
+        languageChipEnabled = this[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         externalModelsJson = this[EXTERNAL_MODELS_JSON]
     )
 
@@ -587,11 +590,21 @@ class PreferencesManagerImpl(
 
     override val compactResultActions: Flow<Boolean> = dataStore.data.map { it[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS }
         .onStart { emit(cache.get().compactResultActions) }
+    override val languageChipEnabled: Flow<Boolean> = dataStore.data.map { it[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED }
+        .onStart { emit(cache.get().languageChipEnabled) }
+
     override suspend fun saveCompactResultActions(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[COMPACT_RESULT_ACTIONS] = enabled
         }
         cache.updateAndGet { it.copy(compactResultActions = enabled) }
+    }
+
+    override suspend fun saveLanguageChipEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[LANGUAGE_CHIP_ENABLED] = enabled
+        }
+        cache.updateAndGet { it.copy(languageChipEnabled = enabled) }
     }
 
     override suspend fun saveForceModelLoad(enabled: Boolean) {

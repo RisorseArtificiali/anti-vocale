@@ -116,6 +116,8 @@ fun SettingsTab(
     val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
     val forceModelLoad by viewModel.forceModelLoad.collectAsState()
     val compactResultActions by viewModel.compactResultActions.collectAsState()
+    // TASK-546: the chip flag (maintainer directive: the flag lives here).
+    val languageChipEnabled by viewModel.languageChipEnabled.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
     val tokenInput by viewModel.tokenInput.collectAsState()
     val oauthState by viewModel.oauthState.collectAsState()
@@ -363,6 +365,7 @@ fun SettingsTab(
                 listOf(R.string.swipe_action_title, R.string.swipe_action_description),
                 listOf(R.string.conversation_grouping_title, R.string.conversation_grouping_description),
                 listOf(R.string.compact_result_actions_title, R.string.compact_result_actions_description),
+                listOf(R.string.language_chip_setting_title, R.string.language_chip_setting_description),
                 listOf(R.string.retranscribe_setting_title, R.string.retranscribe_setting_description),
             ).map { group -> group.map { context.getString(it) } }
         }
@@ -1050,6 +1053,21 @@ fun SettingsTab(
                     checked = compactResultActions,
                     onCheckedChange = { enabled ->
                         viewModel.saveCompactResultActions(enabled)
+                    }
+                )
+            }
+
+            // TASK-546: the language chip is conditional on this flag.
+            val languageChipTitle = stringResource(R.string.language_chip_setting_title)
+            val languageChipDescription = stringResource(R.string.language_chip_setting_description)
+            SearchFilterRow(searchQuery, languageChipTitle, languageChipDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Language,
+                    title = languageChipTitle,
+                    description = languageChipDescription,
+                    checked = languageChipEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveLanguageChip(enabled)
                     }
                 )
             }

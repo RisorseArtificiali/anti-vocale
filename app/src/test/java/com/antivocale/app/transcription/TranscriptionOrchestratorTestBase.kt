@@ -89,6 +89,13 @@ abstract class TranscriptionOrchestratorTestBase {
         // after the punctuation pass for every audio test, so every one of them
         // needs the explicit off, not just the whisper-shaped ones.
         every { preferencesManager.summarizeEnabled } returns flowOf(false)
+        // TASK-546: the success fold resolves the language pin for EVERY request
+        // (text paths included), so this read is as unavoidable as modelPath above;
+        // unstubbed it is a relaxed-mock Flow and first() explodes (NoSuchElementException),
+        // which the generic catch turns into Result.failure. "" = the untouched
+        // preference, which resolvedLanguagePin reports as "auto". Tests that pin
+        // a language re-stub this after baseSetUp and win.
+        every { preferencesManager.transcriptionLanguage } returns flowOf("")
     }
 
     protected fun stubWhisperBackend(): TranscriptionBackend =

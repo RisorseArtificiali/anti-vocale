@@ -1009,4 +1009,10 @@
     <string name="decoded_of_total">%1$s von %2$s dekodiert</string>
     
     <string name="decoded_so_far">%1$s dekodiert</string>
+    <string name="language_chip_setting_title">Sprach-Badge auf Ergebnissen</string>
+    <string name="language_chip_setting_description">Zeigt die erkannte Sprache auf jedem Transkript; tippe darauf, um die Transkriptionssprache zu prüfen oder zu ändern</string>
+    <string name="language_chip_dialog_title">Sprache</string>
+    <string name="language_chip_detected_body">Automatisch erkannt: %1$s. Falsche Sprache? Ändere die Transkriptionssprache und transkribiere das Audio erneut.</string>
+    <string name="language_chip_pinned_body">Festgelegt: %1$s. Zum Ändern öffne die Einstellung der Transkriptionssprache.</string>
+    <string name="language_chip_open_setting">Spracheinstellung öffnen</string>
 </resources>

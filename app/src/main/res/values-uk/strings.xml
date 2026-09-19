@@ -1029,4 +1029,10 @@
     <string name="decoded_of_total">Розпізнано %1$s з %2$s</string>
     
     <string name="decoded_so_far">Розпізнано %1$s</string>
+    <string name="language_chip_setting_title">Мітка мови на результатах</string>
+    <string name="language_chip_setting_description">Показує визначену мову біля кожної розшифровки; торкніться, щоб перевірити чи змінити мову розшифровки</string>
+    <string name="language_chip_dialog_title">Мова</string>
+    <string name="language_chip_detected_body">Визначено автоматично: %1$s. Не та мова? Змініть мову розшифровки та розшифруйте аудіо ще раз.</string>
+    <string name="language_chip_pinned_body">Закріплено: %1$s. Щоб змінити, відкрийте налаштування мови розшифровки.</string>
+    <string name="language_chip_open_setting">Відкрити налаштування мови</string>
 </resources>

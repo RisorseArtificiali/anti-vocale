@@ -44,6 +44,7 @@ private val ALL_MIGRATIONS = arrayOf(
     AppDatabase.MIGRATION_1_2, AppDatabase.MIGRATION_2_3, AppDatabase.MIGRATION_3_4,
     AppDatabase.MIGRATION_4_5, AppDatabase.MIGRATION_5_6, AppDatabase.MIGRATION_6_7,
     AppDatabase.MIGRATION_7_8, AppDatabase.MIGRATION_8_9, AppDatabase.MIGRATION_9_10,
+    AppDatabase.MIGRATION_10_11,
 )
 
 @RunWith(AndroidJUnit4::class)
@@ -248,6 +249,28 @@ class AppDatabaseMigrationTest {
         val updated = runBlocking { db!!.logDao().getByTaskId("task-1") }
         assertEquals("pipeline",
             ProcessingContextConverter.fromJson(updated!!.processingContext)!!.decodePath)
+    }
+
+    /** MIGRATION_10_11 (TASK-546) must run, preserve rows, and default null. */
+    @Test
+    fun migrate_10_to_11_preservesRowAndPassesSchemaValidation() {
+        seedV2Database()
+        db = Room.databaseBuilder(context, AppDatabase::class.java, DB_NAME)
+            .addMigrations(*ALL_MIGRATIONS)
+            .allowMainThreadQueries()
+            .build()
+
+        val row = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertNotNull(row)
+        assertNull("detectedLanguage must default null for pre-v11 rows", row!!.detectedLanguage)
+        assertNull("languagePin must default null for pre-v11 rows", row.languagePin)
+
+        runBlocking {
+            db!!.logDao().update(row.copy(detectedLanguage = "en", languagePin = "auto"))
+        }
+        val updated = runBlocking { db!!.logDao().getByTaskId("task-1") }
+        assertEquals("en", updated!!.detectedLanguage)
+        assertEquals("auto", updated.languagePin)
     }
 
     /** A fresh v3 DB (no migration) must also be internally consistent with the entity. */

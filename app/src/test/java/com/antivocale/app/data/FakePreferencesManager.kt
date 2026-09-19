@@ -53,6 +53,7 @@ internal class FakePreferencesManager : PreferencesManager {
     val _showRetranscribeButton = MutableStateFlow(true)
     val _forceModelLoad = MutableStateFlow(false)
     val _compactResultActions = MutableStateFlow(PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS)
+    val _languageChipEnabled = MutableStateFlow(PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED)
     val _externalModelsJson = MutableStateFlow<String?>(null)
     val _partialTranscriptionText = MutableStateFlow<String?>(null)
     val _partialTranscriptionTimestamp = MutableStateFlow<Long?>(null)
@@ -96,6 +97,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val showRetranscribeButton: Flow<Boolean> get() = _showRetranscribeButton
     override val forceModelLoad: Flow<Boolean> get() = _forceModelLoad
     override val compactResultActions: Flow<Boolean> get() = _compactResultActions
+    override val languageChipEnabled: Flow<Boolean> get() = _languageChipEnabled
     override val externalModelsJson: Flow<String?> get() = _externalModelsJson
     override val partialTranscriptionText: Flow<String?> get() = _partialTranscriptionText
     override val partialTranscriptionTimestamp: Flow<Long?> get() = _partialTranscriptionTimestamp
@@ -133,6 +135,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveShowRetranscribeButton(enabled: Boolean) { _showRetranscribeButton.value = enabled }
     override suspend fun saveForceModelLoad(enabled: Boolean) { _forceModelLoad.value = enabled }
     override suspend fun saveCompactResultActions(enabled: Boolean) { _compactResultActions.value = enabled }
+    override suspend fun saveLanguageChipEnabled(enabled: Boolean) { _languageChipEnabled.value = enabled }
     override suspend fun saveExternalModelsJson(json: String) { _externalModelsJson.value = json }
     override suspend fun savePartialTranscriptionState(text: String) {
         _partialTranscriptionText.value = text

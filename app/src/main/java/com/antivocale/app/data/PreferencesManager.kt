@@ -65,6 +65,8 @@ interface PreferencesManager {
     val showRetranscribeButton: Flow<Boolean>
     val forceModelLoad: Flow<Boolean>
     val compactResultActions: Flow<Boolean>
+    /** TASK-546: show the detected-language chip on results. */
+    val languageChipEnabled: Flow<Boolean>
 
     val externalModelsJson: Flow<String?>
     suspend fun saveExternalModelsJson(json: String)
@@ -109,6 +111,7 @@ interface PreferencesManager {
     suspend fun saveShowRetranscribeButton(enabled: Boolean)
     suspend fun saveForceModelLoad(enabled: Boolean)
     suspend fun saveCompactResultActions(enabled: Boolean)
+    suspend fun saveLanguageChipEnabled(enabled: Boolean)
 
     suspend fun saveBenchmarkResult(modelId: String, jsonResult: String)
     fun getBenchmarkResult(modelId: String): Flow<String?>
@@ -172,6 +175,8 @@ interface PreferencesManager {
         const val DEFAULT_SHOW_RETRANSCRIBE_BUTTON = true
         const val DEFAULT_FORCE_MODEL_LOAD = false
         const val DEFAULT_COMPACT_RESULT_ACTIONS = true
+        /** TASK-546: the chip mitigates invisible wrong-language detection; on by default. */
+        const val DEFAULT_LANGUAGE_CHIP_ENABLED = true
 
         /** The maintained community index, published from this repo. */
         const val DEFAULT_EXTERNAL_CATALOG_URL =

@@ -1006,4 +1006,10 @@
     <string name="decoded_of_total">Decoded %1$s of %2$s</string>
     
     <string name="decoded_so_far">Decoded %1$s</string>
+    <string name="language_chip_setting_title">Language chip on results</string>
+    <string name="language_chip_setting_description">Show the detected language on each transcript; tap it to check or change the transcription language</string>
+    <string name="language_chip_dialog_title">Language</string>
+    <string name="language_chip_detected_body">Auto-detected: %1$s. Wrong language? Change the transcription language and transcribe the audio again.</string>
+    <string name="language_chip_pinned_body">Pinned: %1$s. To change it, open the transcription language setting.</string>
+    <string name="language_chip_open_setting">Open language setting</string>
 </resources>

@@ -1014,4 +1014,10 @@
     <string name="decoded_of_total">%1$s از %2$s رمزگشایی شد</string>
     
     <string name="decoded_so_far">%1$s رمزگشایی شد</string>
+    <string name="language_chip_setting_title">نشان زبان روی نتایج</string>
+    <string name="language_chip_setting_description">زبان شناسایی‌شده را روی هر رونویسی نشان می‌دهد؛ برای بررسی یا تغییر زبان رونویسی لمسش کنید</string>
+    <string name="language_chip_dialog_title">زبان</string>
+    <string name="language_chip_detected_body">به‌طور خودکار شناسایی شد: %1$s. زبان اشتباه است؟ زبان رونویسی را عوض کنید و صدا را دوباره رونویسی کنید.</string>
+    <string name="language_chip_pinned_body">تنظیم‌شده: %1$s. برای تغییر، تنظیم زبان رونویسی را باز کنید.</string>
+    <string name="language_chip_open_setting">باز کردن تنظیم زبان</string>
 </resources>

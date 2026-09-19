@@ -1027,4 +1027,10 @@
     <string name="decoded_of_total">Zdekodowano %1$s z %2$s</string>
     
     <string name="decoded_so_far">Zdekodowano %1$s</string>
+    <string name="language_chip_setting_title">Znacznik języka w wynikach</string>
+    <string name="language_chip_setting_description">Pokazuje wykryty język przy każdej transkrypcji; dotknij, aby sprawdzić lub zmienić język transkrypcji</string>
+    <string name="language_chip_dialog_title">Język</string>
+    <string name="language_chip_detected_body">Wykryty automatycznie: %1$s. Zły język? Zmień język transkrypcji i przetranskrybuj audio ponownie.</string>
+    <string name="language_chip_pinned_body">Przypięty: %1$s. Aby zmienić, otwórz ustawienie języka transkrypcji.</string>
+    <string name="language_chip_open_setting">Otwórz ustawienie języka</string>
 </resources>

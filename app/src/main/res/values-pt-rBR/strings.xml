@@ -874,4 +874,10 @@
     <string name="decoded_of_total">Decodificados %1$s de %2$s</string>
     
     <string name="decoded_so_far">Decodificados %1$s</string>
+    <string name="language_chip_setting_title">Selo de idioma nos resultados</string>
+    <string name="language_chip_setting_description">Mostra o idioma detectado em cada transcrição; toque para conferir ou mudar o idioma de transcrição</string>
+    <string name="language_chip_dialog_title">Idioma</string>
+    <string name="language_chip_detected_body">Detectado automaticamente: %1$s. Idioma errado? Mude o idioma de transcrição e transcreva o áudio de novo.</string>
+    <string name="language_chip_pinned_body">Definido: %1$s. Para mudar, abra a configuração do idioma de transcrição.</string>
+    <string name="language_chip_open_setting">Abrir configuração de idioma</string>
 </resources>

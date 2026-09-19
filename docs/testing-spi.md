@@ -49,6 +49,7 @@ Set keys and value formats:
 | `advanced_sharing` | `saveAdvancedSharingEnabled` | `true` or `false` (strict) |
 | `auto_copy` | `saveAutoCopyEnabled` | `true` or `false` (strict) |
 | `compact_result_actions` | `saveCompactResultActions` | `true` or `false` (strict) |
+| `language_chip` | `saveLanguageChipEnabled` | `true` or `false` (strict); TASK-546: gates the detected-language chip on results |
 | `force_model_load` | `saveForceModelLoad` | `true` or `false` (strict) |
 | `group_logs` | `saveGroupLogsByConversation` | `true` or `false` (strict) |
 | `show_retranscribe` | `saveShowRetranscribeButton` | `true` or `false` (strict) |

@@ -396,6 +396,17 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS
         )
+    /** TASK-546: the detected-language chip toggle (Settings flag). */
+    val languageChipEnabled: StateFlow<Boolean> = preferencesManager.languageChipEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED
+        )
+
+    fun saveLanguageChip(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.saveLanguageChipEnabled(enabled) }
+    }
 
     fun saveCompactResultActions(enabled: Boolean) {
         viewModelScope.launch {

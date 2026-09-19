@@ -874,4 +874,10 @@
     <string name="decoded_of_total">%1$s sur %2$s décodés</string>
     
     <string name="decoded_so_far">%1$s décodés</string>
+    <string name="language_chip_setting_title">Badge de langue sur les résultats</string>
+    <string name="language_chip_setting_description">Affiche la langue détectée sur chaque transcription ; touchez-la pour vérifier ou changer la langue de transcription</string>
+    <string name="language_chip_dialog_title">Langue</string>
+    <string name="language_chip_detected_body">Détectée automatiquement : %1$s. Mauvaise langue ? Changez la langue de transcription et retranscrivez l\'audio.</string>
+    <string name="language_chip_pinned_body">Épinglée : %1$s. Pour la changer, ouvrez le réglage de la langue de transcription.</string>
+    <string name="language_chip_open_setting">Ouvrir le réglage de la langue</string>
 </resources>

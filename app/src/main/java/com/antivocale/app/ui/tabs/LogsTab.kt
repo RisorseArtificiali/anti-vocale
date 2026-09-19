@@ -68,6 +68,7 @@ import com.antivocale.app.ui.components.SwipeToRevealBox
 import com.antivocale.app.ui.components.rememberSwipeToRevealState
 import com.antivocale.app.util.ToastCompat
 import com.antivocale.app.util.FeedbackHelper
+import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.onboarding.TourStep
 import com.antivocale.app.ui.MAX_RENDERED_TRANSCRIPT_CHARS
@@ -90,6 +91,7 @@ internal data class ConversationGroup(
 internal interface LogGroup {
     val logs: List<LogEntry>
 }
+
 
 /**
  * TASK-374: opens the feedback email pre-filled with this entry's facts and a
@@ -896,6 +898,8 @@ fun LogEntryItem(
     onCancel: (() -> Unit)? = null,
     compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
     onNavigateToSettings: (() -> Unit)? = null,
+    /** TASK-546: render the language chip (the Settings flag's value). */
+    showLanguageChip: Boolean = false,
 ) {
     val context = LocalContext.current
     var contextMenuExpanded by remember { mutableStateOf(false) }
@@ -1236,6 +1240,13 @@ fun LogEntryItem(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
+                            if (showLanguageChip) {
+                                LanguageChip(
+                                    detected = log.detectedLanguage,
+                                    pinned = log.languagePin,
+                                    onOpenSetting = { onNavigateToSettings?.invoke() },
+                                )
+                            }
                         }
 
                         // Action buttons: compact icon-only actions tucked into the
@@ -1465,6 +1476,8 @@ private fun LogEntryWithSwipe(
     onNavigateToSettings: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
+    // TASK-546: the chip flag, collected once here (the item stays stateless).
+    val showLanguageChip by viewModel.languageChipEnabled.collectAsState()
     if (SwipeActionMode.from(swipeActionMode) == SwipeActionMode.REVEAL) {
         val revealState = rememberSwipeToRevealState()
 
@@ -1515,6 +1528,7 @@ private fun LogEntryWithSwipe(
                 onDelete = { onDeleted(log); viewModel.deleteLog(log.id) },
                 compactActions = compactActions,
                 onNavigateToSettings = onNavigateToSettings,
+                showLanguageChip = showLanguageChip,
             )
         }
     } else {
@@ -1563,6 +1577,7 @@ private fun LogEntryWithSwipe(
                 onDelete = { onDeleted(log); onDeleteLog(log.id) },
                 compactActions = compactActions,
                 onNavigateToSettings = onNavigateToSettings,
+                showLanguageChip = showLanguageChip,
             )
         }
     }
@@ -1676,6 +1691,65 @@ private fun summarySkipCaptionRes(reason: String?): Int? = when (reason) {
     else -> null
 }
 
+
+/**
+ * TASK-546: the language fact of a result, visible (the detection-failure
+ * class used to be invisible). Shows the backend-reported language when the
+ * run auto-detected, the pin when it was forced; tapping opens the facts and
+ * the path to the language setting (the recovery arm: pin there, then
+ * re-transcribe the same audio). Hidden entirely when neither fact exists
+ * (old rows, text entries) or via the Settings toggle (maintainer directive).
+ */
+@Composable
+private fun LanguageChip(
+    detected: String?,
+    pinned: String?,
+    onOpenSetting: () -> Unit,
+) {
+    val autoDetected = pinned == null || pinned == "auto"
+    val code = if (autoDetected) detected else pinned
+    if (code.isNullOrBlank()) return
+    var showFacts by remember { mutableStateOf(false) }
+    TextButton(
+        onClick = { showFacts = true },
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+        modifier = Modifier.height(28.dp)
+    ) {
+        Text(
+            text = LanguageNames.nativeLanguageName(code) +
+                (if (!autoDetected) "" else " *"),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+    if (showFacts) {
+        AlertDialog(
+            onDismissRequest = { showFacts = false },
+            title = { Text(stringResource(R.string.language_chip_dialog_title)) },
+            text = { Text(
+                if (autoDetected)
+                    stringResource(
+                        R.string.language_chip_detected_body,
+                        LanguageNames.nativeLanguageName(detected ?: code))
+                else
+                    stringResource(
+                        R.string.language_chip_pinned_body,
+                        LanguageNames.nativeLanguageName(code))
+            ) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showFacts = false
+                    onOpenSetting()
+                }) { Text(stringResource(R.string.language_chip_open_setting)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showFacts = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
+}
 
 /**
  * A labeled secondary transcript block of the expanded log card (summary,

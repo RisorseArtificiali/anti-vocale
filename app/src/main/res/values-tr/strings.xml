@@ -1009,4 +1009,10 @@
     <string name="decoded_of_total">%2$s içinden %1$s çözüldü</string>
     
     <string name="decoded_so_far">%1$s çözüldü</string>
+    <string name="language_chip_setting_title">Sonuçlarda dil rozeti</string>
+    <string name="language_chip_setting_description">Her transkriptte algılanan dili gösterir; kontrol etmek veya transkripsiyon dilini değiştirmek için dokunun</string>
+    <string name="language_chip_dialog_title">Dil</string>
+    <string name="language_chip_detected_body">Otomatik algılandı: %1$s. Yanlış dil mi? Transkripsiyon dilini değiştirip sesi yeniden dönüştürün.</string>
+    <string name="language_chip_pinned_body">Sabitlendi: %1$s. Değiştirmek için transkripsiyon dili ayarını açın.</string>
+    <string name="language_chip_open_setting">Dil ayarını aç</string>
 </resources>

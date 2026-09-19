@@ -87,6 +87,7 @@ internal class TestSpiOps(
             .put("autoCopyEnabled", preferences.autoCopyEnabled.first())
             .put("forceModelLoad", preferences.forceModelLoad.first())
             .put("compactResultActions", preferences.compactResultActions.first())
+            .put("languageChipEnabled", preferences.languageChipEnabled.first())
             .put("advancedSharingEnabled", preferences.advancedSharingEnabled.first())
             .put("showRetranscribeButton", preferences.showRetranscribeButton.first())
             .put("groupLogsByConversation", preferences.groupLogsByConversation.first())
@@ -133,6 +134,7 @@ internal class TestSpiOps(
         "show_retranscribe" to preferences::saveShowRetranscribeButton,
         "force_model_load" to preferences::saveForceModelLoad,
         "compact_result_actions" to preferences::saveCompactResultActions,
+        "language_chip" to preferences::saveLanguageChipEnabled,
     )
 
     /**

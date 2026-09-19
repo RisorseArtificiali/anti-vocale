@@ -282,7 +282,9 @@ class TranscriptionOrchestrator @Inject constructor(
                         summary = transcriptionResult.summary,
                         summarySkipReason = transcriptionResult.summarySkipReason,
                         segments = transcriptionResult.segments,
-                        processing = transcriptionResult.processing
+                        processing = transcriptionResult.processing,
+                        detectedLanguage = transcriptionResult.detectedLanguage,
+                        languagePin = resolvedLanguagePin(context)
                     )
                     listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
                         confidence = transcriptionResult.confidence,
@@ -1978,6 +1980,24 @@ class TranscriptionOrchestrator @Inject constructor(
         logDao.promoteToProcessing(taskId)
     }
 
+    /**
+     * TASK-546: the language pin a run executed under, resolved the way the
+     * picker displays it: untouched preference = "auto"; the phone pin = the
+     * device's language; a code pin = itself. Row-level fact: report-time
+     * reads would misattribute settings changed since the run (the TASK-545
+     * review lesson).
+     */
+    private suspend fun resolvedLanguagePin(context: Context): String {
+        val pref = preferencesManager.transcriptionLanguage.first()
+        return when {
+            pref.isBlank() || pref == TranscriptionLanguagePolicy.PREF_SYSTEM -> TranscriptionLanguagePolicy.PREF_AUTO
+            pref == TranscriptionLanguagePolicy.PREF_PHONE ->
+                com.antivocale.app.util.LocaleManager.phoneLanguage(context)
+                    ?: TranscriptionLanguagePolicy.PREF_AUTO
+            else -> pref
+        }
+    }
+
     private suspend fun logSuccess(
         taskId: String,
         result: String,
@@ -1996,6 +2016,10 @@ class TranscriptionOrchestrator @Inject constructor(
         /** TASK-512: how the run was produced, persisted as the row's
          *  processing context (null on the text-LLM path). */
         processing: ProcessingContext? = null,
+        /** TASK-546: what the backend reported it heard (null = not reported). */
+        detectedLanguage: String? = null,
+        /** TASK-546: the policy-resolved pin in force ("auto" when untouched). */
+        languagePin: String? = null,
     ) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
@@ -2005,7 +2029,9 @@ class TranscriptionOrchestrator @Inject constructor(
             summary = summary,
             summarySkipReason = summarySkipReason,
             segments = TimedSegmentsConverter.toJson(segments),
-            processingContext = ProcessingContextConverter.toJson(processing)
+            processingContext = ProcessingContextConverter.toJson(processing),
+            detectedLanguage = detectedLanguage,
+            languagePin = languagePin
         ).toEntity())
         preferencesManager.clearPartialTranscriptionState()
         lastPartialSaveMs = 0L

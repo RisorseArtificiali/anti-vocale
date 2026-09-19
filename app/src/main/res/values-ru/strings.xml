@@ -1028,4 +1028,10 @@
     <string name="decoded_of_total">Распознано %1$s из %2$s</string>
     
     <string name="decoded_so_far">Распознано %1$s</string>
+    <string name="language_chip_setting_title">Язык на результатах</string>
+    <string name="language_chip_setting_description">Показывать определённый язык у каждой расшифровки; нажмите, чтобы проверить или сменить язык расшифровки</string>
+    <string name="language_chip_dialog_title">Язык</string>
+    <string name="language_chip_detected_body">Определён автоматически: %1$s. Не тот язык? Смените язык расшифровки и расшифруйте аудио заново.</string>
+    <string name="language_chip_pinned_body">Закреплён: %1$s. Чтобы сменить, откройте настройку языка расшифровки.</string>
+    <string name="language_chip_open_setting">Открыть настройку языка</string>
 </resources>
