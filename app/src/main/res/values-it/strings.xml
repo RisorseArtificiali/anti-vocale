@@ -256,6 +256,7 @@
     <string name="error_file_not_found">File audio non trovato</string>
     <string name="error_invalid_format">Impossibile determinare il formato audio</string>
     <string name="error_no_audio_track">Nessuna traccia audio trovata nel file</string>
+    <string name="error_no_decoder">Questo dispositivo non ha un decoder per questo audio: %1$s</string>
     <string name="error_duration_unknown">Impossibile determinare la durata dell\'audio</string>
     <string name="error_conversion_failed">Conversione non riuscita: %1$s</string>
     <string name="error_chunk_failed">Il segmento %1$d non è riuscito: %2$s</string>
@@ -282,8 +283,6 @@
     <string name="confidence_low">Bassa attendibilità</string>
     <string name="no_audio_file">Nessun file audio ricevuto</string>
     <string name="failed_to_process_audio">Impossibile elaborare il file audio</string>
-    <string name="unsupported_audio_format">Sono supportati i messaggi vocali delle app di messaggistica; .%1$s non è un formato supportato.</string>
-    <string name="unknown_audio_format">Impossibile identificare il formato audio. Condividi l\'audio da un\'app di messaggistica.</string>
     <string name="transcription_started">Trascrizione avviata…</string>
     <string name="added_to_queue">Aggiunto alla coda…</string>
     <string name="processing_chunk">Elaborazione segmento %1$d/%2$d…</string>

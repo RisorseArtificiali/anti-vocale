@@ -259,6 +259,7 @@
     <string name="error_file_not_found">Ses dosyası bulunamadı</string>
     <string name="error_invalid_format">Ses biçimi belirlenemedi</string>
     <string name="error_no_audio_track">Dosyada ses izi bulunamadı</string>
+    <string name="error_no_decoder">Bu cihazda bu ses için kod çözücü yok: %1$s</string>
     <string name="error_duration_unknown">Ses süresi belirlenemedi</string>
     <string name="error_conversion_failed">Dönüştürme başarısız: %1$s</string>
     <string name="error_chunk_failed">%1$d. bölüm başarısız: %2$s</string>
@@ -285,8 +286,6 @@
     <string name="confidence_low">Düşük güven</string>
     <string name="no_audio_file">Ses dosyası alınmadı</string>
     <string name="failed_to_process_audio">Ses dosyası işlenemedi</string>
-    <string name="unsupported_audio_format">Mesajlaşma uygulamalarındaki sesli mesajlar desteklenir; .%1$s desteklenen bir biçim değil.</string>
-    <string name="unknown_audio_format">Ses biçimi tanımlanamadı. Sesi bir mesajlaşma uygulamasından paylaşın.</string>
     <string name="transcription_started">Metin çıkarma başladı…</string>
     <string name="processing_segment_progress">Dilim %1$d / %2$d…</string>
     <string name="progressive_initial">Metin hazırlanıyor; tamamlanınca nihai sonuç</string>

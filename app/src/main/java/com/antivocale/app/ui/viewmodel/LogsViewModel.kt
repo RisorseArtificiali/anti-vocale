@@ -253,7 +253,7 @@ class LogsViewModel @Inject constructor(
 
     /**
      * TASK-500: the History browse FAB. Copies the picked file through the
-     * SAME shared-audio path as the share receiver (extension/MIME gate,
+     * SAME shared-audio path as the share receiver (format-agnostic copy,
      * free-space pre-copy check, app-storage copy) and enqueues it on the
      * inference service with source "browse": not a share request, so no
      * share-back affordances, exactly like a Tasker-initiated local file.

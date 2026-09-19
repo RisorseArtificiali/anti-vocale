@@ -3,8 +3,9 @@ package com.antivocale.app.util
 /**
  * TASK-519 (GH #95): pure magic-byte audio format detection. Reads the
  * first bytes of a stream and matches known audio/video container
- * signatures. Returns the file extension (matching SharedAudioHandler's
- * SUPPORTED_EXTENSIONS) or null when the header matches nothing.
+ * signatures. Returns the file extension or null when the header matches
+ * nothing. The result names the local copy and feeds the video badge;
+ * since GH #18 it is not an acceptance decision (the decoder validates).
  *
  * Pure Kotlin, no Android imports, so the whole table is JVM-testable.
  * The caller (SharedAudioHandler.sniffExtension) opens the stream and

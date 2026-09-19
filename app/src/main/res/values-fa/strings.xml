@@ -256,6 +256,7 @@
     <string name="error_file_not_found">فایل صوتی پیدا نشد</string>
     <string name="error_invalid_format">قالب صدا تعیین نشد</string>
     <string name="error_no_audio_track">هیچ تراک صوتی در فایل پیدا نشد</string>
+    <string name="error_no_decoder">این دستگاه رمزگشایی برای این صدا ندارد: %1$s</string>
     <string name="error_duration_unknown">مدت صدا تعیین نشد</string>
     <string name="error_conversion_failed">تبدیل ناموفق بود: %1$s</string>
     <string name="error_chunk_failed">قطعه %1$d ناموفق بود: %2$s</string>
@@ -282,8 +283,6 @@
     <string name="confidence_low">اطمینان کم</string>
     <string name="no_audio_file">هیچ فایل صوتی دریافت نشد</string>
     <string name="failed_to_process_audio">پردازش فایل صوتی ناموفق بود</string>
-    <string name="unsupported_audio_format">پیام‌های صوتی پیام‌رسان‌ها پشتیبانی می‌شوند؛ .%1$s قالب پشتیبانی‌شده‌ای نیست.</string>
-    <string name="unknown_audio_format">قالب صدا شناسایی نشد. صدا را از یک پیام‌رسان هم‌رسانی کنید.</string>
     <string name="transcription_started">رونویسی آغاز شد…</string>
     <string name="added_to_queue">به صف اضافه شد…</string>
     <string name="processing_chunk">در حال پردازش قطعه %1$d/%2$d…</string>

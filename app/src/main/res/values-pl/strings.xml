@@ -263,6 +263,7 @@
     <string name="error_file_not_found">Nie znaleziono pliku audio</string>
     <string name="error_invalid_format">Nie można ustalić formatu audio</string>
     <string name="error_no_audio_track">W pliku nie znaleziono ścieżki audio</string>
+    <string name="error_no_decoder">To urządzenie nie ma dekodera dla tego pliku audio: %1$s</string>
     <string name="error_duration_unknown">Nie można ustalić czasu trwania audio</string>
     <string name="error_conversion_failed">Konwersja nie powiodła się: %1$s</string>
     <string name="error_chunk_failed">Segment %1$d nie powiódł się: %2$s</string>
@@ -289,8 +290,6 @@
     <string name="confidence_low">Niska pewność</string>
     <string name="no_audio_file">Nie otrzymano pliku audio</string>
     <string name="failed_to_process_audio">Nie udało się przetworzyć pliku audio</string>
-    <string name="unsupported_audio_format">Obsługiwane są wiadomości głosowe z aplikacji do wiadomości; .%1$s nie jest obsługiwanym formatem.</string>
-    <string name="unknown_audio_format">Nie udało się zidentyfikować formatu audio. Udostępnij audio z aplikacji do wiadomości.</string>
     <string name="transcription_started">Transkrypcja rozpoczęta…</string>
     <string name="processing_segment_progress">Segment %1$d z %2$d…</string>
     <string name="progressive_initial">Przygotowywanie tekstu; wynik końcowy po zakończeniu</string>

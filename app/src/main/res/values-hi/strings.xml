@@ -239,6 +239,7 @@
     <string name="error_file_not_found">ऑडियो फ़ाइल नहीं मिली</string>
     <string name="error_invalid_format">ऑडियो प्रारूप निर्धारित नहीं किया जा सका</string>
     <string name="error_no_audio_track">फ़ाइल में कोई ऑडियो ट्रैक नहीं मिला</string>
+    <string name="error_no_decoder">इस डिवाइस में इस ऑडियो के लिए कोई डिकोडर नहीं है: %1$s</string>
     <string name="error_duration_unknown">ऑडियो अवधि निर्धारित नहीं की जा सकी</string>
     <string name="error_conversion_failed">रूपांतरण विफल: %1$s</string>
     <string name="error_chunk_failed">सेगमेंट %1$d विफल: %2$s</string>
@@ -265,8 +266,6 @@
     <string name="confidence_low">कम भरोसा</string>
     <string name="no_audio_file">कोई ऑडियो फ़ाइल नहीं मिली</string>
     <string name="failed_to_process_audio">ऑडियो फ़ाइल प्रोसेस करने में विफल</string>
-    <string name="unsupported_audio_format">मैसेजिंग ऐप के वॉइस मैसेज समर्थित हैं; .%1$s एक समर्थित फ़ॉर्मैट नहीं है।</string>
-    <string name="unknown_audio_format">ऑडियो फ़ॉर्मैट पहचाना नहीं जा सका। ऑडियो किसी मैसेजिंग ऐप से शेयर करें।</string>
     <string name="transcription_started">ट्रांसक्रिप्शन शुरू हुआ…</string>
     <string name="processing_segment_progress">%2$d में से %1$d हिस्सा…</string>
     <string name="progressive_initial">टेक्स्ट तैयार हो रहा है; पूरा होने पर फ़ाइनल नतीजा</string>

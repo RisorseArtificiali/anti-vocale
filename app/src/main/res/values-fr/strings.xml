@@ -209,6 +209,7 @@
     <string name="error_file_not_found">Fichier audio introuvable</string>
     <string name="error_invalid_format">Impossible de déterminer le format audio</string>
     <string name="error_no_audio_track">Aucune piste audio trouvée dans le fichier</string>
+    <string name="error_no_decoder">Cet appareil n\'a pas de décodeur pour cet audio : %1$s</string>
     <string name="error_duration_unknown">Impossible de déterminer la durée de l\'audio</string>
     <string name="error_conversion_failed">Échec de la conversion : %1$s</string>
     <string name="error_chunk_failed">Le segment %1$d a échoué : %2$s</string>
@@ -235,8 +236,6 @@
     <string name="confidence_low">Confiance faible</string>
     <string name="no_audio_file">Aucun fichier audio reçu</string>
     <string name="failed_to_process_audio">Échec du traitement du fichier audio</string>
-    <string name="unsupported_audio_format">Les messages vocaux des applications de messagerie sont pris en charge ; .%1$s n\'est pas un format pris en charge.</string>
-    <string name="unknown_audio_format">Impossible d\'identifier le format audio. Partagez l\'audio depuis une application de messagerie.</string>
     <string name="transcription_started">Transcription démarrée…</string>
     <string name="processing_segment_progress">Segment %1$d sur %2$d…</string>
     <string name="progressive_initial">Préparation du texte ; résultat final à la fin</string>

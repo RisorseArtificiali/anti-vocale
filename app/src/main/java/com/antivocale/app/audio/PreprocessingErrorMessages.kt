@@ -21,8 +21,20 @@ object PreprocessingErrorMessages {
         is PreprocessingError.FileNotFound -> context.getString(R.string.error_file_not_found)
         is PreprocessingError.InvalidFormat -> context.getString(R.string.error_invalid_format)
         is PreprocessingError.NoAudioTrack -> context.getString(R.string.error_no_audio_track)
+        is PreprocessingError.NoDecoder -> context.getString(R.string.error_no_decoder, noDecoderDetail(error))
         is PreprocessingError.DurationUnknown -> context.getString(R.string.error_duration_unknown)
         is PreprocessingError.ConversionFailed -> context.getString(R.string.error_conversion_failed, error.reason)
         is PreprocessingError.ChunkFailed -> context.getString(R.string.error_chunk_failed, error.chunkIndex, error.reason)
     }
+
+    /**
+     * GH #18: the NoDecoder detail names the container when the source path
+     * carried a clean extension (".ts"), then the track MIME, the reason
+     * ("audio/vnd.dts"). Both tokens are technical identifiers composed here,
+     * in code, so word order stays locale-independent; [PreprocessingError.NoDecoder.format]
+     * is constructor-sanitized ("" when absent), in which case only the MIME
+     * is named.
+     */
+    internal fun noDecoderDetail(error: PreprocessingError.NoDecoder): String =
+        if (error.format.isEmpty()) error.mime else ".${error.format} (${error.mime})"
 }

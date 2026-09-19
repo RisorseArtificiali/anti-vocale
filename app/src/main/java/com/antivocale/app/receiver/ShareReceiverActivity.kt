@@ -32,6 +32,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import java.io.File
 
 /**
  * Transparent activity for receiving shared audio files.
@@ -65,6 +66,13 @@ interface BackendRegistryEntryPoint {
     fun backendRegistry(): BackendRegistry
     /** The chooser reads valid external records; same no-@AndroidEntryPoint situation. */
     fun externalModelStore(): com.antivocale.app.data.ExternalModelStore
+
+    /**
+     * GH #18: the share-time decode probe. The copy path accepts every file,
+     * so this is how the share flow learns whether the device can actually
+     * decode the container before dispatching transcription.
+     */
+    fun audioPreprocessor(): com.antivocale.app.audio.AudioPreprocessor
 
     /**
      * The process-lifetime scope (TASK-438 rule: no hand-built scopes). The
@@ -463,6 +471,23 @@ class ShareReceiverActivity : Activity() {
                 source = InferenceService.SOURCE_SHARE,
                 sourcePackage = sourcePackage,
                 backendOverride = backendOverride)
+        }
+
+        // GH #18: the decode probe gates only the ASR path; subtitle-only
+        // shares were handled above (offered) and never reach here.
+        val decodeError = withContext(Dispatchers.IO) {
+            appEntryPoint.audioPreprocessor().probeDecodable(localPath)
+        }
+        if (decodeError != null) {
+            showErrorToast(
+                com.antivocale.app.audio.PreprocessingErrorMessages.localize(
+                    this@ShareReceiverActivity, decodeError))
+            // GH #18 review: the just-copied file is undecodable garbage;
+            // delete it now, not at the 24h sweep.
+            withContext(Dispatchers.IO) { File(localPath).delete() }
+            cleanup()
+            finish()
+            return
         }
 
         if (offered) {

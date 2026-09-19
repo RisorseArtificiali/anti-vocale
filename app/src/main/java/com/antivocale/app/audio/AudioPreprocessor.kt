@@ -83,6 +83,20 @@ class AudioPreprocessor @Inject constructor() {
         internal fun chunkTotalSuffix(expectedChunkCount: Int, emittedChunkIndex: Int): String =
             if (expectedChunkCount > emittedChunkIndex) "/$expectedChunkCount" else ""
 
+        /**
+         * GH #18: the container extension of [path] for error messages,
+         * sanitized before it can reach a localized string: lowercase
+         * alphanumerics, 1..8 chars (the same guard the retired
+         * SharedAudioHandler whitelist message used). "" when the path has no
+         * clean extension, so callers fall back to naming the MIME alone.
+         */
+        internal fun formatToken(path: String): String {
+            val ext = path.substringAfterLast('/', path)
+                .substringAfterLast('.', "")
+                .lowercase()
+            return if (ext.length in 1..8 && ext.all { it.isLetterOrDigit() }) ext else ""
+        }
+
         private const val TARGET_SAMPLE_RATE = 16000
         private const val TARGET_CHANNELS = 1
         private const val MAX_FILE_SIZE_BYTES = 2L * 1024 * 1024 * 1024 // 2GB sanity bound
@@ -155,6 +169,20 @@ class AudioPreprocessor @Inject constructor() {
         data class ConversionFailed(val reason: String) : PreprocessingError("Conversion failed: $reason")
         data class ChunkFailed(val chunkIndex: Int, val reason: String) : PreprocessingError("Chunk $chunkIndex failed: $reason")
         data object NoAudioTrack : PreprocessingError("No audio track found in file")
+
+        /**
+         * GH #18: the container parsed and holds an audio track, but this
+         * device has no decoder for the track's MIME (e.g. DTS in a shared
+         * .ts, Vorbis variants without a codec). With the copy-side extension
+         * whitelist gone, this is the "unsupported format" refusal, raised at
+         * the same MediaCodec.createDecoderByType call both decode paths
+         * already make. [format] is the sanitized container extension (""
+         * when the path carries no clean token); [mime] is the track MIME
+         * from MediaExtractor. Together they name the format and the reason
+         * in the user-facing message.
+         */
+        data class NoDecoder(val format: String, val mime: String) :
+            PreprocessingError("No decoder on this device for .$format audio ($mime)")
     }
 
     /**
@@ -397,7 +425,7 @@ class AudioPreprocessor @Inject constructor() {
                     expectedChunkCount = expectedChunks
                 )))
 
-                val decoder = MediaCodec.createDecoderByType(mime)
+                val decoder = createDecoderOrThrow(mime, inputPath)
                 val accumulator = mutableListOf<FloatArray>()
                 var accumulatedSamples = 0
                 var chunkIndex = 0
@@ -566,7 +594,7 @@ class AudioPreprocessor @Inject constructor() {
 
             Log.d(TAG, "Input: $mime, ${inputSampleRate}Hz, $inputChannels channels")
 
-            val decoder = MediaCodec.createDecoderByType(mime)
+            val decoder = createDecoderOrThrow(mime, inputPath)
             // TASK-416: resample per decode chunk through the streaming resampler so
             // the input-rate signal is never held whole (the old collect-then-merge
             // held chunks + merged copy, ~230MB for a 10-minute 48kHz file: the
@@ -808,6 +836,52 @@ class AudioPreprocessor @Inject constructor() {
             if (mime?.startsWith("audio/") == true) return i
         }
         throw PreprocessingError.NoAudioTrack
+    }
+
+    /**
+     * GH #18: decoder creation is the device-support decision point now that
+     * the copy path accepts every file. createDecoderByType fails exactly
+     * when no codec exists for the track MIME, so both decode paths and the
+     * share-time probe route through this helper and raise the same typed
+     * [PreprocessingError.NoDecoder] instead of a generic ConversionFailed.
+     */
+    private fun createDecoderOrThrow(mime: String, inputPath: String): MediaCodec =
+        try {
+            MediaCodec.createDecoderByType(mime)
+        } catch (e: Exception) {
+            Log.e(TAG, "No decoder on this device for $mime ($inputPath)", e)
+            throw PreprocessingError.NoDecoder(formatToken(inputPath), mime)
+        }
+
+    /**
+     * GH #18 share-time support probe. The copy path no longer rejects any
+     * format, so the decoder is the arbiter; this parses the container header
+     * and asks the same decoder-creation question the decode paths ask,
+     * WITHOUT decoding PCM, so the share flow can fail fast with a typed,
+     * localized error naming the format and the reason, instead of starting a
+     * transcription that dies in the service seconds later.
+     *
+     * Returns null when the file is decodable; otherwise the container,
+     * track, or decoder failure as a [PreprocessingError] (a subset of what
+     * full preprocessing validates: duration and size ceilings stay the
+     * service's authority). Runs in milliseconds; safe on Dispatchers.IO.
+     */
+    fun probeDecodable(inputPath: String): PreprocessingError? {
+        val extractor = MediaExtractor()
+        return try {
+            extractor.setDataSource(inputPath)
+            val audioTrackIndex = findAudioTrack(extractor)
+            val mime = extractor.getTrackFormat(audioTrackIndex).getString(MediaFormat.KEY_MIME)!!
+            createDecoderOrThrow(mime, inputPath).release()
+            null
+        } catch (e: PreprocessingError) {
+            e
+        } catch (e: Exception) {
+            // A non-media file (PDF, zip, text) fails at setDataSource;
+            // the localized InvalidFormat beats raw framework noise.
+            PreprocessingError.InvalidFormat} finally {
+            extractor.release()
+        }
     }
 
     /**

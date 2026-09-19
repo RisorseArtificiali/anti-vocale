@@ -258,6 +258,7 @@
     <string name="error_file_not_found">קובץ האודיו לא נמצא</string>
     <string name="error_invalid_format">לא ניתן לזהות את פורמט האודיו</string>
     <string name="error_no_audio_track">לא נמצא ערוץ אודיו בקובץ</string>
+    <string name="error_no_decoder">אין למכשיר זה מפענח עבור האודיו הזה: %1$s</string>
     <string name="error_duration_unknown">לא ניתן לקבוע את משך האודיו</string>
     <string name="error_conversion_failed">ההמרה נכשלה: %1$s</string>
     <string name="error_chunk_failed">מקטע %1$d נכשל: %2$s</string>
@@ -284,8 +285,6 @@
     <string name="confidence_low">וודאות נמוכה</string>
     <string name="no_audio_file">לא התקבל קובץ אודיו</string>
     <string name="failed_to_process_audio">עיבוד קובץ האודיו נכשל</string>
-    <string name="unsupported_audio_format">נתמכות הודעות קוליות מאפליקציות מסרים; פורמט .%1$s אינו נתמך.</string>
-    <string name="unknown_audio_format">לא ניתן לזהות את פורמט האודיו. שתף את האודיו מאפליקציית מסרים.</string>
     <string name="transcription_started">התמלול התחיל…</string>
     <string name="processing_segment_progress">מקטע %1$d מתוך %2$d…</string>
     <string name="progressive_initial">מכין טקסט; התוצאה הסופית תהיה זמינה בסיום</string>

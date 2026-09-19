@@ -265,6 +265,7 @@
     <string name="error_file_not_found">Аудіофайл не знайдено</string>
     <string name="error_invalid_format">Не вдалося визначити формат аудіо</string>
     <string name="error_no_audio_track">У файлі не знайдено аудіодоріжку</string>
+    <string name="error_no_decoder">На цьому пристрої немає декодера для цього аудіо: %1$s</string>
     <string name="error_duration_unknown">Не вдалося визначити тривалість аудіо</string>
     <string name="error_conversion_failed">Помилка перетворення: %1$s</string>
     <string name="error_chunk_failed">Сегмент %1$d завершився з помилкою: %2$s</string>
@@ -291,8 +292,6 @@
     <string name="confidence_low">Низька впевненість</string>
     <string name="no_audio_file">Аудіофайл не отримано</string>
     <string name="failed_to_process_audio">Не вдалося обробити аудіофайл</string>
-    <string name="unsupported_audio_format">Підтримуються голосові повідомлення з месенджерів; .%1$s не є підтримуваним форматом.</string>
-    <string name="unknown_audio_format">Не вдалося визначити формат аудіо. Поділіться аудіо з месенджера.</string>
     <string name="transcription_started">Розшифровку розпочато…</string>
     <string name="processing_segment_progress">Сегмент %1$d з %2$d…</string>
     <string name="progressive_initial">Готуємо часткові попередні перегляди; повний текст буде доступний після завершення</string>

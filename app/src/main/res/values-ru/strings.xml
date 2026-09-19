@@ -249,6 +249,7 @@
     <string name="error_file_not_found">Аудиофайл не найден</string>
     <string name="error_invalid_format">Не удалось определить формат аудио</string>
     <string name="error_no_audio_track">В файле не найдена аудиодорожка</string>
+    <string name="error_no_decoder">На этом устройстве нет декодера для этого аудио: %1$s</string>
     <string name="error_duration_unknown">Не удалось определить длительность аудио</string>
     <string name="error_conversion_failed">Ошибка конвертации: %1$s</string>
     <string name="error_chunk_failed">Сегмент %1$d завершился с ошибкой: %2$s</string>
@@ -275,8 +276,6 @@
     <string name="confidence_low">Низкая уверенность</string>
     <string name="no_audio_file">Аудиофайл не получен</string>
     <string name="failed_to_process_audio">Не удалось обработать аудиофайл</string>
-    <string name="unsupported_audio_format">Поддерживаются голосовые сообщения из мессенджеров; формат .%1$s не поддерживается.</string>
-    <string name="unknown_audio_format">Не удалось определить формат аудио. Поделитесь аудио из мессенджера.</string>
     <string name="transcription_started">Распознавание начато…</string>
     <string name="processing_segment_progress">Сегмент %1$d из %2$d…</string>
     <string name="progressive_initial">Подготовка текста; финальный результат после завершения</string>

@@ -240,6 +240,7 @@
     <string name="error_file_not_found">Audiodatei nicht gefunden</string>
     <string name="error_invalid_format">Audioformat konnte nicht ermittelt werden</string>
     <string name="error_no_audio_track">Keine Audiospur in der Datei gefunden</string>
+    <string name="error_no_decoder">Dieses Gerät hat keinen Decoder für dieses Audio: %1$s</string>
     <string name="error_duration_unknown">Audiodauer konnte nicht ermittelt werden</string>
     <string name="error_conversion_failed">Konvertierung fehlgeschlagen: %1$s</string>
     <string name="error_chunk_failed">Segment %1$d fehlgeschlagen: %2$s</string>
@@ -266,8 +267,6 @@
     <string name="confidence_low">Geringe Konfidenz</string>
     <string name="no_audio_file">Keine Audiodatei empfangen</string>
     <string name="failed_to_process_audio">Audiodatei konnte nicht verarbeitet werden</string>
-    <string name="unsupported_audio_format">Sprachnachrichten aus Messenger-Apps werden unterstützt; .%1$s ist kein unterstütztes Format.</string>
-    <string name="unknown_audio_format">Das Audioformat konnte nicht erkannt werden. Teile das Audio aus einer Messenger-App.</string>
     <string name="transcription_started">Transkription gestartet…</string>
     <string name="processing_segment_progress">Segment %1$d von %2$d…</string>
     <string name="progressive_initial">Text wird vorbereitet; Endergebnis nach Abschluss</string>
