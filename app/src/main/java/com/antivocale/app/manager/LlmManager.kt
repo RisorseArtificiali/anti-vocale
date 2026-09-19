@@ -46,6 +46,10 @@ open class LlmManager @Inject constructor(
 
     companion object {
         private const val TAG = "LlmManager"
+        /** TASK-520: per-call ceiling for one LiteRT generation. Generous
+         * because on-device summaries legitimately take minutes; the value
+         * exists so a hung stream becomes a failure, not a frozen service. */
+        private const val LITERT_GENERATION_TIMEOUT_MS = 5 * 60_000L
         private const val MAX_TOKENS = 2048
 
         // Single source of truth for the LiteRT conversation/sampler config of TEXT chat,
@@ -342,11 +346,22 @@ open class LlmManager @Inject constructor(
 
             val response = StringBuilder()
 
-            conversation.sendMessageAsync(Contents.of(Content.Text(prompt)))
-                // No .catch: let mid-stream errors propagate to the outer catch (no silent partial success).
-                .collect { message ->
-                    response.append(message.toString())
-                }
+            // TASK-520 device pass found a deterministic hang: a degenerate
+            // (eos-only) response can leave the NEXT sendMessageAsync
+            // never yielding. A timeout turns the hang into a chunk failure
+            // the caller's degradation path already handles.
+            val completed = kotlinx.coroutines.withTimeoutOrNull(LITERT_GENERATION_TIMEOUT_MS) {
+                conversation.sendMessageAsync(Contents.of(Content.Text(prompt)))
+                    // No .catch: let mid-stream errors propagate to the outer catch (no silent partial success).
+                    .collect { message ->
+                        response.append(message.toString())
+                    }
+                true
+            }
+            if (completed == null) {
+                return Result.failure(java.util.concurrent.TimeoutException(
+                    "LiteRT generation timed out after ${LITERT_GENERATION_TIMEOUT_MS / 1000}s"))
+            }
 
             val result = response.toString()
             Log.d(TAG, "LiteRT generation complete: ${result.length} chars")
