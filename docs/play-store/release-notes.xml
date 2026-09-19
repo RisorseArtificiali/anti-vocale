@@ -1,4 +1,13 @@
 <en-US>
+What's new in 1.13.0:
+• New: search Settings to find any option instantly
+• New: Persian interface and the first Persian transcription model
+• New: AI summaries now cover hour-long recordings
+• New: a failed long run keeps and shows the transcript it produced
+• New: sentence-timed SRT and VTT exports for streaming models
+• Fixed: auto-save folders that could never save are rejected at pick time
+• Safer model imports: incomplete or mismatched sets are caught early
+
 What's new in 1.12.1:
 • Fixed: audio shared by call-recorder apps is now recognized
 • New: imported model folders are auto-detected; a chooser appears only when ambiguous
@@ -17,7 +26,16 @@ What's new in 1.12.0:
 • Fixed: clearer low-memory and corrupt-model errors
 </en-US>
 
-<it-IT>Novità della versione 1.12.1:
+<it-IT>Novità della versione 1.13.0:
+• Cerca nelle Impostazioni: trova qualsiasi opzione al volo
+• Interfaccia in persiano e primo modello di trascrizione in farsi
+• Il riepilogo AI ora copre anche le registrazioni di un'ora e più
+• Una lunga trascrizione fallita conserva e mostra il testo prodotto
+• Esporti SRT e VTT con tempi a frase anche per i modelli in streaming
+• Le cartelle di salvataggio automatico non salvabili vengono rifiutate subito
+• Importazioni più sicure: gli insiemi incompleti o sbagliati sono fermati prima
+
+Novità della versione 1.12.1:
 • Corretto: l'audio condiviso dalle app di registrazione chiamate viene riconosciuto
 • I modelli importati da cartella vengono riconosciuti automaticamente; la scelta appare solo se ambiguo
 • Il timeout della richiesta sottotitoli è ora un'impostazione (1-10 minuti)

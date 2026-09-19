@@ -2,6 +2,10 @@
 
 Questions that come up frequently, mostly collected from real [issue reports](https://github.com/RisorseArtificiali/anti-vocale/issues).
 
+## Can it transcribe calls or meetings?
+
+Yes, if you have the recording: share the audio file with the app (your recorder's share button, or History > pick a file). Recordings longer than a model's own limit are split and stitched automatically; the streaming path accepts up to two hours. If a long run fails partway, the transcript produced so far is kept and shown on the entry. The result exports as subtitles (SRT, VTT) or timestamped text, with sentence-level timing on streaming models. The app does not record calls itself, and it does not tell speakers apart yet ([#83](https://github.com/RisorseArtificiali/anti-vocale/issues/83)).
+
 ## Models and their limits
 
 ### How long can an audio file be?

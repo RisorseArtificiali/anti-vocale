@@ -7,7 +7,7 @@ Transcribe voice messages offline. No internet required.
 
 ## Full Description (4000 chars max)
 
-Anti-Vocale transcribes voice messages from WhatsApp, Telegram, and other messaging apps directly on your Android device. All processing happens on-device: your audio never leaves your phone.
+Anti-Vocale transcribes voice messages from WhatsApp, Telegram, and other messaging apps directly on your Android device. All processing happens on-device: your audio never leaves your phone. It works on recorded calls and meetings too: recordings of any length are split and stitched automatically (up to two hours on the streaming path), a failed run keeps the transcript it produced, and long transcripts can be exported as subtitles (SRT, VTT) or timestamped text, with sentence-level timing on streaming models.
 
 BUILT-IN MODELS
 
@@ -63,7 +63,7 @@ Trascrivi messaggi vocali offline. Nessuna connessione richiesta.
 
 Italiano / Italian:
 
-Anti-Vocale trascrive i messaggi vocali di WhatsApp, Telegram e altre app di messaggistica direttamente sul tuo dispositivo Android. Tutto avviene on-device: l'audio non lascia mai il tuo telefono.
+Anti-Vocale trascrive i messaggi vocali di WhatsApp, Telegram e altre app di messaggistica direttamente sul tuo dispositivo Android. Tutto avviene on-device: l'audio non lascia mai il tuo telefono. Funziona anche su chiamate e riunioni registrate: le registrazioni di qualsiasi durata vengono spezzate e ricucite automaticamente (fino a due ore sul percorso in streaming), una trascrizione fallita conserva il testo prodotto fin lì, e i testi lunghi si esportano come sottotitoli (SRT, VTT) o testo con timestamp, con tempi a frase sui modelli in streaming.
 
 MODELLI INCLUSI
 

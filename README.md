@@ -14,6 +14,8 @@ Android app for transcribing voice messages locally on-device, with no internet 
 
 Anti-Vocale receives shared audio files (from WhatsApp, Telegram, etc.), transcribes them using on-device ASR models, and delivers the result via notification with one-tap copy and share-back actions.
 
+It works on recorded calls and meetings too, at any length: recordings beyond a model's limit are split and stitched automatically (up to two hours on the streaming path), a failed long run keeps the transcript it already produced, and results export as subtitles (SRT, VTT) or timestamped text. Speaker separation is not implemented yet ([#83](https://github.com/RisorseArtificiali/anti-vocale/issues/83)).
+
 ## Why this app exists
 
 The big messengers transcribe voice messages only partially, or not at all:

@@ -1,4 +1,4 @@
-Anti-Vocale transcribes voice messages from WhatsApp, Telegram, and other messaging apps directly on your Android device. All processing happens on-device: your audio never leaves your phone.
+Anti-Vocale transcribes voice messages from WhatsApp, Telegram, and other messaging apps directly on your Android device. All processing happens on-device: your audio never leaves your phone. It works on recorded calls and meetings too: recordings of any length are split and stitched automatically (up to two hours on the streaming path), a failed run keeps the transcript it produced, and long transcripts can be exported as subtitles (SRT, VTT) or timestamped text, with sentence-level timing on streaming models.
 
 BUILT-IN MODELS
 

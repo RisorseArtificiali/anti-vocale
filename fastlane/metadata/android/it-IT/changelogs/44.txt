@@ -1,0 +1,8 @@
+Novità della versione 1.13.0:
+• Cerca nelle Impostazioni: trova qualsiasi opzione al volo
+• Interfaccia in persiano e primo modello di trascrizione in farsi
+• Il riepilogo AI ora copre anche le registrazioni di un'ora e più
+• Una lunga trascrizione fallita conserva e mostra il testo prodotto
+• Esporti SRT e VTT con tempi a frase anche per i modelli in streaming
+• Le cartelle di salvataggio automatico non salvabili vengono rifiutate subito
+• Importazioni più sicure: gli insiemi incompleti o sbagliati sono fermati prima
