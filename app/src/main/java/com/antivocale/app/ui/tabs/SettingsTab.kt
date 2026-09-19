@@ -279,7 +279,9 @@ fun SettingsTab(
                 }
             },
             singleLine = true,
-            shape = MaterialTheme.shapes.extraLarge,
+            // TASK-564: matches the Models tab's language filter field
+            // (RoundedCornerShape(12.dp)), not the extraLarge pill.
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
         )
 
         // TASK-457/TASK-542: the pin state and the one hint line that renders
