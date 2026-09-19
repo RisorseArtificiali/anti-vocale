@@ -863,18 +863,37 @@ class TranscriptionOrchestrator @Inject constructor(
         // Gated by the forceModelLoad preference so a determined user can bypass it. availMem is a
         // coarse predictor (lmkd uses PSI + oom_score_adj, not a literal MemAvailable comparison);
         // the headroom absorbs inference overhead and reclaimable-cache noise.
+        // TASK-575: A0 sampled unconditionally (the measurement is wanted even
+        // when the check is bypassed by forceModelLoad); provider/threads are
+        // part of the measurement key (same model under NNAPI vs CPU is a
+        // different footprint).
+        val resolvedProviderPref = InferenceProvider.resolve(preferencesManager.inferenceProvider.first())
+        val threadCountPref = preferencesManager.threadCount.first()
+        val availBeforeLoad = availableMemoryBytes(context)
         if (!preferencesManager.forceModelLoad.first()) {
-            val availBytes = availableMemoryBytes(context)
+            val availBytes = availBeforeLoad
             // Fail open if we could not read available memory (e.g. no ActivityManager service in
             // a test/local context): blocking on an unknown value would regress those contexts and
             // offer no real protection. Only compute the model size and compare when we have a
             // concrete measurement. This also avoids touching the filesystem (walkTopDown) when the
             // measurement is unavailable.
             if (availBytes > 0) {
-                val modelSizeBytes = modelDir.walkTopDown().filter { it.isFile }.sumOf { it.length() }
-                val requiredBytes = modelSizeBytes + MEMORY_HEADROOM_BYTES
+                // TASK-575 / GH #106: a measured record (from a previous
+                // successful load on this device) replaces the disk-size
+                // estimate: the #63 over-refusal was exactly this estimate
+                // overshooting by ~1GB. The size walk runs only when the
+                // estimate branch needs it.
+                val measuredKey = memoryKey(backendId, modelDir, resolvedProviderPref, threadCountPref)
+                val measured = preferencesManager.measuredModelMemory.first()[measuredKey]
+                val requiredBytes = if (measured != null) {
+                    val r = MeasuredModelMemory.requiredBytes(measured, MEMORY_HEADROOM_BYTES)
+                    Log.i(TAG, "Pre-flight uses the measured footprint for $label: required=${r / MB}MB (loadDelta=${measured.maxLoadDeltaBytes / MB}MB over ${measured.runs} run(s))")
+                    r
+                } else {
+                    modelDir.walkTopDown().filter { it.isFile }.sumOf { it.length() } + MEMORY_HEADROOM_BYTES
+                }
                 if (availBytes < requiredBytes) {
-                    Log.w(TAG, "Blocking $label load: avail=${availBytes / MB}MB < required=${requiredBytes / MB}MB (model=${modelSizeBytes / MB}MB + headroom=${MEMORY_HEADROOM_BYTES / MB}MB)")
+                    Log.w(TAG, "Blocking $label load: avail=${availBytes / MB}MB < required=${requiredBytes / MB}MB (basis=${if (measured != null) "measured" else "size+headroom"}, headroom=${MEMORY_HEADROOM_BYTES / MB}MB)")
                     return Result.failure(TranscriptionException.InsufficientMemory(
                         context.getString(R.string.model_load_low_memory, formatMb(availBytes), formatMb(requiredBytes))
                     ))
@@ -882,16 +901,57 @@ class TranscriptionOrchestrator @Inject constructor(
             }
         }
         Log.i(TAG, "Auto-loading $label model from: ${modelDir.absolutePath}")
-        val providerPref = preferencesManager.inferenceProvider.first()
-        val resolvedProvider = InferenceProvider.resolve(providerPref)
-        val threadCount = preferencesManager.threadCount.first()
-        Log.i(TAG, "Inference provider: pref=$providerPref resolved=$resolvedProvider")
-        return backendManager.setActiveBackend(
+        Log.i(TAG, "Inference provider: resolved=$resolvedProviderPref")
+        val loadResult = backendManager.setActiveBackend(
             backendId = backendId,
             context = context,
-            config = configBlock(threadCount, resolvedProvider),
+            config = configBlock(threadCountPref, resolvedProviderPref),
         )
+        // TASK-575: record the measured footprint of a successful load so the
+        // next pre-flight uses it instead of the disk-size estimate. Failures
+        // here never fail the load itself. The merge runs inside the storage
+        // transaction (concurrent loads must not lose the max) and warm
+        // no-op loads (delta ~0, e.g. after a benchmark warmed the backend
+        // singleton) never create or strengthen a record (review F1/F5).
+        if (loadResult.isSuccess && availBeforeLoad > 0) {
+            runCatching {
+                val availAfter = availableMemoryBytes(context)
+                if (availAfter > 0) {
+                    preferencesManager.mergeMeasuredModelMemorySample(
+                        key = memoryKey(backendId, modelDir, resolvedProviderPref, threadCountPref),
+                        loadDeltaBytes = availBeforeLoad - availAfter,
+                        modelSizeBytes = modelSizeBytes(modelDir),
+                    )
+                    pruneMeasuredMemoryRecords()
+                    Log.i(TAG, "Measured $label footprint: loadDelta=${(availBeforeLoad - availAfter) / MB}MB")
+                }
+            }
+        }
+        return loadResult
     }
+
+    /**
+     * TASK-575 (review F3): drops records whose model dir is gone (versioned
+     * catalog dirs are deleted on update; the record must not outlive them).
+     */
+    private suspend fun pruneMeasuredMemoryRecords() {
+        val records = preferencesManager.measuredModelMemory.first()
+        val valid = records.keys.filterTo(mutableSetOf()) { key ->
+            MeasuredModelMemory.pathOfKey(key)?.let { File(it).exists() } == true
+        }
+        if (valid.size != records.size) {
+            preferencesManager.pruneMeasuredModelMemory(valid)
+        }
+    }
+
+    /**
+     * TASK-575: the per-model key for the measured-footprint records. The
+     * provider and thread count are part of the identity: the same model
+     * under a different provider (NNAPI driver buffers vs CPU arena, issue
+     * #26) has a different footprint (review F2).
+     */
+    private fun memoryKey(backendId: String, modelDir: File, provider: String, threadCount: Int): String =
+        backendId + '@' + provider + '@' + threadCount + '@' + modelDir.absolutePath
 
     /**
      * Sherpa-onnx backend loader: validates the model dir, delegates to the shared

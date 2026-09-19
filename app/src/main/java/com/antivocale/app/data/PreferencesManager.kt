@@ -119,6 +119,27 @@ interface PreferencesManager {
     suspend fun clearBenchmarkResult(modelId: String)
     suspend fun clearAllBenchmarkResults()
 
+    /**
+     * TASK-575 / GH #106: measured per-model load footprints (model key ->
+     * record). The load pre-flight prefers these over the disk-size estimate
+     * once a model has run on this device.
+     */
+    val measuredModelMemory: Flow<Map<String, com.antivocale.app.transcription.MeasuredModelMemory.Record>>
+
+    /**
+     * Merges one load sample into the record for [key] INSIDE the storage
+     * transaction (read-modify-write races would silently lose the max;
+     * review F5). No-op when the sample proves nothing (warm no-op load).
+     */
+    suspend fun mergeMeasuredModelMemorySample(
+        key: String,
+        loadDeltaBytes: Long,
+        modelSizeBytes: Long,
+    )
+
+    /** Drops records whose key is not in [validKeys] (dead model dirs; review F3). */
+    suspend fun pruneMeasuredModelMemory(validKeys: Set<String>)
+
     suspend fun getLegacyLanguagePreference(): String
 
     val partialTranscriptionText: Flow<String?>

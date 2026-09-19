@@ -73,6 +73,7 @@ class PreferencesManagerImpl(
         private val TRANSCRIPTION_LANGUAGE = stringPreferencesKey("transcription_language")
         private val SWIPE_ACTION_MODE = stringPreferencesKey("swipe_action_mode")
         private val BENCHMARK_RESULTS = stringPreferencesKey("benchmark_results")
+        private val MEASURED_MODEL_MEMORY = stringPreferencesKey("measured_model_memory")
         private val VAD_ADVISORY_DISMISSED = booleanPreferencesKey("vad_advisory_dismissed")
         private val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         private val GROUP_LOGS_BY_CONVERSATION = booleanPreferencesKey("group_logs_by_conversation")
@@ -534,6 +535,38 @@ class PreferencesManagerImpl(
     override suspend fun clearAllBenchmarkResults() {
         dataStore.edit { preferences ->
             preferences.remove(BENCHMARK_RESULTS)
+        }
+    }
+
+    override val measuredModelMemory: Flow<Map<String, com.antivocale.app.transcription.MeasuredModelMemory.Record>> =
+        dataStore.data.map { prefs ->
+            com.antivocale.app.transcription.MeasuredModelMemory.decode(prefs[MEASURED_MODEL_MEMORY])
+        }
+
+    override suspend fun mergeMeasuredModelMemorySample(
+        key: String,
+        loadDeltaBytes: Long,
+        modelSizeBytes: Long,
+    ) {
+        dataStore.edit { preferences ->
+            val m = com.antivocale.app.transcription.MeasuredModelMemory
+            val records = m.decode(preferences[MEASURED_MODEL_MEMORY]).toMutableMap()
+            val merged = m.merge(records[key], loadDeltaBytes, modelSizeBytes, System.currentTimeMillis())
+            if (merged != null) {
+                records[key] = merged
+                preferences[MEASURED_MODEL_MEMORY] = m.encode(records)
+            }
+        }
+    }
+
+    override suspend fun pruneMeasuredModelMemory(validKeys: Set<String>) {
+        dataStore.edit { preferences ->
+            val m = com.antivocale.app.transcription.MeasuredModelMemory
+            val records = m.decode(preferences[MEASURED_MODEL_MEMORY])
+            if (records.keys.any { it !in validKeys }) {
+                preferences[MEASURED_MODEL_MEMORY] =
+                    m.encode(records.filterKeys { it in validKeys })
+            }
         }
     }
 

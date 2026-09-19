@@ -88,6 +88,8 @@ internal class TestSpiOps(
             .put("forceModelLoad", preferences.forceModelLoad.first())
             .put("compactResultActions", preferences.compactResultActions.first())
             .put("languageChipEnabled", preferences.languageChipEnabled.first())
+            // TASK-575: read-only over the SPI (records are written by loads).
+            .put("measuredModelMemory", preferences.measuredModelMemory.first().entries.joinToString(",") { e -> e.key + "=" + e.value.runs + "runs" })
             .put("advancedSharingEnabled", preferences.advancedSharingEnabled.first())
             .put("showRetranscribeButton", preferences.showRetranscribeButton.first())
             .put("groupLogsByConversation", preferences.groupLogsByConversation.first())

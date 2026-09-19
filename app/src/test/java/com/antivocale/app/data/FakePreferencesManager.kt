@@ -2,6 +2,7 @@ package com.antivocale.app.data
 
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.map
 
 /**
@@ -162,5 +163,23 @@ internal class FakePreferencesManager : PreferencesManager {
 
     override suspend fun clearAllBenchmarkResults() {
         _benchmarkResults.value = emptyMap()
+    }
+
+    // TASK-575: in-memory stand-in; the merge mirrors the Impl's transaction.
+    val _measuredModelMemory = MutableStateFlow<Map<String, com.antivocale.app.transcription.MeasuredModelMemory.Record>>(emptyMap())
+    override val measuredModelMemory: Flow<Map<String, com.antivocale.app.transcription.MeasuredModelMemory.Record>> = _measuredModelMemory
+    override suspend fun mergeMeasuredModelMemorySample(
+        key: String,
+        loadDeltaBytes: Long,
+        modelSizeBytes: Long,
+    ) {
+        val m = com.antivocale.app.transcription.MeasuredModelMemory
+        _measuredModelMemory.update { records ->
+            m.merge(records[key], loadDeltaBytes, modelSizeBytes, 0L)?.let { records + (key to it) } ?: records
+        }
+    }
+
+    override suspend fun pruneMeasuredModelMemory(validKeys: Set<String>) {
+        _measuredModelMemory.update { it.filterKeys { k -> k in validKeys } }
     }
 }
