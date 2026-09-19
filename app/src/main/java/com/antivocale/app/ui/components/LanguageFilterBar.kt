@@ -82,7 +82,10 @@ fun LanguageFilterBar(
                 textFieldValue = it
                 if (!expanded) expanded = true
             },
-            label = { Text(stringResource(R.string.lang_filter_label)) },
+            // TASK-564: placeholder (not label) so the box height matches the
+            // History and Settings search fields; a label adds a floating
+            // line above the value and makes the field taller.
+            placeholder = { Text(stringResource(R.string.lang_filter_label)) },
             leadingIcon = {
                 Icon(
                     Icons.Default.Search,
