@@ -324,7 +324,19 @@ class TranscriptionOrchestrator @Inject constructor(
                     // Captured once here (not re-read inside the pass): the
                     // backend that produced this result. The queue is serial,
                     // so nothing else has swapped it since the ASR finished.
-                    val asrBackendId = backendManager.getActiveBackend()?.id
+                    // Guard-review finding (pre-existing on the F5 arm): when
+                    // the delivered text came from the FAST first pass, the
+                    // producer is the fast model, not the still-active
+                    // accurate one; with the LLM selected the polish would
+                    // otherwise be skipped on non-LLM text.
+                    val deliveredFromFirstPass =
+                        result.getOrNull()?.firstPass?.refinementFailedToken != null
+                    val asrBackendId = when {
+                        deliveredFromFirstPass ->
+                            result.getOrNull()?.firstPass?.processing?.backendId
+                                ?: backendManager.getActiveBackend()?.id
+                        else -> backendManager.getActiveBackend()?.id
+                    }
                     if (asrBackendId == null) result
                     else result
                         .map { applyPunctuationPass(context, asrBackendId, it, listener) }
