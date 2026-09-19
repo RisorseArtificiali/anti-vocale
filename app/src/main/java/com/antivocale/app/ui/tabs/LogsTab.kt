@@ -736,25 +736,34 @@ fun LogsTab(
 
 @Composable
 private fun DateGroupHeader(label: String, count: Int) {
-    // TASK-566: plain-text header, the Models-tab idiom (the old indigo
-    // secondaryContainer chip read as a third container color).
-    Row(
+    // TASK-566 follow-up: a container from the brand ramp (not the old
+    // indigo chip): surfaceContainerHigh sits one step below the cards,
+    // so the group reads as a section without a third color family.
+    Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        shape = MaterialTheme.shapes.small
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = "($count)",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.titleMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = "($count)",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
     }
 }
 
@@ -1588,9 +1597,9 @@ private fun ConversationGroupHeader(
                 role = Role.Button
                 stateDescription = toggleStateDescription
             },
-        // TASK-566: transparent container, the Models header idiom (the
-        // indigo chip read as a third container color across the tabs).
-        color = androidx.compose.ui.graphics.Color.Transparent,
+        // TASK-566 follow-up: the brand ramp step shared with the date
+        // headers, so a collapsed conversation group reads as a section.
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
         shape = MaterialTheme.shapes.small,
         onClick = onToggle
     ) {
