@@ -57,6 +57,31 @@ class DualRefinementPolicyTest {
     }
 
     @Test
+    fun `the shipped catalog actually carries a streaming entry the gate can pick`() {
+        // The gate's streaming side is catalog-driven; if no entry ever sets
+        // isStreaming, DualRefinementPolicy can only return null and the
+        // whole feature silently no-ops. Pin the assumption against the real
+        // asset (seeded by the test base like every orchestrator test).
+        val moduleRelative = java.io.File("src/main/assets/models_catalog.json")
+        val rootRelative = java.io.File("app/src/main/assets/models_catalog.json")
+        val asset = when {
+            moduleRelative.exists() -> moduleRelative
+            rootRelative.exists() -> rootRelative
+            else -> throw IllegalStateException("cannot locate models_catalog.json")
+        }
+        com.antivocale.app.data.catalog.BundledCatalog.seed(
+            com.antivocale.app.data.catalog.ModelCatalogJson.parseCatalog(asset.readText()))
+        val streaming = com.antivocale.app.data.catalog.BundledCatalog.entries()
+            .filter { it.isStreaming }
+        org.junit.Assert.assertTrue(
+            "no isStreaming entry in the shipped catalog: the dual gate can never fire",
+            streaming.isNotEmpty())
+        org.junit.Assert.assertEquals(
+            "nemotron-streaming is the streaming entry the design names",
+            "nemotron-streaming", streaming.first().id)
+    }
+
+    @Test
     fun `skip tokens are stable strings for the persisted context`() {
         // They ride ProcessingContext.refinementSkipReason and the metadata
         // line; renaming one silently orphanes every recorded row.
