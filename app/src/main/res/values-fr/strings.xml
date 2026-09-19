@@ -868,4 +868,10 @@
         <item quantity="other">%1$d correspondances</item>
     </plurals>
     <string name="settings_search_no_results">Aucun paramètre correspondant</string>
-    <string name="settings_search_clear">Effacer la recherche</string></resources>
+    <string name="settings_search_clear">Effacer la recherche</string>
+        <string name="partial_transcript_label">Transcription partielle</string>
+    
+    <string name="decoded_of_total">%1$s sur %2$s décodés</string>
+    
+    <string name="decoded_so_far">%1$s décodés</string>
+</resources>

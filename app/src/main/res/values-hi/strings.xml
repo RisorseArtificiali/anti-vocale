@@ -1002,4 +1002,10 @@
         <item quantity="other">%1$d परिणाम</item>
     </plurals>
     <string name="settings_search_no_results">कोई मेल खाती सेटिंग्स नहीं</string>
-    <string name="settings_search_clear">खोज साफ़ करें</string></resources>
+    <string name="settings_search_clear">खोज साफ़ करें</string>
+        <string name="partial_transcript_label">आंशिक ट्रांसक्रिप्ट</string>
+    
+    <string name="decoded_of_total">%2$s में से %1$s डिकोड हुआ</string>
+    
+    <string name="decoded_so_far">%1$s डिकोड हुआ</string>
+</resources>

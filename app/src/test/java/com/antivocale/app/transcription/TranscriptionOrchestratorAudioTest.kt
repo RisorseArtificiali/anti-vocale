@@ -240,7 +240,11 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         val result = callProcessRequest(filePath = audioFile.absolutePath)
 
         assertTrue(result.isFailure)
-        assertTrue(result.exceptionOrNull() is PreprocessingError.FileNotFound)
+        // TASK-568: streaming failures are wrapped in PipelineFailure so the
+        // notification can carry decoded-of-total; the typed cause survives.
+        val wrapped = result.exceptionOrNull()
+        assertTrue(wrapped is TranscriptionOrchestrator.PipelineFailure)
+        assertTrue((wrapped as TranscriptionOrchestrator.PipelineFailure).cause is PreprocessingError.FileNotFound)
         verify {
             listener.onError(eq("test-1"), eq("INFERENCE_ERROR"), any(), eq(false), eq(false), any())
         }
@@ -336,7 +340,9 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
 
         assertTrue(result.isFailure)
         val error = result.exceptionOrNull()
-        assertTrue(error is PreprocessingError.FileNotFound)
+        // TASK-568: wrapped (see the single-chunk test above); cause preserved.
+        assertTrue(error is TranscriptionOrchestrator.PipelineFailure)
+        assertTrue((error as TranscriptionOrchestrator.PipelineFailure).cause is PreprocessingError.FileNotFound)
         verify {
             listener.onError(eq("test-1"), eq("INFERENCE_ERROR"), any(), eq(false), eq(false), any())
         }

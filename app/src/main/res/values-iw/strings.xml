@@ -1010,4 +1010,10 @@
         <item quantity="other">%1$d התאמות</item>
     </plurals>
     <string name="settings_search_no_results">אין הגדרות תואמות</string>
-    <string name="settings_search_clear">נקה חיפוש</string></resources>
+    <string name="settings_search_clear">נקה חיפוש</string>
+        <string name="partial_transcript_label">תמליל חלקי</string>
+    
+    <string name="decoded_of_total">פוענחו %1$s מתוך %2$s</string>
+    
+    <string name="decoded_so_far">פוענחו %1$s</string>
+</resources>

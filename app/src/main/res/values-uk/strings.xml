@@ -1023,4 +1023,10 @@
         <item quantity="other">%1$d збіги</item>
     </plurals>
     <string name="settings_search_no_results">Немає відповідних налаштувань</string>
-    <string name="settings_search_clear">Очистити пошук</string></resources>
+    <string name="settings_search_clear">Очистити пошук</string>
+        <string name="partial_transcript_label">Часткова розшифровка</string>
+    
+    <string name="decoded_of_total">Розпізнано %1$s з %2$s</string>
+    
+    <string name="decoded_so_far">Розпізнано %1$s</string>
+</resources>

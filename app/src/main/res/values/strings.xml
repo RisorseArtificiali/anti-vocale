@@ -1000,4 +1000,10 @@
     <string name="transcript_export_format_txt_timed">Timestamped text (experimental)</string>
     <string name="transcript_export_format_srt">SRT subtitles (experimental)</string>
     <string name="transcript_export_format_vtt">WebVTT subtitles (experimental)</string>
+    
+    <string name="partial_transcript_label">Partial transcript</string>
+    
+    <string name="decoded_of_total">Decoded %1$s of %2$s</string>
+    
+    <string name="decoded_so_far">Decoded %1$s</string>
 </resources>

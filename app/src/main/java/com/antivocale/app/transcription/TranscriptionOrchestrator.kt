@@ -3,6 +3,7 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.R
+import com.antivocale.app.util.DecodedOfTotalFormat
 import com.antivocale.app.audio.AudioDurationPolicy
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
@@ -106,6 +107,11 @@ class TranscriptionOrchestrator @Inject constructor(
                 // preprocessing failure reach users through the notification and
                 // the Tasker reply; this branch routes them to localized advice.
                 is PreprocessingError -> PreprocessingErrorMessages.localize(context, error)
+                // TASK-568: the streaming failure wrapper keeps the original
+                // exception as its cause; route through it so typed advice
+                // still reaches the notification (the wrapper itself only
+                // adds the decoded-of-total suffix at the caller).
+                is PipelineFailure -> userFacingErrorMessage(context, error.cause ?: error)
                 else -> context.getString(R.string.transcription_failed)
             }
         }
@@ -282,8 +288,16 @@ class TranscriptionOrchestrator @Inject constructor(
                 },
                 onFailure = { error ->
                     val logMsg = error.message ?: "Unknown error"
-                    val userMsg = userFacingErrorMessage(context, error)
-                    logError(taskId, logMsg, duration)
+                    // TASK-568: the decoded-at-failure context (written by the
+                    // streaming catches) must survive this writeback, so no
+                    // elapsed duration here; the notification instead GAINS
+                    // the decoded-of-total sentence when the failure carries it.
+                    logError(taskId, logMsg)
+                    var userMsg = userFacingErrorMessage(context, error)
+                    if (error is PipelineFailure) {
+                        DecodedOfTotalFormat.format(context, error.decodedSeconds, error.totalSeconds)
+                            ?.let { userMsg += " $it" }
+                    }
                     val isNoModel = isNoModelConfiguredError(error)
                     listener.onError(taskId, "INFERENCE_ERROR", userMsg, isShareRequest, isNoModel, duration)
                 }
@@ -293,7 +307,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         } catch (e: CancellationException) {
             val duration = System.currentTimeMillis() - startTime
-            cancelIfPending(taskId, "Transcription cancelled", duration)
+            cancelIfPending(taskId, "Transcription cancelled", durationMs = 0)
             throw e
         } catch (e: OutOfMemoryError) {
             // TASK-396: OOM is an Error, not an Exception; without this catch it
@@ -303,7 +317,7 @@ class TranscriptionOrchestrator @Inject constructor(
             // string, and bail.
             Log.e(TAG, "Out of memory during transcription", e)
             val duration = System.currentTimeMillis() - startTime
-            logError(taskId, "OutOfMemoryError", duration)
+            logError(taskId, "OutOfMemoryError")
             listener.onError(taskId, "OUT_OF_MEMORY", "OutOfMemoryError", isShareRequest, false, duration)
             return Result.failure(TranscriptionException.InsufficientMemory(
                 context.getString(R.string.error_oom_transcription)))
@@ -311,7 +325,7 @@ class TranscriptionOrchestrator @Inject constructor(
             Log.e(TAG, "Error processing request", e)
             val duration = System.currentTimeMillis() - startTime
             val errorMsg = e.message ?: "Unknown error"
-            logError(taskId, errorMsg, duration)
+            logError(taskId, errorMsg)
             listener.onError(taskId, "PROCESSING_ERROR", errorMsg, isShareRequest, false, duration)
             return Result.failure(e)
         } finally {
@@ -1549,15 +1563,9 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             }
         } catch (e: PreprocessingError) {
-            // Same failure writeback rule as the whole-file path (TASK-522):
-            // DurationTooLong's measured length when the streaming valve
-            // rejects, else the decoded seconds so far, repairing the
-            // metadata-less-container case (0.0 ERROR row).
-            failureWritebackSeconds(e, decodedSeconds)?.let { updateAudioDuration(taskId, it) }
-            return Result.failure(e)
+            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds)
         } catch (e: Exception) {
-            failureWritebackSeconds(null, decodedSeconds)?.let { updateAudioDuration(taskId, it) }
-            return Result.failure(IllegalStateException("Pipeline failed: ${e.message}"))
+            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds)
         }
 
         val combinedResult = accumulatedText.toString()
@@ -1798,8 +1806,15 @@ class TranscriptionOrchestrator @Inject constructor(
 
     private suspend fun logError(taskId: String, errorMessage: String, durationMs: Long = 0) {
         val entity = logDao.getByTaskId(taskId) ?: return
+        // TASK-568: durationMs on an ERROR row is the decoded-at-failure
+        // seconds written by the streaming catches (updateFailureDecodedMs),
+        // not the wall-clock elapsed the callers used to pass (the very
+        // confusion of the v1.5.x reports: four failures, four different
+        // "lengths" that were processing time). A positive param still wins
+        // (the non-streaming entry sites have no decoded figure).
         logDao.update(entity.toLogEntry().copy(
-            status = LogEntry.Status.ERROR, errorMessage = errorMessage, durationMs = durationMs
+            status = LogEntry.Status.ERROR, errorMessage = errorMessage,
+            durationMs = if (durationMs > 0) durationMs else entity.durationMs
         ).toEntity())
         preferencesManager.clearPartialTranscriptionState()
         lastPartialSaveMs = 0L
@@ -1853,6 +1868,62 @@ class TranscriptionOrchestrator @Inject constructor(
         e is PreprocessingError.DurationTooLong && e.durationSeconds > 0.0 -> e.durationSeconds
         decodedSeconds > 0.0 -> decodedSeconds
         else -> null
+    }
+
+    /**
+     * TASK-568: a run that dies mid-stream must not lose what it already
+     * transcribed. With progressive display ON the throttled interim writes
+     * mostly cover it; this FINAL write is unthrottled and also covers the
+     * progressive-OFF case (otherwise nothing at all would survive). The
+     * later logError keeps the result column, so the text stays visible on
+     * the ERROR row. durationMs on the ERROR row becomes the decoded-at-
+     * failure seconds (see logError).
+     */
+    private suspend fun persistPipelineFailureContext(
+        taskId: String, accumulatedText: String, decodedSeconds: Double,
+    ) {
+        if (accumulatedText.isNotEmpty()) {
+            logDao.updateInterimResult(taskId, accumulatedText, isPartial = true)
+        }
+        if (decodedSeconds > 0.0) {
+            logDao.updateFailureDecodedMs(taskId, (decodedSeconds * 1000).toLong())
+        }
+    }
+
+    /**
+     * TASK-568: carries the failure point out of the streaming loop so the
+     * caller can word the error notification as decoded-of-total ("failed
+     * after 23 of 77 minutes") instead of a bare error string. The cause is
+     * the original exception (a [PreprocessingError] on the typed path);
+     * [userFacingErrorMessage] unwraps it so typed preprocessing advice
+     * still reaches the notification.
+     */
+    class PipelineFailure(
+        cause: Throwable,
+        val decodedSeconds: Double,
+        val totalSeconds: Double,
+    ) : IllegalStateException("Pipeline failed: ${cause.message}", cause)
+
+    /**
+     * The one streaming-failure tail (TASK-568, shared by both catches):
+     * persist the salvaged text and the decoded-at-failure seconds, keep the
+     * row length at the larger of header-total and writeback (TASK-522's
+     * DurationTooLong-measured length or the decoded seconds, which repairs
+     * the metadata-less container), and wrap the failure so the notification
+     * site can append the decoded-of-total sentence.
+     */
+    private suspend fun pipelineFailed(
+        taskId: String,
+        cause: Throwable,
+        accumulatedText: String,
+        decodedSeconds: Double,
+        totalDurationSeconds: Double,
+    ): Result<Nothing> {
+        persistPipelineFailureContext(taskId, accumulatedText, decodedSeconds)
+        failureWritebackSeconds(cause as? PreprocessingError, decodedSeconds)
+            ?.takeIf { it > totalDurationSeconds }
+            ?.let { updateAudioDuration(taskId, it) }
+        return Result.failure(PipelineFailure(cause, decodedSeconds, totalDurationSeconds))
     }
 
     // ---- Chunk Retry ----

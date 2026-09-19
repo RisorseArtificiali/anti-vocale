@@ -1022,4 +1022,10 @@
         <item quantity="other">%1$d совпадения</item>
     </plurals>
     <string name="settings_search_no_results">Подходящих настроек не найдено</string>
-    <string name="settings_search_clear">Очистить поиск</string></resources>
+    <string name="settings_search_clear">Очистить поиск</string>
+        <string name="partial_transcript_label">Частичная расшифровка</string>
+    
+    <string name="decoded_of_total">Распознано %1$s из %2$s</string>
+    
+    <string name="decoded_so_far">Распознано %1$s</string>
+</resources>

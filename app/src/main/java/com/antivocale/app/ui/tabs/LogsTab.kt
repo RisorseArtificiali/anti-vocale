@@ -51,6 +51,7 @@ import com.antivocale.app.ui.onboarding.tourRevealable
 import com.antivocale.app.transcription.SummaryPolicy
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.AudioDurationFormat
+import com.antivocale.app.util.DecodedOfTotalFormat
 import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.util.formatProcessingTime
 import com.antivocale.app.data.PreferencesManager
@@ -102,7 +103,9 @@ private fun reportTranscription(context: Context, log: LogEntry) {
                 taskId = log.taskId,
                 modelName = log.modelName ?: "-",
                 audioDurationSeconds = log.audioDurationSeconds,
-                processingTimeMs = log.durationMs,
+                // TASK-568: durationMs on ERROR rows is decoded-at-failure
+                // audio, not processing time; the email field keeps its meaning.
+                processingTimeMs = if (log.status == LogEntry.Status.SUCCESS) log.durationMs else 0L,
                 status = log.status.name,
                 excerpt = log.result,
                 errorMessage = log.errorMessage,
@@ -1251,6 +1254,37 @@ fun LogEntryItem(
                         }
                     }
                     LogEntry.Status.ERROR -> {
+                        // TASK-568: a failed long run keeps whatever was
+                        // transcribed before the stream died (the streaming
+                        // catches persist it); show it with a partial
+                        // qualifier and, when the failure point is known,
+                        // the decoded-of-total line. Empty result renders
+                        // exactly as before.
+                        if (log.result.isNotEmpty()) {
+                            // The salvaged transcript is the run's only
+                            // output: the shared block gives it the copy
+                            // affordance the summary blocks have (GH #72
+                            // rationale), not just a rendered Text.
+                            LabeledTranscriptBlock(
+                                label = stringResource(R.string.partial_transcript_label),
+                                copyLabelRes = R.string.copy,
+                                text = log.result,
+                                searchQuery = searchQuery,
+                            )
+                            if (log.durationMs > 0) {
+                                Spacer(modifier = Modifier.height(4.dp))
+                                DecodedOfTotalFormat
+                                    .format(context, log.durationMs / 1000.0, log.audioDurationSeconds)
+                                    ?.let {
+                                        Text(
+                                            text = it,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+                            }
+                            Spacer(modifier = Modifier.height(4.dp))
+                        }
                         Text(
                             text = stringResource(R.string.logs_error_label),
                             style = MaterialTheme.typography.labelSmall,

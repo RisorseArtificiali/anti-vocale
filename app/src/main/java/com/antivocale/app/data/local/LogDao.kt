@@ -94,6 +94,15 @@ interface LogDao {
     @Query("UPDATE logs SET result = :result, isPartial = :isPartial WHERE taskId = :taskId")
     suspend fun updateInterimResult(taskId: String, result: String, isPartial: Boolean)
 
+    /**
+     * TASK-568: decoded audio seconds at the failure point, column-scoped
+     * like [updateInterimResult]. Written by the streaming catches when a
+     * run dies mid-stream, so the ERROR row can say decoded-of-total; the
+     * success path keeps durationMs as processing time and never calls this.
+     */
+    @Query("UPDATE logs SET durationMs = :durationMs WHERE taskId = :taskId")
+    suspend fun updateFailureDecodedMs(taskId: String, durationMs: Long)
+
     /** Same TASK-390 contract as [updateInterimResult], for the duration column. */
     @Query("UPDATE logs SET audioDurationSeconds = :seconds WHERE taskId = :taskId")
     suspend fun updateAudioDuration(taskId: String, seconds: Double)

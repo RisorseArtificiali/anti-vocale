@@ -288,4 +288,138 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         assertEquals("Hello world from pipeline", result.getOrNull())
         verify { listener.onSuccess(eq("test-pipeline"), eq("Hello world from pipeline"), any(), any(), any(), segments = any()) }
     }
+
+    // ---- TASK-568: mid-stream failure preserves the transcribed text ----
+
+    /**
+     * The stream dies after two decoded chunks (progressive OFF: no interim
+     * write ever ran). The catch must persist the accumulated text and the
+     * decoded-at-failure seconds before failing, or the ERROR row would show
+     * zero output exactly like the v1.5.x reports.
+     */
+    @Test
+    fun `mid-stream failure with progressive OFF persists accumulated text and decoded seconds`() = runTest {
+        every { preferencesManager.progressiveTranscription } returns flowOf(false)
+
+        // Header + 2 chunks, then the decode stream itself dies.
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
+        } returns flow {
+            emit(AudioPreprocessor.StreamEvent.Header(
+                AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = 300.0,
+                    expectedChunkCount = 6)))
+            emit(AudioPreprocessor.StreamEvent.Chunk(
+                AudioPreprocessor.StreamChunk(
+                    samples = FloatArray(1000), sampleRate = 16000, chunkIndex = 0, isLast = false)))
+            emit(AudioPreprocessor.StreamEvent.Chunk(
+                AudioPreprocessor.StreamChunk(
+                    samples = FloatArray(1000), sampleRate = 16000, chunkIndex = 1, isLast = false)))
+            throw IllegalStateException("decode died")
+        }
+
+        var callIndex = 0
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            Result.success(TranscriptionResult(text = listOf("first", "second")[callIndex++]))
+        }
+
+        val result = runPipelineRequest()
+
+        assertTrue(result.isFailure)
+        // The FINAL unthrottled persist: everything transcribed before death.
+        coVerify(exactly = 1) { logDao.updateInterimResult("test-pipeline", "first second", true) }
+        // 2000 samples at 16 kHz = 0.125 s decoded at the failure point.
+        coVerify(exactly = 1) { logDao.updateFailureDecodedMs("test-pipeline", 125L) }
+        // The failure carries the decoded-of-total context for the notification.
+        val err = result.exceptionOrNull()
+        assertTrue("expected PipelineFailure, got $err",
+            err is TranscriptionOrchestrator.PipelineFailure)
+        err as TranscriptionOrchestrator.PipelineFailure
+        assertEquals(0.125, err.decodedSeconds, 1e-9)
+        assertEquals(300.0, err.totalSeconds, 1e-9)
+    }
+
+    /**
+     * TASK-568: logError must PRESERVE the decoded-at-failure ms the catch
+     * wrote (updateFailureDecodedMs) instead of clobbering it with an
+     * elapsed value; the failure site passes no duration, so the row keeps
+     * whatever the entity already carried.
+     */
+    @Test
+    fun `failure writeback preserves the row's decoded-at-failure duration`() = runTest {
+        every { preferencesManager.progressiveTranscription } returns flowOf(false)
+
+        val entity = com.antivocale.app.data.local.LogEntity(
+            id = "1", timestamp = 0L, taskId = "test-pipeline",
+            type = "AUDIO", status = "PROCESSING", prompt = "",
+            durationMs = 125L)
+        coEvery { logDao.getByTaskId("test-pipeline") } returns entity
+
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
+        } returns flow {
+            emit(AudioPreprocessor.StreamEvent.Header(
+                AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000, totalDurationSeconds = 60.0, expectedChunkCount = 1)))
+            emit(AudioPreprocessor.StreamEvent.Chunk(
+                AudioPreprocessor.StreamChunk(
+                    samples = FloatArray(1000), sampleRate = 16000, chunkIndex = 0, isLast = true)))
+            throw IllegalStateException("decode died")
+        }
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            Result.success(TranscriptionResult(text = "partial"))
+        }
+
+        val result = runPipelineRequest()
+
+        assertTrue(result.isFailure)
+        val slot = slot<com.antivocale.app.data.local.LogEntity>()
+        coVerify(atLeast = 1) { logDao.update(capture(slot)) }
+        val errorWrite = slot.captured.status == "ERROR"
+        assertTrue("no ERROR write captured", errorWrite)
+        assertEquals("decoded-at-failure ms must survive the error writeback",
+            125L, slot.captured.durationMs)
+    }
+
+    /** A failure with NOTHING transcribed must not write an empty result. */
+    @Test
+    fun `mid-stream failure with no accumulated text writes no interim result`() = runTest {
+        every { preferencesManager.progressiveTranscription } returns flowOf(false)
+
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
+        } returns flow {
+            emit(AudioPreprocessor.StreamEvent.Header(
+                AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = 60.0,
+                    expectedChunkCount = 2)))
+            throw IllegalStateException("decode died before any chunk")
+        }
+
+        val result = runPipelineRequest()
+
+        assertTrue(result.isFailure)
+        coVerify(exactly = 0) { logDao.updateInterimResult(any(), any(), any()) }
+        coVerify(exactly = 0) { logDao.updateFailureDecodedMs(any(), any()) }
+    }
 }

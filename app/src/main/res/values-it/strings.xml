@@ -1007,4 +1007,10 @@
         <item quantity="other">%1$d risultati</item>
     </plurals>
     <string name="settings_search_no_results">Nessuna impostazione trovata</string>
-    <string name="settings_search_clear">Cancella ricerca</string></resources>
+    <string name="settings_search_clear">Cancella ricerca</string>
+        <string name="partial_transcript_label">Trascrizione parziale</string>
+    
+    <string name="decoded_of_total">Decodificati %1$s di %2$s</string>
+    
+    <string name="decoded_so_far">Decodificati %1$s</string>
+</resources>

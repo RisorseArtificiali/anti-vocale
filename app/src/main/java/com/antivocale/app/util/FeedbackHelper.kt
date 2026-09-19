@@ -85,9 +85,15 @@ object FeedbackHelper {
         appendLine("${l.task}: ${f.taskId}")
         appendLine("${l.model}: ${f.modelName}")
         appendLine("${l.duration}: ${"%.1f".format(f.audioDurationSeconds)}s")
-        appendLine("${l.time}: ${"%.1f".format(f.processingTimeMs / 1000.0)}s")
-        appendLine("${l.status}: ${f.status}")
-        f.errorMessage?.takeIf { it.isNotBlank() }?.let { appendLine("${l.status}: $it") }
+        // TASK-568: 0 means "not applicable" (ERROR rows carry decoded
+        // audio in the column, not processing time), not a zero-length run.
+        if (f.processingTimeMs > 0) {
+            appendLine("${l.time}: ${"%.1f".format(f.processingTimeMs / 1000.0)}s")
+        }
+        // One status line: the error rides in parentheses instead of
+        // repeating the label on a second line (which read as a duplicate).
+        val errorSuffix = f.errorMessage?.takeIf { it.isNotBlank() }?.let { " ($it)" } ?: ""
+        appendLine("${l.status}: ${f.status}$errorSuffix")
         appendLine()
         append("${l.excerpt}: ")
         if (f.excerpt.isEmpty()) {

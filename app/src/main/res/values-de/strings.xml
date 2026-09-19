@@ -1003,4 +1003,10 @@
         <item quantity="other">%1$d Treffer</item>
     </plurals>
     <string name="settings_search_no_results">Keine passenden Einstellungen</string>
-    <string name="settings_search_clear">Suche löschen</string></resources>
+    <string name="settings_search_clear">Suche löschen</string>
+        <string name="partial_transcript_label">Teilweises Transkript</string>
+    
+    <string name="decoded_of_total">%1$s von %2$s dekodiert</string>
+    
+    <string name="decoded_so_far">%1$s dekodiert</string>
+</resources>

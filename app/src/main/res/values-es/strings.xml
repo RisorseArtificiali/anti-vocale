@@ -868,4 +868,10 @@
         <item quantity="other">%1$d coincidencias</item>
     </plurals>
     <string name="settings_search_no_results">No hay ajustes coincidentes</string>
-    <string name="settings_search_clear">Borrar búsqueda</string></resources>
+    <string name="settings_search_clear">Borrar búsqueda</string>
+        <string name="partial_transcript_label">Transcripción parcial</string>
+    
+    <string name="decoded_of_total">Decodificados %1$s de %2$s</string>
+    
+    <string name="decoded_so_far">Decodificados %1$s</string>
+</resources>

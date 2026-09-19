@@ -1008,4 +1008,10 @@
     </plurals>
     <string name="settings_search_no_results">تنظیماتی پیدا نشد</string>
     <string name="settings_search_clear">پاک کردن جستجو</string>
+    
+    <string name="partial_transcript_label">رونویسی جزئی</string>
+    
+    <string name="decoded_of_total">%1$s از %2$s رمزگشایی شد</string>
+    
+    <string name="decoded_so_far">%1$s رمزگشایی شد</string>
 </resources>

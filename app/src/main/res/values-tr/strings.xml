@@ -1003,4 +1003,10 @@
         <item quantity="other">%1$d eşleşme</item>
     </plurals>
     <string name="settings_search_no_results">Eşleşen ayar yok</string>
-    <string name="settings_search_clear">Aramayı temizle</string></resources>
+    <string name="settings_search_clear">Aramayı temizle</string>
+        <string name="partial_transcript_label">Kısmi transkript</string>
+    
+    <string name="decoded_of_total">%2$s içinden %1$s çözüldü</string>
+    
+    <string name="decoded_so_far">%1$s çözüldü</string>
+</resources>
