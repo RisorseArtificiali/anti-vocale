@@ -492,6 +492,7 @@ fun SettingsTab(
                         }
                     }
                 }
+            }
 
             // Active Model Selection Card
             SearchFilterRow(searchQuery, stringResource(R.string.active_model)) {
@@ -1022,7 +1023,6 @@ fun SettingsTab(
                         )
                     }
                 }
-            }
 
             // Conversation Grouping Setting
             val conversationGroupingTitle = stringResource(R.string.conversation_grouping_title)
@@ -1068,7 +1068,6 @@ fun SettingsTab(
                     onCheckedChange = { viewModel.saveShowRetranscribeButton(it) }
                 )
             }
-
         }
 
         CollapsibleSection(
@@ -1760,7 +1759,7 @@ fun SettingsTab(
         // Spacer for scroll
         Spacer(modifier = Modifier.height(32.dp))
     }
-    } // End of if-else for showPerAppSettings
+} // End of if-else for showPerAppSettings
 }
 
 /**
