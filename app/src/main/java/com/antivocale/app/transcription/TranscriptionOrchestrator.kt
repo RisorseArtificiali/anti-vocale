@@ -956,16 +956,14 @@ class TranscriptionOrchestrator @Inject constructor(
             onSkipped(DualRefinementPolicy.SKIP_FAST_LOAD_FAILED)
             return null
         }
-        val forwardingListener = object : TranscriptionListener by listener {
-            // The funnel callbacks are deliberately NOT overridden: phase 1
-            // never reaches them (processAudioRequest reports failures as
-            // return values), so forwarding progress is all this wrapper does.
-        }
+        // The base listener is passed as-is: processAudioRequest reports
+        // failures as return values and never calls the funnel callbacks, so
+        // plain delegation (which an empty wrapper reduced to) is identity.
         val result = processAudioRequest(
             taskId = taskId, filePath = filePath, prompt = prompt,
             queuePosition = queuePosition, queueTotal = queueTotal,
             context = context, cacheDir = cacheDir,
-            listener = forwardingListener, coroutineScope = coroutineScope,
+            listener = listener, coroutineScope = coroutineScope,
         )
         val outcome = result.getOrNull()?.takeIf { it.text.isNotBlank() }
         if (outcome == null) {
@@ -1635,7 +1633,7 @@ class TranscriptionOrchestrator @Inject constructor(
         for (i in chunks.indices) {
             val segNumber = i + 1
             if (accumulatedText.isEmpty()) {
-                listener.onStatusUpdate("Transcribing segment 1…")
+                if (emitInterim) listener.onStatusUpdate("Transcribing segment 1…")
             }
 
             val segResult = backend.transcribeAudio(samples = chunks[i], sampleRate = sampleRate, prompt = prompt)
@@ -1794,18 +1792,20 @@ class TranscriptionOrchestrator @Inject constructor(
                             chunkTokens[index] = tr.tokens
                             chunkConfidences[index] = tr.confidence
                             chunkLanguages[index] = tr.detectedLanguage
-                            if (progressiveText != null && emitInterim) {
+                            if (progressiveText != null) {
                                 if (progressiveText.isNotEmpty()) progressiveText.append(' ')
                                 progressiveText.append(trimmed)
-                                updateInterimResult(taskId, progressiveText.toString())
-                                listener.onInterimResult(
-                                    contentText = trimmed,
-                                    bigText = trimmed,
-                                    subText = "Chunk ${index + 1}/$chunkCount",
-                                    chunkIndex = index,
-                                    chunkText = trimmed,
-                                    totalChunks = chunkCount
-                                )
+                                updateInterimResult(taskId, progressiveText.toString(), writeRow = emitInterim)
+                                if (emitInterim) {
+                                    listener.onInterimResult(
+                                        contentText = trimmed,
+                                        bigText = trimmed,
+                                        subText = "Chunk ${index + 1}/$chunkCount",
+                                        chunkIndex = index,
+                                        chunkText = trimmed,
+                                        totalChunks = chunkCount
+                                    )
+                                }
                             }
                         }
                     },
@@ -1985,8 +1985,8 @@ class TranscriptionOrchestrator @Inject constructor(
                                     if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                     accumulatedText.append(trimmed)
                                     segments.addAll(cuesForChunk(tr.tokens, trimmed, chunkStartMs, chunkEndMs))
+                                    updateInterimResult(taskId, accumulatedText.toString(), writeRow = emitInterim)
                                     if (progressiveEnabled && emitInterim) {
-                                        updateInterimResult(taskId, accumulatedText.toString())
                                         listener.onInterimResult(
                                             contentText = trimmed,
                                             bigText = trimmed,
@@ -2011,8 +2011,8 @@ class TranscriptionOrchestrator @Inject constructor(
                                             if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                             accumulatedText.append(trimmed)
                                             segments.addAll(cuesForChunk(tr.tokens, trimmed, chunkStartMs, chunkEndMs))
+                                            updateInterimResult(taskId, accumulatedText.toString(), writeRow = emitInterim)
                                             if (progressiveEnabled && emitInterim) {
-                                                updateInterimResult(taskId, accumulatedText.toString())
                                                 listener.onInterimResult(
                                                     contentText = trimmed,
                                                     bigText = trimmed,
@@ -2038,7 +2038,7 @@ class TranscriptionOrchestrator @Inject constructor(
                             val ttft = System.currentTimeMillis() - firstChunkInferStartMs
                             Log.i(TAG, "PERF: pipeline time-to-first-text = ${System.currentTimeMillis() - pipelineStartMs}ms (decode=${firstChunkDecodeMs}ms + infer=${ttft}ms)")
                             if (!progressiveEnabled) {
-                                listener.onStatusUpdate("Transcribing…")
+                                if (emitInterim) listener.onStatusUpdate("Transcribing…")
                             }
                         }
                     }
@@ -2355,7 +2355,15 @@ class TranscriptionOrchestrator @Inject constructor(
         logDao.failNonTerminal(taskId, errorMessage, durationMs)
     }
 
-    private suspend fun updateInterimResult(taskId: String, accumulatedText: String) {
+    private suspend fun updateInterimResult(
+        taskId: String,
+        accumulatedText: String,
+        /** GH #43 review F3: phase 2 of a two-pass run passes false: the
+         *  row keeps the complete first-pass text, but the crash-recovery
+         *  state must keep refreshing or the 15s staleness gate misfires a
+         *  false interruption dialog on a live refinement. */
+        writeRow: Boolean = true,
+    ) {
         // Throttle interim Room writes to the same 5s cadence as the partial-state save
         // (TASK-340 Fix 2b): every interim partial used to write Room, and each write
         // re-emitted the whole (bounded) log list through LogsViewModel. The final
@@ -2368,7 +2376,9 @@ class TranscriptionOrchestrator @Inject constructor(
 
         // TASK-390: column-scoped update (no read): a whole-row write-back could
         // resurrect a row that a concurrent close (cancel/sweep) had just terminalized.
-        logDao.updateInterimResult(taskId, accumulatedText, isPartial = true)
+        if (writeRow) {
+            logDao.updateInterimResult(taskId, accumulatedText, isPartial = true)
+        }
 
         if (now - lastPartialSaveMs >= PARTIAL_SAVE_INTERVAL_MS) {
             lastPartialSaveMs = now
