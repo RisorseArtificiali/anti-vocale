@@ -14,6 +14,10 @@ interface PreferencesManager {
     /** TASK-576: app text-size step (TextScale name); SYSTEM = no extra scaling. */
     val textScalePreference: Flow<String>
     suspend fun saveTextScale(value: String)
+
+    /** GH #43: two-pass transcription (fast streaming preview, then refine). */
+    val refinementEnabled: Flow<Boolean>
+    suspend fun saveRefinementEnabled(enabled: Boolean)
     val themeMode: Flow<String>
     val transcriptionBackend: Flow<String>
     /**

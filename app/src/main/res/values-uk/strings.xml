@@ -1045,4 +1045,5 @@
     <string name="text_scale_xlarge">Дуже великий</string>
     <string name="logs_first_pass_label">Перший прохід (%1$s)</string>
     <string name="copy_first_pass">Копіювати перший прохід</string>
+    <string name="refining_status">Уточнення з %1$s…</string>
 </resources>

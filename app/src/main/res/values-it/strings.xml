@@ -1037,4 +1037,5 @@
     <string name="text_scale_xlarge">Molto grande</string>
     <string name="logs_first_pass_label">Prima passata (%1$s)</string>
     <string name="copy_first_pass">Copia prima passata</string>
+    <string name="refining_status">Affinamento con %1$s…</string>
 </resources>

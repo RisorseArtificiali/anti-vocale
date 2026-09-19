@@ -230,6 +230,10 @@ data class TranscriptionResult(
      *  chunk cap, RAM at request time); persisted as the row's processing
      *  context and surfaced in the entry details and report email. */
     val processing: ProcessingContext? = null,
+    /** GH #43: the fast streaming first pass this result refined (null on
+     *  single-model runs). Rides the result to logSuccess, which persists
+     *  the text as the row's first-pass block. */
+    val firstPass: FirstPassOutcome? = null,
 ) {
     companion object {
         private val WHITESPACE = Regex("\\s+")
@@ -248,3 +252,14 @@ data class TranscriptionResult(
         }
     }
 }
+
+/** GH #43: what the fast first pass produced before refinement replaced it. */
+data class FirstPassOutcome(
+    /** The complete first-pass transcript (never blank when present). */
+    val text: String,
+    /** The fast backend's own processing context (nested on the row's). */
+    val processing: ProcessingContext,
+    /** Stable token when refinement did NOT complete (F4/F5): the delivered
+     *  text IS the first pass and the row carries a not-refined caption. */
+    val refinementFailedToken: String? = null,
+)

@@ -890,4 +890,5 @@
     <string name="text_scale_xlarge">Muito grande</string>
     <string name="logs_first_pass_label">Primeira passagem (%1$s)</string>
     <string name="copy_first_pass">Copiar primeira passagem</string>
+    <string name="refining_status">Refinando com %1$s…</string>
 </resources>

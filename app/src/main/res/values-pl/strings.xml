@@ -1043,4 +1043,5 @@
     <string name="text_scale_xlarge">Bardzo duży</string>
     <string name="logs_first_pass_label">Pierwsze przejście (%1$s)</string>
     <string name="copy_first_pass">Skopiuj pierwsze przejście</string>
+    <string name="refining_status">Ulepszanie przez %1$s…</string>
 </resources>

@@ -1024,4 +1024,5 @@
     <string name="text_scale_xlarge">बहुत बड़ा</string>
     <string name="logs_first_pass_label">पहला चरण (%1$s)</string>
     <string name="copy_first_pass">पहला चरण कॉपी करें</string>
+    <string name="refining_status">%1$s के साथ परिशोधन…</string>
 </resources>

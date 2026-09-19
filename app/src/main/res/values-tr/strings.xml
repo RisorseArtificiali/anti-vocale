@@ -1025,4 +1025,5 @@
     <string name="text_scale_xlarge">Çok büyük</string>
     <string name="logs_first_pass_label">İlk geçiş (%1$s)</string>
     <string name="copy_first_pass">İlk geçişi kopyala</string>
+    <string name="refining_status">%1$s ile rafine ediliyor…</string>
 </resources>

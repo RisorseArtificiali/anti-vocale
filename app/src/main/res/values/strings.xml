@@ -1030,4 +1030,5 @@
     <string name="text_scale_xlarge">Extra large</string>
     <string name="logs_first_pass_label">First pass (%1$s)</string>
     <string name="copy_first_pass">Copy first pass</string>
+    <string name="refining_status">Refining with %1$s…</string>
 </resources>

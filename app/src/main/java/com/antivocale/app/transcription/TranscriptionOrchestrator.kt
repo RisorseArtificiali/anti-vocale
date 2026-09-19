@@ -203,8 +203,50 @@ class TranscriptionOrchestrator @Inject constructor(
                 if (subtitleResult != null) return subtitleResult
             }
 
+            // GH #43 (design D6): the two-pass first pass. Runs the fast
+            // streaming backend as phase 1 for instant visible text; phase 2
+            // below (the unmodified single-model path) refines it. Phase 1
+            // never touches the result funnel: no logSuccess, no onSuccess,
+            // no Tasker reply. Its text rides the row as interim, exactly
+            // like today's streaming partials.
+            // F0 guard: any unexpected exception in the phase-1 machinery
+            // (eligibility, load, streaming pass) degrades to the normal
+            // single-model run; phase 1 may never break a request.
+            val fastFirstPass = runCatching {
+                runRefinementFirstPass(
+                    taskId = taskId, requestType = requestType, backendOverride = backendOverride,
+                    filePath = filePath, prompt = prompt, queuePosition = queuePosition,
+                    queueTotal = queueTotal, context = context, cacheDir = cacheDir,
+                    listener = listener, coroutineScope = coroutineScope,
+                )
+            }.onFailure { Log.w(TAG, "First pass machinery failed; single-model run", it) }.getOrNull()
+            if (fastFirstPass != null) {
+                // Phase transition: the row keeps the first-pass text; the
+                // notification says what is happening now (the design's
+                // "Refining with <model>..." line).
+                runCatching {
+                    val accurateId = backendOverride ?: preferencesManager.transcriptionBackend.first()
+                    val name = backendRegistry.byBackendId(accurateId)
+                        ?.let { variantAwareDisplayName(context, it, modelPathForBackend(accurateId)) }
+                        ?: accurateId
+                    listener.onStatusUpdate(context.getString(R.string.refining_status, name))
+                }
+            }
+
             // Ensure the correct backend is loaded
             val loadResult = ensureBackendLoaded(context, backendOverride)
+            if (loadResult.isFailure && fastFirstPass != null) {
+                // Design F4: the accurate model failed to load but a complete
+                // first pass exists. Deliver it as the final text through the
+                // normal funnel; never error away a transcript we have.
+                val error = loadResult.exceptionOrNull()!!
+                Log.w(TAG, "Refinement load failed; delivering first pass (${error.message})")
+                deliverFirstPassAsFinal(
+                    taskId, fastFirstPass, DualRefinementPolicy.SKIP_REFINE_LOAD_FAILED,
+                    startTime, isShareRequest, sourcePackage, listener,
+                )
+                return Result.success(fastFirstPass.text)
+            }
             if (loadResult.isFailure) {
                 val error = loadResult.exceptionOrNull()!!
                 val userMsg = userFacingErrorMessage(context, error)
@@ -234,17 +276,42 @@ class TranscriptionOrchestrator @Inject constructor(
             }
 
             val result = when (requestType) {
-                "audio" -> processAudioRequest(
-                    taskId = taskId,
-                    filePath = filePath,
-                    prompt = prompt,
-                    queuePosition = queuePosition,
-                    queueTotal = queueTotal,
-                    context = context,
-                    cacheDir = cacheDir,
-                    listener = listener,
-                    coroutineScope = coroutineScope
-                )
+                "audio" -> {
+                    val phase2 = processAudioRequest(
+                        taskId = taskId,
+                        filePath = filePath,
+                        prompt = prompt,
+                        queuePosition = queuePosition,
+                        queueTotal = queueTotal,
+                        context = context,
+                        cacheDir = cacheDir,
+                        listener = listener,
+                        coroutineScope = coroutineScope,
+                        // The first-pass text stays on the row; phase 2's
+                        // growing partials must not overwrite it (design D6).
+                        emitInterim = fastFirstPass == null,
+                    )
+                    if (fastFirstPass == null) phase2
+                    else Result.success(phase2.fold(
+                        onSuccess = { it },
+                        onFailure = { phase2Failure ->
+                            // Design F5: phase 2 died with a complete first
+                            // pass in hand. Recover into a first-pass result
+                            // and let the normal funnel deliver it (SUCCESS
+                            // row, caption, one notification); never error
+                            // away a transcript we have. Cancellation keeps
+                            // its contract.
+                            if (phase2Failure is kotlinx.coroutines.CancellationException) throw phase2Failure
+                            Log.w(TAG, "Refinement failed; delivering first pass (${phase2Failure.message})")
+                            TranscriptionResult(
+                                text = fastFirstPass.text,
+                                processing = fastFirstPass.processing,
+                                firstPass = fastFirstPass.copy(
+                                    refinementFailedToken = DualRefinementPolicy.SKIP_REFINE_INFERENCE_FAILED),
+                            )
+                        }
+                    ))
+                }
                 else -> processTextRequest(prompt)
             }
 
@@ -282,9 +349,18 @@ class TranscriptionOrchestrator @Inject constructor(
                         summary = transcriptionResult.summary,
                         summarySkipReason = transcriptionResult.summarySkipReason,
                         segments = transcriptionResult.segments,
-                        processing = transcriptionResult.processing,
+                        processing = transcriptionResult.processing?.withRefinement(
+                            refinedFrom = fastFirstPass?.processing,
+                            skipReason = transcriptionResult.firstPass?.refinementFailedToken,
+                        ),
                         detectedLanguage = transcriptionResult.detectedLanguage,
-                        languagePin = resolvedLanguagePin(context)
+                        languagePin = resolvedLanguagePin(context),
+                        firstPassTranscript = when {
+                            // F4/F5 delivered the first pass AS the final text:
+                            // no duplicate block; the caption carries the story.
+                            transcriptionResult.firstPass?.refinementFailedToken != null -> null
+                            else -> transcriptionResult.firstPass?.text
+                        }
                     )
                     listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
                         confidence = transcriptionResult.confidence,
@@ -829,6 +905,117 @@ class TranscriptionOrchestrator @Inject constructor(
         )
     }
 
+    /**
+     * GH #43 (design D3/D6): phase 1 of a two-pass run. Resolves the fast
+     * streaming backend through [DualRefinementPolicy], loads it, and runs
+     * the normal audio path with a listener that only forwards progress.
+     * The first-pass text is force-written to the row (unthrottled, the
+     * persistPipelineFailureContext salvage precedent) so it stays visible
+     * while phase 2 refines. Returns null whenever the pass does not apply
+     * or failed: the request then proceeds single-model exactly as today.
+     */
+    private suspend fun runRefinementFirstPass(
+        taskId: String,
+        requestType: String,
+        backendOverride: String?,
+        filePath: String?,
+        prompt: String,
+        queuePosition: Int,
+        queueTotal: Int,
+        context: Context,
+        cacheDir: File,
+        listener: TranscriptionListener,
+        coroutineScope: CoroutineScope,
+    ): FirstPassOutcome? {
+        val fastId = DualRefinementPolicy.fastBackendFor(
+            requestType = requestType,
+            backendOverride = backendOverride,
+            refinementEnabled = preferencesManager.refinementEnabled.first(),
+            selectedBackendId = preferencesManager.transcriptionBackend.first(),
+            streamingBackendId = installedStreamingBackendId(context),
+        ) ?: return null
+
+        // F1: a fast-model load failure skips phase 1 silently; the run
+        // degrades to single-model (the skip token rides the context).
+        val load = ensureBackendLoaded(context, fastId)
+        if (load.isFailure) {
+            Log.i(TAG, "Fast first pass skipped (load failed): ${load.exceptionOrNull()?.message}")
+            return null
+        }
+        val forwardingListener = object : TranscriptionListener by listener {
+            // The funnel callbacks are deliberately NOT overridden: phase 1
+            // never reaches them (processAudioRequest reports failures as
+            // return values), so forwarding progress is all this wrapper does.
+        }
+        val result = processAudioRequest(
+            taskId = taskId, filePath = filePath, prompt = prompt,
+            queuePosition = queuePosition, queueTotal = queueTotal,
+            context = context, cacheDir = cacheDir,
+            listener = forwardingListener, coroutineScope = coroutineScope,
+        )
+        val outcome = result.getOrNull()?.takeIf { it.text.isNotBlank() }
+        if (outcome == null) {
+            // F2/F3: mid-stream death or a blank pass. The TASK-568 machinery
+            // salvaged any partial onto the row; phase 2 supersedes it.
+            Log.i(TAG, "Fast first pass produced no usable text; single-model run")
+            return null
+        }
+        // Force-write the complete first-pass text so the row shows it while
+        // PROCESSING (the interim throttle would otherwise sit on it).
+        runCatching { logDao.updateInterimResult(taskId, outcome.text, isPartial = true) }
+        return FirstPassOutcome(text = outcome.text, processing = outcome.processing ?: ProcessingContext(
+            decodePath = "whole_file", backendId = fastId,
+        ))
+    }
+
+    /** The installed streaming catalog entry id, when one resolves locally. */
+    private suspend fun installedStreamingBackendId(context: Context): String? {
+        return runCatching {
+            BundledCatalog.entries()
+                .firstOrNull { it.isStreaming }
+                ?.takeIf { entry ->
+                    SherpaModelManager.of(entry.id).resolveActiveModelPath(context) != null
+                }
+                ?.id
+        }.getOrNull()
+    }
+
+    /**
+     * F4/F5 delivery: the first pass becomes the final text through the
+     * normal funnel (SUCCESS row, one result notification, Tasker reply,
+     * auto-copy: everything that would have fired for the refined text).
+     */
+    private suspend fun deliverFirstPassAsFinal(
+        taskId: String,
+        firstPass: FirstPassOutcome,
+        skipToken: String,
+        startTime: Long,
+        isShareRequest: Boolean,
+        sourcePackage: String?,
+        listener: TranscriptionListener,
+    ) {
+        val duration = System.currentTimeMillis() - startTime
+        logSuccess(
+            taskId, firstPass.text, duration,
+            processing = firstPass.processing.withRefinement(refinedFrom = null, skipReason = skipToken),
+            firstPassTranscript = null,
+        )
+        listener.onSuccess(taskId, firstPass.text, isShareRequest, sourcePackage, duration)
+    }
+
+    /** GH #43: nests the first pass's context and the skip token on the
+     *  delivered row's (phase 2) context; a no-op for single-model runs. */
+    private fun ProcessingContext?.withRefinement(
+        refinedFrom: ProcessingContext?,
+        skipReason: String?,
+    ): ProcessingContext? {
+        if (this == null && refinedFrom == null && skipReason == null) return this
+        return (this ?: ProcessingContext(decodePath = "unknown")).copy(
+            refinementPhase = refinedFrom,
+            refinementSkipReason = skipReason,
+        )
+    }
+
     private fun availableMemoryBytes(context: Context): Long =
         MemoryReadings.availableRamBytes(context) ?: 0L
 
@@ -1058,7 +1245,11 @@ class TranscriptionOrchestrator @Inject constructor(
         context: Context,
         cacheDir: File,
         listener: TranscriptionListener,
-        coroutineScope: CoroutineScope
+        coroutineScope: CoroutineScope,
+        /** GH #43: phase 2 of a two-pass run passes false so the accurate
+         *  pass's growing partials never overwrite the complete first-pass
+         *  text already on the row (design D6: the text never regresses). */
+        emitInterim: Boolean = true,
     ): Result<TranscriptionResult> {
         if (filePath.isNullOrEmpty()) {
             return Result.failure(IllegalArgumentException("No file path provided"))
@@ -1191,7 +1382,8 @@ class TranscriptionOrchestrator @Inject constructor(
                     coroutineScope = coroutineScope,
                     listener = listener,
                     prompt = promptPlan.perChunk,
-                    progressiveEnabled = progressiveEnabled
+                    progressiveEnabled = progressiveEnabled,
+                    emitInterim = emitInterim
                 ))
         }
 
@@ -1247,8 +1439,9 @@ class TranscriptionOrchestrator @Inject constructor(
                 samples = preprocessingResult.chunks.first(),
                 sampleRate = preprocessingResult.sampleRate
             ) { partial ->
-                updateInterimResult(taskId, partial)
-                listener.onInterimResult(
+                if (emitInterim) {
+                    updateInterimResult(taskId, partial)
+                    listener.onInterimResult(
                     contentText = partial,
                     bigText = partial,
                     subText = "",
@@ -1256,6 +1449,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     chunkText = partial,
                     totalChunks = 1
                 )
+                }
             }
             val inferMs = System.currentTimeMillis() - t0
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
@@ -1336,7 +1530,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 listener = listener,
                 coroutineScope = coroutineScope,
                 transcriptionStartTime = transcriptionStartTime,
-                progressiveEnabled = progressiveEnabled
+                progressiveEnabled = progressiveEnabled,
+                emitInterim = emitInterim
             ))
     }
 
@@ -1395,7 +1590,8 @@ class TranscriptionOrchestrator @Inject constructor(
         audioDurationSeconds: Int,
         chunkProcessingStartTime: Long,
         listener: TranscriptionListener,
-        transcriptionStartTime: Long
+        transcriptionStartTime: Long,
+        emitInterim: Boolean = true
     ): Result<TranscriptionResult> {
         val chunkCount = chunks.size
         Log.i(TAG, "VAD-segmented progressive path: $chunkCount segments")
@@ -1422,16 +1618,18 @@ class TranscriptionOrchestrator @Inject constructor(
                         segmentRangesMs.getOrNull(i)?.let { (startMs, endMs) ->
                             segments.addAll(cuesForChunk(tr.tokens, trimmed, startMs, endMs))
                         }
-                        updateInterimResult(taskId, accumulatedText.toString())
-                        Log.i(TAG, "Progressive preview: segment ${trimmed.length} chars, total ${accumulatedText.length} chars")
-                        listener.onInterimResult(
-                            contentText = trimmed,
-                            bigText = trimmed,
-                            subText = "Segment $segNumber/$chunkCount",
-                            chunkIndex = i,
-                            chunkText = trimmed,
-                            totalChunks = chunkCount
-                        )
+                        if (emitInterim) {
+                            updateInterimResult(taskId, accumulatedText.toString())
+                            Log.i(TAG, "Progressive preview: segment ${trimmed.length} chars, total ${accumulatedText.length} chars")
+                            listener.onInterimResult(
+                                contentText = trimmed,
+                                bigText = trimmed,
+                                subText = "Segment $segNumber/$chunkCount",
+                                chunkIndex = i,
+                                chunkText = trimmed,
+                                totalChunks = chunkCount
+                            )
+                        }
                     }
                     minConfidence = aggregateConfidence(minConfidence, tr.confidence)
                     if (detectedLang == null) detectedLang = tr.detectedLanguage
@@ -1492,7 +1690,8 @@ class TranscriptionOrchestrator @Inject constructor(
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope,
         transcriptionStartTime: Long,
-        progressiveEnabled: Boolean = false
+        progressiveEnabled: Boolean = false,
+        emitInterim: Boolean = true
     ): Result<TranscriptionResult> {
         val chunkCount = chunks.size
         val completedChunks = AtomicInteger(0)
@@ -1564,7 +1763,7 @@ class TranscriptionOrchestrator @Inject constructor(
                             chunkTokens[index] = tr.tokens
                             chunkConfidences[index] = tr.confidence
                             chunkLanguages[index] = tr.detectedLanguage
-                            if (progressiveText != null) {
+                            if (progressiveText != null && emitInterim) {
                                 if (progressiveText.isNotEmpty()) progressiveText.append(' ')
                                 progressiveText.append(trimmed)
                                 updateInterimResult(taskId, progressiveText.toString())
@@ -1677,7 +1876,8 @@ class TranscriptionOrchestrator @Inject constructor(
         coroutineScope: CoroutineScope,
         listener: TranscriptionListener,
         prompt: String = "",
-        progressiveEnabled: Boolean = false
+        progressiveEnabled: Boolean = false,
+        emitInterim: Boolean = true
     ): Result<TranscriptionResult> {
         val resolvedPrompt = resolvePrompt(prompt)
 
@@ -1754,7 +1954,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                     if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                     accumulatedText.append(trimmed)
                                     segments.addAll(cuesForChunk(tr.tokens, trimmed, chunkStartMs, chunkEndMs))
-                                    if (progressiveEnabled) {
+                                    if (progressiveEnabled && emitInterim) {
                                         updateInterimResult(taskId, accumulatedText.toString())
                                         listener.onInterimResult(
                                             contentText = trimmed,
@@ -1780,7 +1980,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                             if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                             accumulatedText.append(trimmed)
                                             segments.addAll(cuesForChunk(tr.tokens, trimmed, chunkStartMs, chunkEndMs))
-                                            if (progressiveEnabled) {
+                                            if (progressiveEnabled && emitInterim) {
                                                 updateInterimResult(taskId, accumulatedText.toString())
                                                 listener.onInterimResult(
                                                     contentText = trimmed,
@@ -2080,6 +2280,9 @@ class TranscriptionOrchestrator @Inject constructor(
         detectedLanguage: String? = null,
         /** TASK-546: the policy-resolved pin in force ("auto" when untouched). */
         languagePin: String? = null,
+        /** GH #43: the superseded fast first-pass transcript, persisted when
+         *  a two-pass run refined it (null on single-model runs). */
+        firstPassTranscript: String? = null,
     ) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
@@ -2090,6 +2293,7 @@ class TranscriptionOrchestrator @Inject constructor(
             summarySkipReason = summarySkipReason,
             segments = TimedSegmentsConverter.toJson(segments),
             processingContext = ProcessingContextConverter.toJson(processing),
+            firstPassTranscript = firstPassTranscript,
             detectedLanguage = detectedLanguage,
             languagePin = languagePin
         ).toEntity())

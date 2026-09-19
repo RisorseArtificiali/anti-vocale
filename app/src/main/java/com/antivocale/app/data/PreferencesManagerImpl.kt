@@ -34,6 +34,7 @@ class PreferencesManagerImpl(
         private val LANGUAGE_PREFERENCE = stringPreferencesKey("language_preference")
         private val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
         private val TEXT_SCALE = stringPreferencesKey("text_scale")
+        private val REFINEMENT_ENABLED = booleanPreferencesKey("refinement_enabled")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val TRANSCRIPTION_BACKEND = stringPreferencesKey("transcription_backend")
         private val SHERPA_MODEL_PATH_PREFIX = "sherpa_model_path_"
@@ -238,6 +239,15 @@ class PreferencesManagerImpl(
             preferences[TEXT_SCALE] = value
         }
         cache.updateAndGet { it.copy(textScale = value) }
+    }
+
+    override val refinementEnabled: Flow<Boolean> =
+        dataStore.data.map { it[REFINEMENT_ENABLED] ?: false }
+
+    override suspend fun saveRefinementEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[REFINEMENT_ENABLED] = enabled
+        }
     }
 
     override suspend fun saveThemePreference(theme: String) {

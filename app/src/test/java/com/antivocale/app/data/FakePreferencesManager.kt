@@ -161,6 +161,13 @@ internal class FakePreferencesManager : PreferencesManager {
         _benchmarkResults.value = _benchmarkResults.value - modelId
     }
 
+    // GH #43
+    val _refinementEnabled = MutableStateFlow(false)
+    override val refinementEnabled: Flow<Boolean> = _refinementEnabled
+    override suspend fun saveRefinementEnabled(enabled: Boolean) {
+        _refinementEnabled.value = enabled
+    }
+
     // TASK-576
     val _textScale = MutableStateFlow(PreferencesManager.DEFAULT_TEXT_SCALE)
     override val textScalePreference: Flow<String> = _textScale
