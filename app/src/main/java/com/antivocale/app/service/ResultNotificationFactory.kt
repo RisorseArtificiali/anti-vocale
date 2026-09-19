@@ -30,6 +30,11 @@ data class ResultNotificationSpec(
     /** TASK-450: the request was streamed without silence stripping after the
      *  VAD path would have refused it (device memory ceiling); said in subText. */
     val streamedWithoutVad: Boolean = false,
+    /** GH #43: the fast backend a two-pass run refined (display name), or
+     *  the sentinel NOT_REFINED when the first pass shipped unrefined. */
+    val refinedFrom: String? = null,
+    /** GH #43 sentinel for [refinedFrom]: delivered unrefined (F4/F5). */
+    val notRefined: Boolean = false,
     val firstPostedAt: Long = System.currentTimeMillis(),
     /** True when rebuilding after a prev/next tap: suppresses re-alerting. */
     val repost: Boolean = false
@@ -148,6 +153,11 @@ class ResultNotificationFactory(private val context: Context) {
         }
         if (spec.streamedWithoutVad) {
             subTextParts.add(context.getString(R.string.transcription_streamed_without_vad))
+        }
+        when {
+            spec.notRefined -> subTextParts.add(context.getString(R.string.transcription_not_refined))
+            spec.refinedFrom != null -> subTextParts.add(
+                context.getString(R.string.transcription_refined_from, spec.refinedFrom))
         }
         if (subTextParts.isNotEmpty()) {
             builder.setSubText(subTextParts.joinToString(" · "))

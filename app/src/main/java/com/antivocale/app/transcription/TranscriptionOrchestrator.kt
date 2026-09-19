@@ -212,14 +212,22 @@ class TranscriptionOrchestrator @Inject constructor(
             // F0 guard: any unexpected exception in the phase-1 machinery
             // (eligibility, load, streaming pass) degrades to the normal
             // single-model run; phase 1 may never break a request.
+            // F1/F3 tokens land here when phase 1 attempted but degraded.
+            var dualSkipToken: String? = null
             val fastFirstPass = runCatching {
                 runRefinementFirstPass(
                     taskId = taskId, requestType = requestType, backendOverride = backendOverride,
                     filePath = filePath, prompt = prompt, queuePosition = queuePosition,
                     queueTotal = queueTotal, context = context, cacheDir = cacheDir,
                     listener = listener, coroutineScope = coroutineScope,
+                    onSkipped = { dualSkipToken = it },
                 )
-            }.onFailure { Log.w(TAG, "First pass machinery failed; single-model run", it) }.getOrNull()
+            }.onFailure {
+                // Cancellation must propagate (the house contract): a
+                // cancelled job may not keep loading models.
+                if (it is kotlinx.coroutines.CancellationException) throw it
+                Log.w(TAG, "First pass machinery failed; single-model run", it)
+            }.getOrNull()
             if (fastFirstPass != null) {
                 // Phase transition: the row keeps the first-pass text; the
                 // notification says what is happening now (the design's
@@ -235,19 +243,13 @@ class TranscriptionOrchestrator @Inject constructor(
 
             // Ensure the correct backend is loaded
             val loadResult = ensureBackendLoaded(context, backendOverride)
-            if (loadResult.isFailure && fastFirstPass != null) {
-                // Design F4: the accurate model failed to load but a complete
-                // first pass exists. Deliver it as the final text through the
-                // normal funnel; never error away a transcript we have.
-                val error = loadResult.exceptionOrNull()!!
-                Log.w(TAG, "Refinement load failed; delivering first pass (${error.message})")
-                deliverFirstPassAsFinal(
-                    taskId, fastFirstPass, DualRefinementPolicy.SKIP_REFINE_LOAD_FAILED,
-                    startTime, isShareRequest, sourcePackage, listener,
-                )
-                return Result.success(fastFirstPass.text)
-            }
-            if (loadResult.isFailure) {
+            // Design F4: the accurate model failed to load but a complete
+            // first pass exists. recoverFirstPass below routes it through the
+            // SAME funnel as F5 (punctuation and summary included), so both
+            // degradation arms deliver identically.
+            val f4LoadFailure = if (loadResult.isFailure && fastFirstPass != null)
+                loadResult.exceptionOrNull() else null
+            if (loadResult.isFailure && f4LoadFailure == null) {
                 val error = loadResult.exceptionOrNull()!!
                 val userMsg = userFacingErrorMessage(context, error)
                 val logMsg = "Failed to load backend: ${error.message}"
@@ -276,7 +278,10 @@ class TranscriptionOrchestrator @Inject constructor(
             }
 
             val result = when (requestType) {
-                "audio" -> {
+                "audio" -> if (f4LoadFailure != null) {
+                    recoverFirstPass(fastFirstPass!!, f4LoadFailure,
+                        DualRefinementPolicy.SKIP_REFINE_LOAD_FAILED)
+                } else {
                     val phase2 = processAudioRequest(
                         taskId = taskId,
                         filePath = filePath,
@@ -292,25 +297,14 @@ class TranscriptionOrchestrator @Inject constructor(
                         emitInterim = fastFirstPass == null,
                     )
                     if (fastFirstPass == null) phase2
-                    else Result.success(phase2.fold(
-                        onSuccess = { it },
-                        onFailure = { phase2Failure ->
-                            // Design F5: phase 2 died with a complete first
-                            // pass in hand. Recover into a first-pass result
-                            // and let the normal funnel deliver it (SUCCESS
-                            // row, caption, one notification); never error
-                            // away a transcript we have. Cancellation keeps
-                            // its contract.
-                            if (phase2Failure is kotlinx.coroutines.CancellationException) throw phase2Failure
-                            Log.w(TAG, "Refinement failed; delivering first pass (${phase2Failure.message})")
-                            TranscriptionResult(
-                                text = fastFirstPass.text,
-                                processing = fastFirstPass.processing,
-                                firstPass = fastFirstPass.copy(
-                                    refinementFailedToken = DualRefinementPolicy.SKIP_REFINE_INFERENCE_FAILED),
-                            )
+                    else phase2.fold(
+                        onSuccess = { Result.success(it.copy(firstPass = fastFirstPass)) },
+                        onFailure = { failure ->
+                            // Design F5: deliver through the same funnel.
+                            recoverFirstPass(fastFirstPass, failure,
+                                DualRefinementPolicy.SKIP_REFINE_INFERENCE_FAILED)
                         }
-                    ))
+                    )
                 }
                 else -> processTextRequest(prompt)
             }
@@ -339,6 +333,12 @@ class TranscriptionOrchestrator @Inject constructor(
 
             delivered.fold(
                 onSuccess = { transcriptionResult ->
+                    // F8 (review): the delivered text is the FAST model's when
+                    // refinement failed; credit it, not the accurate one.
+                    if (transcriptionResult.firstPass?.refinementFailedToken != null) {
+                        val fastName = fastFirstPass?.processing?.backendId
+                        if (fastName != null) runCatching { logDao.setModelName(taskId, fastName) }
+                    }
                     logSuccess(
                         taskId,
                         transcriptionResult.text,
@@ -350,8 +350,11 @@ class TranscriptionOrchestrator @Inject constructor(
                         summarySkipReason = transcriptionResult.summarySkipReason,
                         segments = transcriptionResult.segments,
                         processing = transcriptionResult.processing?.withRefinement(
-                            refinedFrom = fastFirstPass?.processing,
-                            skipReason = transcriptionResult.firstPass?.refinementFailedToken,
+                            refinedFrom = fastFirstPass?.processing?.takeIf {
+                                transcriptionResult.firstPass?.refinementFailedToken == null
+                            },
+                            skipReason = transcriptionResult.firstPass?.refinementFailedToken
+                                ?: dualSkipToken,
                         ),
                         detectedLanguage = transcriptionResult.detectedLanguage,
                         languagePin = resolvedLanguagePin(context),
@@ -368,7 +371,16 @@ class TranscriptionOrchestrator @Inject constructor(
                         isPartial = transcriptionResult.isPartial,
                         failedChunkCount = transcriptionResult.failedChunkCount,
                         streamedWithoutVad = transcriptionResult.streamedWithoutVad,
-                        segments = transcriptionResult.segments
+                        segments = transcriptionResult.segments,
+                        // GH #43: which fast model the text refined from, or
+                        // the not-refined sentinel (F4/F5 delivery).
+                        refinementOutcome = when {
+                            transcriptionResult.firstPass?.refinementFailedToken != null ->
+                                DualRefinementPolicy.NOT_REFINED
+                            fastFirstPass?.processing?.backendId != null ->
+                                fastFirstPass.processing.backendId
+                            else -> null
+                        }
                     )
                 },
                 onFailure = { error ->
@@ -926,6 +938,7 @@ class TranscriptionOrchestrator @Inject constructor(
         cacheDir: File,
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope,
+        onSkipped: (token: String) -> Unit = {},
     ): FirstPassOutcome? {
         val fastId = DualRefinementPolicy.fastBackendFor(
             requestType = requestType,
@@ -940,6 +953,7 @@ class TranscriptionOrchestrator @Inject constructor(
         val load = ensureBackendLoaded(context, fastId)
         if (load.isFailure) {
             Log.i(TAG, "Fast first pass skipped (load failed): ${load.exceptionOrNull()?.message}")
+            onSkipped(DualRefinementPolicy.SKIP_FAST_LOAD_FAILED)
             return null
         }
         val forwardingListener = object : TranscriptionListener by listener {
@@ -958,14 +972,53 @@ class TranscriptionOrchestrator @Inject constructor(
             // F2/F3: mid-stream death or a blank pass. The TASK-568 machinery
             // salvaged any partial onto the row; phase 2 supersedes it.
             Log.i(TAG, "Fast first pass produced no usable text; single-model run")
+            onSkipped(DualRefinementPolicy.SKIP_FAST_BLANK)
             return null
         }
         // Force-write the complete first-pass text so the row shows it while
-        // PROCESSING (the interim throttle would otherwise sit on it).
-        runCatching { logDao.updateInterimResult(taskId, outcome.text, isPartial = true) }
-        return FirstPassOutcome(text = outcome.text, processing = outcome.processing ?: ProcessingContext(
-            decodePath = "whole_file", backendId = fastId,
-        ))
+        // PROCESSING (the interim throttle would otherwise sit on it), and
+        // seed the crash-recovery state with it (review F3): phase 2 runs
+        // with interim writes suppressed, so without a fresh seed the state
+        // goes stale and the interruption dialog misfires mid-run.
+        runCatching {
+            logDao.updateInterimResult(taskId, outcome.text, isPartial = true)
+            preferencesManager.savePartialTranscriptionState(outcome.text)
+        }
+        return FirstPassOutcome(
+            text = outcome.text,
+            processing = outcome.processing ?: ProcessingContext(
+                decodePath = "whole_file", backendId = fastId,
+            ),
+            confidence = outcome.confidence,
+            detectedLanguage = outcome.detectedLanguage,
+            segments = outcome.segments,
+        )
+    }
+
+    /**
+     * F4/F5: phase 2 is dead but the first pass completed. Build the
+     * first-pass result that flows the normal funnel (punctuation, summary,
+     * one notification); Cancellation keeps its contract.
+     */
+    private fun recoverFirstPass(
+        firstPass: FirstPassOutcome,
+        failure: Throwable,
+        skipToken: String,
+    ): Result<TranscriptionResult> {
+        if (failure is kotlinx.coroutines.CancellationException) {
+            throw failure
+        }
+        Log.w(TAG, "Refinement failed; delivering first pass (${failure.message})")
+        return Result.success(
+            TranscriptionResult(
+                text = firstPass.text,
+                processing = firstPass.processing,
+                confidence = firstPass.confidence,
+                detectedLanguage = firstPass.detectedLanguage,
+                segments = firstPass.segments,
+                firstPass = firstPass.copy(refinementFailedToken = skipToken),
+            )
+        )
     }
 
     /** The installed streaming catalog entry id, when one resolves locally. */
@@ -978,29 +1031,6 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
                 ?.id
         }.getOrNull()
-    }
-
-    /**
-     * F4/F5 delivery: the first pass becomes the final text through the
-     * normal funnel (SUCCESS row, one result notification, Tasker reply,
-     * auto-copy: everything that would have fired for the refined text).
-     */
-    private suspend fun deliverFirstPassAsFinal(
-        taskId: String,
-        firstPass: FirstPassOutcome,
-        skipToken: String,
-        startTime: Long,
-        isShareRequest: Boolean,
-        sourcePackage: String?,
-        listener: TranscriptionListener,
-    ) {
-        val duration = System.currentTimeMillis() - startTime
-        logSuccess(
-            taskId, firstPass.text, duration,
-            processing = firstPass.processing.withRefinement(refinedFrom = null, skipReason = skipToken),
-            firstPassTranscript = null,
-        )
-        listener.onSuccess(taskId, firstPass.text, isShareRequest, sourcePackage, duration)
     }
 
     /** GH #43: nests the first pass's context and the skip token on the
@@ -1505,7 +1535,8 @@ class TranscriptionOrchestrator @Inject constructor(
                     audioDurationSeconds = audioDurationSeconds,
                     chunkProcessingStartTime = chunkProcessingStartTime,
                     listener = listener,
-                    transcriptionStartTime = transcriptionStartTime
+                    transcriptionStartTime = transcriptionStartTime,
+                    emitInterim = emitInterim
                 ))
         }
 

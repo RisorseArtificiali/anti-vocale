@@ -1031,4 +1031,8 @@
     <string name="logs_first_pass_label">گذر اول (%1$s)</string>
     <string name="copy_first_pass">کپی گذر اول</string>
     <string name="refining_status">پالایش با %1$s…</string>
+    <string name="transcription_not_refined">پالایش نشده (پیش‌نمایش فوری)</string>
+    <string name="transcription_refined_from">پالایش‌شده از %1$s</string>
+    <string name="refinement_title">رونویسی دومرحله‌ای</string>
+    <string name="refinement_description">ابتدا پیش‌نمایش فوری با مدل سریع، سپس پالایش در پس‌زمینه با مدل انتخاب‌شده</string>
 </resources>

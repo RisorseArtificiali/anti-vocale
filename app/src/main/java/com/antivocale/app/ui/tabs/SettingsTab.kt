@@ -683,6 +683,24 @@ fun SettingsTab(
                 }
             }
 
+            // GH #43: two-pass transcription (instant preview, then refine).
+            val refinementTitle = stringResource(R.string.refinement_title)
+            val refinementDescription = stringResource(R.string.refinement_description)
+            val refinementEnabled by viewModel.refinementEnabled.collectAsState()
+            val refinementAvailable by viewModel.refinementAvailable.collectAsState()
+            SearchFilterRow(searchQuery, refinementTitle, refinementDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Bolt,
+                    title = refinementTitle,
+                    description = refinementDescription,
+                    // Greyed out until a streaming model is installed and the
+                    // selected backend is not the streaming one itself.
+                    enabled = refinementAvailable,
+                    checked = refinementEnabled && refinementAvailable,
+                    onCheckedChange = { enabled -> viewModel.saveRefinementEnabled(enabled) }
+                )
+            }
+
             // VAD Silence Stripping Setting
             val vadTitle = stringResource(R.string.vad_title)
             val vadDescription = stringResource(R.string.vad_description)

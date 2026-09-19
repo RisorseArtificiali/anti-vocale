@@ -1026,4 +1026,8 @@
     <string name="logs_first_pass_label">Erster Durchlauf (%1$s)</string>
     <string name="copy_first_pass">Ersten Durchlauf kopieren</string>
     <string name="refining_status">Verfeinern mit %1$s…</string>
+    <string name="transcription_not_refined">Nicht verfeinert (Sofortvorschau)</string>
+    <string name="transcription_refined_from">Verfeinert von %1$s</string>
+    <string name="refinement_title">Zweistufige Transkription</string>
+    <string name="refinement_description">Zeigt sofort eine Vorschau mit dem schnellen Modell und verfeinert sie im Hintergrund mit dem ausgewählten Modell</string>
 </resources>

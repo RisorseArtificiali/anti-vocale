@@ -105,7 +105,8 @@ class TranscriptionNotificationListener(
         isPartial: Boolean,
         failedChunkCount: Int,
         streamedWithoutVad: Boolean,
-        segments: List<TimedSegment>
+        segments: List<TimedSegment>,
+        refinementOutcome: String?
     ) {
         // The worker has no Tasker reply channel; only the service sends ACTION_TASKER_REPLY.
         // For share requests, mirror the service: auto-copy (if enabled) + post the result.

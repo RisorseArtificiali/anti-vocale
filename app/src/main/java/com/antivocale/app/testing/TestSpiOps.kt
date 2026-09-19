@@ -131,6 +131,7 @@ internal class TestSpiOps(
         "vad" to preferences::saveVadEnabled,
         "progressive" to preferences::saveProgressiveTranscription,
         "summarize" to preferences::saveSummarizeEnabled,
+        "refinement_enabled" to preferences::saveRefinementEnabled,
         "auto_copy" to preferences::saveAutoCopyEnabled,
         "vad_advisory" to preferences::saveVadAdvisoryDismissed,
         "onboarding" to preferences::saveOnboardingCompleted,

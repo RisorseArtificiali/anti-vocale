@@ -1026,4 +1026,8 @@
     <string name="logs_first_pass_label">İlk geçiş (%1$s)</string>
     <string name="copy_first_pass">İlk geçişi kopyala</string>
     <string name="refining_status">%1$s ile rafine ediliyor…</string>
+    <string name="transcription_not_refined">Rafine edilmedi (anında önizleme)</string>
+    <string name="transcription_refined_from">%1$s ile rafine edildi</string>
+    <string name="refinement_title">İki aşamalı transkripsiyon</string>
+    <string name="refinement_description">Hızlı modelle anında önizleme göster, sonra arka planda seçili modelle rafine et</string>
 </resources>

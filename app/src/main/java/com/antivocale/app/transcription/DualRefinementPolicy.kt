@@ -12,6 +12,11 @@ package com.antivocale.app.transcription
  */
 object DualRefinementPolicy {
 
+    /** Sentinel carried through onSuccess's refinementOutcome when the first
+     *  pass shipped unrefined (F4/F5); any other value is the fast model's
+     *  display name. */
+    const val NOT_REFINED = "not_refined"
+
     /** Stable skip tokens recorded in ProcessingContext.refinementSkipReason. */
     const val SKIP_FAST_LOAD_FAILED = "fast_load_failed"
     const val SKIP_FAST_BLANK = "fast_blank"

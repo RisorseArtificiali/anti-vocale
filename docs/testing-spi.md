@@ -38,6 +38,7 @@ Set keys and value formats:
 | Key | Writes | Value |
 |---|---|---|
 | `vad` | `saveVadEnabled` | `true` or `false` (strict; anything else is an error) |
+| `refinement_enabled` | `saveRefinementEnabled` | `true` or `false` (GH #43 two-pass toggle) |
 | `punctuation` | `savePunctuationMode` | `off`, `auto`, `always` (the settings dropdown's exact set; anything else is rejected) |
 | `punctuation_prompt` | `savePunctuationPrompt` | free text, 500-char cap; blank = the localized built-in prompt |
 | `keep_alive` | `saveKeepAliveTimeout` | positive integer (minutes); 0/negative rejected (would silently fall back to the default) |

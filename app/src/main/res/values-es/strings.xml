@@ -891,4 +891,8 @@
     <string name="logs_first_pass_label">Primera pasada (%1$s)</string>
     <string name="copy_first_pass">Copiar primera pasada</string>
     <string name="refining_status">Refinando con %1$s…</string>
+    <string name="transcription_not_refined">Sin refinar (vista previa instantánea)</string>
+    <string name="transcription_refined_from">Refinado desde %1$s</string>
+    <string name="refinement_title">Transcripción en dos pasadas</string>
+    <string name="refinement_description">Muestra al instante una vista previa con el modelo rápido y luego la refina en segundo plano con el modelo seleccionado</string>
 </resources>

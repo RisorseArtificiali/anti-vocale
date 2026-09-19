@@ -259,6 +259,11 @@ data class FirstPassOutcome(
     val text: String,
     /** The fast backend's own processing context (nested on the row's). */
     val processing: ProcessingContext,
+    /** The fast pass's own confidence/language/cues, so an F4/F5 delivery
+     *  (review F5) loses nothing a single-model run would keep. */
+    val confidence: Float? = null,
+    val detectedLanguage: String? = null,
+    val segments: List<TimedSegment> = emptyList(),
     /** Stable token when refinement did NOT complete (F4/F5): the delivered
      *  text IS the first pass and the row carries a not-refined caption. */
     val refinementFailedToken: String? = null,

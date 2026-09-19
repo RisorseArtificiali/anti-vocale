@@ -23,6 +23,7 @@ import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.local.LogDao
 import com.antivocale.app.receiver.TaskerRequestReceiver
+import com.antivocale.app.transcription.DualRefinementPolicy
 import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
@@ -560,7 +561,8 @@ class InferenceService : Service(), TranscriptionListener {
         isPartial: Boolean,
         failedChunkCount: Int,
         streamedWithoutVad: Boolean,
-        segments: List<TimedSegment>
+        segments: List<TimedSegment>,
+        refinementOutcome: String?
     ) {
         sendSuccessReply(taskId, resultText)
         // Every completed task moves the model-recency source: re-derive the
@@ -578,7 +580,8 @@ class InferenceService : Service(), TranscriptionListener {
                 try {
                     val copied = autoCopyIfEnabled(resultText, sourcePackage)
                     saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
-                    showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad)
+                    val refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }
+                    showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED)
                 } finally {
                     pendingResultNotifications.remove(coroutineContext[Job])
                 }
@@ -825,6 +828,8 @@ class InferenceService : Service(), TranscriptionListener {
         failedChunkCount: Int = 0,
         copiedToClipboard: Boolean = false,
         streamedWithoutVad: Boolean = false,
+        refinedFrom: String? = null,
+        notRefined: Boolean = false,
     ) {
         val prefs = if (sourcePackage != null) {
             try {
@@ -849,6 +854,8 @@ class InferenceService : Service(), TranscriptionListener {
             notificationId = id,
             copiedToClipboard = copiedToClipboard,
             streamedWithoutVad = streamedWithoutVad,
+            refinedFrom = refinedFrom,
+            notRefined = notRefined,
             firstPostedAt = System.currentTimeMillis()
         )
         val notification = resultNotificationFactory.build(spec, prefs)

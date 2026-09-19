@@ -1044,4 +1044,8 @@
     <string name="logs_first_pass_label">Pierwsze przejście (%1$s)</string>
     <string name="copy_first_pass">Skopiuj pierwsze przejście</string>
     <string name="refining_status">Ulepszanie przez %1$s…</string>
+    <string name="transcription_not_refined">Nie ulepszone (natychmiastowy podgląd)</string>
+    <string name="transcription_refined_from">Ulepszone z %1$s</string>
+    <string name="refinement_title">Transkrypcja dwuetapowa</string>
+    <string name="refinement_description">Pokaż natychmiast podgląd szybkim modelem, a następnie ulepsz go w tle wybranym modelem</string>
 </resources>

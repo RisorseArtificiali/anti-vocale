@@ -311,6 +311,13 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_SUMMARIZE_ENABLED
         )
 
+    // GH #43: two-pass refinement. The toggle's availability needs the
+    // installed-streaming check (a disk probe), so it is its own flow.
+    private val _refinementEnabled = MutableStateFlow(false)
+    val refinementEnabled: StateFlow<Boolean> = _refinementEnabled.asStateFlow()
+    private val _refinementAvailable = MutableStateFlow(false)
+    val refinementAvailable: StateFlow<Boolean> = _refinementAvailable.asStateFlow()
+
     // TASK-336: background-kill detection (cold-start sweep marker rows) for the
     // battery-exemption card. Only re-offered after a NEW interruption.
     private val _backgroundKills = MutableStateFlow(0)
@@ -465,6 +472,23 @@ class SettingsViewModel @Inject constructor(
                     ThemeType.DEFAULT
                 }
             }
+        }
+        // GH #43: refinement toggle + availability
+        viewModelScope.launch {
+            preferencesManager.refinementEnabled.collect { _refinementEnabled.value = it }
+        }
+        viewModelScope.launch(Dispatchers.Default) {
+            val appCtx = getApplication<Application>()
+            val streaming = runCatching {
+                com.antivocale.app.data.catalog.BundledCatalog.entries()
+                    .firstOrNull { it.isStreaming }
+                    ?.takeIf { entry ->
+                        com.antivocale.app.transcription.SherpaModelManager.of(entry.id)
+                            .resolveActiveModelPath(appCtx) != null
+                    }
+            }.getOrNull()
+            val selected = preferencesManager.transcriptionBackend.first()
+            _refinementAvailable.value = streaming != null && streaming.id != selected
         }
         // Load text size from preferences (TASK-576)
         viewModelScope.launch {
@@ -644,6 +668,18 @@ class SettingsViewModel @Inject constructor(
     fun savePunctuationPrompt(prompt: String) {
         viewModelScope.launch {
             preferencesManager.savePunctuationPrompt(prompt)
+        }
+    }
+
+    /** GH #43: persists the two-pass toggle. */
+    fun saveRefinementEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.saveRefinementEnabled(enabled)
+                _refinementEnabled.value = enabled
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to save refinement toggle", e)
+            }
         }
     }
 

@@ -1033,4 +1033,8 @@
     <string name="logs_first_pass_label">מעבר ראשון (%1$s)</string>
     <string name="copy_first_pass">העתק מעבר ראשון</string>
     <string name="refining_status">מחדד עם %1$s…</string>
+    <string name="transcription_not_refined">לא מחודד (תצוגה מיידית)</string>
+    <string name="transcription_refined_from">חודד מ-%1$s</string>
+    <string name="refinement_title">תמלול דו-שלבי</string>
+    <string name="refinement_description">הצג מיד תצוגה מקדימה עם המודל המהיר, ואז חדד אותה ברקע עם המודל הנבחר</string>
 </resources>

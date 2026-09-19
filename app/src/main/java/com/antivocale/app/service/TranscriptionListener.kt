@@ -62,7 +62,11 @@ interface TranscriptionListener {
         streamedWithoutVad: Boolean = false,
         /** GH #92: the subtitle cues (sentence-level when token timing exists,
          *  else one per chunk), empty when no honest timing exists. */
-        segments: List<TimedSegment> = emptyList()
+        segments: List<TimedSegment> = emptyList(),
+        /** GH #43: the fast backend a two-pass run refined (its display
+         *  name), or the literal token "failed" when the first pass was
+         *  delivered unrefined. Null on single-model runs. */
+        refinementOutcome: String? = null,
     )
 
     /** Transcription or backend loading failed */

@@ -1045,4 +1045,8 @@
     <string name="logs_first_pass_label">Первый проход (%1$s)</string>
     <string name="copy_first_pass">Копировать первый проход</string>
     <string name="refining_status">Уточнение с %1$s…</string>
+    <string name="transcription_not_refined">Не уточнено (мгновенный предпросмотр)</string>
+    <string name="transcription_refined_from">Уточнено с %1$s</string>
+    <string name="refinement_title">Двухпроходная расшифровка</string>
+    <string name="refinement_description">Сначала мгновенный предпросмотр быстрой моделью, затем уточнение в фоне выбранной моделью</string>
 </resources>
