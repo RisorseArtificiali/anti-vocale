@@ -984,12 +984,17 @@ class TranscriptionOrchestrator @Inject constructor(
         }
         return FirstPassOutcome(
             text = outcome.text,
-            processing = outcome.processing ?: ProcessingContext(
-                decodePath = "whole_file", backendId = fastId,
-            ),
+            // Stamp the fast id even when the backend supplied a context:
+            // the audio assembly paths build success contexts WITHOUT
+            // backendId (guard-review finding: the field was always null,
+            // breaking the model credit and the notification outcome).
+            processing = (outcome.processing ?: ProcessingContext(decodePath = "whole_file"))
+                .copy(backendId = fastId),
             confidence = outcome.confidence,
             detectedLanguage = outcome.detectedLanguage,
             segments = outcome.segments,
+            isPartial = outcome.isPartial,
+            failedChunkCount = outcome.failedChunkCount,
         )
     }
 
@@ -1014,6 +1019,11 @@ class TranscriptionOrchestrator @Inject constructor(
                 confidence = firstPass.confidence,
                 detectedLanguage = firstPass.detectedLanguage,
                 segments = firstPass.segments,
+                // A partially-decoded first pass is delivered as partial:
+                // the notification title and logSuccess must not claim a
+                // complete transcript (guard-review finding).
+                isPartial = firstPass.isPartial,
+                failedChunkCount = firstPass.failedChunkCount,
                 firstPass = firstPass.copy(refinementFailedToken = skipToken),
             )
         )

@@ -264,6 +264,10 @@ data class FirstPassOutcome(
     val confidence: Float? = null,
     val detectedLanguage: String? = null,
     val segments: List<TimedSegment> = emptyList(),
+    /** Chunk-completeness of the first pass, so an F4/F5 delivery reports
+     *  partial results as partial (guard-review finding). */
+    val isPartial: Boolean = false,
+    val failedChunkCount: Int = 0,
     /** Stable token when refinement did NOT complete (F4/F5): the delivered
      *  text IS the first pass and the row carries a not-refined caption. */
     val refinementFailedToken: String? = null,
