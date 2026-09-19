@@ -47,7 +47,14 @@ private val DefaultDarkColorScheme = darkColorScheme(
     surfaceVariant = Color(0xFF334155),
     onSurfaceVariant = Color(0xFFCBD5E1),
     error = Color(0xFFFCA5A5),
-    onError = Color(0xFF450A0A)
+    onError = Color(0xFF450A0A),
+    surfaceDim = Color(0xFF0B1222),
+    surfaceBright = Color(0xFF374357),
+    surfaceContainerLowest = Color(0xFF0F172A),
+    surfaceContainerLow = Color(0xFF1E293B),
+    surfaceContainer = Color(0xFF263349),
+    surfaceContainerHigh = Color(0xFF2A3A52),
+    surfaceContainerHighest = Color(0xFF334155)
 )
 
 private val DefaultLightColorScheme = lightColorScheme(
@@ -68,7 +75,14 @@ private val DefaultLightColorScheme = lightColorScheme(
     surfaceVariant = Color(0xFFE2E8F0),
     onSurfaceVariant = Color(0xFF475569),
     error = Color(0xFFDC2626),
-    onError = Color(0xFFFFFFFF)
+    onError = Color(0xFFFFFFFF),
+    surfaceDim = Color(0xFFD5DBE5),
+    surfaceBright = Color(0xFFFAFCFF),
+    surfaceContainerLowest = Color(0xFFFEFCFF),
+    surfaceContainerLow = Color(0xFFF8FAFC),
+    surfaceContainer = Color(0xFFF1F5F9),
+    surfaceContainerHigh = Color(0xFFE2E8F0),
+    surfaceContainerHighest = Color(0xFFCBD5E1)
 )
 
 // ---------------- WhatsApp (green) ----------------
@@ -90,7 +104,14 @@ private val WhatsAppDarkColorScheme = darkColorScheme(
     surfaceVariant = Color(0xFF1E2D3A),
     onSurfaceVariant = Color(0xFFB8D4C8),
     error = Color(0xFFEF5350),
-    onError = Color(0xFF2D0A0A)
+    onError = Color(0xFF2D0A0A),
+    surfaceDim = Color(0xFF09121A),
+    surfaceBright = Color(0xFF36424C),
+    surfaceContainerLowest = Color(0xFF0B141A),
+    surfaceContainerLow = Color(0xFF121C24),
+    surfaceContainer = Color(0xFF182430),
+    surfaceContainerHigh = Color(0xFF1E2D3A),
+    surfaceContainerHighest = Color(0xFF243646)
 )
 
 private val WhatsAppLightColorScheme = lightColorScheme(
@@ -111,7 +132,14 @@ private val WhatsAppLightColorScheme = lightColorScheme(
     surfaceVariant = Color(0xFFC8E6C9),
     onSurfaceVariant = Color(0xFF3B5240),
     error = Color(0xFFD32F2F),
-    onError = Color(0xFFFFFFFF)
+    onError = Color(0xFFFFFFFF),
+    surfaceDim = Color(0xFFCBE8CD),
+    surfaceBright = Color(0xFFFCFDF6),
+    surfaceContainerLowest = Color(0xFFFEFCFF),
+    surfaceContainerLow = Color(0xFFF4FAF4),
+    surfaceContainer = Color(0xFFE8F5E9),
+    surfaceContainerHigh = Color(0xFFDCEFDD),
+    surfaceContainerHighest = Color(0xFFC8E6C9)
 )
 
 // ---------------- Telegram (blue) ----------------
@@ -133,7 +161,14 @@ private val TelegramDarkColorScheme = darkColorScheme(
     surfaceVariant = Color(0xFF1C2733),
     onSurfaceVariant = Color(0xFFB0BEC5),
     error = Color(0xFFEF5350),
-    onError = Color(0xFF2D0A0A)
+    onError = Color(0xFF2D0A0A),
+    surfaceDim = Color(0xFF070B10),
+    surfaceBright = Color(0xFF333D48),
+    surfaceContainerLowest = Color(0xFF0A0E14),
+    surfaceContainerLow = Color(0xFF111820),
+    surfaceContainer = Color(0xFF161F2A),
+    surfaceContainerHigh = Color(0xFF1C2733),
+    surfaceContainerHighest = Color(0xFF232F3D)
 )
 
 private val TelegramLightColorScheme = lightColorScheme(
@@ -154,7 +189,14 @@ private val TelegramLightColorScheme = lightColorScheme(
     surfaceVariant = Color(0xFFBBDEFB),
     onSurfaceVariant = Color(0xFF37474F),
     error = Color(0xFFD32F2F),
-    onError = Color(0xFFFFFFFF)
+    onError = Color(0xFFFFFFFF),
+    surfaceDim = Color(0xFFD3E1EC),
+    surfaceBright = Color(0xFFFDFEFE),
+    surfaceContainerLowest = Color(0xFFFCFDFD),
+    surfaceContainerLow = Color(0xFFF7FAFD),
+    surfaceContainer = Color(0xFFEFF5FB),
+    surfaceContainerHigh = Color(0xFFE3EEF8),
+    surfaceContainerHighest = Color(0xFFBBDEFB)
 )
 
 @Composable
