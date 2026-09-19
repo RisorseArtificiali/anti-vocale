@@ -389,6 +389,7 @@ fun SettingsTab(
                 listOf(R.string.performance_stats_title, R.string.performance_stats_subtitle),
             ).map { group -> group.map { context.getString(it) } }
         }
+        @SuppressLint("RememberReturnType")
         val feedbackSearchGroups = remember(context) {
             // One group for one Card: the count reports cards, and the
             // Feedback rows do not filter individually. The replay-tour
