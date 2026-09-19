@@ -104,6 +104,36 @@ if [[ -z "$DEVICE" ]]; then
     fi
 fi
 
+# Install + verify (TASK-573): adb can stream for minutes, print its own
+# error, and still exit 0, so the exit code alone is not evidence. Require
+# "Success" in the output AND confirm the package resolver answers, then
+# report the installed versionName. Any miss exits 1.
+install_and_verify() {
+    local adb_args=("$@")
+    local out rc
+    set +e
+    out="$("$ADB" "${adb_args[@]}" install --user 0 -r "$APK" 2>&1)"
+    rc=$?
+    set -e
+    echo "$out"
+    if (( rc != 0 )) || ! grep -q "Success" <<<"$out"; then
+        echo "INSTALL FAILED (adb exit $rc; no Success marker)." >&2
+        exit 1
+    fi
+    # Post-install verification against the package manager, not the adb
+    # client: the debug build carries the .debug applicationIdSuffix.
+    local pkg
+    for pkg in com.antivocale.app.debug com.antivocale.app; do
+        if "$ADB" "${adb_args[@]}" shell pm path "$pkg" >/dev/null 2>&1; then
+            echo "Installed: $pkg ($("$ADB" "${adb_args[@]}" shell dumpsys package "$pkg" 2>/dev/null | sed -n 's/.*versionName=\([^ ]*\).*/\1/p' | head -1))"
+            echo "Done."
+            return 0
+        fi
+    done
+    echo "INSTALL FAILED: Success reported but the package does not resolve." >&2
+    exit 1
+}
+
 # Optional pairing (only meaningful for an explicit/mDNS address, not the single-device path).
 if [[ "${USE_CONNECTED_SINGLE}" == "0" ]]; then
     if [[ -n "$PAIRING_CODE" ]]; then
@@ -117,14 +147,12 @@ if [[ "${USE_CONNECTED_SINGLE}" == "0" ]]; then
         exit 1
     fi
     echo "Installing $(basename "$APK") to main profile..."
-    "$ADB" -s "$DEVICE" install --user 0 -r "$APK"
+    install_and_verify -s "$DEVICE"
 else
     if ! "$ADB" shell echo "ok" >/dev/null 2>&1; then
         echo "Connected device not responding"
         exit 1
     fi
     echo "Installing $(basename "$APK") to main profile (single connected device)..."
-    "$ADB" install --user 0 -r "$APK"
+    install_and_verify
 fi
-
-echo "Done."
