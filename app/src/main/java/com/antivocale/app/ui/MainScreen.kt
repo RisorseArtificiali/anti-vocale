@@ -224,7 +224,9 @@ fun MainScreen(
                 }
             },
         ) {
-            Column(modifier = Modifier.fillMaxSize()) {
+            // TASK-565: the removed TopAppBar provided the status-bar inset; without
+                // it the TabRow sits under the status-bar icons.
+                Column(modifier = Modifier.fillMaxSize().statusBarsPadding()) {
                 // TASK-565 (maintainer): the app-name bar is gone. The
                 // launcher, recents, and Settings > About carry the name;
                 // the TabRow says where you are. The freed space is where
