@@ -277,6 +277,9 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         stubMultiChunkStream(chunkCount = 4)
 
         val chunkTexts = listOf("Hello", "world", "from", "pipeline")
+        coEvery { logDao.getByTaskId("test-pipeline") } returns com.antivocale.app.data.local.LogEntity(
+            id = "1", timestamp = 0L, taskId = "test-pipeline",
+            type = "AUDIO", status = "PROCESSING", prompt = "")
         var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
@@ -287,6 +290,12 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         assertTrue(result.isSuccess)
         assertEquals("Hello world from pipeline", result.getOrNull())
         verify { listener.onSuccess(eq("test-pipeline"), eq("Hello world from pipeline"), any(), any(), any(), segments = any()) }
+        // TASK-512: the row write carries the run's provenance (path, chunk
+        // count, cap; the codec itself is unit-tested separately).
+        coVerify(atLeast = 1) { logDao.update(match { e ->
+            val pc = com.antivocale.app.data.local.ProcessingContextConverter.fromJson(e.processingContext)
+            pc?.decodePath == "pipeline" && pc.totalChunks == 4 && pc.chunkCapSeconds != null
+        }) }
     }
 
     // ---- TASK-568: mid-stream failure preserves the transcribed text ----

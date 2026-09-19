@@ -184,6 +184,39 @@ class FeedbackHelperTest {
     }
 
     @Test
+    fun `transcript feedback body carries the tail and processing attribution`() {
+        // TASK-512: long excerpts gain the last-100-chars tail (truncation vs
+        // repetition-loop is instantly readable) and the env/processing line.
+        val longExcerpt = "a".repeat(FeedbackHelper.TRANSCRIPT_EXCERPT_CAP + 50) +
+            "THE-TAIL-MARKER"
+        val facts = FeedbackHelper.TranscriptFacts(
+            taskId = "t", modelName = "m", audioDurationSeconds = 1.0,
+            processingTimeMs = 100L, status = "SUCCESS", excerpt = longExcerpt,
+            appVersion = "1.13.0-SNAPSHOT", deviceModel = "RMX3853",
+            processingLine = "pipeline chunks=157 cap=60s")
+        val labels = FeedbackHelper.TranscriptLabels(
+            task = "Task", model = "Model", duration = "D", time = "T",
+            status = "S", excerpt = "Excerpt", truncatedNote = "truncated")
+        val body = FeedbackHelper.buildTranscriptFeedbackBody(facts, labels)
+        org.junit.Assert.assertTrue(body.contains("tail: ..."))
+        org.junit.Assert.assertTrue(body.substringAfterLast("tail: ...").contains("THE-TAIL-MARKER"))
+        org.junit.Assert.assertTrue(body.contains("v1.13.0-SNAPSHOT RMX3853 | pipeline chunks=157 cap=60s"))
+    }
+
+    @Test
+    fun `transcript feedback body omits the tail and attribution when absent`() {
+        val facts = FeedbackHelper.TranscriptFacts(
+            taskId = "t", modelName = "m", audioDurationSeconds = 1.0,
+            processingTimeMs = 100L, status = "SUCCESS", excerpt = "short")
+        val labels = FeedbackHelper.TranscriptLabels(
+            task = "Task", model = "Model", duration = "D", time = "T",
+            status = "S", excerpt = "Excerpt", truncatedNote = "truncated")
+        val body = FeedbackHelper.buildTranscriptFeedbackBody(facts, labels)
+        org.junit.Assert.assertFalse(body.contains("tail:"))
+        org.junit.Assert.assertFalse(body.contains("|"))
+    }
+
+    @Test
     fun `transcript feedback subject groups by task`() {
         org.junit.Assert.assertEquals(
             "[Anti-Vocale feedback] task task-42",

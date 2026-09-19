@@ -52,10 +52,11 @@ object FailureContextJson {
                     backendId = o.optString("backendId").takeIf { it.isNotEmpty() },
                     provider = o.optString("provider").takeIf { it.isNotEmpty() },
                     appVersion = o.optString("appVersion").takeIf { it.isNotEmpty() },
-                    processedChunks = if (o.has("processedChunks")) o.getInt("processedChunks") else null,
-                    failedChunks = if (o.has("failedChunks")) o.getInt("failedChunks") else null,
-                    metadataSeconds = if (o.has("metadataSeconds")) o.getDouble("metadataSeconds") else null,
-                    decodedSeconds = if (o.has("decodedSeconds")) o.getDouble("decodedSeconds") else null,
+                    // has() alone is true for explicit JSON nulls; isNull guards both.
+                    processedChunks = o.optIntOrNull("processedChunks"),
+                    failedChunks = o.optIntOrNull("failedChunks"),
+                    metadataSeconds = o.optDoubleOrNull("metadataSeconds"),
+                    decodedSeconds = o.optDoubleOrNull("decodedSeconds"),
                 )
             }.getOrNull()
         }
@@ -74,3 +75,9 @@ object FailureContextJson {
         }.joinToString(" ")
     }
 }
+
+private fun org.json.JSONObject.optIntOrNull(key: String): Int? =
+    if (has(key) && !isNull(key)) getInt(key) else null
+
+private fun org.json.JSONObject.optDoubleOrNull(key: String): Double? =
+    if (has(key) && !isNull(key)) getDouble(key) else null

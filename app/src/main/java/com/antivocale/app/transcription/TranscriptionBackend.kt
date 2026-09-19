@@ -226,6 +226,10 @@ data class TranscriptionResult(
      *  are deliberately unwired pending an on-device probe of their timestamp
      *  arrays. */
     val tokens: List<TimedToken> = emptyList(),
+    /** TASK-512: how this result was produced (decode path, chunk coverage,
+     *  chunk cap, RAM at request time); persisted as the row's processing
+     *  context and surfaced in the entry details and report email. */
+    val processing: ProcessingContext? = null,
 ) {
     companion object {
         private val WHITESPACE = Regex("\\s+")

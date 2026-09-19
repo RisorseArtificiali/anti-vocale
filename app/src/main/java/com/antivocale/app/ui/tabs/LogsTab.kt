@@ -50,6 +50,7 @@ import com.antivocale.app.R
 import com.antivocale.app.ui.onboarding.tourRevealable
 import com.antivocale.app.transcription.SummaryPolicy
 import com.antivocale.app.data.local.FailureContextJson
+import com.antivocale.app.data.local.ProcessingContextConverter
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.AudioDurationFormat
 import com.antivocale.app.util.DecodedOfTotalFormat
@@ -112,6 +113,10 @@ private fun reportTranscription(context: Context, log: LogEntry) {
                 errorMessage = log.errorMessage,
                 failureDiagnostics = FailureContextJson.render(
                     FailureContextJson.fromJson(log.failureContext)),
+                appVersion = FeedbackHelper.currentVersionName(context),
+                deviceModel = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}".trim(),
+                processingLine = ProcessingContextConverter.render(
+                    ProcessingContextConverter.fromJson(log.processingContext)),
             ),
             FeedbackHelper.TranscriptLabels(
                 task = context.getString(R.string.feedback_label_task),
@@ -1204,6 +1209,22 @@ fun LogEntryItem(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
+                            }
+                            // TASK-512: the processing line (decode path, chunk
+                            // coverage, cap, RAM) so a long-run report is
+                            // attributable from the card alone. Remember-parsed
+                            // (the list re-emits on every interim write).
+                            val renderedProcessing = remember(log.processingContext) {
+                                ProcessingContextConverter.render(
+                                    ProcessingContextConverter.fromJson(log.processingContext))
+                            }
+                            renderedProcessing?.let { rendered ->
+                                Text(
+                                    text = rendered,
+                                    style = MaterialTheme.typography.labelSmall.copy(
+                                        fontFamily = FontFamily.Monospace),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
                             }
                             // Model that produced the transcription (GH #45); null on pre-v4
                             // rows. Long external-import names wrap (TASK-495) instead of

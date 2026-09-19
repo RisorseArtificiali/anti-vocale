@@ -20,6 +20,7 @@ import com.antivocale.app.data.catalog.CatalogStringKeys
 import com.antivocale.app.data.local.FailureContext
 import com.antivocale.app.data.local.FailureContextJson
 import com.antivocale.app.data.local.LogDao
+import com.antivocale.app.data.local.ProcessingContextConverter
 import com.antivocale.app.data.local.TimedSegmentsConverter
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
@@ -278,7 +279,8 @@ class TranscriptionOrchestrator @Inject constructor(
                         rawTranscript = transcriptionResult.rawTranscript,
                         summary = transcriptionResult.summary,
                         summarySkipReason = transcriptionResult.summarySkipReason,
-                        segments = transcriptionResult.segments
+                        segments = transcriptionResult.segments,
+                        processing = transcriptionResult.processing
                     )
                     listener.onSuccess(taskId, transcriptionResult.text, isShareRequest, sourcePackage, duration,
                         confidence = transcriptionResult.confidence,
@@ -1013,6 +1015,11 @@ class TranscriptionOrchestrator @Inject constructor(
         }
 
         val preprocessStartMs = System.currentTimeMillis()
+        // TASK-512: request-time RAM, shared by the prepare call and the
+        // processing contexts written below.
+        val availableRamBytes = runCatching {
+            MemoryReadings.availableRamBytes(context)
+        }.getOrNull()
         val preprocessingResult = try {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = filePath,
@@ -1026,7 +1033,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 enableVad = effectiveVad,
                 vadNumThreads = threadCount,
                 vadProvider = resolvedProvider,
-                availableRamBytes = MemoryReadings.availableRamBytes(context),
+                availableRamBytes = availableRamBytes,
                 maxHeapBytes = MemoryReadings.maxHeapBytes()
             )
         } catch (e: PreprocessingError) {
@@ -1087,7 +1094,16 @@ class TranscriptionOrchestrator @Inject constructor(
                         } else emptyList()
                         // Tokens are chunk-relative intermediates; the assembled result
                         // carries cues only, same convention as the other three paths.
-                        Result.success(tr.copy(text = trimmed, segments = segments, tokens = emptyList()))
+                        Result.success(tr.copy(
+                            text = trimmed, segments = segments, tokens = emptyList(),
+                            // TASK-512: the single-decode fast path (the most
+                            // common run: the short voice message).
+                            processing = ProcessingContext(
+                                decodePath = "whole_file",
+                                transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
+                                chunkCapSeconds = maxChunkDuration,
+                                availableRamBytes = availableRamBytes,
+                            )))
                     } else {
                         Result.failure(TranscriptionException.NoTranscriptionProduced())
                     }
@@ -1102,6 +1118,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 backend, promptPlan.finalPass,
                 processProgressiveSegments(
                     taskId = taskId,
+                    chunkCapSeconds = maxChunkDuration,
+                    availableRamBytes = availableRamBytes,
                     chunks = preprocessingResult.chunks,
                     sampleRate = preprocessingResult.sampleRate,
                     segmentRangesMs = preprocessingResult.chunkRangesMs,
@@ -1119,6 +1137,9 @@ class TranscriptionOrchestrator @Inject constructor(
             backend, promptPlan.finalPass,
             processParallelChunks(
                 taskId = taskId,
+                chunkCapSeconds = maxChunkDuration,
+                availableRamBytes = availableRamBytes,
+                vadSegmented = preprocessingResult.isVadSegmented,
                 chunks = preprocessingResult.chunks,
                 sampleRate = preprocessingResult.sampleRate,
                 segmentRangesMs = preprocessingResult.chunkRangesMs,
@@ -1179,6 +1200,8 @@ class TranscriptionOrchestrator @Inject constructor(
 
     private suspend fun processProgressiveSegments(
         taskId: String,
+        chunkCapSeconds: Int?,
+        availableRamBytes: Long?,
         chunks: List<FloatArray>,
         sampleRate: Int,
         segmentRangesMs: List<Pair<Long, Long>>,
@@ -1251,13 +1274,24 @@ class TranscriptionOrchestrator @Inject constructor(
                 detectedLanguage = detectedLang,
                 isPartial = failedSegments > 0,
                 failedChunkCount = failedSegments,
-                segments = segments
+                segments = segments,
+                processing = ProcessingContext(
+                    decodePath = "vad_chunked",
+                    totalChunks = chunkCount,
+                    failedChunks = failedSegments,
+                    transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
+                    chunkCapSeconds = chunkCapSeconds,
+                    availableRamBytes = availableRamBytes,
+                )
             ))
         }
     }
 
     private suspend fun processParallelChunks(
         taskId: String,
+        chunkCapSeconds: Int?,
+        availableRamBytes: Long?,
+        vadSegmented: Boolean,
         chunks: List<FloatArray>,
         sampleRate: Int,
         /** GH #92: per-chunk offsets aligned with the chunks; empty when no timing exists. */
@@ -1422,7 +1456,19 @@ class TranscriptionOrchestrator @Inject constructor(
                 detectedLanguage = detectedLang,
                 isPartial = failedChunks > 0,
                 failedChunkCount = failedChunks,
-                segments = segments
+                segments = segments,
+                processing = ProcessingContext(
+                    // The label separates the two ways this shape arises:
+                    // VAD-merged segments vs fixed-window splits of one long
+                    // speech span (and the VAD-threw fallback): the chunk
+                    // boundaries mean different things.
+                    decodePath = if (vadSegmented) "vad_chunked" else "windowed",
+                    totalChunks = chunkCount,
+                    failedChunks = failedChunks,
+                    transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
+                    chunkCapSeconds = chunkCapSeconds,
+                    availableRamBytes = availableRamBytes,
+                )
             ))
         }
     }
@@ -1466,13 +1512,18 @@ class TranscriptionOrchestrator @Inject constructor(
         // durations lie; the accumulated sample counts are the ground truth).
         val segments = mutableListOf<TimedSegment>()
 
+        // TASK-512: RAM at REQUEST time (a completion-time read would report
+        // the post-run state, not the constraint the path ran under).
+        val availableRamBytes = runCatching {
+            MemoryReadings.availableRamBytes(context)
+        }.getOrNull()
         try {
             audioPreprocessor.prepareAudioStream(
                 inputPath = filePath,
                 maxChunkDurationSeconds = maxChunkDurationSeconds,
                 context = context,
                 enableVad = false,
-                availableRamBytes = MemoryReadings.availableRamBytes(context),
+                availableRamBytes = availableRamBytes,
                 maxHeapBytes = MemoryReadings.maxHeapBytes()
             ).collect { event ->
                 when (event) {
@@ -1606,7 +1657,19 @@ class TranscriptionOrchestrator @Inject constructor(
                 isPartial = failedChunks > 0,
                 failedChunkCount = failedChunks,
                 streamedWithoutVad = streamedWithoutVad,
-                segments = segments
+                segments = segments,
+                processing = ProcessingContext(
+                    decodePath = if (streamedWithoutVad) "streamed_no_vad" else "pipeline",
+                    // Counted, not the metadata estimate: the estimate
+                    // under-reports on lying duration tags (TASK-449), which
+                    // would inflate the rendered failure rate against the
+                    // counted failedChunks numerator.
+                    totalChunks = processedChunks,
+                    failedChunks = failedChunks,
+                    transcribedSeconds = totalDurationSeconds.takeIf { it > 0.0 },
+                    chunkCapSeconds = maxChunkDurationSeconds,
+                    availableRamBytes = availableRamBytes,
+                )
             ))
         }
     }
@@ -1801,6 +1864,9 @@ class TranscriptionOrchestrator @Inject constructor(
         /** GH #92: the subtitle cues (sentence-level when token timing exists,
          *  else chunk-level), stored as JSON on the row. */
         segments: List<TimedSegment> = emptyList(),
+        /** TASK-512: how the run was produced, persisted as the row's
+         *  processing context (null on the text-LLM path). */
+        processing: ProcessingContext? = null,
     ) {
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
@@ -1809,7 +1875,8 @@ class TranscriptionOrchestrator @Inject constructor(
             rawTranscript = rawTranscript,
             summary = summary,
             summarySkipReason = summarySkipReason,
-            segments = TimedSegmentsConverter.toJson(segments)
+            segments = TimedSegmentsConverter.toJson(segments),
+            processingContext = ProcessingContextConverter.toJson(processing)
         ).toEntity())
         preferencesManager.clearPartialTranscriptionState()
         lastPartialSaveMs = 0L
@@ -1924,9 +1991,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // raised inside a catch block is not caught by the sibling handler
         // and would abort the service's queue loop).
         runCatching {
-            val version = runCatching {
-                context.packageManager.getPackageInfo(context.packageName, 0).versionName
-            }.getOrNull()
+            val version = com.antivocale.app.util.FeedbackHelper.currentVersionName(context)
             val provider = runCatching {
                 InferenceProvider.resolve(preferencesManager.inferenceProvider.first())
             }.getOrNull()

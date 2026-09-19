@@ -70,6 +70,9 @@ data class LogEntry(
     /** TASK-570: structured failure diagnostics JSON (raw passthrough; see
      *  FailureContextJson); present on ERROR rows written since v9. */
     val failureContext: String? = null,
+    /** TASK-512: JSON processing context (raw passthrough; see
+     *  ProcessingContextConverter); present on SUCCESS rows since v10. */
+    val processingContext: String? = null,
 ) {
     enum class Type { TEXT, AUDIO }
 

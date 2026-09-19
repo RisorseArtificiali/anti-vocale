@@ -111,6 +111,9 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         stubSingleChunkStream()
 
         coEvery { backend.transcribeAudio(any(), any(), any()) } returns Result.success(TranscriptionResult(text = "  Hello world  "))
+        coEvery { logDao.getByTaskId("test-1") } returns com.antivocale.app.data.local.LogEntity(
+            id = "1", timestamp = 0L, taskId = "test-1",
+            type = "AUDIO", status = "PROCESSING", prompt = "")
 
         val result = callProcessRequest(filePath = audioFile.absolutePath)
 
@@ -119,6 +122,12 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         verify {
             listener.onSuccess(eq("test-1"), eq("Hello world"), eq(false), isNull(), any(), segments = any())
         }
+        // TASK-512: with VAD off this request routes through the pipeline
+        // (single chunk); the row carries the run's provenance either way.
+        coVerify(atLeast = 1) { logDao.update(match { e ->
+            val pc = com.antivocale.app.data.local.ProcessingContextConverter.fromJson(e.processingContext)
+            pc?.decodePath == "pipeline" && pc.totalChunks == 1 && pc.chunkCapSeconds != null
+        }) }
     }
 
     @Test

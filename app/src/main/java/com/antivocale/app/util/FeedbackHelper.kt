@@ -66,6 +66,11 @@ object FeedbackHelper {
         /** TASK-570: rendered structured diagnostics (backend/provider/version/
          *  chunks/durations) when the failure wrote them. */
         val failureDiagnostics: String? = null,
+        /** TASK-512: app version and device model, so the email stands alone. */
+        val appVersion: String? = null,
+        val deviceModel: String? = null,
+        /** TASK-512: rendered processing context (decode path, chunks, cap, RAM). */
+        val processingLine: String? = null,
     )
 
     /** Localized labels for the per-transcription body template. */
@@ -82,7 +87,16 @@ object FeedbackHelper {
     /** Cap for the excerpt embedded in the body; referenced by the tests too. */
     const val TRANSCRIPT_EXCERPT_CAP = 300
 
+    /** TASK-512: chars of the result TAIL embedded beside the head excerpt. */
+    const val TRANSCRIPT_TAIL_CHARS = 100
+
     fun transcriptFeedbackSubject(taskId: String) = "$SUBJECT_FEEDBACK task $taskId"
+
+    /** TASK-512: one version-name read for the diagnostics email, the
+     *  orchestrator's failure context, and the transcript report. */
+    fun currentVersionName(context: Context): String? = runCatching {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+    }.getOrNull()
 
     fun buildTranscriptFeedbackBody(f: TranscriptFacts, l: TranscriptLabels): String = buildString {
         appendLine("${l.task}: ${f.taskId}")
@@ -98,6 +112,16 @@ object FeedbackHelper {
         val errorSuffix = f.errorMessage?.takeIf { it.isNotBlank() }?.let { " ($it)" } ?: ""
         appendLine("${l.status}: ${f.status}$errorSuffix")
         f.failureDiagnostics?.takeIf { it.isNotBlank() }?.let { appendLine(it) }
+        // TASK-512: standalone attribution + the tail that instantly tells
+        // truncation from a repetition loop (the head alone cannot).
+        buildList {
+            val env = listOfNotNull(f.appVersion?.let { "v$it" }, f.deviceModel)
+            if (env.isNotEmpty()) add(env.joinToString(" "))
+            f.processingLine?.takeIf { it.isNotBlank() }?.let { add(it) }
+        }.takeIf { it.isNotEmpty() }?.let { appendLine(it.joinToString(" | ")) }
+        if (f.excerpt.length > TRANSCRIPT_EXCERPT_CAP) {
+            appendLine("tail: ...${f.excerpt.takeLast(TRANSCRIPT_TAIL_CHARS)}")
+        }
         appendLine()
         append("${l.excerpt}: ")
         if (f.excerpt.isEmpty()) {

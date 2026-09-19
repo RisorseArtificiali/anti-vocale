@@ -48,6 +48,10 @@ data class LogEntity(
      *  metadata-vs-decoded duration at the failure point. Null on
      *  pre-v9 rows and on every non-ERROR write. */
     val failureContext: String? = null,
+    /** TASK-512: JSON processing context of a SUCCESS run (decode path,
+     *  chunk coverage, cap, RAM; see ProcessingContextConverter). Null on
+     *  pre-v10 rows and on text-only entries. */
+    val processingContext: String? = null,
 )
 
 fun LogEntity.toLogEntry(): LogEntry = LogEntry(
@@ -73,7 +77,8 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     summary = summary,
     summarySkipReason = summarySkipReason,
     segments = segments,
-    failureContext = failureContext
+    failureContext = failureContext,
+    processingContext = processingContext
 )
 
 fun LogEntry.toEntity(): LogEntity = LogEntity(
@@ -96,5 +101,6 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     summary = summary,
     summarySkipReason = summarySkipReason,
     segments = segments,
-    failureContext = failureContext
+    failureContext = failureContext,
+    processingContext = processingContext
 )
