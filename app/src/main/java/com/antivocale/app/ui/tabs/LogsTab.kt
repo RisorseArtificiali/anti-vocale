@@ -591,20 +591,18 @@ fun LogsTab(
                     )
                 ) {
                     item(key = "header") {
+                        // TASK-564 (maintainer): the search field is the
+                        // tab's first element, at the same 16dp inset and on
+                        // the same surface as the Settings search field.
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.colorScheme.surface)
+                                .padding(16.dp)
                         ) {
-                            // TASK-564 (maintainer): no title row - the
-                            // search field is the tab's first element, like
-                            // the Settings search and the Models filter bar.
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { viewModel.onSearchQueryChanged(it) },
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp),
+                                modifier = Modifier.fillMaxWidth(),
                                 placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
                                 leadingIcon = {
                                     Icon(Icons.Default.Search, contentDescription = null)

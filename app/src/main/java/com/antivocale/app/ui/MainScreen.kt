@@ -225,14 +225,10 @@ fun MainScreen(
             },
         ) {
             Column(modifier = Modifier.fillMaxSize()) {
-                TopAppBar(
-                    title = {
-                        Text(stringResource(R.string.app_name))
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    )
-                )
+                // TASK-565 (maintainer): the app-name bar is gone. The
+                // launcher, recents, and Settings > About carry the name;
+                // the TabRow says where you are. The freed space is where
+                // the History search field and the Models filter sit.
 
                 // TASK-508: the Welcome cutout is the WHOLE tab row, not the
                 // app title. The title's cutout sits above the TabRow, so a
