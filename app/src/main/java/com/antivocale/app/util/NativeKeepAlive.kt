@@ -30,12 +30,21 @@ class NativeKeepAlive(
     private val tag: String,
     private val defaultTimeoutMinutes: Int,
     private val onIdleUnload: () -> Unit,
+    // TASK-574: elapsedRealtime by default; tests inject a controllable clock.
+    private val clock: () -> Long = { android.os.SystemClock.elapsedRealtime() },
 ) {
     private val timeoutMinutes = AtomicInteger(defaultTimeoutMinutes)
     private val workInFlight = AtomicInteger(0)
     private val timerActive = AtomicBoolean(false)
     private val lock = Any()
     private var job: Job? = null
+
+    // TASK-574: the moment the running idle timer will fire; null while the
+    // timer is paused by in-flight work, disarmed, or never started. Written
+    // under [lock], read racily by [remainingSeconds] (a stale read shows an
+    // already-restarted deadline, never a wrong direction).
+    @Volatile
+    private var idleDeadline: Long? = null
 
     /**
      * TEST SEAM (TASK-388): invoked inside the idle-unload window, AFTER the
@@ -73,6 +82,18 @@ class NativeKeepAlive(
     /** TASK-451: state reads for LlmManager.getRemainingTimeSeconds and tests. */
     fun isTimerActiveForTest(): Boolean = timerActive.get()
 
+    /**
+     * TASK-574: seconds until the idle timer fires, or null when there is no
+     * live countdown (never started, paused by in-flight work, stopped, or
+     * disarmed after an unload). This is the real remaining idle time, not
+     * the configured timeout.
+     */
+    fun remainingSeconds(): Long? {
+        if (!timerActive.get()) return null
+        val deadline = idleDeadline ?: return null
+        return ((deadline - clock()) / 1000L).coerceAtLeast(0L)
+    }
+
     /** TASK-451: in-flight generation count, for the bracket tests. */
     fun workInFlightForTest(): Int = workInFlight.get()
 
@@ -80,6 +101,7 @@ class NativeKeepAlive(
     fun stop() {
         synchronized(lock) {
             timerActive.set(false)
+            idleDeadline = null
             job?.cancel()
             job = null
         }
@@ -98,6 +120,8 @@ class NativeKeepAlive(
     fun beginWork() {
         synchronized(lock) {
             workInFlight.incrementAndGet()
+            // TASK-574: countdown pauses while work runs (endWork re-arms it).
+            idleDeadline = null
             job?.cancel()
         }
     }
@@ -111,6 +135,7 @@ class NativeKeepAlive(
 
     private fun restartLocked() {
         job?.cancel()
+        idleDeadline = clock() + timeoutMinutes.get() * 60_000L
         job = scope.launch {
             val minutes = timeoutMinutes.get()
             delay(minutes * 60_000L)
@@ -132,6 +157,7 @@ class NativeKeepAlive(
                         // Disarm: no no-op refires every timeout while idle.
                         // The next initialize() re-arms via start().
                         timerActive.set(false)
+                        idleDeadline = null
                     }
                 }
             }

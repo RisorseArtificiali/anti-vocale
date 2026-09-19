@@ -559,12 +559,14 @@ open class LlmManager @Inject constructor(
     fun getModelPath(): String? = modelPath
 
     /**
-     * Gets the remaining time before auto-unload in seconds.
-     * Returns null if no timer is running or model is not loaded.
+     * Gets the remaining idle time before auto-unload in seconds.
+     * Returns null if no countdown is live (not loaded, work in flight,
+     * or the timer disarmed after a fire). TASK-574: this is the real
+     * remaining time, not the configured timeout.
      */
     fun getRemainingTimeSeconds(): Long? {
-        if (!isInitialized || !keepAlive.isTimerActiveForTest()) return null
-        return (keepAlive.currentTimeoutMinutes() * 60).toLong()
+        if (!isInitialized) return null
+        return keepAlive.remainingSeconds()
     }
 
     /**

@@ -216,7 +216,19 @@ fun SettingsTab(
     // was rendering for Parakeet users and hiding from Gemma users).
     val isLlmBackend = BuiltInBackendIds.isLlm(uiState.transcriptionBackend)
     val isModelLoaded by viewModel.llmIsReadyFlow.collectAsState()
-    val remainingTime = viewModel.llmRemainingTimeSeconds ?: 0L
+    // TASK-574: tick the countdown every second while a live deadline exists;
+    // the getter is a plain read, so without the producer the banner would
+    // freeze at whatever the composition first saw.
+    val remainingTime by produceState(
+        initialValue = viewModel.llmRemainingTimeSeconds ?: 0L,
+        key1 = isModelLoaded,
+    ) {
+        while (isModelLoaded) {
+            value = viewModel.llmRemainingTimeSeconds ?: 0L
+            if (value <= 0L) break
+            kotlinx.coroutines.delay(1_000)
+        }
+    }
     // TASK-507: the Gemma-pass rows (punctuation, summarize)
     // expose only when a Gemma model is configured; without one they can
     // never run and were silent no-ops.
