@@ -20,11 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 /**
- * TASK-564/510: the ONE card-title idiom (primary icon + titleMedium Bold),
+ * TASK-564/510: the ONE card-title idiom, in the Models-tab style the
+ * maintainer chose as the app reference (muted icon + plain titleMedium);
  * extracted from the ~30 inline copies the tabs had grown by 2026-09-19
  * (SettingsTab's collapsible-section cards most numerously; ModelTab's
  * headers were plain titleMedium and joined the idiom in the same pass).
@@ -50,8 +50,7 @@ fun CardTitleRow(
         )
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+            style = MaterialTheme.typography.titleMedium
         )
     }
 }
@@ -74,12 +73,17 @@ fun SectionCard(
     // against the material3 bytecode), so every caller that passes nothing
     // renders exactly like a plain Card.
     containerColor: Color = Color.Unspecified,
-    iconTint: Color = MaterialTheme.colorScheme.primary,
+    iconTint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
     content: @Composable () -> Unit,
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = containerColor)
+        colors = CardDefaults.cardColors(
+            // Models idiom: the subdued container, not the raised default.
+            containerColor = if (containerColor == Color.Unspecified)
+                MaterialTheme.colorScheme.surfaceVariant
+            else containerColor
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp),

@@ -650,8 +650,7 @@ fun SettingsTab(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = stringResource(R.string.export_settings_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.titleMedium
                             )
                             Text(
                                 text = stringResource(R.string.export_settings_description),
@@ -821,8 +820,7 @@ fun SettingsTab(
                                 Column {
                                     Text(
                                         text = stringResource(R.string.default_prompt_title),
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
+                                        style = MaterialTheme.typography.titleMedium
                                     )
                                     Text(
                                         text = stringResource(R.string.default_prompt_description),
@@ -957,8 +955,7 @@ fun SettingsTab(
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = stringResource(R.string.app_icon_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.titleMedium
                             )
                             Text(
                                 text = stringResource(currentLauncherIcon.nameRes),
@@ -1674,8 +1671,7 @@ fun SettingsTab(
                             Column {
                                 Text(
                                     text = stringResource(R.string.per_app_settings_title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    style = MaterialTheme.typography.titleMedium
                                 )
                                 Text(
                                     text = stringResource(R.string.per_app_settings_description),
@@ -1729,8 +1725,7 @@ fun SettingsTab(
                             Column {
                                 Text(
                                     text = stringResource(R.string.performance_stats_title),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    style = MaterialTheme.typography.titleMedium
                                 )
                                 Text(
                                     text = stringResource(R.string.performance_stats_subtitle),
@@ -1776,8 +1771,8 @@ fun SettingsTab(
 
         // Spacer for scroll
         Spacer(modifier = Modifier.height(32.dp))
-    }
-} // End of if-else for showPerAppSettings
+        }
+    } // End of if-else for showPerAppSettings
 }
 
 /**
@@ -1862,8 +1857,7 @@ private fun FeedbackSection(
                         Column {
                             Text(
                                 text = stringResource(R.string.settings_feedback_send_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.titleMedium
                             )
                             Text(
                                 text = stringResource(R.string.settings_feedback_send_description),
@@ -1904,8 +1898,7 @@ private fun FeedbackSection(
                         Column {
                             Text(
                                 text = stringResource(R.string.settings_feedback_translation_title),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
+                                style = MaterialTheme.typography.titleMedium
                             )
                             Text(
                                 text = stringResource(R.string.settings_feedback_translation_description),
@@ -1949,8 +1942,7 @@ private fun FeedbackSection(
                         )
                         Text(
                             text = stringResource(R.string.settings_feedback_source_title),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
+                            style = MaterialTheme.typography.titleMedium
                         )
                     }
                     Icon(
