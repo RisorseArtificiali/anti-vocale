@@ -1013,4 +1013,7 @@
     <string name="language_chip_detected_body">स्वतः पहचानी गई: %1$s। भाषा गलत है? ट्रांसक्रिप्शन भाषा बदलें और ऑडियो फिर से ट्रांसक्राइब करें।</string>
     <string name="language_chip_pinned_body">सेट की गई: %1$s। बदलने के लिए ट्रांसक्रिप्शन भाषा सेटिंग खोलें।</string>
     <string name="language_chip_open_setting">भाषा सेटिंग खोलें</string>
+    <string name="curated_section_title">आपकी भाषा के लिए</string>
+    <string name="curated_browse_all">सभी भाषाएँ देखें</string>
+    <string name="curated_suggest_model">अपनी भाषा के लिए मॉडल सुझाएँ</string>
 </resources>

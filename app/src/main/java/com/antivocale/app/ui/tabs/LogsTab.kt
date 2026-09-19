@@ -596,38 +596,9 @@ fun LogsTab(
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.surface)
                         ) {
-                            Row(
-                                modifier = Modifier
-                                    .padding(horizontal = 16.dp, vertical = 4.dp)
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // Locale-safe: weight + ellipsis keeps the Clear button
-                                // anchored under longer locales (TASK-345)
-                                Text(
-                                    text = stringResource(R.string.logs_recent_requests, logs.size),
-                                    // TASK-564: section-header level (titleMedium),
-                                    // matching the Models tab's headers.
-                                    style = MaterialTheme.typography.titleMedium,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.weight(1f)
-                                )
-                                TextButton(
-                                    onClick = { showClearDialog = true },
-                                    enabled = logs.isNotEmpty()
-                                ) {
-                                    Icon(
-                                        Icons.Default.DeleteSweep,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(4.dp))
-                                    Text(stringResource(R.string.logs_clear))
-                                }
-                            }
-
+                            // TASK-564 (maintainer): no title row - the
+                            // search field is the tab's first element, like
+                            // the Settings search and the Models filter bar.
                             OutlinedTextField(
                                 value = searchQuery,
                                 onValueChange = { viewModel.onSearchQueryChanged(it) },
@@ -638,12 +609,24 @@ fun LogsTab(
                                 leadingIcon = {
                                     Icon(Icons.Default.Search, contentDescription = null)
                                 },
+                                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                                 trailingIcon = {
+                                    // Search-clear when a query is active;
+                                    // history-clear otherwise (the title row
+                                    // that used to carry it is gone).
                                     if (searchQuery.isNotEmpty()) {
                                         IconButton(onClick = { viewModel.clearSearch() }) {
                                             Icon(
                                                 Icons.Default.Clear,
                                                 contentDescription = stringResource(R.string.clear_search)
+                                            )
+                                        }
+                                    } else if (logs.isNotEmpty()) {
+                                        IconButton(onClick = { showClearDialog = true }) {
+                                            Icon(
+                                                Icons.Default.DeleteSweep,
+                                                contentDescription = stringResource(R.string.logs_clear),
+                                                modifier = Modifier.size(20.dp)
                                             )
                                         }
                                     }

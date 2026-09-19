@@ -1033,4 +1033,7 @@
     <string name="language_chip_detected_body">Определён автоматически: %1$s. Не тот язык? Смените язык расшифровки и расшифруйте аудио заново.</string>
     <string name="language_chip_pinned_body">Закреплён: %1$s. Чтобы сменить, откройте настройку языка расшифровки.</string>
     <string name="language_chip_open_setting">Открыть настройку языка</string>
+    <string name="curated_section_title">Для вашего языка</string>
+    <string name="curated_browse_all">Показать все языки</string>
+    <string name="curated_suggest_model">Предложить модель для вашего языка</string>
 </resources>
