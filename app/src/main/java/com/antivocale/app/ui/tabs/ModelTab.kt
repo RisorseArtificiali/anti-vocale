@@ -3,6 +3,7 @@ package com.antivocale.app.ui.tabs
 import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.ui.text.font.FontWeight
@@ -28,6 +29,7 @@ import androidx.compose.ui.Alignment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
@@ -48,6 +50,7 @@ import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.ExternalCatalog
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ModelFamily
+import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.CatalogDisplay
 import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogStringKeys
@@ -525,6 +528,38 @@ fun ModelTab(
             onLanguageSelected = { filterLanguageCode = it }
         )
 
+        // GH #70: curated "For your language" elevation. The language comes
+        // from the UI configuration (the per-app locale when one is set, else
+        // the system one): the reactive equivalent of
+        // LocaleManager.effectiveLocale, so a locale change recomposes the
+        // section. Two rules keep the mechanisms from stacking: an explicit
+        // language-filter choice always beats the automatic curation (the
+        // filter stays the primary tool), and one "Browse all languages" tap
+        // returns to the universal tab for the rest of this tab visit (no
+        // persisted preference; a tab re-entry shows the curation again).
+        val curatedAppLanguage = LocalConfiguration.current.locales[0]?.language
+        val curatedProfile =
+            if (filterLanguageCode == null) CuratedProfiles.forLanguage(curatedAppLanguage) else null
+        var browseAllModels by remember { mutableStateOf(false) }
+        val showCuratedSection = curatedProfile != null && !browseAllModels
+        // While the curation is on screen it IS the tab: the catalog and Gemma
+        // sections hide behind "Browse all languages" (their installed models
+        // still surface as fully functional cards inside the recommendations).
+        val catalogEntriesVisible = if (showCuratedSection) emptyList() else viewModel.catalogEntries
+        if (showCuratedSection) {
+            CuratedLanguageSection(
+                profile = curatedProfile,
+                viewModel = viewModel,
+                benchmarkViewModel = benchmarkViewModel,
+                catalogStates = catalogStates,
+                activeBackendId = activeBackendId,
+                isTranscribing = isTranscribing,
+                guardedModelSwitch = guardedSwitch,
+                onInfoClick = { modelInfoVariant = it },
+                onBrowseAll = { browseAllModels = true },
+            )
+        }
+
         // Unload Model button — only shown when model is actually loaded in memory
         if (uiState.status == ModelViewModel.ModelStatus.READY) {
             UnloadModelButton(
@@ -536,7 +571,7 @@ fun ModelTab(
         // Catalog-driven model sections (Parakeet, Whisper, Qwen3-ASR, Nemotron, GigaAM).
         // One generic section per catalog entry — all model-specific behavior lives in the
         // catalog, never in hard-coded per-model UI.
-        viewModel.catalogEntries.forEach { entry ->
+        catalogEntriesVisible.forEach { entry ->
             val visibleVariants = remember(entry.id, filterLanguageCode) {
                 filterVariants(CatalogVariantUi.forEntry(entry.id), filterLanguageCode) { it.supportedLanguageCodes }
             }
@@ -556,7 +591,7 @@ fun ModelTab(
         }
 
         // Download models section - Gemma LLM models (advanced features)
-        if (visibleGemmaVariants.isNotEmpty()) {
+        if (!showCuratedSection && visibleGemmaVariants.isNotEmpty()) {
             ModelDownloadSection(
                 viewModel = viewModel,
                 context = context,
@@ -782,6 +817,224 @@ fun ModelTab(
                     }
                 }
             }
+        }
+    }
+}
+
+// ==================== Curated language section (GH #70) ====================
+
+/** Bundled community-index snapshot the curated profiles resolve against. */
+private const val CURATED_COMMUNITY_INDEX = "external-catalog/index.json"
+
+/**
+ * The "For your language" elevation (GH #70): the profile's ranked
+ * recommendations, each rendered as the reason line plus the same card the
+ * universal tab shows (bundled entries) or a one-tap import card (community
+ * entries), closed by the community-input link and the "Browse all
+ * languages" escape.
+ */
+@Composable
+private fun CuratedLanguageSection(
+    profile: CuratedProfiles.Profile,
+    viewModel: ModelViewModel,
+    benchmarkViewModel: BenchmarkViewModel,
+    catalogStates: Map<String, ModelViewModel.ModelEntryUiState>,
+    activeBackendId: String,
+    isTranscribing: Boolean,
+    guardedModelSwitch: (() -> Unit) -> Unit,
+    onInfoClick: (ModelVariant) -> Unit,
+    onBrowseAll: () -> Unit,
+) {
+    val context = LocalContext.current
+    // Community references resolve against the BUNDLED index snapshot: static
+    // data (no fetch at render time) that a catalog-URL override cannot
+    // rewrite. A name that vanished from the snapshot drops its row (the
+    // CuratedProfilesTest contract keeps the seeds resolvable).
+    val communityIndex = remember {
+        runCatching {
+            context.assets.open(CURATED_COMMUNITY_INDEX)
+                .bufferedReader(Charsets.UTF_8).use { it.readText() }
+        }.getOrNull()
+            ?.let { ExternalCatalog.parseIndex(it).associateBy { entry -> entry.name } }
+            ?: emptyMap()
+    }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Star,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = stringResource(R.string.curated_section_title),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.semantics { heading() },
+            )
+        }
+
+        profile.recommendations.forEach { recommendation ->
+            when (recommendation) {
+                is CuratedProfiles.Recommendation.Bundled -> {
+                    val entry = BundledCatalog.byId(recommendation.entryId)
+                    val variants = entry?.let {
+                        CatalogVariantUi.forEntry(it.id).filter { variant ->
+                            recommendation.variantNames == null ||
+                                variant.variantName in recommendation.variantNames
+                        }
+                    }
+                    if (entry != null && !variants.isNullOrEmpty()) {
+                        CuratedWhyLine(whyResId = recommendation.whyResId)
+                        CatalogModelSection(
+                            viewModel = viewModel,
+                            benchmarkViewModel = benchmarkViewModel,
+                            entry = entry,
+                            state = catalogStates[entry.id] ?: ModelViewModel.ModelEntryUiState(),
+                            activeBackendId = activeBackendId,
+                            isTranscribing = isTranscribing,
+                            visibleVariants = variants,
+                            guardedModelSwitch = guardedModelSwitch,
+                            onInfoClick = onInfoClick,
+                        )
+                    }
+                }
+                is CuratedProfiles.Recommendation.Community ->
+                    communityIndex[recommendation.catalogName]?.let { catalogEntry ->
+                        CuratedWhyLine(whyResId = recommendation.whyResId)
+                        CuratedCommunityCard(
+                            entry = catalogEntry,
+                            viewModel = viewModel,
+                        )
+                    }
+            }
+        }
+
+        // The community-input angle of GH #70: curation invites suggestions.
+        Text(
+            text = stringResource(R.string.curated_suggest_model),
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .clickable(role = Role.Button) {
+                    context.startActivity(
+                        android.content.Intent(
+                            android.content.Intent.ACTION_VIEW,
+                            Uri.parse(CuratedProfiles.SUGGESTION_ISSUE_URL),
+                        )
+                    )
+                }
+                .padding(vertical = 4.dp),
+        )
+
+        OutlinedButton(
+            onClick = onBrowseAll,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp),
+        ) {
+            Icon(Icons.Default.ExpandMore, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.curated_browse_all))
+            Spacer(modifier = Modifier.weight(1f))
+        }
+    }
+}
+
+/** One recommendation's reason line, rendered above its card. */
+@Composable
+private fun CuratedWhyLine(@StringRes whyResId: Int) {
+    Text(
+        text = stringResource(whyResId),
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.primary,
+    )
+}
+
+/**
+ * In-flight external-import state, shared by the Advanced section and the
+ * curated community cards: the file-progress row while importing (TASK-398:
+ * same progress widget as catalog downloads, so a stalled import is visible
+ * instead of a static label) and the persistent error line on failure. Idle
+ * renders nothing.
+ */
+@Composable
+private fun ExternalImportStateView(state: ModelViewModel.ExternalImportState) {
+    when (state) {
+        is ModelViewModel.ExternalImportState.Importing -> Column(
+            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
+        ) {
+            Text(
+                if (state.fileCount > 0)
+                    stringResource(
+                        R.string.external_importing_file,
+                        state.fileName, state.fileIndex + 1, state.fileCount)
+                else
+                    stringResource(R.string.external_importing),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            if (state.fileCount > 0) {
+                DownloadProgressView(
+                    downloadState = DownloadState.Downloading(
+                        bytesDownloaded = state.bytes,
+                        totalBytes = state.totalBytes,
+                        // progressPercent is the 0..100 scale (ResumeDownloadHelper convention)
+                        progressPercent = state.progress * 100,
+                    ),
+                    downloadProgress = state.progress,
+                )
+            }
+        }
+        is ModelViewModel.ExternalImportState.Error -> Text(
+            stringResource(R.string.external_import_failed, state.message),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        else -> {}
+    }
+}
+
+/**
+ * One community-catalog recommendation: the index entry as a compact card
+ * with a one-tap import (the same import the catalog dialog runs) and the
+ * shared import progress/error state.
+ */
+@Composable
+private fun CuratedCommunityCard(
+    entry: ExternalCatalog.CatalogEntry,
+    viewModel: ModelViewModel,
+) {
+    val importState by viewModel.externalImportState.collectAsState()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = entry.name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.Bold,
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = { viewModel.importExternalFromUrl(entry.entryUrl, entry.family) },
+                enabled = importState !is ModelViewModel.ExternalImportState.Importing,
+            ) {
+                Icon(Icons.Default.CloudDownload, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(stringResource(R.string.external_import))
+            }
+            ExternalImportStateView(importState)
         }
     }
 }
@@ -1537,44 +1790,7 @@ private fun ExternalModelsSection(
         }
 
 
-        when (val st = importState) {
-            is ModelViewModel.ExternalImportState.Importing -> Column(
-                modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
-            ) {
-                // TASK-398: same progress widget as catalog downloads, so a stalled
-                // external import is visible instead of a static "Importing…" label.
-                Text(
-                    if (st.fileCount > 0)
-                        stringResource(
-                            R.string.external_importing_file,
-                            st.fileName, st.fileIndex + 1, st.fileCount)
-                    else
-                        stringResource(R.string.external_importing),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                if (st.fileCount > 0) {
-                    DownloadProgressView(
-                        downloadState = DownloadState.Downloading(
-                            bytesDownloaded = st.bytes,
-                            totalBytes = st.totalBytes,
-                            // progressPercent is the 0..100 scale (ResumeDownloadHelper convention)
-                            progressPercent = st.progress * 100,
-                        ),
-                        downloadProgress = st.progress,
-                    )
-                }
-            }
-            is ModelViewModel.ExternalImportState.Error -> Text(
-                stringResource(R.string.external_import_failed, st.message),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.error,
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-            else -> {}
-        }
+        ExternalImportStateView(importState)
 
         // Gap between the import buttons/state and the first card
         if (records.isNotEmpty()) Spacer(modifier = Modifier.height(8.dp))

@@ -1011,4 +1011,15 @@
     <string name="language_chip_detected_body">Auto-detected: %1$s. Wrong language? Change the transcription language and transcribe the audio again.</string>
     <string name="language_chip_pinned_body">Pinned: %1$s. To change it, open the transcription language setting.</string>
     <string name="language_chip_open_setting">Open language setting</string>
+
+    <!-- Curated Model-tab profiles (GH #70): per-language recommendation copy -->
+    <string name="curated_section_title">For your language</string>
+    <string name="curated_browse_all">Browse all languages</string>
+    <string name="curated_suggest_model">Suggest a model for your language</string>
+    <string name="curated_why_distil_it">Fine-tuned for Italian: the most accurate choice</string>
+    <string name="curated_why_parakeet">Very fast (about 17x) and still very accurate</string>
+    <string name="curated_why_german_whisper">Fine-tuned for German: the most accurate option</string>
+    <string name="curated_why_canary">Compact: small download, quick results</string>
+    <string name="curated_why_swiss_german">For Swiss German dialects</string>
+    <string name="curated_why_kroko">Streaming: text appears while you speak</string>
 </resources>

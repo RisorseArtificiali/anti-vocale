@@ -1018,4 +1018,15 @@
     <string name="language_chip_detected_body">Rilevata automaticamente: %1$s. Lingua sbagliata? Cambia la lingua di trascrizione e ritrasscrivi l\'audio.</string>
     <string name="language_chip_pinned_body">Fissata: %1$s. Per cambiarla, apri l\'impostazione della lingua di trascrizione.</string>
     <string name="language_chip_open_setting">Apri impostazione lingua</string>
+
+    <!-- Curated Model-tab profiles (GH #70): per-language recommendation copy -->
+    <string name="curated_section_title">Per la tua lingua</string>
+    <string name="curated_browse_all">Sfoglia tutte le lingue</string>
+    <string name="curated_suggest_model">Suggerisci un modello per la tua lingua</string>
+    <string name="curated_why_distil_it">Ottimizzato per l\'italiano: la scelta più accurata</string>
+    <string name="curated_why_parakeet">Molto veloce (circa 17 volte) e comunque molto accurato</string>
+    <string name="curated_why_german_whisper">Ottimizzato per il tedesco: l\'opzione più accurata</string>
+    <string name="curated_why_canary">Compatto: download ridotto, risultati rapidi</string>
+    <string name="curated_why_swiss_german">Per i dialetti svizzeri</string>
+    <string name="curated_why_kroko">Streaming: il testo appare mentre parli</string>
 </resources>
