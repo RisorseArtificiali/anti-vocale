@@ -44,6 +44,31 @@ object ModelFamilyDetector {
             family to plan
         }
         val exact = matching.filter { it.second.keys.size == files.size }
+        // A [encoder*.onnx, tokens] set is CTC's exact shape (with or without
+        // sidecar files: exact match, or the sole survivor of the partial
+        // tier), but it is also exactly a transducer/whisper/canary export
+        // one or two files short: an interrupted copy or partial download.
+        // Importing it as CTC succeeds at copy time and dies at native load
+        // with no hint of what was wrong; routed to the chooser instead,
+        // every offered pick fails fast naming what is missing, and the
+        // folder name can still narrow a genuine full export. A ctc-hinted
+        // name (GigaAM's v3_ctc, istupakov's encoder-ctc) stays detected;
+        // a generic model.onnx set is the pre-existing CTC/SenseVoice
+        // ambiguity, untouched here.
+        val soleDetected = when {
+            exact.size == 1 -> exact[0].first
+            exact.isEmpty() && matching.size == 1 -> matching[0].first
+            else -> null
+        }
+        if (soleDetected == ModelFamily.CTC &&
+            files.any { it.contains("encoder", ignoreCase = true) } &&
+            files.none { it.contains("decoder", ignoreCase = true) } &&
+            files.none { it.contains("ctc", ignoreCase = true) }
+        ) {
+            return Result.Ambiguous(listOf(
+                ModelFamily.TRANSDUCER, ModelFamily.CTC,
+                ModelFamily.WHISPER, ModelFamily.CANARY))
+        }
         return when {
             exact.size == 1 -> Result.Detected(exact[0].first)
             exact.size > 1 -> Result.Ambiguous(exact.map { it.first })

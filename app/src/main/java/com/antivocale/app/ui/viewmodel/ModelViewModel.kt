@@ -59,6 +59,8 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
@@ -1545,6 +1547,14 @@ class ModelViewModel @Inject constructor(
     private fun ctcModelType(family: ModelFamily, ctcModelType: String): String? =
         if (family == ModelFamily.CTC) ctcModelType else null
 
+    /** Serializes external imports: the progress slot is a single StateFlow,
+     *  so two overlapping imports would mask each other's state; a second
+     *  import waits its turn and re-arms the indicator when its turn comes
+     *  (the write happens inside the lock, after the predecessor's terminal
+     *  state). The store's own mutation lock (ExternalModelStore.mutate)
+     *  covers record safety against deletes and updateDir. */
+    private val externalImportMutex = Mutex()
+
     /** Shared import scaffolding: progress state, IO dispatching, and the failure tail.
      *  [onProgress] is handed to the block so URL imports can stream download telemetry
      *  into the state (TASK-398); null for the folder path (nothing to report). */
@@ -1554,18 +1564,20 @@ class ModelViewModel @Inject constructor(
         block: suspend ((Int, Int, String, Long, Long) -> Unit) -> ExternalModelRecord,
     ) {
         val noop: (Int, Int, String, Long, Long) -> Unit = { _, _, _, _, _ -> }
-        _externalImportState.value = ExternalImportState.Importing()
         viewModelScope.launch(Dispatchers.IO) {
-            runCatching { block(onProgress ?: noop) }
-                .fold(
-                    onSuccess = { record -> onExternalImported(record) },
-                    onFailure = { e ->
-                        Log.e(TAG, "$label import failed", e)
-                        _externalImportState.value = ExternalImportState.Error(e.message ?: "unknown error")
-                        _snackbarEvent.tryEmit(SnackbarEvent.Message(
-                            ctx.getString(R.string.external_import_failed, e.message ?: "")))
-                    },
-                )
+            externalImportMutex.withLock {
+                _externalImportState.value = ExternalImportState.Importing()
+                runCatching { block(onProgress ?: noop) }
+                    .fold(
+                        onSuccess = { record -> onExternalImported(record) },
+                        onFailure = { e ->
+                            Log.e(TAG, "$label import failed", e)
+                            _externalImportState.value = ExternalImportState.Error(e.message ?: "unknown error")
+                            _snackbarEvent.tryEmit(SnackbarEvent.Message(
+                                ctx.getString(R.string.external_import_failed, e.message ?: "")))
+                        },
+                    )
+            }
         }
     }
 

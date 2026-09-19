@@ -119,20 +119,25 @@ class ExternalModelImporter(
     internal fun buildCopyPlan(files: List<String>, family: ModelFamily = ModelFamily.TRANSDUCER): Map<String, String>? =
         ModelFamilySupport.forFamily(family).buildCopyPlan(files)
 
-    /** Human spelling of a family for diagnostic messages ("SenseVoice",
-     *  not the raw "SENSE_VOICE" enum name; the UI layer's familyLabel is a
-     *  composable and stays there). */
+    /** Human spelling of a family for diagnostic messages ("SenseVoice" and
+     *  "CTC", not the raw "SENSE_VOICE" enum name; the UI layer's
+     *  familyLabel is a composable and stays there). */
     private fun familyDisplayName(family: ModelFamily): String =
-        family.name.lowercase().split('_').joinToString("") { it.replaceFirstChar { c -> c.uppercase() } }
+        if (family == ModelFamily.CTC) "CTC"
+        else family.name.lowercase().split('_').joinToString("") { it.replaceFirstChar { c -> c.uppercase() } }
 
     /** Family-named role-set error shared by the local and URL planning sites. When
      *  the set matches another family's shape, the error says so and names the
      *  candidates (TASK-513, GH #93: a Canary set must not fail as "missing
-     *  TRANSDUCER files" with no hint that the family is the wrong knob). */
+     *  TRANSDUCER files" with no hint that the family is the wrong knob). The
+     *  hint is suppressed when the family the user already picked is among
+     *  the detected candidates: there it would only restate their own pick
+     *  (the truncated-set chooser route ends exactly there). */
     private fun missingRolesError(family: ModelFamily, names: List<String>): IllegalArgumentException {
         val detected = when (val d = ModelFamilyDetector.detect(names)) {
             is ModelFamilyDetector.Result.Ambiguous ->
-                d.candidates.joinToString(" or ") { familyDisplayName(it) }
+                if (family in d.candidates) null
+                else d.candidates.joinToString(" or ") { familyDisplayName(it) }
             is ModelFamilyDetector.Result.Detected -> familyDisplayName(d.family)
             ModelFamilyDetector.Result.Unknown -> null
         }
@@ -188,7 +193,6 @@ class ExternalModelImporter(
         }
     }
 
-    /** SAF folder import: the primary v2a entry point. */
     /** The SAF tree's file children, one definition for the detection
      *  listing and the import itself (TASK-513; the import re-lists rather
      *  than reuse a stale detection pass: the user can sit on the chooser). */
@@ -201,6 +205,7 @@ class ExternalModelImporter(
     override suspend fun listTreeFileNames(context: Context, treeUri: Uri): List<String> =
         treeChildren(context, treeUri).second.mapNotNull { it.name }
 
+    /** SAF folder import: the primary v2a entry point. */
     override suspend fun importFromTreeUri(
         context: Context,
         treeUri: Uri,

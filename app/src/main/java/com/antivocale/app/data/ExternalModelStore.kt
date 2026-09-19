@@ -3,6 +3,8 @@ package com.antivocale.app.data
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Single source of truth for imported external models (spec: External models
@@ -49,8 +51,16 @@ class ExternalModelStore(
         return removed
     }
 
+    // One lock for every whole-list read-modify-write (imports, deletes,
+    // updateDir): two unsynchronized mutators would each write the list back
+    // from their own snapshot and drop the other's change (an imported
+    // record lost to a concurrent delete, or a delete silently reverted).
+    private val mutateMutex = Mutex()
+
     private suspend fun mutate(transform: (List<ExternalModelRecord>) -> List<ExternalModelRecord>) {
-        val current = records()
-        preferencesManager.saveExternalModelsJson(ExternalModelListJson.encode(transform(current)))
+        mutateMutex.withLock {
+            val current = records()
+            preferencesManager.saveExternalModelsJson(ExternalModelListJson.encode(transform(current)))
+        }
     }
 }

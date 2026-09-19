@@ -30,9 +30,53 @@ class ModelFamilyDetectorTest {
 
     @Test
     fun `ctc set is detected unambiguously`() {
-        val files = listOf("encoder.int8.onnx", "tokens.txt")
+        // A ctc-hinted name (GigaAM's v3_ctc) is the genuine-CTC tell.
+        // A generic model.onnx set is NOT this case: it is the CTC/SenseVoice
+        // ambiguity covered by its own test below.
+        val files = listOf("v3_ctc.int8.onnx", "tokens.txt")
         val r = ModelFamilyDetector.detect(files)
         assertEquals(ModelFamilyDetector.Result.Detected(ModelFamily.CTC), r)
+    }
+
+    @Test
+    fun `encoder-named ctc file with a ctc hint stays detected`() {
+        // istupakov-style mixed repos ship CTC under encoder-ish names; the
+        // ctc hint in the name is the genuine-CTC tell, not a truncation.
+        val files = listOf("encoder-ctc.onnx", "tokens.txt")
+        assertEquals(
+            ModelFamilyDetector.Result.Detected(ModelFamily.CTC),
+            ModelFamilyDetector.detect(files))
+    }
+
+    @Test
+    fun `truncated whisper set is ambiguous with ctc so the chooser decides`() {
+        // [encoder.onnx, tokens] is the exact CTC shape AND exactly a
+        // transducer/whisper/canary export one or two files short: an
+        // interrupted copy. Importing as CTC would die at native load; the
+        // chooser makes every pick fail fast naming what is missing, and a
+        // whisper/canary folder name narrows straight to the right family.
+        val files = listOf("encoder.int8.onnx", "tokens.txt")
+        val r = ModelFamilyDetector.detect(files)
+        assertTrue(r is ModelFamilyDetector.Result.Ambiguous)
+        r as ModelFamilyDetector.Result.Ambiguous
+        assertEquals(
+            listOf(ModelFamily.TRANSDUCER, ModelFamily.CTC, ModelFamily.WHISPER, ModelFamily.CANARY),
+            r.candidates)
+    }
+
+    @Test
+    fun `truncated set with a sidecar file still reaches the chooser`() {
+        // The README variant of the truncation: nothing exact-matches
+        // (2-role plan over 3 files), CTC is the sole partial match, and
+        // the same encoder-without-decoder tell downgrades it instead of
+        // letting the partial tier auto-import it as CTC.
+        val files = listOf("encoder.onnx", "tokens.txt", "README.md")
+        val r = ModelFamilyDetector.detect(files)
+        assertTrue(r is ModelFamilyDetector.Result.Ambiguous)
+        r as ModelFamilyDetector.Result.Ambiguous
+        assertEquals(
+            listOf(ModelFamily.TRANSDUCER, ModelFamily.CTC, ModelFamily.WHISPER, ModelFamily.CANARY),
+            r.candidates)
     }
 
     @Test
