@@ -1022,4 +1022,10 @@
     <string name="curated_why_canary" translatable="false">Compact: small download, quick results</string>
     <string name="curated_why_swiss_german" translatable="false">For Swiss German dialects</string>
     <string name="curated_why_kroko" translatable="false">Streaming: text appears while you speak</string>
+    <string name="text_size_title">Text size</string>
+    <string name="text_size_description">Make the app text larger or smaller on top of the system font size</string>
+    <string name="text_scale_system">System</string>
+    <string name="text_scale_small">Small</string>
+    <string name="text_scale_large">Large</string>
+    <string name="text_scale_xlarge">Extra large</string>
 </resources>

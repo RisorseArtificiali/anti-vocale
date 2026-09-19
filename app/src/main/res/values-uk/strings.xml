@@ -1037,4 +1037,10 @@
     <string name="curated_section_title">Для вашої мови</string>
     <string name="curated_browse_all">Переглянути всі мови</string>
     <string name="curated_suggest_model">Запропонуйте модель для вашої мови</string>
+    <string name="text_size_title">Розмір тексту</string>
+    <string name="text_size_description">Збільшуйте або зменшуйте текст застоску понад системний розмір</string>
+    <string name="text_scale_system">Система</string>
+    <string name="text_scale_small">Малий</string>
+    <string name="text_scale_large">Великий</string>
+    <string name="text_scale_xlarge">Дуже великий</string>
 </resources>

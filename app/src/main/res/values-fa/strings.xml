@@ -1022,4 +1022,10 @@
     <string name="curated_section_title">برای زبان شما</string>
     <string name="curated_browse_all">مشاهده همه زبان‌ها</string>
     <string name="curated_suggest_model">مدلی برای زبان خود پیشنهاد دهید</string>
+    <string name="text_size_title">اندازه متن</string>
+    <string name="text_size_description">متن برنامه را بزرگ‌تر یا کوچک‌تر از اندازه سیستم کنید</string>
+    <string name="text_scale_system">سیستم</string>
+    <string name="text_scale_small">کوچک</string>
+    <string name="text_scale_large">بزرگ</string>
+    <string name="text_scale_xlarge">بسیار بزرگ</string>
 </resources>

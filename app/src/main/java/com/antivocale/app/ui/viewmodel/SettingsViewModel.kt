@@ -29,6 +29,7 @@ import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.ui.appearance.LauncherIconManager
 import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.ui.theme.ThemeMode
+import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.util.LocaleManager
@@ -426,6 +427,10 @@ class SettingsViewModel @Inject constructor(
     private val _currentThemeMode = MutableStateFlow(ThemeMode.SYSTEM)
     val currentThemeMode: StateFlow<ThemeMode> = _currentThemeMode.asStateFlow()
 
+    // TASK-576: app text-size step from preferences
+    private val _currentTextScale = MutableStateFlow(TextScale.SYSTEM)
+    val currentTextScale: StateFlow<TextScale> = _currentTextScale.asStateFlow()
+
     // Launcher icon variants (TASK-392): source of truth is the PackageManager
     // component state (binder calls), read on Dispatchers.Default like
     // BridgeApplication's share-target sync.
@@ -457,6 +462,16 @@ class SettingsViewModel @Inject constructor(
                     ThemeType.valueOf(themeName)
                 } catch (e: IllegalArgumentException) {
                     ThemeType.DEFAULT
+                }
+            }
+        }
+        // Load text size from preferences (TASK-576)
+        viewModelScope.launch {
+            preferencesManager.textScalePreference.collect { scaleName ->
+                _currentTextScale.value = try {
+                    TextScale.valueOf(scaleName)
+                } catch (e: IllegalArgumentException) {
+                    TextScale.SYSTEM
                 }
             }
         }
@@ -705,6 +720,21 @@ class SettingsViewModel @Inject constructor(
      * Saves the theme preference.
      * Changes take effect immediately via StateFlow.
      */
+    /**
+     * TASK-576: saves the text-size step. The theme wrapper reads the
+     * preference directly in MainActivity; this exists for the UI round trip.
+     */
+    fun saveTextScale(scale: TextScale) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.saveTextScale(scale.name)
+                _currentTextScale.value = scale
+            } catch (e: Exception) {
+                Log.e("SettingsViewModel", "Failed to save text scale", e)
+            }
+        }
+    }
+
     fun saveThemePreference(theme: ThemeType) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, saveSuccess = null, errorMessage = null) }

@@ -902,7 +902,9 @@ fun SettingsTab(
                 themeTitle,
                 stringResource(R.string.theme_description),
                 themeModeTitle,
-                stringResource(R.string.theme_mode_description)
+                stringResource(R.string.theme_mode_description),
+                stringResource(R.string.text_size_title),
+                stringResource(R.string.text_size_description)
             ) {
                 SectionCard(
                     icon = Icons.Default.Palette,

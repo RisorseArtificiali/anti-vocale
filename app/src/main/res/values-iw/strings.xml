@@ -1024,4 +1024,10 @@
     <string name="curated_section_title">עבור השפה שלך</string>
     <string name="curated_browse_all">עיין בכל השפות</string>
     <string name="curated_suggest_model">הצע מודל עבור השפה שלך</string>
+    <string name="text_size_title">גודל טקסט</string>
+    <string name="text_size_description">הגדל או הקטן את טקסט האפליקציה מעבר לגודל המערכת</string>
+    <string name="text_scale_system">מערכת</string>
+    <string name="text_scale_small">קטן</string>
+    <string name="text_scale_large">גדול</string>
+    <string name="text_scale_xlarge">גדול מאוד</string>
 </resources>

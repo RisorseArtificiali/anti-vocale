@@ -161,6 +161,13 @@ internal class FakePreferencesManager : PreferencesManager {
         _benchmarkResults.value = _benchmarkResults.value - modelId
     }
 
+    // TASK-576
+    val _textScale = MutableStateFlow(PreferencesManager.DEFAULT_TEXT_SCALE)
+    override val textScalePreference: Flow<String> = _textScale
+    override suspend fun saveTextScale(value: String) {
+        _textScale.value = value
+    }
+
     override suspend fun clearAllBenchmarkResults() {
         _benchmarkResults.value = emptyMap()
     }

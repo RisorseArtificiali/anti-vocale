@@ -1017,4 +1017,10 @@
     <string name="curated_section_title">Diliniz için</string>
     <string name="curated_browse_all">Tüm dilleri görüntüle</string>
     <string name="curated_suggest_model">Diliniz için bir model önerin</string>
+    <string name="text_size_title">Metin boyutu</string>
+    <string name="text_size_description">Uygulama metnini sistem yazı boyutunun ötesinde büyüt veya küçült</string>
+    <string name="text_scale_system">Sistem</string>
+    <string name="text_scale_small">Küçük</string>
+    <string name="text_scale_large">Büyük</string>
+    <string name="text_scale_xlarge">Çok büyük</string>
 </resources>

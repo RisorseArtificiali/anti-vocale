@@ -882,4 +882,10 @@
     <string name="curated_section_title">Pour votre langue</string>
     <string name="curated_browse_all">Parcourir toutes les langues</string>
     <string name="curated_suggest_model">Proposer un modèle pour votre langue</string>
+    <string name="text_size_title">Taille du texte</string>
+    <string name="text_size_description">Agrandir ou réduire le texte de l\'appli au-delà de la taille système</string>
+    <string name="text_scale_system">Système</string>
+    <string name="text_scale_small">Petit</string>
+    <string name="text_scale_large">Grand</string>
+    <string name="text_scale_xlarge">Très grand</string>
 </resources>

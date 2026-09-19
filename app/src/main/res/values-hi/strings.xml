@@ -1016,4 +1016,10 @@
     <string name="curated_section_title">आपकी भाषा के लिए</string>
     <string name="curated_browse_all">सभी भाषाएँ देखें</string>
     <string name="curated_suggest_model">अपनी भाषा के लिए मॉडल सुझाएँ</string>
+    <string name="text_size_title">टेक्स्ट आकार</string>
+    <string name="text_size_description">सिस्टम फ़ॉन्ट आकार के अलावा ऐप का टेक्स्ट बड़ा या छोटा करें</string>
+    <string name="text_scale_system">सिस्टम</string>
+    <string name="text_scale_small">छोटा</string>
+    <string name="text_scale_large">बड़ा</string>
+    <string name="text_scale_xlarge">बहुत बड़ा</string>
 </resources>

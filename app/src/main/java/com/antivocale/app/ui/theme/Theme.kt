@@ -2,8 +2,10 @@ package com.antivocale.app.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Typography
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.lightColorScheme
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
@@ -199,10 +201,47 @@ private val TelegramLightColorScheme = lightColorScheme(
     surfaceContainerHighest = Color(0xFFBBDEFB)
 )
 
+/**
+ * TASK-576: the app-level text size. SYSTEM applies no extra scaling (sp
+ * already follows the OS font size); the other steps multiply every
+ * typography fontSize/lineHeight on top of the system setting.
+ */
+enum class TextScale(val multiplier: Float, val nameRes: Int) {
+    SYSTEM(1.0f, com.antivocale.app.R.string.text_scale_system),
+    SMALL(0.9f, com.antivocale.app.R.string.text_scale_small),
+    LARGE(1.15f, com.antivocale.app.R.string.text_scale_large),
+    XLARGE(1.3f, com.antivocale.app.R.string.text_scale_xlarge),
+}
+
+private fun TextStyle.scaledFont(f: Float): TextStyle =
+    copy(fontSize = fontSize * f, lineHeight = lineHeight * f)
+
+private fun scaledTypography(f: Float): Typography {
+    val t = Typography()
+    return Typography(
+        displayLarge = t.displayLarge.scaledFont(f),
+        displayMedium = t.displayMedium.scaledFont(f),
+        displaySmall = t.displaySmall.scaledFont(f),
+        headlineLarge = t.headlineLarge.scaledFont(f),
+        headlineMedium = t.headlineMedium.scaledFont(f),
+        headlineSmall = t.headlineSmall.scaledFont(f),
+        titleLarge = t.titleLarge.scaledFont(f),
+        titleMedium = t.titleMedium.scaledFont(f),
+        titleSmall = t.titleSmall.scaledFont(f),
+        bodyLarge = t.bodyLarge.scaledFont(f),
+        bodyMedium = t.bodyMedium.scaledFont(f),
+        bodySmall = t.bodySmall.scaledFont(f),
+        labelLarge = t.labelLarge.scaledFont(f),
+        labelMedium = t.labelMedium.scaledFont(f),
+        labelSmall = t.labelSmall.scaledFont(f),
+    )
+}
+
 @Composable
 fun AntiVocaleTheme(
     brand: ThemeType = ThemeType.DEFAULT,
     mode: ThemeMode = ThemeMode.SYSTEM,
+    textScale: TextScale = TextScale.SYSTEM,
     content: @Composable () -> Unit
 ) {
     val isDark = when (mode) {
@@ -219,6 +258,7 @@ fun AntiVocaleTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
+        typography = if (textScale == TextScale.SYSTEM) Typography() else scaledTypography(textScale.multiplier),
         content = content
     )
 }

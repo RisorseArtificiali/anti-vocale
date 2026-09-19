@@ -1035,4 +1035,10 @@
     <string name="curated_section_title">Dla Twojego języka</string>
     <string name="curated_browse_all">Przeglądaj wszystkie języki</string>
     <string name="curated_suggest_model">Zaproponuj model dla swojego języka</string>
+    <string name="text_size_title">Rozmiar tekstu</string>
+    <string name="text_size_description">Powiększ lub zmniejsz tekst aplikacji ponad rozmiar systemowy</string>
+    <string name="text_scale_system">System</string>
+    <string name="text_scale_small">Mały</string>
+    <string name="text_scale_large">Duży</string>
+    <string name="text_scale_xlarge">Bardzo duży</string>
 </resources>

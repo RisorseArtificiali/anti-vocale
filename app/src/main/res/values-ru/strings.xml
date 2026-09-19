@@ -1036,4 +1036,10 @@
     <string name="curated_section_title">Для вашего языка</string>
     <string name="curated_browse_all">Показать все языки</string>
     <string name="curated_suggest_model">Предложить модель для вашего языка</string>
+    <string name="text_size_title">Размер текста</string>
+    <string name="text_size_description">Увеличьте или уменьшите текст приложения поверх системного размера</string>
+    <string name="text_scale_system">Система</string>
+    <string name="text_scale_small">Маленький</string>
+    <string name="text_scale_large">Большой</string>
+    <string name="text_scale_xlarge">Очень большой</string>
 </resources>

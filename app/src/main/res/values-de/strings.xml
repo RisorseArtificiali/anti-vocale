@@ -1017,4 +1017,10 @@
     <string name="curated_section_title">Für deine Sprache</string>
     <string name="curated_browse_all">Alle Sprachen durchsuchen</string>
     <string name="curated_suggest_model">Schlage ein Modell für deine Sprache vor</string>
+    <string name="text_size_title">Textgröße</string>
+    <string name="text_size_description">App-Text über die System-Schriftgröße hinaus vergrößern oder verkleinern</string>
+    <string name="text_scale_system">System</string>
+    <string name="text_scale_small">Klein</string>
+    <string name="text_scale_large">Groß</string>
+    <string name="text_scale_xlarge">Sehr groß</string>
 </resources>

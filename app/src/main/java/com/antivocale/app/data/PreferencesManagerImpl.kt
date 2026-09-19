@@ -33,6 +33,7 @@ class PreferencesManagerImpl(
         private val KEEP_ALIVE_TIMEOUT_LEGACY = stringPreferencesKey("keep_alive_timeout")
         private val LANGUAGE_PREFERENCE = stringPreferencesKey("language_preference")
         private val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
+        private val TEXT_SCALE = stringPreferencesKey("text_scale")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val TRANSCRIPTION_BACKEND = stringPreferencesKey("transcription_backend")
         private val SHERPA_MODEL_PATH_PREFIX = "sherpa_model_path_"
@@ -225,6 +226,15 @@ class PreferencesManagerImpl(
 
     override val themePreference: Flow<String> = dataStore.data.map { it[THEME_PREFERENCE] ?: PreferencesManager.DEFAULT_THEME }
         .onStart { emit(cache.get().themePreference) }
+
+    override val textScalePreference: Flow<String> =
+        dataStore.data.map { it[TEXT_SCALE] ?: PreferencesManager.DEFAULT_TEXT_SCALE }
+
+    override suspend fun saveTextScale(value: String) {
+        dataStore.edit { preferences ->
+            preferences[TEXT_SCALE] = value
+        }
+    }
 
     override suspend fun saveThemePreference(theme: String) {
         dataStore.edit { preferences ->

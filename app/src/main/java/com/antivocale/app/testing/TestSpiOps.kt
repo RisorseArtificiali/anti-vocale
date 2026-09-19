@@ -97,6 +97,7 @@ internal class TestSpiOps(
             .put("onboardingCompleted", preferences.onboardingCompleted.first())
             .put("swipeActionMode", preferences.swipeActionMode.first())
             .put("themePreference", preferences.themePreference.first())
+            .put("textScalePreference", preferences.textScalePreference.first())
             .put("themeMode", preferences.themeMode.first())
             .put("defaultPrompt", preferences.defaultPrompt.first())
             .put("summaryPrompt", preferences.summaryPrompt.first())

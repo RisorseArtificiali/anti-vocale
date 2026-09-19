@@ -1029,4 +1029,10 @@
     <string name="curated_why_canary">Compact: small download, quick results</string>
     <string name="curated_why_swiss_german">For Swiss German dialects</string>
     <string name="curated_why_kroko">Streaming: text appears while you speak</string>
+    <string name="text_size_title">Dimensione testo</string>
+    <string name="text_size_description">Ingrandisci o riduci il testo dell\'app oltre alla dimensione di sistema</string>
+    <string name="text_scale_system">Sistema</string>
+    <string name="text_scale_small">Piccolo</string>
+    <string name="text_scale_large">Grande</string>
+    <string name="text_scale_xlarge">Molto grande</string>
 </resources>

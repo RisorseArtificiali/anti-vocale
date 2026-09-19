@@ -11,6 +11,9 @@ interface PreferencesManager {
      *  timed WorkManager fallback transcribes automatically. */
     val subtitleChoiceTimeoutMinutes: Flow<Int>
     val themePreference: Flow<String>
+    /** TASK-576: app text-size step (TextScale name); SYSTEM = no extra scaling. */
+    val textScalePreference: Flow<String>
+    suspend fun saveTextScale(value: String)
     val themeMode: Flow<String>
     val transcriptionBackend: Flow<String>
     /**
@@ -171,6 +174,7 @@ interface PreferencesManager {
         const val DEFAULT_SUMMARIZE_ENABLED = false
         const val DEFAULT_THEME = "DEFAULT"
         const val DEFAULT_THEME_MODE = "SYSTEM"
+        const val DEFAULT_TEXT_SCALE = "SYSTEM"
         const val DEFAULT_TRANSCRIPTION_BACKEND = "sherpa-onnx"
 
         // Backend id for user-imported sherpa-onnx transducer models (Strada B sideload).
