@@ -1023,4 +1023,10 @@
     <string name="curated_section_title">Per la tua lingua</string>
     <string name="curated_browse_all">Sfoglia tutte le lingue</string>
     <string name="curated_suggest_model">Suggerisci un modello per la tua lingua</string>
+    <string name="curated_why_distil_it">Fine-tuned for Italian: the most accurate choice</string>
+    <string name="curated_why_parakeet">Very fast (about 17x) and still very accurate</string>
+    <string name="curated_why_german_whisper">Fine-tuned for German: the most accurate option</string>
+    <string name="curated_why_canary">Compact: small download, quick results</string>
+    <string name="curated_why_swiss_german">For Swiss German dialects</string>
+    <string name="curated_why_kroko">Streaming: text appears while you speak</string>
 </resources>
