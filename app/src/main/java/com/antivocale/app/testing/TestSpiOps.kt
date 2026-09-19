@@ -9,6 +9,7 @@ import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.ui.theme.ThemeMode
+import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.SubtitleFormatter
 import kotlinx.coroutines.CancellationException
@@ -152,6 +153,7 @@ internal class TestSpiOps(
         "swipe_action" to Pair(PreferencesManager.SWIPE_ACTION_MODES, preferences::saveSwipeActionMode),
         "theme" to Pair(THEME_TYPES, preferences::saveThemePreference),
         "theme_mode" to Pair(THEME_MODES, preferences::saveThemeMode),
+        "text_scale" to Pair(TEXT_SCALES, preferences::saveTextScale),
         // GH #92: device tests flip the auto-save format over adb.
         "transcript_export_format" to Pair(
             SubtitleFormatter.Format.entries.map { it.name },
@@ -383,6 +385,7 @@ internal class TestSpiOps(
 
         /** Persisted as the enum names (SettingsViewModel.saveThemePreference/Mode). */
         val THEME_TYPES = ThemeType.entries.map { it.name }
+        val TEXT_SCALES = TextScale.entries.map { it.name }
         val THEME_MODES = ThemeMode.entries.map { it.name }
     }
 }

@@ -29,6 +29,7 @@ import com.antivocale.app.ui.MainScreen
 import com.antivocale.app.ui.TestNavigation
 import com.antivocale.app.ui.theme.AntiVocaleTheme
 import com.antivocale.app.ui.theme.TextScale
+import com.antivocale.app.ui.theme.fromName
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.ui.viewmodel.LogsViewModel
@@ -137,11 +138,7 @@ class MainActivity : AppCompatActivity() {
 
             // TASK-576: collect the text-size step and convert to TextScale
             val textScaleName by preferencesManager.textScalePreference.collectAsState(initial = PreferencesManager.DEFAULT_TEXT_SCALE)
-            val textScale = try {
-                TextScale.valueOf(textScaleName)
-            } catch (e: IllegalArgumentException) {
-                TextScale.SYSTEM
-            }
+            val textScale = TextScale.fromName(textScaleName)
 
             // Observe PiP mode state
             val isInPip by _isInPipMode.collectAsState()

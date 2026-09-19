@@ -210,11 +210,24 @@ enum class TextScale(val multiplier: Float, val nameRes: Int) {
     SYSTEM(1.0f, com.antivocale.app.R.string.text_scale_system),
     SMALL(0.9f, com.antivocale.app.R.string.text_scale_small),
     LARGE(1.15f, com.antivocale.app.R.string.text_scale_large),
-    XLARGE(1.3f, com.antivocale.app.R.string.text_scale_xlarge),
+    XLARGE(1.3f, com.antivocale.app.R.string.text_scale_xlarge);
+
+    companion object
 }
+
+/** One parse site for persisted names (review F10): unknown values read as SYSTEM. */
+fun TextScale.Companion.fromName(name: String?): TextScale =
+    TextScale.entries.firstOrNull { it.name == name } ?: TextScale.SYSTEM
 
 private fun TextStyle.scaledFont(f: Float): TextStyle =
     copy(fontSize = fontSize * f, lineHeight = lineHeight * f)
+
+/**
+ * TASK-576 review F3: the app-level multiplier, readable outside composition
+ * data (the PiP render cap divides by it exactly like the accessibility
+ * fontScale). Provided by [AntiVocaleTheme] at its top.
+ */
+val LocalTextScaleMultiplier = androidx.compose.runtime.compositionLocalOf { 1.0f }
 
 private fun scaledTypography(f: Float): Typography {
     val t = Typography()
@@ -237,6 +250,12 @@ private fun scaledTypography(f: Float): Typography {
     )
 }
 
+/** All four steps precomputed once (review F9); SYSTEM maps to the base. */
+private val SCALED_TYPOGRAPHIES: Map<TextScale, Typography> =
+    TextScale.entries.associateWith { step ->
+        if (step == TextScale.SYSTEM) Typography() else scaledTypography(step.multiplier)
+    }
+
 @Composable
 fun AntiVocaleTheme(
     brand: ThemeType = ThemeType.DEFAULT,
@@ -256,9 +275,16 @@ fun AntiVocaleTheme(
         ThemeType.TELEGRAM -> if (isDark) TelegramDarkColorScheme else TelegramLightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = if (textScale == TextScale.SYSTEM) Typography() else scaledTypography(textScale.multiplier),
-        content = content
-    )
+    androidx.compose.runtime.CompositionLocalProvider(
+        LocalTextScaleMultiplier provides textScale.multiplier,
+    ) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            // Precomputed per step: rebuilding the 15-style graph per
+            // recomposition allocates on every state flip (review F9);
+            // SYSTEM is the identity and skips the map.
+            typography = SCALED_TYPOGRAPHIES.getOrElse(textScale) { Typography() },
+            content = content,
+        )
+    }
 }

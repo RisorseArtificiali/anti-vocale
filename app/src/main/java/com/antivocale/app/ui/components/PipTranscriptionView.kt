@@ -134,8 +134,13 @@ fun PipTranscriptionView(
                 )
             } else {
                 val fontScale = androidx.compose.ui.platform.LocalDensity.current.fontScale
-                val pipRenderCap = remember(displayText, fontScale) {
-                    (MAX_RENDERED_TRANSCRIPT_CHARS / fontScale.coerceAtLeast(1f)).toInt()
+                // TASK-576 review F3: the app-level text-size step inflates
+                // rendered height exactly like the accessibility fontScale,
+                // so the same division must apply or a LARGE/XLARGE step
+                // re-opens the 262142px Constraints breach (TASK-506).
+                val appScale = com.antivocale.app.ui.theme.LocalTextScaleMultiplier.current
+                val pipRenderCap = remember(displayText, fontScale, appScale) {
+                    (MAX_RENDERED_TRANSCRIPT_CHARS / (fontScale * appScale).coerceAtLeast(1f)).toInt()
                         .coerceAtLeast(1_000)
                 }
                 // GH #94: the position-indicator modifier on the scrollable
@@ -165,7 +170,10 @@ fun PipTranscriptionView(
                             MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         .verticalScroll(scrollState),
-                    lineHeight = 16.sp
+                    // TASK-576 review F5: scale the pinned leading with the
+                    // app step, or a scaled bodySmall (15.6sp at XLARGE)
+                    // renders on 16sp lines and consecutive lines touch.
+                    lineHeight = (16.sp * appScale)
                 )
             }
         }

@@ -30,6 +30,7 @@ import com.antivocale.app.ui.appearance.LauncherIconManager
 import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.TextScale
+import com.antivocale.app.ui.theme.fromName
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.util.LocaleManager
@@ -468,11 +469,7 @@ class SettingsViewModel @Inject constructor(
         // Load text size from preferences (TASK-576)
         viewModelScope.launch {
             preferencesManager.textScalePreference.collect { scaleName ->
-                _currentTextScale.value = try {
-                    TextScale.valueOf(scaleName)
-                } catch (e: IllegalArgumentException) {
-                    TextScale.SYSTEM
-                }
+                _currentTextScale.value = TextScale.fromName(scaleName)
             }
         }
         // Load theme mode from preferences
@@ -720,21 +717,6 @@ class SettingsViewModel @Inject constructor(
      * Saves the theme preference.
      * Changes take effect immediately via StateFlow.
      */
-    /**
-     * TASK-576: saves the text-size step. The theme wrapper reads the
-     * preference directly in MainActivity; this exists for the UI round trip.
-     */
-    fun saveTextScale(scale: TextScale) {
-        viewModelScope.launch {
-            try {
-                preferencesManager.saveTextScale(scale.name)
-                _currentTextScale.value = scale
-            } catch (e: Exception) {
-                Log.e("SettingsViewModel", "Failed to save text scale", e)
-            }
-        }
-    }
-
     fun saveThemePreference(theme: ThemeType) {
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true, saveSuccess = null, errorMessage = null) }
@@ -753,6 +735,27 @@ class SettingsViewModel @Inject constructor(
                     saveSuccess = false,
                     errorMessage = e.message ?: getApplication<Application>().getString(R.string.error_save_theme)
                 )}
+            }
+        }
+    }
+
+    /**
+     * TASK-576: saves the text-size step. Same uiState round trip as the
+     * sibling savers (a DataStore failure must surface, not silently snap
+     * the dropdown back).
+     */
+    fun saveTextScale(scale: TextScale) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isSaving = true, saveSuccess = null, errorMessage = null) }
+            try {
+                preferencesManager.saveTextScale(scale.name)
+                _currentTextScale.value = scale
+                _uiState.update { it.copy(isSaving = false, saveSuccess = true) }
+                kotlinx.coroutines.delay(2000)
+                _uiState.update { it.copy(isSaving = false, saveSuccess = null) }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to save text scale", e)
+                _uiState.update { it.copy(isSaving = false, errorMessage = e.message) }
             }
         }
     }

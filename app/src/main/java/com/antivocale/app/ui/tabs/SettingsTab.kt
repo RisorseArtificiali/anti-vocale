@@ -76,6 +76,7 @@ import com.antivocale.app.ui.dialogs.PerformanceStatsDialog
 import com.antivocale.app.ui.screens.LauncherIconScreen
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.screens.PromptSettingsScreen
+import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.util.LanguageNames
@@ -944,6 +945,20 @@ fun SettingsTab(
                         optionDisplay = { it.displayName },
                         onOptionSelected = { viewModel.saveThemeMode(it) },
                         label = themeModeTitle
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // TASK-576: text size, four steps over the system scale
+                    val textSizeTitle = stringResource(R.string.text_size_title)
+                    val currentTextScale by viewModel.currentTextScale.collectAsState()
+                    SettingsDropdown(
+                        currentValue = currentTextScale,
+                        options = TextScale.entries.toList(),
+                        currentValueDisplay = stringResource(currentTextScale.nameRes),
+                        optionDisplay = { stringResource(it.nameRes) },
+                        onOptionSelected = { viewModel.saveTextScale(it) },
+                        label = textSizeTitle
                     )
                 }
             }
