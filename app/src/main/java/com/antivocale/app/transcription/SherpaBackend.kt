@@ -645,7 +645,12 @@ class SherpaBackend(
                 Log.d(TAG, "Transcription complete: '${transcription.take(100)}...' (${transcription.length} chars)")
 
                 if (transcription.isBlank()) {
-                    Result.failure(TranscriptionException.NoTranscriptionProduced())
+                    // GH #96: a blank decode on a chunked path is a silence
+                    // window, not a lost chunk. Returning it as a successful
+                    // empty result lets the orchestrator skip it without
+                    // counting a failure; the single-chunk (whole-file) path
+                    // maps it to NoTranscriptionProduced at its own gate.
+                    Result.success(TranscriptionResult(text = ""))
                 } else {
                     // Keep the ORIGINAL samples length (not the padded one) for the duration calc.
                     val confidence = TranscriptionResult.computeConfidence(transcription, samples.size, sampleRate)
@@ -736,7 +741,12 @@ class SherpaBackend(
                 Log.d(TAG, "Transcription complete: '${transcription.take(100)}...' (${transcription.length} chars)")
 
                 if (transcription.isBlank()) {
-                    Result.failure(TranscriptionException.NoTranscriptionProduced())
+                    // GH #96: a blank decode on a chunked path is a silence
+                    // window, not a lost chunk. Returning it as a successful
+                    // empty result lets the orchestrator skip it without
+                    // counting a failure; the single-chunk (whole-file) path
+                    // maps it to NoTranscriptionProduced at its own gate.
+                    Result.success(TranscriptionResult(text = ""))
                 } else {
                     // OnlineRecognizerResult exposes no confidence/language fields.
                     val confidence = TranscriptionResult.computeConfidence(transcription, samples.size, sampleRate)

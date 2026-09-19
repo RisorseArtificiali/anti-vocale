@@ -262,7 +262,8 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                 val detectedLang = result.lang.ifBlank { null }
 
                 if (transcription.isBlank()) {
-                    Result.failure(TranscriptionException.NoTranscriptionProduced())
+                    // GH #96: silence windows decode blank; see SherpaBackend.
+                    Result.success(TranscriptionResult(text = ""))
                 } else {
                     // Words-per-second heuristic: keep the original length, not the padded one.
                     val confidence = TranscriptionResult.computeConfidence(transcription, samples.size, sampleRate)
