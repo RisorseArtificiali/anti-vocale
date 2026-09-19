@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.*
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -606,7 +607,9 @@ fun LogsTab(
                                 // anchored under longer locales (TASK-345)
                                 Text(
                                     text = stringResource(R.string.logs_recent_requests, logs.size),
-                                    style = MaterialTheme.typography.titleSmall,
+                                    // TASK-564: section-header level (titleMedium),
+                                    // matching the Models tab's headers.
+                                    style = MaterialTheme.typography.titleMedium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     modifier = Modifier.weight(1f)
@@ -914,7 +917,12 @@ fun LogEntryItem(
             .combinedClickable(
                 onClick = { onExpandChange(!expanded) },
                 onLongClick = { contextMenuExpanded = true }
-            )
+            ),
+        // TASK-564: the Models-tab container idiom (the app-wide style
+        // reference); matches SectionCard and the curated model cards.
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             // Long-press context menu (GH #52), anchored to the card's top-start.
