@@ -408,4 +408,119 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
             })
         }
     }
+
+    // ---- TASK-520: map-reduce past the context guard ----
+
+    /** Comfortably past the 12k guard: a 78-minute call is 60-80k chars. */
+    private val hugeTranscript = buildString {
+        while (length < 30_000) {
+            append("la riunione di oggi ha coperto il budget, le scadenze e i nomi dei responsabili. ")
+        }
+    }.trim()
+
+    private fun stubHugeTranscriptRequest() {
+        stubPreprocessing(listOf(FloatArray(3) { it.toFloat() }), totalDurationSeconds = 5.0)
+        coEvery { whisperBackend.transcribeAudio(any(), any(), any()) } returns
+            Result.success(TranscriptionResult(text = hugeTranscript))
+        coEvery { whisperBackend.transcribeAudioStreaming(any(), any(), any(), any()) } returns
+            Result.success(TranscriptionResult(text = hugeTranscript))
+    }
+
+    @Test
+    fun `map-reduce summarizes a transcript past the context guard`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
+        stubSwapToLlm()
+        stubHugeTranscriptRequest()
+
+        val expectedChunks = com.antivocale.app.transcription.ContextChunker.split(hugeTranscript).size
+        // Load-bearing pin (not self-referential): the fixture is 371
+        // repeats of an 81-char sentence (~30k chars), so the 12k budget
+        // must yield exactly 3 chunks (148 sentences, 148, remainder).
+        assertEquals(3, expectedChunks)
+        // Queue: one acceptable partial per chunk, then the reduce output.
+        val responses = ArrayDeque<Result<String>>()
+        repeat(expectedChunks) { responses.addLast(Result.success("Parte ${it + 1}: budget e scadenze discussi.")) }
+        responses.addLast(Result.success("Riunione su budget e scadenze del progetto vocale."))
+        coEvery { llmBackend.generateText(any()) } coAnswers { responses.removeFirst() }
+
+        val delivered = runAudioRequest("summ-map")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        val row = logDao.getByTaskId("summ-map")!!
+        // logSuccess persists via the captured entity: assert through the
+        // update captures instead (the base stub returns a fixed entity).
+        coVerify(atLeast = 1) { logDao.update(match { e ->
+            e.summary == "Riunione su budget e scadenze del progetto vocale." &&
+                e.summarySkipReason == null
+        }) }
+        coVerify(exactly = expectedChunks + 1) { llmBackend.generateText(any()) }
+        // Every map prompt carries a context-sized piece, never the whole.
+        coVerify(atLeast = expectedChunks) { llmBackend.generateText(match { p ->
+            p.length < hugeTranscript.length
+        }) }
+    }
+
+    @Test
+    fun `map-reduce degrades gracefully when one chunk fails`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
+        stubSwapToLlm()
+        stubHugeTranscriptRequest()
+
+        val expectedChunks = com.antivocale.app.transcription.ContextChunker.split(hugeTranscript).size
+        val responses = ArrayDeque<Result<String>>()
+        responses.addLast(Result.failure(IllegalStateException("generation died")))
+        repeat(expectedChunks - 1) { responses.addLast(Result.success("Parte ${it + 2}: nomi dei responsabili.")) }
+        responses.addLast(Result.success("Riassunto dalle parti disponibili della riunione."))
+        coEvery { llmBackend.generateText(any()) } coAnswers { responses.removeFirst() }
+
+        val delivered = runAudioRequest("summ-map-partial")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        coVerify(atLeast = 1) { logDao.update(match { e ->
+            e.summary == "Riassunto dalle parti disponibili della riunione."
+        }) }
+    }
+
+    @Test
+    fun `map-reduce records failed when the reduce generation crashes`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
+        stubSwapToLlm()
+        stubHugeTranscriptRequest()
+
+        val expectedChunks = com.antivocale.app.transcription.ContextChunker.split(hugeTranscript).size
+        val responses = ArrayDeque<Result<String>>()
+        repeat(expectedChunks) { responses.addLast(Result.success("Parte ${it + 1}: budget e scadenze.")) }
+        responses.addLast(Result.failure(IllegalStateException("reduce died")))
+        coEvery { llmBackend.generateText(any()) } coAnswers { responses.removeFirst() }
+
+        val delivered = runAudioRequest("summ-map-reduce-fail")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        // The crash must surface as FAILED, not misfiled as a guards
+        // rejection (the review finding this test pins).
+        coVerify(atLeast = 1) { logDao.update(match {
+            it.summary == null && it.summarySkipReason == SummaryPolicy.SKIP_REASON_FAILED
+        }) }
+    }
+
+    @Test
+    fun `map-reduce records failed when every chunk generation crashes`() = runTest {
+        every { preferencesManager.summarizeEnabled } returns flowOf(true)
+        every { preferencesManager.summaryPrompt } returns flowOf("")
+        stubSwapToLlm()
+        stubHugeTranscriptRequest()
+
+        coEvery { llmBackend.generateText(any()) } returns
+            Result.failure(IllegalStateException("map died"))
+
+        val delivered = runAudioRequest("summ-map-all-fail")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        coVerify(atLeast = 1) { logDao.update(match {
+            it.summary == null && it.summarySkipReason == SummaryPolicy.SKIP_REASON_FAILED
+        }) }
+    }
 }

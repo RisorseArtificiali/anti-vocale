@@ -57,7 +57,8 @@ object SummaryPolicy {
      *  Rendered localized at the single LogsTab caption mapping; never
      *  persisted as user text. */
     const val SKIP_REASON_GUARDS = "guards"
-    const val SKIP_REASON_CONTEXT = "context_limit"
+    const val SKIP_REASON_CONTEXT = "context_limit" // legacy-read only: TASK-520
+        // replaced the skip with map-reduce; existing rows still render it
     const val SKIP_REASON_NO_MODEL = "no_model"
     const val SKIP_REASON_FAILED = "failed"
 

@@ -63,6 +63,8 @@ class TranscriptionOrchestrator @Inject constructor(
         // the trade we take (d6a49e0 had measured the 2-permit wall-clock win).
         private const val MAX_CONCURRENT_CHUNKS = 1
         private const val PARTIAL_SAVE_INTERVAL_MS = 5000L
+        /** TASK-520: map -> reduce recursion budget; partials shrink hard per level. */
+        private const val MAX_SUMMARY_LEVELS = 3
         private const val MB = 1024L * 1024L
         // Headroom over the on-disk model size: absorbs sherpa inference buffers and reclaimable-cache
         // noise in availMem. Tunable; see TASK-314 spec. ~300MB derived from the SmoothQuant incident.
@@ -509,6 +511,109 @@ class TranscriptionOrchestrator @Inject constructor(
      * and any failure degrades to no summary: an optional extra may never
      * fail a completed transcription.
      */
+    /**
+     * TASK-520: map-reduce summary for transcripts past the context guard
+     * (a 78-minute call is 60-80k chars; the single-shot pass would skip).
+     * Runs AFTER the common gates and swap in [applySummaryPass], on the
+     * already-loaded LLM. The TASK-498 retry ladder applies here too: each
+     * instruction gets a full map-reduce attempt before the next runs.
+     * Per-chunk failures degrade by dropping that partial; only a total
+     * map failure (or the last attempt's reduce failure) fails the pass,
+     * because an optional extra may never break the delivery.
+     */
+    private suspend fun summarizeLongTranscript(
+        llm: TranscriptionBackend,
+        instructions: List<String>,
+        result: TranscriptionResult,
+    ): TranscriptionResult {
+        var lastFailure: Throwable? = null
+        for ((attempt, instruction) in instructions.withIndex()) {
+            if (attempt > 0) {
+                Log.i(TAG, "Custom summary prompt did not produce an acceptable map-reduce summary; retrying with the built-in prompt")
+            }
+            val generation = summarizeWithMapReduce(llm, instruction, result.text, MAX_SUMMARY_LEVELS)
+            lastFailure = generation.failure ?: lastFailure
+            val summary = generation.summary
+            if (summary != null && SummaryPolicy.acceptableSummary(summary, result.text)) {
+                Log.i(TAG, "Summary map-reduce applied (${result.text.length} chars -> ${summary.length}-char summary)")
+                return result.copy(summary = summary)
+            }
+        }
+        // Match the single-shot tail: a THROWN generation (map or reduce)
+        // fails the pass; completed-but-rejected output is the guards
+        // verdict. The reason rides the result (TASK-494).
+        lastFailure?.let { throw it }
+        Log.w(TAG, "Summary map-reduce produced no acceptable summary after ${instructions.size} attempt(s); delivering without, reason recorded")
+        return result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_GUARDS)
+    }
+
+    /**
+     * Recursive map-reduce core, bounded by the level budget (not by
+     * shrinkage: a near-copier model passes the 1.2x guard per chunk, so
+     * growth is possible until the budget stops it). Null summary with a
+     * null failure = completed but rejected (guards); null summary with a
+     * failure = a generation crashed (failed). Cancellation always
+     * propagates (the house contract): the map loop rethrows it instead
+     * of recording it as a chunk failure.
+     */
+    private suspend fun summarizeWithMapReduce(
+        llm: TranscriptionBackend,
+        instruction: String,
+        text: String,
+        levelsLeft: Int,
+    ): SummaryGeneration {
+        // Single generation whenever the text fits the guard (the common
+        // reduce case: joined partials are a fraction of the original).
+        if (SummaryPolicy.withinContextLimit(text)) {
+            val generated = llm.generateText(ChunkPromptPolicy.finalPrompt(instruction, text))
+                .map { it.trim() }
+            val candidate = generated.getOrNull()
+            if (candidate != null && SummaryPolicy.acceptableSummary(candidate, text)) {
+                return SummaryGeneration(candidate)
+            }
+            return SummaryGeneration(null, failure = generated.exceptionOrNull())
+        }
+        if (levelsLeft <= 0) return SummaryGeneration(null)
+        val chunks = ContextChunker.split(text)
+        Log.i(TAG, "Summary map stage: ${chunks.size} chunks (${text.length} chars)")
+        val partials = mutableListOf<String>()
+        var lastFailure: Throwable? = null
+        for ((index, chunk) in chunks.withIndex()) {
+            val generated = runCatching {
+                llm.generateText(ChunkPromptPolicy.finalPrompt(instruction, chunk)).map { it.trim() }
+            }.getOrElse { e ->
+                if (e is kotlinx.coroutines.CancellationException) throw e
+                Result.failure(e)
+            }
+            val candidate = generated.getOrNull()
+            if (candidate != null && SummaryPolicy.acceptableSummary(candidate, chunk)) {
+                partials += candidate
+            } else {
+                generated.exceptionOrNull()?.let { lastFailure = it }
+                Log.w(TAG, "Summary map stage: chunk ${index + 1}/${chunks.size} produced no usable partial; continuing")
+            }
+        }
+        if (partials.isEmpty()) return SummaryGeneration(null, failure = lastFailure)
+        // A lone surviving partial cannot gain coverage from a reduce over
+        // itself: return it and let the whole-transcript guard judge it.
+        if (partials.size == 1) return SummaryGeneration(partials.first(), failure = lastFailure)
+        return summarizeWithMapReduce(llm, instruction, partials.joinToString("\n\n"), levelsLeft - 1)
+    }
+
+    /** TASK-520: the map-reduce core's verdict (a summary, or why not). */
+    private data class SummaryGeneration(
+        val summary: String?,
+        val failure: Throwable? = null,
+    )
+
+    /**
+     * TASK-121.4: the summary pass at the transcribeAudio funnel, chained
+     * after the punctuation pass. Every skip path (toggle off, short
+     * length, no Gemma configured) avoids the backend swap entirely, and
+     * any failure degrades to no summary: an optional extra may never
+     * fail a completed transcription. Transcripts past the context guard
+     * take the TASK-520 map-reduce branch below instead of skipping.
+     */
     private suspend fun applySummaryPass(
         context: Context,
         result: TranscriptionResult,
@@ -520,10 +625,10 @@ class TranscriptionOrchestrator @Inject constructor(
         return runCatching {
             if (!preferencesManager.summarizeEnabled.first()) return@runCatching result
             if (!SummaryPolicy.needsSummary(result.text)) return@runCatching result
-            if (!SummaryPolicy.withinContextLimit(result.text)) {
-                Log.i(TAG, "Summary pass skipped: ${result.text.length} chars exceeds the Gemma context guard")
-                return@runCatching result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_CONTEXT)
-            }
+            // The no-Gemma skip runs BEFORE any branch that can swap the
+            // backend (TASK-520 review: a >12k transcript with no model
+            // configured used to enter the map-reduce load and unload the
+            // working ASR backend on its way to a wrong skip reason).
             if (preferencesManager.modelPath.first().isNullOrBlank()) {
                 Log.i(TAG, "Summary pass skipped: no Gemma model configured (delivering transcript without summary)")
                 return@runCatching result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_NO_MODEL)
@@ -546,6 +651,8 @@ class TranscriptionOrchestrator @Inject constructor(
             // instruction on the same loaded backend: the user still gets a
             // real recap instead of a caption. With no custom prompt the
             // built-in IS the first attempt and a failure stays one-shot.
+            // TASK-520: the ladder applies to the map-reduce path too
+            // (summarizeLongTranscript): long transcripts keep the retry.
             val instructions = buildList {
                 add(SummaryPolicy.effectivePrompt(customInstruction, builtInInstruction))
                 // A saved prompt identical to the built-in text must not run
@@ -553,6 +660,15 @@ class TranscriptionOrchestrator @Inject constructor(
                 if (customInstruction.isNotEmpty() && customInstruction != builtInInstruction) {
                     add(builtInInstruction)
                 }
+            }
+            if (!SummaryPolicy.withinContextLimit(result.text)) {
+                // TASK-520: too long for ONE generation, not too long to
+                // summarize: map over context-sized chunks, reduce the
+                // partials. Falls back to the recorded skip only when the
+                // map stage dies entirely (see summarizeLongTranscript).
+                Log.i(TAG, "Summary pass: ${result.text.length} chars exceeds the context guard; map-reduce over chunks")
+                return@runCatching summarizeLongTranscript(
+                    llm = llm, instructions = instructions, result = result)
             }
             var summary: String? = null
             var generationFailure: Throwable? = null
