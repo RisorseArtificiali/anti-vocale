@@ -43,7 +43,9 @@ fun VadAdvisoryCard(
         Card(
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer
+                // Informational (maintainer, 2026-09-20): an info advisory
+                // must not wear the error palette.
+                containerColor = MaterialTheme.colorScheme.secondaryContainer
             )
         ) {
             Column(
@@ -54,28 +56,28 @@ fun VadAdvisoryCard(
                     Icon(
                         imageVector = Icons.Outlined.Info,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onErrorContainer
+                        tint = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = stringResource(R.string.vad_advisory_title),
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
                     )
                 }
 
                 Text(
                     text = stringResource(R.string.vad_advisory_description),
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onErrorContainer
+                    color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
 
                 Row(modifier = Modifier.align(Alignment.End)) {
                     Button(
                         onClick = onDismiss,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.error,
-                            contentColor = MaterialTheme.colorScheme.onError
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            contentColor = MaterialTheme.colorScheme.onSecondary
                         )
                     ) {
                         Text(stringResource(R.string.vad_advisory_dismiss))

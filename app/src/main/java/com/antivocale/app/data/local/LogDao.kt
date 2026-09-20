@@ -42,12 +42,12 @@ interface LogDao {
      */
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs ORDER BY timestamp DESC LIMIT 500")
+        "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, firstPassTranscript, detectedLanguage, languagePin FROM logs ORDER BY timestamp DESC LIMIT 500")
     fun getAll(): Flow<List<LogEntity>>
 
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' " +
+        "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, firstPassTranscript, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' " +
         "ORDER BY timestamp DESC LIMIT 500")
     fun searchAll(query: String): Flow<List<LogEntity>>
 
