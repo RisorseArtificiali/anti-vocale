@@ -39,3 +39,5 @@ Apache 2.0. Source code: https://github.com/RisorseArtificiali/anti-vocale
 REQUIREMENTS
 
 Android 8.0+ | 4GB+ RAM recommended | 326MB-1GB storage per model
+
+NOTE: on some phones with aggressive battery savers (Realme, OnePlus, Vivo), open the app once after sharing audio so the transcription can finish.

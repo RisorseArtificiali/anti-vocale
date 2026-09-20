@@ -4,7 +4,7 @@ Questions that come up frequently, mostly collected from real [issue reports](ht
 
 ## Can it transcribe calls or meetings?
 
-Yes, if you have the recording: share the audio file with the app (your recorder's share button, or History > pick a file). Recordings longer than a model's own limit are split and stitched automatically; the streaming path accepts up to two hours. If a long run fails partway, the transcript produced so far is kept and shown on the entry. The result exports as subtitles (SRT, VTT) or timestamped text, with sentence-level timing on streaming models. The app does not record calls itself, and it does not tell speakers apart yet ([#83](https://github.com/RisorseArtificiali/anti-vocale/issues/83)).
+Yes, if you have the recording: share the audio file with the app (your recorder's share button, or History > pick a file). Recordings longer than a model's own limit are split and stitched automatically; the streaming path accepts up to two hours. If a long run fails partway, the transcript produced so far is kept and shown on the entry. The result exports as subtitles (SRT, VTT) or timestamped text, with sentence-level timing on streaming models. The app does not record calls itself.
 
 ## Models and their limits
 
@@ -85,6 +85,17 @@ Swipe an entry to delete it. A standard long-press context menu is being added a
 ### Can I see who sent a voice message, or what my messaging apps put in their notifications?
 
 Anti-Vocale only knows the app a voice message came from (WhatsApp, Telegram, Signal): the Android share system carries no contact or sender information. If your workflow needs that level of detail, a notification logger shows you what your messaging apps actually put in their notifications, including sender and conversation names: [NotificationLog](https://f-droid.org/en/packages/de.jl.notificationlog/) is a privacy-first, open-source option that stores your full notification history locally.
+
+## Troubleshooting
+
+### I shared audio from another app and nothing happened
+
+On some phones (Realme, OnePlus, Vivo and other OEMs with aggressive battery managers) the system freezes the app a few seconds after you leave it, even while it is legitimately working on your audio in the background. The share succeeds, the transcription starts, and then everything pauses silently: no result notification arrives until you open the app again, at which point the pending result finishes and appears.
+
+This is the manufacturer's background restriction, not a bug in the transcription. Two things help:
+
+1. Open the app once after sharing: the frozen work resumes and the result arrives within seconds.
+2. Make the app exempt from battery optimization (Settings, or the card the app shows on affected devices). On the most aggressive builds this is not always enough; option 1 always works.
 
 ## Nightly builds
 

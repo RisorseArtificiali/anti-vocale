@@ -39,3 +39,5 @@ Licenza Apache 2.0. Codice sorgente: https://github.com/RisorseArtificiali/anti-
 REQUISITI
 
 Android 8.0+ | 4GB+ di RAM consigliati | 326MB-1GB di spazio per modello
+
+NOTA: su alcuni telefoni con gestori batteria aggressivi (Realme, OnePlus, Vivo), apri l'app una volta dopo la condivisione dell'audio per consentire il completamento della trascrizione.
