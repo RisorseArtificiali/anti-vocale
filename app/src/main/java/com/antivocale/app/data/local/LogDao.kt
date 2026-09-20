@@ -50,6 +50,13 @@ interface LogDao {
         "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, firstPassTranscript, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' " +
         "ORDER BY timestamp DESC LIMIT 500")
     fun searchAll(query: String): Flow<List<LogEntity>>
+    /**
+     * GH #83: the cues of ONE row, for the expanded detail (speaker turns).
+     * Deliberately not in the list projections above: the cues JSON re-copies
+     * the transcript and the list flows re-emit on every interim write.
+     */
+    @Query("SELECT segments FROM logs WHERE id = :id")
+    fun getSegments(id: String): Flow<String?>
 
     @Query("SELECT * FROM logs WHERE taskId = :taskId LIMIT 1")
     suspend fun getByTaskId(taskId: String): LogEntity?

@@ -880,6 +880,8 @@ private fun PartialTranscriptionBanner(failedChunkCount: Int) {
 @Composable
 fun LogEntryItem(
     log: LogEntry,
+    /** GH #83: the row's cues arrive through the ViewModel's per-row flow. */
+    viewModel: LogsViewModel,
     searchQuery: String = "",
     expanded: Boolean = false,
     onExpandChange: (Boolean) -> Unit = {},
@@ -1111,8 +1113,10 @@ fun LogEntryItem(
                 // this row's text (display, copy, share) uses the turn-annotated
                 // form, the same rendering the exports produce; unlabeled rows
                 // fall back to the stored transcript.
-                val speakerAnnotated = remember(log.id, log.segments) {
-                    log.segments?.let {
+                val rowSegments by viewModel.segmentsFlow(log.id)
+                    .collectAsState(initial = log.segments)
+                val speakerAnnotated = remember(log.id, rowSegments) {
+                    rowSegments?.let {
                         SubtitleFormatter.speakerAnnotated(TimedSegmentsConverter.fromJson(it))
                     }
                 }
@@ -1535,6 +1539,7 @@ private fun LogEntryWithSwipe(
         ) {
             LogEntryItem(
                 log = log,
+                viewModel = viewModel,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
                 onExpandChange = { expanded ->
@@ -1590,6 +1595,7 @@ private fun LogEntryWithSwipe(
         ) {
             LogEntryItem(
                 log = log,
+                viewModel = viewModel,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
                 onExpandChange = onExpandChange,

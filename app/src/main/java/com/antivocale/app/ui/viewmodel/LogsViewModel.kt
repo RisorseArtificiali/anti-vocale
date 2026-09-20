@@ -27,6 +27,7 @@ import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -498,6 +499,10 @@ class LogsViewModel @Inject constructor(
     ) { backendId, vadEnabled, dismissed ->
         backendId == BuiltInBackendIds.PARAKEET && vadEnabled && !dismissed
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
+    /** GH #83: the cues JSON of one row, for the expanded detail's speaker
+     *  turns; scoped per row so the list flows stay lean (see LogDao). */
+    fun segmentsFlow(id: String): Flow<String?> = logDao.getSegments(id)
 
     fun dismissVadAdvisory() {
         viewModelScope.launch {
