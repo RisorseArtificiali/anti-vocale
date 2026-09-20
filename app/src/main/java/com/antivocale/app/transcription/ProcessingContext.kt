@@ -40,4 +40,7 @@ data class ProcessingContext(
      *  fast_loop_detected, refine_load_failed, refine_inference_failed,
      *  refine_loop_detected). */
     val refinementSkipReason: String? = null,
+    /** TASK-582: measured loop-detector values at the skip ("compression=
+     *  2.61 ngram=0.42"); null unless refinementSkipReason is a loop token. */
+    val refinementLoopMetrics: String? = null,
 )

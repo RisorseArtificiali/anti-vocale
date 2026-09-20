@@ -271,4 +271,7 @@ data class FirstPassOutcome(
     /** Stable token when refinement did NOT complete (F4/F5): the delivered
      *  text IS the first pass and the row carries a not-refined caption. */
     val refinementFailedToken: String? = null,
+    /** TASK-582: the detector's measured values when the token is a loop
+     *  skip ("compression=2.61 ngram=0.42"), for field threshold tuning. */
+    val refinementLoopMetrics: String? = null,
 )

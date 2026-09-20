@@ -217,13 +217,17 @@ class TranscriptionOrchestrator @Inject constructor(
             // single-model run; phase 1 may never break a request.
             // F1/F3 tokens land here when phase 1 attempted but degraded.
             var dualSkipToken: String? = null
+            var dualSkipLoopMetrics: String? = null
             val fastFirstPass = runCatching {
                 runRefinementFirstPass(
                     taskId = taskId, requestType = requestType, backendOverride = backendOverride,
                     filePath = filePath, prompt = prompt, queuePosition = queuePosition,
                     queueTotal = queueTotal, context = context, cacheDir = cacheDir,
                     listener = listener, coroutineScope = coroutineScope,
-                    onSkipped = { dualSkipToken = it },
+                    onSkipped = { token, loopMetrics ->
+                        dualSkipToken = token
+                        dualSkipLoopMetrics = loopMetrics
+                    },
                 )
             }.onFailure {
                 // Cancellation must propagate (the house contract): a
@@ -414,6 +418,8 @@ class TranscriptionOrchestrator @Inject constructor(
                             },
                             skipReason = transcriptionResult.firstPass?.refinementFailedToken
                                 ?: dualSkipToken,
+                            loopMetrics = transcriptionResult.firstPass?.refinementLoopMetrics
+                                ?: dualSkipLoopMetrics,
                         ),
                         detectedLanguage = transcriptionResult.detectedLanguage,
                         languagePin = resolvedLanguagePin(context),
@@ -997,7 +1003,7 @@ class TranscriptionOrchestrator @Inject constructor(
         cacheDir: File,
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope,
-        onSkipped: (token: String) -> Unit = {},
+        onSkipped: (token: String, loopMetrics: String?) -> Unit = { _, _ -> },
     ): FirstPassOutcome? {
         val fastId = DualRefinementPolicy.fastBackendFor(
             requestType = requestType,
@@ -1012,7 +1018,7 @@ class TranscriptionOrchestrator @Inject constructor(
         val load = ensureBackendLoaded(context, fastId)
         if (load.isFailure) {
             Log.i(TAG, "Fast first pass skipped (load failed): ${load.exceptionOrNull()?.message}")
-            onSkipped(DualRefinementPolicy.SKIP_FAST_LOAD_FAILED)
+            onSkipped(DualRefinementPolicy.SKIP_FAST_LOAD_FAILED, null)
             return null
         }
         // The base listener is passed as-is: processAudioRequest reports
@@ -1029,7 +1035,7 @@ class TranscriptionOrchestrator @Inject constructor(
             // F2/F3: mid-stream death or a blank pass. The TASK-568 machinery
             // salvaged any partial onto the row; phase 2 supersedes it.
             Log.i(TAG, "Fast first pass produced no usable text; single-model run")
-            onSkipped(DualRefinementPolicy.SKIP_FAST_BLANK)
+            onSkipped(DualRefinementPolicy.SKIP_FAST_BLANK, null)
             return null
         }
         // TASK-579 (AC2, the other direction): a budget-filling loop from the
@@ -1037,8 +1043,9 @@ class TranscriptionOrchestrator @Inject constructor(
         // the F4/F5 fallback text; the run degrades to single-model instead.
         val fastLoop = RepetitionLoopDetector.detect(outcome.text)
         if (fastLoop != null) {
-            Log.i(TAG, "Fast first pass repetition loop ($fastLoop); single-model run")
-            onSkipped(DualRefinementPolicy.SKIP_FAST_LOOP)
+            val loopMetrics = fastLoop.metrics()
+            Log.i(TAG, "Fast first pass repetition loop (${fastLoop.reason} $loopMetrics); single-model run")
+            onSkipped(DualRefinementPolicy.SKIP_FAST_LOOP, loopMetrics)
             return null
         }
         // Force-write the complete first-pass text so the row shows it while
@@ -1137,13 +1144,15 @@ class TranscriptionOrchestrator @Inject constructor(
         refined: TranscriptionResult,
     ): Result<TranscriptionResult> {
         val loop = RepetitionLoopDetector.detect(refined.text)
+        val refineLoopMetrics = loop?.metrics()
         return if (loop == null) {
             Result.success(refined.copy(firstPass = fastFirstPass))
         } else {
             recoverFirstPass(
                 fastFirstPass,
-                IllegalStateException("refinement repetition loop: $loop"),
+                IllegalStateException("refinement repetition loop: ${loop.reason} $refineLoopMetrics"),
                 DualRefinementPolicy.SKIP_REFINE_LOOP,
+                loopMetrics = refineLoopMetrics,
             )
         }
     }
@@ -1158,6 +1167,7 @@ class TranscriptionOrchestrator @Inject constructor(
         firstPass: FirstPassOutcome,
         failure: Throwable,
         skipToken: String,
+        loopMetrics: String? = null,
     ): Result<TranscriptionResult> {
         if (failure is kotlinx.coroutines.CancellationException) {
             throw failure
@@ -1175,7 +1185,10 @@ class TranscriptionOrchestrator @Inject constructor(
                 // complete transcript (guard-review finding).
                 isPartial = firstPass.isPartial,
                 failedChunkCount = firstPass.failedChunkCount,
-                firstPass = firstPass.copy(refinementFailedToken = skipToken),
+                firstPass = firstPass.copy(
+                    refinementFailedToken = skipToken,
+                    refinementLoopMetrics = loopMetrics,
+                ),
             )
         )
     }
@@ -1197,11 +1210,19 @@ class TranscriptionOrchestrator @Inject constructor(
     private fun ProcessingContext?.withRefinement(
         refinedFrom: ProcessingContext?,
         skipReason: String?,
+        loopMetrics: String? = null,
     ): ProcessingContext? {
         if (this == null && refinedFrom == null && skipReason == null) return this
         return (this ?: ProcessingContext(decodePath = "unknown")).copy(
             refinementPhase = refinedFrom,
             refinementSkipReason = skipReason,
+            // Future-proofing only: today both metrics sources are already
+            // loop-token-exclusive by construction; if a future skip token
+            // ever carries metrics, this guard must grow with it.
+            refinementLoopMetrics = loopMetrics?.takeIf {
+                skipReason == DualRefinementPolicy.SKIP_FAST_LOOP ||
+                    skipReason == DualRefinementPolicy.SKIP_REFINE_LOOP
+            },
         )
     }
 

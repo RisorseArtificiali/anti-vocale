@@ -1,6 +1,8 @@
 package com.antivocale.app.transcription
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -29,14 +31,14 @@ class RepetitionLoopDetectorTest {
         // 20 repeats: the exact user incident shape (19.8 s budget-filled loop).
         assertEquals(
             RepetitionLoopDetector.REASON_COMPRESSION,
-            RepetitionLoopDetector.detect(loop("¡Muy bien!", 20)))
+            RepetitionLoopDetector.detect(loop("¡Muy bien!", 20))?.reason)
     }
 
     @Test
     fun `a budget-filling long-phrase loop fires`() {
         assertEquals(
             RepetitionLoopDetector.REASON_COMPRESSION,
-            RepetitionLoopDetector.detect(loop("Grazie per aver chiamato", 99)))
+            RepetitionLoopDetector.detect(loop("Grazie per aver chiamato", 99))?.reason)
     }
 
     @Test
@@ -46,7 +48,7 @@ class RepetitionLoopDetectorTest {
             RepetitionLoopDetector.detect(loop(
                 "Die Wissenschaft weist nun darauf hin, dass diese massive " +
                     "Kohlenstoffwirtschaft die Biosphäre aus einem ihrer stabilen " +
-                    "Zustände herausgebracht hat.", 40)))
+                    "Zustände herausgebracht hat.", 40))?.reason)
     }
 
     @Test
@@ -56,7 +58,7 @@ class RepetitionLoopDetectorTest {
         val text = normalTranscript + " " + loop("¡Muy bien!", 30)
         assertEquals(
             RepetitionLoopDetector.REASON_COMPRESSION,
-            RepetitionLoopDetector.detect(text))
+            RepetitionLoopDetector.detect(text)?.reason)
     }
 
     @Test
@@ -64,7 +66,7 @@ class RepetitionLoopDetectorTest {
         val text = loop("Okay. Alright, let's do that.", 80)
         assertEquals(
             RepetitionLoopDetector.REASON_COMPRESSION,
-            RepetitionLoopDetector.detect(text))
+            RepetitionLoopDetector.detect(text)?.reason)
     }
 
     @Test
@@ -90,7 +92,7 @@ class RepetitionLoopDetectorTest {
     @Test
     fun `short texts are exempt even when internally repetitive`() {
         // Under the word floor: cosmetic repeats in a brief answer are not the class.
-        assertNull(RepetitionLoopDetector.detect(loop("¡Muy bien!", 4)))
+        assertNull(RepetitionLoopDetector.detect(loop("¡Muy bien!", 4))?.reason)
     }
 
     @Test
@@ -134,7 +136,7 @@ class RepetitionLoopDetectorTest {
         val text = "ありがとうございます。".repeat(60)
         assertEquals(
             RepetitionLoopDetector.REASON_COMPRESSION,
-            RepetitionLoopDetector.detect(text))
+            RepetitionLoopDetector.detect(text)?.reason)
     }
 
     @Test
@@ -145,12 +147,38 @@ class RepetitionLoopDetectorTest {
         val text = clean + " " + loop("ciao a tutti quanto", 6)
         // The loop is short enough that its window compresses hard; either
         // arm firing proves the anchored tail window covered it.
-        org.junit.Assert.assertNotNull(RepetitionLoopDetector.detect(text))
+        assertNotNull(RepetitionLoopDetector.detect(text)?.reason)
     }
 
     @Test
     fun `reason tokens are stable strings for the persisted context`() {
         assertEquals("compression", RepetitionLoopDetector.REASON_COMPRESSION)
         assertEquals("ngram", RepetitionLoopDetector.REASON_NGRAM)
+    }
+
+    @Test
+    fun `a fired detection carries the measured maxima for tuning`() {
+        val d = RepetitionLoopDetector.detect(loop("¡Muy bien!", 20))
+        assertNotNull(d)
+        assertEquals(RepetitionLoopDetector.REASON_COMPRESSION, d!!.reason)
+        assertTrue("compression above threshold: ${d.maxCompressionRatio}",
+            d.maxCompressionRatio >= 2.4f)
+        val m = d.metrics()
+        assertTrue("metrics string carries both values: $m",
+            m.startsWith("compression=") && m.contains("ngram="))
+    }
+
+    @Test
+    fun `the scan continues past the firing window to record the true maxima`() {
+        // The verifier's gradual-onset shape: early windows already fire,
+        // later windows compress far harder. The persisted maxima must
+        // include the tail, not stop at the fire point.
+        val text = loop("Die Wissenschaft weist nun darauf hin.", 8) + " " + loop("no no", 20)
+        val d = RepetitionLoopDetector.detect(text)
+        assertNotNull(d)
+        // Only the tiny-phrase tail reaches 4.0; the sentence region alone
+        // stays below it (its 40-token windows hold ~2.7 sentence repeats).
+        assertTrue("tail windows recorded: ${d!!.maxCompressionRatio}",
+            d.maxCompressionRatio > 4.0f)
     }
 }

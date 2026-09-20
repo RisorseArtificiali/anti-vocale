@@ -1,6 +1,7 @@
 package com.antivocale.app.transcription
 
 import java.io.ByteArrayOutputStream
+import java.util.Locale
 import java.util.zip.DeflaterOutputStream
 
 /**
@@ -28,8 +29,11 @@ import java.util.zip.DeflaterOutputStream
  * re-tokenized into codepoints; thresholds are unchanged, with the honest
  * caveat that they were measured on spaced scripts, not on CJK prose.
  *
- * Condensing outputs (summaries, short answers) never fire: the token
- * floor is 24 and neither arm measures length against the audio. The
+ * Condensing outputs (summaries, short answers) never fire: neither arm
+ * measures length against the audio. The floor is effectively 40 tokens
+ * (one full window): 24-39-token texts pass the pre-check but form no
+ * window, so a loop shorter than one window goes undetected (tracked;
+ * the thresholds were measured on 40-token windows). The
  * evaluated-and-rejected third arm: a words-per-second ceiling anchored on
  * audio duration; the greedy token budget itself caps loops at ~6 words/s,
  * too close to real fast speech to separate.
@@ -50,25 +54,57 @@ object RepetitionLoopDetector {
     private val CJK = Regex("[\\u3040-\\u30ff\\u3400-\\u4dbf\\u4e00-\\u9fff\\uf900-\\ufaff]")
 
     /**
-     * @return the reason token when [text] is a runaway repetition loop,
-     *   null when the text is acceptable (including every short or
-     *   condensed text, by construction).
+     * TASK-582: a fired detection with the measured signal maxima for
+     * threshold tuning. Once a window fires the scan CONTINUES to the end
+     * so the maxima cover every window (a review measured prefix-truncated
+     * maxima biasing field rows low, e.g. firing at 2.47 with later
+     * windows at 7.48); the reason is the FIRST arm that fired, the
+     * verdict, which cannot change after the fact.
      */
-    fun detect(text: String): String? {
+    data class Detection(
+        val reason: String,
+        val maxCompressionRatio: Float,
+        val maxTrigramDominance: Float,
+    ) {
+        /** The compact persisted form, Locale-stable: "compression=2.3951
+         *  ngram=0.1053". Four decimals: two decimals rendered 2.3951 and
+         *  2.4049 identically, losing the tuning signal at 2.4. */
+        fun metrics(): String =
+            "compression=%.4f ngram=%.4f".format(Locale.US, maxCompressionRatio, maxTrigramDominance)
+    }
+
+    /**
+     * @return the detection (reason plus measured values) when [text] is a
+     *   runaway repetition loop, null when the text is acceptable
+     *   (including every short or condensed text, by construction).
+     */
+    fun detect(text: String): Detection? {
         val tokens = tokenize(text)
         if (tokens.size < MIN_TOKENS) return null
         var start = 0
         val lastStart = tokens.size - WINDOW_TOKENS
+        var maxCompression = 0f
+        var maxDominance = 0f
+        var firedReason: String? = null
         while (start <= lastStart) {
             val window = tokens.subList(start, start + WINDOW_TOKENS).joinToString(" ")
-            if (compressionRatio(window) >= COMPRESSION_THRESHOLD) return REASON_COMPRESSION
-            if (topTrigramDominance(tokens, start, start + WINDOW_TOKENS) >= NGRAM_DOMINANCE) {
-                return REASON_NGRAM
+            val compression = compressionRatio(window)
+            maxCompression = maxOf(maxCompression, compression)
+            val dominance = topTrigramDominance(tokens, start, start + WINDOW_TOKENS)
+            maxDominance = maxOf(maxDominance, dominance)
+            // First fire fixes the reason and the verdict; the scan still
+            // continues so later windows update the tuning maxima.
+            if (firedReason == null) {
+                firedReason = when {
+                    compression >= COMPRESSION_THRESHOLD -> REASON_COMPRESSION
+                    dominance >= NGRAM_DOMINANCE -> REASON_NGRAM
+                    else -> null
+                }
             }
             if (start == lastStart) break
             start = minOf(start + WINDOW_STEP, lastStart)
         }
-        return null
+        return firedReason?.let { Detection(it, maxCompression, maxDominance) }
     }
 
     /**

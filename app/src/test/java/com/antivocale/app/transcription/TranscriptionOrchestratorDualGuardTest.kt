@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -61,6 +62,12 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
         assertEquals(
             DualRefinementPolicy.SKIP_REFINE_LOOP,
             delivered.firstPass?.refinementFailedToken)
+        // TASK-582: the measured loop values ride the same record, so a
+        // field firing is tunable after the fact.
+        val metrics = delivered.firstPass?.refinementLoopMetrics
+        assertNotNull(metrics)
+        assertTrue("compression= and ngram= in: $metrics",
+            metrics!!.startsWith("compression=") && metrics.contains("ngram="))
         assertEquals(
             "nemotron-streaming",
             delivered.firstPass?.processing?.backendId)

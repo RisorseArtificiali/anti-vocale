@@ -23,6 +23,7 @@ object ProcessingContextConverter {
             c.backendId?.let { put("backendId", it) }
             c.refinementPhase?.let { put("refinementPhase", toJson(it)) }
             c.refinementSkipReason?.let { put("refinementSkipReason", it) }
+            c.refinementLoopMetrics?.let { put("refinementLoopMetrics", it) }
         }.toString()
     }
 
@@ -43,6 +44,7 @@ object ProcessingContextConverter {
                     backendId = o.optStringOrNull("backendId"),
                     refinementPhase = fromJson(o.optStringOrNull("refinementPhase")),
                     refinementSkipReason = o.optStringOrNull("refinementSkipReason"),
+                    refinementLoopMetrics = o.optStringOrNull("refinementLoopMetrics"),
                 )
             }.getOrNull()
         }
@@ -63,6 +65,7 @@ object ProcessingContextConverter {
             // report email) without a new field anywhere.
             c.refinementPhase?.backendId?.let { add("refined=$it") }
             c.refinementSkipReason?.let { add("skip=$it") }
+            c.refinementLoopMetrics?.let { add("loop=$it") }
         }.joinToString(" ")
     }
 }

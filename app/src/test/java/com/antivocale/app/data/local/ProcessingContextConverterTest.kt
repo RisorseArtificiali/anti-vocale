@@ -42,6 +42,18 @@ class ProcessingContextConverterTest {
             refinementSkipReason = null,
         )
         assertEquals(dual, ProcessingContextConverter.fromJson(ProcessingContextConverter.toJson(dual)))
+        // F8: the common metrics-free skip render stays asserted too.
+        assertEquals(
+            "pipeline refined=nemotron-streaming skip=fast_blank",
+            ProcessingContextConverter.render(dual.copy(refinementSkipReason = "fast_blank")))
+        // TASK-582: the measured loop values survive the JSON round trip
+        // (a key mismatch would silently drop them from every row).
+        val looped = dual.copy(
+            refinementSkipReason = "fast_loop_detected",
+            refinementLoopMetrics = "compression=2.6100 ngram=0.4200")
+        assertEquals(
+            looped,
+            ProcessingContextConverter.fromJson(ProcessingContextConverter.toJson(looped)))
         assertEquals(
             "pipeline refined=nemotron-streaming",
             ProcessingContextConverter.render(dual))
@@ -49,10 +61,11 @@ class ProcessingContextConverterTest {
         val skipped = ProcessingContext(
             decodePath = "whole_file",
             backendId = "parakeet",
-            refinementSkipReason = "fast_load_failed",
+            refinementSkipReason = "fast_loop_detected",
+            refinementLoopMetrics = "compression=2.6100 ngram=0.4200",
         )
         assertEquals(
-            "whole_file skip=fast_load_failed",
+            "whole_file skip=fast_loop_detected loop=compression=2.6100 ngram=0.4200",
             ProcessingContextConverter.render(skipped))
         // Old JSON (pre-dual) parses with the new fields null.
         assertEquals(
