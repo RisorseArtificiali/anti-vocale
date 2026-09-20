@@ -23,6 +23,10 @@ object DualRefinementPolicy {
     const val SKIP_REFINE_LOAD_FAILED = "refine_load_failed"
     const val SKIP_REFINE_INFERENCE_FAILED = "refine_inference_failed"
 
+    /** TASK-579: phase 2 completed but its text is a repetition loop
+     *  (RepetitionLoopDetector); the first pass is delivered instead. */
+    const val SKIP_REFINE_LOOP = "refine_loop_detected"
+
     /**
      * @param requestType the request's type token ("audio" qualifies; text,
      *   subtitle, and LLM requests never do).

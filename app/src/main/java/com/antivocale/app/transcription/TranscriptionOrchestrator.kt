@@ -298,7 +298,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     )
                     if (fastFirstPass == null) phase2
                     else phase2.fold(
-                        onSuccess = { Result.success(it.copy(firstPass = fastFirstPass)) },
+                        onSuccess = { refined -> refinementFoldSuccess(fastFirstPass, refined) },
                         onFailure = { failure ->
                             // Design F5: deliver through the same funnel.
                             recoverFirstPass(fastFirstPass, failure,
@@ -1011,7 +1011,32 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     /**
-     * F4/F5: phase 2 is dead but the first pass completed. Build the
+     * TASK-579: the phase-2 success arm of the dual fold. A refinement
+     * that completed in a repetition loop (RepetitionLoopDetector) must
+     * not replace the good first pass; it delivers through the same
+     * F4/F5 funnel with the loop skip token. A clean refinement carries
+     * the first pass alongside, as before. Extracted for the fold-arm
+     * tests: the full success path needs a real phase-2 load.
+     */
+    internal fun refinementFoldSuccess(
+        fastFirstPass: FirstPassOutcome,
+        refined: TranscriptionResult,
+    ): Result<TranscriptionResult> {
+        val loop = RepetitionLoopDetector.detect(refined.text)
+        return if (loop == null) {
+            Result.success(refined.copy(firstPass = fastFirstPass))
+        } else {
+            recoverFirstPass(
+                fastFirstPass,
+                IllegalStateException("refinement repetition loop: $loop"),
+                DualRefinementPolicy.SKIP_REFINE_LOOP,
+            )
+        }
+    }
+
+    /**
+     * F4/F5 and the TASK-579 loop arm: phase 2 is dead, or completed with
+     * unusable (looping) output, while the first pass completed. Build the
      * first-pass result that flows the normal funnel (punctuation, summary,
      * one notification); Cancellation keeps its contract.
      */
