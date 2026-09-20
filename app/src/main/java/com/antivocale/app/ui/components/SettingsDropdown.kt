@@ -67,7 +67,12 @@ fun <T> SettingsDropdown(
                 .menuAnchor()
                 .fillMaxWidth(),
             enabled = enabled,
+            // TASK-592: an explicit tonal container so selects read as
+            // controls; the default filled colors sit too close to the page
+            // background, especially in dark theme.
             colors = ExposedDropdownMenuDefaults.textFieldColors(
+                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                 focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                 unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
