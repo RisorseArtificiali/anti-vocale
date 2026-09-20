@@ -1678,11 +1678,27 @@ class TranscriptionOrchestrator @Inject constructor(
         // the callback via the default implementation in TranscriptionBackend.
         if (chunkCount == 1) {
             val t0 = System.currentTimeMillis()
-            val result = backend.transcribeAudioStreaming(
-                prompt = resolvedPrompt,
-                samples = preprocessingResult.chunks.first(),
-                sampleRate = preprocessingResult.sampleRate
-            ) { partial ->
+            // TASK-602 F1: a single non-streaming decode (the common
+            // voice-message shape) has no callbacks; without a heartbeat the
+            // phase-2 boundary seed ages past the 15s staleness gate while
+            // the accurate model loads and decodes, and reopening mid-run
+            // offers recovery for a LIVE run. Re-saving the same text only
+            // refreshes the timestamp.
+            val seedHeartbeat = if (!emitInterim) coroutineScope.launch {
+                while (isActive) {
+                    delay(PARTIAL_SAVE_INTERVAL_MS)
+                    val seed = preferencesManager.partialTranscriptionText.first()
+                    if (!seed.isNullOrBlank()) {
+                        preferencesManager.savePartialTranscriptionState(seed)
+                    }
+                }
+            } else null
+            val result = try {
+                backend.transcribeAudioStreaming(
+                    prompt = resolvedPrompt,
+                    samples = preprocessingResult.chunks.first(),
+                    sampleRate = preprocessingResult.sampleRate
+                ) { partial ->
                 if (emitInterim) {
                     updateInterimResult(taskId, partial)
                     listener.onInterimResult(
@@ -1693,7 +1709,10 @@ class TranscriptionOrchestrator @Inject constructor(
                     chunkText = partial,
                     totalChunks = 1
                 )
+                    }
                 }
+            } finally {
+                seedHeartbeat?.cancel()
             }
             val inferMs = System.currentTimeMillis() - t0
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
@@ -1863,8 +1882,13 @@ class TranscriptionOrchestrator @Inject constructor(
                         segmentRangesMs.getOrNull(i)?.let { (startMs, endMs) ->
                             segments.addAll(cuesForChunk(tr.tokens, trimmed, startMs, endMs))
                         }
+                        // TASK-602: the crash-recovery partial must refresh even
+                        // when interim writes are suppressed (dual phase 2),
+                        // or the seed ages past RECOVERY_STALE_THRESHOLD_MS and
+                        // reopening mid-run offers recovery for a LIVE run;
+                        // same writeRow idiom as the pipeline/windowed paths.
+                        updateInterimResult(taskId, accumulatedText.toString(), writeRow = emitInterim)
                         if (emitInterim) {
-                            updateInterimResult(taskId, accumulatedText.toString())
                             Log.i(TAG, "Progressive preview: segment ${trimmed.length} chars, total ${accumulatedText.length} chars")
                             listener.onInterimResult(
                                 contentText = trimmed,
@@ -1996,7 +2020,13 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             }
 
+            // TASK-602 F2: the seed must refresh on EVERY phase-2 chunk
+            // completion, not only when the progressive builder exists:
+            // with the toggle off the old site never ran and the boundary
+            // seed went stale mid-run. Single-model runs with the toggle
+            // off keep the old no-interim-writes behavior.
             val progressiveText = if (progressiveEnabled) StringBuilder() else null
+            var seedText = ""
 
             deferredResults.forEachIndexed { index, deferred ->
                 val chunkResult = deferred.await()
@@ -2011,17 +2041,20 @@ class TranscriptionOrchestrator @Inject constructor(
                             if (progressiveText != null) {
                                 if (progressiveText.isNotEmpty()) progressiveText.append(' ')
                                 progressiveText.append(trimmed)
-                                updateInterimResult(taskId, progressiveText.toString(), writeRow = emitInterim)
-                                if (emitInterim) {
-                                    listener.onInterimResult(
-                                        contentText = trimmed,
-                                        bigText = trimmed,
-                                        subText = "Chunk ${index + 1}/$chunkCount",
-                                        chunkIndex = index,
-                                        chunkText = trimmed,
-                                        totalChunks = chunkCount
-                                    )
-                                }
+                            }
+                            seedText = if (progressiveText != null) progressiveText.toString() else trimmed
+                            if (progressiveText != null || !emitInterim) {
+                                updateInterimResult(taskId, seedText, writeRow = emitInterim)
+                            }
+                            if (progressiveText != null && emitInterim) {
+                                listener.onInterimResult(
+                                    contentText = trimmed,
+                                    bigText = trimmed,
+                                    subText = "Chunk ${index + 1}/$chunkCount",
+                                    chunkIndex = index,
+                                    chunkText = trimmed,
+                                    totalChunks = chunkCount
+                                )
                             }
                         }
                     },
@@ -2607,6 +2640,11 @@ class TranscriptionOrchestrator @Inject constructor(
         // listener, which is NOT throttled here.
         val now = throttleClock()
         if (now - (lastInterimRoomWriteMs[taskId] ?: 0L) < PARTIAL_SAVE_INTERVAL_MS) return
+        // NOTE (TASK-602 review F7): the key advances on EVERY pass, including
+        // writeRow=false ones, so it means "last updateInterimResult pass", not
+        // "last Room write"; a writeRow=true caller within 5s of a suppressed
+        // pass still skips its row write (acceptable: the final logSuccess is
+        // unconditional).
         lastInterimRoomWriteMs[taskId] = now
 
         // TASK-390: column-scoped update (no read): a whole-row write-back could
