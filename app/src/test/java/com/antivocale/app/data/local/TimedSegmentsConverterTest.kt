@@ -32,4 +32,17 @@ class TimedSegmentsConverterTest {
     fun malformedJson_decodeToEmpty() {
         assertEquals(emptyList<TimedSegment>(), TimedSegmentsConverter.fromJson("{not json"))
     }
+
+    @Test
+    fun `speaker labels round-trip and old rows stay unlabeled`() {
+        val labeled = listOf(
+            TimedSegment(0, 1000, "prima frase", speaker = 0),
+            TimedSegment(1000, 2000, "seconda", speaker = 1),
+            TimedSegment(2000, 3000, "terza senza label"),
+        )
+        assertEquals(labeled, TimedSegmentsConverter.fromJson(TimedSegmentsConverter.toJson(labeled)))
+        // Rows written before GH #83 carry no speaker key.
+        val legacy = """[{"startMs":0,"endMs":10,"text":"vecchia"}]"""
+        assertNull(TimedSegmentsConverter.fromJson(legacy).single().speaker)
+    }
 }

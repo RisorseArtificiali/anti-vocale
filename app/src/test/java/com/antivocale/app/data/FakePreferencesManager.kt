@@ -168,6 +168,12 @@ internal class FakePreferencesManager : PreferencesManager {
         _refinementEnabled.value = enabled
     }
 
+    val _speakerLabelsEnabled = MutableStateFlow(false)
+    override val speakerLabelsEnabled: Flow<Boolean> = _speakerLabelsEnabled
+    override suspend fun saveSpeakerLabelsEnabled(enabled: Boolean) {
+        _speakerLabelsEnabled.value = enabled
+    }
+
     // TASK-576
     val _textScale = MutableStateFlow(PreferencesManager.DEFAULT_TEXT_SCALE)
     override val textScalePreference: Flow<String> = _textScale

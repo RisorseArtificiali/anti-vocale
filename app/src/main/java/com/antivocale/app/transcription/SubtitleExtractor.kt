@@ -185,7 +185,12 @@ object SubtitleExtractor {
     internal fun stripTimestampsAndMarkup(raw: String, mime: String): String {
         // 1. Strip all <...> markup tags: HTML/tx3g styling (<i>, </i>, <b>) and WebVTT
         //    inline cue-time tags (<00:00:01.000>).
-        val withoutTags = raw.replace(MARKUP_TAG_REGEX, "")
+        // 1b. Strip the app's own speaker-turn prefixes (GH #83 exports
+        //     "SPEAKER k: " at turn starts): re-ingesting a labeled export
+        //     must not deliver machine labels as literal transcript text.
+        val withoutTags = raw
+            .replace(MARKUP_TAG_REGEX, "")
+            .replace(SPEAKER_PREFIX_REGEX, "")
 
         // 2. Keep only real subtitle text lines: drop cue timestamp ranges (lines
         //    containing "-->"), standalone timestamp lines, SRT cue indices (lines that
@@ -210,6 +215,10 @@ object SubtitleExtractor {
 
     // Matches <...> (non-greedy, no nested '>'): covers <i>, </i>, <00:00:01.500>, <b>, etc.
     private val MARKUP_TAG_REGEX = Regex("<[^>]*>")
+
+    // The app's speaker-turn cue prefix (SubtitleFormatter): "SPEAKER 12: "
+    // at a line start.
+    private val SPEAKER_PREFIX_REGEX = Regex("(?m)^SPEAKER \\d+: ")
 
     // A pure SRT cue index line: one or more digits and nothing else (e.g. "1", "23").
     private val CUE_INDEX_REGEX = Regex("^\\d+$")

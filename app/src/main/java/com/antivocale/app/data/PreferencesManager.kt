@@ -17,7 +17,13 @@ interface PreferencesManager {
 
     /** GH #43: two-pass transcription (fast streaming preview, then refine). */
     val refinementEnabled: Flow<Boolean>
+
+    /** GH #83: post-transcription speaker labeling on the cue timeline. */
+    val speakerLabelsEnabled: Flow<Boolean>
     suspend fun saveRefinementEnabled(enabled: Boolean)
+
+    /** GH #83. */
+    suspend fun saveSpeakerLabelsEnabled(enabled: Boolean)
     val themeMode: Flow<String>
     val transcriptionBackend: Flow<String>
     /**

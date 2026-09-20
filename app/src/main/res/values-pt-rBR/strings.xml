@@ -891,6 +891,9 @@
     <string name="logs_first_pass_label">Primeira passagem (%1$s)</string>
     <string name="copy_first_pass">Copiar primeira passagem</string>
     <string name="refining_status">Refinando com %1$s…</string>
+    <string name="speaker_labels_status">Identificando falantes…</string>
+    <string name="speaker_labels_title">Identificar falantes (chamadas de 2 pessoas)</string>
+    <string name="speaker_labels_description">Adiciona um rótulo de falante a cada frase. Baixa cerca de~47 MB de modelos no primeiro uso; adiciona tempo de processamento.</string>
     <string name="transcription_not_refined">Não refinado (prévia instantânea)</string>
     <string name="transcription_refined_from">Refinado de %1$s</string>
     <string name="refinement_title">Transcrição em duas passagens</string>

@@ -701,6 +701,22 @@ fun SettingsTab(
                 )
             }
 
+            // GH #83: speaker labels on transcript cues.
+            val speakerLabelsTitle = stringResource(R.string.speaker_labels_title)
+            val speakerLabelsSummary = stringResource(R.string.speaker_labels_description)
+            val speakerLabelsEnabled by viewModel.speakerLabelsEnabled.collectAsState()
+            SearchFilterRow(searchQuery, speakerLabelsTitle, speakerLabelsSummary) {
+                ToggleSettingCard(
+                    icon = Icons.Default.RecordVoiceOver,
+                    title = speakerLabelsTitle,
+                    description = speakerLabelsSummary,
+                    checked = speakerLabelsEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveSpeakerLabelsEnabled(enabled)
+                    }
+                )
+            }
+
             // VAD Silence Stripping Setting
             val vadTitle = stringResource(R.string.vad_title)
             val vadDescription = stringResource(R.string.vad_description)

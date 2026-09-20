@@ -12,6 +12,9 @@ data class TimedSegment(
     val startMs: Long,
     val endMs: Long,
     val text: String,
+    /** GH #83: dense speaker id from the diarization pass, null on unlabeled
+     *  cues and on every row written before the feature existed. */
+    val speaker: Int? = null,
 )
 
 /**

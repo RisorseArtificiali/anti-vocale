@@ -1046,6 +1046,9 @@
     <string name="logs_first_pass_label">Перший прохід (%1$s)</string>
     <string name="copy_first_pass">Копіювати перший прохід</string>
     <string name="refining_status">Уточнення з %1$s…</string>
+    <string name="speaker_labels_status">Визначення мовців…</string>
+    <string name="speaker_labels_title">Визначати мовців (розмови на двох)</string>
+    <string name="speaker_labels_description">Додає мітку мовця до кожного речення. При першому використанні завантажує близько~47 МБ моделей; збільшує час обробки.</string>
     <string name="transcription_not_refined">Не уточнено (миттєвий перегляд)</string>
     <string name="transcription_refined_from">Уточнено з %1$s</string>
     <string name="refinement_title">Двопрохідна розшифровка</string>

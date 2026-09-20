@@ -100,6 +100,7 @@ internal class TestSpiOps(
             .put("themePreference", preferences.themePreference.first())
             .put("textScalePreference", preferences.textScalePreference.first())
             .put("refinementEnabled", preferences.refinementEnabled.first())
+            .put("speakerLabelsEnabled", preferences.speakerLabelsEnabled.first())
             .put("themeMode", preferences.themeMode.first())
             .put("defaultPrompt", preferences.defaultPrompt.first())
             .put("summaryPrompt", preferences.summaryPrompt.first())
@@ -132,6 +133,7 @@ internal class TestSpiOps(
         "progressive" to preferences::saveProgressiveTranscription,
         "summarize" to preferences::saveSummarizeEnabled,
         "refinement_enabled" to preferences::saveRefinementEnabled,
+        "speaker_labels_enabled" to preferences::saveSpeakerLabelsEnabled,
         "auto_copy" to preferences::saveAutoCopyEnabled,
         "vad_advisory" to preferences::saveVadAdvisoryDismissed,
         "onboarding" to preferences::saveOnboardingCompleted,

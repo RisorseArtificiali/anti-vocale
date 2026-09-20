@@ -1031,6 +1031,9 @@
     <string name="logs_first_pass_label">First pass (%1$s)</string>
     <string name="copy_first_pass">Copy first pass</string>
     <string name="refining_status">Refining with %1$s…</string>
+    <string name="speaker_labels_status">Identifying speakers…</string>
+    <string name="speaker_labels_title">Identify speakers (2-person calls)</string>
+    <string name="speaker_labels_description">Adds a speaker label to each sentence. Downloads ~47 MB of speaker models on first use; adds processing time.</string>
     <string name="transcription_not_refined">Not refined (instant preview)</string>
     <string name="transcription_refined_from">Refined from %1$s</string>
     <string name="refinement_title">Two-pass transcription</string>

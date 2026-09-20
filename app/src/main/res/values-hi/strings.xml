@@ -1025,6 +1025,9 @@
     <string name="logs_first_pass_label">पहला चरण (%1$s)</string>
     <string name="copy_first_pass">पहला चरण कॉपी करें</string>
     <string name="refining_status">%1$s के साथ परिशोधन…</string>
+    <string name="speaker_labels_status">वक्ताओं की पहचान हो रही है…</string>
+    <string name="speaker_labels_title">वक्ताओं की पहचान करें (2-व्यक्ति कॉल)</string>
+    <string name="speaker_labels_description">प्रत्येक वाक्य में वक्ता का लेबल जोड़ता है। पहले उपयोग पर लगभग~47 MB मॉडल डाउनलोड होते हैं; प्रोसेसिंग समय बढ़ता है।</string>
     <string name="transcription_not_refined">परिशोधित नहीं (तुरंत पूर्वावलोकन)</string>
     <string name="transcription_refined_from">%1$s से परिशोधित</string>
     <string name="refinement_title">दो-चरण ट्रांसक्रिप्शन</string>

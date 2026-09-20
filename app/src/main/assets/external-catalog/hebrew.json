@@ -1,0 +1,30 @@
+{
+  "name": "Whisper v3 Turbo Hebrew int8 (sherpa, ivrit-ai fine-tune)",
+  "family": "WHISPER",
+  "modelType": "",
+  "languages": ["he"],
+  "options": {
+    "whisper.language": "he",
+    "whisper.task": "transcribe"
+  },
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-hebrew-sherpa/resolve/main/encoder.int8.onnx",
+      "sha256": "48ae7f0b1f9c116a4563a065bb55414c7e1f87c42d69786cf36b288384b5a80e",
+      "size": 674622348
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-hebrew-sherpa/resolve/main/decoder.int8.onnx",
+      "sha256": "7dc9a189407f98792b2e32046562582bfaad12363300e11f9b9d5ccf699179d1",
+      "size": 361352573
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/pantinor/whisper-large-v3-turbo-hebrew-sherpa/resolve/main/tokens.txt",
+      "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+      "size": 816730
+    }
+  ]
+}

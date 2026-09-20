@@ -318,6 +318,10 @@ class SettingsViewModel @Inject constructor(
     private val _refinementAvailable = MutableStateFlow(false)
     val refinementAvailable: StateFlow<Boolean> = _refinementAvailable.asStateFlow()
 
+    // GH #83: speaker labeling after transcription.
+    private val _speakerLabelsEnabled = MutableStateFlow(false)
+    val speakerLabelsEnabled: StateFlow<Boolean> = _speakerLabelsEnabled.asStateFlow()
+
     // TASK-336: background-kill detection (cold-start sweep marker rows) for the
     // battery-exemption card. Only re-offered after a NEW interruption.
     private val _backgroundKills = MutableStateFlow(0)
@@ -476,6 +480,10 @@ class SettingsViewModel @Inject constructor(
         // GH #43: refinement toggle + availability
         viewModelScope.launch {
             preferencesManager.refinementEnabled.collect { _refinementEnabled.value = it }
+        }
+        // GH #83: speaker labeling toggle
+        viewModelScope.launch {
+            preferencesManager.speakerLabelsEnabled.collect { _speakerLabelsEnabled.value = it }
         }
         viewModelScope.launch(Dispatchers.Default) {
             val appCtx = getApplication<Application>()
@@ -679,6 +687,18 @@ class SettingsViewModel @Inject constructor(
                 _refinementEnabled.value = enabled
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to save refinement toggle", e)
+            }
+        }
+    }
+
+    /** GH #83: persists the speaker-labeling toggle. */
+    fun saveSpeakerLabelsEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.saveSpeakerLabelsEnabled(enabled)
+                _speakerLabelsEnabled.value = enabled
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to save speaker-labels toggle", e)
             }
         }
     }

@@ -1045,6 +1045,9 @@
     <string name="logs_first_pass_label">Первый проход (%1$s)</string>
     <string name="copy_first_pass">Копировать первый проход</string>
     <string name="refining_status">Уточнение с %1$s…</string>
+    <string name="speaker_labels_status">Определение говорящих…</string>
+    <string name="speaker_labels_title">Определять говорящих (звонки на двоих)</string>
+    <string name="speaker_labels_description">Добавляет метку говорящего к каждому предложению. При первом использовании загружает около~47 МБ моделей; увеличивает время обработки.</string>
     <string name="transcription_not_refined">Не уточнено (мгновенный предпросмотр)</string>
     <string name="transcription_refined_from">Уточнено с %1$s</string>
     <string name="refinement_title">Двухпроходная расшифровка</string>

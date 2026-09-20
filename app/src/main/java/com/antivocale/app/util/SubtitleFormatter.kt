@@ -84,16 +84,29 @@ object SubtitleFormatter {
             if (numbered) append(index + 1).append('\n')
             append(fullClock(segment.startMs, decimal)).append(' ').append(CUE_TIME_SEPARATOR)
                 .append(' ').append(fullClock(segment.endMs, decimal)).append('\n')
+            // GH #83: speaker label at each TURN (the readable form; a label
+            // on every cue would repeat the same name down a monologue).
+            speakerPrefix(segments, index)?.let { append(it) }
             append(segment.text).append('\n')
         }
         toString()
+    }
+
+    /** "SPEAKER k: " when this cue starts a labeled turn, else null. */
+    private fun speakerPrefix(segments: List<TimedSegment>, index: Int): String? {
+        val speaker = segments[index].speaker ?: return null
+        val previous = segments.getOrNull(index - 1)?.speaker
+        if (speaker == previous) return null
+        return "SPEAKER ${speaker + 1}: "
     }
 
     fun timedTxt(segments: List<TimedSegment>): String = with(renderBuffer(segments)) {
         segments.forEachIndexed { index, segment ->
             if (index > 0) append('\n')
             append(shortTime(segment.startMs)).append('-').append(shortTime(segment.endMs))
-                .append(' ').append(segment.text)
+                .append(' ')
+            speakerPrefix(segments, index)?.let { append(it) }
+            append(segment.text)
         }
         toString()
     }

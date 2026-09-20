@@ -16,12 +16,14 @@ object TimedSegmentsConverter {
         if (segments.isEmpty()) return null
         val array = JSONArray()
         for (segment in segments) {
-            array.put(
-                JSONObject()
-                    .put("startMs", segment.startMs)
-                    .put("endMs", segment.endMs)
-                    .put("text", segment.text)
-            )
+            val cue = JSONObject()
+                .put("startMs", segment.startMs)
+                .put("endMs", segment.endMs)
+                .put("text", segment.text)
+            // GH #83: speaker rides only when labeled; JSONObject.put with
+            // null REMOVES the key, so the guard is load-bearing.
+            segment.speaker?.let { cue.put("speaker", it) }
+            array.put(cue)
         }
         return array.toString()
     }
@@ -38,6 +40,9 @@ object TimedSegmentsConverter {
                             startMs = item.getLong("startMs"),
                             endMs = item.getLong("endMs"),
                             text = item.getString("text"),
+                            // optInt default -1: rows written before GH #83
+                            // carry no key and read back unlabeled.
+                            speaker = item.optInt("speaker", -1).takeIf { it >= 0 },
                         )
                     )
                 }

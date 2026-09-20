@@ -8,6 +8,9 @@ import com.antivocale.app.audio.AudioDurationPolicy
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.audio.AudioPreprocessor.StreamEvent
+import com.antivocale.app.transcription.diarization.DiarizationModels
+import com.antivocale.app.transcription.diarization.SpeakerDiarizer
+import com.antivocale.app.transcription.diarization.SpeakerLabeler
 import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.audio.PreprocessingErrorMessages
 import com.antivocale.app.data.ExternalModelRecord
@@ -277,6 +280,16 @@ class TranscriptionOrchestrator @Inject constructor(
                 logDao.setModelName(taskId, name)
             }
 
+            // GH #83: collect the preprocessed chunks once for the optional
+            // speaker-labeling pass (references only; the concatenated copy
+            // is built lazily inside the pass, after ASR releases its own
+            // working set). The fast first pass passes no collector.
+            var diarizationChunks: List<FloatArray>? = null
+            var diarizationSampleRate = 16000
+            val collectSpeakers = runCatching {
+                preferencesManager.speakerLabelsEnabled.first()
+            }.getOrDefault(false)
+
             val result = when (requestType) {
                 "audio" -> if (f4LoadFailure != null) {
                     recoverFirstPass(fastFirstPass!!, f4LoadFailure,
@@ -295,6 +308,14 @@ class TranscriptionOrchestrator @Inject constructor(
                         // The first-pass text stays on the row; phase 2's
                         // growing partials must not overwrite it (design D6).
                         emitInterim = fastFirstPass == null,
+                        collectSamples = if (collectSpeakers) {
+                            { chunks, rate ->
+                                diarizationChunks = chunks
+                                diarizationSampleRate = rate
+                            }
+                        } else {
+                            null
+                        },
                     )
                     if (fastFirstPass == null) phase2
                     else phase2.fold(
@@ -343,7 +364,25 @@ class TranscriptionOrchestrator @Inject constructor(
                         .map { applySummaryPass(context, it, listener) }
                 } else result
 
-            delivered.fold(
+            // GH #83: the optional speaker-labeling pass. Runs on the same
+            // timeline the cues were assembled on (the concatenated
+            // preprocessed chunks), labels each cue by speech-time voting,
+            // and can only ADD metadata: any failure logs and delivers the
+            // unlabeled result, never breaking the run.
+            if (collectSpeakers && diarizationChunks == null && requestType == "audio") {
+                Log.i(TAG, "Speaker labels skipped: streaming or VAD-segmented decode path")
+            }
+            val speakerLabeled: Result<TranscriptionResult> =
+                if (delivered.isSuccess && diarizationChunks != null) {
+                    applySpeakerLabels(
+                        context, delivered, diarizationChunks!!, diarizationSampleRate, listener)
+                    // The concatenated copy must not outlive the pass.
+                        .also { diarizationChunks = null }
+                } else {
+                    delivered
+                }
+
+            speakerLabeled.fold(
                 onSuccess = { transcriptionResult ->
                     // F8 (review): the delivered text is the FAST model's when
                     // refinement failed; credit it, not the accurate one.
@@ -1028,6 +1067,65 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     /**
+     * GH #83: the optional speaker-labeling pass over a completed audio
+     * result. Downloads the two models on first use, runs the diarization
+     * engine on the concatenated preprocessed chunks (the cues' own
+     * timeline), and labels each cue by speech-time voting with the
+     * 2-speaker "phone call" preset. Additive only: any failure logs and
+     * returns the input unchanged.
+     */
+    private suspend fun applySpeakerLabels(
+        context: Context,
+        result: Result<TranscriptionResult>,
+        chunks: List<FloatArray>,
+        sampleRate: Int,
+        listener: TranscriptionListener,
+    ): Result<TranscriptionResult> {
+        val transcription = result.getOrNull() ?: return result
+        if (transcription.segments.isEmpty()) return result
+        // The failure arm recovers OUT HERE (fold, the punctuation pass's
+        // shape): a .map recovery inside runCatching would never run, and
+        // the failure would surface as INFERENCE_ERROR on a transcript
+        // that already succeeded. Cancellation rethrows through degradeTo;
+        // everything else degrades to the unlabeled result. The status
+        // precedes the first-use download so the row never sits silent
+        // behind ~47 MB.
+        return runCatching {
+            listener.onStatusUpdate(context.getString(R.string.speaker_labels_status))
+            DiarizationModels.ensureDownloaded(context).getOrThrow()
+            val threads = preferencesManager.threadCount.first()
+            // The preprocessor's own merge keeps this copy's memory-peak
+            // contract pinned with its tests (code review F8); the list is
+            // dead after the merge, so its destructive clear is fine.
+            val samples = audioPreprocessor.mergeAndResample(
+                chunks.toMutableList(), sampleRate).first
+            val diarizer = SpeakerDiarizer.create(
+                segmentationModel = DiarizationModels.segmentationFile(context),
+                embeddingModel = DiarizationModels.embeddingFile(context),
+                numSpeakers = 2,
+                numThreads = threads,
+            ).getOrThrow()
+            try {
+                val segments = diarizer.diarize(samples, sampleRate)
+                val labels = SpeakerLabeler.label(transcription.segments, segments)
+                result.map { unlabeled ->
+                    unlabeled.copy(
+                        segments = unlabeled.segments.mapIndexed { index, cue ->
+                            cue.copy(speaker = labels[index])
+                        })
+                }
+            } finally {
+                diarizer.release()
+            }
+        }.fold(
+            onSuccess = { it },
+            onFailure = { failure ->
+                Result.success(degradeTo(transcription, "Speaker labels", failure))
+            },
+        )
+    }
+
+    /**
      * TASK-579: the phase-2 success arm of the dual fold. A refinement
      * that completed in a repetition loop (RepetitionLoopDetector) must
      * not replace the good first pass; it delivers through the same
@@ -1342,6 +1440,11 @@ class TranscriptionOrchestrator @Inject constructor(
          *  pass's growing partials never overwrite the complete first-pass
          *  text already on the row (design D6: the text never regresses). */
         emitInterim: Boolean = true,
+        /** GH #83: when non-null, invoked once with the preprocessed chunks
+         *  and their sample rate (contiguous-timeline runs only) for the
+         *  speaker-labeling pass. Streaming and VAD-segmented runs never
+         *  invoke it and the pass is skipped for them. */
+        collectSamples: ((List<FloatArray>, Int) -> Unit)? = null,
     ): Result<TranscriptionResult> {
         if (filePath.isNullOrEmpty()) {
             return Result.failure(IllegalArgumentException("No file path provided"))
@@ -1509,6 +1612,16 @@ class TranscriptionOrchestrator @Inject constructor(
             return Result.failure(e)
         } catch (e: Exception) {
             return Result.failure(IllegalStateException("Audio preprocessing failed: ${e.message}"))
+        }
+
+        // GH #83: hand the caller the preprocessed chunks while they are all
+        // in hand, only when NO VAD preprocessing ran: VAD-segmented runs
+        // carry gap-stripped cues on the original timeline, and even the
+        // single-speech-span arm offsets cues by originMs while the
+        // concatenation starts at the speech onset (code review F3); the
+        // offset mapping is a tracked follow-up, not a v1 guess.
+        if (collectSamples != null && !vadEnabled) {
+            collectSamples(preprocessingResult.chunks, preprocessingResult.sampleRate)
         }
 
         val chunkCount = preprocessingResult.chunkCount
@@ -1972,9 +2085,17 @@ class TranscriptionOrchestrator @Inject constructor(
         listener: TranscriptionListener,
         prompt: String = "",
         progressiveEnabled: Boolean = false,
-        emitInterim: Boolean = true
+        emitInterim: Boolean = true,
+        /** GH #83: when non-null, invoked after the stream completes with the
+         *  decoded chunk list. The pipeline's stream never strips silence
+         *  (enableVad is false by construction here) and cue times derive
+         *  from the same accumulated decoded seconds, so the timelines
+         *  match by construction. */
+        collectSamples: ((List<FloatArray>, Int) -> Unit)? = null,
     ): Result<TranscriptionResult> {
         val resolvedPrompt = resolvePrompt(prompt)
+        val speakerChunks = if (collectSamples != null) mutableListOf<FloatArray>() else null
+        var speakerSampleRate = 16000
 
         val pipelineStartMs = System.currentTimeMillis()
         val chunkProcessingStartTime = System.currentTimeMillis()
@@ -2021,6 +2142,10 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                     is AudioPreprocessor.StreamEvent.Chunk -> {
                         val chunk = event.chunk
+                        if (speakerChunks != null) {
+                            speakerChunks.add(chunk.samples)
+                            speakerSampleRate = chunk.sampleRate
+                        }
                         processedChunks++
                         val chunkStartMs = (decodedSeconds * 1000).toLong()
                         decodedSeconds += chunk.samples.size.toDouble() / chunk.sampleRate
