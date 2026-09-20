@@ -892,7 +892,7 @@
     <string name="copy_first_pass">Copier la première passe</string>
     <string name="refining_status">Affinage avec %1$s…</string>
     <string name="speaker_labels_status">Identification des locuteurs…</string>
-    <string name="speaker_labels_title">Identifier les locuteurs (appels à 2)</string>
+    <string name="speaker_labels_title">Identifier les locuteurs</string>
     <string name="speaker_labels_description">Ajoute une étiquette de locuteur à chaque phrase. Télécharge environ~47 Mo de modèles au premier usage; allonge le temps de traitement.</string>
     <string name="transcription_not_refined">Non affiné (aperçu instantané)</string>
     <string name="transcription_refined_from">Affiné depuis %1$s</string>

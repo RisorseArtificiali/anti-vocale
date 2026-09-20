@@ -1039,7 +1039,7 @@
     <string name="copy_first_pass">Copia prima passata</string>
     <string name="refining_status">Affinamento con %1$s…</string>
     <string name="speaker_labels_status">Identificazione degli interlocutori…</string>
-    <string name="speaker_labels_title">Identifica gli interlocutori (chiamate a 2)</string>
+    <string name="speaker_labels_title">Identifica gli interlocutori</string>
     <string name="speaker_labels_description">Aggiunge la label del parlante a ogni frase. Al primo uso scarica circa~47 MB di modelli; aumenta il tempo di elaborazione.</string>
     <string name="transcription_not_refined">Non rifinito (anteprima immediata)</string>
     <string name="transcription_refined_from">Rifinito da %1$s</string>

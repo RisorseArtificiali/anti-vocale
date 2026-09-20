@@ -1027,7 +1027,7 @@
     <string name="copy_first_pass">İlk geçişi kopyala</string>
     <string name="refining_status">%1$s ile rafine ediliyor…</string>
     <string name="speaker_labels_status">Konuşmacılar tanımlanıyor…</string>
-    <string name="speaker_labels_title">Konuşmacıları tanımla (2 kişilik aramalar)</string>
+    <string name="speaker_labels_title">Konuşmacıları tanımla</string>
     <string name="speaker_labels_description">Her cümleye bir konuşmacı etiketi ekler. İlk kullanımda yaklaşık~47 MB model indirir; işlem süresini artırır.</string>
     <string name="transcription_not_refined">Rafine edilmedi (anında önizleme)</string>
     <string name="transcription_refined_from">%1$s ile rafine edildi</string>

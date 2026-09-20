@@ -23,32 +23,33 @@ import java.io.File
  * window + clustering pipeline and returns app-side [DiarizedSegment]s
  * with dense speaker ids.
  *
- * The preset comes from the 2026-09-20 prototype: the "phone call" mode
- * pins the cluster count (perfect on ground truth, removes the counting
- * problem entirely for the majority use case). Auto counting needs a
- * threshold sweep (0.8 measured correct where sherpa's 0.5 default
- * over-split every file); it returns when a settings surface can pick it.
+ * Speaker counting is AUTO (maintainer decision over the 2-person-call
+ * preset): the model identifies as many speakers as the audio carries.
+ * The threshold is the one the 2026-09-20 prototype measured correct on
+ * every file (2-speaker and 3-speaker ground truths both landed on the
+ * exact count): 0.8, never sherpa's 0.5 default, which over-split every
+ * file measured.
  */
 class SpeakerDiarizer private constructor(
     private val engine: OfflineSpeakerDiarization,
 ) {
     companion object {
+        /** The auto-clustering threshold measured correct on every
+         *  prototype file (0.5 over-split all of them). */
+        const val AUTO_THRESHOLD = 0.8f
+
         /**
          * @param segmentationModel int8 pyannote segmentation ONNX file
          * @param embeddingModel titanet (or compatible) embedding ONNX file
-         * @param numSpeakers the pinned cluster count (2 for the phone-call
-         *   preset)
          * @param numThreads inference threads, from the user's setting
          */
         fun create(
             segmentationModel: File,
             embeddingModel: File,
-            numSpeakers: Int,
             numThreads: Int,
         ): Result<SpeakerDiarizer> = runCatching {
-            // Threshold is inert when numClusters is pinned; sherpa only
-            // consults it in auto mode. Do not tune this value.
-            val clustering = FastClusteringConfig(numSpeakers, 0.5f, computeConfidence = true)
+            val clustering =
+                FastClusteringConfig(-1, AUTO_THRESHOLD, computeConfidence = true)
             val config = OfflineSpeakerDiarizationConfig(
                 segmentation = OfflineSpeakerSegmentationModelConfig(
                     pyannote = OfflineSpeakerSegmentationPyannoteModelConfig(

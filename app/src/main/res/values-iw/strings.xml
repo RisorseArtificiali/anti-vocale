@@ -1034,7 +1034,7 @@
     <string name="copy_first_pass">העתק מעבר ראשון</string>
     <string name="refining_status">מחדד עם %1$s…</string>
     <string name="speaker_labels_status">מזהה דוברים…</string>
-    <string name="speaker_labels_title">זיהוי דוברים (שיחות של 2)</string>
+    <string name="speaker_labels_title">זיהוי דוברים</string>
     <string name="speaker_labels_description">מוסיף תווית דובר לכל משפט. בשימוש הראשון מוריד כ-~47 מ״ב של מודלים; מוסיף זמן עיבוד.</string>
     <string name="transcription_not_refined">לא מחודד (תצוגה מיידית)</string>
     <string name="transcription_refined_from">חודד מ-%1$s</string>

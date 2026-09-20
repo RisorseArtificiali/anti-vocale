@@ -1032,7 +1032,7 @@
     <string name="copy_first_pass">کپی گذر اول</string>
     <string name="refining_status">پالایش با %1$s…</string>
     <string name="speaker_labels_status">در حال شناسایی گویندگان…</string>
-    <string name="speaker_labels_title">شناسایی گویندگان (تماس‌های دو‌نفره)</string>
+    <string name="speaker_labels_title">شناسایی گویندگان</string>
     <string name="speaker_labels_description">به هر جمله یک برچسب گوینده اضافه می‌کند. در اولین استفاده حدود ۴۷ مگابایت مدل دانلود می‌شود؛ زمان پردازش بیشتر می‌شود.</string>
     <string name="transcription_not_refined">پالایش نشده (پیش‌نمایش فوری)</string>
     <string name="transcription_refined_from">پالایش‌شده از %1$s</string>

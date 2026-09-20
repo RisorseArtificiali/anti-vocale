@@ -1102,7 +1102,6 @@ class TranscriptionOrchestrator @Inject constructor(
             val diarizer = SpeakerDiarizer.create(
                 segmentationModel = DiarizationModels.segmentationFile(context),
                 embeddingModel = DiarizationModels.embeddingFile(context),
-                numSpeakers = 2,
                 numThreads = threads,
             ).getOrThrow()
             try {

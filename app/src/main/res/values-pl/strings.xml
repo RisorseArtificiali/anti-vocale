@@ -1045,7 +1045,7 @@
     <string name="copy_first_pass">Skopiuj pierwsze przejście</string>
     <string name="refining_status">Ulepszanie przez %1$s…</string>
     <string name="speaker_labels_status">Identyfikowanie mówców…</string>
-    <string name="speaker_labels_title">Identyfikuj mówców (rozmowy 2-osobowe)</string>
+    <string name="speaker_labels_title">Identyfikuj mówców</string>
     <string name="speaker_labels_description">Dodaje etykietę mówcy do każdego zdania. Przy pierwszym użyciu pobiera ok.~47 MB modeli; wydłuża czas przetwarzania.</string>
     <string name="transcription_not_refined">Nie ulepszone (natychmiastowy podgląd)</string>
     <string name="transcription_refined_from">Ulepszone z %1$s</string>

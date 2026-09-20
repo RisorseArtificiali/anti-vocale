@@ -892,7 +892,7 @@
     <string name="copy_first_pass">Copiar primera pasada</string>
     <string name="refining_status">Refinando con %1$s…</string>
     <string name="speaker_labels_status">Identificando hablantes…</string>
-    <string name="speaker_labels_title">Identificar hablantes (llamadas de 2 personas)</string>
+    <string name="speaker_labels_title">Identificar hablantes</string>
     <string name="speaker_labels_description">Añade una etiqueta de hablante a cada frase. Descarga unos~47 MB de modelos en el primer uso; añade tiempo de procesamiento.</string>
     <string name="transcription_not_refined">Sin refinar (vista previa instantánea)</string>
     <string name="transcription_refined_from">Refinado desde %1$s</string>
