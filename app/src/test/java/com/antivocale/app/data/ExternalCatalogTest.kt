@@ -140,7 +140,10 @@ class ExternalCatalogTest {
         // + whisper tiny multilingual (TASK-475, low-RAM) + sense voice
         // small multilingual (TASK-476, zh/en/yue/ja/ko)
         // + shenava persian transducer (TASK-550, desktop-validated on FLEURS fa)
-        assertEquals(13, entries.size)
+        // + orukeet italian-focused parakeet fine-tune (2026-09-20, FLEURS-it
+        //   gain verified from the publisher's paired evidence; desktop-eval
+        //   clean on real voice messages)
+        assertEquals(14, entries.size)
         val sense = ExternalCatalog.filter(entries, "sense")
         assertEquals(1, sense.size)
         assertEquals(ModelFamily.SENSE_VOICE, sense[0].family)

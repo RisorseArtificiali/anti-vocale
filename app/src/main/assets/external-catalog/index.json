@@ -49,6 +49,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/spanish-small.json"
     },
     {
+      "name": "Orukeet multilingual int8 (Parakeet TDT v3 fine-tune, Italian gain, CC BY-SA 4.0)",
+      "languages": [
+        "it"
+      ],
+      "family": "TRANSDUCER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/orukeet.json"
+    },
+    {
       "name": "SenseVoice Small multilingual int8 (zh/en/yue/ja/ko)",
       "languages": [
         "zh",
