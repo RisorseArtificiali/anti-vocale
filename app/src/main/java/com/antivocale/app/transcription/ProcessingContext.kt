@@ -37,6 +37,7 @@ data class ProcessingContext(
     val refinementPhase: ProcessingContext? = null,
     /** GH #43: stable token when the first pass was skipped or refinement
      *  failed with text delivered anyway (fast_load_failed, fast_blank,
-     *  refine_load_failed, refine_inference_failed). */
+     *  fast_loop_detected, refine_load_failed, refine_inference_failed,
+     *  refine_loop_detected). */
     val refinementSkipReason: String? = null,
 )

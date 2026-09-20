@@ -55,7 +55,7 @@ class RepetitionLoopDetectorTest {
         // The global ratio dilutes; the n-gram window must catch it.
         val text = normalTranscript + " " + loop("¡Muy bien!", 30)
         assertEquals(
-            RepetitionLoopDetector.REASON_NGRAM,
+            RepetitionLoopDetector.REASON_COMPRESSION,
             RepetitionLoopDetector.detect(text))
     }
 
@@ -91,6 +91,61 @@ class RepetitionLoopDetectorTest {
     fun `short texts are exempt even when internally repetitive`() {
         // Under the word floor: cosmetic repeats in a brief answer are not the class.
         assertNull(RepetitionLoopDetector.detect(loop("¡Muy bien!", 4)))
+    }
+
+    @Test
+    fun `a long clean transcript does not fire`() {
+        // The 2026-09-20 review measured clean prose crossing a whole-text
+        // 2.4 ratio near 1950 Italian words (this fixture's whole-text
+        // ratio measures 22.6 under zlib; its worst 40-word window 1.68),
+        // which is exactly why both arms are windowed.
+        assertNull(RepetitionLoopDetector.detect(diverseProse(2200)))
+    }
+
+    /** Deterministic prose-shaped text: a real vocabulary revisited with a
+     *  stride mix, so windows stay diverse while the whole text compresses
+     *  without bound like real prose. */
+    private fun diverseProse(words: Int): String {
+        val vocab = listOf(
+            "casa", "giorno", "tempo", "vita", "mano", "parte", "mondo", "occhio",
+            "donna", "uomo", "anno", "ora", "modo", "cosa", "punto", "serie",
+            "numero", "città", "nome", "gente", "signore", "signora", "bambino",
+            "acqua", "fuoco", "terra", "aria", "mare", "monte", "fiume", "bosco",
+            "strada", "piazza", "chiesa", "scuola", "libro", "parola", "voce",
+            "canto", "musica", "gioco", "sport", "cibo", "vino", "pane", "frutta",
+            "estate", "inverno", "primavera", "autunno", "pioggia", "neve",
+            "vento", "sole", "luna", "stella", "notte", "mattino", "sera",
+            "lavoro", "riposo", "sonno", "sogno", "pensiero", "ricordo", "amore",
+            "amicizia", "famiglia", "madre", "padre", "figlio", "fratello",
+            "sorella", "nonna", "nonno", "macchina", "treno", "aereo", "nave",
+            "bicicletta", "viaggio", "vacanza", "ristorante", "caffè",
+            "colazione", "pranzo", "cena", "dolce", "torta", "gelato",
+            "medico", "farmacia", "ospedale", "salute", "guarigione", "dolore",
+            "gioia", "tristezza")
+        return (0 until words).joinToString(" ") { i ->
+            vocab[(i * 37 + (i / 41) * 13) % vocab.size]
+        }
+    }
+
+    @Test
+    fun `a whitespace-free CJK loop fires`() {
+        // Whitespace-free scripts collapse to one word; without the
+        // codepoint fallback both arms would bypass the loop entirely.
+        val text = "ありがとうございます。".repeat(60)
+        assertEquals(
+            RepetitionLoopDetector.REASON_COMPRESSION,
+            RepetitionLoopDetector.detect(text))
+    }
+
+    @Test
+    fun `a trailing loop shorter than the window step still fires`() {
+        // 55 clean words then a 6-repeat loop: step-20 windows from 0 cover
+        // [0,60) only, so the tail must get its own anchored window.
+        val clean = (1..55).joinToString(" ") { "parola$it" }
+        val text = clean + " " + loop("ciao a tutti quanto", 6)
+        // The loop is short enough that its window compresses hard; either
+        // arm firing proves the anchored tail window covered it.
+        org.junit.Assert.assertNotNull(RepetitionLoopDetector.detect(text))
     }
 
     @Test

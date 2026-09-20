@@ -11,23 +11,28 @@ import java.util.zip.DeflaterOutputStream
  * loop-prone texts cannot see either direction, while these anchors
  * judge each text on its own.
  *
- * Two independent arms, both validated on the loop corpus and the real
- * transcripts of the 2026-09-20 spike (claudedocs; loop ratios 2.6-47,
- * prose 1.7-1.9, condensations 0.7-1.4):
- *  - compression: raw/zlib-deflated UTF-8 ratio >= 2.4 (OpenAI's
- *    long-form threshold, arXiv 2212.04356). Above the 24-word floor it
- *    fires from ~5 repeats of a five-word phrase and ~3 of a full
- *    sentence; the two-word "Muy bien!" loop needs twelve.
- *  - n-gram, windowed: one word trigram covering >= 40 percent of a
- *    40-word window (step 20). Windows catch the buried-loop shape a
- *    global ratio dilutes: a clean chunk followed by a looping chunk,
- *    exactly what multi-chunk assembly produces.
+ * Both arms are WINDOWED over the token list (40 tokens, step 20, plus a
+ * final window anchored at the tail so the last few tokens are always
+ * covered). The 2026-09-20 review measured that a whole-text compression
+ * ratio grows without bound on clean prose (2.4 crossed near 1950 Italian
+ * words), which would make long clean transcripts false-positive; a
+ * 40-token window of clean prose stays near 1.5-2.0 while any window of a
+ * budget-filling loop measures 2.6-47, the separation the corpus measured.
+ *  - compression: zlib ratio >= 2.4 over a window's bytes (OpenAI's
+ *    long-form threshold, arXiv 2212.04356, applied per window).
+ *  - n-gram: one token trigram covering >= 40 percent of a window.
  *
- * Condensing outputs (summaries, short answers) never fire: both arms
- * need a minimum word count, and neither measures length against the
- * audio. The evaluated-and-rejected third arm: a words-per-second
- * ceiling anchored on audio duration; the greedy token budget itself
- * caps loops at ~6 words/s, too close to real fast speech to separate.
+ * Tokens are whitespace words. Whitespace-free scripts (Japanese, Chinese)
+ * would collapse to a single token and bypass both arms, so when the text
+ * is substantial (over 500 bytes) but yields too few words it is
+ * re-tokenized into codepoints; thresholds are unchanged, with the honest
+ * caveat that they were measured on spaced scripts, not on CJK prose.
+ *
+ * Condensing outputs (summaries, short answers) never fire: the token
+ * floor is 24 and neither arm measures length against the audio. The
+ * evaluated-and-rejected third arm: a words-per-second ceiling anchored on
+ * audio duration; the greedy token budget itself caps loops at ~6 words/s,
+ * too close to real fast speech to separate.
  */
 object RepetitionLoopDetector {
 
@@ -36,12 +41,13 @@ object RepetitionLoopDetector {
     const val REASON_NGRAM = "ngram"
 
     private const val COMPRESSION_THRESHOLD = 2.4f
-    private const val COMPRESSION_MIN_WORDS = 24
     private const val NGRAM_DOMINANCE = 0.4f
-    private const val NGRAM_WINDOW_WORDS = 40
-    private const val NGRAM_WINDOW_STEP = 20
-
+    private const val WINDOW_TOKENS = 40
+    private const val WINDOW_STEP = 20
+    private const val MIN_TOKENS = 24
+    private const val CJK_RETOKENIZE_BYTES = 500
     private val WHITESPACE = Regex("\\s+")
+    private val CJK = Regex("[\\u3040-\\u30ff\\u3400-\\u4dbf\\u4e00-\\u9fff\\uf900-\\ufaff]")
 
     /**
      * @return the reason token when [text] is a runaway repetition loop,
@@ -49,21 +55,37 @@ object RepetitionLoopDetector {
      *   condensed text, by construction).
      */
     fun detect(text: String): String? {
-        val words = text.split(WHITESPACE).filter { it.isNotEmpty() }
-        if (words.size < COMPRESSION_MIN_WORDS) return null
-        if (compressionRatio(text) >= COMPRESSION_THRESHOLD) return REASON_COMPRESSION
+        val tokens = tokenize(text)
+        if (tokens.size < MIN_TOKENS) return null
         var start = 0
-        while (start + NGRAM_WINDOW_WORDS <= words.size) {
-            if (topTrigramDominance(words, start, start + NGRAM_WINDOW_WORDS) >= NGRAM_DOMINANCE) {
+        val lastStart = tokens.size - WINDOW_TOKENS
+        while (start <= lastStart) {
+            val window = tokens.subList(start, start + WINDOW_TOKENS).joinToString(" ")
+            if (compressionRatio(window) >= COMPRESSION_THRESHOLD) return REASON_COMPRESSION
+            if (topTrigramDominance(tokens, start, start + WINDOW_TOKENS) >= NGRAM_DOMINANCE) {
                 return REASON_NGRAM
             }
-            start += NGRAM_WINDOW_STEP
+            if (start == lastStart) break
+            start = minOf(start + WINDOW_STEP, lastStart)
         }
         return null
     }
 
-    private fun compressionRatio(text: String): Float {
+    /**
+     * Whitespace words; a substantial text with too few of them (CJK) is
+     * re-tokenized into codepoints so windows and trigrams still see it.
+     */
+    private fun tokenize(text: String): List<String> {
+        val words = text.split(WHITESPACE).filter { it.isNotEmpty() }
         val raw = text.toByteArray(Charsets.UTF_8)
+        if (words.size < MIN_TOKENS && raw.size > CJK_RETOKENIZE_BYTES && CJK.containsMatchIn(text)) {
+            return text.codePoints().toArray().map { it.toChar().toString() }
+        }
+        return words
+    }
+
+    private fun compressionRatio(window: String): Float {
+        val raw = window.toByteArray(Charsets.UTF_8)
         val deflated = ByteArrayOutputStream().use { out ->
             // No explicit Deflater: the default level suffices (the consumer
             // is a ratio against 2.4; loops measure 2.6-47), and only the
@@ -77,13 +99,13 @@ object RepetitionLoopDetector {
     }
 
     /** Top trigram count over positions in [from, until), divided by them. */
-    private fun topTrigramDominance(words: List<String>, from: Int, until: Int): Float {
+    private fun topTrigramDominance(tokens: List<String>, from: Int, until: Int): Float {
         val positions = until - from - 2
         if (positions <= 0) return 0f
         val counts = HashMap<String, Int>(positions)
         var top = 0
         for (i in from + 2 until until) {
-            val key = words[i - 2] + ' ' + words[i - 1] + ' ' + words[i]
+            val key = tokens[i - 2] + ' ' + tokens[i - 1] + ' ' + tokens[i]
             val count = (counts[key] ?: 0) + 1
             counts[key] = count
             if (count > top) top = count

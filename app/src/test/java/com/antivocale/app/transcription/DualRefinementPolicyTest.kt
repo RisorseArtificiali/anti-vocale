@@ -90,5 +90,6 @@ class DualRefinementPolicyTest {
         assertEquals("refine_load_failed", DualRefinementPolicy.SKIP_REFINE_LOAD_FAILED)
         assertEquals("refine_inference_failed", DualRefinementPolicy.SKIP_REFINE_INFERENCE_FAILED)
         assertEquals("refine_loop_detected", DualRefinementPolicy.SKIP_REFINE_LOOP)
+        assertEquals("fast_loop_detected", DualRefinementPolicy.SKIP_FAST_LOOP)
     }
 }

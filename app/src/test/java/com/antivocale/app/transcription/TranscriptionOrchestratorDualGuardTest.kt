@@ -99,6 +99,9 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
 
         every { preferencesManager.refinementEnabled } returns flowOf(true)
         stubDefaultWhisperPreferences()
+        // The F8 display-name credit resolves the fast model's saved path
+        // (a relaxed Flow explodes on first(), the base's documented trap).
+        every { preferencesManager.sherpaModelPath("nemotron-streaming") } returns flowOf("")
         val streaming = mockk<TranscriptionBackend>(relaxed = true) {
             every { id } returns "nemotron-streaming"
             every { isReady() } returns true

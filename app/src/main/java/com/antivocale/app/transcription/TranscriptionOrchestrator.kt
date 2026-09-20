@@ -348,8 +348,16 @@ class TranscriptionOrchestrator @Inject constructor(
                     // F8 (review): the delivered text is the FAST model's when
                     // refinement failed; credit it, not the accurate one.
                     if (transcriptionResult.firstPass?.refinementFailedToken != null) {
-                        val fastName = fastFirstPass?.processing?.backendId
-                        if (fastName != null) runCatching { logDao.setModelName(taskId, fastName) }
+                        // F8 credit by DISPLAY name: the Logs model column
+                        // renders verbatim, so a raw backend id must never
+                        // reach it (loop arm newly routes completed phase-2
+                        // runs through here too).
+                        fastFirstPass?.processing?.backendId?.let { fastId ->
+                            val name = backendRegistry.byBackendId(fastId)
+                                ?.let { variantAwareDisplayName(context, it, modelPathForBackend(fastId)) }
+                                ?: fastId
+                            runCatching { logDao.setModelName(taskId, name) }
+                        }
                     }
                     logSuccess(
                         taskId,
@@ -983,6 +991,15 @@ class TranscriptionOrchestrator @Inject constructor(
             // salvaged any partial onto the row; phase 2 supersedes it.
             Log.i(TAG, "Fast first pass produced no usable text; single-model run")
             onSkipped(DualRefinementPolicy.SKIP_FAST_BLANK)
+            return null
+        }
+        // TASK-579 (AC2, the other direction): a budget-filling loop from the
+        // fast pass must not ride the row as the first pass nor survive as
+        // the F4/F5 fallback text; the run degrades to single-model instead.
+        val fastLoop = RepetitionLoopDetector.detect(outcome.text)
+        if (fastLoop != null) {
+            Log.i(TAG, "Fast first pass repetition loop ($fastLoop); single-model run")
+            onSkipped(DualRefinementPolicy.SKIP_FAST_LOOP)
             return null
         }
         // Force-write the complete first-pass text so the row shows it while

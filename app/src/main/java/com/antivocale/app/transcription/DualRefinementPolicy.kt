@@ -27,6 +27,10 @@ object DualRefinementPolicy {
      *  (RepetitionLoopDetector); the first pass is delivered instead. */
     const val SKIP_REFINE_LOOP = "refine_loop_detected"
 
+    /** TASK-579 (AC2): the fast first pass itself looped; the run degrades
+     *  to single-model exactly like a fast load failure. */
+    const val SKIP_FAST_LOOP = "fast_loop_detected"
+
     /**
      * @param requestType the request's type token ("audio" qualifies; text,
      *   subtitle, and LLM requests never do).
