@@ -1598,7 +1598,12 @@ class TranscriptionOrchestrator @Inject constructor(
                     listener = listener,
                     prompt = promptPlan.perChunk,
                     progressiveEnabled = progressiveEnabled,
-                    emitInterim = emitInterim
+                    emitInterim = emitInterim,
+                    // GH #83: the pipeline is the DEFAULT contiguous path
+                    // (Parakeet); without this the collector only reached
+                    // the whole-file branch and every default run skipped
+                    // labels (caught on the first real device trial).
+                    collectSamples = collectSamples
                 ))
         }
 
@@ -2271,6 +2276,13 @@ class TranscriptionOrchestrator @Inject constructor(
 
         val totalMs = System.currentTimeMillis() - pipelineStartMs
         Log.i(TAG, "PERF: pipeline total ${totalMs}ms for ${totalDurationSeconds}s audio, $processedChunks chunks (expected $expectedChunkCount), backend=${backend.id}, ttft_decode=${firstChunkDecodeMs}ms")
+
+        // GH #83: hand the accumulated contiguous chunks to the caller's
+        // speaker-labeling pass. By construction the pipeline never strips
+        // silence and cue times derive from the same accumulated decoded
+        // seconds, so the timelines match; chunks are references, the
+        // concatenated copy is built lazily inside the pass.
+        speakerChunks?.let { collectSamples?.invoke(it, speakerSampleRate) }
 
         return if (combinedResult.isBlank()) {
             Result.failure(TranscriptionException.NoTranscriptionProduced())
