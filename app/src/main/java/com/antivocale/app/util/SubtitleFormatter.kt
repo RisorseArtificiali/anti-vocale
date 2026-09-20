@@ -100,6 +100,23 @@ object SubtitleFormatter {
         return "SPEAKER ${speaker + 1}: "
     }
 
+    /**
+     * GH #83: the cue texts joined with SPEAKER prefixes at turn starts,
+     * the same rendering the exports use, for in-app display. Returns null
+     * when no cue carries a speaker label: the caller then shows the stored
+     * transcript unchanged (single-model and unlabeled rows).
+     */
+    fun speakerAnnotated(segments: List<TimedSegment>): String? {
+        if (segments.none { it.speaker != null }) return null
+        return buildString {
+            segments.forEachIndexed { index, segment ->
+                if (index > 0) append('\n')
+                speakerPrefix(segments, index)?.let { append(it) }
+                append(segment.text)
+            }
+        }
+    }
+
     fun timedTxt(segments: List<TimedSegment>): String = with(renderBuffer(segments)) {
         segments.forEachIndexed { index, segment ->
             if (index > 0) append('\n')

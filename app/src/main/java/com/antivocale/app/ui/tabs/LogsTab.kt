@@ -73,7 +73,9 @@ import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.onboarding.TourStep
 import com.antivocale.app.ui.MAX_RENDERED_TRANSCRIPT_CHARS
+import com.antivocale.app.data.local.TimedSegmentsConverter
 import com.antivocale.app.ui.components.CappedTranscriptText
+import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.ui.components.highlightText
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import androidx.compose.runtime.produceState
@@ -1105,6 +1107,17 @@ fun LogEntryItem(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 Spacer(modifier = Modifier.height(12.dp))
 
+                // GH #83: when the cues carry speaker labels, every surface of
+                // this row's text (display, copy, share) uses the turn-annotated
+                // form, the same rendering the exports produce; unlabeled rows
+                // fall back to the stored transcript.
+                val speakerAnnotated = remember(log.id, log.segments) {
+                    log.segments?.let {
+                        SubtitleFormatter.speakerAnnotated(TimedSegmentsConverter.fromJson(it))
+                    }
+                }
+                val displayResult = speakerAnnotated ?: log.result
+
                 // Full transcription result
                 when (log.status) {
                     LogEntry.Status.SUCCESS -> {
@@ -1119,7 +1132,7 @@ fun LogEntryItem(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         CappedTranscriptText(
-                            text = log.result,
+                            text = displayResult,
                             searchQuery = searchQuery,
                             container = MaterialTheme.colorScheme.primaryContainer,
                             onAutoSaveHintClick = onNavigateToSettings,
@@ -1281,7 +1294,7 @@ fun LogEntryItem(
                                 // Copy button
                                 ResultActionButton(
                                     compact = compactActions,
-                                    onClick = { copyTranscriptionToClipboard(context, log.result) },
+                                    onClick = { copyTranscriptionToClipboard(context, displayResult) },
                                     icon = Icons.Default.ContentCopy,
                                     labelRes = R.string.copy,
                                     contentDescriptionRes = R.string.copy_transcription
@@ -1289,7 +1302,7 @@ fun LogEntryItem(
                                 // Share button
                                 ResultActionButton(
                                     compact = compactActions,
-                                    onClick = { shareTranscription(context, log.result) },
+                                    onClick = { shareTranscription(context, displayResult) },
                                     icon = Icons.Default.Share,
                                     labelRes = R.string.share_transcription
                                 )

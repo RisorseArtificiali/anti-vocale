@@ -2,6 +2,7 @@ package com.antivocale.app.util
 
 import com.antivocale.app.transcription.TimedSegment
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class SubtitleFormatterTest {
@@ -88,5 +89,34 @@ class SubtitleFormatterTest {
         assertEquals(SubtitleFormatter.Format.TXT, SubtitleFormatter.Format.fromStored(null))
         assertEquals(SubtitleFormatter.Format.TXT, SubtitleFormatter.Format.fromStored("NOPE"))
         assertEquals(SubtitleFormatter.Format.VTT, SubtitleFormatter.Format.fromStored("VTT"))
+    }
+
+    // GH #83: the in-app display text uses the export turn convention.
+
+    private fun labeledCue(start: Long, speaker: Int?, text: String) =
+        TimedSegment(startMs = start, endMs = start + 3_000, text = text, speaker = speaker)
+
+    @Test
+    fun speakerAnnotated_prefixesTurnStartsAndSkipsContinuations() {
+        val annotated = SubtitleFormatter.speakerAnnotated(
+            listOf(
+                labeledCue(0, 0, "Ciao."),
+                labeledCue(4_000, 0, "Come va?"),
+                labeledCue(9_000, 1, "Bene, tu?"),
+                labeledCue(13_000, null, "..."),
+                labeledCue(17_000, 0, "A dopo."),
+            ))
+        assertEquals("SPEAKER 1: Ciao.\nCome va?\nSPEAKER 2: Bene, tu?\n...\nSPEAKER 1: A dopo.", annotated)
+    }
+
+    @Test
+    fun speakerAnnotated_nullWhenNoCueIsLabeled() {
+        assertNull(
+            SubtitleFormatter.speakerAnnotated(
+                listOf(
+                    TimedSegment(0, 3_000, "no labels"),
+                    TimedSegment(4_000, 7_000, "plain row"),
+                )))
+        assertNull(SubtitleFormatter.speakerAnnotated(emptyList()))
     }
 }
