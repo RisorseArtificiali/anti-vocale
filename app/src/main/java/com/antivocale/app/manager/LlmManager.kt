@@ -2,6 +2,7 @@ package com.antivocale.app.manager
 
 import android.content.Context
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.transcription.TranscriptionException
@@ -16,6 +17,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
+import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -44,12 +46,20 @@ open class LlmManager @Inject constructor(
     @ApplicationScope private val managerScope: CoroutineScope
 ) {
 
+    /** TASK-594: the per-generation ceiling, injectable for the unit test
+     *  (the NativeKeepAlive idleUnloadWindowHook settable-seam precedent;
+     *  volatile for the same cross-thread reason). Generous by default:
+     *  on-device summaries legitimately take minutes. */
+    @VisibleForTesting
+    @Volatile
+    internal var generationTimeoutMs: Long = DEFAULT_GENERATION_TIMEOUT_MS
+
     companion object {
         private const val TAG = "LlmManager"
         /** TASK-520: per-call ceiling for one LiteRT generation. Generous
          * because on-device summaries legitimately take minutes; the value
          * exists so a hung stream becomes a failure, not a frozen service. */
-        private const val LITERT_GENERATION_TIMEOUT_MS = 5 * 60_000L
+        private const val DEFAULT_GENERATION_TIMEOUT_MS = 5 * 60_000L
         private const val MAX_TOKENS = 2048
 
         // Single source of truth for the LiteRT conversation/sampler config of TEXT chat,
@@ -337,40 +347,96 @@ open class LlmManager @Inject constructor(
     }
 
     /**
-     * Generates text using LiteRT-LM backend.
+     * TASK-594: one LiteRT generation under a ceiling. withTimeoutOrNull
+     * alone cancels only the awaiting coroutine (litertlm's callbackFlow
+     * awaitClose is a no-op, bytecode-verified 0.13.1), so on timeout the
+     * native generation must be explicitly cancelled via [cancel]:
+     * otherwise the session stays wedged and every later generation on
+     * the process-wide conversation burns another full ceiling, leaking
+     * one native callback per timeout. The same coverage applies to a
+     * CALLER cancellation, which escapes withTimeoutOrNull untouched:
+     * it cancels the native generation too, then rethrows. Internal for
+     * the unit test.
+     * Contract: the block must return NON-NULL (production callers pass a
+     * Boolean sentinel), because null is the ceiling signal; a nullable
+     * result cannot be distinguished from the timeout. Internal for the
+     * unit test.
+     * @return the block's value, or null when the ceiling fired.
+     */
+    internal suspend fun <T : Any> withGenerationCeiling(
+        cancel: () -> Unit,
+        block: suspend () -> T,
+    ): T? = try {
+        // A non-positive ceiling would shortcut to null without running
+        // the block (withTimeoutOrNull semantics), misread as a timeout.
+        withTimeoutOrNull(generationTimeoutMs.coerceAtLeast(1L)) { block() }
+    } catch (e: CancellationException) {
+        cancelNativeQuietly(cancel, "caller cancellation")
+        throw e
+    }.also {
+        if (it == null) cancelNativeQuietly(cancel, "timeout")
+    }
+
+    /**
+     * TASK-594: one cancel attempt, both failure paths. A native Error from
+     * cancelProcess is the engine-corruption class the audio path's
+     * catch(e: Error) exists for, so it RETHROWS instead of being swallowed
+     * (review F1: a swallowed Error left caughtNativeError false and the
+     * finally re-entered a corrupt engine). Exceptions log and vanish: a
+     * closed-underneath conversation must not mask the primary outcome.
+     */
+    private fun cancelNativeQuietly(cancel: () -> Unit, cause: String) {
+        try {
+            cancel()
+        } catch (e: Exception) {
+            Log.w(TAG, "native generation cancel after $cause failed", e)
+        }
+    }
+
+    /**
+     * TASK-594: the shared body of both LiteRT generations (text chat and
+     * audio transcription): one ceiling, one native-cancel, one timeout
+     * translation, so the two sites cannot drift (review low finding).
+     */
+    private suspend fun generateUnderCeiling(
+        conversation: Conversation,
+        label: String,
+        contents: Contents,
+    ): Result<String> = try {
+        val response = StringBuilder()
+        val completed = withGenerationCeiling(cancel = { conversation.cancelProcess() }) {
+            conversation.sendMessageAsync(contents)
+                // No .catch: let mid-stream errors propagate to the outer catch
+                // (no silent partial success).
+                .collect { message ->
+                    response.append(message.toString())
+                }
+            true
+        }
+        if (completed == null) {
+            Log.e(TAG, "LiteRT $label generation timed out after ${generationTimeoutMs / 1000}s")
+            Result.failure(TimeoutException(
+                "LiteRT $label generation timed out after ${generationTimeoutMs / 1000}s"))
+        } else {
+            Result.success(response.toString())
+        }
+    } catch (e: CancellationException) {
+        // TASK-594: caller cancellation is not a generation failure; the
+        // ceiling already cancelled the native generation. Propagate.
+        throw e
+    } catch (e: Exception) {
+        Log.e(TAG, "LiteRT $label generation failed", e)
+        Result.failure(e)
+    }
+
+    /**
+     * Generates text using LiteRT-LM backend: the shared chat-tuned
+     * conversation under the generation ceiling.
      */
     private suspend fun generateTextLiteRT(prompt: String): Result<String> {
-        return try {
-            val conversation = litertConversation
-                ?: return Result.failure(IllegalStateException("LiteRT conversation not available"))
-
-            val response = StringBuilder()
-
-            // TASK-520 device pass found a deterministic hang: a degenerate
-            // (eos-only) response can leave the NEXT sendMessageAsync
-            // never yielding. A timeout turns the hang into a chunk failure
-            // the caller's degradation path already handles.
-            val completed = kotlinx.coroutines.withTimeoutOrNull(LITERT_GENERATION_TIMEOUT_MS) {
-                conversation.sendMessageAsync(Contents.of(Content.Text(prompt)))
-                    // No .catch: let mid-stream errors propagate to the outer catch (no silent partial success).
-                    .collect { message ->
-                        response.append(message.toString())
-                    }
-                true
-            }
-            if (completed == null) {
-                return Result.failure(java.util.concurrent.TimeoutException(
-                    "LiteRT generation timed out after ${LITERT_GENERATION_TIMEOUT_MS / 1000}s"))
-            }
-
-            val result = response.toString()
-            Log.d(TAG, "LiteRT generation complete: ${result.length} chars")
-            Result.success(result)
-
-        } catch (e: Exception) {
-            Log.e(TAG, "LiteRT text generation failed", e)
-            Result.failure(e)
-        }
+        val conversation = litertConversation
+            ?: return Result.failure(IllegalStateException("LiteRT conversation not available"))
+        return generateUnderCeiling(conversation, label = "text", Contents.of(Content.Text(prompt)))
     }
 
     /**
@@ -477,9 +543,12 @@ open class LlmManager @Inject constructor(
             Log.d(TAG, "Processing audio in fresh conversation...")
             Log.d(TAG, "Audio data size: ${audioData.size} bytes")
 
-            val response = StringBuilder()
-
-            freshConversation.sendMessageAsync(
+            // TASK-594: the audio path hung forever before this ceiling; a
+            // wedged native stream held audioMutex and the keep-alive work
+            // bracket with it.
+            generateUnderCeiling(
+                freshConversation,
+                label = "audio",
                 Contents.of(
                     // E4 REFUTED ON DEVICE 2026-08-24 (g240-e2be4): raw PCM made every
                     // chunk return blank ("No transcription produced"); the litertlm
@@ -489,16 +558,16 @@ open class LlmManager @Inject constructor(
                     Content.AudioBytes(audioData),
                     Content.Text(prompt)
                 )
-            )
-                // No .catch on the flow: let a mid-stream error propagate to the outer catch
-                // so a truncated transcript is reported as failure, not silent partial success.
-                .collect { message ->
-                    response.append(message.toString())
-                }
-
-            val result = response.toString()
-            Log.d(TAG, "Fresh conversation audio processing complete: ${result.length} chars")
-            outcome = Result.success(result)
+            ).onSuccess { result ->
+                Log.d(TAG, "Fresh conversation audio processing complete: ${result.length} chars")
+                outcome = Result.success(result)
+            }.onFailure { e ->
+                outcome = Result.failure(e)
+            }
+        } catch (e: CancellationException) {
+            // TASK-594: caller cancellation propagates; the finally block
+            // below still releases the fresh conversation.
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "LiteRT audio processing failed", e)
             outcome = Result.failure(e)

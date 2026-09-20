@@ -744,7 +744,21 @@ class TranscriptionOrchestrator @Inject constructor(
             if (candidate != null && SummaryPolicy.acceptableSummary(candidate, chunk)) {
                 partials += candidate
             } else {
-                generated.exceptionOrNull()?.let { lastFailure = it }
+                val failure = generated.exceptionOrNull()
+                if (failure is java.util.concurrent.TimeoutException) {
+                    // TASK-594 circuit breaker: a timeout means the engine is
+                    // wedged, not that this chunk is hard; grinding the
+                    // remaining chunks at one ceiling each turns a hang into
+                    // a 40-70 minute crawl. Abort with what we have.
+                    Log.w(TAG, "Summary map stage: generation timeout on chunk " +
+                        "${index + 1}/${chunks.size}; aborting the attempt")
+                    // No partial salvage: a first-chunk summary would pass the
+                    // whole-transcript length guard and ship as if it covered
+                    // the call (review F1). Null routes the timeout through the
+                    // ladder's failure path to SKIP_REASON_FAILED instead.
+                    return SummaryGeneration(null, failure = failure)
+                }
+                failure?.let { lastFailure = it }
                 Log.w(TAG, "Summary map stage: chunk ${index + 1}/${chunks.size} produced no usable partial; continuing")
             }
         }
