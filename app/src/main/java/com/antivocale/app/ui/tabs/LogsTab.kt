@@ -27,7 +27,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.launch
-import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -74,9 +73,7 @@ import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.ui.viewmodel.LogEntry
 import com.antivocale.app.ui.onboarding.TourStep
 import com.antivocale.app.ui.MAX_RENDERED_TRANSCRIPT_CHARS
-import com.antivocale.app.data.local.TimedSegmentsConverter
 import com.antivocale.app.ui.components.CappedTranscriptText
-import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.ui.components.highlightText
 import com.antivocale.app.ui.viewmodel.LogsViewModel
 import androidx.compose.runtime.produceState
@@ -881,8 +878,11 @@ private fun PartialTranscriptionBanner(failedChunkCount: Int) {
 @Composable
 fun LogEntryItem(
     log: LogEntry,
-    /** GH #83: the row's cues arrive through the ViewModel's per-row flow. */
-    viewModel: LogsViewModel,
+    /** TASK-599: the pre-annotated transcript when this row is expanded and
+     *  carries speaker cues; the item stays stateless (no ViewModel). */
+    speakerAnnotated: String?,
+    /** TASK-601: the first-pass header's display name, pre-derived. */
+    firstPassLabel: String = "",
     searchQuery: String = "",
     expanded: Boolean = false,
     onExpandChange: (Boolean) -> Unit = {},
@@ -1110,22 +1110,11 @@ fun LogEntryItem(
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
                 Spacer(modifier = Modifier.height(12.dp))
 
-                // GH #83: when the cues carry speaker labels, every surface of
-                // this row's text (display, copy, share) uses the turn-annotated
-                // form, the same rendering the exports produce; unlabeled rows
-                // fall back to the stored transcript.
-                val rowSegments by viewModel.segmentsFlow(log.id)
-                    .collectAsState(initial = log.segments)
-                // The block returns String? (speakerAnnotated's nullable
-                // contract); this lint release misinfers Unit here, same
-                // false positive as the Settings search groups.
-
-                @SuppressLint("RememberReturnType")
-                val speakerAnnotated = remember(log.id, rowSegments) {
-                    rowSegments?.let {
-                        SubtitleFormatter.speakerAnnotated(TimedSegmentsConverter.fromJson(it))
-                    }
-                }
+                // GH #83/TASK-599: when the cues carry speaker labels, every
+                // surface of this row's text uses the turn-annotated form,
+                // the same rendering the exports produce; the wrapper passes
+                // it pre-derived, unlabeled rows fall back to the stored
+                // transcript.
                 val displayResult = speakerAnnotated ?: log.result
 
                 // Full transcription result
@@ -1193,20 +1182,9 @@ fun LogEntryItem(
                         log.firstPassTranscript?.let { firstPass ->
                             LabeledTranscriptBlock(
                                 label = stringResource(
-                                    R.string.logs_first_pass_label,
-                                    // TASK-601: display name, never the raw
-                                    // catalog id (was "First pass (nemotron-
-                                    // streaming)" on every refined row).
-                                    // Remembered like the sibling metadata
-                                    // reader below: the list re-emits on every
-                                    // interim write and the registry lookup
-                                    // rebuilds external descriptors.
-                                    remember(log.processingContext) {
-                                        viewModel.fastBackendDisplayName(
-                                            ProcessingContextConverter.fromJson(log.processingContext)
-                                                ?.refinementPhase?.backendId,
-                                        )
-                                    } ?: "",
+                                    // TASK-601: the wrapper's pre-derived
+                                    // display name, never the raw catalog id.
+                                    R.string.logs_first_pass_label, firstPassLabel,
                                 ),
                                 copyLabelRes = R.string.copy_first_pass,
                                 text = firstPass,
@@ -1520,6 +1498,31 @@ private fun LogEntryWithSwipe(
     val context = LocalContext.current
     // TASK-546: the chip flag, collected once here (the item stays stateless).
     val showLanguageChip by viewModel.languageChipEnabled.collectAsState()
+    // TASK-599: the expanded row's annotated transcript is collected HERE
+    // (the wrapper knows expansion; the item stays stateless) from the
+    // ViewModel's cached per-row flow: no cold-flow-per-recomposition, no
+    // flash of unlabeled text, no JSON parse on the composition thread.
+    val speakerAnnotated = if (isExpanded) {
+        viewModel.speakerAnnotatedFlow(log.id).collectAsState().value
+    } else {
+        null
+    }
+    // TASK-601 via TASK-599: the first-pass header's display name, derived
+    // here (remembered; the registry lookup rebuilds external descriptors
+    // and the list re-emits on every interim write) and handed down as a
+    // string: the item stays stateless.
+    val firstPassLabel = if (log.firstPassTranscript != null) {
+        // Gated on the transcript actually existing (review F1): the parse
+        // and the registry lookup run only for rows that render the block,
+        // not for every row entering composition.
+        remember(log.processingContext) {
+            viewModel.fastBackendDisplayName(
+                ProcessingContextConverter.fromJson(log.processingContext)?.refinementPhase?.backendId,
+            )
+        } ?: ""
+    } else {
+        ""
+    }
     if (SwipeActionMode.from(swipeActionMode) == SwipeActionMode.REVEAL) {
         val revealState = rememberSwipeToRevealState()
 
@@ -1556,7 +1559,8 @@ private fun LogEntryWithSwipe(
         ) {
             LogEntryItem(
                 log = log,
-                viewModel = viewModel,
+                speakerAnnotated = speakerAnnotated,
+                firstPassLabel = firstPassLabel,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
                 onExpandChange = { expanded ->
@@ -1612,7 +1616,8 @@ private fun LogEntryWithSwipe(
         ) {
             LogEntryItem(
                 log = log,
-                viewModel = viewModel,
+                speakerAnnotated = speakerAnnotated,
+                firstPassLabel = firstPassLabel,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
                 onExpandChange = onExpandChange,

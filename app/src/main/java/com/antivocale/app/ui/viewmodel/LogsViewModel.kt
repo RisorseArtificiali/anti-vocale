@@ -1,6 +1,9 @@
 package com.antivocale.app.ui.viewmodel
 
 import android.content.Context
+import java.util.concurrent.ConcurrentHashMap
+import com.antivocale.app.util.SubtitleFormatter
+import kotlinx.coroutines.flow.distinctUntilChanged
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -13,6 +16,7 @@ import com.antivocale.app.audio.AudioDurationPolicy
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.data.local.LogDao
+import com.antivocale.app.data.local.TimedSegmentsConverter
 import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
@@ -67,7 +71,13 @@ data class LogEntry(
     val summary: String? = null,
     /** TASK-494: stable token from the entity; rendered localized. */
     val summarySkipReason: String? = null,
-    /** GH #92: JSON-serialized timed cues (raw passthrough; see TimedSegmentsConverter). */
+    /** GH #92: JSON-serialized timed cues (raw passthrough; see
+     *  TimedSegmentsConverter). WRITE-PATH ONLY (TASK-599): both list
+     *  projections deliberately exclude this column, so it is structurally
+     *  null on the UI side; reads go exclusively through
+     *  LogsViewModel.speakerAnnotatedFlow / LogDao.getSegments. Do NOT
+     *  "fix" it by adding the column back (pinned heap-churn regression,
+     *  LogDaoProjectionTest). */
     val segments: String? = null,
     /** TASK-570: structured failure diagnostics JSON (raw passthrough; see
      *  FailureContextJson); present on ERROR rows written since v9. */
@@ -383,12 +393,16 @@ class LogsViewModel @Inject constructor(
     }
 
     fun deleteLog(id: String) {
+        // TASK-599 F3: the row's cached annotated transcript must not
+        // outlive the row (long transcripts pin real memory).
+        annotatedByRow.remove(id)
         viewModelScope.launch {
             logDao.deleteById(id)
         }
     }
 
     fun clearLogs() {
+        annotatedByRow.clear()
         viewModelScope.launch {
             logDao.deleteAll()
         }
@@ -501,9 +515,32 @@ class LogsViewModel @Inject constructor(
         backendId == BuiltInBackendIds.PARAKEET && vadEnabled && !dismissed
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
-    /** GH #83: the cues JSON of one row, for the expanded detail's speaker
-     *  turns; scoped per row so the list flows stay lean (see LogDao). */
-    fun segmentsFlow(id: String): Flow<String?> = logDao.getSegments(id)
+    /**
+     * GH #83 / TASK-599: the expanded row's speaker-annotated transcript.
+     * ONE StateFlow per row id, cached for the session: the cold Room flow
+     * is built once (not per recomposition), deduped (any logs-table write
+     * re-runs the DAO query; an unchanged String costs one equals), and
+     * parsed + annotated OFF the composition thread. WhileSubscribed(5000)
+     * stops the query when the row collapses; the cached StateFlow keeps
+     * its last value across collapse/re-expand, so only the FIRST expand
+     * can show the stored text for a frame before the annotated one lands.
+     * Null while loading or when the row carries no cues; the caller falls
+     * back to the stored text.
+     */
+    private val annotatedByRow = ConcurrentHashMap<String, StateFlow<String?>>()
+
+    fun speakerAnnotatedFlow(id: String): StateFlow<String?> = annotatedByRow.getOrPut(id) {
+            logDao.getSegments(id)
+                .distinctUntilChanged()
+                .map { json ->
+                    withContext(Dispatchers.Default) {
+                        json?.let {
+                            SubtitleFormatter.speakerAnnotated(TimedSegmentsConverter.fromJson(it))
+                        }
+                    }
+                }
+                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    }
 
     /** TASK-601: the fast model's DISPLAY name for the first-pass header
      *  (the registry's contract for user surfaces; the observability
