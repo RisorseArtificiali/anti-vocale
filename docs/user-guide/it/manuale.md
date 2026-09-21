@@ -54,6 +54,7 @@ Regole pratiche:
 - La notifica del risultato offre: **Copia**, **Condividi** e, quando l'app di origine è supportata, **Invia a [App]** che incolla il testo direttamente nella chat da cui proveniva il vocale.
 - Con Copia automatica attiva (Impostazioni), il testo è già negli appunti quando arriva la notifica; la notifica te lo dice.
 - Ogni trascrizione resta nella scheda **Cronologia** con modello usato, durata e tempo di elaborazione. Tieni premuta una voce per riprovare, copiare, eliminare o segnalare un risultato sbagliato via email.
+- Con un modello **Whisper o SenseVoice**, ogni trascrizione espansa mostra la bandierina della lingua rilevata: un tocco per controllarla o bloccarla quando il modello sbaglia (i modelli piccoli a volte sbagliano). Le altre famiglie non rilevano la lingua, quindi la bandierina resta spenta; l'interruttore nelle Impostazioni lo dice e resta disattivato.
 - con Salvataggio automatico (Impostazioni) ogni trascrizione viene scritta anche come file .txt in una cartella a tua scelta.
 
 ## Audio lunghi, coda e ritentativi
