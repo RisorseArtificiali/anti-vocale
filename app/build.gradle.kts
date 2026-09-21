@@ -213,7 +213,7 @@ dependencies {
     // LiteRT-LM for multimodal inference (text + audio). v0.13.1 adds MTP speculative-
     // decoding runtime support (TASK-221); pairs with the version-stamp prompt in TASK-236.
     // https://maven.google.com/web/index.html#com.google.ai.edge.litertlm:litertlm-android
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.13.1")
+    implementation("com.google.ai.edge.litertlm:litertlm-android:0.17.1")
 
     // MediaPipe GenAI - kept as fallback for text-only inference
     implementation("com.google.mediapipe:tasks-genai:0.10.33")
