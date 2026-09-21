@@ -1042,4 +1042,8 @@
     <string name="language_chip_setting_note">Nur die Modelle Whisper und SenseVoice können die Sprache erkennen.</string>
     <string name="technical_details_title">Technische Details anzeigen</string>
     <string name="technical_details_description">Zeigt die technische Verarbeitungszeile (Dekodierungspfad, Chunks, VAD, Speicher) bei Transkripteinträgen. Standardmäßig aus; die Details sind in Feedback-Berichten immer enthalten.</string>
+    <string name="external_family_moonshine">Moonshine</string>
+    <string name="external_family_moonshine_help">Erwartet preprocess + encode + uncached/cached decode + tokens (v1) oder encoder_model.ort + decoder_model_merged.ort + tokens (v2); Englisch und einige 2026-Exporte</string>
+    <string name="external_family_dolphin">Dolphin</string>
+    <string name="external_family_dolphin_help">Erwartet model + tokens Dateien; mehrsprachig (zh/en base)</string>
 </resources>

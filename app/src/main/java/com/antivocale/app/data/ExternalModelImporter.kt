@@ -143,13 +143,13 @@ class ExternalModelImporter(
         }
         val looksLike = detected?.let { " The files look like a $it model: pick the $it family and retry." }.orEmpty()
         return IllegalArgumentException(
-            "missing required files for ${familyDisplayName(family)} (${ModelFamilySupport.forFamily(family).requiredRoles().joinToString("/")}); found: $names.$looksLike")
+            "missing required files for ${familyDisplayName(family)} (${ModelFamilySupport.forFamily(family).requiredRolesFor(names).joinToString("/")}); found: $names.$looksLike")
     }
 
     /**
      * Family-aware modelType resolution via the shared table
      * ([ModelFamilySupport.defaultModelType]): TRANSDUCER defaults to
-     * "nemo_transducer", WHISPER/SENSE_VOICE/CANARY to "", and CTC has no safe
+     * "nemo_transducer", WHISPER/SENSE_VOICE/CANARY/MOONSHINE/DOLPHIN to "", and CTC has no safe
      * default (it selects the sherpa config subtype) so it must be passed
      * explicitly.
      */

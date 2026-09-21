@@ -110,8 +110,13 @@ object CatalogModelValidator {
         if (!dir.isDirectory) return false
         return fileNames.all { name ->
             val file = File(dir, name)
-            if (file.name.endsWith(".onnx")) ResumeDownloadHelper.isFileComplete(file)
-            else file.exists()
+            // .ort joins .onnx (GH #89 moonshine v2 ships the ORT extension;
+            // the completeness check is extension-agnostic, the magic check is not).
+            if (file.name.endsWith(".onnx", ignoreCase = true) || file.name.endsWith(".ort", ignoreCase = true)) {
+                ResumeDownloadHelper.isFileComplete(file)
+            } else {
+                file.exists()
+            }
         }
     }
 }

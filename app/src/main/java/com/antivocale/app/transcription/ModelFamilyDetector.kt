@@ -60,14 +60,42 @@ object ModelFamilyDetector {
             exact.isEmpty() && matching.size == 1 -> matching[0].first
             else -> null
         }
+        // GH #89: a truncated MOONSHINE set must land here too. The v1 file
+        // names carry no "encoder"/"decoder" substring (preprocess/encode/
+        // uncached_decode/cached_decode), so without the moonshine-name tell a
+        // lost decode file would leave CTC the sole partial match and import a
+        // moonshine preprocess as a CTC encoder: no metadata gate, native
+        // _Exit(-1) at first load. The v2 names (encoder_model.* /
+        // decoder_model_merged.*) DO contain "encoder", so both generations
+        // reach this guard through one tell.
+        // Tight tells only (review round): the family's own role constants
+        // (single definition with the plan, so a future role rename cannot
+        // leave this list stale), so a stray session.ort or an unrelated
+        // "preprocessing-notes.txt" sidecar cannot flip a clean CTC detection
+        // into the chooser. The verification round caught "encode" missing
+        // here: a v1 folder reduced to encode+tokens imported as CTC and
+        // died at native load, the exact class this guard exists for.
+        val moonshineNames = files.any { f ->
+            (f.endsWith(".onnx", ignoreCase = true) || f.endsWith(".ort", ignoreCase = true)) &&
+                f.substringBefore('.').let { role ->
+            role.equals(MoonshineSupport.V1_ROLE_PREPROCESSOR, ignoreCase = true) ||
+                role.equals(MoonshineSupport.V1_ROLE_ENCODER, ignoreCase = true) ||
+                role.equals(MoonshineSupport.V1_ROLE_UNCACHED_DECODER, ignoreCase = true) ||
+                role.equals(MoonshineSupport.V1_ROLE_CACHED_DECODER, ignoreCase = true) ||
+                role.equals(MoonshineSupport.V2_ROLE_ENCODER, ignoreCase = true) ||
+                role.equals(MoonshineSupport.V2_ROLE_MERGED_DECODER, ignoreCase = true)
+                }
+        }
+        // MOONSHINE joins the offered picks only when a moonshine-shaped file
+        // is actually present: a pick whose import can only fail is noise.
         if (soleDetected == ModelFamily.CTC &&
-            files.any { it.contains("encoder", ignoreCase = true) } &&
+            (files.any { it.contains("encoder", ignoreCase = true) } || moonshineNames) &&
             files.none { it.contains("decoder", ignoreCase = true) } &&
             files.none { it.contains("ctc", ignoreCase = true) }
         ) {
-            return Result.Ambiguous(listOf(
-                ModelFamily.TRANSDUCER, ModelFamily.CTC,
-                ModelFamily.WHISPER, ModelFamily.CANARY))
+            val base = listOf(ModelFamily.TRANSDUCER, ModelFamily.CTC,
+                ModelFamily.WHISPER, ModelFamily.CANARY)
+            return Result.Ambiguous(if (moonshineNames) base + ModelFamily.MOONSHINE else base)
         }
         return when {
             exact.size == 1 -> Result.Detected(exact[0].first)
@@ -99,14 +127,18 @@ object ModelFamilyDetector {
         // an unrelated word (DetectCore) does not vote; 'sense_voice' and
         // 'sense-voice' both match SenseVoice. (Round 4.)
         val tokens = terminal.split(Regex("[^a-z0-9]")).filter { it.isNotEmpty() }
-        val matches = candidates.filter { candidate ->
-            val words = candidate.name.lowercase().split('_')
-            words.all { it in tokens }
-        }
-        // A terminal name carrying tokens of MULTIPLE candidates (a folder
-        // literally named sense-voice-ctc) is a tie the hint cannot break:
-        // the chooser decides, not enum order (round 3: firstOrNull picked
-        // CTC for exactly that name, importing with the wrong config).
-        return if (matches.size == 1) matches[0] else null
+        val matchedWords = candidates.map { candidate ->
+            candidate to candidate.name.lowercase().split('_')
+        }.filter { (_, words) -> words.all { it in tokens } }
+        // A terminal name carrying tokens of MULTIPLE candidates stays a tie
+        // the hint cannot break: the chooser decides, not enum order (round 3:
+        // firstOrNull picked CTC for exactly that name, importing with the
+        // wrong config). KNOWN LIMITATION (GH #89 review): every published
+        // dolphin repo name also carries 'ctc', so a dolphin set opens the
+        // chooser where a CTC pick imports structurally and dies at native
+        // load; splitting "ctc as architecture qualifier" from "genuinely
+        // mixed repo" needs the file shape or a chooser preselect, tracked
+        // on TASK-618 for the 1.14 window.
+        return if (matchedWords.size == 1) matchedWords[0].first else null
     }
 }

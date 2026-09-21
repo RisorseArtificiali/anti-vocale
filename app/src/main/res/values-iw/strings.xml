@@ -1049,4 +1049,8 @@
     <string name="language_chip_setting_note">רק דגמי Whisper ו-SenseVoice יכולים לזהות את השפה.</string>
     <string name="technical_details_title">הצגת פרטים טכניים</string>
     <string name="technical_details_description">מציג את שורת העיבוד הטכנית (נתיב פענוח, מקטעים, VAD, זיכרון) ברשומות התמלול. כבוי כברירת מחדל; הפרטים נכללים תמיד בדוחות.</string>
+    <string name="external_family_moonshine">Moonshine</string>
+    <string name="external_family_moonshine_help">דורש preprocess + encode + uncached/cached decode + tokens (v1) או encoder_model.ort + decoder_model_merged.ort + tokens (v2); אנגלית וכמה ייצואי 2026</string>
+    <string name="external_family_dolphin">Dolphin</string>
+    <string name="external_family_dolphin_help">דורש קבצי model + tokens; רב-לשוני (בסיס zh/en)</string>
 </resources>

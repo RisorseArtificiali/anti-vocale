@@ -133,6 +133,12 @@ class SherpaBackend(
             valueKey: String?,
             maxScanBytes: Long = ONNX_METADATA_SCAN_LIMIT
         ): Pair<List<String>, String?> {
+            // No keys and no value to read: skip the tail scan entirely
+            // (review round: the empty-gate families paid a 2 MiB read on
+            // every initialize and every post-idle re-initialization for
+            // bytes nothing consumed; the sibling missingOnnxMetadata
+            // already short-circuits this way).
+            if (requiredKeys.isEmpty() && valueKey == null) return emptyList<String>() to null
             val data = readTail(file, maxScanBytes) ?: return requiredKeys to null
             val value = valueKey?.let { onnxMetadataValueBytes(data, it) }
             return missingOnnxMetadataKeys(data, requiredKeys) to value

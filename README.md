@@ -48,7 +48,7 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 ### Models
 
 - **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, Qwen3-ASR, GigaAM v3, Nemotron 3.5 (streaming), or import your own
-- **Custom model import** - Bring any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice) from a folder or HuggingFace URL, no app update needed; one-tap validated entries live in the community catalog, and only models matching a supported family's layout import ([docs](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise))
+- **Custom model import** - Bring any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Moonshine, Dolphin) from a folder or HuggingFace URL, no app update needed; one-tap validated entries live in the community catalog, and only models matching a supported family's layout import ([docs](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise))
 - **Full user manual** - Getting started, choosing a model, troubleshooting and FAQ, in 8 languages ([user guide](docs/user-guide/))
 - **Any audio length** - Long inputs are automatically split and stitched; practical ceilings are declared up front (2 hours on the streaming path, memory-dependent with VAD enabled) (see the [FAQ](FAQ.md))
 - **Declared limits before download** - Each model card states its audio-length capability up front, so big downloads are informed choices
@@ -162,7 +162,7 @@ Long transcripts are split into pages you can read without leaving the notificat
 
 ### Custom Models (ONNX Sherpa)
 
-Import any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Canary) from a local folder or HuggingFace URL, or take the recommended route: the community catalog offers validated models as a one-tap import, per language. The app handles role-based file matching, SHA-256 verification, and architecture selection. See the [import reference](docs/external-models.md) for supported formats, the catalog-entry JSON schema, and [what import can and cannot do](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise).
+Import any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Canary, Moonshine, Dolphin) from a local folder or HuggingFace URL, or take the recommended route: the community catalog offers validated models as a one-tap import, per language. The app handles role-based file matching, SHA-256 verification, and architecture selection. See the [import reference](docs/external-models.md) for supported formats, the catalog-entry JSON schema, and [what import can and cannot do](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise).
 
 ### Italian ASR Benchmark
 
@@ -242,7 +242,7 @@ AudioPreprocessor (16kHz mono WAV; chunk size per model family + free RAM)
     v
 TranscriptionOrchestrator
     |--- SherpaBackend (one engine; bundled catalog entries: Parakeet TDT, Whisper, Qwen3-ASR, GigaAM v3, Nemotron 3.5 streaming)
-    |--- ExternalSherpaBackend (user-imported models: Transducer/Whisper/CTC/SenseVoice/Canary)
+    |--- ExternalSherpaBackend (user-imported models: Transducer/Whisper/CTC/SenseVoice/Canary/Moonshine/Dolphin)
     |--- LlmTranscriptionBackend (Gemma via LiteRT-LM)
     |
     v

@@ -1061,4 +1061,8 @@
     <string name="language_chip_setting_note">Определять язык умеют только модели Whisper и SenseVoice.</string>
     <string name="technical_details_title">Показывать технические детали</string>
     <string name="technical_details_description">Показывает техническую строку обработки (путь декодирования, чанки, VAD, память) в записях транскрипции. По умолчанию выключено; детали всегда включаются в отчёты.</string>
+    <string name="external_family_moonshine">Moonshine</string>
+    <string name="external_family_moonshine_help">Требует preprocess + encode + uncached/cached decode + tokens (v1) либо encoder_model.ort + decoder_model_merged.ort + tokens (v2); английский и некоторые экспорты 2026 года</string>
+    <string name="external_family_dolphin">Dolphin</string>
+    <string name="external_family_dolphin_help">Требует файлы model + tokens; многоязычная (база zh/en)</string>
 </resources>

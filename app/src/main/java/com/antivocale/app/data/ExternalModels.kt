@@ -4,7 +4,7 @@ import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 
-enum class ModelFamily { TRANSDUCER, WHISPER, CTC, SENSE_VOICE, CANARY }
+enum class ModelFamily { TRANSDUCER, WHISPER, CTC, SENSE_VOICE, CANARY, MOONSHINE, DOLPHIN }
 
 enum class ExternalModelSource { LOCAL, URL, CATALOG }
 

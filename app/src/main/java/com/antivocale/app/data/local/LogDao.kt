@@ -46,11 +46,19 @@ interface LogDao {
         "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs ORDER BY timestamp DESC LIMIT 500")
     fun getAll(): Flow<List<LogEntity>>
 
+    // TASK-613: callers pass likeLiteral(query); the ESCAPE clause makes the
+    // backslash the escape character, so a literal % or _ in the user's query
+    // stops acting as a wildcard (a bare "%" used to return the newest 500
+    // rows regardless of the query).
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' " +
+        "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
         "ORDER BY timestamp DESC LIMIT 500")
     fun searchAll(query: String): Flow<List<LogEntity>>
+
+    /** TASK-613: escapes SQL LIKE wildcards for [searchAll]'s ESCAPE clause. */
+    fun likeLiteral(query: String): String =
+        query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
     /** Lean per-row read (GH #83 cues), fetched on expand; see the
      *  lean-projection note above for why it stays out of the lists. */

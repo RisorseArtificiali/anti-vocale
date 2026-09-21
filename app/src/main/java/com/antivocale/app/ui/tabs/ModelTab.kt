@@ -1422,6 +1422,8 @@ private val FAMILY_OPTIONS = listOf(
     Triple(ModelFamily.CTC, R.string.external_family_ctc, R.string.external_family_ctc_help),
     Triple(ModelFamily.SENSE_VOICE, R.string.external_family_sense_voice, R.string.external_family_sense_voice_help),
     Triple(ModelFamily.CANARY, R.string.external_family_canary, R.string.external_family_canary_help),
+    Triple(ModelFamily.MOONSHINE, R.string.external_family_moonshine, R.string.external_family_moonshine_help),
+    Triple(ModelFamily.DOLPHIN, R.string.external_family_dolphin, R.string.external_family_dolphin_help),
 )
 
 /** One label lookup, loud on a missing row (a family without a label must

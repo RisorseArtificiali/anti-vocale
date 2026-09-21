@@ -3,6 +3,7 @@ package com.antivocale.app.testing
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelStore
+import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
@@ -46,12 +47,14 @@ internal class TestSpiOps(
         value: String? = null,
         entry: String? = null,
         url: String? = null,
+        family: String? = null,
+        modelType: String? = null,
     ): String = runCatching {
         when (op) {
             OP_GET -> get()
             OP_SET -> set(key, value, entry)
             OP_RECORDS -> records()
-            OP_IMPORT -> importModel(url)
+            OP_IMPORT -> importModel(url, family, modelType)
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -348,14 +351,32 @@ internal class TestSpiOps(
      * exactly the path the import dialog uses; the response is the imported
      * record, so a device test can chain set backend=external:<id> on it.
      */
-    private suspend fun importModel(url: String?): String {
+    private suspend fun importModel(url: String?, family: String?, modelType: String?): String {
+        fun importError(message: String): String =
+            JSONObject().put("op", OP_IMPORT).put("error", message).toString()
         if (url.isNullOrBlank()) {
-            return JSONObject()
-                .put("op", OP_IMPORT)
-                .put("error", "missing 'url' extra")
-                .toString()
+            return importError("missing 'url' extra")
         }
-        val record = importer.importFromUrl(url)
+        // TASK-618: optional family override, because URL imports are
+        // detect-then-tell by design (the UI dialog owns the chooser) and a
+        // headless test must be able to make the same choice the user makes.
+        val parsedFamily = family?.let { raw ->
+            ModelFamily.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
+                ?: return importError(
+                    "unknown family '$raw' (use one of: " +
+                        ModelFamily.entries.joinToString("/") { it.name } + ")")
+        }
+        // model_type carries the CTC subtype (the dialog's nemo/zipformer
+        // selector): family=CTC cannot succeed without it (review round).
+        // Catalog-entry JSON carries its own family; the override would be
+        // silently dropped there, so say so instead of diverging from the
+        // dialog path the SPI mirrors (review round).
+        if (parsedFamily != null && url.trim().endsWith(".json")) {
+            return importError("family override applies to repo URLs only; entry JSON carries its own family")
+        }
+        val record = importer.importFromUrl(
+            url, modelType = modelType,
+            family = parsedFamily ?: ModelFamily.TRANSDUCER)
         return JSONObject()
             .put("op", OP_IMPORT)
             .put("record", record.toJson().put("backendId", record.backendId))
@@ -371,7 +392,8 @@ internal class TestSpiOps(
             "usage",
             "am broadcast -a com.antivocale.app.TEST_SPI --es op=<$OP_GET|$OP_SET|$OP_RECORDS|$OP_IMPORT|$OP_HELP> " +
                 "[--es key=<setKey> --es value=<newValue>] [--es entry=<catalogId> (sherpa_path only)] " +
-                "[--es url=<entry-or-repo url> (import only)]")
+                "[--es url=<entry-or-repo url> (import only)] [--es family=<ModelFamily> (import only, optional override)] "
+            + "[--es model_type=<subtype> (import only, CTC: nemo_ctc/zipformer_ctc)]")
         .put(
             "transcription",
             "transcription is NOT triggered here: broadcast com.antivocale.app.PROCESS_REQUEST with extras " +

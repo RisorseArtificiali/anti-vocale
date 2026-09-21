@@ -1048,4 +1048,8 @@
     <string name="language_chip_setting_note">Solo i modelli Whisper e SenseVoice possono rilevare la lingua.</string>
     <string name="technical_details_title">Mostra i dettagli tecnici</string>
     <string name="technical_details_description">Mostra la riga tecnica di elaborazione (percorso di decodifica, chunk, VAD, memoria) nelle voci delle trascrizioni. Disattivo per impostazione predefinita; i dettagli sono sempre inclusi nelle segnalazioni.</string>
+    <string name="external_family_moonshine">Moonshine</string>
+    <string name="external_family_moonshine_help">Richiede preprocess + encode + uncached/cached decode + token (v1) oppure encoder_model.ort + decoder_model_merged.ort + token (v2); inglese e alcune esportazioni 2026</string>
+    <string name="external_family_dolphin">Dolphin</string>
+    <string name="external_family_dolphin_help">Richiede i file model + token; multilingua (base zh/en)</string>
 </resources>

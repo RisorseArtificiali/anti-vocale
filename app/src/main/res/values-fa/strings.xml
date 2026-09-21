@@ -1047,4 +1047,8 @@
     <string name="language_chip_setting_note">فقط مدل‌های Whisper و SenseVoice می‌توانند زبان را تشخیص دهند.</string>
     <string name="technical_details_title">نمایش جزئیات فنی</string>
     <string name="technical_details_description">نمایش خط فنی پردازش (مسیر رمزگشایی، قطعه‌ها، VAD، حافظه) در مدخل‌های پیاده‌سازی متن. به‌طور پیش‌فرض خاموش است؛ جزئیات همیشه در گزارش‌ها گنجانده می‌شود.</string>
+    <string name="external_family_moonshine">Moonshine</string>
+    <string name="external_family_moonshine_help">نیازمند preprocess + encode + uncached/cached decode + tokens (نسخه ۱) یا encoder_model.ort + decoder_model_merged.ort + tokens (نسخه ۲)؛ انگلیسی و چند صادرات ۲۰۲۶</string>
+    <string name="external_family_dolphin">Dolphin</string>
+    <string name="external_family_dolphin_help">نیازمند فایل‌های model + tokens؛ چندزبانه (پایه zh/en)</string>
 </resources>

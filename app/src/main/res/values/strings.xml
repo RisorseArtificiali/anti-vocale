@@ -1041,4 +1041,8 @@
     <string name="language_chip_setting_note">Only the Whisper and SenseVoice models can detect the language.</string>
     <string name="technical_details_title">Show technical details</string>
     <string name="technical_details_description">Show the technical processing line (decode path, chunks, VAD, memory) under each transcript entry. Off by default; the details are always included in feedback reports.</string>
+    <string name="external_family_moonshine">Moonshine</string>
+    <string name="external_family_moonshine_help">Expects preprocess + encode + uncached/cached decode + tokens (v1) or encoder_model.ort + decoder_model_merged.ort + tokens (v2); English and a few 2026 exports</string>
+    <string name="external_family_dolphin">Dolphin</string>
+    <string name="external_family_dolphin_help">Expects model + tokens files; multi-language (zh/en base)</string>
 </resources>

@@ -15,6 +15,7 @@ import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -32,6 +33,7 @@ class TestSpiOpsTest {
     /** Captures the url and answers with a fixture record; no network in unit tests. */
     private class FakeImporter(
         var lastUrl: String? = null,
+        var lastFamily: ModelFamily? = null,
         val answer: (String) -> ExternalModelRecord,
     ) : ExternalModelImportOperations {
         override suspend fun importFromTreeUri(
@@ -54,6 +56,7 @@ class TestSpiOpsTest {
             onProgress: com.antivocale.app.data.ExternalImportProgress,
         ): ExternalModelRecord {
             lastUrl = url
+            lastFamily = family
             return answer("fromurl")
         }
     }
@@ -438,6 +441,23 @@ class TestSpiOpsTest {
         val json = JSONObject(ops.handle("import"))
         assertEquals("import", json.getString("op"))
         assertTrue(json.getString("error").contains("url"))
+    }
+
+    @Test
+    fun `import op forwards the family override and defaults without it`() = runTest {
+        // TASK-618: the headless equivalent of the dialog's family chooser.
+        ops.handle("import", url = "http://x/repo", family = "MOONSHINE")
+        assertEquals(ModelFamily.MOONSHINE, fakeImporter.lastFamily)
+        ops.handle("import", url = "http://x/repo")
+        assertEquals(ModelFamily.TRANSDUCER, fakeImporter.lastFamily)
+    }
+
+    @Test
+    fun `import op rejects an unknown family without importing`() = runTest {
+        val json = JSONObject(ops.handle("import", url = "http://x/repo", family = "bogus"))
+        assertTrue(json.getString("error").contains("bogus"))
+        assertTrue(json.getString("error").contains("MOONSHINE"))
+        assertNull(fakeImporter.lastUrl)
     }
 }
 

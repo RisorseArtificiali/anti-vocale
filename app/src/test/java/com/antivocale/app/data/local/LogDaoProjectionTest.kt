@@ -10,6 +10,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -121,5 +122,35 @@ class LogDaoProjectionTest {
             checkProjection("getAll", field.get(fromGetAll), written, name)
             checkProjection("searchAll", field.get(fromSearch), written, name)
         }
+    }
+    @Test
+    fun `like wildcards in the user query match literally`() = runBlocking {
+        val full = LogEntity(
+            id = "id", timestamp = 1_000_000L, taskId = "task", type = "AUDIO",
+            status = "SUCCESS", prompt = "p", result = "has % literal",
+            errorMessage = "e", durationMs = 16_000L, filePath = "/f",
+            audioDurationSeconds = 2.0, sourcePackageName = "pkg", isPartial = false,
+            failedChunkCount = 1, modelName = "m", rawTranscript = "raw",
+            summary = "s", summarySkipReason = "skip", failureContext = "fx",
+            processingContext = "{}", firstPassTranscript = "first",
+            detectedLanguage = "de", languagePin = "it",
+        )
+        dao.insert(full)
+        dao.insert(LogEntity(id = "id2", timestamp = 2_000_000L, taskId = "t2", type = "AUDIO",
+            status = "SUCCESS", prompt = "p", result = "plain text row",
+            errorMessage = "e", durationMs = 1L, filePath = "/f2", audioDurationSeconds = 1.0,
+            sourcePackageName = "pkg", isPartial = false, failedChunkCount = 0, modelName = "m",
+            rawTranscript = "raw", summary = "s", summarySkipReason = "skip",
+            failureContext = "fx", processingContext = "{}", firstPassTranscript = null,
+            detectedLanguage = null, languagePin = null))
+        // A bare % is not "match everything": only rows literally containing it.
+        val pct = dao.searchAll(dao.likeLiteral("%")).first()
+        assertEquals(listOf("id"), pct.map { it.id })
+        // An underscore is a literal, not a single-char wildcard: the fixture
+        // result "r" must not match "_".
+        val und = dao.searchAll(dao.likeLiteral("_")).first()
+        assertTrue(und.isEmpty())
+        // Normal queries still work through the escape path.
+        assertEquals(listOf("id2"), dao.searchAll(dao.likeLiteral("plain")).first().map { it.id })
     }
 }

@@ -7,6 +7,7 @@ import com.antivocale.app.data.ModelFamily
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotNull
@@ -44,6 +45,9 @@ class ModelFamilySupportTest {
         assertEquals(80, WhisperSupport.featureDim)
         assertEquals(80, CtcSupport.featureDim)
         assertEquals(80, SenseVoiceSupport.featureDim)
+        // GH #89 families: both ship 80 bands (dolphin's 80-dim override is native-side).
+        assertEquals(80, MoonshineSupport.featureDim)
+        assertEquals(80, DolphinSupport.featureDim)
     }
 
     @Test
@@ -53,6 +57,9 @@ class ModelFamilySupportTest {
         assertEquals("", ModelFamilySupport.defaultModelType(ModelFamily.SENSE_VOICE))
         assertEquals("", ModelFamilySupport.defaultModelType(ModelFamily.CANARY))
         assertNull(ModelFamilySupport.defaultModelType(ModelFamily.CTC))
+        // GH #89 families take the blank-string default (whisper/sense_voice class).
+        assertEquals("", ModelFamilySupport.defaultModelType(ModelFamily.MOONSHINE))
+        assertEquals("", ModelFamilySupport.defaultModelType(ModelFamily.DOLPHIN))
     }
 
     @Test
@@ -73,6 +80,10 @@ class ModelFamilySupportTest {
         assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.SENSE_VOICE, "sense_voice"))
         assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.CANARY, ""))
         assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.CANARY, "nemo_transducer"))
+        // GH #89 families: blank only, like whisper/sense_voice.
+        assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.MOONSHINE, ""))
+        assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.MOONSHINE, "nemo_transducer"))
+        assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.DOLPHIN, ""))
     }
 
     // ---- TASK-408: CanarySupport ----
@@ -123,6 +134,75 @@ class ModelFamilySupportTest {
         // the import-time option wins over the record languages
         val opted = record.copy(options = mapOf(ModelFamilySupport.OPTION_CANARY_LANGUAGE to "fr"))
         assertEquals("fr", CanarySupport.buildModelConfig(opted, 4, "cpu").canary.srcLang)
+    }
+
+    // ---- Moonshine / Dolphin (GH #89 light-models families) ----
+
+    @Test
+    fun `moonshine v2 plan maps the ort pair and tokens`() {
+        val files = listOf("encoder_model.ort", "decoder_model_merged.ort", "tokens.txt", "README.md")
+        val plan = MoonshineSupport.buildCopyPlan(files)!!
+        assertEquals(
+            listOf("encoder_model.ort", "decoder_model_merged.ort", "tokens.txt"),
+            plan.keys.toList())
+        // v2 presence narrows the load-time roles to exactly that generation
+        assertEquals(
+            listOf("encoder_model.ort", "decoder_model_merged.ort", "tokens.txt"),
+            MoonshineSupport.requiredRolesFor(files))
+    }
+
+    @Test
+    fun `moonshine v1 plan maps the four onnx roles and rejects a v2-only set`() {
+        val files = listOf(
+            "preprocess.onnx", "encode.int8.onnx",
+            "uncached_decode.int8.onnx", "cached_decode.int8.onnx", "tokens.txt")
+        val plan = MoonshineSupport.buildCopyPlan(files)!!
+        assertEquals(5, plan.size)
+        assertNull(MoonshineSupport.buildCopyPlan(listOf("encoder_model.ort", "tokens.txt")))
+    }
+
+    @Test
+    fun `moonshine model config picks the generation by the files on disk`() {
+        val v1 = record(ModelFamily.MOONSHINE).copy(
+            files = mapOf(
+                "preprocess.onnx" to FilePin("a", true),
+                "encode.int8.onnx" to FilePin("b", true),
+                "uncached_decode.int8.onnx" to FilePin("c", true),
+                "cached_decode.int8.onnx" to FilePin("d", true),
+                "tokens.txt" to FilePin("e", true),
+            ))
+        val configV1 = MoonshineSupport.buildModelConfig(v1, numThreads = 2, provider = "cpu")
+        assertEquals("", configV1.moonshine.mergedDecoder)
+        assertNotEquals("", configV1.moonshine.preprocessor)
+        assertEquals("tokens.txt", configV1.tokens.substringAfterLast('/'))
+        // v2 branch: the record dir really carries the .ort pair
+        val dir = java.nio.file.Files.createTempDirectory("moonshine").toFile()
+        try {
+            java.io.File(dir, "encoder_model.ort").writeBytes(byteArrayOf(1))
+            val configV2 = MoonshineSupport.buildModelConfig(
+                v1.copy(
+                    dir = dir.absolutePath,
+                    files = mapOf(
+                        "encoder_model.ort" to FilePin("a", true),
+                        "decoder_model_merged.ort" to FilePin("b", true),
+                        "tokens.txt" to FilePin("c", true),
+                    )), numThreads = 2, provider = "cpu")
+            assertNotEquals("", configV2.moonshine.mergedDecoder)
+            assertEquals("", configV2.moonshine.preprocessor)
+        } finally {
+            dir.deleteRecursively()
+        }
+    }
+
+    @Test
+    fun `dolphin plan maps model and tokens and shares the sense-voice shape`() {
+        val files = listOf("model.int8.onnx", "tokens.txt")
+        val plan = DolphinSupport.buildCopyPlan(files)!!
+        assertEquals(listOf(DolphinSupport.CANONICAL_MODEL, "tokens.txt"), plan.keys.toList())
+        val config = DolphinSupport.buildModelConfig(
+            record(ModelFamily.DOLPHIN), numThreads = 2, provider = "cpu")
+        assertEquals("model.int8.onnx", config.dolphin.model.substringAfterLast('/'))
+        assertNull(DolphinSupport.valueMetadataKey())
     }
 
     // ---- Task 4: TransducerSupport (behavior moved verbatim from the importer) ----

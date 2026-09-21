@@ -52,6 +52,9 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
         fun familyChunkCapSeconds(family: ModelFamily): Int? = when (family) {
             ModelFamily.WHISPER -> 30
             ModelFamily.CANARY -> 10
+            // Moonshine's window is whisper-sized (GH #89); Dolphin decodes
+            // whole files like SenseVoice (no cap).
+            ModelFamily.MOONSHINE -> 30
             else -> null
         }
 
@@ -137,7 +140,11 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
         // when the family's model file is missing critical metadata, killing the app silently.
         val support = ModelFamilySupport.forFamily(record.family)
         return withContext(Dispatchers.IO) {
-            val missing = support.requiredRoles().filterNot { File(dir, it).exists() }
+            // record.files.keys: the canonical names the import wrote (the
+            // generation truth), re-verified against the directory itself so
+            // a deleted file still fails loudly.
+            val missing = support.requiredRolesFor(record.files.keys.toList())
+                .filterNot { File(dir, it).exists() }
             if (missing.isNotEmpty()) {
                 return@withContext Result.failure(TranscriptionException.ModelLoadError(
                     "missing files in ${record.dir}: $missing"))

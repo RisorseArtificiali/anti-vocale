@@ -1041,4 +1041,8 @@
     <string name="language_chip_setting_note">केवल Whisper और SenseVoice मॉडल भाषा पहचान सकते हैं।</string>
     <string name="technical_details_title">तकनीकी विवरण दिखाएँ</string>
     <string name="technical_details_description">प्रतिलेख प्रविष्टियों में तकनीकी प्रोसेसिंग पंक्ति (डिकोड पथ, चंक, VAD, मेमोरी) दिखाता है। डिफ़ॉल्ट रूप से बंद; विवरण रिपोर्ट में सदैव शामिल रहते हैं।</string>
+    <string name="external_family_moonshine">Moonshine</string>
+    <string name="external_family_moonshine_help">को preprocess + encode + uncached/cached decode + tokens (v1) या encoder_model.ort + decoder_model_merged.ort + tokens (v2) चाहिए; अंग्रेज़ी और कुछ 2026 निर्यात</string>
+    <string name="external_family_dolphin">Dolphin</string>
+    <string name="external_family_dolphin_help">model + tokens फ़ाइलें चाहिए; बहुभाषी (zh/en बेस)</string>
 </resources>

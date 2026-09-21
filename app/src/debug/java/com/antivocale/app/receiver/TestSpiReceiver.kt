@@ -62,6 +62,8 @@ class TestSpiReceiver : BroadcastReceiver() {
         /** Catalog entry id; required by op=set key=sherpa_path. */
         const val EXTRA_ENTRY = "entry"
         const val EXTRA_URL = "url"
+        const val EXTRA_FAMILY = "family"
+        const val EXTRA_MODEL_TYPE = "model_type"
 
         /** TASK-486: navigation destination; required by op=nav. */
         const val EXTRA_DEST = "dest"
@@ -114,6 +116,8 @@ class TestSpiReceiver : BroadcastReceiver() {
         val value = intent.getStringExtra(EXTRA_VALUE)
         val entry = intent.getStringExtra(EXTRA_ENTRY)
         val url = intent.getStringExtra(EXTRA_URL)
+        val family = intent.getStringExtra(EXTRA_FAMILY)
+        val modelType = intent.getStringExtra(EXTRA_MODEL_TYPE)
         val dest = intent.getStringExtra(EXTRA_DEST)
 
         // ModelPreloadReceiver idiom: goAsync plus a scope per receive,
@@ -130,7 +134,7 @@ class TestSpiReceiver : BroadcastReceiver() {
                     handleNav(context, dest)
                 } else {
                     // handle() answers every request with JSON, errors included.
-                    ops.handle(op, key, value, entry, url)
+                    ops.handle(op, key, value, entry, url, family, modelType)
                 }
                 // PendingResult setters, the goAsync-sanctioned API for this
                 // async window: onReceive has already returned and we are on IO.
