@@ -241,9 +241,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 // "Refining with <model>..." line).
                 runCatching {
                     val accurateId = backendOverride ?: preferencesManager.transcriptionBackend.first()
-                    val name = backendRegistry.byBackendId(accurateId)
-                        ?.let { variantAwareDisplayName(context, it, modelPathForBackend(accurateId)) }
-                        ?: accurateId
+                    val name = displayNameForBackend(context, accurateId)
                     listener.onStatusUpdate(context.getString(R.string.refining_status, name))
                 }
             }
@@ -396,9 +394,10 @@ class TranscriptionOrchestrator @Inject constructor(
                         // reach it (loop arm newly routes completed phase-2
                         // runs through here too).
                         fastFirstPass?.processing?.backendId?.let { fastId ->
-                            val name = backendRegistry.byBackendId(fastId)
-                                ?.let { variantAwareDisplayName(context, it, modelPathForBackend(fastId)) }
-                                ?: fastId
+                            // The suspend derivation stays OUTSIDE the catch so
+                            // a cancellation unwinds here, not at the next
+                            // suspension point (review F8).
+                            val name = displayNameForBackend(context, fastId)
                             runCatching { logDao.setModelName(taskId, name) }
                         }
                     }
@@ -442,9 +441,12 @@ class TranscriptionOrchestrator @Inject constructor(
                         refinementOutcome = when {
                             transcriptionResult.firstPass?.refinementFailedToken != null ->
                                 DualRefinementPolicy.NOT_REFINED
-                            fastFirstPass?.processing?.backendId != null ->
-                                fastFirstPass.processing.backendId
-                            else -> null
+                            // TASK-601: the contract is the fast model's DISPLAY
+                            // name (formatted into the localized "Refined from
+                            // %1$s"); the raw catalog id was reaching every
+                            // locale's notification.
+                            else -> fastFirstPass?.processing?.backendId
+                                ?.let { displayNameForBackend(context, it) }
                         }
                     )
                 },
@@ -1073,10 +1075,12 @@ class TranscriptionOrchestrator @Inject constructor(
         }
         return FirstPassOutcome(
             text = outcome.text,
-            // Stamp the fast id even when the backend supplied a context:
-            // the audio assembly paths build success contexts WITHOUT
-            // backendId (guard-review finding: the field was always null,
-            // breaking the model credit and the notification outcome).
+            // Belt-and-braces stamp: today all four audio assembly paths
+            // stamp backendId themselves and no backend ever supplies its
+            // own ProcessingContext, so this is normally a same-value copy;
+            // a future arm that forgets the stamp still credits the fast
+            // model here. No test pins the four stamps yet (TASK-601
+            // residue, with TASK-595's harness).
             processing = (outcome.processing ?: ProcessingContext(decodePath = "whole_file"))
                 .copy(backendId = fastId),
             confidence = outcome.confidence,
@@ -1731,6 +1735,7 @@ class TranscriptionOrchestrator @Inject constructor(
                             // TASK-512: the single-decode fast path (the most
                             // common run: the short voice message).
                             processing = ProcessingContext(
+                                backendId = backend.id,
                                 decodePath = "whole_file",
                                 vadRequested = vadRequested,
                                 transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
@@ -1922,6 +1927,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 failedChunkCount = failedSegments,
                 segments = segments,
                 processing = ProcessingContext(
+                    backendId = backend.id,
                     decodePath = "vad_chunked",
                     vadRequested = vadRequested,
                     totalChunks = chunkCount,
@@ -2118,6 +2124,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 failedChunkCount = failedChunks,
                 segments = segments,
                 processing = ProcessingContext(
+                    backendId = backend.id,
                     // The label separates the two ways this shape arises:
                     // VAD-merged segments vs fixed-window splits of one long
                     // speech span (and the VAD-threw fallback): the chunk
@@ -2340,6 +2347,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 streamedWithoutVad = streamedWithoutVad,
                 segments = segments,
                 processing = ProcessingContext(
+                    backendId = backend.id,
                     decodePath = if (streamedWithoutVad) "streamed_no_vad" else "pipeline",
                     // Counted, not the metadata estimate: the estimate
                     // under-reports on lying duration tags (TASK-449), which
@@ -2818,6 +2826,19 @@ class TranscriptionOrchestrator @Inject constructor(
             else -> preferencesManager.modelPath.first()
         } ?: ""
     }
+
+    /**
+     * TASK-601: the display name for a backend id, variant-aware when a
+     * saved model path resolves, the id itself as the fallback. Shared by
+     * the refining status, the Logs model credit, and the notification's
+     * "Refined from" line (the GH #45 credit site keeps its own chain:
+     * its unknown-id fallback is the backend's display name, not the raw
+     * id, and it is not this helper's to change).
+     */
+    private suspend fun displayNameForBackend(context: Context, backendId: String): String =
+        backendRegistry.byBackendId(backendId)
+            ?.let { variantAwareDisplayName(context, it, modelPathForBackend(backendId)) }
+            ?: backendId
 
     internal fun deriveDisplayName(backendId: String, modelPath: String, fallbackName: String?): String {
         val dirName = File(modelPath).name

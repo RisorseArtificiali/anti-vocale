@@ -1194,8 +1194,19 @@ fun LogEntryItem(
                             LabeledTranscriptBlock(
                                 label = stringResource(
                                     R.string.logs_first_pass_label,
-                                    ProcessingContextConverter.fromJson(log.processingContext)
-                                        ?.refinementPhase?.backendId ?: "",
+                                    // TASK-601: display name, never the raw
+                                    // catalog id (was "First pass (nemotron-
+                                    // streaming)" on every refined row).
+                                    // Remembered like the sibling metadata
+                                    // reader below: the list re-emits on every
+                                    // interim write and the registry lookup
+                                    // rebuilds external descriptors.
+                                    remember(log.processingContext) {
+                                        viewModel.fastBackendDisplayName(
+                                            ProcessingContextConverter.fromJson(log.processingContext)
+                                                ?.refinementPhase?.backendId,
+                                        )
+                                    } ?: "",
                                 ),
                                 copyLabelRes = R.string.copy_first_pass,
                                 text = firstPass,

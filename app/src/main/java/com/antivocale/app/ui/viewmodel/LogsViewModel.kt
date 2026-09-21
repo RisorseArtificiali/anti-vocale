@@ -26,6 +26,7 @@ import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import com.antivocale.app.transcription.variantAwareDisplayName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -503,6 +504,18 @@ class LogsViewModel @Inject constructor(
     /** GH #83: the cues JSON of one row, for the expanded detail's speaker
      *  turns; scoped per row so the list flows stay lean (see LogDao). */
     fun segmentsFlow(id: String): Flow<String?> = logDao.getSegments(id)
+
+    /** TASK-601: the fast model's DISPLAY name for the first-pass header
+     *  (the registry's contract for user surfaces; the observability
+     *  metadata line still renders raw ids by design). Variant-blind: the
+     *  fast side is the streaming entry; if a multi-variant streaming entry
+     *  ever ships, resolve the saved path here too (review residue). Falls
+     *  back to the id itself for unknown/external ids rather than blank. */
+    fun fastBackendDisplayName(backendId: String?): String? = backendId?.let { id ->
+        backendRegistry.byBackendId(id)
+            ?.let { variantAwareDisplayName(appContext, it, null) }
+            ?: id
+    }
 
     fun dismissVadAdvisory() {
         viewModelScope.launch {

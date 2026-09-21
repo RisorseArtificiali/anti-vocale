@@ -64,7 +64,7 @@ interface TranscriptionListener {
          *  else one per chunk), empty when no honest timing exists. */
         segments: List<TimedSegment> = emptyList(),
         /** GH #43: the fast backend a two-pass run refined (its display
-         *  name), or the literal token "failed" when the first pass was
+         *  name), or the DualRefinementPolicy.NOT_REFINED token when the first pass was
          *  delivered unrefined. Null on single-model runs. */
         refinementOutcome: String? = null,
     )
