@@ -238,6 +238,17 @@ data class TranscriptionResult(
     companion object {
         private val WHITESPACE = Regex("\\s+")
 
+        /**
+         * TASK-615: the recognizer's raw `lang` normalized to a bare code.
+         * SenseVoice reports the decode token verbatim ("<|en|>"), Whisper a
+         * plain "en"; the chip, the pin flow and the persisted row must all
+         * see the bare code. Unrecognized shapes (blank, stray pipes) mean
+         * no usable detection: null.
+         */
+        fun normalizedDetectedLanguage(raw: String?): String? =
+            raw?.trim()?.removeSurrounding("<|", "|>")?.trim()
+                ?.takeIf { it.isNotEmpty() && '|' !in it }
+
         fun computeConfidence(text: String, sampleCount: Int, sampleRate: Int): Float? {
             val audioDurationSeconds = sampleCount.toFloat() / sampleRate
             if (audioDurationSeconds <= 0f) return null

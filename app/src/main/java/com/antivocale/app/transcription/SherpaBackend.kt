@@ -629,7 +629,7 @@ class SherpaBackend(
 
                 val result = rec.getResult(stream)
                 val transcription = result.text
-                val detectedLang = result.lang.ifBlank { null }
+                val detectedLang = TranscriptionResult.normalizedDetectedLanguage(result.lang)
 
                 // GH #92: token timestamps decide whether sentence-level subtitle
                 // cues are possible for this model (empty = chunk cues only), and

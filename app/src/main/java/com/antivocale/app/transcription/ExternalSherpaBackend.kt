@@ -259,7 +259,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
 
                 val result = rec.getResult(stream)
                 val transcription = result.text
-                val detectedLang = result.lang.ifBlank { null }
+                val detectedLang = TranscriptionResult.normalizedDetectedLanguage(result.lang)
 
                 if (transcription.isBlank()) {
                     // GH #96: silence windows decode blank; see SherpaBackend.
