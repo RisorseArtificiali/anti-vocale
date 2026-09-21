@@ -1039,4 +1039,5 @@
     <string name="curated_why_canary">Kompakt: kleiner Download, schnelle Ergebnisse</string>
     <string name="curated_why_swiss_german">Für Schweizer Mundarten</string>
     <string name="curated_why_kroko">Streaming: Text erscheint beim Sprechen</string>
+    <string name="language_chip_setting_note">Nur die Modelle Whisper und SenseVoice können die Sprache erkennen.</string>
 </resources>

@@ -904,4 +904,5 @@
     <string name="curated_why_canary">Compacto: descarga pequeña, resultados rápidos</string>
     <string name="curated_why_swiss_german">Para dialectos suizo-alemanes</string>
     <string name="curated_why_kroko">Streaming: el texto aparece mientras hablas</string>
+    <string name="language_chip_setting_note">Solo los modelos Whisper y SenseVoice pueden detectar el idioma.</string>
 </resources>

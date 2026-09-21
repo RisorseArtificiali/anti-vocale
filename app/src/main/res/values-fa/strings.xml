@@ -1044,4 +1044,5 @@
     <string name="curated_why_canary">جمع‌وجور: دانلود کوچک، نتایج سریع</string>
     <string name="curated_why_swiss_german">برای گویش‌های آلمانی سوئیسی</string>
     <string name="curated_why_kroko">جریانی: متن همزمان با گفتار ظاهر می‌شود</string>
+    <string name="language_chip_setting_note">فقط مدل‌های Whisper و SenseVoice می‌توانند زبان را تشخیص دهند.</string>
 </resources>

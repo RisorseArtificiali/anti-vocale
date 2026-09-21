@@ -4,7 +4,10 @@ import android.app.Application
 import android.content.Context
 import com.antivocale.app.R
 import com.antivocale.app.data.ActiveModelRepository
+import com.antivocale.app.data.ExternalModelRecord
+import com.antivocale.app.data.ExternalModelRecordsProvider
 import com.antivocale.app.data.FakePreferencesManager
+import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.transcription.staticRegistry
 import com.antivocale.app.ui.appearance.LauncherIconVariant
 import io.mockk.every
@@ -12,6 +15,7 @@ import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -44,6 +48,7 @@ class SettingsViewModelActiveModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var fakePrefs: FakePreferencesManager
+    private val externalRecords = MutableStateFlow<List<ExternalModelRecord>>(emptyList())
     private lateinit var viewModel: SettingsViewModel
 
     @Before
@@ -51,6 +56,12 @@ class SettingsViewModelActiveModelTest {
         Dispatchers.setMain(testDispatcher)
         fakePrefs = FakePreferencesManager()
         viewModel = SettingsViewModel(
+            // TASK-611: a real StateFlow, not a relaxed mock; a mocked flow
+            // never emits, so the availability combine would be dead and every
+            // test would pass against the seed alone.
+            externalRecordsProvider = object : ExternalModelRecordsProvider {
+                override val records = externalRecords
+            },
             application = mockk<Application>(relaxed = true),
             preferencesManager = fakePrefs,
             logDao = mockk(relaxed = true),
@@ -156,6 +167,40 @@ class SettingsViewModelActiveModelTest {
         val parakeet = viewModel.transcriptionLanguagePicker.value
         assertFalse(parakeet.conditioningAvailable)
         assertTrue(parakeet.offeredCodes.isEmpty())
+
+        collector.cancel()
+    }
+
+    /**
+     * TASK-611: the language chip needs a model that detects the language.
+     * The family enum decides, NOT modelType: whisper and sense_voice records
+     * carry a blank modelType by design, so a stringly check never matches.
+     */
+    @Test
+    fun `language chip availability follows the backend family`() = runTest {
+        val collector = launch { viewModel.languageChipAvailable.collect {} }
+        runCurrent()
+        assertFalse("parakeet, the default backend, cannot detect", viewModel.languageChipAvailable.value)
+
+        fakePrefs._transcriptionBackend.value = "whisper"
+        runCurrent()
+        assertTrue("built-in whisper can detect", viewModel.languageChipAvailable.value)
+
+        fakePrefs._transcriptionBackend.value = "external:testid"
+        runCurrent()
+        assertFalse("an external transducer cannot detect", viewModel.languageChipAvailable.value)
+
+        externalRecords.value = listOf(
+            sampleRecord().copy(family = ModelFamily.WHISPER, modelType = ""),
+        )
+        runCurrent()
+        assertTrue("an external whisper can detect, blank modelType included", viewModel.languageChipAvailable.value)
+
+        externalRecords.value = listOf(
+            sampleRecord().copy(family = ModelFamily.SENSE_VOICE, modelType = ""),
+        )
+        runCurrent()
+        assertTrue("an external sense_voice can detect", viewModel.languageChipAvailable.value)
 
         collector.cancel()
     }

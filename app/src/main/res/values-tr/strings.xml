@@ -1039,4 +1039,5 @@
     <string name="curated_why_canary">Kompakt: küçük indirme, hızlı sonuçlar</string>
     <string name="curated_why_swiss_german">İsviçre Almanca lehçeleri için</string>
     <string name="curated_why_kroko">Akış: konuşurken metin görünür</string>
+    <string name="language_chip_setting_note">Yalnızca Whisper ve SenseVoice modelleri dili algılayabilir.</string>
 </resources>

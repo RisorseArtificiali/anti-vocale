@@ -1046,4 +1046,5 @@
     <string name="curated_why_canary">קומפקטי: הורדה קטנה, תוצאות מהירות</string>
     <string name="curated_why_swiss_german">לניבים של גרמנית שוויצרית</string>
     <string name="curated_why_kroko">סטרימינג: הטקסט מופיע תוך כדי דיבור</string>
+    <string name="language_chip_setting_note">רק דגמי Whisper ו-SenseVoice יכולים לזהות את השפה.</string>
 </resources>

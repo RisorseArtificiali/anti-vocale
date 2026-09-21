@@ -1038,4 +1038,5 @@
     <string name="transcription_refined_from">Refined from %1$s</string>
     <string name="refinement_title">Two-pass transcription</string>
     <string name="refinement_description">Stream an instant preview with the fast model, then refine it with the selected model in the background</string>
+    <string name="language_chip_setting_note">Only the Whisper and SenseVoice models can detect the language.</string>
 </resources>

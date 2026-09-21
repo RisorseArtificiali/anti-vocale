@@ -1038,4 +1038,5 @@
     <string name="curated_why_canary">कॉम्पैक्ट: छोटा डाउनलोड, तेज़ नतीजे</string>
     <string name="curated_why_swiss_german">स्विस जर्मन बोलियों के लिए</string>
     <string name="curated_why_kroko">स्ट्रीमिंग: बोलते समय टेक्स्ट दिखता है</string>
+    <string name="language_chip_setting_note">केवल Whisper और SenseVoice मॉडल भाषा पहचान सकते हैं।</string>
 </resources>

@@ -34,6 +34,9 @@ fun ToggleSettingCard(
     /** GH #43: greyed-out and inert when the feature's requirements (here: a
      *  streaming model installed) are not met. */
     enabled: Boolean = true,
+    /** TASK-611: an extra line under the description (why the toggle is
+     *  disabled, which models support the feature). */
+    supportingText: String? = null,
 ) {
     Card(
         modifier = modifier
@@ -46,6 +49,7 @@ fun ToggleSettingCard(
                 .fillMaxWidth()
                 .toggleable(
                     value = checked,
+                    enabled = enabled,
                     role = Role.Switch,
                     onValueChange = onCheckedChange
                 )
@@ -61,6 +65,13 @@ fun ToggleSettingCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+                supportingText?.let {
+                    Text(
+                        text = it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
             Spacer(modifier = Modifier.width(16.dp))
             Switch(

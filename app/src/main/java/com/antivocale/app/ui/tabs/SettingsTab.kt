@@ -1129,12 +1129,18 @@ fun SettingsTab(
             // TASK-546: the language chip is conditional on this flag.
             val languageChipTitle = stringResource(R.string.language_chip_setting_title)
             val languageChipDescription = stringResource(R.string.language_chip_setting_description)
+            val languageChipNote = stringResource(R.string.language_chip_setting_note)
+            val languageChipAvailable by viewModel.languageChipAvailable.collectAsState()
             SearchFilterRow(searchQuery, languageChipTitle, languageChipDescription) {
                 ToggleSettingCard(
                     icon = Icons.Default.Language,
                     title = languageChipTitle,
                     description = languageChipDescription,
-                    checked = languageChipEnabled,
+                    // TASK-611: visible but disabled on models that cannot
+                    // detect the language; the note names the supported ones.
+                    enabled = languageChipAvailable,
+                    supportingText = languageChipNote.takeIf { !languageChipAvailable },
+                    checked = languageChipEnabled && languageChipAvailable,
                     onCheckedChange = { enabled ->
                         viewModel.saveLanguageChip(enabled)
                     }

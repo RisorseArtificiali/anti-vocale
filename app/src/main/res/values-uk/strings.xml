@@ -1059,4 +1059,5 @@
     <string name="curated_why_canary">Компактний: невелике завантаження, швидкі результати</string>
     <string name="curated_why_swiss_german">Для швейцарських діалектів німецької</string>
     <string name="curated_why_kroko">Потоковий режим: текст з\'являється під час розмови</string>
+    <string name="language_chip_setting_note">Визначати мову вміють лише моделі Whisper і SenseVoice.</string>
 </resources>

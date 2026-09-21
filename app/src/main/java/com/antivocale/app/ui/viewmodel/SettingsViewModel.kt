@@ -7,11 +7,13 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.antivocale.app.R
 import com.antivocale.app.data.DiscoveredModel
+import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.HuggingFaceApiClient
 import com.antivocale.app.data.HuggingFaceAuthManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDiscovery
+import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
@@ -19,6 +21,7 @@ import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.catalog.BundledCatalog
+import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
@@ -38,6 +41,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import java.io.File
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -60,6 +64,7 @@ import kotlinx.coroutines.launch
  */
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
+    private val externalRecordsProvider: com.antivocale.app.data.ExternalModelRecordsProvider,
     application: Application,
     private val preferencesManager: PreferencesManager,
     private val logDao: com.antivocale.app.data.local.LogDao,
@@ -409,13 +414,35 @@ class SettingsViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS
         )
-    /** TASK-546: the detected-language chip toggle (Settings flag). */
+    /** TASK-546: the detected-language chip toggle (Settings flag). The
+     *  underlying preference keeps its value even while the toggle is
+     *  disabled for models that cannot detect the language (TASK-611). */
     val languageChipEnabled: StateFlow<Boolean> = preferencesManager.languageChipEnabled
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED
         )
+    /**
+     * TASK-611: only Whisper and SenseVoice backends fill detectedLanguage
+     * (sherpa's transducer/canary paths never set it), so the chip toggle is
+     * ENABLED for those and kept visible-but-off with its description
+     * naming the supported models otherwise. Two inputs, collected: the
+     * backend selection and the external records (an external install
+     * writes no backend value).
+     */
+    val languageChipAvailable: StateFlow<Boolean> = combine(
+        preferencesManager.transcriptionBackend,
+        externalRecordsProvider.records,
+    ) { backendId, records ->
+        when {
+            backendId == BuiltInBackendIds.WHISPER -> true
+            backendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX) -> records
+                .firstOrNull { it.backendId == backendId }
+                ?.let { it.family == ModelFamily.WHISPER || it.family == ModelFamily.SENSE_VOICE } ?: false
+            else -> false
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     fun saveLanguageChip(enabled: Boolean) {
         viewModelScope.launch { preferencesManager.saveLanguageChipEnabled(enabled) }
