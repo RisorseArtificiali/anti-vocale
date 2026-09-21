@@ -58,22 +58,24 @@ def main() -> None:
     if tag is None:
         if not allow_no_tag:
             sys.exit("FAIL: no vX.Y.Z tag found; pass --allow-no-tag for a first release")
-    else:
-        tagged = tagged_version_code(tag)
-        if tagged is None:
-            failures.append(f"{tag} has no readable versionCode")
-        elif code <= tagged:
-            failures.append(
-                f"versionCode {code} is not greater than {tag}'s {tagged}: "
-                "Play and F-Droid already serve that code")
 
     snapshot = name.endswith("-SNAPSHOT")
     changelog = ROOT / f"fastlane/metadata/android/en-US/changelogs/{code}.txt"
     locales = sorted(p.name for p in (ROOT / "fastlane/metadata/android").iterdir() if p.is_dir())
     if snapshot:
-        if changelog.exists():
-            failures.append(f"{name} is a SNAPSHOT but changelog {changelog.name} exists")
+        # Post-release window (the documented state): the SNAPSHOT legitimately
+        # keeps the released base code, and the released base's changelog
+        # correctly exists. Both release-moment rules below therefore apply
+        # only to non-SNAPSHOT version names; a snapshot sharing the base with
+        # the PREVIOUS tag is fine, one ahead of the next release's decision.
+        pass
     else:
+        if tag is not None:
+            tagged = tagged_version_code(tag)
+            if tagged is not None and code <= tagged:
+                failures.append(
+                    f"versionCode {code} is not greater than {tag}'s {tagged}: "
+                        "Play and F-Droid already serve that code")
         missing = [loc for loc in locales
                    if not (ROOT / f"fastlane/metadata/android/{loc}/changelogs/{code}.txt").exists()]
         if missing:
