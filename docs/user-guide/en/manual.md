@@ -54,6 +54,7 @@ Rules of thumb:
 - The result notification offers: **Copy**, **Share**, and, when the source app is supported, **Send to [App]** which pastes the text directly into the chat the voice message came from.
 - With Auto-Copy enabled (Settings), the text is already on your clipboard when the notification arrives; the notification says so.
 - Every transcription is kept in the **Logs** tab with the model used, duration, and processing time. Long-press an entry to retry, copy, delete, or report a bad result by email.
+- With a **Whisper or SenseVoice** model, each expanded transcript carries a language chip: the flag of the language the model detected, with a tap to check or pin it when the guess is wrong (small models misfire sometimes). Other model families do not report a detected language, so the chip stays off for them; the toggle in Settings says so and stays disabled.
 - With Auto-Save (Settings) every transcript is also written as a .txt file into a folder you choose.
 
 ## Long audio, queue, and retries
