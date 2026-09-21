@@ -93,6 +93,20 @@ class LogDaoProjectionTest {
         // Per-field assertions against the allowlist, not bare data-class
         // equality: equality alone cannot distinguish "excluded" from
         // "coincidentally null".
+        fun checkProjection(source: String, read: Any?, written: Any?, name: String) {
+            if (name in leanAllowlist) {
+                assertNull(
+                    "$name is in the lean allowlist but the $source projection " +
+                        "carried it: either the allowlist is stale or the " +
+                        "projection grew a heavy column",
+                    read)
+            } else {
+                assertEquals(
+                    "$name lost or altered by the $source projection " +
+                        "(add it to BOTH list queries or remove the column)",
+                    written, read)
+            }
+        }
         for (field in LogEntity::class.java.declaredFields) {
             if (java.lang.reflect.Modifier.isStatic(field.modifiers)) continue
             field.isAccessible = true
@@ -104,25 +118,8 @@ class LogDaoProjectionTest {
                 // equals null, pin green with a real projection gap).
                 assertNotNull("fixture left $name null: populate it non-null", written)
             }
-            val read = field.get(fromGetAll)
-            if (name in leanAllowlist) {
-                assertNull(
-                    "$name is in the lean allowlist but the getAll projection " +
-                        "carried it: either the allowlist is stale or the " +
-                        "projection grew a heavy column",
-                    read)
-            } else {
-                assertEquals(
-                    "$name lost or altered by the getAll projection " +
-                        "(add it to BOTH list queries or remove the column)",
-                    written, read)
-            }
-            val searched = field.get(fromSearch)
-            if (name in leanAllowlist) {
-                assertNull("$name leaked through the searchAll projection", searched)
-            } else {
-                assertEquals("$name lost or altered by the searchAll projection", written, searched)
-            }
+            checkProjection("getAll", field.get(fromGetAll), written, name)
+            checkProjection("searchAll", field.get(fromSearch), written, name)
         }
     }
 }

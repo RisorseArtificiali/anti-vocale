@@ -89,8 +89,10 @@ data class LogEntry(
      *  WRITE-PATH ONLY (TASK-595): excluded from both list projections
      *  (it duplicates the transcript and rides every interim re-emit), so
      *  structurally null on the UI side; reads go exclusively through
-     *  LogsViewModel.firstPassFlow / LogDao.getFirstPass. Do NOT add the
-     *  column back to the projections (pinned, LogDaoProjectionTest). */
+     *  LogsViewModel.firstPassFlow / LogDao.getFirstPass. It is load-bearing
+     *  on the updateLog round-trip: getByTaskId is a full SELECT and the
+     *  whole-row @Update must write the column back, so do NOT drop it, and
+     *  do NOT add it back to the projections (pinned, LogDaoProjectionTest). */
     val firstPassTranscript: String? = null,
     /** TASK-546: backend-reported language (null on old rows and text entries). */
     val detectedLanguage: String? = null,
@@ -537,28 +539,37 @@ class LogsViewModel @Inject constructor(
     private val annotatedByRow = ConcurrentHashMap<String, StateFlow<String?>>()
     private val firstPassByRow = ConcurrentHashMap<String, StateFlow<String?>>()
 
+    /** One cached per-row StateFlow per id: the flow is built once, late
+     *  collectors share the running upstream, and eviction happens on
+     *  delete/clear. Shared by the two lean per-row reads (TASK-595). */
+    private fun <T> rowFlow(
+        cache: ConcurrentHashMap<String, StateFlow<T?>>,
+        id: String,
+        build: () -> StateFlow<T?>,
+    ): StateFlow<T?> = cache.getOrPut(id, build)
+
     /**
      * TASK-595 F5: the first-pass transcript of the expanded row, same lean
      * lifecycle as [speakerAnnotatedFlow] (the column left the list
      * projections: it duplicates the transcript and rides every re-emit).
      */
-    fun firstPassFlow(id: String): StateFlow<String?> = firstPassByRow.getOrPut(id) {
+    fun firstPassFlow(id: String): StateFlow<String?> = rowFlow(firstPassByRow, id) {
         logDao.getFirstPass(id)
             .distinctUntilChanged()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     }
 
-    fun speakerAnnotatedFlow(id: String): StateFlow<String?> = annotatedByRow.getOrPut(id) {
-            logDao.getSegments(id)
-                .distinctUntilChanged()
-                .map { json ->
-                    withContext(Dispatchers.Default) {
-                        json?.let {
-                            SubtitleFormatter.speakerAnnotated(TimedSegmentsConverter.fromJson(it))
-                        }
+    fun speakerAnnotatedFlow(id: String): StateFlow<String?> = rowFlow(annotatedByRow, id) {
+        logDao.getSegments(id)
+            .distinctUntilChanged()
+            .map { json ->
+                withContext(Dispatchers.Default) {
+                    json?.let {
+                        SubtitleFormatter.speakerAnnotated(TimedSegmentsConverter.fromJson(it))
                     }
                 }
-                .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+            }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
     }
 
     /** TASK-601: the fast model's DISPLAY name for the first-pass header

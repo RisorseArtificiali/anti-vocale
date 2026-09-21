@@ -32,16 +32,14 @@ interface LogDao {
      */
     /**
      * The two queries below list every [LogEntity] column EXCEPT the lean
-     * per-row pair `segments` and `firstPassTranscript`
-     * (GH #92): the cues JSON re-copies the transcript per timed row, and these
-     * queries re-emit on every table write (including per-chunk interim
-     * updates), so the list paths must not carry them: the cues re-copy the
-     * transcript (GH #92) and the first pass duplicates it whole (GH #43).
-     * Room fills the unselected
-     * nullable column with its null default (partial-entity query) and
-     * validates each column name at compile time. When a column is added to
-     * LogEntity, add it to BOTH lists or it silently reads as its default in
-     * the Logs list.
+     * per-row pair `segments` and `firstPassTranscript`: the cues JSON
+     * re-copies the transcript per timed row (GH #92) and the first pass
+     * duplicates it whole (GH #43), while these queries re-emit on every
+     * table write (including per-chunk interim updates), so the list paths
+     * must not carry them. Room fills the unselected nullable column with
+     * its null default (partial-entity query) and validates each column
+     * name at compile time. When a column is added to LogEntity, add it to
+     * BOTH lists or it silently reads as its default in the Logs list.
      */
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
@@ -53,19 +51,14 @@ interface LogDao {
         "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' " +
         "ORDER BY timestamp DESC LIMIT 500")
     fun searchAll(query: String): Flow<List<LogEntity>>
-    /**
-     * Lean per-row reads (GH #83 cues, TASK-595 first pass), fetched on
-     * expand: both re-copy the transcript text and the list flows re-emit
-     * on every interim write, so they must not ride the projections.
-     */
+
+    /** Lean per-row read (GH #83 cues), fetched on expand; see the
+     *  lean-projection note above for why it stays out of the lists. */
     @Query("SELECT segments FROM logs WHERE id = :id")
     fun getSegments(id: String): Flow<String?>
 
-    /**
-     * TASK-595 F5: the first-pass transcript of ONE row, for the expanded
-     * detail. Deliberately out of the list projections (it duplicates the
-     * transcript text and the list flows re-emit on every interim write).
-     */
+    /** TASK-595 F5: the first-pass transcript of ONE row (GH #43), for the
+     *  expanded detail; see the lean-projection note above. */
     @Query("SELECT firstPassTranscript FROM logs WHERE id = :id")
     fun getFirstPass(id: String): Flow<String?>
 
