@@ -27,6 +27,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.launch
+import android.annotation.SuppressLint
 import android.content.ClipData
 import android.content.Context
 import android.content.Intent
@@ -1115,6 +1116,10 @@ fun LogEntryItem(
                 // fall back to the stored transcript.
                 val rowSegments by viewModel.segmentsFlow(log.id)
                     .collectAsState(initial = log.segments)
+                // The block returns String?; this lint release misinfers
+                // Unit here (same false positive as the Settings search
+                // groups, suppressed for the same reason).
+                @SuppressLint("RememberReturnType")
                 val speakerAnnotated = remember(log.id, rowSegments) {
                     rowSegments?.let {
                         SubtitleFormatter.speakerAnnotated(TimedSegmentsConverter.fromJson(it))
