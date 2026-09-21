@@ -65,6 +65,12 @@ case "$PHASE" in prepare | finalize) ;; *) usage ;; esac
 # finalize takes no commit arg: by then tag + release exist (release-create.sh
 # ran), and gate C resolves everything from the tag.
 [ "$PHASE" = "finalize" ] && [ -n "$COMMIT" ] && usage
+# A short hash fails the workflow's checkout-by-name two refspecs and burns a
+# ~3h dispatch (the 1.13.0 first-dispatch incident): require the full SHA.
+if [ -n "$COMMIT" ] && ! printf '%s' "$COMMIT" | grep -qE '^[0-9a-f]{40}$'; then
+  echo "FAIL: commit must be a full 40-char SHA, got '$COMMIT'" >&2
+  exit 1
+fi
 
 cd "$APP_REPO"
 

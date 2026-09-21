@@ -113,6 +113,11 @@ def main() -> None:
         version = version or gradle_version
         base = base if base is not None else gradle_base
     commit = args.commit or peel_tag(version)
+    # A short hash here writes recipe blocks whose checkout-by-name fails on
+    # the buildserver (the 1.13.0 first-dispatch incident): actions/checkout
+    # and fdroid both resolve 40-char SHAs. Refuse anything else.
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        fail(f"--commit must be a full 40-char SHA, got {commit!r}")
 
     text = open(args.recipe).read()
     header, blocks, tail = split_recipe(text)
