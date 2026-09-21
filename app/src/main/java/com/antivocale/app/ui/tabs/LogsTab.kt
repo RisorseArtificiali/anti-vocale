@@ -883,6 +883,8 @@ fun LogEntryItem(
     speakerAnnotated: String?,
     /** TASK-601: the first-pass header's display name, pre-derived. */
     firstPassLabel: String = "",
+    /** TASK-595: the first-pass transcript via the lean per-row flow. */
+    firstPassTranscript: String? = null,
     searchQuery: String = "",
     expanded: Boolean = false,
     onExpandChange: (Boolean) -> Unit = {},
@@ -1179,7 +1181,7 @@ fun LogEntryItem(
 
                         // GH #43: the superseded fast first pass, kept copyable
                         // when refinement replaced it with better text.
-                        log.firstPassTranscript?.let { firstPass ->
+                        firstPassTranscript?.let { firstPass ->
                             LabeledTranscriptBlock(
                                 label = stringResource(
                                     // TASK-601: the wrapper's pre-derived
@@ -1507,11 +1509,18 @@ private fun LogEntryWithSwipe(
     } else {
         null
     }
+    // TASK-595 F5: the first-pass transcript rides the same lean per-row
+    // flow (it left the list projections); collected here, handed down.
+    val firstPassTranscript = if (isExpanded) {
+        viewModel.firstPassFlow(log.id).collectAsState().value
+    } else {
+        null
+    }
     // TASK-601 via TASK-599: the first-pass header's display name, derived
     // here (remembered; the registry lookup rebuilds external descriptors
     // and the list re-emits on every interim write) and handed down as a
     // string: the item stays stateless.
-    val firstPassLabel = if (log.firstPassTranscript != null) {
+    val firstPassLabel = if (firstPassTranscript != null) {
         // Gated on the transcript actually existing (review F1): the parse
         // and the registry lookup run only for rows that render the block,
         // not for every row entering composition.
@@ -1561,6 +1570,7 @@ private fun LogEntryWithSwipe(
                 log = log,
                 speakerAnnotated = speakerAnnotated,
                 firstPassLabel = firstPassLabel,
+                firstPassTranscript = firstPassTranscript,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
                 onExpandChange = { expanded ->
@@ -1618,6 +1628,7 @@ private fun LogEntryWithSwipe(
                 log = log,
                 speakerAnnotated = speakerAnnotated,
                 firstPassLabel = firstPassLabel,
+                firstPassTranscript = firstPassTranscript,
                 searchQuery = searchQuery,
                 expanded = isExpanded,
                 onExpandChange = onExpandChange,

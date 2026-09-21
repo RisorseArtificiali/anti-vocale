@@ -85,7 +85,12 @@ data class LogEntry(
     /** TASK-512: JSON processing context (raw passthrough; see
      *  ProcessingContextConverter); present on SUCCESS rows since v10. */
     val processingContext: String? = null,
-    /** GH #43: the superseded fast first-pass transcript (two-pass runs). */
+    /** GH #43: the superseded fast first-pass transcript (two-pass runs).
+     *  WRITE-PATH ONLY (TASK-595): excluded from both list projections
+     *  (it duplicates the transcript and rides every interim re-emit), so
+     *  structurally null on the UI side; reads go exclusively through
+     *  LogsViewModel.firstPassFlow / LogDao.getFirstPass. Do NOT add the
+     *  column back to the projections (pinned, LogDaoProjectionTest). */
     val firstPassTranscript: String? = null,
     /** TASK-546: backend-reported language (null on old rows and text entries). */
     val detectedLanguage: String? = null,
@@ -396,6 +401,7 @@ class LogsViewModel @Inject constructor(
         // TASK-599 F3: the row's cached annotated transcript must not
         // outlive the row (long transcripts pin real memory).
         annotatedByRow.remove(id)
+        firstPassByRow.remove(id)
         viewModelScope.launch {
             logDao.deleteById(id)
         }
@@ -403,6 +409,7 @@ class LogsViewModel @Inject constructor(
 
     fun clearLogs() {
         annotatedByRow.clear()
+        firstPassByRow.clear()
         viewModelScope.launch {
             logDao.deleteAll()
         }
@@ -528,6 +535,18 @@ class LogsViewModel @Inject constructor(
      * back to the stored text.
      */
     private val annotatedByRow = ConcurrentHashMap<String, StateFlow<String?>>()
+    private val firstPassByRow = ConcurrentHashMap<String, StateFlow<String?>>()
+
+    /**
+     * TASK-595 F5: the first-pass transcript of the expanded row, same lean
+     * lifecycle as [speakerAnnotatedFlow] (the column left the list
+     * projections: it duplicates the transcript and rides every re-emit).
+     */
+    fun firstPassFlow(id: String): StateFlow<String?> = firstPassByRow.getOrPut(id) {
+        logDao.getFirstPass(id)
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    }
 
     fun speakerAnnotatedFlow(id: String): StateFlow<String?> = annotatedByRow.getOrPut(id) {
             logDao.getSegments(id)
