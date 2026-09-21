@@ -1,8 +1,8 @@
 What's new in 1.13.0:
-• New: search Settings to find any option instantly
-• New: Persian interface and the first Persian transcription model
-• New: AI summaries now cover hour-long recordings
-• New: a failed long run keeps and shows the transcript it produced
-• New: sentence-timed SRT and VTT exports for streaming models
-• Fixed: auto-save folders that could never save are rejected at pick time
-• Safer model imports: incomplete or mismatched sets are caught early
+• New: speaker labels in transcripts (two speakers detected automatically)
+• New: dual-model mode: a fast first pass, then a refined transcript
+• New: text size setting for transcripts
+• New: repetition-loop guard on long runs
+• Improved: Gemma engine updated (0.17.1); audio transcription no longer crashes
+• Improved: History loads long transcripts faster
+• Fixed: the language chip appears only on models that detect language

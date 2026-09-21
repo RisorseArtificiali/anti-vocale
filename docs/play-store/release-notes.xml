@@ -1,13 +1,12 @@
 <en-US>
 What's new in 1.13.0:
-• New: search Settings to find any option instantly
-• New: Persian interface and the first Persian transcription model
-• New: AI summaries now cover hour-long recordings
-• New: a failed long run keeps and shows the transcript it produced
-• New: sentence-timed SRT and VTT exports for streaming models
-• Fixed: auto-save folders that could never save are rejected at pick time
-• Safer model imports: incomplete or mismatched sets are caught early
-
+• New: speaker labels in transcripts (two speakers detected automatically)
+• New: dual-model mode: a fast first pass, then a refined transcript
+• New: text size setting for transcripts
+• New: repetition-loop guard on long runs
+• Improved: Gemma engine updated (0.17.1); audio transcription no longer crashes
+• Improved: History loads long transcripts faster
+• Fixed: the language chip appears only on models that detect language
 What's new in 1.12.1:
 • Fixed: audio shared by call-recorder apps is now recognized
 • New: imported model folders are auto-detected; a chooser appears only when ambiguous
@@ -26,15 +25,15 @@ What's new in 1.12.0:
 • Fixed: clearer low-memory and corrupt-model errors
 </en-US>
 
-<it-IT>Novità della versione 1.13.0:
-• Cerca nelle Impostazioni: trova qualsiasi opzione al volo
-• Interfaccia in persiano e primo modello di trascrizione in farsi
-• Il riepilogo AI ora copre anche le registrazioni di un'ora e più
-• Una lunga trascrizione fallita conserva e mostra il testo prodotto
-• Esporti SRT e VTT con tempi a frase anche per i modelli in streaming
-• Le cartelle di salvataggio automatico non salvabili vengono rifiutate subito
-• Importazioni più sicure: gli insiemi incompleti o sbagliati sono fermati prima
-
+<it-IT>
+Novità della versione 1.13.0:
+• Nuovo: etichette dei parlanti nei trascritti (rilevati in automatico)
+• Nuovo: modalità doppia: passata veloce, poi testo raffinato
+• Nuovo: dimensione del testo dei trascritti
+• Nuovo: protezione dai loop nelle registrazioni lunghe
+• Migliorato: Gemma aggiornato (0.17.1): niente più crash in trascrizione audio
+• Migliorato: il registro carica prima i testi lunghi
+• Corretto: la bandierina lingua solo sui modelli che la rilevano
 Novità della versione 1.12.1:
 • Corretto: l'audio condiviso dalle app di registrazione chiamate viene riconosciuto
 • I modelli importati da cartella vengono riconosciuti automaticamente; la scelta appare solo se ambiguo
@@ -260,6 +259,14 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.13.0:
+• Neu: Sprecher-Markierungen in Transkripten (zwei Sprecher automatisch)
+• Neu: Dual-Modus: schneller Erstdurchlauf, dann verfeinerter Text
+• Neu: Textgrößen-Einstellung für Transkripte
+• Neu: Schutz vor Endlosschleifen bei langen Aufnahmen
+• Verbessert: Gemma 0.17.1: Audio-Transkription stürzt nicht mehr ab
+• Verbessert: der Verlauf lädt lange Texte schneller
+• Behoben: Sprach-Chip nur bei Modellen mit Spracherkennung
 Neuigkeiten in Version 1.12.1:
 • Behoben: Von Anruf-Recorder-Apps geteiltes Audio wird jetzt erkannt
 • Importierte Modellordner werden automatisch erkannt; eine Auswahl erscheint nur bei Mehrdeutigkeit
@@ -305,6 +312,14 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>
+Novedades de la versión 1.13.0:
+• Nuevo: etiquetas de hablante en las transcripciones (dos detectados)
+• Nuevo: modo dual: primera pasada rápida y luego texto refinado
+• Nuevo: ajuste de tamaño de texto para las transcripciones
+• Nuevo: protección contra bucles en grabaciones largas
+• Mejorado: Gemma 0.17.1: sin bloqueos al transcribir audio
+• Mejorado: historial más rápido con textos largos
+• Corregido: chip de idioma solo en modelos que detectan el idioma
 Novedades de la versión 1.12.1:
 • Corregido: el audio compartido por apps de grabación de llamadas ya se reconoce
 • Las carpetas de modelos importados se detectan automáticamente; el selector aparece solo si es ambiguo
@@ -350,6 +365,14 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.13.0 :
+• Nouveau : étiquettes de locuteur (deux locuteurs détectés)
+• Nouveau : mode double : passe rapide puis texte affiné
+• Nouveau : réglage de la taille du texte
+• Nouveau : protection contre les boucles sur les longs enregistrements
+• Amélioré : Gemma 0.17.1 : les transcriptions audio ne plantent plus
+• Amélioré : historique plus rapide sur les longs textes
+• Corrigé : pastille de langue sur les modèles qui détectent la langue
 Nouveautés de la version 1.12.1 :
 • Corrigé : l'audio partagé par les applis d'enregistrement d'appels est reconnu
 • Les dossiers de modèles importés sont détectés automatiquement ; le sélecteur n'apparaît qu'en cas d'ambiguïté
@@ -395,6 +418,14 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>
+Novidades da versão 1.13.0:
+• Novo: rótulos de falante nas transcrições (dois detectados)
+• Novo: modo duplo: primeira passada rápida e depois texto refinado
+• Novo: ajuste de tamanho de texto para as transcrições
+• Novo: proteção contra loops em gravações longas
+• Melhorado: Gemma 0.17.1: sem travamentos ao transcrever áudio
+• Melhorado: histórico mais rápido com textos longos
+• Corrigido: selo de idioma só em modelos que detectam o idioma
 Novidades da versão 1.12.1:
 • Corrigido: áudio compartilhado por gravadores de chamadas agora é reconhecido
 • Pastas de modelos importados são detectadas automaticamente; o seletor aparece só quando ambíguo
@@ -440,6 +471,14 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>
+Что нового в версии 1.13.0:
+• Новое: метки дикторов в транскрипциях (до двух дикторов автоматически)
+• Новое: двухэтапный режим: быстрый черновик, затем уточнённый текст
+• Новое: настройка размера текста транскрипций
+• Новое: защита от зацикливания на длинных записях
+• Улучшено: обновлена Gemma (0.17.1): распознавание аудио больше не падает
+• Улучшено: история быстрее загружает длинные тексты
+• Исправлено: индикатор языка только для моделей с определением языка
 Что нового в версии 1.12.1:
 • Исправлено: аудио из приложений записи звонков теперь распознаётся
 • Папки импортированных моделей определяются автоматически; выбор появляется только при неоднозначности
@@ -485,6 +524,14 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>
+Sürüm 1.13.0\'daki yenilikler:
+• Yeni: transkriptlerde konuşmacı etiketleri (iki konuşmacı otomatik)
+• Yeni: çift mod: hızlı ilk taslak, sonra rafine metin
+• Yeni: transkriptler için yazı boyutu ayarı
+• Yeni: uzun kayıtlarda döngü koruması
+• İyileştirme: Gemma güncellendi (0.17.1): sesli transkripsiyonda çökme yok
+• İyileştirme: geçmiş uzun metinleri daha hızlı yüklüyor
+• Düzeltme: dil simgesi yalnızca dili algılayan modellerde
 Sürüm 1.12.1'deki yenilikler:
 • Düzeltildi: çağrı kaydedici uygulamalardan paylaşılan ses artık tanınıyor
 • İçe aktarılan model klasörleri otomatik algılanır; seçici yalnızca belirsizse görünür
@@ -530,6 +577,14 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.13.0:
+• Nowe: etykiety mówców w transkrypcjach (do dwóch mówców automatycznie)
+• Nowe: tryb podwójny: szybki wstęp, a potem dopracowany tekst
+• Nowe: ustawienie rozmiaru tekstu transkrypcji
+• Nowe: ochrona przed zapętleniem przy długich nagraniach
+• Poprawa: Gemma zaktualizowana (0.17.1): koniec awarii przy transkrypcji audio
+• Poprawa: historia szybciej ładuje długie teksty
+• Poprawka: plakietka języka tylko dla modeli wykrywających język
 Nowości w wersji 1.12.1:
 • Naprawiono: dźwięk udostępniany przez rejestratory rozmów jest teraz rozpoznawany
 • Zaimportowane foldery modeli są wykrywane automatycznie; wybór pojawia się tylko przy niejednoznaczności
@@ -575,6 +630,14 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>
+संस्करण 1.13.0 में नया क्या है:
+• नया: प्रतिलेखों में वक्ता लेबल (दो वक्ताओं तक स्वतः पहचान)
+• नया: दोहरा मोड: तेज़ पहला पास, फिर परिष्कृत पाठ
+• नया: प्रतिलेखों के लिए टेक्स्ट आकार सेटिंग
+• नया: लंबे रन में दोहराव-लूप सुरक्षा
+• सुधरा: Gemma अपडेट (0.17.1): ऑडियो ट्रांसक्रिप्शन अब क्रैश नहीं
+• सुधरा: इतिहास लंबे टेक्स्ट तेज़ लोड करता है
+• ठीक: भाषा चिप केवल भाषा पहचानने वाले मॉडल पर
 संस्करण 1.12.1 में नया क्या है:
 • सुधार: कॉल-रिकॉर्डर ऐप्स से साझा किया गया ऑडियो अब पहचाना जाता है
 • इंपोर्ट किए गए मॉडल फ़ोल्डर अपने आप पहचाने जाते हैं; विकल्प केवल अस्पष्ट होने पर दिखता है
