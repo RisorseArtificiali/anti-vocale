@@ -303,6 +303,9 @@ private fun buildSwipeActions(
 @Composable
 fun LogsTab(
     onNavigateToSettings: (() -> Unit)? = null,
+    /** TASK-617: the chip's own destination (transcription section), NOT
+     *  the auto-save hint's export page: one callback cannot serve both. */
+    onOpenLanguageSetting: (() -> Unit)? = null,
     viewModel: LogsViewModel = hiltViewModel(),
     highlightTaskId: String? = null,
     tourRevealState: com.svenjacobs.reveal.RevealState,
@@ -682,6 +685,7 @@ fun LogsTab(
                                         onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null,
                                         compactActions = compactActions,
                                         onNavigateToSettings = onNavigateToSettings,
+                                        onOpenLanguageSetting = onOpenLanguageSetting,
                                     )
                                     HorizontalDivider(
                                         modifier = Modifier.padding(horizontal = 16.dp),
@@ -720,6 +724,7 @@ fun LogsTab(
                                     onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null,
                                     compactActions = compactActions,
                                     onNavigateToSettings = onNavigateToSettings,
+                                    onOpenLanguageSetting = onOpenLanguageSetting,
                                 )
                                 HorizontalDivider(
                                     modifier = Modifier.padding(horizontal = 16.dp),
@@ -893,6 +898,7 @@ fun LogEntryItem(
     onCancel: (() -> Unit)? = null,
     compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
     onNavigateToSettings: (() -> Unit)? = null,
+    onOpenLanguageSetting: (() -> Unit)? = null,
     /** TASK-546: render the language chip (the Settings flag's value). */
     showLanguageChip: Boolean = false,
     /** TASK-616: render the technical processing-context line. No default:
@@ -1276,7 +1282,7 @@ fun LogEntryItem(
                                 LanguageChip(
                                     detected = log.detectedLanguage,
                                     pinned = log.languagePin,
-                                    onOpenSetting = { onNavigateToSettings?.invoke() },
+                                    onOpenSetting = { onOpenLanguageSetting?.invoke() },
                                 )
                             }
                         }
@@ -1506,6 +1512,7 @@ private fun LogEntryWithSwipe(
     onRetranscribe: (() -> Unit)? = null,
     compactActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
     onNavigateToSettings: (() -> Unit)? = null,
+    onOpenLanguageSetting: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     // TASK-546: the chip flag, collected once here (the item stays stateless).
@@ -1597,6 +1604,7 @@ private fun LogEntryWithSwipe(
                 onDelete = { onDeleted(log); viewModel.deleteLog(log.id) },
                 compactActions = compactActions,
                 onNavigateToSettings = onNavigateToSettings,
+                onOpenLanguageSetting = onOpenLanguageSetting,
                 showLanguageChip = showLanguageChip,
                 showTechnicalDetails = showTechnicalDetails,
             )
@@ -1650,6 +1658,7 @@ private fun LogEntryWithSwipe(
                 onDelete = { onDeleted(log); onDeleteLog(log.id) },
                 compactActions = compactActions,
                 onNavigateToSettings = onNavigateToSettings,
+                onOpenLanguageSetting = onOpenLanguageSetting,
                 showLanguageChip = showLanguageChip,
                 showTechnicalDetails = showTechnicalDetails,
             )

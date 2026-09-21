@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.LinearProgressIndicator
@@ -181,32 +182,25 @@ internal fun CappedTranscriptText(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         // GH #94: surface the auto-save feature at the moment of need: the
-        // user is looking at a truncated transcript, which is exactly when
-        // the full-text file export is most useful and least known.
-        // TASK-548 part B: tappable when the caller provides the destination.
-        // The click sits on the wrapping Box so the touch target is the full
-        // row at the 48dp minimum, with the label vertically centered in it
-        // (a bare Text with heightIn would top-align the words and leave the
-        // extra band dead). Without a destination the extra modifiers drop
-        // off and the Box renders as the plain label row.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .then(
-                    if (onAutoSaveHintClick != null) {
-                        Modifier
-                            .heightIn(min = 48.dp)
-                            .clickable(role = Role.Button) { onAutoSaveHintClick() }
-                    } else {
-                        Modifier
-                    }
-                ),
-            contentAlignment = Alignment.CenterStart,
-        ) {
+        // user is looking at a truncated transcript, exactly when the
+        // full-text file export is most useful. TASK-617: rendered ONLY when
+        // the caller provides the destination (a link-styled row with no
+        // click reads as broken), and at most once per card: the primary
+        // result/interim surface passes the callback, the labeled blocks do
+        // not. The three modifiers move together: heightIn(min 48dp) is the
+        // full-row touch target, wrapContentSize(CenterStart) keeps the label
+        // vertically centered in that band (dropping it top-aligns the
+        // words, dropping heightIn shrinks the target to the text).
+        if (onAutoSaveHintClick != null) {
             Text(
                 text = stringResource(R.string.transcript_capped_autosave_hint),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 48.dp)
+                    .clickable(role = Role.Button) { onAutoSaveHintClick() }
+                    .wrapContentSize(Alignment.CenterStart),
             )
         }
     }

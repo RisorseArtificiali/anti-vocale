@@ -49,13 +49,28 @@ class AppNavigationTest {
         assertEquals(setOf("icon_picker", "prompt", "per_app", "export"), AppNavigation.SUBPAGE_KEYS)
         assertEquals(setOf("import"), AppNavigation.MODEL_KEYS)
         assertEquals(listOf("history", "models", "settings"), AppNavigation.TAB_KEYS)
+        // TASK-617 F2: the derived indices pin the TabRow ORDER, not just
+        // membership; the load-time check in AppNavigation catches absence,
+        // this catches a silent reorder.
+        assertEquals(0, AppNavigation.TAB_INDEX_HISTORY)
+        assertEquals(1, AppNavigation.TAB_INDEX_MODELS)
+        assertEquals(2, AppNavigation.TAB_INDEX_SETTINGS)
     }
 
-    /** Dual-path source read (repo root or module subdirectory cwd), shared by the scans below. */
-    private fun sourceOf(relative: String): String =
-        java.io.File(relative)
-            .let { if (it.isFile) it else java.io.File("app/$relative") }
-            .readText()
+    /**
+     * Dual-path source read (repo root or module subdirectory cwd), shared
+     * by the scans below. TASK-617 F8: names the cwd on failure, so a
+     * working-dir regression is diagnosable instead of a bare
+     * FileNotFoundException with no context.
+     */
+    private fun sourceOf(relative: String): String {
+        val direct = java.io.File(relative)
+        val file = if (direct.isFile) direct else java.io.File("app/$relative")
+        check(file.isFile) {
+            "cannot locate '$relative' from cwd ${java.io.File(".").absolutePath}"
+        }
+        return file.readText()
+    }
 
     @Test
     fun `every section key is wired into the Settings UI`() {
@@ -73,11 +88,18 @@ class AppNavigationTest {
                 source.contains("sectionOffsets[\"$key\"]"))
         }
         AppNavigation.SUBPAGE_KEYS.forEach { key ->
-            // The export branch is pinned by the shared constant (TASK-548),
-            // so it appears in SettingsTab as the constant reference.
-            val wired = source.contains("\"$key\"") ||
-                (key == AppNavigation.SUBPAGE_KEY_EXPORT &&
-                    source.contains("AppNavigation.SUBPAGE_KEY_EXPORT"))
+            // TASK-617 F4: export is pinned by the shared constant (TASK-548)
+            // and must appear in SettingsTab AS the constant reference; the
+            // other three sub-pages are matched by literal. An either/or
+            // here would let a rename ship as a silent no-op.
+            val wired = if (key == AppNavigation.SUBPAGE_KEY_EXPORT) {
+                // Anchored to the actual comparison: a bare contains() stays
+                // green on any unrelated constant mention elsewhere in the
+                // file while the branch itself drifts back to a literal.
+                Regex("==\\s*AppNavigation\\.SUBPAGE_KEY_EXPORT").containsMatchIn(source)
+            } else {
+                source.contains("\"$key\"")
+            }
             assertTrue(
                 "SettingsTab lacks the sub-page branch for '$key'",
                 wired)

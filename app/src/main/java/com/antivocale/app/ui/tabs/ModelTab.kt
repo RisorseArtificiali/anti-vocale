@@ -615,7 +615,9 @@ fun ModelTab(
         // request is nulled by the FIRST consumer): a tab re-entry sees null
         // and cannot replay. Both levels act on the same request on purpose.
         LaunchedEffect(navRequest) {
-            if (!com.antivocale.app.BuildConfig.DEBUG) return@LaunchedEffect
+            // TASK-617 F3: the stale debug gate is gone. No production writer
+            // hands ModelTab a NavRequest today, and the gate made the
+            // AppNavigation KDoc's release-posture contract false.
             val request = navRequest ?: return@LaunchedEffect
             if (request.destination is AppNavigation.Destination.ModelTarget) {
                 advancedExpanded = true
@@ -1606,7 +1608,6 @@ private fun ExternalModelsSection(
     // the section and must stay re-fire-free); consuming here means a later
     // manual collapse/re-expand of Advanced cannot resurrect the request.
     LaunchedEffect(navRequest) {
-        if (!com.antivocale.app.BuildConfig.DEBUG) return@LaunchedEffect
         val request = navRequest ?: return@LaunchedEffect
         onNavConsumed()
         if (request.destination is AppNavigation.Destination.ModelTarget) {
