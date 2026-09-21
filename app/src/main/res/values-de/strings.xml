@@ -1033,4 +1033,10 @@
     <string name="transcription_refined_from">Verfeinert von %1$s</string>
     <string name="refinement_title">Zweistufige Transkription</string>
     <string name="refinement_description">Zeigt sofort eine Vorschau mit dem schnellen Modell und verfeinert sie im Hintergrund mit dem ausgewählten Modell</string>
+    <string name="curated_why_distil_it">Für Italienisch feinabgestimmt: die genaueste Wahl</string>
+    <string name="curated_why_parakeet">Sehr schnell (etwa 17x) und dennoch sehr genau</string>
+    <string name="curated_why_german_whisper">Für Deutsch feinabgestimmt: die genaueste Option</string>
+    <string name="curated_why_canary">Kompakt: kleiner Download, schnelle Ergebnisse</string>
+    <string name="curated_why_swiss_german">Für Schweizer Mundarten</string>
+    <string name="curated_why_kroko">Streaming: Text erscheint beim Sprechen</string>
 </resources>

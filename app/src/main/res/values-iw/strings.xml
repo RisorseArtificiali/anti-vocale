@@ -1040,4 +1040,10 @@
     <string name="transcription_refined_from">חודד מ-%1$s</string>
     <string name="refinement_title">תמלול דו-שלבי</string>
     <string name="refinement_description">הצג מיד תצוגה מקדימה עם המודל המהיר, ואז חדד אותה ברקע עם המודל הנבחר</string>
+    <string name="curated_why_distil_it">כוונן לאיטלקית: הבחירה המדויקת ביותר</string>
+    <string name="curated_why_parakeet">מהיר מאוד (פי 17 בערך) ועדיין מדויק מאוד</string>
+    <string name="curated_why_german_whisper">כוונן לגרמנית: האפשרות המדויקת ביותר</string>
+    <string name="curated_why_canary">קומפקטי: הורדה קטנה, תוצאות מהירות</string>
+    <string name="curated_why_swiss_german">לניבים של גרמנית שוויצרית</string>
+    <string name="curated_why_kroko">סטרימינג: הטקסט מופיע תוך כדי דיבור</string>
 </resources>

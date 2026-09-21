@@ -1051,4 +1051,10 @@
     <string name="transcription_refined_from">Ulepszone z %1$s</string>
     <string name="refinement_title">Transkrypcja dwuetapowa</string>
     <string name="refinement_description">Pokaż natychmiast podgląd szybkim modelem, a następnie ulepsz go w tle wybranym modelem</string>
+    <string name="curated_why_distil_it">Dostrojony do włoskiego: najdokładniejszy wybór</string>
+    <string name="curated_why_parakeet">Bardzo szybki (około 17x) i wciąż bardzo dokładny</string>
+    <string name="curated_why_german_whisper">Dostrojony do niemieckiego: najbardziej dokładna opcja</string>
+    <string name="curated_why_canary">Kompaktowy: małe pobieranie, szybkie wyniki</string>
+    <string name="curated_why_swiss_german">Dla szwajcarskich dialektów niemieckiego</string>
+    <string name="curated_why_kroko">Streaming: tekst pojawia się podczas mówienia</string>
 </resources>

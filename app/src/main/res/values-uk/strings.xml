@@ -1053,4 +1053,10 @@
     <string name="transcription_refined_from">Уточнено з %1$s</string>
     <string name="refinement_title">Двопрохідна розшифровка</string>
     <string name="refinement_description">Спочатку миттєвий перегляд швидкою моделлю, потім уточнення у фоні обраною моделлю</string>
+    <string name="curated_why_distil_it">Налаштований для італійської: найточніший вибір</string>
+    <string name="curated_why_parakeet">Дуже швидкий (приблизно у 17 разів) і досі дуже точний</string>
+    <string name="curated_why_german_whisper">Налаштований для німецької: найточніший варіант</string>
+    <string name="curated_why_canary">Компактний: невелике завантаження, швидкі результати</string>
+    <string name="curated_why_swiss_german">Для швейцарських діалектів німецької</string>
+    <string name="curated_why_kroko">Потоковий режим: текст з\'являється під час розмови</string>
 </resources>

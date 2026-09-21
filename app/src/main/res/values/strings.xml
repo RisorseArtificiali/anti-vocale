@@ -1016,12 +1016,12 @@
     <string name="curated_section_title">For your language</string>
     <string name="curated_browse_all">Browse all languages</string>
     <string name="curated_suggest_model">Suggest a model for your language</string>
-    <string name="curated_why_distil_it" translatable="false">Fine-tuned for Italian: the most accurate choice</string>
-    <string name="curated_why_parakeet" translatable="false">Very fast (about 17x) and still very accurate</string>
-    <string name="curated_why_german_whisper" translatable="false">Fine-tuned for German: the most accurate option</string>
-    <string name="curated_why_canary" translatable="false">Compact: small download, quick results</string>
-    <string name="curated_why_swiss_german" translatable="false">For Swiss German dialects</string>
-    <string name="curated_why_kroko" translatable="false">Streaming: text appears while you speak</string>
+    <string name="curated_why_distil_it">Fine-tuned for Italian: the most accurate choice</string>
+    <string name="curated_why_parakeet">Very fast (about 17x) and still very accurate</string>
+    <string name="curated_why_german_whisper">Fine-tuned for German: the most accurate option</string>
+    <string name="curated_why_canary">Compact: small download, quick results</string>
+    <string name="curated_why_swiss_german">For Swiss German dialects</string>
+    <string name="curated_why_kroko">Streaming: text appears while you speak</string>
     <string name="text_size_title">Text size</string>
     <string name="text_size_description">Make the app text larger or smaller on top of the system font size</string>
     <string name="text_scale_system">System</string>

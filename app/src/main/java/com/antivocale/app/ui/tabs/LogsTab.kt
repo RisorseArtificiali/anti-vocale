@@ -1116,9 +1116,10 @@ fun LogEntryItem(
                 // fall back to the stored transcript.
                 val rowSegments by viewModel.segmentsFlow(log.id)
                     .collectAsState(initial = log.segments)
-                // The block returns String?; this lint release misinfers
-                // Unit here (same false positive as the Settings search
-                // groups, suppressed for the same reason).
+                // The block returns String? (speakerAnnotated's nullable
+                // contract); this lint release misinfers Unit here, same
+                // false positive as the Settings search groups.
+
                 @SuppressLint("RememberReturnType")
                 val speakerAnnotated = remember(log.id, rowSegments) {
                     rowSegments?.let {

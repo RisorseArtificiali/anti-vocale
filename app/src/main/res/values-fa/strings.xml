@@ -1038,4 +1038,10 @@
     <string name="transcription_refined_from">پالایش‌شده از %1$s</string>
     <string name="refinement_title">رونویسی دومرحله‌ای</string>
     <string name="refinement_description">ابتدا پیش‌نمایش فوری با مدل سریع، سپس پالایش در پس‌زمینه با مدل انتخاب‌شده</string>
+    <string name="curated_why_distil_it">تنظیم‌شده برای ایتالیایی: دقیق‌ترین انتخاب</string>
+    <string name="curated_why_parakeet">بسیار سریع (حدود ۱۷ برابر) و همچنان بسیار دقیق</string>
+    <string name="curated_why_german_whisper">تنظیم‌شده برای آلمانی: دقیق‌ترین گزینه</string>
+    <string name="curated_why_canary">جمع‌وجور: دانلود کوچک، نتایج سریع</string>
+    <string name="curated_why_swiss_german">برای گویش‌های آلمانی سوئیسی</string>
+    <string name="curated_why_kroko">جریانی: متن همزمان با گفتار ظاهر می‌شود</string>
 </resources>

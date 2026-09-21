@@ -898,4 +898,10 @@
     <string name="transcription_refined_from">Refinado desde %1$s</string>
     <string name="refinement_title">Transcripción en dos pasadas</string>
     <string name="refinement_description">Muestra al instante una vista previa con el modelo rápido y luego la refina en segundo plano con el modelo seleccionado</string>
+    <string name="curated_why_distil_it">Afinado para italiano: la opción más precisa</string>
+    <string name="curated_why_parakeet">Muy rápido (unas 17 veces) y aún muy preciso</string>
+    <string name="curated_why_german_whisper">Afinado para alemán: la opción más precisa</string>
+    <string name="curated_why_canary">Compacto: descarga pequeña, resultados rápidos</string>
+    <string name="curated_why_swiss_german">Para dialectos suizo-alemanes</string>
+    <string name="curated_why_kroko">Streaming: el texto aparece mientras hablas</string>
 </resources>

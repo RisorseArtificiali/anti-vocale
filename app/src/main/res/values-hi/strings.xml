@@ -1032,4 +1032,10 @@
     <string name="transcription_refined_from">%1$s से परिशोधित</string>
     <string name="refinement_title">दो-चरण ट्रांसक्रिप्शन</string>
     <string name="refinement_description">तेज़ मॉडल से तुरंत पूर्वावलोकन दिखाएं, फिर चयनित मॉडल से बैकग्राउंड में परिशोधित करें</string>
+    <string name="curated_why_distil_it">इतालवी के लिए फ़ाइन-ट्यून: सबसे सटीक विकल्प</string>
+    <string name="curated_why_parakeet">बहुत तेज़ (लगभग 17 गुना) और फिर भी बहुत सटीक</string>
+    <string name="curated_why_german_whisper">जर्मन के लिए फ़ाइन-ट्यून: सबसे सटीक विकल्प</string>
+    <string name="curated_why_canary">कॉम्पैक्ट: छोटा डाउनलोड, तेज़ नतीजे</string>
+    <string name="curated_why_swiss_german">स्विस जर्मन बोलियों के लिए</string>
+    <string name="curated_why_kroko">स्ट्रीमिंग: बोलते समय टेक्स्ट दिखता है</string>
 </resources>

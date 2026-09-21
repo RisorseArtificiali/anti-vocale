@@ -1033,4 +1033,10 @@
     <string name="transcription_refined_from">%1$s ile rafine edildi</string>
     <string name="refinement_title">İki aşamalı transkripsiyon</string>
     <string name="refinement_description">Hızlı modelle anında önizleme göster, sonra arka planda seçili modelle rafine et</string>
+    <string name="curated_why_distil_it">İtalyanca için ince ayarlı: en isabetli seçim</string>
+    <string name="curated_why_parakeet">Çok hızlı (yaklaşık 17 kat) ve yine de çok isabetli</string>
+    <string name="curated_why_german_whisper">Almanca için ince ayarlı: en isabetli seçenek</string>
+    <string name="curated_why_canary">Kompakt: küçük indirme, hızlı sonuçlar</string>
+    <string name="curated_why_swiss_german">İsviçre Almanca lehçeleri için</string>
+    <string name="curated_why_kroko">Akış: konuşurken metin görünür</string>
 </resources>
