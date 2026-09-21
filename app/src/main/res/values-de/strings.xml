@@ -1040,4 +1040,6 @@
     <string name="curated_why_swiss_german">Für Schweizer Mundarten</string>
     <string name="curated_why_kroko">Streaming: Text erscheint beim Sprechen</string>
     <string name="language_chip_setting_note">Nur die Modelle Whisper und SenseVoice können die Sprache erkennen.</string>
+    <string name="technical_details_title">Technische Details anzeigen</string>
+    <string name="technical_details_description">Zeigt die technische Verarbeitungszeile (Dekodierungspfad, Chunks, VAD, Speicher) bei Transkripteinträgen. Standardmäßig aus; die Details sind in Feedback-Berichten immer enthalten.</string>
 </resources>

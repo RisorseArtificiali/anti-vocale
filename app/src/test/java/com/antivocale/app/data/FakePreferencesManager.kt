@@ -50,6 +50,7 @@ internal class FakePreferencesManager : PreferencesManager {
     val _transcriptionLanguage = MutableStateFlow("auto")
     val _swipeActionMode = MutableStateFlow("REVEAL")
     val _groupLogsByConversation = MutableStateFlow(true)
+    val _showTechnicalDetails = MutableStateFlow(PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS)
     val _advancedSharingEnabled = MutableStateFlow(false)
     val _showRetranscribeButton = MutableStateFlow(true)
     val _forceModelLoad = MutableStateFlow(false)
@@ -94,6 +95,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val transcriptionLanguage: Flow<String> get() = _transcriptionLanguage
     override val swipeActionMode: Flow<String> get() = _swipeActionMode
     override val groupLogsByConversation: Flow<Boolean> get() = _groupLogsByConversation
+    override val showTechnicalDetails: Flow<Boolean> get() = _showTechnicalDetails
     override val advancedSharingEnabled: Flow<Boolean> get() = _advancedSharingEnabled
     override val showRetranscribeButton: Flow<Boolean> get() = _showRetranscribeButton
     override val forceModelLoad: Flow<Boolean> get() = _forceModelLoad
@@ -132,6 +134,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveTranscriptionLanguage(language: String) { _transcriptionLanguage.value = language }
     override suspend fun saveSwipeActionMode(mode: String) { _swipeActionMode.value = mode }
     override suspend fun saveGroupLogsByConversation(enabled: Boolean) { _groupLogsByConversation.value = enabled }
+    override suspend fun saveShowTechnicalDetails(enabled: Boolean) { _showTechnicalDetails.value = enabled }
     override suspend fun saveAdvancedSharingEnabled(enabled: Boolean) { _advancedSharingEnabled.value = enabled }
     override suspend fun saveShowRetranscribeButton(enabled: Boolean) { _showRetranscribeButton.value = enabled }
     override suspend fun saveForceModelLoad(enabled: Boolean) { _forceModelLoad.value = enabled }

@@ -905,4 +905,6 @@
     <string name="curated_why_swiss_german">Para dialetos suíço-alemães</string>
     <string name="curated_why_kroko">Streaming: o texto aparece enquanto você fala</string>
     <string name="language_chip_setting_note">Apenas os modelos Whisper e SenseVoice conseguem detectar o idioma.</string>
+    <string name="technical_details_title">Mostrar detalhes técnicos</string>
+    <string name="technical_details_description">Mostra a linha técnica de processamento (caminho de decodificação, chunks, VAD, memória) nas entradas de transcrição. Desativado por padrão; os detalhes sempre entram nos relatórios.</string>
 </resources>

@@ -80,6 +80,7 @@ class PreferencesManagerImpl(
         private val VAD_ADVISORY_DISMISSED = booleanPreferencesKey("vad_advisory_dismissed")
         private val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         private val GROUP_LOGS_BY_CONVERSATION = booleanPreferencesKey("group_logs_by_conversation")
+        private val SHOW_TECHNICAL_DETAILS = booleanPreferencesKey("show_technical_details")
         private val ADVANCED_SHARING_ENABLED = booleanPreferencesKey("advanced_sharing_enabled")
         private val SHOW_RETRANSCRIBE_BUTTON = booleanPreferencesKey("show_retranscribe_button")
         private val FORCE_MODEL_LOAD = booleanPreferencesKey("force_model_load")
@@ -123,6 +124,7 @@ class PreferencesManagerImpl(
         val vadAdvisoryDismissed: Boolean = false,
         val onboardingCompleted: Boolean = false,
         val groupLogsByConversation: Boolean = PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION,
+        val showTechnicalDetails: Boolean = PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
         val advancedSharingEnabled: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         val forceModelLoad: Boolean = PreferencesManager.DEFAULT_FORCE_MODEL_LOAD,
@@ -168,6 +170,7 @@ class PreferencesManagerImpl(
         vadAdvisoryDismissed = this[VAD_ADVISORY_DISMISSED] ?: false,
         onboardingCompleted = this[ONBOARDING_COMPLETED] ?: false,
         groupLogsByConversation = this[GROUP_LOGS_BY_CONVERSATION] ?: PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION,
+        showTechnicalDetails = this[SHOW_TECHNICAL_DETAILS] ?: PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
         advancedSharingEnabled = this[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         forceModelLoad = this[FORCE_MODEL_LOAD] ?: PreferencesManager.DEFAULT_FORCE_MODEL_LOAD,
@@ -630,6 +633,16 @@ class PreferencesManagerImpl(
             preferences[GROUP_LOGS_BY_CONVERSATION] = enabled
         }
         cache.updateAndGet { it.copy(groupLogsByConversation = enabled) }
+    }
+
+    override val showTechnicalDetails: Flow<Boolean> = dataStore.data.map { it[SHOW_TECHNICAL_DETAILS] ?: PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS }
+        .onStart { emit(cache.get().showTechnicalDetails) }
+
+    override suspend fun saveShowTechnicalDetails(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SHOW_TECHNICAL_DETAILS] = enabled
+        }
+        cache.updateAndGet { it.copy(showTechnicalDetails = enabled) }
     }
 
     override val advancedSharingEnabled: Flow<Boolean> = dataStore.data.map { it[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED }

@@ -1039,4 +1039,6 @@
     <string name="curated_why_swiss_german">स्विस जर्मन बोलियों के लिए</string>
     <string name="curated_why_kroko">स्ट्रीमिंग: बोलते समय टेक्स्ट दिखता है</string>
     <string name="language_chip_setting_note">केवल Whisper और SenseVoice मॉडल भाषा पहचान सकते हैं।</string>
+    <string name="technical_details_title">तकनीकी विवरण दिखाएँ</string>
+    <string name="technical_details_description">प्रतिलेख प्रविष्टियों में तकनीकी प्रोसेसिंग पंक्ति (डिकोड पथ, चंक, VAD, मेमोरी) दिखाता है। डिफ़ॉल्ट रूप से बंद; विवरण रिपोर्ट में सदैव शामिल रहते हैं।</string>
 </resources>

@@ -895,6 +895,10 @@ fun LogEntryItem(
     onNavigateToSettings: (() -> Unit)? = null,
     /** TASK-546: render the language chip (the Settings flag's value). */
     showLanguageChip: Boolean = false,
+    /** TASK-616: render the technical processing-context line. No default:
+     *  a call site that forgets the pass-through must be a compile error,
+     *  not a silently dropped diagnostics line. */
+    showTechnicalDetails: Boolean,
 ) {
     val context = LocalContext.current
     var contextMenuExpanded by remember { mutableStateOf(false) }
@@ -1237,12 +1241,18 @@ fun LogEntryItem(
                                 }
                             }
                             // TASK-512: the processing line (decode path, chunk
-                            // coverage, cap, RAM) so a long-run report is
-                            // attributable from the card alone. Remember-parsed
-                            // (the list re-emits on every interim write).
-                            val renderedProcessing = remember(log.processingContext) {
-                                ProcessingContextConverter.render(
-                                    ProcessingContextConverter.fromJson(log.processingContext))
+                            // coverage, cap, RAM) makes a long-run report
+                            // attributable from the card alone. TASK-616: it
+                            // stays persisted and rides the feedback report,
+                            // but the card parses and renders it only on
+                            // opt-in (the list re-emits on every interim write).
+                            val renderedProcessing = remember(log.processingContext, showTechnicalDetails) {
+                                if (!showTechnicalDetails) {
+                                    null
+                                } else {
+                                    ProcessingContextConverter.render(
+                                        ProcessingContextConverter.fromJson(log.processingContext))
+                                }
                             }
                             renderedProcessing?.let { rendered ->
                                 Text(
@@ -1500,6 +1510,8 @@ private fun LogEntryWithSwipe(
     val context = LocalContext.current
     // TASK-546: the chip flag, collected once here (the item stays stateless).
     val showLanguageChip by viewModel.languageChipEnabled.collectAsState()
+    // TASK-616: same pattern for the technical processing-context line.
+    val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
     // TASK-599: the expanded row's annotated transcript is collected HERE
     // (the wrapper knows expansion; the item stays stateless) from the
     // ViewModel's cached per-row flow: no cold-flow-per-recomposition, no
@@ -1586,6 +1598,7 @@ private fun LogEntryWithSwipe(
                 compactActions = compactActions,
                 onNavigateToSettings = onNavigateToSettings,
                 showLanguageChip = showLanguageChip,
+                showTechnicalDetails = showTechnicalDetails,
             )
         }
     } else {
@@ -1638,6 +1651,7 @@ private fun LogEntryWithSwipe(
                 compactActions = compactActions,
                 onNavigateToSettings = onNavigateToSettings,
                 showLanguageChip = showLanguageChip,
+                showTechnicalDetails = showTechnicalDetails,
             )
         }
     }

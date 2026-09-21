@@ -94,6 +94,7 @@ internal class TestSpiOps(
             .put("advancedSharingEnabled", preferences.advancedSharingEnabled.first())
             .put("showRetranscribeButton", preferences.showRetranscribeButton.first())
             .put("groupLogsByConversation", preferences.groupLogsByConversation.first())
+            .put("showTechnicalDetails", preferences.showTechnicalDetails.first())
             .put("vadAdvisoryDismissed", preferences.vadAdvisoryDismissed.first())
             .put("onboardingCompleted", preferences.onboardingCompleted.first())
             .put("swipeActionMode", preferences.swipeActionMode.first())
@@ -142,6 +143,7 @@ internal class TestSpiOps(
         "show_retranscribe" to preferences::saveShowRetranscribeButton,
         "force_model_load" to preferences::saveForceModelLoad,
         "compact_result_actions" to preferences::saveCompactResultActions,
+        "technical_details" to preferences::saveShowTechnicalDetails,
         "language_chip" to preferences::saveLanguageChipEnabled,
     )
 

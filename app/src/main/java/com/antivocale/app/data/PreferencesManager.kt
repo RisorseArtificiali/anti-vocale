@@ -74,6 +74,8 @@ interface PreferencesManager {
     val transcriptionLanguage: Flow<String>
     val swipeActionMode: Flow<String>
     val groupLogsByConversation: Flow<Boolean>
+    /** TASK-616: render the technical processing-context line on expanded entries. */
+    val showTechnicalDetails: Flow<Boolean>
     val advancedSharingEnabled: Flow<Boolean>
     val showRetranscribeButton: Flow<Boolean>
     val forceModelLoad: Flow<Boolean>
@@ -120,6 +122,8 @@ interface PreferencesManager {
     suspend fun saveTranscriptionLanguage(language: String)
     suspend fun saveSwipeActionMode(mode: String)
     suspend fun saveGroupLogsByConversation(enabled: Boolean)
+    /** TASK-616: see [showTechnicalDetails]. */
+    suspend fun saveShowTechnicalDetails(enabled: Boolean)
     suspend fun saveAdvancedSharingEnabled(enabled: Boolean)
     suspend fun saveShowRetranscribeButton(enabled: Boolean)
     suspend fun saveForceModelLoad(enabled: Boolean)
@@ -206,6 +210,8 @@ interface PreferencesManager {
         val SWIPE_ACTION_MODES = com.antivocale.app.ui.tabs.SwipeActionMode.NAMES
         const val DEFAULT_INFERENCE_PROVIDER = "auto"
         const val DEFAULT_GROUP_LOGS_BY_CONVERSATION = true
+        /** TASK-616: the technical line is diagnostic detail; hidden unless asked for. */
+        const val DEFAULT_SHOW_TECHNICAL_DETAILS = false
         const val DEFAULT_ADVANCED_SHARING_ENABLED = false
         const val DEFAULT_SHOW_RETRANSCRIBE_BUTTON = true
         const val DEFAULT_FORCE_MODEL_LOAD = false

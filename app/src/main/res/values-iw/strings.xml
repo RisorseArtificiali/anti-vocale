@@ -1047,4 +1047,6 @@
     <string name="curated_why_swiss_german">לניבים של גרמנית שוויצרית</string>
     <string name="curated_why_kroko">סטרימינג: הטקסט מופיע תוך כדי דיבור</string>
     <string name="language_chip_setting_note">רק דגמי Whisper ו-SenseVoice יכולים לזהות את השפה.</string>
+    <string name="technical_details_title">הצגת פרטים טכניים</string>
+    <string name="technical_details_description">מציג את שורת העיבוד הטכנית (נתיב פענוח, מקטעים, VAD, זיכרון) ברשומות התמלול. כבוי כברירת מחדל; הפרטים נכללים תמיד בדוחות.</string>
 </resources>

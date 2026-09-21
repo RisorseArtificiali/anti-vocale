@@ -495,6 +495,11 @@ class LogsViewModel @Inject constructor(
     val groupLogsByConversation: StateFlow<Boolean> = preferencesManager.groupLogsByConversation
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_GROUP_LOGS_BY_CONVERSATION)
 
+    /** TASK-616: the technical processing-context line renders only when
+     *  this is on (off by default); the data stays persisted either way. */
+    val showTechnicalDetails: StateFlow<Boolean> = preferencesManager.showTechnicalDetails
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS)
+
     val showRetranscribeButton: StateFlow<Boolean> = preferencesManager.showRetranscribeButton
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON)
 

@@ -454,6 +454,20 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /** TASK-616: the technical processing-context line on transcript entries. */
+    val showTechnicalDetails: StateFlow<Boolean> = preferencesManager.showTechnicalDetails
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
+        )
+
+    fun saveShowTechnicalDetails(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveShowTechnicalDetails(enabled)
+        }
+    }
+
     // Current language from Per-App Language API (not DataStore)
     private val _currentLanguage = MutableStateFlow(LocaleManager.getCurrentLocaleCode())
     val currentLanguage: StateFlow<String> = _currentLanguage.asStateFlow()

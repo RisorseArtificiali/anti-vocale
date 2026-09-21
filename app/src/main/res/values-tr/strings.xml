@@ -1040,4 +1040,6 @@
     <string name="curated_why_swiss_german">İsviçre Almanca lehçeleri için</string>
     <string name="curated_why_kroko">Akış: konuşurken metin görünür</string>
     <string name="language_chip_setting_note">Yalnızca Whisper ve SenseVoice modelleri dili algılayabilir.</string>
+    <string name="technical_details_title">Teknik ayrıntıları göster</string>
+    <string name="technical_details_description">Transkripsiyon kayıtlarında teknik işleme satırını (çözümleme yolu, parçalar, VAD, bellek) gösterir. Varsayılan olarak kapalıdır; ayrıntılar raporlara her zaman eklenir.</string>
 </resources>

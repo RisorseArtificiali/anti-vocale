@@ -43,6 +43,12 @@ class PreferencesManagerTest {
     }
 
     @Test
+    fun `DEFAULT_SHOW_TECHNICAL_DETAILS is false`() {
+        // TASK-616: the technical line is diagnostic detail, hidden unless asked for.
+        assertFalse(PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS)
+    }
+
+    @Test
     fun `DEFAULT_THREAD_COUNT is at least 2`() {
         assertTrue(PreferencesManager.DEFAULT_THREAD_COUNT >= 2)
     }

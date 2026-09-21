@@ -1059,4 +1059,6 @@
     <string name="curated_why_swiss_german">Для швейцарских диалектов немецкого</string>
     <string name="curated_why_kroko">Потоковый режим: текст появляется по мере речи</string>
     <string name="language_chip_setting_note">Определять язык умеют только модели Whisper и SenseVoice.</string>
+    <string name="technical_details_title">Показывать технические детали</string>
+    <string name="technical_details_description">Показывает техническую строку обработки (путь декодирования, чанки, VAD, память) в записях транскрипции. По умолчанию выключено; детали всегда включаются в отчёты.</string>
 </resources>

@@ -1039,4 +1039,6 @@
     <string name="refinement_title">Two-pass transcription</string>
     <string name="refinement_description">Stream an instant preview with the fast model, then refine it with the selected model in the background</string>
     <string name="language_chip_setting_note">Only the Whisper and SenseVoice models can detect the language.</string>
+    <string name="technical_details_title">Show technical details</string>
+    <string name="technical_details_description">Show the technical processing line (decode path, chunks, VAD, memory) under each transcript entry. Off by default; the details are always included in feedback reports.</string>
 </resources>

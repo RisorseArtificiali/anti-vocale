@@ -117,6 +117,7 @@ fun SettingsTab(
     val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
     val forceModelLoad by viewModel.forceModelLoad.collectAsState()
     val compactResultActions by viewModel.compactResultActions.collectAsState()
+    val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
     // TASK-546: the chip flag (maintainer directive: the flag lives here).
     val languageChipEnabled by viewModel.languageChipEnabled.collectAsState()
     val tokenState by viewModel.tokenState.collectAsState()
@@ -386,6 +387,7 @@ fun SettingsTab(
                 listOf(R.string.swipe_action_title, R.string.swipe_action_description),
                 listOf(R.string.conversation_grouping_title, R.string.conversation_grouping_description),
                 listOf(R.string.compact_result_actions_title, R.string.compact_result_actions_description),
+                listOf(R.string.technical_details_title, R.string.technical_details_description),
                 listOf(R.string.language_chip_setting_title, R.string.language_chip_setting_description),
                 listOf(R.string.retranscribe_setting_title, R.string.retranscribe_setting_description),
             ).map { group -> group.map { context.getString(it) } }
@@ -1122,6 +1124,22 @@ fun SettingsTab(
                     checked = compactResultActions,
                     onCheckedChange = { enabled ->
                         viewModel.saveCompactResultActions(enabled)
+                    }
+                )
+            }
+
+            // TASK-616: the technical processing-context line on transcript
+            // entries; off by default, the data rides the report regardless.
+            val technicalDetailsTitle = stringResource(R.string.technical_details_title)
+            val technicalDetailsDescription = stringResource(R.string.technical_details_description)
+            SearchFilterRow(searchQuery, technicalDetailsTitle, technicalDetailsDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.DataObject,
+                    title = technicalDetailsTitle,
+                    description = technicalDetailsDescription,
+                    checked = showTechnicalDetails,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveShowTechnicalDetails(enabled)
                     }
                 )
             }

@@ -1045,4 +1045,6 @@
     <string name="curated_why_swiss_german">برای گویش‌های آلمانی سوئیسی</string>
     <string name="curated_why_kroko">جریانی: متن همزمان با گفتار ظاهر می‌شود</string>
     <string name="language_chip_setting_note">فقط مدل‌های Whisper و SenseVoice می‌توانند زبان را تشخیص دهند.</string>
+    <string name="technical_details_title">نمایش جزئیات فنی</string>
+    <string name="technical_details_description">نمایش خط فنی پردازش (مسیر رمزگشایی، قطعه‌ها، VAD، حافظه) در مدخل‌های پیاده‌سازی متن. به‌طور پیش‌فرض خاموش است؛ جزئیات همیشه در گزارش‌ها گنجانده می‌شود.</string>
 </resources>

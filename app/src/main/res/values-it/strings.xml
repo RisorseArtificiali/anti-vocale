@@ -1046,4 +1046,6 @@
     <string name="refinement_title">Trascrizione in due passate</string>
     <string name="refinement_description">Mostra subito un\'anteprima col modello veloce, poi la raffina in background col modello selezionato</string>
     <string name="language_chip_setting_note">Solo i modelli Whisper e SenseVoice possono rilevare la lingua.</string>
+    <string name="technical_details_title">Mostra i dettagli tecnici</string>
+    <string name="technical_details_description">Mostra la riga tecnica di elaborazione (percorso di decodifica, chunk, VAD, memoria) nelle voci delle trascrizioni. Disattivo per impostazione predefinita; i dettagli sono sempre inclusi nelle segnalazioni.</string>
 </resources>
