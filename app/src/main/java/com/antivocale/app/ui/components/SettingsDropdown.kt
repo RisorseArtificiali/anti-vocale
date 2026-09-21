@@ -1,6 +1,7 @@
 package com.antivocale.app.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DropdownMenuItem
@@ -67,14 +68,33 @@ fun <T> SettingsDropdown(
                 .menuAnchor()
                 .fillMaxWidth(),
             enabled = enabled,
-            // TASK-592: an explicit tonal container so selects read as
-            // controls; the default filled colors sit too close to the page
-            // background, especially in dark theme.
+            // TASK-592 + maintainer rounds: an explicit tonal container so
+            // selects read as controls at REST (unfocused) too. The theme
+            // ramp's ceiling (surfaceContainerHighest) was still too subtle,
+            // so the container lerps PAST it toward onSurface: +10 percent at
+            // rest and disabled, +16 while focused (interaction feedback),
+            // derived from the scheme so all six themes stay consistent. The
+            // disabled state keeps the container (the transparent default
+            // made disabled selects look like plain text again).
             colors = ExposedDropdownMenuDefaults.textFieldColors(
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                focusedContainerColor = lerp(
+                    MaterialTheme.colorScheme.surfaceContainerHighest,
+                    MaterialTheme.colorScheme.onSurface, 0.16f),
+                unfocusedContainerColor = lerp(
+                    MaterialTheme.colorScheme.surfaceContainerHighest,
+                    MaterialTheme.colorScheme.onSurface, 0.10f),
+                disabledContainerColor = lerp(
+                    MaterialTheme.colorScheme.surfaceContainerHighest,
+                    MaterialTheme.colorScheme.onSurface, 0.10f),
                 focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant
+                unfocusedIndicatorColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                // The default label/trailing colors sit on primary (violet),
+                // which the lightened container leaves low-contrast: the
+                // label and the resting icon read on onSurface tones instead,
+                // the value text already does.
+                unfocusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                focusedLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         )
         ExposedDropdownMenu(
