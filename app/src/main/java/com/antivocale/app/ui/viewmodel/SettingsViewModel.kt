@@ -485,18 +485,27 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.speakerLabelsEnabled.collect { _speakerLabelsEnabled.value = it }
         }
-        viewModelScope.launch(Dispatchers.Default) {
-            val appCtx = getApplication<Application>()
-            val streaming = runCatching {
-                com.antivocale.app.data.catalog.BundledCatalog.entries()
-                    .firstOrNull { it.isStreaming }
-                    ?.takeIf { entry ->
-                        com.antivocale.app.transcription.SherpaModelManager.of(entry.id)
-                            .resolveActiveModelPath(appCtx) != null
+        // TASK-603 F6: availability has TWO inputs, and both are collected:
+        // the backend selection (a switch) and the streaming entry's saved
+        // path (a bare install writes no backend value, and the backend flow
+        // is distinctUntilChanged, so collecting it alone never re-probes on
+        // install; review F1). The disk probe rides each (rare) emission of
+        // either source, through the shared owner of the probe.
+        val streamingEntry = com.antivocale.app.data.catalog.BundledCatalog.entries()
+            .firstOrNull { it.isStreaming }
+        if (streamingEntry != null) {
+            viewModelScope.launch(Dispatchers.Default) {
+                kotlinx.coroutines.flow.combine(
+                    preferencesManager.transcriptionBackend,
+                    preferencesManager.sherpaModelPath(streamingEntry.id),
+                ) { selected, _ -> selected }
+                    .collect { selected ->
+                        val installed =
+                            com.antivocale.app.transcription.SherpaModelManager
+                                .installedStreamingEntryId(getApplication<Application>()) != null
+                        _refinementAvailable.value = installed && streamingEntry.id != selected
                     }
-            }.getOrNull()
-            val selected = preferencesManager.transcriptionBackend.first()
-            _refinementAvailable.value = streaming != null && streaming.id != selected
+            }
         }
         // Load text size from preferences (TASK-576)
         viewModelScope.launch {

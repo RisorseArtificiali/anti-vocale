@@ -1207,17 +1207,11 @@ class TranscriptionOrchestrator @Inject constructor(
         )
     }
 
-    /** The installed streaming catalog entry id, when one resolves locally. */
-    private suspend fun installedStreamingBackendId(context: Context): String? {
-        return runCatching {
-            BundledCatalog.entries()
-                .firstOrNull { it.isStreaming }
-                ?.takeIf { entry ->
-                    SherpaModelManager.of(entry.id).resolveActiveModelPath(context) != null
-                }
-                ?.id
-        }.getOrNull()
-    }
+    /** The installed streaming catalog entry id, when one resolves locally.
+     *  TASK-603 F3: delegates to the shared owner (Settings derives the
+     *  toggle's availability from the same probe). */
+    private suspend fun installedStreamingBackendId(context: Context): String? =
+        SherpaModelManager.installedStreamingEntryId(context)
 
     /** GH #43: nests the first pass's context and the skip token on the
      *  delivered row's (phase 2) context; a no-op for single-model runs. */

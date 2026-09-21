@@ -17,6 +17,21 @@ import java.util.concurrent.ConcurrentHashMap
 class SherpaModelManager private constructor(val entryId: String) {
 
     companion object {
+        /**
+         * GH #43 / TASK-603: the installed streaming catalog entry id, when one
+         * resolves locally. ONE owner: the orchestrator's runtime two-pass gate
+         * and the Settings toggle's availability both derive from this, so the
+         * advertised state can never drift from the enforced one.
+         */
+        suspend fun installedStreamingEntryId(context: android.content.Context): String? =
+            runCatching {
+                com.antivocale.app.data.catalog.BundledCatalog.entries()
+                    .firstOrNull { it.isStreaming }
+                    ?.takeIf { entry ->
+                        SherpaModelManager.of(entry.id).resolveActiveModelPath(context) != null
+                    }
+                    ?.id
+            }.getOrNull()
         private val cache = ConcurrentHashMap<String, SherpaModelManager>()
 
         fun of(entryId: String): SherpaModelManager =

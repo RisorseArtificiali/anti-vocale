@@ -224,9 +224,15 @@ fun SettingsTab(
         initialValue = viewModel.llmRemainingTimeSeconds ?: 0L,
         key1 = isModelLoaded,
     ) {
+        // TASK-603 (TASK-574 regression): a null reading means PAUSED (work
+        // in flight; beginWork drops the idle deadline and endWork re-arms
+        // the FULL timeout), so it HIDES the row (the >0L display gate)
+        // instead of freezing a stale imminent number; and there is no
+        // break-on-zero: a transient zero (re-arm racing the fire) must not
+        // kill the producer, and every genuine expiry ends with the unload
+        // flipping isModelLoaded, which is the loop's key and its exit.
         while (isModelLoaded) {
             value = viewModel.llmRemainingTimeSeconds ?: 0L
-            if (value <= 0L) break
             kotlinx.coroutines.delay(1_000)
         }
     }
