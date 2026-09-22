@@ -19,6 +19,14 @@ data class ProcessingContext(
     val totalChunks: Int? = null,
     /** Chunks skipped after retry (mirrors TranscriptionResult.failedChunkCount). */
     val failedChunks: Int? = null,
+    /** TASK-622: chunks that decoded SUCCESSFULLY but blank. A blank is a
+     *  silence window by design (GH #96), but it is also exactly what a
+     *  swallowed native decode failure looks like (the moonshine over-ceiling
+     *  class: sherpa catches the onnxruntime error and returns ""), so the
+     *  count is the tell that separates "quiet audio" from "broken decode".
+     *  Null on old rows and on zero-blank runs (written only when at least
+     *  one chunk was blank). */
+    val blankChunks: Int? = null,
     /** Audio seconds actually covered by inference (decoded seconds). */
     val transcribedSeconds: Double? = null,
     /** The chunk ceiling in force, after any RAM-driven tightening. */

@@ -176,8 +176,13 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
     class NotInitialized :
         TranscriptionException("Backend not initialized (no model loaded)")
 
-    /** Audio could be decoded but produced no transcription text. */
-    class NoTranscriptionProduced :
+    /**
+     * Audio could be decoded but produced no transcription text.
+     * TASK-622: [blankChunks] counts chunks that decoded successfully but
+     * blank (1 on the whole-file path); it rides the exception to the ERROR
+     * row's FailureContext without changing the user-facing message.
+     */
+    class NoTranscriptionProduced(val blankChunks: Int? = null) :
         TranscriptionException("No transcription produced")
 
     /** The device had too little free memory to load the model (pre-flight block). */

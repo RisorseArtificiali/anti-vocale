@@ -16,6 +16,7 @@ object ProcessingContextConverter {
             put("decodePath", c.decodePath)
             c.totalChunks?.let { put("totalChunks", it) }
             c.failedChunks?.let { put("failedChunks", it) }
+            c.blankChunks?.let { put("blankChunks", it) }
             c.transcribedSeconds?.let { put("transcribedSeconds", it) }
             c.chunkCapSeconds?.let { put("chunkCapSeconds", it) }
             c.availableRamBytes?.let { put("availableRamBytes", it) }
@@ -37,6 +38,7 @@ object ProcessingContextConverter {
                     // both, so one null field cannot downgrade the whole context.
                     totalChunks = o.optIntOrNull("totalChunks"),
                     failedChunks = o.optIntOrNull("failedChunks"),
+                    blankChunks = o.optIntOrNull("blankChunks"),
                     transcribedSeconds = o.optDoubleOrNull("transcribedSeconds"),
                     chunkCapSeconds = o.optIntOrNull("chunkCapSeconds"),
                     availableRamBytes = o.optLongOrNull("availableRamBytes"),
@@ -53,8 +55,11 @@ object ProcessingContextConverter {
     fun render(context: ProcessingContext?): String? = context?.let { c ->
         buildList {
             add(c.decodePath)
-            if (c.totalChunks != null) add("chunks=${c.totalChunks}" +
-                (c.failedChunks?.takeIf { it > 0 }?.let { " (failed $it)" } ?: ""))
+            if (c.totalChunks != null) {
+                add("chunks=${c.totalChunks}")
+                c.failedChunks?.takeIf { it > 0 }?.let { add("(failed $it)") }
+                c.blankChunks?.takeIf { it > 0 }?.let { add("(blank $it)") }
+            }
             c.transcribedSeconds?.takeIf { it > 0.0 }?.let { add("decoded=${it}s") }
             c.chunkCapSeconds?.let { add("cap=${it}s") }
             // Integer MB, the app-wide RAM unit (the low-memory toasts): no

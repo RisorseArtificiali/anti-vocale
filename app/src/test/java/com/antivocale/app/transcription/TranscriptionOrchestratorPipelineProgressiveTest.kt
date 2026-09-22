@@ -178,6 +178,11 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
             Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
         }
+        // logSuccess reads the row before its update write (the final
+        // processing-context land requires it).
+        coEvery { logDao.getByTaskId("test-pipeline") } returns com.antivocale.app.data.local.LogEntity(
+            id = "1", timestamp = 0L, taskId = "test-pipeline",
+            type = "AUDIO", status = "PROCESSING", prompt = "")
 
         val result = runPipelineRequest()
 
@@ -204,6 +209,12 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
                 totalChunks = 3
             )
         }
+        // TASK-622: the blank chunk is counted on the persisted row (the
+        // source-side wiring the converter tests cannot see).
+        coVerify(atLeast = 1) { logDao.update(match { e ->
+            val pc = com.antivocale.app.data.local.ProcessingContextConverter.fromJson(e.processingContext)
+            pc?.blankChunks == 1 && pc.totalChunks == 3
+        }) }
     }
 
     @Test

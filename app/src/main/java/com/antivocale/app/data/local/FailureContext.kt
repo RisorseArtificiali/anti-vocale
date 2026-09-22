@@ -22,6 +22,12 @@ data class FailureContext(
     val processedChunks: Int? = null,
     /** Chunks that failed (skipped after retry) before the run died. */
     val failedChunks: Int? = null,
+    /** TASK-622: chunks that decoded successfully but blank before the run
+     *  died (1 on a whole-file blank). A blank is silence by design (GH #96)
+     *  but also the swallowed-decode signature; on the ERROR row the pair
+     *  (failed, blank) is the diagnosis. Null on old rows and zero-blank
+     *  runs. */
+    val blankChunks: Int? = null,
     /** Container-metadata audio length in seconds (0 when absent/lying). */
     val metadataSeconds: Double? = null,
     /** Audio decoded before the failure in seconds. */
@@ -38,6 +44,7 @@ object FailureContextJson {
             c.appVersion?.let { put("appVersion", it) }
             c.processedChunks?.let { put("processedChunks", it) }
             c.failedChunks?.let { put("failedChunks", it) }
+            c.blankChunks?.let { put("blankChunks", it) }
             c.metadataSeconds?.let { put("metadataSeconds", it) }
             c.decodedSeconds?.let { put("decodedSeconds", it) }
         }.toString()
@@ -55,6 +62,7 @@ object FailureContextJson {
                     // has() alone is true for explicit JSON nulls; isNull guards both.
                     processedChunks = o.optIntOrNull("processedChunks"),
                     failedChunks = o.optIntOrNull("failedChunks"),
+                    blankChunks = o.optIntOrNull("blankChunks"),
                     metadataSeconds = o.optDoubleOrNull("metadataSeconds"),
                     decodedSeconds = o.optDoubleOrNull("decodedSeconds"),
                 )
@@ -68,8 +76,11 @@ object FailureContextJson {
             c.backendId?.let { add("backend=$it") }
             c.provider?.let { add("provider=$it") }
             c.appVersion?.let { add("v$it") }
-            if (c.processedChunks != null) add("chunks=${c.processedChunks}" +
-                (c.failedChunks?.takeIf { it > 0 }?.let { " (failed $it)" } ?: ""))
+            if (c.processedChunks != null) {
+                add("chunks=${c.processedChunks}")
+                c.failedChunks?.takeIf { it > 0 }?.let { add("(failed $it)") }
+                c.blankChunks?.takeIf { it > 0 }?.let { add("(blank $it)") }
+            }
             c.metadataSeconds?.takeIf { it > 0.0 }?.let { add("total=${it}s") }
             c.decodedSeconds?.takeIf { it > 0.0 }?.let { add("decoded=${it}s") }
         }.joinToString(" ")

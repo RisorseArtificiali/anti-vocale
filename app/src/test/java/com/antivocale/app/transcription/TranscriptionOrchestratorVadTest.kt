@@ -198,6 +198,65 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
     }
 
     @Test
+    fun `progressive blank segment is not a failure`() = runTest {
+        // TASK-622 / GH #96: a blank decode is silence by design, so a run
+        // with one blank segment succeeds NON-partial with failedChunkCount 0
+        // (the blank count lands in ProcessingContext, not the failure
+        // counters). The three blank-segment end state is the next test.
+        val chunk1 = FloatArray(100) { 1.0f }
+        val chunk2 = FloatArray(100) { 2.0f }
+        val chunk3 = FloatArray(100) { 3.0f }
+        stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
+
+        val results = listOf(
+            Result.success(TranscriptionResult(text = "seg1")),
+            Result.success(TranscriptionResult(text = "   ")),
+            Result.success(TranscriptionResult(text = "seg3")),
+        )
+        var callIndex = 0
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            results[callIndex++]
+        }
+
+        val result = runProcessRequest(scope = this)
+
+        assertTrue(result.isSuccess)
+        assertEquals("seg1 seg3", result.getOrNull())
+        verify {
+            listener.onSuccess(
+                eq("vad-test"), eq("seg1 seg3"), any(), any(), any(),
+                confidence = any(), detectedLanguage = any(),
+                isPartial = false, failedChunkCount = eq(0)
+            )
+        }
+    }
+
+    @Test
+    fun `progressive mixed failure and blank counts both in the message`() = runTest {
+        // TASK-622: the composite terminal state names both counters.
+        val chunk1 = FloatArray(100) { 1.0f }
+        val chunk2 = FloatArray(100) { 2.0f }
+        stubVadPreprocessing(listOf(chunk1, chunk2))
+
+        val results = listOf(
+            Result.failure(RuntimeException("backend error")),
+            Result.success(TranscriptionResult(text = "  ")),
+        )
+        var callIndex = 0
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            results[callIndex++]
+        }
+
+        val result = runProcessRequest(scope = this)
+
+        assertTrue(result.isFailure)
+        val error = result.exceptionOrNull()
+        assertTrue(
+            "Expected the mixed-counts message but got: ${error?.message}",
+            error?.message?.contains("1 failed, 1 blank") == true)
+    }
+
+    @Test
     fun `progressive segments with blank results`() = runTest {
         val chunk1 = FloatArray(100) { 1.0f }
         val chunk2 = FloatArray(100) { 2.0f }
@@ -217,11 +276,13 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         val result = runProcessRequest(scope = this)
 
         assertTrue(result.isFailure)
+        // TASK-622: every segment SUCCEEDED empty; the old message called
+        // that a failure and misdirected the first debugging pass.
         val error = result.exceptionOrNull()
         assertNotNull(error)
         assertTrue(
-            "Expected 'All 3 segments failed' but got: ${error?.message}",
-            error?.message?.contains("All 3 segments failed") == true
+            "Expected the blank-specific message but got: ${error?.message}",
+            error?.message?.contains("All 3 segments decoded blank") == true
         )
 
         verify(exactly = 0) { listener.onInterimResult(any(), any(), any()) }

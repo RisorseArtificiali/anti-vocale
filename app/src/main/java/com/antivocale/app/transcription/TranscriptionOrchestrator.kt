@@ -1753,7 +1753,10 @@ class TranscriptionOrchestrator @Inject constructor(
                                 availableRamBytes = availableRamBytes,
                             )))
                     } else {
-                        Result.failure(TranscriptionException.NoTranscriptionProduced())
+                        // TASK-622: whole-file blank (1 chunk); on the most
+                        // common path silence and broken decode were
+                        // indistinguishable on the ERROR row until this.
+                        Result.failure(TranscriptionException.NoTranscriptionProduced(blankChunks = 1))
                     }
                 }
                 else -> Result.failure(result.exceptionOrNull()!!)
@@ -1841,6 +1844,17 @@ class TranscriptionOrchestrator @Inject constructor(
      * whose cues all normalize blank yields no cue (the honest gap for a noise
      * decode). One owner keeps all four assembly paths in step.
      */
+    /**
+     * TASK-622: the one cause phrase for every blank-chunk diagnostic (log
+     * lines and the all-blank error text share it so the wording cannot
+     * drift). [silenceExpected] keys it on the path's relationship with
+     * silence: the pipeline stream never strips silence (blanks are normal
+     * there), VAD paths selected their chunks AS speech (a blank there is
+     * the suspect signal).
+     */
+    private fun blankCause(silenceExpected: Boolean): String =
+        "silence ${if (silenceExpected) "(expected on this path) " else ""}or swallowed decode failure"
+
     private fun cuesForChunk(
         tokens: List<TimedToken>,
         trimmedChunkText: String,
@@ -1870,6 +1884,7 @@ class TranscriptionOrchestrator @Inject constructor(
         Log.i(TAG, "VAD-segmented progressive path: $chunkCount segments")
         val accumulatedText = StringBuilder()
         var failedSegments = 0
+        var blankSegments = 0
         var minConfidence: Float? = null
         var detectedLang: String? = null
         val segments = mutableListOf<TimedSegment>()
@@ -1908,6 +1923,8 @@ class TranscriptionOrchestrator @Inject constructor(
                                 totalChunks = chunkCount
                             )
                         }
+                    } else {
+                        blankSegments++
                     }
                     minConfidence = aggregateConfidence(minConfidence, tr.confidence)
                     if (detectedLang == null) detectedLang = tr.detectedLanguage
@@ -1923,8 +1940,27 @@ class TranscriptionOrchestrator @Inject constructor(
         Log.i(TAG, "PERF: progressive total ${totalMs}ms for ${audioDurationSeconds}s audio, $chunkCount segments, backend=${backend.id}")
         recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
 
+        if (blankSegments > 0) {
+            // TASK-622: a blank is silence by design (GH #96) but also the
+            // signature of a swallowed decode failure; all-blank here is the
+            // over-ceiling tell.
+            Log.i(TAG, "Progressive: $blankSegments/$chunkCount segments decoded blank (${blankCause(false)})")
+        }
         return if (accumulatedText.isEmpty()) {
-            Result.failure(IllegalStateException("All $chunkCount segments failed to transcribe"))
+            // TASK-622: the old message said "failed" even when every segment
+            // SUCCEEDED empty, misdirecting the first debugging pass.
+            Result.failure(when {
+                // All genuinely failed: the historical message (tests pin it).
+                failedSegments == chunkCount -> IllegalStateException("All $chunkCount segments failed to transcribe")
+                // All succeeded empty: a swallowed decode failure looks exactly
+                // like this (GH #96 semantics made it success); name it.
+                failedSegments == 0 -> BlankSegmentsException(
+                    blankSegments,
+                    "All $chunkCount segments decoded blank (${blankCause(false)})")
+                else -> BlankSegmentsException(
+                    blankSegments,
+                    "All $chunkCount segments produced no text ($failedSegments failed, $blankSegments blank)")
+            })
         } else {
             if (failedSegments > 0) {
                 Log.w(TAG, "Completed with $failedSegments/$chunkCount failed segments")
@@ -1942,6 +1978,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     vadRequested = vadRequested,
                     totalChunks = chunkCount,
                     failedChunks = failedSegments,
+                    blankChunks = blankSegments.takeIf { it > 0 },
                     transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
                     chunkCapSeconds = chunkCapSeconds,
                     availableRamBytes = availableRamBytes,
@@ -2015,6 +2052,7 @@ class TranscriptionOrchestrator @Inject constructor(
         }
 
         var failedChunks = 0
+        var blankChunks = 0
 
         coroutineScope {
             val deferredResults = chunks.mapIndexed { index, chunk ->
@@ -2066,6 +2104,8 @@ class TranscriptionOrchestrator @Inject constructor(
                                     totalChunks = chunkCount
                                 )
                             }
+                        } else {
+                            blankChunks++
                         }
                     },
                     onFailure = { error ->
@@ -2080,6 +2120,8 @@ class TranscriptionOrchestrator @Inject constructor(
                                     chunkTokens[index] = tr.tokens
                                     chunkConfidences[index] = tr.confidence
                                     chunkLanguages[index] = tr.detectedLanguage
+                                } else {
+                                    blankChunks++
                                 }
                             },
                             onFailure = { retryError ->
@@ -2096,6 +2138,11 @@ class TranscriptionOrchestrator @Inject constructor(
 
         val combinedResult = results.filterNotNull().joinToString(" ")
         Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.filterNotNull().size}/$chunkCount chunks")
+        if (blankChunks > 0) {
+            // TASK-622: silence by design (GH #96), but also the swallowed
+            // decode-failure signature; the count is the tell.
+            Log.i(TAG, "Parallel: $blankChunks/$chunkCount chunks decoded blank (${blankCause(false)})")
+        }
 
         // GH #92: one positional rule for every origin of these chunks (VAD merged
         // segments, fixed windows, the stripped single span): the preprocessor's
@@ -2119,7 +2166,9 @@ class TranscriptionOrchestrator @Inject constructor(
         recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
 
         return if (combinedResult.isBlank()) {
-            Result.failure(TranscriptionException.NoTranscriptionProduced())
+            // TASK-622: all-blank IS the swallowed-decode signature; the
+            // count rides to the ERROR row's FailureContext.
+            Result.failure(TranscriptionException.NoTranscriptionProduced(blankChunks = blankChunks))
         } else {
             if (failedChunks > 0) {
                 Log.w(TAG, "Parallel completed with $failedChunks/$chunkCount failed chunks")
@@ -2143,6 +2192,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     vadRequested = vadRequested,
                     totalChunks = chunkCount,
                     failedChunks = failedChunks,
+                    blankChunks = blankChunks.takeIf { it > 0 },
                     transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
                     chunkCapSeconds = chunkCapSeconds,
                     availableRamBytes = availableRamBytes,
@@ -2193,6 +2243,7 @@ class TranscriptionOrchestrator @Inject constructor(
         var firstChunkDecodeMs = 0L
         var firstChunkInferStartMs = 0L
         var failedChunks = 0
+        var blankChunks = 0
         var minConfidence: Float? = null
         var detectedLang: String? = null
         // GH #92: cue boundaries from the running decoded total (container
@@ -2268,6 +2319,8 @@ class TranscriptionOrchestrator @Inject constructor(
                                             totalChunks = expectedChunkCount
                                         )
                                     }
+                                } else {
+                                    blankChunks++
                                 }
                                 minConfidence = aggregateConfidence(minConfidence, tr.confidence)
                                 if (detectedLang == null) detectedLang = tr.detectedLanguage
@@ -2294,6 +2347,8 @@ class TranscriptionOrchestrator @Inject constructor(
                                                     totalChunks = expectedChunkCount
                                                 )
                                             }
+                                        } else {
+                                            blankChunks++
                                         }
                                         minConfidence = aggregateConfidence(minConfidence, tr.confidence)
                                         if (detectedLang == null) detectedLang = tr.detectedLanguage
@@ -2317,9 +2372,9 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             }
         } catch (e: PreprocessingError) {
-            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds, processedChunks, failedChunks, context, backend.id)
+            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds, processedChunks, failedChunks, blankChunks, context, backend.id)
         } catch (e: Exception) {
-            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds, processedChunks, failedChunks, context, backend.id)
+            return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds, processedChunks, failedChunks, blankChunks, context, backend.id)
         }
 
         val combinedResult = accumulatedText.toString()
@@ -2342,8 +2397,17 @@ class TranscriptionOrchestrator @Inject constructor(
         // concatenated copy is built lazily inside the pass.
         speakerChunks?.let { collectSamples?.invoke(it, speakerSampleRate) }
 
+        // TASK-622: logged BEFORE the blank fail-fast so an all-blank run
+        // (the swallowed-decode signature) still leaves the tell in logcat;
+        // the pipeline stream never strips silence, so blanks here are
+        // expected-quiet first, suspect second (contrast the VAD paths).
+        if (blankChunks > 0) {
+            Log.i(TAG, "Pipeline: $blankChunks/$processedChunks chunks decoded blank (${blankCause(true)})")
+        }
         return if (combinedResult.isBlank()) {
-            Result.failure(TranscriptionException.NoTranscriptionProduced())
+            // TASK-622: all-blank IS the swallowed-decode signature; the
+            // count rides to the ERROR row's FailureContext.
+            Result.failure(TranscriptionException.NoTranscriptionProduced(blankChunks = blankChunks))
         } else {
             if (failedChunks > 0) {
                 Log.w(TAG, "Pipeline completed with $failedChunks/$processedChunks failed chunks")
@@ -2365,6 +2429,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     // counted failedChunks numerator.
                     totalChunks = processedChunks,
                     failedChunks = failedChunks,
+                    blankChunks = blankChunks.takeIf { it > 0 },
                     transcribedSeconds = totalDurationSeconds.takeIf { it > 0.0 },
                     chunkCapSeconds = maxChunkDurationSeconds,
                     availableRamBytes = availableRamBytes,
@@ -2726,6 +2791,7 @@ class TranscriptionOrchestrator @Inject constructor(
         context: Context,
         processedChunks: Int? = null,
         failedChunks: Int? = null,
+        blankChunks: Int? = null,
         metadataSeconds: Double? = null,
         decodedSeconds: Double? = null,
         backendId: String? = null,
@@ -2754,6 +2820,9 @@ class TranscriptionOrchestrator @Inject constructor(
                         appVersion = version,
                         processedChunks = processedChunks,
                         failedChunks = failedChunks,
+                        blankChunks = blankChunks
+                            ?: (error as? TranscriptionException.NoTranscriptionProduced)?.blankChunks
+                            ?: (error as? BlankSegmentsException)?.blankChunks,
                         metadataSeconds = metadataSeconds,
                         decodedSeconds = decodedSeconds,
                     )))
@@ -2775,6 +2844,18 @@ class TranscriptionOrchestrator @Inject constructor(
     ) : IllegalStateException("Pipeline failed: ${cause.message}", cause)
 
     /**
+     * TASK-622: the progressive path's no-text terminal state (all segments
+     * blank, or a fail+blank mix). Carries the blank count to the ERROR row
+     * the same way [TranscriptionException.NoTranscriptionProduced] does.
+     */
+    class BlankSegmentsException(
+        blankChunks: Int,
+        message: String,
+    ) : IllegalStateException(message) {
+        val blankChunks: Int = blankChunks
+    }
+
+    /**
      * The one streaming-failure tail (TASK-568, shared by both catches):
      * persist the salvaged text and the decoded-at-failure seconds, keep the
      * row length at the larger of header-total and writeback (TASK-522's
@@ -2790,6 +2871,7 @@ class TranscriptionOrchestrator @Inject constructor(
         totalDurationSeconds: Double,
         processedChunks: Int,
         failedChunks: Int,
+        blankChunks: Int = 0,
         context: Context,
         backendId: String?,
     ): Result<Nothing> {
@@ -2797,6 +2879,7 @@ class TranscriptionOrchestrator @Inject constructor(
         persistFailureContext(
             taskId, cause, context,
             processedChunks = processedChunks, failedChunks = failedChunks,
+            blankChunks = blankChunks.takeIf { it > 0 },
             metadataSeconds = totalDurationSeconds, decodedSeconds = decodedSeconds,
             backendId = backendId)
         failureWritebackSeconds(cause as? PreprocessingError, decodedSeconds)

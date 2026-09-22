@@ -12,6 +12,7 @@ class ProcessingContextConverterTest {
         decodePath = "pipeline",
         totalChunks = 157,
         failedChunks = 3,
+        blankChunks = 2,
         transcribedSeconds = 4620.0,
         chunkCapSeconds = 60,
         availableRamBytes = 5_800_000_000L,
@@ -25,9 +26,14 @@ class ProcessingContextConverterTest {
 
     @Test
     fun `render is one line with the observability keys`() {
+        // TASK-622: blank chunks render beside failed ones (the two mean
+        // opposite things and the pair is the diagnosis).
+        assertEquals(
+            "pipeline chunks=157 (failed 3) (blank 2) decoded=4620.0s cap=60s ram=5531MB vad=on",
+            ProcessingContextConverter.render(full))
         assertEquals(
             "pipeline chunks=157 (failed 3) decoded=4620.0s cap=60s ram=5531MB vad=on",
-            ProcessingContextConverter.render(full))
+            ProcessingContextConverter.render(full.copy(blankChunks = 0)))
     }
 
     @Test
