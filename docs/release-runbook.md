@@ -301,16 +301,27 @@ Proof: GitLab pipeline `success`; the build is marked "verified reproducible".
 
 ## Step 8. Play Store (independent of F-Droid timing)
 
-Trigger the Play Store publish job (AAB), or upload manually. This can run in
-parallel with the F-Droid MR review; it does not block on it.
+**Do NOT dispatch anything after the release is published.** The
+`release: published` event already runs the Publish job (the workflow
+condition covers it): publishing the GitHub release produces ONE run that
+builds, builds the F-Droid reference APKs, and parks its Publish job at the
+`production` environment gate. Approve THAT run in the Actions UI
+(Environment "production" -> pending deployment, or the run page's
+"Review pending deployments"); the AAB is built and waiting by then.
 
-Two v1.12.1 lessons: (1) a publish-only dispatch MUST pin the release ref,
+The 2026-09-21 near-miss this rule comes from: the old v1.12.1-era habit of
+ALSO dispatching `-f play-store-track=...` after publishing produced a second
+run with the SAME gated Publish job (and WITHOUT the reference-APK job), so
+two approvals were pending for the same versionCode; both approved, the
+second upload fails on the duplicate versionCode and the Actions history
+shows twin "Android CI/CD" runs every release.
+
+The dispatch form remains valid BEFORE the GitHub release exists (internal
+track testing pre-announcement; build-first mode, Step 5) and as RECOVERY if
+the release run was cancelled by mistake: pin the release ref,
 `gh workflow run android-release.yml --ref vX.Y.Z -f play-store-track=internal`
 (a bare SHA is rejected with 422, and a main-tip dispatch after the
-post-release snapshot bump fails the notes extractor on the version mismatch);
-(2) the publish job runs in the `production` environment, so it parks at an
-approval until a maintainer grants it in the Actions UI; the AAB itself is
-built and waiting by then.
+post-release snapshot bump fails the notes extractor on the version mismatch).
 
 Proof: Play Console shows the new release in review/published.
 

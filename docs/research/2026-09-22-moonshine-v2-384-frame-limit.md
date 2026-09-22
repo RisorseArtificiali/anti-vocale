@@ -29,6 +29,17 @@ RESULTS.md "2026-09-22 TASK-619" section. App-side consequence already shipped:
    dimension other than 1. 2 by 403" at enc_len 403): an export-time defect
    in the mask-bearing export generation, not a designed maximum (the graph's
    input shapes are fully dynamic in encoder_sequence_length).
+   The fragile code path is IDENTIFIED (transformers 4.49 moonshine
+   modeling, export-attempt follow-up): the decoder downsamples the encoder
+   mask itself via `mask[..., ::384][..., :mask_len]` (stride 384 = the conv
+   strides = the paper's 384) before the cross-attention mask Add. A second
+   interface fact: sherpa feeds the decoder's `encoder_attention_mask` at
+   FRAME length (`mask.resize(encoder_out.shape[1], 1)`), while the HF
+   model's contract expects it at RAW audio length. The healthy es
+   generation sidesteps the whole class: its decoder has NO mask input at
+   all (sherpa's `decoder_needs_mask_` flag exists exactly for it). A
+   re-export should drop the mask input (sherpa feeds all-ones only;
+   unmasked == all-ones masked).
 5. Control: the es export of the same 2026-02-27 line (63MB generation, and
    structurally DIFFERENT: its decoder has NO `encoder_attention_mask` input,
    which is why sherpa carries the `decoder_needs_mask_` flag) runs clean at
@@ -47,8 +58,8 @@ def drive(model_path, enc_len):
     dmodel = inputs["encoder_hidden_states"][2]
     layers = max(int(m.group(1)) for n in inputs
                  if (m := re.match(r"past_key_values\.(\d+)\.", n)))
-    nh = hd = next(sh[1], sh[3] for n, sh in inputs.items()
-                   if n.startswith("past_key_values.0.decoder.key"))
+    nh, hd = next((sh[1], sh[3]) for n, sh in inputs.items()
+                  if n.startswith("past_key_values.0.decoder.key"))
     enc = (np.random.default_rng(0).standard_normal((1, enc_len, dmodel)) * 0.1).astype(np.float32)
     feed = {"input_ids": np.array([[1]], dtype=np.int64),
             "encoder_hidden_states": enc,
@@ -66,9 +77,12 @@ def drive(model_path, enc_len):
 
 ## Where this goes upstream
 
-k2-fsa/sherpa-onnx (the export tooling for these models lives in
-`scripts/moonshine/v2/`; the mirrors are csukuangfj2/sherpa-onnx-moonshine-*):
-two findings, one issue each or one combined.
+Destinations: k2-fsa/sherpa-onnx (runtime + the repackage script; its
+`scripts/moonshine/v2/run.sh` only DOWNLOADS the quantized .ort files from
+download.moonshine.ai and rebrands them, it does not export) and
+moonshine-ai / Useful Sensors (the actual export pipeline that baked the
+defect; the mirrors are csukuangfj2/sherpa-onnx-moonshine-*). Two findings,
+one issue each or one combined.
 
 1. The mask-bearing 2026-02-27 decoder exports (uk/ar/vi at minimum; ja/zh/ko
    of the same line are suspect) fail above 384 encoder frames with an
