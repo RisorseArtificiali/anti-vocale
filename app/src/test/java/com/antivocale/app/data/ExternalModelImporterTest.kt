@@ -373,6 +373,26 @@ class ExternalModelImporterTest {
     }
 
     @Test
+    fun `an explicit modelType incoherent with the family is rejected at import time`() = runTest {
+        // Seventh review round: without this guard the pair persists and the
+        // app native-exits exit(255) at first load; resolveModelType is the
+        // one path every funnel converges on.
+        val dir = tmp.newFolder("badpair")
+        File(dir, "v3_ctc.int8.onnx").writeBytes(ByteArray(16) { 4 })
+        File(dir, "tokens.txt").writeText("<unk> 0\n")
+
+        val result = runCatching {
+            importer.importFromDirectory(dir, family = ModelFamily.TRANSDUCER, modelType = "nemo_ctc")
+        }
+
+        assertTrue(result.isFailure)
+        assertTrue(
+            "error must name the pair and the accepted values: ${result.exceptionOrNull()?.message}",
+            result.exceptionOrNull()?.message?.contains("not valid for TRANSDUCER") == true)
+        assertEquals(0, store.records().size)
+    }
+
+    @Test
     fun `disk pre-flight blocks imports larger than available space`() = runTest {
         val smallRoot = tmp.newFolder("tiny-root")
         val tightImporter = ExternalModelImporter(store, filesRoot = { smallRoot }, uuid = { "0123456789abcdef" })

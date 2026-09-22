@@ -2,8 +2,10 @@ package com.antivocale.app.testing
 
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelImportOperations
+import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.ModelFamily
+import com.antivocale.app.transcription.ModelFamilySupport
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
@@ -352,31 +354,46 @@ internal class TestSpiOps(
      * record, so a device test can chain set backend=external:<id> on it.
      */
     private suspend fun importModel(url: String?, family: String?, modelType: String?): String {
-        fun importError(message: String): String =
-            JSONObject().put("op", OP_IMPORT).put("error", message).toString()
         if (url.isNullOrBlank()) {
-            return importError("missing 'url' extra")
+            throw IllegalArgumentException("missing 'url' extra")
         }
         // TASK-618: optional family override, because URL imports are
         // detect-then-tell by design (the UI dialog owns the chooser) and a
         // headless test must be able to make the same choice the user makes.
-        val parsedFamily = family?.let { raw ->
+        // Errors are THROWN: handle()'s runCatching wrapper already renders
+        // them as the {op, error} envelope (one construction site, not four).
+        val familyOverride = family?.let { raw ->
             ModelFamily.entries.firstOrNull { it.name.equals(raw, ignoreCase = true) }
-                ?: return importError(
+                ?: throw IllegalArgumentException(
                     "unknown family '$raw' (use one of: " +
                         ModelFamily.entries.joinToString("/") { it.name } + ")")
         }
-        // model_type carries the CTC subtype (the dialog's nemo/zipformer
-        // selector): family=CTC cannot succeed without it (review round).
-        // Catalog-entry JSON carries its own family; the override would be
-        // silently dropped there, so say so instead of diverging from the
-        // dialog path the SPI mirrors (review round).
-        if (parsedFamily != null && url.trim().endsWith(".json")) {
-            return importError("family override applies to repo URLs only; entry JSON carries its own family")
+        val parsedFamily = familyOverride ?: ModelFamily.TRANSDUCER
+        // Catalog-entry JSON carries its own family AND modelType; either
+        // override would be silently dropped there, so say so instead of
+        // diverging from the dialog path the SPI mirrors. Checked BEFORE the
+        // pair validation: on an entry URL the override is the specific
+        // error, not the pair incoherence (review round). The nullable
+        // [familyOverride], not the resolved [parsedFamily], drives the
+        // test: an EXPLICIT family=TRANSDUCER on an entry URL is still an
+        // override the entry would drop (simplify round: the resolved
+        // default made it indistinguishable from absent).
+        if ((familyOverride != null || modelType != null) &&
+            ExternalModelImporter.isCatalogEntryUrl(url)
+        ) {
+            throw IllegalArgumentException(
+                "family/model_type overrides apply to repo URLs only; entry JSON carries its own")
         }
-        val record = importer.importFromUrl(
-            url, modelType = modelType,
-            family = parsedFamily ?: ModelFamily.TRANSDUCER)
+        // model_type carries the CTC subtype (the dialog's nemo/zipformer
+        // selector). Validated against the resolved family HERE (review
+        // round): the repo-URL import path never runs isValidModelType, and
+        // an incoherent pair (family=TRANSDUCER with nemo_ctc) would persist
+        // and native-exit at load, the exit(255) class, debug build or not.
+        if (modelType != null && !ModelFamilySupport.isValidModelType(parsedFamily, modelType)) {
+            throw IllegalArgumentException(
+                "model_type '$modelType' is not valid for family ${parsedFamily.name}")
+        }
+        val record = importer.importFromUrl(url, modelType = modelType, family = parsedFamily)
         return JSONObject()
             .put("op", OP_IMPORT)
             .put("record", record.toJson().put("backendId", record.backendId))

@@ -46,18 +46,25 @@ interface LogDao {
         "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs ORDER BY timestamp DESC LIMIT 500")
     fun getAll(): Flow<List<LogEntity>>
 
-    // TASK-613: callers pass likeLiteral(query); the ESCAPE clause makes the
-    // backslash the escape character, so a literal % or _ in the user's query
-    // stops acting as a wildcard (a bare "%" used to return the newest 500
-    // rows regardless of the query).
+    // TASK-613: RAW query, ESCAPE-clause-aware. Room interfaces cannot give a
+    // default-method body the @Query annotation, so the escape is owned HERE.
+    // [searchAll] is the caller-facing API (raw text in, literal match out);
+    // [searchAllRaw] exists only as its delegate. The type system cannot
+    // enforce that (a public @Query member is callable anywhere), so the
+    // guarantee is this convention plus review: a future caller reaching for
+    // searchAllRaw with user text re-opens the TASK-613 wildcard bug (a bare
+    // "%" matching the newest 500 rows regardless of the query).
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
         "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
         "ORDER BY timestamp DESC LIMIT 500")
-    fun searchAll(query: String): Flow<List<LogEntity>>
+    fun searchAllRaw(query: String): Flow<List<LogEntity>>
 
-    /** TASK-613: escapes SQL LIKE wildcards for [searchAll]'s ESCAPE clause. */
-    fun likeLiteral(query: String): String =
+    /** TASK-613: raw-text History search; LIKE wildcards match literally. */
+    fun searchAll(query: String): Flow<List<LogEntity>> = searchAllRaw(likeLiteral(query))
+
+    /** TASK-613: escapes SQL LIKE wildcards for [searchAllRaw]'s ESCAPE clause. */
+    private fun likeLiteral(query: String): String =
         query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
 
     /** Lean per-row read (GH #83 cues), fetched on expand; see the

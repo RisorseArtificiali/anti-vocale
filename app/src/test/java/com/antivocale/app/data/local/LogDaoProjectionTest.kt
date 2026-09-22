@@ -144,13 +144,15 @@ class LogDaoProjectionTest {
             failureContext = "fx", processingContext = "{}", firstPassTranscript = null,
             detectedLanguage = null, languagePin = null))
         // A bare % is not "match everything": only rows literally containing it.
-        val pct = dao.searchAll(dao.likeLiteral("%")).first()
+        // Raw text goes in: the DAO owns the escape now (review round), so the
+        // caller-facing searchAll is what must survive a wildcard query.
+        val pct = dao.searchAll("%").first()
         assertEquals(listOf("id"), pct.map { it.id })
         // An underscore is a literal, not a single-char wildcard: the fixture
         // result "r" must not match "_".
-        val und = dao.searchAll(dao.likeLiteral("_")).first()
+        val und = dao.searchAll("_").first()
         assertTrue(und.isEmpty())
         // Normal queries still work through the escape path.
-        assertEquals(listOf("id2"), dao.searchAll(dao.likeLiteral("plain")).first().map { it.id })
+        assertEquals(listOf("id2"), dao.searchAll("plain").first().map { it.id })
     }
 }

@@ -37,9 +37,9 @@ object DownloadedModelIntegrity {
         return files.mapNotNull { f ->
             when {
                 f.name.endsWith(".onnx", ignoreCase = true) -> when {
-                    f.length() < MIN_ONNX_BYTES -> Finding(f, "suspiciously small (${f.length()}B) - download truncated?")
+                    f.length() < MIN_ONNX_BYTES -> Finding(f, "suspiciously small (${f.length()}B): download truncated?")
                     f.inputStream().use { it.read() } != ONNX_FIRST_BYTE ->
-                        Finding(f, "missing ONNX header - file is not a model graph")
+                        Finding(f, "missing ONNX header: file is not a model graph")
                     else -> null
                 }
                 // GH #89 moonshine v2 ships .ort (the ORT flatbuffer format).
@@ -47,7 +47,7 @@ object DownloadedModelIntegrity {
                 // 4-byte root offset read "ORTM" (onnxruntime ort.fbs
                 // file_identifier; the uk encoder_model.ort checked by hand).
                 f.name.endsWith(".ort", ignoreCase = true) -> when {
-                    f.length() < MIN_ONNX_BYTES -> Finding(f, "suspiciously small (${f.length()}B) - download truncated?")
+                    f.length() < MIN_ONNX_BYTES -> Finding(f, "suspiciously small (${f.length()}B): download truncated?")
                     else -> {
                         // Fail-closed on a short read (review round: read() may
                         // return fewer bytes than asked). The finding fires only
@@ -71,14 +71,14 @@ object DownloadedModelIntegrity {
                             head[7] == 'M'.code.toByte()
                         val looksLikeOnnxProto = head != null && head[0] == 0x08.toByte()
                         if (!isOrtm && looksLikeOnnxProto) {
-                            Finding(f, "ONNX bytes under a .ort name - wrong format or renamed split file")
+                            Finding(f, "ONNX bytes under a .ort name: wrong format or renamed split file")
                         } else {
                             null
                         }
                     }
                 }
                 f.name.endsWith(".txt", ignoreCase = true) && f.length() < MIN_TOKENS_BYTES ->
-                    Finding(f, "token file too small (${f.length()}B) - download truncated?")
+                    Finding(f, "token file too small (${f.length()}B): download truncated?")
                 else -> null
             }
         }

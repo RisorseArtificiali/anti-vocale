@@ -34,6 +34,7 @@ class TestSpiOpsTest {
     private class FakeImporter(
         var lastUrl: String? = null,
         var lastFamily: ModelFamily? = null,
+        var lastModelType: String? = null,
         val answer: (String) -> ExternalModelRecord,
     ) : ExternalModelImportOperations {
         override suspend fun importFromTreeUri(
@@ -57,6 +58,7 @@ class TestSpiOpsTest {
         ): ExternalModelRecord {
             lastUrl = url
             lastFamily = family
+            lastModelType = modelType
             return answer("fromurl")
         }
     }
@@ -458,6 +460,37 @@ class TestSpiOpsTest {
         assertTrue(json.getString("error").contains("bogus"))
         assertTrue(json.getString("error").contains("MOONSHINE"))
         assertNull(fakeImporter.lastUrl)
+    }
+
+    @Test
+    fun `import op rejects a model type incoherent with the family`() = runTest {
+        // TASK-618 review: the pair would persist and native-exit at load.
+        val json = JSONObject(ops.handle(
+            "import", url = "http://x/repo", family = "MOONSHINE", modelType = "nemo_ctc"))
+        assertTrue(json.getString("error").contains("nemo_ctc"))
+        assertTrue(json.getString("error").contains("MOONSHINE"))
+        assertNull(fakeImporter.lastUrl)
+    }
+
+    @Test
+    fun `import op accepts a coherent model type and rejects overrides on entry json`() = runTest {
+        ops.handle("import", url = "http://x/repo", family = "CTC", modelType = "nemo_ctc")
+        assertEquals("nemo_ctc", fakeImporter.lastModelType)
+        // Entry JSON carries its own family AND modelType; either override
+        // would be silently dropped, so the SPI says so instead.
+        val json = JSONObject(ops.handle("import", url = "http://x/entry.json", modelType = "nemo_ctc"))
+        assertTrue(json.getString("error").contains("entry JSON"))
+        // Rejected BEFORE the importer: the fake still holds the previous call.
+        assertEquals("http://x/repo", fakeImporter.lastUrl)
+    }
+
+    @Test
+    fun `import op rejects an explicit TRANSDUCER family on entry json too`() = runTest {
+        // Simplify round: the resolved default made an explicit family=
+        // TRANSDUCER override indistinguishable from absent; the override
+        // would still be silently dropped by the entry.
+        val json = JSONObject(ops.handle("import", url = "http://x/entry.json", family = "TRANSDUCER"))
+        assertTrue(json.getString("error").contains("entry JSON"))
     }
 }
 

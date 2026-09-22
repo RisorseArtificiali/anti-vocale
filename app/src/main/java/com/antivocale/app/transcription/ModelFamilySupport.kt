@@ -11,7 +11,6 @@ import com.k2fsa.sherpa.onnx.OfflineSenseVoiceModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTransducerModelConfig
 import com.k2fsa.sherpa.onnx.OfflineWhisperModelConfig
 import com.k2fsa.sherpa.onnx.OfflineZipformerCtcModelConfig
-import java.io.File
 
 /** True for transducer joiner files, which also answer to GigaAM's "joint" naming. */
 private fun isJoinerLike(name: String) =
@@ -242,14 +241,18 @@ sealed interface ModelFamilySupport {
             ModelFamily.CTC -> null
         }
 
-        /** True when [modelType] is a valid record modelType for [family] (single definition). */
-        fun isValidModelType(family: ModelFamily, modelType: String): Boolean = when (family) {
-            ModelFamily.TRANSDUCER ->
-                modelType.isEmpty() || modelType == "nemo_transducer" || modelType == "conformer_transducer"
-            ModelFamily.CTC -> modelType == "nemo_ctc" || modelType == "zipformer_ctc"
+        /** The modelType strings this family accepts ("" = no subtype); the
+         *  ONE table both [isValidModelType] and error messages derive from. */
+        fun validModelTypes(family: ModelFamily): List<String> = when (family) {
+            ModelFamily.TRANSDUCER -> listOf("", "nemo_transducer", "conformer_transducer")
+            ModelFamily.CTC -> listOf("nemo_ctc", "zipformer_ctc")
             ModelFamily.WHISPER, ModelFamily.SENSE_VOICE, ModelFamily.CANARY,
-            ModelFamily.MOONSHINE, ModelFamily.DOLPHIN -> modelType.isEmpty()
+            ModelFamily.MOONSHINE, ModelFamily.DOLPHIN -> listOf("")
         }
+
+        /** True when [modelType] is a valid record modelType for [family] (single definition). */
+        fun isValidModelType(family: ModelFamily, modelType: String): Boolean =
+            modelType in validModelTypes(family)
 
         fun forFamily(family: ModelFamily): ModelFamilySupport = when (family) {
             ModelFamily.TRANSDUCER -> TransducerSupport
@@ -684,48 +687,82 @@ object MoonshineSupport : ModelFamilySupport {
 
     /** Union of both generations' canonical names (plus tokens); the
      *  files-aware narrowing below picks the generation actually present. */
-    // Documentation/test union, DERIVED from the generation lists (review
+    // Documentation/test union, DERIVED from the published lists (review
     // round: a hand-maintained third copy is what nothing in production
-    // reads, so it rots silently).
-    override fun requiredRoles(): List<String> =
-        (rolesForGeneration(true) + rolesForGeneration(false)).distinct()
+    // reads, so it rots silently). Nothing in the import or load path reads
+    // this; requiredRolesFor(files) is the live narrowing.
+    override fun requiredRoles(): List<String> = (V2_PUBLISHED + V1_PUBLISHED).distinct()
+
+    /** Container-gated role-name test (review round): the ONE predicate
+     *  shared with ModelFamilyDetector's truncated-set guard, which used to
+     *  carry its own copy of the six constants. Sidecar rationale on
+     *  [isContainerSegment]. */
+    internal fun isRoleName(name: String): Boolean =
+        name.isContainerSegment(ROLE_SEGMENTS)
+
+    /** One container gate + segment matcher for the plan-side role lookups
+     *  (isRoleName, byRole). The gate exists because a split-ONNX sidecar
+     *  (encode.int8.onnx.data) or a same-stem note file shares the first
+     *  segment: a plan role must resolve to a real container, and a
+     *  truncated-set guard must not fire on sidecars. Generation INFERENCE
+     *  (v2Generation below) deliberately does NOT use this gate; see there.
+     *  A future container-extension change edits this line only. */
+    private fun String.isContainerSegment(segments: Set<String>): Boolean =
+        (endsWith(".onnx", ignoreCase = true) || endsWith(".ort", ignoreCase = true)) &&
+            substringBefore('.').lowercase() in segments
+
+    private val ROLE_SEGMENTS = setOf(
+        V2_ROLE_ENCODER, V2_ROLE_MERGED_DECODER,
+        V1_ROLE_PREPROCESSOR, V1_ROLE_ENCODER,
+        V1_ROLE_UNCACHED_DECODER, V1_ROLE_CACHED_DECODER,
+    )
 
     // Generation selection has TWO predicates by design: the PLAN is strict
     // (a v2 import needs BOTH .ort files), while generation INFERENCE answers
     // "which shape is this folder" even when incomplete, so error messages
     // never send a v2 folder chasing v1 files. This is the single inference
     // definition; both callers below share it.
-    /** Model containers only (verification round): a split-ONNX sidecar
-     *  (encode.int8.onnx.data) or a same-basename note file shares the first
-     *  segment and would win the role otherwise. */
-    private fun Collection<String>.byRole(role: String): String? = firstOrNull {
-        (it.endsWith(".onnx", ignoreCase = true) || it.endsWith(".ort", ignoreCase = true)) &&
-            it.substringBefore('.').equals(role, ignoreCase = true)
-    }
+    /** Model containers only (verification round); rationale on
+     *  [isContainerSegment]. */
+    private fun Collection<String>.byRole(role: String): String? =
+        firstOrNull { it.isContainerSegment(setOf(role)) }
 
+    // STEM-ONLY, deliberately ungated (seventh review round): the plan-side
+    // lookups are container-gated, but inference must answer "which shape is
+    // this folder" even when the containers were lost and only split-file
+    // sidecars survive (encoder_model.onnx.data still carries the v2 stem),
+    // so the missing-files error keeps naming the v2 set instead of sending
+    // a v2 folder chasing v1 files. The inference-vs-plan split is the
+    // object comment above.
+    private val V2_SEGMENTS = setOf(V2_ROLE_ENCODER, V2_ROLE_MERGED_DECODER)
     private fun v2Generation(names: Iterable<String>): Boolean =
-        names.any {
-            it.substringBefore('.').let { role ->
-                role.equals(V2_ROLE_ENCODER, ignoreCase = true) ||
-                    role.equals(V2_ROLE_MERGED_DECODER, ignoreCase = true)
-            }
-        }
+        names.any { it.substringBefore('.').lowercase() in V2_SEGMENTS }
 
-    // User-facing fallback names (verification round): carry the
-    // generation's published extension so the missing-files error names
-    // files that can exist, not bare role stems.
-    private fun rolesForGeneration(v2: Boolean): List<String> =
-        if (v2) listOf("$V2_ROLE_ENCODER.ort", "$V2_ROLE_MERGED_DECODER.ort", SherpaBackend.CANONICAL_TOKENS)
-        else listOf(
-            "$V1_ROLE_PREPROCESSOR.onnx", "$V1_ROLE_ENCODER.int8.onnx",
-            "$V1_ROLE_UNCACHED_DECODER.int8.onnx", "$V1_ROLE_CACHED_DECODER.int8.onnx",
-            SherpaBackend.CANONICAL_TOKENS,
-        )
+    // The generations' published spellings: ONE definition each (seventh
+    // review round killed the emptyList()-means-published dual mode).
+    private val V2_PUBLISHED = listOf(
+        "$V2_ROLE_ENCODER.ort", "$V2_ROLE_MERGED_DECODER.ort", SherpaBackend.CANONICAL_TOKENS)
+    private val V1_PUBLISHED = listOf(
+        "$V1_ROLE_PREPROCESSOR.onnx", "$V1_ROLE_ENCODER.int8.onnx",
+        "$V1_ROLE_UNCACHED_DECODER.int8.onnx", "$V1_ROLE_CACHED_DECODER.int8.onnx",
+        SherpaBackend.CANONICAL_TOKENS,
+    )
+
+    // User-facing fallback names: the generation's published spelling, or
+    // the file ACTUALLY present for that role when the folder carries a
+    // non-canonical extension (an .onnx-flavored v2 export's error must
+    // name encoder_model.onnx, not the .ort spelling it does not use)
+    // (verification + review rounds: extensions derived, never hardcoded
+    // against the set).
+    private fun rolesForGeneration(v2: Boolean, files: List<String>): List<String> =
+        (if (v2) V2_PUBLISHED else V1_PUBLISHED).map { published ->
+            files.byRole(published.substringBefore('.')) ?: published
+        }
 
     // The interface default supplies the plan keys; only the INCOMPLETE-set
     // fallback is moonshine-specific (generation inference, not the union).
     override fun requiredRolesFor(files: List<String>): List<String> =
-        buildCopyPlan(files)?.keys?.toList() ?: rolesForGeneration(v2Generation(files))
+        buildCopyPlan(files)?.keys?.toList() ?: rolesForGeneration(v2Generation(files), files)
 
     override fun buildCopyPlan(files: List<String>): Map<String, String>? {
         val tokens = pickTokens(files) ?: return null

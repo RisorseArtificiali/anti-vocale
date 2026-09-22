@@ -68,24 +68,15 @@ object ModelFamilyDetector {
         // _Exit(-1) at first load. The v2 names (encoder_model.* /
         // decoder_model_merged.*) DO contain "encoder", so both generations
         // reach this guard through one tell.
-        // Tight tells only (review round): the family's own role constants
-        // (single definition with the plan, so a future role rename cannot
-        // leave this list stale), so a stray session.ort or an unrelated
-        // "preprocessing-notes.txt" sidecar cannot flip a clean CTC detection
-        // into the chooser. The verification round caught "encode" missing
-        // here: a v1 folder reduced to encode+tokens imported as CTC and
-        // died at native load, the exact class this guard exists for.
-        val moonshineNames = files.any { f ->
-            (f.endsWith(".onnx", ignoreCase = true) || f.endsWith(".ort", ignoreCase = true)) &&
-                f.substringBefore('.').let { role ->
-            role.equals(MoonshineSupport.V1_ROLE_PREPROCESSOR, ignoreCase = true) ||
-                role.equals(MoonshineSupport.V1_ROLE_ENCODER, ignoreCase = true) ||
-                role.equals(MoonshineSupport.V1_ROLE_UNCACHED_DECODER, ignoreCase = true) ||
-                role.equals(MoonshineSupport.V1_ROLE_CACHED_DECODER, ignoreCase = true) ||
-                role.equals(MoonshineSupport.V2_ROLE_ENCODER, ignoreCase = true) ||
-                role.equals(MoonshineSupport.V2_ROLE_MERGED_DECODER, ignoreCase = true)
-                }
-        }
+        // Tight tells only (review round): MoonshineSupport::isRoleName, the
+        // same container-gated role test the plan uses (single definition,
+        // so a future role rename cannot leave this list stale), so a stray
+        // session.ort or an unrelated "preprocessing-notes.txt" sidecar
+        // cannot flip a clean CTC detection into the chooser. The
+        // verification round caught "encode" missing here: a v1 folder
+        // reduced to encode+tokens imported as CTC and died at native load,
+        // the exact class this guard exists for.
+        val moonshineNames = files.any(MoonshineSupport::isRoleName)
         // MOONSHINE joins the offered picks only when a moonshine-shaped file
         // is actually present: a pick whose import can only fail is noise.
         if (soleDetected == ModelFamily.CTC &&

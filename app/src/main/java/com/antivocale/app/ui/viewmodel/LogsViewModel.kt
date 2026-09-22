@@ -178,7 +178,7 @@ class LogsViewModel @Inject constructor(
     val filteredLogs: StateFlow<List<LogEntry>> =
         _searchQuery.flatMapLatest { query ->
             if (query.isBlank()) logDao.getAll()
-            else logDao.searchAll(logDao.likeLiteral(query))
+            else logDao.searchAll(query)
         }.map { entities -> entities.map { it.toLogEntry() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
