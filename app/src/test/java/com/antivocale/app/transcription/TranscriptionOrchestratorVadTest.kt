@@ -388,4 +388,26 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             segmentsSlot.captured,
         )
     }
+
+    @Test
+    fun `progressive segment timeout aborts the run at the first wedged segment`() = runTest {
+        // TASK-606 F2: the VAD loop's old shape counted the failure and kept
+        // going, one full generation ceiling per remaining segment.
+        val chunk1 = FloatArray(100) { 1.0f }
+        val chunk2 = FloatArray(100) { 2.0f }
+        val chunk3 = FloatArray(100) { 3.0f }
+        stubVadPreprocessing(listOf(chunk1, chunk2, chunk3))
+        var calls = 0
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            calls++
+            Result.failure(com.antivocale.app.manager.EngineWedgeTimeoutException("LiteRT audio generation timed out after 300s"))
+        }
+
+        val result = runProcessRequest(scope = this)
+
+        assertTrue(result.isFailure)
+        assertTrue("expected the wedge abort, got: ${result.exceptionOrNull()?.message}",
+            result.exceptionOrNull()?.message?.contains("wedged") == true)
+        assertEquals("the run stops at the first timed-out segment", 1, calls)
+    }
 }

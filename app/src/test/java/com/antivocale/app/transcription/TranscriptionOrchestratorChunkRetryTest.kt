@@ -278,4 +278,67 @@ class TranscriptionOrchestratorChunkRetryTest : TranscriptionOrchestratorTestBas
         assertTrue(result.isPartial)
         assertEquals(2, result.failedChunkCount)
     }
+
+    // ---- TASK-606 F2: wedge aborts on generation timeouts ----
+
+    @Test
+    fun `pipeline - a chunk generation timeout aborts the run without a GC retry`() = runTest {
+        stubPipelineStream(chunkCount = 3)
+        var calls = 0
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            calls++
+            Result.failure(com.antivocale.app.manager.EngineWedgeTimeoutException("LiteRT audio generation timed out after 300s"))
+        }
+
+        val result = runPipelineRequest()
+
+        assertTrue(result.isFailure)
+        val msg = result.exceptionOrNull()?.message.orEmpty()
+        assertTrue("expected the wedge abort, got: $msg", msg.contains("wedged"))
+        // The stream aborts at the FIRST timed-out chunk: no GC retry (the
+        // old second full ceiling) and no decode of the remaining chunks.
+        assertEquals("wedge aborts at the first chunk, no retry, no continuation", 1, calls)
+    }
+
+    @Test
+    fun `pipeline - a plain timeout on a responsive engine is retried, not aborted`() = runTest {
+        // TASK-606 F2 discrimination: only the wedge MARKER aborts the run.
+        // A plain TimeoutException (slow generation whose native cancel came
+        // back) keeps the historical GC-retry path.
+        stubPipelineStream(chunkCount = 2)
+        var calls = 0
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            calls++
+            if (calls == 1) {
+                Result.failure(java.util.concurrent.TimeoutException("slow but alive engine"))
+            } else {
+                Result.success(TranscriptionResult(text = "recovered"))
+            }
+        }
+
+        val result = runPipelineRequest()
+
+        assertTrue("Expected success: ${result.exceptionOrNull()}", result.isSuccess)
+        // chunk0 (timeout) + chunk0-retry + chunk1 = 3: the retry happened.
+        assertEquals("the plain timeout was retried once", 3, calls)
+    }
+
+    @Test
+    fun `parallel - a chunk generation timeout aborts the run, never retries`() = runTest {
+        stubParallelPreprocessing(chunkCount = 4)
+        var calls = 0
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            calls++
+            Result.failure(com.antivocale.app.manager.EngineWedgeTimeoutException("LiteRT audio generation timed out after 300s"))
+        }
+
+        val result = runPipelineRequest()
+
+        assertTrue(result.isFailure)
+        assertTrue("expected the wedge abort, got: ${result.exceptionOrNull()?.message}",
+            result.exceptionOrNull()?.message?.contains("wedged") == true)
+        // Every chunk at most once: a retry (the second ceiling per chunk)
+        // would push the count past the chunk total.
+        assertTrue("wedge must abort before retries (calls=$calls)", calls <= 4)
+    }
 }

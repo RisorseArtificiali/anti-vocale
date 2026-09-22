@@ -38,6 +38,20 @@ import javax.inject.Singleton
  * - Audio transcription (multimodal)
  * - Keep-alive timeout for automatic unloading
  */
+/**
+ * TASK-606: the wedge marker. Extends TimeoutException so existing
+ * timeout-shaped matching keeps working, but the chunk loops and the
+ * summarize ladder dispatch on THIS subtype: a plain TimeoutException
+ * (a healthy-but-slow generation whose native cancel returned promptly)
+ * is an ordinary failure worth a GC retry, while this marker means the
+ * engine itself stopped responding and the run must abort. This class
+ * must stay ABOVE LlmManager's annotations: a class inserted between
+ * @Singleton and the decorated class silently steals the annotation
+ * (fifteenth review, bytecode-verified on the Dagger component).
+ */
+class EngineWedgeTimeoutException(message: String) :
+    java.util.concurrent.TimeoutException(message)
+
 @Singleton
 open class LlmManager @Inject constructor(
     // Shared process-lifetime scope (TASK-438; see [ApplicationScope]) for the
@@ -54,12 +68,39 @@ open class LlmManager @Inject constructor(
     @Volatile
     internal var generationTimeoutMs: Long = DEFAULT_GENERATION_TIMEOUT_MS
 
+    /**
+     * TASK-606 F8: cross-attempt wedge memory. Set the first time a
+     * generation ceiling fires (LiteRT) or the MediaPipe deadline passes;
+     * every later generation fails fast instead of burning another full
+     * ceiling on an engine that already proved wedged (the summarize
+     * ladder's second instruction, the remaining audio chunks, the retry
+     * arms). Cleared only by a successful [initialize]: a re-init is the
+     * one recovery action that plausibly unwedges the engine.
+     */
+    @VisibleForTesting
+    @Volatile
+    internal var engineWedged: Boolean = false
+
+    /** TASK-606 F9: the deadline for one native cancelProcess attempt.
+     *  Injectable for the unit test (the generationTimeoutMs precedent). */
+    @VisibleForTesting
+    @Volatile
+    internal var nativeCancelTimeoutMs: Long = DEFAULT_NATIVE_CANCEL_TIMEOUT_MS
+
+    /** TASK-606 (round 15): wedged engines leaked by teardownNative this
+     *  process; surfaced in the wedge message because the remedy (restart)
+     *  is a user action. */
+    private var wedgedLeaks: Int = 0
+
     companion object {
         private const val TAG = "LlmManager"
         /** TASK-520: per-call ceiling for one LiteRT generation. Generous
          * because on-device summaries legitimately take minutes; the value
          * exists so a hung stream becomes a failure, not a frozen service. */
         private const val DEFAULT_GENERATION_TIMEOUT_MS = 5 * 60_000L
+        /** TASK-606 F9: generous for a healthy engine's cancel, short
+         *  against a wedged one (the abandoned thread is the cost). */
+        private const val DEFAULT_NATIVE_CANCEL_TIMEOUT_MS = 5_000L
         private const val MAX_TOKENS = 2048
 
         // Single source of truth for the LiteRT conversation/sampler config of TEXT chat,
@@ -206,11 +247,21 @@ open class LlmManager @Inject constructor(
      * @param path Absolute path to the model file (.litertlm or .task)
      * @return Result.success if initialization succeeded
      */
+    @Synchronized
     fun initialize(context: Context, path: String): Result<Unit> {
         if (isInitialized) {
-            Log.w(TAG, "Model already initialized, resetting keep-alive timer")
-            resetKeepAliveTimer()
-            return Result.success(Unit)
+            if (engineWedged) {
+                // TASK-606 F3: the advertised recovery must be reachable. A
+                // wedged engine must not early-return READY: tear it down
+                // (unload skips the native close on a wedged engine, see
+                // below) and run a full initialize in its place.
+                Log.w(TAG, "Engine is wedged; forcing re-initialization")
+                unload()
+            } else {
+                Log.w(TAG, "Model already initialized, resetting keep-alive timer")
+                resetKeepAliveTimer()
+                return Result.success(Unit)
+            }
         }
 
         Log.i(TAG, "Initializing model from: $path")
@@ -278,6 +329,9 @@ open class LlmManager @Inject constructor(
 
             currentBackend = Backend.LITERT_LM
             modelPath = path
+            // TASK-606 F8: a fresh successful initialize is the one recovery
+            // action that plausibly unwedges the engine.
+            engineWedged = false
             isInitialized = true
             _isReady.value = true
             keepAlive.start()
@@ -319,6 +373,7 @@ open class LlmManager @Inject constructor(
 
             currentBackend = Backend.MEDIAPIPE_GENAI
             modelPath = path
+            engineWedged = false
             isInitialized = true
             _isReady.value = true
             keepAlive.start()
@@ -339,6 +394,7 @@ open class LlmManager @Inject constructor(
      * @return Result containing the generated text
      */
     suspend fun generateText(prompt: String): Result<String> = withContext(Dispatchers.IO) {
+        if (engineWedged) return@withContext Result.failure(wedgedFailure())
         if (!isInitialized) {
             return@withContext Result.failure(IllegalStateException("Model not initialized"))
         }
@@ -382,26 +438,68 @@ open class LlmManager @Inject constructor(
         // the block (withTimeoutOrNull semantics), misread as a timeout.
         withTimeoutOrNull(generationTimeoutMs.coerceAtLeast(1L)) { block() }
     } catch (e: CancellationException) {
-        cancelNativeQuietly(cancel, "caller cancellation")
+        // The caller is already cancelling, so the deadline cannot be
+        // honored here (join() throws at entry); run the cancel unbounded
+        // and surface a native Error as suppressed (TASK-594 F1: it must
+        // not vanish under a user or service cancellation).
+        runCatching { cancelWithDeadline(cancel, "caller cancellation") }
+            .getOrNull()?.error?.let { e.addSuppressed(it) }
         throw e
     }.also {
-        if (it == null) cancelNativeQuietly(cancel, "timeout")
+        if (it == null) {
+            val outcome = cancelWithDeadline(cancel, "timeout")
+            // TASK-606 F2: only a cancel that did NOT come back marks the
+            // engine wedged; a prompt cancel on a ceiling fire means a slow
+            // generation, which a plain GC retry may still complete.
+            if (!outcome.returned) engineWedged = true
+            // TASK-594 F1 preserved: a native Error from the cancel escapes
+            // to the caller instead of dying on the manager scope.
+            outcome.error?.let { throw it }
+        }
     }
 
+    /** TASK-606 F8: the fail-fast failure every wedged entry returns. */
+    private fun wedgedFailure(): EngineWedgeTimeoutException = EngineWedgeTimeoutException(
+        "LLM engine is wedged after a generation timeout; re-initialize the model to retry" +
+            if (wedgedLeaks > 0) " ($wedgedLeaks leaked engine(s) this process; restart the app)" else "")
+
     /**
-     * TASK-594: one cancel attempt, both failure paths. A native Error from
-     * cancelProcess is the engine-corruption class the audio path's
-     * catch(e: Error) exists for, so it RETHROWS instead of being swallowed
-     * (review F1: a swallowed Error left caughtNativeError false and the
-     * finally re-entered a corrupt engine). Exceptions log and vanish: a
-     * closed-underneath conversation must not mask the primary outcome.
+     * TASK-606 F9 + F2: one native cancel under a deadline. Returns TRUE when
+     * the cancel returned promptly (the engine is responsive: a ceiling fire
+     * on such an engine is a slow generation, not a wedge), FALSE when it was
+     * abandoned or failed (the engine is not responding: the caller marks it
+     * wedged). A native [Error] from the cancel is captured for the caller to
+     * rethrow, preserving the TASK-594 F1 contract (the audio path's
+     * catch(Error) skips the corrupt engine); it cannot propagate from the
+     * manager-scope job by itself.
      */
-    private fun cancelNativeQuietly(cancel: () -> Unit, cause: String) {
-        try {
-            cancel()
-        } catch (e: Exception) {
-            Log.w(TAG, "native generation cancel after $cause failed", e)
+    private class CancelOutcome(val returned: Boolean, val error: Error?)
+
+    private suspend fun cancelWithDeadline(cancel: () -> Unit, cause: String): CancelOutcome {
+        // The cancel itself can block on the wedged engine's internal lock
+        // (cancelProcess is synchronous native): dispatch it with a deadline
+        // and ABANDON it if it does not return. The abandoned job's thread
+        // keeps grinding alone, which beats freezing the caller one ceiling
+        // later (a leaked thread beats a frozen service).
+        // AtomicReference: on the abandon path the caller reads the holder
+        // with no happens-before edge to the still-running worker; a plain
+        // captured var would be a data race (round 15/16 finding).
+        val holder = java.util.concurrent.atomic.AtomicReference<Error?>(null)
+        val job = managerScope.launch(Dispatchers.IO) {
+            try {
+                cancel()
+            } catch (e: Error) {
+                holder.set(e)
+            } catch (e: Exception) {
+                Log.w(TAG, "native generation cancel after $cause failed", e)
+            }
         }
+        val done = withTimeoutOrNull(nativeCancelTimeoutMs) { job.join() }
+        if (done == null) {
+            Log.w(TAG, "native generation cancel after $cause did not return in " +
+                "${nativeCancelTimeoutMs}ms; abandoning it (thread leaks, caller proceeds)")
+        }
+        return CancelOutcome(returned = done != null && holder.get() == null, error = holder.get())
     }
 
     /**
@@ -426,8 +524,17 @@ open class LlmManager @Inject constructor(
         }
         if (completed == null) {
             Log.e(TAG, "LiteRT $label generation timed out after ${generationTimeoutMs / 1000}s")
-            Result.failure(TimeoutException(
-                "LiteRT $label generation timed out after ${generationTimeoutMs / 1000}s"))
+            // TASK-606 F2 discrimination: withGenerationCeiling marked the
+            // engine wedged ONLY when the native cancel did not come back
+            // (a stuck engine). A prompt cancel on a ceiling fire means a
+            // slow generation: the plain timeout keeps the GC retry path.
+            if (engineWedged) {
+                Result.failure(EngineWedgeTimeoutException(
+                    "LiteRT $label generation timed out after ${generationTimeoutMs / 1000}s"))
+            } else {
+                Result.failure(TimeoutException(
+                    "LiteRT $label generation timed out after ${generationTimeoutMs / 1000}s"))
+            }
         } else {
             Result.success(response.toString())
         }
@@ -454,11 +561,45 @@ open class LlmManager @Inject constructor(
      * Generates text using MediaPipe backend.
      */
     private suspend fun generateTextMediaPipe(prompt: String): Result<String> {
+        // TASK-606 F3: MediaPipe's generateResponse is a blocking call with no
+        // native cancel, so a hang holds the delivery hostage forever. Await
+        // it under the same generation ceiling; on timeout ABANDON the worker
+        // thread (it keeps grinding alone) and mark the engine wedged so every
+        // later generation fails fast instead of burning another ceiling.
+        val inference = mediapipeInference
+            ?: return Result.failure(IllegalStateException("MediaPipe inference not available"))
+        val deferred = managerScope.async(Dispatchers.IO) { inference.generateResponse(prompt) }
         return try {
-            val result = mediapipeInference?.generateResponse(prompt)
-                ?: return Result.failure(IllegalStateException("MediaPipe inference not available"))
+            val result = withTimeoutOrNull(generationTimeoutMs.coerceAtLeast(1L)) { deferred.await() }
+            if (result == null) {
+                Log.e(TAG, "MediaPipe generation timed out after ${generationTimeoutMs / 1000}s; " +
+                    "abandoning the worker thread")
+                // A still-queued job must not start later on the engine we
+                // just declared wedged (round 16).
+                deferred.cancel()
+                engineWedged = true
+                return Result.failure(EngineWedgeTimeoutException(
+                    "MediaPipe generation timed out after ${generationTimeoutMs / 1000}s"))
+            }
             Log.d(TAG, "MediaPipe generation complete: ${result.length} chars")
             Result.success(result)
+        } catch (e: CancellationException) {
+            // Cancellation always propagates (the withGenerationCeiling
+            // contract): swallowing it here would misclassify a user cancel
+            // as a generation failure and exit the keep-alive bracket while
+            // the abandoned worker still runs the shared session. The worker
+            // IS abandoned (the blocking call has no cancel), so the engine
+            // is marked wedged: unload() must not close the shared session
+            // underneath it, and the next call must not run concurrently.
+            deferred.cancel()
+            // Deliberately NOT wedging on a caller cancellation (round 16:
+            // a routine cancel must not latch a permanent fail-fast on a
+            // healthy engine, and the LiteRT path does not either). The
+            // blocking call has no cancel, so the worker keeps running on
+            // the shared session; the accepted residual risk (a concurrent
+            // next call or an unload underneath it) predates this change on
+            // this deprecated fallback backend.
+            throw e
         } catch (e: Exception) {
             Log.e(TAG, "MediaPipe text generation failed", e)
             Result.failure(e)
@@ -480,6 +621,9 @@ open class LlmManager @Inject constructor(
      */
     suspend fun generateFromAudio(prompt: String, audioData: ByteArray): Result<String> = audioMutex.withLock {
         withContext(Dispatchers.IO) {
+            if (engineWedged) {
+                return@withContext Result.failure(wedgedFailure())
+            }
             if (!isInitialized) {
                 return@withContext Result.failure(IllegalStateException("Model not initialized"))
             }
@@ -588,16 +732,23 @@ open class LlmManager @Inject constructor(
             Log.e(TAG, "LiteRT native error", e)
             outcome = Result.failure(IllegalStateException("Native error during audio processing: ${e.message}", e))
         } finally {
-            // ALWAYS release the fresh conversation (safe helper swallows double-close).
-            closeConversationSafe(freshConversation)
+            // Release the fresh conversation (safe helper swallows double-close).
+            // TASK-606: on a WEDGED engine even this close is skipped: the
+            // abandoned cancelProcess was issued against THIS conversation
+            // and may still be inside it (a close would race it).
+            if (!engineWedged) closeConversationSafe(freshConversation)
             freshConversation = null
-            if (caughtNativeError) {
-                // After a native Error the engine/runtime may be corrupt — do NOT re-enter
+            if (caughtNativeError || engineWedged) {
+                // After a native Error the engine/runtime may be corrupt: do NOT re-enter
                 // native here (createConversation), or a second crash could escape `finally`
                 // (its inner catch is Exception-only) and suppress the captured `outcome`.
                 // litertConversation is already null (set at entry), so the next caller sees a
                 // clean "not available" rather than risking another native crash.
-                Log.w(TAG, "Skipping main-conversation restore after native error (engine may be unstable)")
+                // TASK-606 F4: the same skip applies to a WEDGED engine: an
+                // abandoned cancelProcess may still be inside the engine, and
+                // close()/createConversation() here would race it under
+                // audioMutex with no ceiling (the frozen-caller class again).
+                Log.w(TAG, "Skipping main-conversation restore after native error or wedge (engine may be unstable)")
             } else {
                 // Recreate a valid main conversation so the next chunk/retry starts from a
                 // valid state on BOTH success and ordinary-exception paths.
@@ -626,7 +777,12 @@ open class LlmManager @Inject constructor(
     /**
      * Checks if the model is ready for inference.
      */
-    open fun isReady(): Boolean = isInitialized && (litertEngine != null || mediapipeInference != null)
+    open fun isReady(): Boolean =
+        // TASK-606 (round 16): a WEDGED engine is not ready. The
+        // readiness-gated reload paths (ensureBackendLoaded, the preload
+        // receiver) then run initialize(), whose wedged branch tears down
+        // and re-initializes: the recovery the wedge message promises.
+        !engineWedged && isInitialized && (litertEngine != null || mediapipeInference != null)
 
     /**
      * Checks if audio processing is available.
@@ -652,23 +808,51 @@ open class LlmManager @Inject constructor(
     /**
      * Unloads the model from memory.
      */
+    @Synchronized
     open fun unload() {
         Log.i(TAG, "Unloading model")
 
         keepAlive.stop()
 
-        // Close LiteRT resources (use safe helper — never throws on double-close)
-        closeConversationSafe(litertConversation)
+        // TASK-606 F5: on a WEDGED engine the native close is skipped on
+        // purpose: an abandoned cancel or generateResponse may still be
+        // inside the native objects, and the close paths carry no in-flight
+        // drain (a native use-after-close crash). The wedged engine's memory
+        // leaks until the process restarts; a leak beats a native crash on
+        // an engine that is unusable anyway.
+        teardownNative()
+    }
+
+    /**
+     * TASK-606 F5 + R7 (round 15): the one teardown for unload() and
+     * performAutoUnload(). On a WEDGED engine every native close is skipped
+     * on purpose: an abandoned cancelProcess or generateResponse may still
+     * be inside the objects, and the close paths carry no in-flight drain
+     * (native use-after-close). The wedged engine's memory then leaks until
+     * the process restarts; the leak counter surfaces the stacking in the
+     * wedge message so the "restart the app" advice is visible.
+     */
+    private fun teardownNative() {
+        val skipNativeClose = engineWedged
+        if (skipNativeClose) {
+            wedgedLeaks++
+            Log.w(TAG, "Engine is wedged: skipping native close (leak #$wedgedLeaks " +
+                "this process; restart the app to reclaim it)")
+        }
+
+        // Close LiteRT resources (use safe helper, never throws on double-close)
+        if (!skipNativeClose) closeConversationSafe(litertConversation)
         litertConversation = null
-        litertEngine?.close()
+        if (!skipNativeClose) litertEngine?.close()
         litertEngine = null
 
         // Close MediaPipe inference
-        mediapipeInference?.close()
+        if (!skipNativeClose) mediapipeInference?.close()
         mediapipeInference = null
 
         modelPath = null
         isInitialized = false
+        engineWedged = false
         _isReady.value = false
         currentBackend = null
     }
@@ -688,18 +872,7 @@ open class LlmManager @Inject constructor(
         // the documented re-arm race (work queued during the unload window)
         // can fire a second time on already-unloaded state. Idempotent no-op.
         if (!isInitialized) return
-        closeConversationSafe(litertConversation)
-        litertConversation = null
-        litertEngine?.close()
-        litertEngine = null
-
-        mediapipeInference?.close()
-        mediapipeInference = null
-
-        modelPath = null
-        isInitialized = false
-        _isReady.value = false
-        currentBackend = null
+        teardownNative()
 
         onAutoUnloadCallback.get()?.let { callback ->
             managerScope.launch(Dispatchers.Main) {

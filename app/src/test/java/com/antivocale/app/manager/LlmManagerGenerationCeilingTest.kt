@@ -2,6 +2,7 @@ package com.antivocale.app.manager
 
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -23,7 +24,7 @@ class LlmManagerGenerationCeilingTest {
     )
 
     @Test
-    fun `a hung generation returns null and cancels the native call`() = runTest {
+    fun `a hung generation returns null and cancels the native call`() = runBlocking {
         manager.generationTimeoutMs = 50
         var cancelled = 0
         val outcome = manager.withGenerationCeiling(cancel = { cancelled++ }) {
@@ -44,7 +45,7 @@ class LlmManagerGenerationCeilingTest {
     }
 
     @Test
-    fun `a failing cancel does not mask the timeout`() = runTest {
+    fun `a failing cancel does not mask the timeout`() = runBlocking {
         manager.generationTimeoutMs = 50
         val outcome = manager.withGenerationCeiling(cancel = { throw IllegalStateException("native gone") }) {
             awaitCancellation()
@@ -68,7 +69,7 @@ class LlmManagerGenerationCeilingTest {
     }
 
     @Test
-    fun `caller cancellation cancels the native generation before escaping`() = runTest {
+    fun `caller cancellation cancels the native generation before escaping`() = runBlocking {
         var cancelled = 0
         try {
             manager.withGenerationCeiling(cancel = { cancelled++ }) {

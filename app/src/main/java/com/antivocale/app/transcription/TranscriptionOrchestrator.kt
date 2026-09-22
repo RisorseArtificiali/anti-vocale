@@ -3,6 +3,7 @@ package com.antivocale.app.transcription
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.R
+import com.antivocale.app.manager.EngineWedgeTimeoutException
 import com.antivocale.app.util.DecodedOfTotalFormat
 import com.antivocale.app.audio.AudioDurationPolicy
 import com.antivocale.app.audio.AudioPreprocessor
@@ -88,6 +89,11 @@ class TranscriptionOrchestrator @Inject constructor(
          */
         internal fun userFacingErrorMessage(context: Context, error: Throwable): String {
             return when (error) {
+                is WedgeAbortException ->
+                    // TASK-606 F8: the abort's own message is English diagnostics;
+                    // the notification and the Tasker reply carry the localized
+                    // generic failure (the technical detail stays in logcat).
+                    context.getString(R.string.transcription_failed)
                 is TranscriptionException.ModelLoadError ->
                     // The heal path (TASK-479) carries the actionable
                     // "corrupt files removed, re-download" instruction;
@@ -499,7 +505,15 @@ class TranscriptionOrchestrator @Inject constructor(
             val errorMsg = e.message ?: "Unknown error"
             persistFailureContext(taskId, e, context)
             logError(taskId, errorMsg)
-            listener.onError(taskId, "PROCESSING_ERROR", errorMsg, isShareRequest, false, duration)
+            // TASK-606 R5 (round 15): route through the shared funnel (its
+            // WedgeAbortException arm carries the localized string; every
+            // other error keeps the raw message this catch always sent).
+            val userMsg = if (e is WedgeAbortException) {
+                userFacingErrorMessage(context, e)
+            } else {
+                errorMsg
+            }
+            listener.onError(taskId, "PROCESSING_ERROR", userMsg, isShareRequest, false, duration)
             return Result.failure(e)
         } finally {
             if (backendOverride != null) {
@@ -747,7 +761,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 partials += candidate
             } else {
                 val failure = generated.exceptionOrNull()
-                if (failure is java.util.concurrent.TimeoutException) {
+                if (failure is EngineWedgeTimeoutException) {
                     // TASK-594 circuit breaker: a timeout means the engine is
                     // wedged, not that this chunk is hard; grinding the
                     // remaining chunks at one ceiling each turns a hang into
@@ -1930,6 +1944,12 @@ class TranscriptionOrchestrator @Inject constructor(
                     if (detectedLang == null) detectedLang = tr.detectedLanguage
                 },
                 onFailure = { error ->
+                    if (error is EngineWedgeTimeoutException) {
+                        // TASK-606 F2: wedged engine; each remaining segment
+                        // would burn a full generation ceiling for nothing.
+                        Log.e(TAG, "Segment $segNumber/$chunkCount timed out; engine wedged, aborting the run")
+                        return Result.failure(WedgeAbortException(error))
+                    }
                     failedSegments++
                     Log.e(TAG, "Segment $segNumber/$chunkCount failed", error)
                 }
@@ -2054,6 +2074,15 @@ class TranscriptionOrchestrator @Inject constructor(
         var failedChunks = 0
         var blankChunks = 0
 
+        // TASK-606 F1: the timer is cancelled in a FINALLY: a WedgeAbort (or
+        // any throw) out of the scope below used to orphan the infinite
+        // progress timer, and a live child kept the per-task job from
+        // completing, deadlocking the service queue on taskJob.join().
+        // TASK-606 (round 16): hoisted so the post-scope return can read them.
+        var wedge: Throwable? = null
+        var wedgeResult: Result<TranscriptionResult>? = null
+
+        try {
         coroutineScope {
             val deferredResults = chunks.mapIndexed { index, chunk ->
                 async {
@@ -2076,7 +2105,14 @@ class TranscriptionOrchestrator @Inject constructor(
             val progressiveText = if (progressiveEnabled) StringBuilder() else null
             var seedText = ""
 
+            // TASK-606 (round 16): a wedge is recorded and the run RETURNs a
+            // failure like the VAD twin (the old throw escaped
+            // processAudioRequest, bypassed the dual-model recoverFirstPass
+            // fold, and discarded every completed chunk). Remaining
+            // iterations skip; the pending sibling chunks are cancelled
+            // after the loop so none burns another ceiling.
             deferredResults.forEachIndexed { index, deferred ->
+                if (wedge != null) return@forEachIndexed
                 val chunkResult = deferred.await()
                 chunkResult.fold(
                     onSuccess = { tr ->
@@ -2109,6 +2145,13 @@ class TranscriptionOrchestrator @Inject constructor(
                         }
                     },
                     onFailure = { error ->
+                        if (error is EngineWedgeTimeoutException) {
+                            // TASK-606 F2: wedged engine; retrying burns a
+                            // second ceiling, continuing burns one per chunk.
+                            Log.e(TAG, "Parallel chunk ${index + 1} timed out; engine wedged, aborting the run")
+                            wedge = error
+                            return@fold
+                        }
                         Log.w(TAG, "Parallel chunk ${index + 1} failed, retrying with memory cleanup", error)
                         val retried = retryChunkWithGc(backend, chunks[index], sampleRate, prompt)
                         retried.fold(
@@ -2132,9 +2175,24 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                 )
             }
+
+            wedge?.let { w ->
+                // Cancel the still-pending siblings so the scope can
+                // complete (coroutineScope waits for every child) and none
+                // burns another ceiling; the failure is RETURNED after the
+                // scope (a non-local return is not allowed in this lambda).
+                deferredResults.forEach { it.cancel() }
+                wedgeResult = Result.failure(WedgeAbortException(w))
+            }
+            }
+        } finally {
+            progressTimerJob.cancel()
         }
 
-        progressTimerJob.cancel()
+        val abort: Result<TranscriptionResult>? = wedgeResult
+        if (abort != null) {
+            return abort
+        }
 
         val combinedResult = results.filterNotNull().joinToString(" ")
         Log.i(TAG, "Audio transcription complete: ${combinedResult.length} chars from ${results.filterNotNull().size}/$chunkCount chunks")
@@ -2326,6 +2384,12 @@ class TranscriptionOrchestrator @Inject constructor(
                                 if (detectedLang == null) detectedLang = tr.detectedLanguage
                             },
                             onFailure = { error ->
+                                if (error is EngineWedgeTimeoutException) {
+                                    // TASK-606 F2: wedged engine; abort the
+                                    // stream instead of a second ceiling.
+                                    Log.e(TAG, "Pipeline chunk ${chunk.chunkIndex} timed out; engine wedged, aborting the run")
+                                    throw WedgeAbortException(error)
+                                }
                                 Log.w(TAG, "Pipeline chunk ${chunk.chunkIndex} failed, retrying with memory cleanup", error)
                                 val retried = retryChunkWithGc(backend, chunk.samples, chunk.sampleRate, resolvedPrompt)
                                 retried.fold(
@@ -2842,6 +2906,20 @@ class TranscriptionOrchestrator @Inject constructor(
         val decodedSeconds: Double,
         val totalSeconds: Double,
     ) : IllegalStateException("Pipeline failed: ${cause.message}", cause)
+
+    /**
+     * TASK-606 F2: a chunk generation timeout means the LLM engine is
+     * wedged, not that the chunk is hard. Feeding it to retryChunkWithGc
+     * burns a second full ceiling per chunk and letting the loop continue
+     * burns one per remaining chunk (a 30-chunk recording at 2 x 5min each
+     * was a ~5-hour foreground crawl). The loops abort the whole run
+     * instead; LlmManager's engineWedged flag makes the surviving
+     * generations fail fast.
+     */
+    class WedgeAbortException(cause: Throwable) :
+        IllegalStateException(
+            "LLM engine wedged (chunk generation timeout); run aborted to spare the remaining chunks",
+            cause)
 
     /**
      * TASK-622: the progressive path's no-text terminal state (all segments
