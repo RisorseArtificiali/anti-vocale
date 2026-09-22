@@ -83,7 +83,10 @@ class PreferencesManagerImpl(
         private val SHOW_TECHNICAL_DETAILS = booleanPreferencesKey("show_technical_details")
         private val ADVANCED_SHARING_ENABLED = booleanPreferencesKey("advanced_sharing_enabled")
         private val SHOW_RETRANSCRIBE_BUTTON = booleanPreferencesKey("show_retranscribe_button")
-        private val FORCE_MODEL_LOAD = booleanPreferencesKey("force_model_load")
+        // TASK-631: replaces the old force-load key with NO migration; that key's only
+        // signal was an opt-out of the block, which the new default (no block) grants
+        // to everyone, so a stored old value is deliberately never read again.
+        private val MEMORY_PROTECTION = booleanPreferencesKey("memory_protection")
         private val COMPACT_RESULT_ACTIONS = booleanPreferencesKey("compact_result_actions")
         private val LANGUAGE_CHIP_ENABLED = booleanPreferencesKey("language_chip_enabled")
         private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
@@ -127,7 +130,7 @@ class PreferencesManagerImpl(
         val showTechnicalDetails: Boolean = PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
         val advancedSharingEnabled: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
-        val forceModelLoad: Boolean = PreferencesManager.DEFAULT_FORCE_MODEL_LOAD,
+        val memoryProtection: Boolean = PreferencesManager.DEFAULT_MEMORY_PROTECTION,
         val compactResultActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         val languageChipEnabled: Boolean = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         val externalModelsJson: String? = null
@@ -173,7 +176,7 @@ class PreferencesManagerImpl(
         showTechnicalDetails = this[SHOW_TECHNICAL_DETAILS] ?: PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS,
         advancedSharingEnabled = this[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
-        forceModelLoad = this[FORCE_MODEL_LOAD] ?: PreferencesManager.DEFAULT_FORCE_MODEL_LOAD,
+        memoryProtection = this[MEMORY_PROTECTION] ?: PreferencesManager.DEFAULT_MEMORY_PROTECTION,
         compactResultActions = this[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         languageChipEnabled = this[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         externalModelsJson = this[EXTERNAL_MODELS_JSON]
@@ -665,8 +668,8 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(showRetranscribeButton = enabled) }
     }
 
-    override val forceModelLoad: Flow<Boolean> = dataStore.data.map { it[FORCE_MODEL_LOAD] ?: PreferencesManager.DEFAULT_FORCE_MODEL_LOAD }
-        .onStart { emit(cache.get().forceModelLoad) }
+    override val memoryProtection: Flow<Boolean> = dataStore.data.map { it[MEMORY_PROTECTION] ?: PreferencesManager.DEFAULT_MEMORY_PROTECTION }
+        .onStart { emit(cache.get().memoryProtection) }
 
     override val compactResultActions: Flow<Boolean> = dataStore.data.map { it[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS }
         .onStart { emit(cache.get().compactResultActions) }
@@ -687,11 +690,11 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(languageChipEnabled = enabled) }
     }
 
-    override suspend fun saveForceModelLoad(enabled: Boolean) {
+    override suspend fun saveMemoryProtection(enabled: Boolean) {
         dataStore.edit { preferences ->
-            preferences[FORCE_MODEL_LOAD] = enabled
+            preferences[MEMORY_PROTECTION] = enabled
         }
-        cache.updateAndGet { it.copy(forceModelLoad = enabled) }
+        cache.updateAndGet { it.copy(memoryProtection = enabled) }
     }
 
     override val externalModelsJson: Flow<String?> = dataStore.data.map { it[EXTERNAL_MODELS_JSON] }

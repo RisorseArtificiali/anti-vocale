@@ -395,16 +395,16 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    val forceModelLoad: StateFlow<Boolean> = preferencesManager.forceModelLoad
+    val memoryProtection: StateFlow<Boolean> = preferencesManager.memoryProtection
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = PreferencesManager.DEFAULT_FORCE_MODEL_LOAD
+            initialValue = PreferencesManager.DEFAULT_MEMORY_PROTECTION
         )
 
-    fun saveForceModelLoad(enabled: Boolean) {
+    fun saveMemoryProtection(enabled: Boolean) {
         viewModelScope.launch {
-            preferencesManager.saveForceModelLoad(enabled)
+            preferencesManager.saveMemoryProtection(enabled)
         }
     }
 

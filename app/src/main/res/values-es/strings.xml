@@ -224,10 +224,10 @@
     <string name="oom_crash_warning">La app se cerró porque el dispositivo tenía poca memoria. Cierra otras apps o usa un modelo más ligero antes de reintentar.</string>
     <string name="native_crash_title">La app se cerró inesperadamente</string>
     <string name="native_crash_go_to_model">Ir a la pestaña Modelo</string>
-    <string name="model_load_low_memory">No hay memoria libre suficiente para este modelo (%1$s disponible, ~%2$s necesario). Cierra otras apps o usa un modelo más ligero. La carga forzada está disponible en Ajustes.</string>
-    <string name="transcribe_low_memory">No hay memoria libre suficiente para transcribir con este modelo (unas %1$s libres, se necesitan %2$s). Cierra otras apps e inténtalo de nuevo, o activa Forzar carga del modelo en Ajustes.</string>
-    <string name="force_model_load">Forzar carga del modelo</string>
-    <string name="force_model_load_desc">Carga el modelo aunque la memoria parezca insuficiente. Puede cerrar la app en dispositivos con poca RAM.</string>
+    <string name="model_load_low_memory">No hay memoria libre suficiente para este modelo (%1$s disponible, ~%2$s necesario). La protección de memoria está activa: cierra otras apps, usa un modelo más ligero o desactívala en Ajustes para intentarlo de todos modos.</string>
+    <string name="transcribe_low_memory">No hay memoria libre suficiente para transcribir con este modelo (unas %1$s libres, se necesitan %2$s). La protección de memoria está activa: cierra otras apps e inténtalo de nuevo, o desactívala en Ajustes para intentarlo de todos modos.</string>
+    <string name="memory_protection">Protección de memoria</string>
+    <string name="memory_protection_desc">Bloquea la carga de un modelo cuando la memoria libre parece insuficiente, para evitar cierres silenciosos de la app. Desactivada por defecto: normalmente la app siempre intenta ejecutar el modelo.</string>
     <string name="copy">Copiar</string>
     <string name="share">Compartir</string>
     <string name="char_counter">%1$d de %2$d caracteres</string>
@@ -510,6 +510,7 @@
     <string name="notification_no_model_title">Modelo no instalado</string>
     <string name="notification_no_model_message">Abre la app y descarga un modelo</string>
     <string name="notification_no_model_action">Abrir app</string>
+    <string name="error_open_memory_protection_setting">Abrir ajuste</string>
     <string name="notification_channel_tasker_fallback">Automatización Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Toca para iniciar la transcripción cuando se activa en segundo plano</string>
     <string name="tasker_fallback_notification_text">Toca para iniciar la transcripción</string>
@@ -850,7 +851,8 @@
     <string name="a11y_back">Atrás</string>
     <string name="litertlm_importing">Importando…</string>
     <string name="model_ram_warning">%1$s podría no tener memoria suficiente en este dispositivo. Podría fallar al cargar o cerrarse; los modelos más ligeros son más seguros.</string>
-    <string name="error_oom_transcription">No hay memoria suficiente para transcribir este audio. Prueba un archivo más corto, un modelo más pequeño, o cierra otras apps. Si sigue fallando, Ajustes > Avanzado > Forzar carga del modelo puede omitir esta comprobación.</string>
+    <string name="error_oom_transcription">No hay memoria suficiente para transcribir este audio. Prueba un archivo más corto, un modelo más pequeño, o cierra otras apps. Para evitar el intento por completo, activa la protección de memoria en Ajustes > Avanzado.</string>
+    <string name="error_oom_transcription_protected">No hay memoria suficiente para transcribir este audio incluso con la protección de memoria activada. Prueba con un archivo más corto, un modelo más pequeño o cierra otras aplicaciones.</string>
     <string name="external_family_detected">Detectado: %1$s</string>
     <string name="external_family_pick_title">¿De qué familia es este modelo?</string>
     <string name="subtitle_timeout_title">Tiempo de espera de la elección automática</string>

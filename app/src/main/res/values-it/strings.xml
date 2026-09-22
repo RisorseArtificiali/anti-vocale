@@ -271,10 +271,10 @@
     <string name="oom_crash_warning">L\'app è stata chiusa perché il dispositivo aveva poca memoria libera. Prova a chiudere le altre app o a usare un modello più piccolo prima di trascrivere di nuovo.</string>
     <string name="native_crash_title">Chiusura imprevista</string>
     <string name="native_crash_go_to_model">Vai alla scheda Modello</string>
-    <string name="model_load_low_memory">Memoria libera insufficiente per questo modello (%1$s disponibili, circa %2$s necessari). Chiudi altre app o usa un modello più piccolo. Il caricamento forzato è disponibile nelle Impostazioni.</string>
-    <string name="transcribe_low_memory">Memoria libera insufficiente per trascrivere con questo modello (circa %1$s liberi, servono %2$s). Chiudi altre app e riprova, oppure attiva Forza caricamento modello nelle impostazioni.</string>
-    <string name="force_model_load">Forza caricamento modello</string>
-    <string name="force_model_load_desc">Carica il modello anche quando la memoria sembra insufficiente. Può far chiudere l\'app sui dispositivi con poca RAM.</string>
+    <string name="model_load_low_memory">Memoria libera insufficiente per questo modello (%1$s disponibili, circa %2$s necessari). La protezione memoria è attiva: chiudi altre app, usa un modello più piccolo, oppure disattivala nelle impostazioni per provare comunque.</string>
+    <string name="transcribe_low_memory">Memoria libera insufficiente per trascrivere con questo modello (circa %1$s liberi, servono %2$s). La protezione memoria è attiva: chiudi altre app e riprova, oppure disattivala nelle impostazioni per provare comunque.</string>
+    <string name="memory_protection">Protezione memoria</string>
+    <string name="memory_protection_desc">Blocca il caricamento del modello quando la memoria libera sembra insufficiente, per evitare chiusure silenziose dell\'app. Disattivata per impostazione predefinita: normalmente l\'app tenta sempre di eseguire il modello.</string>
     <string name="copy">Copia</string>
     <string name="share">Condividi</string>
     <string name="char_counter">%1$d di %2$d caratteri</string>
@@ -708,6 +708,7 @@
     <string name="notification_no_model_title">Modello non installato</string>
     <string name="notification_no_model_message">Apri l\'app e scarica un modello</string>
     <string name="notification_no_model_action">Apri app</string>
+    <string name="error_open_memory_protection_setting">Apri impostazione</string>
 
     <!-- Content descriptions (accessibility) -->
     <string name="back">Indietro</string>
@@ -989,7 +990,8 @@
     <string name="a11y_back">Indietro</string>
     <string name="litertlm_importing">Importazione in corso…</string>
     <string name="model_ram_warning">%1$s potrebbe non avere memoria sufficiente su questo dispositivo. Potrebbe non caricarsi o crashare; i modelli più leggeri sono più sicuri.</string>
-    <string name="error_oom_transcription">Memoria insufficiente per trascrivere questo audio. Prova un file più corto, un modello più piccolo, o chiudi altre app. Se fallisce ancora, Impostazioni > Avanzate > Forza caricamento modello può saltare questo controllo.</string>
+    <string name="error_oom_transcription">Memoria insufficiente per trascrivere questo audio. Prova un file più corto, un modello più piccolo, o chiudi altre app. Per evitare del tutto il tentativo, attiva la protezione memoria in Impostazioni > Avanzate.</string>
+    <string name="error_oom_transcription_protected">Memoria insufficiente per trascrivere questo audio anche con la protezione memoria attiva. Prova un file più corto, un modello più piccolo, o chiudi altre app.</string>
     <string name="external_family_detected">Rilevato: %1$s</string>
     <string name="external_family_pick_title">A quale famiglia appartiene questo modello?</string>
     <string name="subtitle_timeout_title">Timeout della scelta automatica</string>

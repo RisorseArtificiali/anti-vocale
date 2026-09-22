@@ -278,10 +278,10 @@
     <string name="oom_crash_warning">Aplikacja została zamknięta, ponieważ urządzeniu kończyła się pamięć. Przed ponowną transkrypcją spróbuj zamknąć inne aplikacje lub użyć mniejszego modelu.</string>
     <string name="native_crash_title">Aplikacja zamknęła się nieoczekiwanie</string>
     <string name="native_crash_go_to_model">Przejdź do karty Model</string>
-    <string name="model_load_low_memory">Za mało wolnej pamięci dla tego modelu (dostępne %1$s, potrzeba ok. %2$s). Zamknij inne aplikacje lub użyj mniejszego modelu. Wymuszone wczytanie jest dostępne w Ustawieniach.</string>
-    <string name="transcribe_low_memory">Za mało wolnej pamięci, aby transkrybować tym modelem (około %1$s wolne, wymagane %2$s). Zamknij inne aplikacje i spróbuj ponownie albo włącz Wymuszaj ładowanie modelu w ustawieniach.</string>
-    <string name="force_model_load">Wymuś wczytanie modelu</string>
-    <string name="force_model_load_desc">Wczytaj model nawet, gdy pamięci wydaje się brakować. Może zamknąć aplikację na urządzeniach z małą ilością RAM.</string>
+    <string name="model_load_low_memory">Za mało wolnej pamięci dla tego modelu (dostępne %1$s, potrzeba ok. %2$s). Ochrona pamięci jest aktywna: zamknij inne aplikacje, użyj mniejszego modelu albo wyłącz ją w Ustawieniach, aby spróbować mimo to.</string>
+    <string name="transcribe_low_memory">Za mało wolnej pamięci, aby transkrybować tym modelem (około %1$s wolne, wymagane %2$s). Ochrona pamięci jest aktywna: zamknij inne aplikacje i spróbuj ponownie albo wyłącz ją w ustawieniach, aby spróbować mimo to.</string>
+    <string name="memory_protection">Ochrona pamięci</string>
+    <string name="memory_protection_desc">Blokuje wczytywanie modelu, gdy wolnej pamięci wydaje się brakować, aby uniknąć cichego zamykania aplikacji. Wyłączona domyślnie: normalnie aplikacja zawsze próbuje uruchomić model.</string>
     <string name="copy">Kopiuj</string>
     <string name="share">Udostępnij</string>
     <string name="char_counter">%1$d z %2$d znaków</string>
@@ -624,6 +624,7 @@
     <string name="notification_no_model_title">Model niezainstalowany</string>
     <string name="notification_no_model_message">Otwórz aplikację i pobierz model</string>
     <string name="notification_no_model_action">Otwórz aplikację</string>
+    <string name="error_open_memory_protection_setting">Otwórz ustawienie</string>
 
     <!-- Tasker fallback notification -->
     <string name="notification_channel_tasker_fallback">Automatyzacja Tasker</string>
@@ -1001,7 +1002,8 @@
     <string name="a11y_back">Wstecz</string>
     <string name="litertlm_importing">Importowanie…</string>
     <string name="model_ram_warning">%1$s może nie mieć wystarczającej pamięci na tym urządzeniu. Ładowanie może się nie powieść; lżejsze modele są bezpieczniejsze.</string>
-    <string name="error_oom_transcription">Za mało pamięci, aby transkrybować to audio. Spróbuj krótszego pliku, mniejszego modelu lub zamknij inne aplikacje. Jeśli nadal się nie uda, Ustawienia > Zaawansowane > Wymuś załadowanie modelu może pominąć to sprawdzanie.</string>
+    <string name="error_oom_transcription">Za mało pamięci, aby transkrybować to audio. Spróbuj krótszego pliku, mniejszego modelu lub zamknij inne aplikacje. Aby całkowicie uniknąć próby, włącz ochronę pamięci w Ustawienia > Zaawansowane.</string>
+    <string name="error_oom_transcription_protected">Za mało pamięci, aby transkrybować ten plik audio nawet przy włączonej ochronie pamięci. Spróbuj krótszego pliku, mniejszego modelu albo zamknij inne aplikacje.</string>
     <string name="external_family_detected">Wykryto: %1$s</string>
     <string name="external_family_pick_title">Do której rodziny należy ten model?</string>
     <string name="subtitle_timeout_title">Czas automatycznego wyboru</string>

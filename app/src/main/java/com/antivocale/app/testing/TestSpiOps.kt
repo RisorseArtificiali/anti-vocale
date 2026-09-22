@@ -86,7 +86,7 @@ internal class TestSpiOps(
             .put("paths", paths)
             .put("summarizeEnabled", preferences.summarizeEnabled.first())
             .put("autoCopyEnabled", preferences.autoCopyEnabled.first())
-            .put("forceModelLoad", preferences.forceModelLoad.first())
+            .put("memoryProtection", preferences.memoryProtection.first())
             .put("compactResultActions", preferences.compactResultActions.first())
             .put("languageChipEnabled", preferences.languageChipEnabled.first())
             // TASK-575: read-only over the SPI (records are written by loads).
@@ -141,7 +141,7 @@ internal class TestSpiOps(
         "group_logs" to preferences::saveGroupLogsByConversation,
         "advanced_sharing" to preferences::saveAdvancedSharingEnabled,
         "show_retranscribe" to preferences::saveShowRetranscribeButton,
-        "force_model_load" to preferences::saveForceModelLoad,
+        "memory_protection" to preferences::saveMemoryProtection,
         "compact_result_actions" to preferences::saveCompactResultActions,
         "technical_details" to preferences::saveShowTechnicalDetails,
         "language_chip" to preferences::saveLanguageChipEnabled,

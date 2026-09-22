@@ -38,10 +38,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 fun MainScreen(
     startOnModelTab: Boolean = false,
     navigateToModel: Boolean = false,
-    isInPipMode: Boolean = false
+    isInPipMode: Boolean = false,
+    focusSettingsRow: SettingsFocusRow? = null,
+    onSettingsFocusConsumed: () -> Unit = {}
 ) {
     // PiP mode: show compact transcription view
     if (isInPipMode) {
+        // A settings-row focus arriving while in PiP cannot run (the tab UI is
+        // not composed): consume it instead of firing a stale jump on PiP exit.
+        LaunchedEffect(focusSettingsRow) {
+            if (focusSettingsRow != null) onSettingsFocusConsumed()
+        }
         PipTranscriptionView()
         return
     }
@@ -119,6 +126,14 @@ fun MainScreen(
         }
     }
 
+    // TASK-625: switch to Settings when a row-focus signal arrives; the
+    // target is handed to SettingsTab, which consumes it after delivery.
+    LaunchedEffect(focusSettingsRow) {
+        if (focusSettingsRow != null) {
+            selectedTabIndex = AppNavigation.TAB_INDEX_SETTINGS
+        }
+    }
+
     // TASK-486: the debug-SPI navigation signal (consumed exactly once; the
     // settings-scoped remainder is handed to the Settings tab).
     val testNav by TestNavigation.pending.collectAsState()
@@ -186,7 +201,7 @@ fun MainScreen(
             )
         },
         TabItem(R.string.model_tab, Icons.Default.Storage) { ModelTab(onNavigateToSettings = { navigateToTab(AppNavigation.TAB_INDEX_SETTINGS) }, navRequest = modelsNavRequest, onNavConsumed = { modelsNavRequest = null }) },
-        TabItem(R.string.settings_tab, Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(AppNavigation.TAB_INDEX_MODELS) }, navRequest = settingsNavRequest, onNavConsumed = { settingsNavRequest = null }) }
+        TabItem(R.string.settings_tab, Icons.Default.Settings) { SettingsTab(onNavigateToModelTab = { navigateToTab(AppNavigation.TAB_INDEX_MODELS) }, navRequest = settingsNavRequest, onNavConsumed = { settingsNavRequest = null }, focusRow = focusSettingsRow, onFocusRowConsumed = onSettingsFocusConsumed) }
     )
 
     RevealCanvas(

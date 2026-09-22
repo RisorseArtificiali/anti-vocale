@@ -224,10 +224,10 @@
     <string name="oom_crash_warning">O app foi fechado porque o dispositivo estava com pouca memória. Feche outros apps ou use um modelo menor antes de tentar de novo.</string>
     <string name="native_crash_title">O app fechou inesperadamente</string>
     <string name="native_crash_go_to_model">Ir para a aba Modelo</string>
-    <string name="model_load_low_memory">Memória livre insuficiente para este modelo (%1$s disponível, ~%2$s necessário). Feche outros apps ou use um modelo menor. O carregamento forçado está disponível nas Configurações.</string>
-    <string name="transcribe_low_memory">Memória livre insuficiente para transcrever com este modelo (cerca de %1$s livres, são necessários %2$s). Feche outros apps e tente de novo, ou ative Forçar carregamento do modelo nas configurações.</string>
-    <string name="force_model_load">Forçar carregamento do modelo</string>
-    <string name="force_model_load_desc">Carrega o modelo mesmo quando a memória parece insuficiente. Pode fechar o app em dispositivos com pouca RAM.</string>
+    <string name="model_load_low_memory">Memória livre insuficiente para este modelo (%1$s disponível, ~%2$s necessário). A proteção de memória está ativa: feche outros apps, use um modelo menor ou desative-a nas Configurações para tentar mesmo assim.</string>
+    <string name="transcribe_low_memory">Memória livre insuficiente para transcrever com este modelo (cerca de %1$s livres, são necessários %2$s). A proteção de memória está ativa: feche outros apps e tente de novo, ou desative-a nas configurações para tentar mesmo assim.</string>
+    <string name="memory_protection">Proteção de memória</string>
+    <string name="memory_protection_desc">Bloqueia o carregamento de um modelo quando a memória livre parece insuficiente, para evitar fechamentos silenciosos do app. Desativada por padrão: normalmente o app sempre tenta executar o modelo.</string>
     <string name="copy">Copiar</string>
     <string name="share">Compartilhar</string>
     <string name="char_counter">%1$d de %2$d caracteres</string>
@@ -510,6 +510,7 @@
     <string name="notification_no_model_title">Modelo não instalado</string>
     <string name="notification_no_model_message">Abra o app e baixe um modelo</string>
     <string name="notification_no_model_action">Abrir app</string>
+    <string name="error_open_memory_protection_setting">Abrir configuração</string>
     <string name="notification_channel_tasker_fallback">Automação Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Toque para iniciar a transcrição quando acionado em segundo plano</string>
     <string name="tasker_fallback_notification_text">Toque para iniciar a transcrição</string>
@@ -850,7 +851,8 @@
     <string name="a11y_back">Voltar</string>
     <string name="litertlm_importing">Importando…</string>
     <string name="model_ram_warning">%1$s pode não ter memória suficiente neste dispositivo. Pode falhar ao carregar ou fechar; modelos mais leves são mais seguros.</string>
-    <string name="error_oom_transcription">Memória insuficiente para transcrever este áudio. Tente um arquivo mais curto, um modelo menor, ou feche outros apps. Se ainda falhar, Configurações > Avançado > Forçar carregamento do modelo pode ignorar esta verificação.</string>
+    <string name="error_oom_transcription">Memória insuficiente para transcrever este áudio. Tente um arquivo mais curto, um modelo menor, ou feche outros apps. Para evitar a tentativa por completo, ative a proteção de memória em Configurações > Avançado.</string>
+    <string name="error_oom_transcription_protected">Memória insuficiente para transcrever este áudio mesmo com a proteção de memória ativada. Tente um arquivo mais curto, um modelo menor, ou feche outros apps.</string>
     <string name="external_family_detected">Detectado: %1$s</string>
     <string name="external_family_pick_title">A qual família este modelo pertence?</string>
     <string name="subtitle_timeout_title">Prazo da escolha automática</string>

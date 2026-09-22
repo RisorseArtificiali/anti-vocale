@@ -274,10 +274,10 @@
     <string name="oom_crash_warning">Cihazın belleği azaldığı için uygulama kapatıldı. Yeniden metin çıkarmadan önce diğer uygulamaları kapatmayı veya daha küçük bir model kullanmayı deneyin.</string>
     <string name="native_crash_title">Uygulama beklenmedik şekilde kapandı</string>
     <string name="native_crash_go_to_model">Model sekmesine git</string>
-    <string name="model_load_low_memory">Bu model için yeterli boş bellek yok (%1$s boş, yaklaşık %2$s gerekiyor). Diğer uygulamaları kapatın veya daha küçük bir model kullanın. Zorunlu yükleme Ayarlar\'dan yapılabilir.</string>
-    <string name="transcribe_low_memory">Bu modelle transkripsiyon için yeterli boş bellek yok (yaklaşık %1$s boş, %2$s gerekiyor). Diğer uygulamaları kapatıp tekrar deneyin veya ayarlarda Model yüklemeyi zorla seçeneğini açın.</string>
-    <string name="force_model_load">Model yüklemeyi zorla</string>
-    <string name="force_model_load_desc">Bellek yetersiz görünse bile modeli yükle. Az RAM\'li cihazlarda uygulamayı kapatabilir.</string>
+    <string name="model_load_low_memory">Bu model için yeterli boş bellek yok (%1$s boş, yaklaşık %2$s gerekiyor). Bellek koruması etkin: diğer uygulamaları kapatın, daha küçük bir model kullanın veya yine de denemek için bunu Ayarlar\'dan kapatın.</string>
+    <string name="transcribe_low_memory">Bu modelle transkripsiyon için yeterli boş bellek yok (yaklaşık %1$s boş, %2$s gerekiyor). Bellek koruması etkin: diğer uygulamaları kapatıp tekrar deneyin veya yine de denemek için bunu Ayarlar\'dan kapatın.</string>
+    <string name="memory_protection">Bellek koruması</string>
+    <string name="memory_protection_desc">Boş bellek yetersiz görünüyorsa model yüklenmesini engeller, böylece uygulamanın sessizce kapanması önlenir. Varsayılan olarak kapalıdır: uygulama normalde modeli her zaman çalıştırmayı dener.</string>
     <string name="copy">Kopyala</string>
     <string name="share">Paylaş</string>
     <string name="char_counter">%2$d karakterden %1$d</string>
@@ -616,6 +616,7 @@
     <string name="notification_no_model_title">Model yüklü değil</string>
     <string name="notification_no_model_message">Uygulamayı açın ve bir model indirin</string>
     <string name="notification_no_model_action">Uygulamayı aç</string>
+    <string name="error_open_memory_protection_setting">Ayarı aç</string>
 
     <!-- Tasker fallback notification -->
     <string name="notification_channel_tasker_fallback">Tasker Otomasyonu</string>
@@ -985,7 +986,8 @@
     <string name="a11y_back">Geri</string>
     <string name="litertlm_importing">İçe aktarılıyor…</string>
     <string name="model_ram_warning">Bu cihazda %1$s için yeterli bellek olmayabilir. Yükleme başarısız olabilir; daha hafif modeller daha güvenli.</string>
-    <string name="error_oom_transcription">Bu sesi transkribe etmek için yeterli bellek yok. Daha kısa bir dosya, daha küccük bir model deneyin veya diğer uygulamaları kapatın. Yine başarısız olursa, Ayarlar > Gelişmiş > Model yüklemeyi zorla bu kontrolü atlayabilir.</string>
+    <string name="error_oom_transcription">Bu sesi transkribe etmek için yeterli bellek yok. Daha kısa bir dosya, daha küçük bir model deneyin veya diğer uygulamaları kapatın. Denemeyi tamamen önlemek için Ayarlar > Gelişmiş bölümünden bellek korumasını açın.</string>
+    <string name="error_oom_transcription_protected">Bellek koruması açık olsa bile bu sesi yazıya dökmek için yeterli bellek yok. Daha kısa bir dosya veya daha küçük bir model deneyin ya da diğer uygulamaları kapatın.</string>
     <string name="external_family_detected">Algılandı: %1$s</string>
     <string name="external_family_pick_title">Bu model hangi aileden?</string>
     <string name="subtitle_timeout_title">Otomatik seçim süresi</string>

@@ -53,7 +53,7 @@ internal class FakePreferencesManager : PreferencesManager {
     val _showTechnicalDetails = MutableStateFlow(PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS)
     val _advancedSharingEnabled = MutableStateFlow(false)
     val _showRetranscribeButton = MutableStateFlow(true)
-    val _forceModelLoad = MutableStateFlow(false)
+    val _memoryProtection = MutableStateFlow(false)
     val _compactResultActions = MutableStateFlow(PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS)
     val _languageChipEnabled = MutableStateFlow(PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED)
     val _externalModelsJson = MutableStateFlow<String?>(null)
@@ -98,7 +98,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val showTechnicalDetails: Flow<Boolean> get() = _showTechnicalDetails
     override val advancedSharingEnabled: Flow<Boolean> get() = _advancedSharingEnabled
     override val showRetranscribeButton: Flow<Boolean> get() = _showRetranscribeButton
-    override val forceModelLoad: Flow<Boolean> get() = _forceModelLoad
+    override val memoryProtection: Flow<Boolean> get() = _memoryProtection
     override val compactResultActions: Flow<Boolean> get() = _compactResultActions
     override val languageChipEnabled: Flow<Boolean> get() = _languageChipEnabled
     override val externalModelsJson: Flow<String?> get() = _externalModelsJson
@@ -137,7 +137,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveShowTechnicalDetails(enabled: Boolean) { _showTechnicalDetails.value = enabled }
     override suspend fun saveAdvancedSharingEnabled(enabled: Boolean) { _advancedSharingEnabled.value = enabled }
     override suspend fun saveShowRetranscribeButton(enabled: Boolean) { _showRetranscribeButton.value = enabled }
-    override suspend fun saveForceModelLoad(enabled: Boolean) { _forceModelLoad.value = enabled }
+    override suspend fun saveMemoryProtection(enabled: Boolean) { _memoryProtection.value = enabled }
     override suspend fun saveCompactResultActions(enabled: Boolean) { _compactResultActions.value = enabled }
     override suspend fun saveLanguageChipEnabled(enabled: Boolean) { _languageChipEnabled.value = enabled }
     override suspend fun saveExternalModelsJson(json: String) { _externalModelsJson.value = json }

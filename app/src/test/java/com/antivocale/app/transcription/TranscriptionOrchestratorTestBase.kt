@@ -77,10 +77,10 @@ abstract class TranscriptionOrchestratorTestBase {
             fakeStore,
         )
 
-        // Default the OOM pre-flight to off in tests so it does not interfere with orchestrator
-        // behaviour assertions. (The memory check itself is fail-open on a mock Context anyway,
-        // but stubbing the preference keeps the intent explicit.)
-        every { preferencesManager.forceModelLoad } returns flowOf(false)
+        // Default the opt-in memory protection to off in tests so it does not interfere with
+        // orchestrator behaviour assertions. (The check itself is fail-open on a mock Context
+        // anyway, but stubbing the preference keeps the intent explicit.)
+        every { preferencesManager.memoryProtection } returns flowOf(false)
         // GH #45: the model-name write reads the LLM model path before deriving the
         // display name; a relaxed mock Flow explodes on first().
         every { preferencesManager.modelPath } returns flowOf("/models/gemma")
