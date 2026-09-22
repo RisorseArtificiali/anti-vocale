@@ -79,3 +79,56 @@ Persian measurement caveats (the number is honest but pessimistic):
   (۷۰, ۴۱) where the model emits number words (fa_010 alone scores 62% from this).
 RTF 0.04 = ~28x realtime on 4 desktop threads. Desktop-validated only; the catalog
 entry ships pending the on-device import + RTL render pass.
+
+## 2026-09-22 TASK-619: moonshine-base 2026-02-27 v2 exports (uk/ar/es/vi)
+
+First eval-first pass of the light-models direction (GH #89): the four
+candidate repos csukuangfj2/sherpa-onnx-moonshine-base-{uk,ar,es,vi}-quantized-2026-02-27,
+downloaded and decoded with sherpa-onnx 1.13.8 (eval/.venv, = the shipped AAR
+pin) via the wheel's public from_moonshine_v2 factory.
+
+| Model | Size | WER (decodable clips) | Clips decoded | RTF |
+|---|---|---|---|---|
+| moonshine-base-uk | 141 MB | 16.3 % | 4/10 | 0.03 |
+| moonshine-base-ar | 141 MB | 23.7 % | 3/10 | 0.05 |
+| moonshine-base-es | 63 MB | 3.0 % | 10/10 | 0.34 |
+| moonshine-base-vi | 141 MB | 11.2 % | 4/10 | 0.06 |
+
+THE finding: the uk/ar/vi exports have a hard decode ceiling at ~9.25s. Binary
+search on uk_008 (the other languages show the same empty-decode split in the
+raw run, but only uk was boundary-searched): 9.2s decodes text, 9.3s returns
+EMPTY. The optimum-exported decoder throws an onnxruntime broadcast failure
+("Attempting to broadcast an axis by a dimension other than 1. 2 by 403",
+encoder_attn/Add) which sherpa catches and converts to a silent empty result.
+The es export (63 MB, a different export generation) decoded a 21.4s clip
+fine and scored 3.0% on all ten clips. The ceiling counts TOTAL input: the
+app's decode path appends a 1s silence pad per chunk, so 9s of audio + pad
+already decodes EMPTY and the family cap is 8, not 9.
+
+App consequence (fixed same night): ExternalSherpaBackend's moonshine family
+chunk cap shipped at 30s in TASK-618 and would have blanked most
+voice-message-length audio for these exports; it is now 9s (correct for every
+variant, es included).
+
+Catalog implications for TASK-619:
+- es: strong candidate (3.0% WER, 63 MB, no length issue on top of the 9s cap).
+- vi: decent (11.2%) where nothing exists today; viable with the 9s cap.
+- uk: 16.3% on clean FLEURS clips; still the only option at 141 MB for a
+  language with no entry today.
+- ar: 23.7% vs the 1087 MB whisper-arabic entry; the 7.7x size argument
+  stands but the quality gap makes promotion a maintainer call, not a default.
+All numbers above are FLEURS-read speech, not voice messages. Re-run with the
+app's 8s cap active (fixed 8s chunking + the 1s pad's worth of headroom, no
+VAD alignment; `run_moonshine.py --capped`, results_moonshine_capped.json)
+so every clip scores:
+
+| Model | WER (all 10 clips, 8s chunks) | Empty decodes |
+|---|---|---|
+| moonshine-base-uk | 23.3 % | 0 |
+| moonshine-base-ar | 24.6 % | 0 |
+| moonshine-base-es | 6.8 % | 0 |
+| moonshine-base-vi | 15.7 % | 0 |
+
+The chunk-boundary word damage (words cut at 8s) inflates these a few points;
+the app's VAD-aligned chunking cuts at speech pauses and will do better. es
+goes 3.0 -> 6.8 purely from boundaries, bounding that inflation.

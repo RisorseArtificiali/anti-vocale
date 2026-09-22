@@ -1,0 +1,242 @@
+[
+ {
+  "name": "moonshine-base-uk (2026-02-27)",
+  "lang": "uk",
+  "load": "OK",
+  "wer": 76.70454545454545,
+  "rtf": 0.03389818678849727,
+  "audio_s": 105.1,
+  "detail": [
+   {
+    "file": "uk_000.wav",
+    "ref": "потім лаккха сінг взяв на себе ініціативу у співі бгаджан",
+    "hyp": "Потім лака Сінг взяв на себе ініціативу у співі \"Бгаджан\"."
+   },
+   {
+    "file": "uk_001.wav",
+    "ref": ". учені стверджують що оперення цієї тварини було каштаново-коричневим зверху з нижньою частиною блідого або каротиноїдного кольору",
+    "hyp": ""
+   },
+   {
+    "file": "uk_002.wav",
+    "ref": "оскільки на день можна було здобути лише вісімнадцять медалей низка країн не змогла піднятись на п'єдестал",
+    "hyp": "Оскільки на день можна було здобути лише 18 медалей, низка країн не змогла піднятися на п'ятисталку."
+   },
+   {
+    "file": "uk_003.wav",
+    "ref": "щойно ви виберетеся з течії плисти назад буде не складніше ніж зазвичай",
+    "hyp": "щойно ви виберетеся з дитячої пластинозавр буде не складніше ніж зазвичай"
+   },
+   {
+    "file": "uk_004.wav",
+    "ref": "морські крокодили не проводять в океані багато часу їхнє основне природне середовище річкові лимани на північ від рокгемптона",
+    "hyp": ""
+   },
+   {
+    "file": "uk_005.wav",
+    "ref": "для баба шиам було подано 108 тарілок виробника схапхан бхог в індуїзмі 56 різних їстівних речей наприклад солодощів фруктів оріхів страв тощо які пропонуються божеству",
+    "hyp": ""
+   },
+   {
+    "file": "uk_006.wav",
+    "ref": "якщо ви відвідаєте арктику або антарктику взимку ви відкриєте для себе полярну ніч коли сонце не підіймається над горизонтом",
+    "hyp": ""
+   },
+   {
+    "file": "uk_007.wav",
+    "ref": "дослідники припустили що хоча це хвіст молодого динозавра зразок демонструє доросле оперення а не пух дитинчати",
+    "hyp": ""
+   },
+   {
+    "file": "uk_008.wav",
+    "ref": "яванська кухня зараз дуже поширена на всьому архіпелазі і пропонує широкий вибір просто приправлених страв серед яких переважаючими смаками є арахіс чилі цукор особливо яванський кокосовий цукор а також різноманітні ароматні спеції",
+    "hyp": ""
+   },
+   {
+    "file": "uk_009.wav",
+    "ref": "мені здалося що це не має сенсу це безперечно було нечесно",
+    "hyp": "мені здається, що це не має сенсу, це, безперечно, було нечесно."
+   }
+  ]
+ },
+ {
+  "name": "moonshine-base-ar (2026-02-27)",
+  "lang": "ar",
+  "load": "OK",
+  "wer": 83.42857142857143,
+  "rtf": 0.045731585071754656,
+  "audio_s": 111.2,
+  "detail": [
+   {
+    "file": "ar_000.wav",
+    "ref": "قام البرتغاليون بتدميرها وإعادة بنائها تحت اسم كازا برانكا فقط ليهجروها بعد زلزال 1755",
+    "hyp": ""
+   },
+   {
+    "file": "ar_001.wav",
+    "ref": "ومع هذا فمعظم الإشارات يتم التعبير عنها باللغة الكاتالونية لأنها وبموجب القانون تعتبر اللغة الرسمية الأولى",
+    "hyp": ""
+   },
+   {
+    "file": "ar_002.wav",
+    "ref": "عندما سافرت إلى الخارج في البداية ربما كان الناس صبورين ومتفهمين مع العلم أن المسافرين في بلد جديد بحاجة إلى التكيف",
+    "hyp": ""
+   },
+   {
+    "file": "ar_003.wav",
+    "ref": "أصبحت مثلَ هذه الأشياء مجالاتٍ منفصلةٍ تركز على تقديم حلولٍ لمشاكل الحياة الحقيقيّة",
+    "hyp": "أصبحت مثل هذه الأشياء مجالاتٌ مفصلةٌ تُركز على تقديم حلول لمشاكل الحياة الحقيقية"
+   },
+   {
+    "file": "ar_004.wav",
+    "ref": "يُقدم المغنون المشهورون عبر البلدة البهاجانات أو الأغاني الدينية لأقدام شري شيام",
+    "hyp": "نقدم المغنون المشهورون عبر البلدة البهاجانات أو الأغاني الدينية لأقدام شريشيان"
+   },
+   {
+    "file": "ar_005.wav",
+    "ref": "الهاتف الذي يعمل بالأقمار الصناعية لا يعد عموماً بديلاً عن الهاتف المحمول إذ يجب أن تكون في الخارج في وجود خط رؤية واضح مع القمر الصناعي لإجراء مكالمةٍ هاتفيةٍ",
+    "hyp": ""
+   },
+   {
+    "file": "ar_006.wav",
+    "ref": "تستند البوذية التبتية على تعاليم بوذا لكنها امتدت من خلال طريق ماهايا للحب وتقنيات أخرى من اليوغا الهندية",
+    "hyp": ""
+   },
+   {
+    "file": "ar_007.wav",
+    "ref": "في باحة الكنيسة توجد تماثيل رخامية بديعة للحمام فوق بعض المقابر",
+    "hyp": "في باحة الكنيسة توجد تماثيل رخامية بديعة للحمام فوق بعض المقابر"
+   },
+   {
+    "file": "ar_008.wav",
+    "ref": "يقول العلماء أن ريش هذا الحيوان كان بنيًا كستنائيًا من الأعلى وجانبه السفلي شاحباً أو بلون الكاروتينات",
+    "hyp": ""
+   },
+   {
+    "file": "ar_009.wav",
+    "ref": "تساوي أو تقارب العديد من الصيغ الشائعة مجموعة صيغ نظام الصور المتقدم، على سبيل المثال نسبةَ العرض إلى الارتفاع هذه",
+    "hyp": ""
+   }
+  ]
+ },
+ {
+  "name": "moonshine-base-es (2026-02-27)",
+  "lang": "es",
+  "load": "OK",
+  "wer": 2.978723404255319,
+  "rtf": 0.335764252616378,
+  "audio_s": 111.6,
+  "detail": [
+   {
+    "file": "es_000.wav",
+    "ref": "se recomienda enfáticamente a los viajeros que se informen sobre cualquier riesgo de clima extremo en el área que visitan dado que ello puede afectar sus planes de viaje",
+    "hyp": "Se recomienda enfáticamente a los viajeros que se informen sobre cualquier riesgo del clima extremo en el área que visitan, dado que ello puede afectar sus planes de viaje."
+   },
+   {
+    "file": "es_001.wav",
+    "ref": "el uso adecuado de los blogs «puede empoderar a los alumnos para que sean más analíticos y críticos a través de la respuesta activa a los contenidos de internet pueden definir sus posturas en el contexto de los escritos de otros además de establecer sus perspectivas sobre temas específicos» oravec 2002",
+    "hyp": "El uso adecuado de los blogs puede empoderar a los alumnos para que sean más analíticos y críticos a través de la respuesta activa a los contenidos de Internet. Pueden definir sus posturas en el contexto de los escritos de otros, además de establecer sus perspectivas sobre temas específicos. Orabeck 2002"
+   },
+   {
+    "file": "es_002.wav",
+    "ref": "fue tanta la cantidad de gente que se concentró que no todos pudieron acceder al funeral en la plaza de san pedro",
+    "hyp": "Fue tanta la cantidad de gente que se concentró que no todos pudieron acceder al funeral en la plaza de San Pedro."
+   },
+   {
+    "file": "es_003.wav",
+    "ref": "esto parece tener sentido ya que en la tierra no se percibe su movimiento ¿cierto?",
+    "hyp": "Esto parece tener sentido, ya que en la Tierra no se percibe su movimiento, ¿cierto?"
+   },
+   {
+    "file": "es_004.wav",
+    "ref": "carpanedo participó en dos carreras individuales del campeonato aparte de la competencia del miércoles",
+    "hyp": "Carpaneo participó en dos carreras individuales del campeonato aparte de la competencia del miércoles."
+   },
+   {
+    "file": "es_005.wav",
+    "ref": "hoy en día las personas escriben mensajes en las pantallas de sus computadoras no tienen la necesidad de siquiera aproximarse a un sacapuntas",
+    "hyp": "Hoy en día las personas escriben mensajes en las pantallas de sus computadoras, no tienen la necesidad de siquiera aproximarse a un sacapuntas."
+   },
+   {
+    "file": "es_006.wav",
+    "ref": "los luchadores compañeros de luna también le rindieron homenaje",
+    "hyp": "Los luchadores compañeros de Luna también le rindieron homenaje."
+   },
+   {
+    "file": "es_007.wav",
+    "ref": "duvall que está casado y tiene dos hijos adultos no causó una buena impresión a miller que fue a quien le relató la historia",
+    "hyp": "Dugal, que está casado y tiene dos hijos adultos, no causó una buena impresión a Miller, que fue a quien le relató la historia."
+   },
+   {
+    "file": "es_008.wav",
+    "ref": "entre los fenómenos climáticos regionales y estacionales extremos encontramos los ventarrones las tormentas de nieve hielo o polvo",
+    "hyp": "Entre los fenómenos climáticos regionales y estacionales extremos encontramos los ventarrones, las tormentas de nieve y el o polvo."
+   },
+   {
+    "file": "es_009.wav",
+    "ref": "se puede definir a una civilización como una cultura específica de la que forma parte un extenso grupo de personas que viven y trabajan en conjunto es decir una sociedad",
+    "hyp": "Se puede definir a una civilización como una cultura específica de que forma parte un extenso grupo de personas que viven y trabajan en conjunto, es decir, una sociedad."
+   }
+  ]
+ },
+ {
+  "name": "moonshine-base-vi (2026-02-27)",
+  "lang": "vi",
+  "load": "OK",
+  "wer": 71.16788321167883,
+  "rtf": 0.056552853903006704,
+  "audio_s": 102.5,
+  "detail": [
+   {
+    "file": "vi_000.wav",
+    "ref": "một số loài động vật như voi và hươu cao cổ thường hay lại gần xe và chỉ với các dụng cụ bình thường chúng ta cũng sẽ quan sát một cách dễ dàng",
+    "hyp": ""
+   },
+   {
+    "file": "vi_001.wav",
+    "ref": "điện thoại vệ tinh nói chung không phải là sự thay thế cho điện thoại di động vì bạn phải ở ngoài trời và phải có tầm nhìn thông thoáng thẳng đến vệ tinh thì mới sử dụng được",
+    "hyp": ""
+   },
+   {
+    "file": "vi_002.wav",
+    "ref": "các sản phẩm thủ công có thể được coi là đồ cổ mặc dù tuổi đời của chúng trẻ hơn rất nhiều các sản phẩm tương tự được sản xuất hàng loạt",
+    "hyp": "Các sản phẩm thủ công có thể được coi là độ cổ, mặc dù tuổi đời của chúng trẻ hơn rất nhiều các sản phẩm tương tự được sản xuất hàng lạc."
+   },
+   {
+    "file": "vi_003.wav",
+    "ref": "sau đó lakkha singh giữ vai trò chính khi hát các bài hát bhajan",
+    "hyp": "Sau đó, Laka Sinh giữ vai trò chính khi hát các bài hát Hajan"
+   },
+   {
+    "file": "vi_004.wav",
+    "ref": "bác sĩ moll nghĩ rằng một số bệnh nhân có thể đã bị lây rệp ở bệnh viện và ít nhất hai người là nhân viên y tế trong bệnh viện",
+    "hyp": ""
+   },
+   {
+    "file": "vi_005.wav",
+    "ref": "tôi không biết bạn có nhận ra hay không nhưng hầu hết hàng hóa từ trung mỹ nhập khẩu vào nước này đều được miễn thuế",
+    "hyp": ""
+   },
+   {
+    "file": "vi_006.wav",
+    "ref": "argentina nổi tiếng có một trong những đội bóng pô-lô và cầu thủ giỏi nhất thế giới",
+    "hyp": "Argentina nổi tiếng có một trong những đội bóng polo và cầu thủ giỏi nhất thế giới."
+   },
+   {
+    "file": "vi_007.wav",
+    "ref": "tỷ số chung cuộc là chiến thắng với cách biệt chỉ một điểm 21 - 20 chấm dứt chuỗi 15 trận toàn thắng của all blacks",
+    "hyp": ""
+   },
+   {
+    "file": "vi_008.wav",
+    "ref": "nếu đến thăm vùng bắc cực hoặc nam cực vào mùa đông bạn sẽ được trải nghiệm đêm vùng cực nghĩa là mặt trời không nhú lên khỏi chân trời",
+    "hyp": ""
+   },
+   {
+    "file": "vi_009.wav",
+    "ref": "nghiên cứu trí tuệ nhân tạo bao gồm tạo ra những cỗ máy tự động hóa các tác vụ đòi hỏi hành vi thông minh",
+    "hyp": "Nghiên cứu trí tệ nhân tạo bao gồm tạo ra những cỗ máy từ động hóa, các tác dụ đòi hỏi hành vi thông minh."
+   }
+  ]
+ }
+]

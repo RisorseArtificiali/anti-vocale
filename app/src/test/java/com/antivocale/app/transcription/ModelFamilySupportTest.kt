@@ -5,10 +5,10 @@ import com.antivocale.app.data.ExternalModelSource
 import com.antivocale.app.data.FilePin
 import com.antivocale.app.data.ModelFamily
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertThrows
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.fail
@@ -622,5 +622,16 @@ class ModelFamilySupportTest {
         val falseConfig = support.buildModelConfig(
             record(ModelFamily.SENSE_VOICE, options = mapOf("sensevoice.itn" to "0")), numThreads = 1, provider = "cpu")
         assertEquals(false, falseConfig.senseVoice.useInverseTextNormalization)
+    }
+
+    @Test
+    fun `family chunk caps`() {
+        // MOONSHINE's 8: the TASK-619 measurement, 1s below the 9.0s TEXT /
+        // 9.2s EMPTY boundary because the decode path pads every chunk with
+        // 1s of silence (rationale on the cap site and RESULTS.md).
+        assertEquals(8, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.MOONSHINE))
+        assertEquals(30, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.WHISPER))
+        assertEquals(10, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.CANARY))
+        assertNull(ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.TRANSDUCER))
     }
 }

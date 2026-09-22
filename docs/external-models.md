@@ -26,7 +26,7 @@ The family selector above the import buttons picks the architecture; expected fi
 | CTC | `encoder` + tokens | `nemo_ctc` or `zipformer_ctc` (explicit, no default) | none |
 | SenseVoice | `model` + tokens | `""` | `sensevoice.language` (optional), `sensevoice.itn` (`true`/`false`) |
 | Canary (NeMo) | `encoder` + `decoder` + tokens | `""` | `canary.language` (one of `en`, `es`, `de`, `fr`; conditions the recognizer itself: there is no auto-detection) |
-| Moonshine | v1: `preprocess` + `encode` + `uncached_decode` + `cached_decode` + tokens; v2: `encoder_model.ort` + `decoder_model_merged.ort` + tokens | `""` | none (English and the 2026 KO/JA/ZH exports; 30 s chunking) |
+| Moonshine | v1: `preprocess` + `encode` + `uncached_decode` + `cached_decode` + tokens; v2: `encoder_model.ort` + `decoder_model_merged.ort` + tokens | `""` | none (English and the 2026 exports; 8 s chunking: the 2026-02-27 v2 .ort exports decode empty above ~9 s of input) |
 | Dolphin | `model` + tokens | `""` | none (multi-language zh/en base; same file shape as SenseVoice, so an unhinted set asks which family) |
 
 Exact file names don't matter; roles are matched by keyword (CTC prefers `ctc`-hinted candidates, Transducer prefers `rnnt`-hinted tokens). A joiner/joint file in the candidate pool is rejected for Whisper and CTC as a transducer signature, so a wrong family fails at import time instead of crashing at transcription.

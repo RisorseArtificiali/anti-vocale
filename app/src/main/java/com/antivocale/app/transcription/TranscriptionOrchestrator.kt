@@ -1532,11 +1532,15 @@ class TranscriptionOrchestrator @Inject constructor(
             // through the ExternalSherpaBackend's configured family.
             val memoryFamily = when {
                 backend.id == "whisper" -> TranscriptionMemoryPolicy.Family.WHISPER
-                // MOONSHINE rides the whisper curve too (GH #89): it shares
-                // whisper's 30s decode window, and the flat transducer
-                // baseline under-refused exactly the light models the family
-                // exists for (a 953MB moonshine passed a bar the whisper
-                // curve refuses).
+                // MOONSHINE rides the whisper curve too (GH #89): an
+                // encoder/decoder attention model with whisper-shaped memory
+                // behavior, and the flat transducer baseline under-refused
+                // exactly the light models the family exists for (a 953MB
+                // moonshine passed a bar the whisper curve refuses). The
+                // curve still PRICES the 30s whisper window though moonshine
+                // chunks at 8s (TASK-619): deliberate conservatism, no
+                // moonshine RAM measurement exists, and the 600MB overhead
+                // floor dominates the term anyway.
                 backend is ExternalSherpaBackend && (
                     backend.memoryFamily == com.antivocale.app.data.ModelFamily.WHISPER ||
                         backend.memoryFamily == com.antivocale.app.data.ModelFamily.MOONSHINE) ->

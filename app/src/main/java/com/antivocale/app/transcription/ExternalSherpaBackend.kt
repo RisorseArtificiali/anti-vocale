@@ -52,9 +52,21 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
         fun familyChunkCapSeconds(family: ModelFamily): Int? = when (family) {
             ModelFamily.WHISPER -> 30
             ModelFamily.CANARY -> 10
-            // Moonshine's window is whisper-sized (GH #89); Dolphin decodes
-            // whole files like SenseVoice (no cap).
-            ModelFamily.MOONSHINE -> 30
+            // Moonshine (GH #89): the whisper-sized window guess was WRONG for
+            // the 2026-02-27 v2 .ort exports. Measured on the eval harness
+            // (sherpa 1.13.8, TASK-619, 2026-09-22): uk/ar/vi decode correctly
+            // up to 9.2s of TOTAL input and return EMPTY above ~9.25s (sherpa
+            // catches the onnxruntime broadcast failure inside the
+            // optimum-exported decoder and silently yields ""), so a 30s cap
+            // produced silent blanks on most voice-message-length audio. The
+            // app's decode path appends a 1s silence pad to every chunk, so
+            // the cap must leave room for it: 8+1=9.0s total, inside the
+            // ceiling (verified: 8s+pad TEXT, 9s+pad EMPTY). The es export of
+            // the same line tolerates 21s+, but 8s stays correct for every
+            // variant (per-record caps tracked on the follow-up task);
+            // re-measure if a v3 shape arrives. Dolphin decodes whole files
+            // like SenseVoice (no cap).
+            ModelFamily.MOONSHINE -> 8
             else -> null
         }
 
