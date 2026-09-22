@@ -215,10 +215,21 @@ open class LlmManager @Inject constructor(
 
         Log.i(TAG, "Initializing model from: $path")
 
-        // Validate file exists
+        // Validate file exists and is not empty. A 0-byte file passes a bare
+        // exists() check and makes the LiteRT-LM engine fail deep inside the
+        // native stack with an opaque "model is null" (the email bug report
+        // of 2026-09-22): surface the real cause instead.
         val modelFile = File(path)
         if (!modelFile.exists()) {
             return Result.failure(TranscriptionException.ModelLoadError("file not found: $path"))
+        }
+        // Every real .litertlm/.task model is gigabyte-scale: an empty or
+        // sub-1MB file is a truncated download, and LiteRT-LM would fail
+        // deep in the native stack with the opaque "model is null" instead.
+        if (modelFile.length() < 1L * 1024 * 1024) {
+            return Result.failure(TranscriptionException.ModelLoadError(
+                "model file is empty or truncated (${modelFile.length()} bytes, " +
+                    "expected gigabyte-scale): $path; delete and re-download it"))
         }
 
         appContext = context.applicationContext
