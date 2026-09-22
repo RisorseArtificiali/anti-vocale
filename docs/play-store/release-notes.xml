@@ -1,4 +1,7 @@
 <en-US>
+What's new in 1.13.1:
+• Fixed: low-memory alerts now carry an "Open setting" action that lands on the exact Settings row
+• Changed: models always try to run; the memory guard no longer blocks by default and is opt-in (Settings > Advanced)
 What's new in 1.13.0:
 • New: speaker labels in transcripts (two speakers detected automatically)
 • New: dual-model mode: a fast first pass, then a refined transcript
@@ -26,6 +29,9 @@ What's new in 1.12.0:
 </en-US>
 
 <it-IT>
+Novità della versione 1.13.1:
+• Corretto: gli avvisi di memoria insufficiente hanno ora un'azione "Apri impostazione" che porta alla riga giusta
+• Modifica: i modelli vengono sempre avviati; il controllo memoria non blocca più di default ed è facoltativo (Impostazioni > Avanzate)
 Novità della versione 1.13.0:
 • Nuovo: etichette dei parlanti nei trascritti (rilevati in automatico)
 • Nuovo: modalità doppia: passata veloce, poi testo raffinato

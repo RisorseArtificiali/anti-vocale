@@ -1,0 +1,3 @@
+Novità della versione 1.13.1:
+• Corretto: gli avvisi di memoria insufficiente hanno ora un'azione "Apri impostazione" che porta alla riga giusta
+• Modifica: i modelli vengono sempre avviati; il controllo memoria non blocca più di default ed è facoltativo (Impostazioni > Avanzate)
