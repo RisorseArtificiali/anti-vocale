@@ -196,7 +196,7 @@ Top-level shape:
 |---|---|---|
 | `name` | yes | Shown in the suggestion list; searchable by substring |
 | `languages` | no | ISO codes; searchable by exact/prefix code |
-| `family` | no (default `TRANSDUCER`) | One of `TRANSDUCER`, `WHISPER`, `CTC`, `SENSE_VOICE`; unknown values skip the entry |
+| `family` | no (default `TRANSDUCER`) | One of `TRANSDUCER`, `WHISPER`, `CTC`, `SENSE_VOICE`, `CANARY`, `MOONSHINE`, `DOLPHIN`; unknown values skip the entry |
 | `entryUrl` | yes | URL of the single-model JSON below |
 
 `entryUrl` must point at the single-model document from section 3. Malformed or
@@ -236,8 +236,8 @@ per-variant `source`, `storageDir`, `shareAlias`):
 | Field | Required | Description |
 |---|---|---|
 | `name` | yes | Literal display name (external strings are never localized; the UI shows the exact text) |
-| `family` | no (default `TRANSDUCER`) | `TRANSDUCER`, `WHISPER`, `CTC`, `SENSE_VOICE`; unknown values are rejected |
-| `modelType` | no | Family-aware default: `nemo_transducer` for TRANSDUCER, `""` for WHISPER/SENSE_VOICE; CTC requires `nemo_ctc` or `zipformer_ctc` |
+| `family` | no (default `TRANSDUCER`) | `TRANSDUCER`, `WHISPER`, `CTC`, `SENSE_VOICE`, `CANARY`, `MOONSHINE`, `DOLPHIN`; unknown values are rejected |
+| `modelType` | no | Omitted means the family default (`ModelFamilySupport.defaultModelType`); any other value must appear in `ModelFamilySupport.validModelTypes` for the family or the import is rejected |
 | `languages` | required when `family` present | Normalized ISO codes; doubles as the Whisper default language |
 | `options` | no | Flat map of family options (e.g. `{"whisper.language": "ar"}`) |
 | `description` | no | Literal string |

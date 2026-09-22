@@ -129,7 +129,7 @@ object ModelFamilyDetector {
         // chooser where a CTC pick imports structurally and dies at native
         // load; splitting "ctc as architecture qualifier" from "genuinely
         // mixed repo" needs the file shape or a chooser preselect, tracked
-        // on TASK-618 for the 1.14 window.
+        // on TASK-623.
         return if (matchedWords.size == 1) matchedWords[0].first else null
     }
 }

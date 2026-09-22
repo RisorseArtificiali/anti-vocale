@@ -65,4 +65,60 @@ class DownloadedModelIntegrityTest {
         assertEquals(1, DownloadedModelIntegrity.validate(File("/nonexistent")).size)
         assertEquals(1, DownloadedModelIntegrity.validate(tmp.newFolder()).size)
     }
+
+    /** An .ort fixture: 4-byte root offset + "ORTM" identifier + filler. */
+    private fun ort(name: String, size: Int = 8192, identifier: Boolean = true, onnxFirstByte: Boolean = false): File =
+        File(tmp.newFolder(), name).apply {
+            val head = ByteArray(if (onnxFirstByte) 8 else 8) {
+                when (it) {
+                    0 -> if (onnxFirstByte) 0x08 else 0x14
+                    in 4..7 -> if (identifier) "ORTM"[it - 4].code.toByte() else 0x00
+                    else -> 0x00
+                }
+            }
+            writeBytes(head + ByteArray(size - head.size))
+        }
+
+    @Test
+    fun `valid ort file passes the identifier check`() {
+        // The moonshine v2 shape (GH #89): a finding here would make the
+        // downloader deleteRecursively() the model dir on every clean
+        // download, an install loop (review round: this arm had zero tests).
+        val dir = tmp.newFolder()
+        ort("encoder_model.ort").copyTo(File(dir, "encoder_model.ort"))
+        ort("decoder_model_merged.ort").copyTo(File(dir, "decoder_model_merged.ort"))
+        File(dir, "tokens.txt").writeText((1..100).joinToString("\n") { "tok$it $it" })
+
+        assertTrue(DownloadedModelIntegrity.validate(dir).isEmpty())
+    }
+
+    @Test
+    fun `onnx protobuf bytes under an ort name are flagged`() {
+        val dir = tmp.newFolder()
+        ort("encoder_model.ort", identifier = false, onnxFirstByte = true)
+            .copyTo(File(dir, "encoder_model.ort"))
+
+        val findings = DownloadedModelIntegrity.validate(dir)
+        assertEquals(1, findings.size)
+        assertTrue(findings[0].reason.contains(".ort name"))
+    }
+
+    @Test
+    fun `identifier-less non-onnx ort is left alone`() {
+        // Neither ORTM nor ONNX protobuf: not our failure to diagnose.
+        val dir = tmp.newFolder()
+        ort("encoder_model.ort", identifier = false).copyTo(File(dir, "encoder_model.ort"))
+
+        assertTrue(DownloadedModelIntegrity.validate(dir).isEmpty())
+    }
+
+    @Test
+    fun `truncated ort is flagged by the floor`() {
+        val dir = tmp.newFolder()
+        ort("encoder_model.ort", size = 100).copyTo(File(dir, "encoder_model.ort"))
+
+        val findings = DownloadedModelIntegrity.validate(dir)
+        assertEquals(1, findings.size)
+        assertTrue(findings[0].reason.contains("small"))
+    }
 }

@@ -68,6 +68,13 @@ class SherpaBackend(
         val CANONICAL_JOINER = REQUIRED_MODEL_FILES.first { it.startsWith("joiner") }
         val CANONICAL_TOKENS = REQUIRED_MODEL_FILES.first { it.startsWith("tokens") }
 
+        /** Single-model families (SenseVoice, Dolphin): the one model file's
+         *  canonical name, the owner both families alias so a rename on one
+         *  side cannot re-point the other. Deliberately NOT derived:
+         *  REQUIRED_MODEL_FILES is the transducer set, and single-model
+         *  families have no list here to derive from (review round). */
+        const val CANONICAL_MODEL = "model.int8.onnx"
+
         /**
          * Metadata keys a transducer encoder must carry for [modelType], shared by the
          * external-model importer (import-time validation) and the external engine

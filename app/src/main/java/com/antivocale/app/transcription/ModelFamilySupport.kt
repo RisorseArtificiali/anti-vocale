@@ -104,11 +104,10 @@ private fun pickSingleModelPlan(
     } ?: return null
     val tokens = pickTokens(files) ?: return null
     return linkedMapOf(
-        SenseVoiceSupport.CANONICAL_MODEL to model,
+        SherpaBackend.CANONICAL_MODEL to model,
         SherpaBackend.CANONICAL_TOKENS to tokens,
     )
 }
-
 
 /**
  * The config tail every family shares (tokens path, threading, provider);
@@ -149,7 +148,13 @@ sealed interface ModelFamilySupport {
     val featureDim: Int
         get() = 80
 
-    /** Canonical file names every import of this family must produce. */
+    /**
+     * Canonical file names every import of this family must produce: the
+     * production list for the one-shape families (the [requiredRolesFor]
+     * default is exactly this). MOONSHINE alone returns the union of its two
+     * generations' published names, which nothing in production reads
+     * (moonshine overrides [requiredRolesFor] per generation).
+     */
     fun requiredRoles(): List<String>
 
     /**
@@ -555,8 +560,9 @@ object CtcSupport : ModelFamilySupport {
  * Record modelType: ignored; OfflineModelConfig.modelType = "sense_voice".
  */
 object SenseVoiceSupport : ModelFamilySupport {
-    /** Canonical single-model file name (the .int8.onnx convention of the table). */
-    const val CANONICAL_MODEL = "model.int8.onnx"
+    /** Aliases [SherpaBackend.CANONICAL_MODEL], the single owner of the
+     *  single-model canonical name (rename THERE, not here). */
+    const val CANONICAL_MODEL = SherpaBackend.CANONICAL_MODEL
 
     override val family: ModelFamily = ModelFamily.SENSE_VOICE
 
@@ -848,9 +854,10 @@ object MoonshineSupport : ModelFamilySupport {
  * exactly like the whisper/canary pair).
  */
 object DolphinSupport : ModelFamilySupport {
-    /** Same canonical single-model file as SenseVoice (the shared .int8.onnx
-     *  convention of the table; one definition, both families). */
-    const val CANONICAL_MODEL = SenseVoiceSupport.CANONICAL_MODEL
+    /** Aliases [SherpaBackend.CANONICAL_MODEL], the single owner of the
+     *  single-model canonical name (SenseVoice aliases the same constant;
+     *  renaming means editing THAT one, not this alias). */
+    const val CANONICAL_MODEL = SherpaBackend.CANONICAL_MODEL
 
     override val family: ModelFamily = ModelFamily.DOLPHIN
 
