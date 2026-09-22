@@ -41,6 +41,8 @@ internal class TestSpiOps(
     private val preferences: PreferencesManager,
     private val externalModels: ExternalModelStore,
     private val importer: ExternalModelImportOperations,
+    /** Needed by the notify_memory_error op; the debug receiver passes its context. */
+    private val appContext: android.content.Context? = null,
 ) {
 
     suspend fun handle(
@@ -57,6 +59,7 @@ internal class TestSpiOps(
             OP_SET -> set(key, value, entry)
             OP_RECORDS -> records()
             OP_IMPORT -> importModel(url, family, modelType)
+            OP_NOTIFY_MEMORY_ERROR -> notifyMemoryError()
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -400,10 +403,30 @@ internal class TestSpiOps(
             .toString()
     }
 
+    /**
+     * TASK-625 trial tool: posts the production memory-failure error
+     * notification (the exact ResultNotificationFactory builder both error
+     * surfaces use) so the Open-setting action can be exercised on device
+     * without engineering a real out-of-memory failure. Debug receiver only.
+     */
+    private fun notifyMemoryError(): String {
+        val ctx = appContext ?: error("notify_memory_error requires a Context (debug receiver only)")
+        val factory = com.antivocale.app.service.ResultNotificationFactory(ctx)
+        val message = ctx.getString(
+            com.antivocale.app.R.string.model_load_low_memory, "1.2GB", "4.8GB")
+        val id = com.antivocale.app.service.ResultNotificationFactory.nextNotificationId()
+        ctx.getSystemService(android.app.NotificationManager::class.java)
+            .notify(id, factory.errorNotification(message, memoryAction = true))
+        return JSONObject()
+            .put("op", OP_NOTIFY_MEMORY_ERROR)
+            .put("posted", id)
+            .toString()
+    }
+
     private fun help(error: String? = null): String = JSONObject()
         .apply { error?.let { put("error", it) } }
         .put("op", OP_HELP)
-        .put("ops", JSONArray(listOf(OP_GET, OP_SET, OP_RECORDS, OP_IMPORT, OP_HELP)))
+        .put("ops", JSONArray(listOf(OP_GET, OP_SET, OP_RECORDS, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_HELP)))
         .put("setKeys", JSONArray(SET_KEYS))
         .put(
             "usage",
@@ -423,6 +446,7 @@ internal class TestSpiOps(
         const val OP_SET = "set"
         const val OP_RECORDS = "records"
         const val OP_IMPORT = "import"
+        const val OP_NOTIFY_MEMORY_ERROR = "notify_memory_error"
         const val OP_HELP = "help"
 
         /** TASK-276: the single source is PunctuationPolicy.MODE_PREFS; the SPI only adds write-time strictness. */

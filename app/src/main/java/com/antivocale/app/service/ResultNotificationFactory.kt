@@ -12,6 +12,7 @@ import com.antivocale.app.receiver.NotificationActionReceiver
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.LanguageNames
+import com.antivocale.app.ui.SettingsFocusRow
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Everything needed to (re)build one result notification (TASK-327). */
@@ -65,6 +66,57 @@ class ResultNotificationFactory(private val context: Context) {
         // service ever created the channel.
         AppNotificationChannel.TRANSCRIPTION_RESULT.create(context)
     }
+
+    /**
+     * TASK-625: the transcription-failure error notification, shared by both
+     * error surfaces (InferenceService and TranscriptionNotificationListener)
+     * and by the debug TEST_SPI simulate op. With [memoryAction] the content
+     * intent and an action button deep-link to the memory-protection settings
+     * row; the request codes mirror the services' launch band (same intent
+     * shapes must stay one PendingIntent).
+     */
+    fun errorNotification(errorMessage: String, memoryAction: Boolean): Notification {
+        val launch = if (memoryAction) {
+            settingsRowPendingIntent(SettingsFocusRow.MEMORY_PROTECTION)
+        } else {
+            plainLaunchPendingIntent()
+        }
+        val builder = NotificationCompat.Builder(context, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
+            .setContentTitle(context.getString(R.string.transcription_failed))
+            .setContentText(errorMessage)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(launch)
+            .setAutoCancel(true)
+        if (memoryAction) {
+            builder.addAction(
+                android.R.drawable.ic_menu_set_as,
+                context.getString(R.string.error_open_memory_protection_setting),
+                launch
+            )
+        }
+        return builder.build()
+    }
+
+    /** The plain app launch both error surfaces default to. */
+    private fun plainLaunchPendingIntent(): PendingIntent = PendingIntent.getActivity(
+        context, RC_ERROR_LAUNCH_DEFAULT,
+        Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
+
+    /**
+     * TASK-625: the settings-row deep link. In-app handoff (the live activity
+     * receives the extra via onNewIntent), not a task clear.
+     */
+    fun settingsRowPendingIntent(row: SettingsFocusRow): PendingIntent = PendingIntent.getActivity(
+        context, RC_ERROR_LAUNCH_SETTINGS_ROW,
+        Intent(context, MainActivity::class.java)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            .putExtra(MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW, row.name),
+        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    )
 
     fun build(spec: ResultNotificationSpec, prefs: AppNotificationPreferences): Notification {
         val text = spec.transcriptionText
@@ -280,6 +332,11 @@ class ResultNotificationFactory(private val context: Context) {
     }
 
     companion object {
+        // Mirror the services' launch-band constants so the same intent shape
+        // stays a single PendingIntent whichever builder produced it.
+        private const val RC_ERROR_LAUNCH_DEFAULT = 0
+        private const val RC_ERROR_LAUNCH_SETTINGS_ROW = 2
+
         /** Preview truncation for the non-pageable oversized path, unchanged from the previous implementations. */
         const val CHAR_PREVIEW_LIMIT = 100
 

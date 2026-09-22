@@ -18,11 +18,16 @@ This SPI is deliberately separate from the production exported receivers (`PROCE
 
 ```text
 Action: com.antivocale.app.TEST_SPI   (string extras, one op per broadcast)
-  op     get | set | records | import | help   (missing or unknown op answers with help)
+  op     get | set | records | import | notify_memory_error | help   (missing or unknown op answers with help)
   key    one of the set keys below    (op=set)
   value  the new value                (op=set)
   entry  catalog entry id             (op=set, only for key=sherpa_path)
 ```
+
+`notify_memory_error` (TASK-625 trial tool, no extras) posts the production
+memory-failure error notification through the same ResultNotificationFactory
+builder both error surfaces use, so the Open-setting action can be exercised
+on device without engineering a real out-of-memory failure.
 
 | Op | Extras | Response |
 |---|---|---|

@@ -110,7 +110,7 @@ class TestSpiReceiver : BroadcastReceiver() {
         if (!BuildConfig.DEBUG) return
 
         val pendingResult = goAsync()
-        val ops = TestSpiOps(preferencesManager, externalModelStore, importer)
+        val ops = TestSpiOps(preferencesManager, externalModelStore, importer, context.applicationContext)
         val op = intent.getStringExtra(EXTRA_OP)
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)

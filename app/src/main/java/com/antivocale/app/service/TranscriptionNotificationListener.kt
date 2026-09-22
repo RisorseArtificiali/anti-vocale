@@ -228,25 +228,9 @@ class TranscriptionNotificationListener(
     }
 
     private fun showErrorNotification(errorMessage: String, isMemoryFailure: Boolean) {
-        // TASK-625: mirrors InferenceService's error action for memory failures.
-        val openPendingIntent = buildLaunchPendingIntent(
-            navigateToSettingsRow = if (isMemoryFailure) SettingsFocusRow.MEMORY_PROTECTION else null
-        )
-        val builder = NotificationCompat.Builder(appContext, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
-            .setContentTitle(appContext.getString(R.string.transcription_failed))
-            .setContentText(errorMessage)
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(openPendingIntent)
-            .setAutoCancel(true)
-        if (isMemoryFailure) {
-            builder.addAction(
-                android.R.drawable.ic_menu_set_as,
-                appContext.getString(R.string.error_open_memory_protection_setting),
-                openPendingIntent
-            )
-        }
-        val notification = builder.build()
+        // TASK-625: composition lives in ResultNotificationFactory (both error
+        // surfaces and the TEST_SPI simulate op share this one builder).
+        val notification = resultNotificationFactory.errorNotification(errorMessage, isMemoryFailure)
         val id = ResultNotificationFactory.nextNotificationId()
         notificationManager.notify(id, notification)
         Log.i(TAG, "Worker showed error notification: $errorMessage (memoryAction=$isMemoryFailure, id=$id)")

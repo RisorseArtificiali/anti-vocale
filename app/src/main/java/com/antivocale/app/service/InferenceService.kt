@@ -873,26 +873,9 @@ class InferenceService : Service(), TranscriptionListener {
     }
 
     private fun showErrorNotification(errorMessage: String, isMemoryFailure: Boolean) {
-        // TASK-625: memory-class failures offer a direct jump to the Memory
-        // protection row instead of naming the setting in prose only.
-        val openPendingIntent = buildLaunchPendingIntent(
-            navigateToSettingsRow = if (isMemoryFailure) SettingsFocusRow.MEMORY_PROTECTION else null
-        )
-        val builder = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
-            .setContentTitle(getString(R.string.transcription_failed))
-            .setContentText(errorMessage)
-            .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(openPendingIntent)
-            .setAutoCancel(true)
-        if (isMemoryFailure) {
-            builder.addAction(
-                android.R.drawable.ic_menu_set_as,
-                getString(R.string.error_open_memory_protection_setting),
-                openPendingIntent
-            )
-        }
-        val notification = builder.build()
+        // TASK-625: composition lives in ResultNotificationFactory (both error
+        // surfaces and the TEST_SPI simulate op share this one builder).
+        val notification = resultNotificationFactory.errorNotification(errorMessage, isMemoryFailure)
 
         val id = ResultNotificationFactory.nextNotificationId()
         notificationManager.notify(id, notification)
