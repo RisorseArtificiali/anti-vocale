@@ -1,5 +1,6 @@
 package com.antivocale.app.ui
 
+import com.antivocale.app.MainActivity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -130,5 +131,24 @@ class AppNavigationTest {
         assertNull(AppNavigation.parse("settings:nonexistent"))
         assertNull(AppNavigation.parse("models:nonexistent"))
         assertNull(AppNavigation.parse("history")) // bare tab name without prefix
+    }
+
+    @Test
+    fun `settings focus rows parse by enum name and reject unknown values`() {
+        // TASK-625: the wire value is the enum name the error notification's
+        // PendingIntent writes and MainActivity parses at its boundary.
+        assertEquals(SettingsFocusRow.MEMORY_PROTECTION, AppNavigation.parseSettingsFocusRow("MEMORY_PROTECTION"))
+        assertNull(AppNavigation.parseSettingsFocusRow(null))
+        assertNull(AppNavigation.parseSettingsFocusRow(""))
+        assertNull(AppNavigation.parseSettingsFocusRow("memory_protection")) // valueOf is exact
+        assertNull(AppNavigation.parseSettingsFocusRow("MEMORY_PROTECTION "))
+    }
+
+    @Test
+    fun `the settings-row extra name and wire token are pinned`() {
+        // Writer (both error-notification surfaces) and reader (MainActivity)
+        // share these literals; a drift in either is a silent no-op.
+        assertEquals("navigate_to_settings_row", MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW)
+        assertEquals("MEMORY_PROTECTION", SettingsFocusRow.MEMORY_PROTECTION.name)
     }
 }

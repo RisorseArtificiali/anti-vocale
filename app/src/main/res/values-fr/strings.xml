@@ -224,10 +224,10 @@
     <string name="oom_crash_warning">L\'application a été fermée car la mémoire de l\'appareil était insuffisante. Fermez d\'autres applications ou utilisez un modèle plus léger avant de réessayer.</string>
     <string name="native_crash_title">Application fermée de manière inattendue</string>
     <string name="native_crash_go_to_model">Aller à l\'onglet Modèle</string>
-    <string name="model_load_low_memory">Mémoire libre insuffisante pour ce modèle (%1$s disponibles, environ %2$s nécessaires). Fermez d\'autres applications ou utilisez un modèle plus léger. Le chargement forcé est disponible dans les paramètres.</string>
-    <string name="transcribe_low_memory">Mémoire libre insuffisante pour transcrire avec ce modèle (environ %1$s libres, %2$s nécessaires). Fermez d\'autres applications et réessayez, ou activez Forcer le chargement du modèle dans les paramètres.</string>
-    <string name="force_model_load">Forcer le chargement du modèle</string>
-    <string name="force_model_load_desc">Charge le modèle même si la mémoire semble insuffisante. Peut fermer l\'application sur les appareils avec peu de RAM.</string>
+    <string name="model_load_low_memory">Mémoire libre insuffisante pour ce modèle (%1$s disponibles, environ %2$s nécessaires). La protection de la mémoire est active : fermez d\'autres applications, utilisez un modèle plus léger ou désactivez-la dans les paramètres pour essayer quand même.</string>
+    <string name="transcribe_low_memory">Mémoire libre insuffisante pour transcrire avec ce modèle (environ %1$s libres, %2$s nécessaires). La protection de la mémoire est active : fermez d\'autres applications et réessayez, ou désactivez-la dans les paramètres pour essayer quand même.</string>
+    <string name="memory_protection">Protection de la mémoire</string>
+    <string name="memory_protection_desc">Bloque le chargement d\'un modèle quand la mémoire libre semble insuffisante, pour éviter les fermetures silencieuses de l\'application. Désactivée par défaut : normalement, l\'application tente toujours d\'exécuter le modèle.</string>
     <string name="copy">Copier</string>
     <string name="share">Partager</string>
     <string name="char_counter">%1$d sur %2$d caractères</string>
@@ -510,6 +510,7 @@
     <string name="notification_no_model_title">Modèle non installé</string>
     <string name="notification_no_model_message">Ouvrez l\'application et téléchargez un modèle</string>
     <string name="notification_no_model_action">Ouvrir l\'application</string>
+    <string name="error_open_memory_protection_setting">Ouvrir le réglage</string>
     <string name="notification_channel_tasker_fallback">Automatisation Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Appuyez pour lancer la transcription quand elle est déclenchée en arrière-plan</string>
     <string name="tasker_fallback_notification_text">Appuyez pour lancer la transcription</string>
@@ -850,7 +851,8 @@
     <string name="a11y_back">Retour</string>
     <string name="litertlm_importing">Importation en cours…</string>
     <string name="model_ram_warning">%1$s pourrait manquer de mémoire sur cet appareil. Le chargement pourrait échouer ou planter ; les modèles plus légers sont plus sûrs.</string>
-    <string name="error_oom_transcription">Pas assez de mémoire pour transcrire cet audio. Essayez un fichier plus court, un modèle plus petit, ou fermez d\'autres applications. Si ça échoue encore, Paramètres > Avancé > Forcer le chargement du modèle peut contourner cette vérification.</string>
+    <string name="error_oom_transcription">Pas assez de mémoire pour transcrire cet audio. Essayez un fichier plus court, un modèle plus petit, ou fermez d\'autres applications. Pour éviter la tentative complètement, activez la protection de la mémoire dans Paramètres > Avancé.</string>
+    <string name="error_oom_transcription_protected">Mémoire insuffisante pour transcrire ce fichier audio même avec la protection mémoire activée. Essaie un fichier plus court, un modèle plus petit, ou ferme les autres applications.</string>
     <string name="external_family_detected">Détecté : %1$s</string>
     <string name="external_family_pick_title">De quelle famille ce modèle fait-il partie ?</string>
     <string name="subtitle_timeout_title">Délai de choix automatique</string>

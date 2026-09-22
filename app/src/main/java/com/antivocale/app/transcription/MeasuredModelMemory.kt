@@ -6,7 +6,7 @@ import org.json.JSONObject
  * TASK-575 / GH #106: the measured per-model memory footprint, replacing the
  * disk-size estimate in the load pre-flight once a model has run on this
  * device. The estimate over-refuses (issue #63: a user was told 3056MB was
- * needed, enabled Force model load, and the model ran fine on 1853MB free)
+ * needed, bypassed the check, and the model ran fine on 1853MB free)
  * because the real cost depends on the allocator, the arena, and what the
  * vendor keeps resident, not on the bytes on disk.
  *
@@ -22,8 +22,8 @@ import org.json.JSONObject
  * - A changed model size resets the record: a re-import or updated download
  *   at the same path is a different model.
  * - The max decays 10% per merge, so one noisy sample (another process
- *   allocating during the load window) does not raise the bar forever; the
- *   force-load escape covers the meanwhile.
+ *   allocating during the load window) does not raise the bar forever; with
+ *   protection opt-in (TASK-631), turning it off remains the escape.
  * - The record keys on backendId + provider + threads + path: the same model
  *   under a different inference provider (NNAPI driver buffers vs CPU arena,
  *   issue #26) is a different footprint.

@@ -76,6 +76,10 @@ interface TranscriptionListener {
         errorMessage: String,
         isShareRequest: Boolean,
         isNoModelError: Boolean,
-        durationMs: Long
+        durationMs: Long,
+        /** TASK-625: a memory-class failure (typed, see
+         * [com.antivocale.app.transcription.isMemoryClassFailure]); the error
+         * notification offers the Memory-protection action for these. */
+        isMemoryFailure: Boolean = false
     )
 }

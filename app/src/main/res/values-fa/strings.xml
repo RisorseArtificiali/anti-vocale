@@ -271,10 +271,10 @@
     <string name="oom_crash_warning">برنامه بسته شد چون حافظه آزاد دستگاه کم بود. پیش از رونویسی دوباره، برنامه‌های دیگر را ببندید یا از مدل کوچک‌تری استفاده کنید.</string>
     <string name="native_crash_title">بسته شدن غیرمنتظره</string>
     <string name="native_crash_go_to_model">رفتن به زبانه مدل</string>
-    <string name="model_load_low_memory">حافظه آزاد برای این مدل کافی نیست (%1$s موجود، حدود %2$s لازم است). برنامه‌های دیگر را ببندید یا از مدل کوچک‌تری استفاده کنید. بارگذاری اجباری در تنظیمات در دسترس است.</string>
-    <string name="transcribe_low_memory">حافظه آزاد برای رونویسی با این مدل کافی نیست (حدود %1$s آزاد، %2$s لازم است). برنامه‌های دیگر را ببندید و دوباره امتحان کنید، یا بارگذاری اجباری مدل را در تنظیمات روشن کنید.</string>
-    <string name="force_model_load">بارگذاری اجباری مدل</string>
-    <string name="force_model_load_desc">مدل را حتی وقتی حافظه کافی به نظر نمی‌رسد بارگذاری می‌کند. ممکن است روی دستگاه‌های کم‌رم باعث بسته شدن برنامه شود.</string>
+    <string name="model_load_low_memory">حافظه آزاد برای این مدل کافی نیست (%1$s موجود، حدود %2$s لازم است). محافظت از حافظه فعال است: برنامه‌های دیگر را ببندید، از مدل کوچک‌تری استفاده کنید، یا برای تلاش در هر صورت آن را در تنظیمات خاموش کنید.</string>
+    <string name="transcribe_low_memory">حافظه آزاد برای رونویسی با این مدل کافی نیست (حدود %1$s آزاد، %2$s لازم است). محافظت از حافظه فعال است: برنامه‌های دیگر را ببندید و دوباره امتحان کنید، یا برای تلاش در هر صورت آن را در تنظیمات خاموش کنید.</string>
+    <string name="memory_protection">محافظت از حافظه</string>
+    <string name="memory_protection_desc">بارگذاری مدل را وقتی حافظه آزاد کافی به نظر نمی‌رسد مسدود می‌کند تا از بسته شدن بی‌صدا برنامه جلوگیری شود. به طور پیش‌فرض خاموش است: معمولاً برنامه همیشه سعی می‌کند مدل را اجرا کند.</string>
     <string name="copy">کپی</string>
     <string name="share">هم‌رسانی</string>
     <string name="char_counter">%1$d از %2$d نویسه</string>
@@ -708,6 +708,7 @@
     <string name="notification_no_model_title">مدل نصب نیست</string>
     <string name="notification_no_model_message">برنامه را باز کنید و یک مدل دانلود کنید</string>
     <string name="notification_no_model_action">باز کردن برنامه</string>
+    <string name="error_open_memory_protection_setting">باز کردن تنظیم</string>
 
     <!-- Content descriptions (accessibility) -->
     <string name="back">بازگشت</string>
@@ -989,7 +990,8 @@
     <string name="a11y_back">بازگشت</string>
     <string name="litertlm_importing">در حال وارد کردن…</string>
     <string name="model_ram_warning">ممکن است %1$s روی این دستگاه حافظه کافی نداشته باشد. ممکن است بارگذاری نشود یا کرش کند؛ مدل‌های سبک‌تر مطمئن‌ترند.</string>
-    <string name="error_oom_transcription">حافظه برای رونویسی این صدا کافی نیست. فایل کوتاه‌تر یا مدل کوچک‌تری را امتحان کنید، یا برنامه‌های دیگر را ببندید. اگر باز هم شکست خورد، تنظیمات > پیشرفته > اجبار بارگذاری مدل می‌تواند این بررسی را رد کند.</string>
+    <string name="error_oom_transcription">حافظه برای رونویسی این صدا کافی نیست. فایل کوتاه‌تر یا مدل کوچک‌تری را امتحان کنید، یا برنامه‌های دیگر را ببندید. برای اینکه این تلاش اصلاً انجام نشود، محافظت از حافظه را در تنظیمات > پیشرفته روشن کنید.</string>
+    <string name="error_oom_transcription_protected">حتی با فعال بودن محافظت حافظه، حافظه کافی برای رونویسی این صوت وجود ندارد. یک فایل کوتاه‌تر یا مدل کوچک‌تر امتحان کنید یا سایر برنامه‌ها را ببندید.</string>
     <string name="external_family_detected">شناسایی‌شده: %1$s</string>
     <string name="external_family_pick_title">این مدل به کدام خانواده تعلق دارد؟</string>
     <string name="subtitle_timeout_title">مهلت انتخاب خودکار</string>

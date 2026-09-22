@@ -277,10 +277,10 @@
     <string name="oom_crash_warning">The app was closed because the device was running low on memory. Try closing other apps or using a smaller model before transcribing again.</string>
     <string name="native_crash_title">App closed unexpectedly</string>
     <string name="native_crash_go_to_model">Go to Model tab</string>
-    <string name="model_load_low_memory">Not enough free memory for this model (%1$s available, about %2$s needed). Close other apps or use a smaller model. Forced loading is available in Settings.</string>
-    <string name="transcribe_low_memory">Not enough free memory to transcribe with this model (about %1$s free, %2$s needed). Close other apps and try again, or enable Force model load in Settings.</string>
-    <string name="force_model_load">Force model load</string>
-    <string name="force_model_load_desc">Load the model even when memory seems insufficient. May close the app on devices with little RAM.</string>
+    <string name="model_load_low_memory">Not enough free memory for this model (%1$s available, about %2$s needed). Memory protection is active: close other apps, use a smaller model, or turn it off in Settings to try anyway.</string>
+    <string name="transcribe_low_memory">Not enough free memory to transcribe with this model (about %1$s free, %2$s needed). Memory protection is active: close other apps and try again, or turn it off in Settings to try anyway.</string>
+    <string name="memory_protection">Memory protection</string>
+    <string name="memory_protection_desc">Block loading a model when free memory looks insufficient, to avoid silent app crashes. Off by default: normally the app always tries to run the model.</string>
     <string name="copy">Copy</string>
     <string name="share">Share</string>
     <string name="char_counter">%1$d of %2$d chars</string>
@@ -619,6 +619,7 @@
     <string name="notification_no_model_title">Model not installed</string>
     <string name="notification_no_model_message">Open the app and download a model</string>
     <string name="notification_no_model_action">Open app</string>
+    <string name="error_open_memory_protection_setting">Open setting</string>
 
     <!-- Tasker fallback notification -->
     <string name="notification_channel_tasker_fallback">Tasker Automation</string>
@@ -988,7 +989,8 @@
     <string name="a11y_back">Back</string>
     <string name="litertlm_importing">Importing…</string>
     <string name="model_ram_warning">%1$s may not have enough memory on this device. It might fail to load or crash; lighter models are safer.</string>
-    <string name="error_oom_transcription">Not enough memory to transcribe this audio. Try a shorter file, a smaller model, or close other apps. If it still fails, Settings > Advanced > Force model load can bypass this check.</string>
+    <string name="error_oom_transcription">Not enough memory to transcribe this audio. Try a shorter file, a smaller model, or close other apps. To avoid the attempt altogether, enable Memory protection in Settings > Advanced.</string>
+    <string name="error_oom_transcription_protected">Not enough memory to transcribe this audio even with memory protection on. Try a shorter file, a smaller model, or close other apps.</string>
     <string name="external_family_detected">Detected: %1$s</string>
     <string name="external_family_pick_title">Which family is this model?</string>
     <string name="subtitle_timeout_title">Automatic Choice Timeout</string>

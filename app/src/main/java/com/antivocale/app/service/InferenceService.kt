@@ -27,6 +27,7 @@ import com.antivocale.app.transcription.DualRefinementPolicy
 import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
+import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.ProgressThrottler
 import com.antivocale.app.util.TranscriptFileSaver
@@ -65,9 +66,16 @@ class InferenceService : Service(), TranscriptionListener {
 
         private const val RC_LAUNCH_DEFAULT = 0
         private const val RC_LAUNCH_MODEL_TAB = 1
+        private const val RC_LAUNCH_SETTINGS_ROW = 2
         private const val RC_NAV_PREV = 10
         private const val RC_NAV_NEXT = 11
         private const val RC_NAV_LIVE = 12
+
+        // TaskId-hash request codes live above the small-constant band: a raw
+        // hash can land on a constant's value, and PendingIntent matching
+        // ignores extras, so a collision silently overwrites the other intent
+        // (the slot-band comment in InferenceEnqueue documents the same class).
+        private const val RC_HASH_BASE = 1000
 
         const val EXTRA_SOURCE = "source"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
@@ -595,7 +603,8 @@ class InferenceService : Service(), TranscriptionListener {
         errorMessage: String,
         isShareRequest: Boolean,
         isNoModelError: Boolean,
-        durationMs: Long
+        durationMs: Long,
+        isMemoryFailure: Boolean
     ) {
         sendErrorReply(taskId, errorCode, errorMessage)
         // TASK-307: in-app failures get the same notification as share failures.
@@ -603,11 +612,11 @@ class InferenceService : Service(), TranscriptionListener {
         // an in-app transcription had no immediate signal unless they expanded the row.
         if (isNoModelError) showNoModelNotification()
         else showErrorNotification(
-            // TASK-396 pt.1: the orchestrator's OOM catch reports the technical
-            // class name as the message; the notification must carry the localized
-            // mitigation advice, not "OutOfMemoryError".
-            if (errorCode == "OUT_OF_MEMORY") getString(R.string.error_oom_transcription)
-            else errorMessage)
+            // TASK-631: the orchestrator now sends the localized message for
+            // every failure path, including the OOM catch (its advice varies
+            // with the memory-protection state), so errorMessage is final.
+            errorMessage,
+            isMemoryFailure = isMemoryFailure)
     }
 
     // ---- Broadcast Replies ----
@@ -863,19 +872,31 @@ class InferenceService : Service(), TranscriptionListener {
         Log.i(TAG, "Showed result notification (${transcriptionText.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction} (id=$id)")
     }
 
-    private fun showErrorNotification(errorMessage: String) {
-        val notification = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
+    private fun showErrorNotification(errorMessage: String, isMemoryFailure: Boolean) {
+        // TASK-625: memory-class failures offer a direct jump to the Memory
+        // protection row instead of naming the setting in prose only.
+        val openPendingIntent = buildLaunchPendingIntent(
+            navigateToSettingsRow = if (isMemoryFailure) SettingsFocusRow.MEMORY_PROTECTION else null
+        )
+        val builder = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
             .setContentTitle(getString(R.string.transcription_failed))
             .setContentText(errorMessage)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(buildLaunchPendingIntent())
+            .setContentIntent(openPendingIntent)
             .setAutoCancel(true)
-            .build()
+        if (isMemoryFailure) {
+            builder.addAction(
+                android.R.drawable.ic_menu_set_as,
+                getString(R.string.error_open_memory_protection_setting),
+                openPendingIntent
+            )
+        }
+        val notification = builder.build()
 
         val id = ResultNotificationFactory.nextNotificationId()
         notificationManager.notify(id, notification)
-        Log.i(TAG, "Showed error notification: $errorMessage (id=$id)")
+        Log.i(TAG, "Showed error notification: $errorMessage (memoryAction=$isMemoryFailure, id=$id)")
     }
 
     private fun showNoModelNotification() {
@@ -904,19 +925,29 @@ class InferenceService : Service(), TranscriptionListener {
 
     private fun buildLaunchPendingIntent(
         navigateToModelTab: Boolean = false,
-        highlightTaskId: String? = null
+        highlightTaskId: String? = null,
+        navigateToSettingsRow: SettingsFocusRow? = null
     ): android.app.PendingIntent {
         val requestCode = when {
-            highlightTaskId != null -> highlightTaskId.hashCode()
+            highlightTaskId != null ->
+                RC_HASH_BASE + highlightTaskId.hashCode().let { if (it < 0) it.inv() else it }
+            navigateToSettingsRow != null -> RC_LAUNCH_SETTINGS_ROW
             navigateToModelTab -> RC_LAUNCH_MODEL_TAB
             else -> RC_LAUNCH_DEFAULT
         }
         val openIntent = Intent(this, MainActivity::class.java).apply {
-            if (highlightTaskId != null) {
+            // In-app deep links (highlight, settings row) hand the extra to the
+            // live activity (onNewIntent) instead of clearing its task.
+            if (highlightTaskId != null || navigateToSettingsRow != null) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, highlightTaskId)
             } else {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            when {
+                highlightTaskId != null ->
+                    putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, highlightTaskId)
+                navigateToSettingsRow != null ->
+                    putExtra(MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW, navigateToSettingsRow.name)
             }
             if (navigateToModelTab) {
                 putExtra(MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, true)

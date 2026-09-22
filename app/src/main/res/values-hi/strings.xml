@@ -254,10 +254,10 @@
     <string name="oom_crash_warning">डिवाइस की मेमोरी कम होने की वजह से ऐप बंद कर दिया गया। फिर ट्रांसक्राइब करने से पहले दूसरे ऐप बंद करें या कोई छोटा मॉडल इस्तेमाल करें।</string>
     <string name="native_crash_title">ऐप अचानक बंद हुआ</string>
     <string name="native_crash_go_to_model">मॉडल टैब पर जाएं</string>
-    <string name="model_load_low_memory">इस मॉडल के लिए ज़रूरी मेमोरी काफ़ी नहीं है (%1$s उपलब्ध, लगभग %2$s चाहिए)। दूसरे ऐप बंद करें या छोटा मॉडल इस्तेमाल करें। सेटिंग में फ़ोर्स्ड लोडिंग उपलब्ध है।</string>
-    <string name="transcribe_low_memory">इस मॉडल से ट्रांसक्राइब करने के लिए पर्याप्त खाली मेमोरी नहीं है (लगभग %1$s खाली, %2$s चाहिए)। अन्य ऐप्स बंद करके पुनः प्रयास करें, या सेटिंग में मॉडल लोड बाध्य करें चालू करें।</string>
-    <string name="force_model_load">मॉडल ज़बरदस्ती लोड करें</string>
-    <string name="force_model_load_desc">मेमोरी कम लगने पर भी मॉडल लोड करें। कम RAM वाले डिवाइस पर ऐप बंद हो सकता है।</string>
+    <string name="model_load_low_memory">इस मॉडल के लिए ज़रूरी मेमोरी काफ़ी नहीं है (%1$s उपलब्ध, लगभग %2$s चाहिए)। मेमोरी सुरक्षा सक्रिय है: दूसरे ऐप बंद करें, छोटा मॉडल इस्तेमाल करें, या फिर भी कोशिश करने के लिए इसे सेटिंग में बंद कर दें।</string>
+    <string name="transcribe_low_memory">इस मॉडल से ट्रांसक्राइब करने के लिए पर्याप्त खाली मेमोरी नहीं है (लगभग %1$s खाली, %2$s चाहिए)। मेमोरी सुरक्षा सक्रिय है: अन्य ऐप्स बंद करके पुनः प्रयास करें, या फिर भी कोशिश करने के लिए इसे सेटिंग में बंद कर दें।</string>
+    <string name="memory_protection">मेमोरी सुरक्षा</string>
+    <string name="memory_protection_desc">जब खाली मेमोरी काफ़ी न लगे तो मॉडल लोड होने से रोकें, ताकि ऐप चुपचाप बंद न हो। डिफ़ॉल्ट रूप से बंद है: सामान्यतः ऐप हमेशा मॉडल चलाने की कोशिश करता है।</string>
     <string name="copy">कॉपी करें</string>
     <string name="share">शेयर करें</string>
     <string name="char_counter">%2$d में से %1$d अक्षर</string>
@@ -586,6 +586,7 @@
     <string name="notification_no_model_title">मॉडल इंस्टॉल नहीं है</string>
     <string name="notification_no_model_message">ऐप खोलें और मॉडल डाउनलोड करें</string>
     <string name="notification_no_model_action">ऐप खोलें</string>
+    <string name="error_open_memory_protection_setting">सेटिंग खोलें</string>
 
     <!-- Tasker fallback notification -->
     <string name="notification_channel_tasker_fallback">Tasker ऑटोमेशन</string>
@@ -984,7 +985,8 @@
     <string name="a11y_back">पीछे</string>
     <string name="litertlm_importing">इंपोर्ट हो रहा है…</string>
     <string name="model_ram_warning">इस डिवाइस पर %1$s के लिए पर्याप्त मेमोरी नहीं हो सकती। लोड विफल हो सकता है; हल्के मॉडल सुरक्षित हैं।</string>
-    <string name="error_oom_transcription">इस ऑडियो को ट्रांसक्रिप्ट करने के लिए पर्याप्त मेमोरी नहीं है। छोटी फ़ाइल, हल्का मॉडल आज़माएं, या अन्य ऐप बंद करें। यदि फिर भी विफल हो, तो सेटिंग्स > उन्नत > मॉडल लोड बाध्य करें इस जाँच को छोड़ सकता है।</string>
+    <string name="error_oom_transcription">इस ऑडियो को ट्रांसक्रिप्ट करने के लिए पर्याप्त मेमोरी नहीं है। छोटी फ़ाइल, हल्का मॉडल आज़माएं, या अन्य ऐप बंद करें। यह कोशिश पूरी तरह टालने के लिए सेटिंग्स > उन्नत में मेमोरी सुरक्षा चालू करें।</string>
+    <string name="error_oom_transcription_protected">मेमोरी सुरक्षा चालू होने के बावजूद इस ऑडियो को ट्रांसक्राइब करने के लिए मेमोरी काफ़ी नहीं है। छोटी फ़ाइल या छोटा मॉडल आज़माएँ, या दूसरे ऐप बंद करें।</string>
     <string name="external_family_detected">पहचाना गया: %1$s</string>
     <string name="external_family_pick_title">यह मॉडल किस परिवार का है?</string>
     <string name="subtitle_timeout_title">स्वचालित चयन समय-सीमा</string>

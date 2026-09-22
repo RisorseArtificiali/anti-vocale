@@ -10,8 +10,11 @@ import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.documentfile.provider.DocumentFile
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
@@ -34,6 +37,7 @@ import androidx.compose.ui.Alignment
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import androidx.compose.ui.Modifier
@@ -42,10 +46,12 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
 import com.antivocale.app.ui.AppNavigation
+import com.antivocale.app.ui.SettingsFocusRow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -92,6 +98,8 @@ fun SettingsTab(
     onNavigateToModelTab: () -> Unit = {},
     navRequest: AppNavigation.NavRequest? = null,
     onNavConsumed: () -> Unit = {},
+    focusRow: SettingsFocusRow? = null,
+    onFocusRowConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -115,7 +123,7 @@ fun SettingsTab(
     val groupLogsByConversation by viewModel.groupLogsByConversation.collectAsState()
     val advancedSharingEnabled by viewModel.advancedSharingEnabled.collectAsState()
     val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
-    val forceModelLoad by viewModel.forceModelLoad.collectAsState()
+    val memoryProtection by viewModel.memoryProtection.collectAsState()
     val compactResultActions by viewModel.compactResultActions.collectAsState()
     val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
     // TASK-546: the chip flag (maintainer directive: the flag lives here).
@@ -188,6 +196,79 @@ fun SettingsTab(
                 }
             }
             else -> Unit
+        }
+    }
+
+    // TASK-625: row-level focus (the memory-failure notification action).
+    // Same mechanics as the section branch above: consume first, back out of
+    // any open sub-page, then scroll to the row's captured content-space Y
+    // once layout has delivered it. The scroll and the highlight decay run in
+    // navScope so they survive this effect's relaunch on consumption.
+    var memoryProtectionRowY by remember { mutableStateOf<Int?>(null) }
+    var memoryProtectionHighlighted by remember { mutableStateOf(false) }
+    LaunchedEffect(focusRow) {
+        val row = focusRow ?: return@LaunchedEffect
+        onFocusRowConsumed()
+        when (row) {
+            SettingsFocusRow.MEMORY_PROTECTION -> {
+                showIconSettings = false
+                showPromptSettings = false
+                showPerAppSettings = false
+                showExportSettings = false
+                // A live search query keeps non-matching rows out of
+                // composition, so the focus row would never lay out: clear it.
+                searchQuery = ""
+                // The row lives in the collapsed-by-default Advanced section:
+                // expand it (the TASK-543 counter pattern, same key as the
+                // section destination) or the row never lays out and there is
+                // nothing to scroll to.
+                expandCounters["advanced"] = (expandCounters["advanced"] ?: 0) + 1
+                // Everything below awaits frames, and consuming the focus
+                // signal relaunches (read: cancels) this effect; the wait and
+                // the scroll must run in navScope to survive it.
+                navScope.launch {
+                    // Wait for the row to lay out (the expand bump above), then
+                    // converge on it. The expand and the async cards above the
+                    // row (battery, share targets) keep shifting its position,
+                    // so re-derive the target from the LIVE row position each
+                    // pass; rowY - contentRoot is invariant to scrolling and
+                    // tracks only real layout changes. Reaching a CLAMPED cap
+                    // is not convergence while the list can still grow: an
+                    // in-flight expand keeps maxValue small, so treat clamped
+                    // passes as settled only once maxValue has stopped moving.
+                    var attempts = 0
+                    var settled = false
+                    var lastMax = -1
+                    var stableMaxFrames = 0
+                    while (attempts < 48 && !settled) {
+                        val rowY = memoryProtectionRowY
+                        if (rowY == null) {
+                            withFrameNanos { }
+                        } else {
+                            val wanted = maxOf(0, rowY - scrollContentRootY - 32)
+                            val cap = minOf(wanted, scrollState.maxValue)
+                            val clamped = wanted > scrollState.maxValue
+                            if (clamped) {
+                                stableMaxFrames =
+                                    if (scrollState.maxValue == lastMax) stableMaxFrames + 1 else 0
+                                lastMax = scrollState.maxValue
+                                scrollState.animateScrollTo(cap)
+                                settled = stableMaxFrames >= 3
+                                if (!settled) withFrameNanos { }
+                            } else if (kotlin.math.abs(scrollState.value - cap) <= 4) {
+                                settled = true
+                            } else {
+                                scrollState.animateScrollTo(cap)
+                                withFrameNanos { }
+                            }
+                        }
+                        attempts++
+                    }
+                    memoryProtectionHighlighted = true
+                    delay(2_500)
+                    memoryProtectionHighlighted = false
+                }
+            }
         }
     }
 
@@ -405,7 +486,7 @@ fun SettingsTab(
                     R.string.advanced_sharing_toggle,
                 ),
                 listOf(R.string.subtitle_timeout_title, R.string.subtitle_timeout_description),
-                listOf(R.string.force_model_load, R.string.force_model_load_desc),
+                listOf(R.string.memory_protection, R.string.memory_protection_desc),
                 listOf(R.string.per_app_settings_title, R.string.per_app_settings_description),
                 listOf(R.string.performance_stats_title, R.string.performance_stats_subtitle),
             ).map { group -> group.map { context.getString(it) } }
@@ -1723,16 +1804,27 @@ fun SettingsTab(
                 )
             }
 
-            // Force model load (bypass the low-memory pre-flight)
-            val forceModelLoadTitle = stringResource(R.string.force_model_load)
-            val forceModelLoadDescription = stringResource(R.string.force_model_load_desc)
-            SearchFilterRow(searchQuery, forceModelLoadTitle, forceModelLoadDescription) {
+            // Memory protection (opt-in low-memory pre-flight; off by default the app never blocks)
+            val memoryProtectionTitle = stringResource(R.string.memory_protection)
+            val memoryProtectionDescription = stringResource(R.string.memory_protection_desc)
+            SearchFilterRow(searchQuery, memoryProtectionTitle, memoryProtectionDescription) {
+                // TASK-625: the memory-failure notification scrolls here and
+                // flashes the card border (selection border, LauncherIconScreen
+                // pattern); idle is a transparent border, invisible.
+                val highlightColor by animateColorAsState(
+                    if (memoryProtectionHighlighted) MaterialTheme.colorScheme.primary else Color.Transparent,
+                    tween(durationMillis = 400),
+                    label = "memory_protection_highlight"
+                )
                 ToggleSettingCard(
                     icon = Icons.Default.Memory,
-                    title = forceModelLoadTitle,
-                    description = forceModelLoadDescription,
-                    checked = forceModelLoad,
-                    onCheckedChange = { viewModel.saveForceModelLoad(it) }
+                    title = memoryProtectionTitle,
+                    description = memoryProtectionDescription,
+                    checked = memoryProtection,
+                    onCheckedChange = { viewModel.saveMemoryProtection(it) },
+                    modifier = Modifier
+                        .onGloballyPositioned { memoryProtectionRowY = it.positionInRoot().y.toInt() }
+                        .border(2.dp, highlightColor, MaterialTheme.shapes.medium)
                 )
             }
 

@@ -268,7 +268,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 val isNoModel = isNoModelConfiguredError(error)
                 persistFailureContext(taskId, error, context)
                 logError(taskId, logMsg, duration)
-                listener.onError(taskId, "BACKEND_LOAD_FAILED", userMsg, isShareRequest, isNoModel, duration)
+                listener.onError(taskId, "BACKEND_LOAD_FAILED", userMsg, isShareRequest, isNoModel, duration,
+                    isMemoryFailure = isMemoryClassFailure(error))
                 return Result.failure(error)
             }
 
@@ -476,7 +477,8 @@ class TranscriptionOrchestrator @Inject constructor(
                             ?.let { userMsg += " $it" }
                     }
                     val isNoModel = isNoModelConfiguredError(error)
-                    listener.onError(taskId, "INFERENCE_ERROR", userMsg, isShareRequest, isNoModel, duration)
+                    listener.onError(taskId, "INFERENCE_ERROR", userMsg, isShareRequest, isNoModel, duration,
+                        isMemoryFailure = isMemoryClassFailure(error))
                 }
             )
 
@@ -496,9 +498,19 @@ class TranscriptionOrchestrator @Inject constructor(
             val duration = System.currentTimeMillis() - startTime
             persistFailureContext(taskId, e, context)
             logError(taskId, "OutOfMemoryError")
-            listener.onError(taskId, "OUT_OF_MEMORY", "OutOfMemoryError", isShareRequest, false, duration)
-            return Result.failure(TranscriptionException.InsufficientMemory(
-                context.getString(R.string.error_oom_transcription)))
+            // TASK-631: the advice differs by protection state. With protection
+            // OFF (default) the notification's action offers to enable it; with
+            // protection ON it already tried the guard and the advice must be
+            // close apps / smaller model, not "enable what is enabled". The
+            // localized text travels as errorMessage (the service no longer
+            // swaps the string for this code).
+            val protectionOn = preferencesManager.memoryProtection.first()
+            val oomMessage = context.getString(
+                if (protectionOn) R.string.error_oom_transcription_protected
+                else R.string.error_oom_transcription)
+            listener.onError(taskId, "OUT_OF_MEMORY", oomMessage, isShareRequest, false, duration,
+                isMemoryFailure = !protectionOn)
+            return Result.failure(TranscriptionException.InsufficientMemory(oomMessage))
         } catch (e: Exception) {
             Log.e(TAG, "Error processing request", e)
             val duration = System.currentTimeMillis() - startTime
@@ -1266,7 +1278,8 @@ class TranscriptionOrchestrator @Inject constructor(
      * Shared pre-flight + preference resolution + backend activation body.
      *
      * Validates the model directory, runs the OOM memory pre-flight gated by
-     * [forceModelLoad], resolves thread count and inference provider, then calls
+     * the opt-in [memoryProtection] preference, resolves thread count and
+     * inference provider, then calls
      * [backendManager.setActiveBackend] with the [configBlock] lambda.
      *
      * Shared by [configureSherpaBackend] (static sherpa-onnx backends) and
@@ -1283,17 +1296,20 @@ class TranscriptionOrchestrator @Inject constructor(
             return Result.failure(IllegalStateException("$label model directory not found: ${modelDir.absolutePath}"))
         }
         // Pre-flight memory check: refuse to load if free memory is below the model size + headroom.
-        // Gated by the forceModelLoad preference so a determined user can bypass it. availMem is a
-        // coarse predictor (lmkd uses PSI + oom_score_adj, not a literal MemAvailable comparison);
-        // the headroom absorbs inference overhead and reclaimable-cache noise.
+        // TASK-631: runs ONLY when the opt-in memoryProtection preference is on; off (the default)
+        // the app always attempts the load and never refuses on its own (two healthy-device
+        // misfires). availMem is a coarse predictor (lmkd uses PSI + oom_score_adj, not a literal
+        // MemAvailable comparison); the headroom absorbs inference overhead and reclaimable-cache
+        // noise.
         // TASK-575: A0 sampled unconditionally (the measurement is wanted even
-        // when the check is bypassed by forceModelLoad); provider/threads are
+        // when protection is off); provider/threads are
         // part of the measurement key (same model under NNAPI vs CPU is a
         // different footprint).
         val resolvedProviderPref = InferenceProvider.resolve(preferencesManager.inferenceProvider.first())
         val threadCountPref = preferencesManager.threadCount.first()
         val availBeforeLoad = availableMemoryBytes(context)
-        if (!preferencesManager.forceModelLoad.first()) {
+        val memoryProtectionOn = preferencesManager.memoryProtection.first()
+        if (memoryProtectionOn) {
             val availBytes = availBeforeLoad
             // Fail open if we could not read available memory (e.g. no ActivityManager service in
             // a test/local context): blocking on an unknown value would regress those contexts and
@@ -1315,7 +1331,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 } else {
                     modelDir.walkTopDown().filter { it.isFile }.sumOf { it.length() } + MEMORY_HEADROOM_BYTES
                 }
-                if (availBytes < requiredBytes) {
+                if (shouldRefuseForMemory(memoryProtectionOn, availBytes, requiredBytes)) {
                     Log.w(TAG, "Blocking $label load: avail=${availBytes / MB}MB < required=${requiredBytes / MB}MB (basis=${if (measured != null) "measured" else "size+headroom"}, headroom=${MEMORY_HEADROOM_BYTES / MB}MB)")
                     return Result.failure(TranscriptionException.InsufficientMemory(
                         context.getString(R.string.model_load_low_memory, formatMb(availBytes), formatMb(requiredBytes))
@@ -1566,13 +1582,15 @@ class TranscriptionOrchestrator @Inject constructor(
             // hold even the minimum-chunk baseline, the old path proceeded at
             // the floor and the process walked into an LMK/OEM kill with no
             // trace anywhere (the 4GB crash report, TASK-468). A clear error
-            // beats a silent death; forceModelLoad keeps the bypass, mirroring
-            // the load pre-flight. Returned (not thrown) so the refusal rides
-            // the same failure path as every other transcription refusal.
+            // beats a silent death; TASK-631 makes the refusal opt-in
+            // (memoryProtection, mirroring the load pre-flight) so by default
+            // the app attempts the transcription anyway. Returned (not thrown)
+            // so the refusal rides the same failure path as every other
+            // transcription refusal.
             // avail is read POST-load (the model is resident), so the
             // required figure is the decode-side bar only; the displayed
             // number is exactly the compared number.
-            if (!preferencesManager.forceModelLoad.first() &&
+            if (preferencesManager.memoryProtection.first() &&
                 TranscriptionMemoryPolicy.canServeMinimumChunk(availBytes, modelSize, memoryFamily) == false
             ) {
                 // minimumDecodeBaselineBytes already carries the headroom:

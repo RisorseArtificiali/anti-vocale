@@ -17,6 +17,7 @@ import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.TimedSegment
+import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.TranscriptFileSaver
 import kotlinx.coroutines.CoroutineScope
@@ -125,10 +126,11 @@ class TranscriptionNotificationListener(
         errorMessage: String,
         isShareRequest: Boolean,
         isNoModelError: Boolean,
-        durationMs: Long
+        durationMs: Long,
+        isMemoryFailure: Boolean
     ) {
         if (!isShareRequest) return
-        if (isNoModelError) showNoModelNotification() else showErrorNotification(errorMessage)
+        if (isNoModelError) showNoModelNotification() else showErrorNotification(errorMessage, isMemoryFailure)
     }
 
     // ---- Auto-Copy (ported from InferenceService to keep the service untouched) ----
@@ -225,18 +227,29 @@ class TranscriptionNotificationListener(
         Log.i(TAG, "Worker showed result notification (${transcriptionText.length} chars) (id=$id)")
     }
 
-    private fun showErrorNotification(errorMessage: String) {
-        val notification = NotificationCompat.Builder(appContext, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
+    private fun showErrorNotification(errorMessage: String, isMemoryFailure: Boolean) {
+        // TASK-625: mirrors InferenceService's error action for memory failures.
+        val openPendingIntent = buildLaunchPendingIntent(
+            navigateToSettingsRow = if (isMemoryFailure) SettingsFocusRow.MEMORY_PROTECTION else null
+        )
+        val builder = NotificationCompat.Builder(appContext, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
             .setContentTitle(appContext.getString(R.string.transcription_failed))
             .setContentText(errorMessage)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(buildLaunchPendingIntent())
+            .setContentIntent(openPendingIntent)
             .setAutoCancel(true)
-            .build()
+        if (isMemoryFailure) {
+            builder.addAction(
+                android.R.drawable.ic_menu_set_as,
+                appContext.getString(R.string.error_open_memory_protection_setting),
+                openPendingIntent
+            )
+        }
+        val notification = builder.build()
         val id = ResultNotificationFactory.nextNotificationId()
         notificationManager.notify(id, notification)
-        Log.i(TAG, "Worker showed error notification: $errorMessage (id=$id)")
+        Log.i(TAG, "Worker showed error notification: $errorMessage (memoryAction=$isMemoryFailure, id=$id)")
     }
 
     private fun showNoModelNotification() {
@@ -261,19 +274,29 @@ class TranscriptionNotificationListener(
 
     private fun buildLaunchPendingIntent(
         navigateToModelTab: Boolean = false,
-        highlightTaskId: String? = null
+        highlightTaskId: String? = null,
+        navigateToSettingsRow: SettingsFocusRow? = null
     ): PendingIntent {
         val requestCode = when {
-            highlightTaskId != null -> highlightTaskId.hashCode()
+            highlightTaskId != null ->
+                RC_HASH_BASE + highlightTaskId.hashCode().let { if (it < 0) it.inv() else it }
+            navigateToSettingsRow != null -> RC_LAUNCH_SETTINGS_ROW
             navigateToModelTab -> RC_LAUNCH_MODEL_TAB
             else -> RC_LAUNCH_DEFAULT
         }
         val openIntent = Intent(appContext, MainActivity::class.java).apply {
-            if (highlightTaskId != null) {
+            // In-app deep links (highlight, settings row) hand the extra to the
+            // live activity (onNewIntent) instead of clearing its task.
+            if (highlightTaskId != null || navigateToSettingsRow != null) {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, highlightTaskId)
             } else {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            }
+            when {
+                highlightTaskId != null ->
+                    putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, highlightTaskId)
+                navigateToSettingsRow != null ->
+                    putExtra(MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW, navigateToSettingsRow.name)
             }
             if (navigateToModelTab) {
                 putExtra(MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, true)
@@ -289,5 +312,10 @@ class TranscriptionNotificationListener(
         private const val TAG = "TranscriptionNotificationListener"
         private const val RC_LAUNCH_DEFAULT = 0
         private const val RC_LAUNCH_MODEL_TAB = 1
+        private const val RC_LAUNCH_SETTINGS_ROW = 2
+
+        // TaskId-hash codes live above the small-constant band (see the same
+        // comment on InferenceService.RC_HASH_BASE).
+        private const val RC_HASH_BASE = 1000
     }
 }

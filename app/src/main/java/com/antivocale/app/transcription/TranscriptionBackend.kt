@@ -195,6 +195,23 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
 }
 
 /**
+ * TASK-625: whether this failure belongs to the memory class (the pre-flight
+ * refusals plus the OOM catch). The error notification offers the
+ * jump-to-Memory-protection action for exactly these; detection is typed, never the
+ * localized message text.
+ */
+fun isMemoryClassFailure(error: Throwable): Boolean =
+    error is TranscriptionException.InsufficientMemory || error is OutOfMemoryError
+
+/**
+ * TASK-631: the load pre-flight refusal. Protection is OPT-IN (off by default:
+ * the app never refuses a model on its own), and an unreadable memory value
+ * (0) fails open rather than blocking on an unknown figure.
+ */
+fun shouldRefuseForMemory(protectionOn: Boolean, availBytes: Long, requiredBytes: Long): Boolean =
+    protectionOn && availBytes > 0L && availBytes < requiredBytes
+
+/**
  * Result from audio transcription containing the text and optional metadata.
  */
 data class TranscriptionResult(

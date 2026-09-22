@@ -255,10 +255,10 @@
     <string name="oom_crash_warning">Die App wurde geschlossen, weil der Gerätespeicher knapp war. Schließe andere Apps oder verwende ein kleineres Modell, bevor du erneut transkribierst.</string>
     <string name="native_crash_title">App unerwartet geschlossen</string>
     <string name="native_crash_go_to_model">Zum Tab \"Modell\" gehen</string>
-    <string name="model_load_low_memory">Nicht genug freier Speicher für dieses Modell (%1$s verfügbar, etwa %2$s benötigt). Schließe andere Apps oder verwende ein kleineres Modell. Erzwungenes Laden ist in den Einstellungen verfügbar.</string>
-    <string name="transcribe_low_memory">Nicht genug freier Speicher, um mit diesem Modell zu transkribieren (etwa %1$s frei, %2$s benötigt). Schließe andere Apps und versuche es erneut, oder aktiviere Modell laden erzwingen in den Einstellungen.</string>
-    <string name="force_model_load">Modellladen erzwingen</string>
-    <string name="force_model_load_desc">Das Modell auch dann laden, wenn der Speicher nicht auszureichen scheint. Kann die App auf Geräten mit wenig RAM schließen.</string>
+    <string name="model_load_low_memory">Nicht genug freier Speicher für dieses Modell (%1$s verfügbar, etwa %2$s benötigt). Speicherschutz ist aktiv: Schließe andere Apps, verwende ein kleineres Modell oder deaktiviere ihn in den Einstellungen, um es trotzdem zu versuchen.</string>
+    <string name="transcribe_low_memory">Nicht genug freier Speicher, um mit diesem Modell zu transkribieren (etwa %1$s frei, %2$s benötigt). Speicherschutz ist aktiv: Schließe andere Apps und versuche es erneut oder deaktiviere ihn in den Einstellungen, um es trotzdem zu versuchen.</string>
+    <string name="memory_protection">Speicherschutz</string>
+    <string name="memory_protection_desc">Das Laden eines Modells blockieren, wenn der freie Speicher nicht auszureichen scheint, um stilles Schließen der App zu vermeiden. Standardmäßig aus: Normalerweise versucht die App immer, das Modell auszuführen.</string>
     <string name="copy">Kopieren</string>
     <string name="share">Teilen</string>
     <string name="char_counter">%1$d von %2$d Zeichen</string>
@@ -587,6 +587,7 @@
     <string name="notification_no_model_title">Modell nicht installiert</string>
     <string name="notification_no_model_message">Öffne die App und lade ein Modell herunter</string>
     <string name="notification_no_model_action">App öffnen</string>
+    <string name="error_open_memory_protection_setting">Einstellung öffnen</string>
 
     <!-- Tasker fallback notification -->
     <string name="notification_channel_tasker_fallback">Tasker-Automatisierung</string>
@@ -985,7 +986,8 @@
     <string name="a11y_back">Zurück</string>
     <string name="litertlm_importing">Import läuft…</string>
     <string name="model_ram_warning">%1$s hat auf diesem Gerät möglicherweise nicht genug Speicher. Das Laden könnte fehlschlagen oder abstürzen; leichtere Modelle sind sicherer.</string>
-    <string name="error_oom_transcription">Nicht genug Speicher, um dieses Audio zu transkribieren. Versuche eine kürzere Datei, ein kleineres Modell, oder schließe andere Apps. Wenn es weiterhin fehlschlägt, kann Einstellungen > Erweitert > Modell-Laden erzwingen diese Prüfung umgehen.</string>
+    <string name="error_oom_transcription">Nicht genug Speicher, um dieses Audio zu transkribieren. Versuche eine kürzere Datei, ein kleineres Modell, oder schließe andere Apps. Um den Versuch ganz zu vermeiden, aktiviere Speicherschutz in Einstellungen > Erweitert.</string>
+    <string name="error_oom_transcription_protected">Nicht genug Speicher, um dieses Audio auch mit aktivem Speicherschutz zu transkribieren. Versuche eine kürzere Datei, ein kleineres Modell oder schließe andere Apps.</string>
     <string name="external_family_detected">Erkannt: %1$s</string>
     <string name="external_family_pick_title">Zu welcher Familie gehört dieses Modell?</string>
     <string name="subtitle_timeout_title">Automatische Wahlzeit</string>

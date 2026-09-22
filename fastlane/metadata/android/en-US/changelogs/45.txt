@@ -1,0 +1,3 @@
+What's new in 1.13.1:
+• Fixed: low-memory alerts now carry an "Open setting" action that lands on the exact Settings row
+• Changed: models always try to run; the memory guard no longer blocks by default and is opt-in (Settings > Advanced)

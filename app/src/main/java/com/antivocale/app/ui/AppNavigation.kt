@@ -12,6 +12,15 @@ import java.util.concurrent.atomic.AtomicLong
  * depended on it. The debug bridge keeps its own object; everything the
  * release build uses lives here.
  */
+
+/**
+ * TASK-625: a single Settings row to scroll into view and briefly highlight.
+ * Set by the memory-failure error notification's action, which names the
+ * Memory protection setting; the value travels as its enum name in
+ * [com.antivocale.app.MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW].
+ */
+enum class SettingsFocusRow { MEMORY_PROTECTION }
+
 object AppNavigation {
     private val seqCounter = AtomicLong(0)
 
@@ -72,6 +81,11 @@ object AppNavigation {
         data class SettingsSection(val key: String) : Destination
         data class ModelTarget(val key: String) : Destination
     }
+
+    /** TASK-625: parses the settings-row extra; null on unknown values. */
+    fun parseSettingsFocusRow(name: String?): SettingsFocusRow? =
+        if (name.isNullOrBlank()) null
+        else runCatching { SettingsFocusRow.valueOf(name) }.getOrNull()
 
     fun parse(dest: String?): Destination? {
         if (dest.isNullOrBlank()) return null

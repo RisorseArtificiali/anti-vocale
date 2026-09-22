@@ -78,7 +78,7 @@ interface PreferencesManager {
     val showTechnicalDetails: Flow<Boolean>
     val advancedSharingEnabled: Flow<Boolean>
     val showRetranscribeButton: Flow<Boolean>
-    val forceModelLoad: Flow<Boolean>
+    val memoryProtection: Flow<Boolean>
     val compactResultActions: Flow<Boolean>
     /** TASK-546: show the detected-language chip on results. */
     val languageChipEnabled: Flow<Boolean>
@@ -126,7 +126,7 @@ interface PreferencesManager {
     suspend fun saveShowTechnicalDetails(enabled: Boolean)
     suspend fun saveAdvancedSharingEnabled(enabled: Boolean)
     suspend fun saveShowRetranscribeButton(enabled: Boolean)
-    suspend fun saveForceModelLoad(enabled: Boolean)
+    suspend fun saveMemoryProtection(enabled: Boolean)
     suspend fun saveCompactResultActions(enabled: Boolean)
     suspend fun saveLanguageChipEnabled(enabled: Boolean)
 
@@ -214,7 +214,8 @@ interface PreferencesManager {
         const val DEFAULT_SHOW_TECHNICAL_DETAILS = false
         const val DEFAULT_ADVANCED_SHARING_ENABLED = false
         const val DEFAULT_SHOW_RETRANSCRIBE_BUTTON = true
-        const val DEFAULT_FORCE_MODEL_LOAD = false
+        /** TASK-631: protection is opt-in; by default the app never refuses a load on its own. */
+        const val DEFAULT_MEMORY_PROTECTION = false
         const val DEFAULT_COMPACT_RESULT_ACTIONS = true
         /** TASK-546: the chip mitigates invisible wrong-language detection; on by default. */
         const val DEFAULT_LANGUAGE_CHIP_ENABLED = true

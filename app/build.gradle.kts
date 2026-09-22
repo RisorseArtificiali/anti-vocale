@@ -32,7 +32,7 @@ android {
         applicationId = "com.antivocale.app"
         minSdk = 26
         targetSdk = 36
-        versionCode = 44
+        versionCode = 45
         versionName = "1.14.0-SNAPSHOT"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

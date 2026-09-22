@@ -273,10 +273,10 @@
     <string name="oom_crash_warning">האפליקציה נסגרה כי הזיכרון במכשיר אזל. נסה לסגור אפליקציות אחרות או להשתמש במודל קטן יותר לפני תמלול חוזר.</string>
     <string name="native_crash_title">האפליקציה נסגרה באופן בלתי צפוי</string>
     <string name="native_crash_go_to_model">מעבר ללשונית מודלים</string>
-    <string name="model_load_low_memory">אין מספיק זיכרון פנוי למודל הזה (%1$s זמינים, דרושים כ-%2$s). סגור אפליקציות אחרות או השתמש במודל קטן יותר. טעינה בכפייה זמינה בהגדרות.</string>
-    <string name="transcribe_low_memory">אין מספיק זיכרון פנוי לתמלל עם המודל הזה (כ-%1$s פנויים, דרושים %2$s). סגור אפליקציות אחרות ונסה שוב, או הפעל טעינת מודל בכפייה בהגדרות.</string>
-    <string name="force_model_load">טעינת מודל בכפייה</string>
-    <string name="force_model_load_desc">טוען את המודל גם כשנראה שאין מספיק זיכרון. עלול לסגור את האפליקציה במכשירים עם מעט RAM.</string>
+    <string name="model_load_low_memory">אין מספיק זיכרון פנוי למודל הזה (%1$s זמינים, דרושים כ-%2$s). הגנת הזיכרון פעילה: סגור אפליקציות אחרות, השתמש במודל קטן יותר, או כבה אותה בהגדרות כדי לנסות בכל זאת.</string>
+    <string name="transcribe_low_memory">אין מספיק זיכרון פנוי לתמלל עם המודל הזה (כ-%1$s פנויים, דרושים %2$s). הגנת הזיכרון פעילה: סגור אפליקציות אחרות ונסה שוב, או כבה אותה בהגדרות כדי לנסות בכל זאת.</string>
+    <string name="memory_protection">הגנת זיכרון</string>
+    <string name="memory_protection_desc">חוסם טעינת מודל כשנראה שאין מספיק זיכרון פנוי, כדי למנוע סגירה שקטה של האפליקציה. כבוי כברירת מחדל: בדרך כלל האפליקציה תמיד מנסה להריץ את המודל.</string>
     <string name="copy">העתקה</string>
     <string name="share">שיתוף</string>
     <string name="char_counter">%1$d מתוך %2$d תווים</string>
@@ -617,6 +617,7 @@
     <string name="notification_no_model_title">מודל לא מותקן</string>
     <string name="notification_no_model_message">פתח את האפליקציה והורד מודל</string>
     <string name="notification_no_model_action">פתיחת האפליקציה</string>
+    <string name="error_open_memory_protection_setting">פתיחת ההגדרה</string>
 
     <!-- Tasker fallback notification -->
     <string name="notification_channel_tasker_fallback">אוטומציה של Tasker</string>
@@ -990,7 +991,8 @@
     <string name="a11y_back">חזרה</string>
     <string name="litertlm_importing">מייבא…</string>
     <string name="model_ram_warning">ייתכן שאין ל%1$s מספיק זיכרון במכשיר זה. הטעינה עלולה להיכשל או לקרוס; מודלים קלים יותר בטוחים יותר.</string>
-    <string name="error_oom_transcription">אין מספיק זיכרון לתמלל את האודיו הזה. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. אם זה עדיין נכשל, הגדרות > מתקדם > כפה טעינת מודל יכול לדלג על בדיקה זו.</string>
+    <string name="error_oom_transcription">אין מספיק זיכרון לתמלל את האודיו הזה. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. כדי להימנע מהניסיון לחלוטין, הפעל הגנת זיכרון בהגדרות > מתקדם.</string>
+    <string name="error_oom_transcription_protected">אין די זיכרון לתמלול האודיו הזה גם כשהגנת הזיכרון פעילה. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות.</string>
     <string name="external_family_detected">זוהה: %1$s</string>
     <string name="external_family_pick_title">לאיזו משפחה שייך המודל?</string>
     <string name="subtitle_timeout_title">פסק זמן בחירה אוטומטית</string>

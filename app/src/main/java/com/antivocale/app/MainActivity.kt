@@ -25,7 +25,9 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.service.InferenceService
+import com.antivocale.app.ui.AppNavigation
 import com.antivocale.app.ui.MainScreen
+import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.ui.TestNavigation
 import com.antivocale.app.ui.theme.AntiVocaleTheme
 import com.antivocale.app.ui.theme.TextScale
@@ -58,6 +60,9 @@ class MainActivity : AppCompatActivity() {
         /** Intent extra: taskId of a log entry to highlight (scroll-to + expand). */
         const val EXTRA_HIGHLIGHT_TASK_ID = "highlight_task_id"
 
+        /** Intent extra: [com.antivocale.app.ui.SettingsFocusRow] name to scroll to and highlight. */
+        const val EXTRA_NAVIGATE_TO_SETTINGS_ROW = "navigate_to_settings_row"
+
         private const val PIP_ASPECT_RATIO_NUMERATOR = 9
         private const val PIP_ASPECT_RATIO_DENOMINATOR = 16
     }
@@ -71,6 +76,13 @@ class MainActivity : AppCompatActivity() {
 
     /** When true, the app opens on the Model tab. Set by native-crash dialog or intent extra. */
     private val _navigateToModelTab = MutableStateFlow(false)
+
+    /**
+     * TASK-625: the Settings row to scroll to and highlight (the memory-failure
+     * notification action). Null once consumed by the Settings tab, so a second
+     * tap on the same notification re-delivers instead of being deduped.
+     */
+    private val _settingsFocusRow = MutableStateFlow<SettingsFocusRow?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,6 +130,13 @@ class MainActivity : AppCompatActivity() {
             intent.removeExtra(EXTRA_HIGHLIGHT_TASK_ID)
         }
 
+        // TASK-625: Settings row focus (cold start); removed so a later
+        // configuration-change recreation does not replay the scroll.
+        AppNavigation.parseSettingsFocusRow(intent.getStringExtra(EXTRA_NAVIGATE_TO_SETTINGS_ROW))?.let {
+            _settingsFocusRow.value = it
+            intent.removeExtra(EXTRA_NAVIGATE_TO_SETTINGS_ROW)
+        }
+
         requestNotificationPermissionIfNeeded()
         setContent {
             // Collect theme preference and convert to ThemeType
@@ -146,6 +165,9 @@ class MainActivity : AppCompatActivity() {
             // Observe late navigation signals (e.g. the native-crash dialog button)
             val navigateToModel by _navigateToModelTab.collectAsState()
 
+            // TASK-625: the Settings row-focus signal, cleared after delivery
+            val settingsFocusRow by _settingsFocusRow.collectAsState()
+
             // Observe transcription state and update PiP auto-enter params
             LaunchedEffect(Unit) {
                 InferenceService.isTranscribing.collect { isTranscribing ->
@@ -161,7 +183,9 @@ class MainActivity : AppCompatActivity() {
                     MainScreen(
                         startOnModelTab = startOnModelTab,
                         navigateToModel = navigateToModel,
-                        isInPipMode = isInPip
+                        isInPipMode = isInPip,
+                        focusSettingsRow = settingsFocusRow,
+                        onSettingsFocusConsumed = { _settingsFocusRow.value = null }
                     )
                 }
             }
@@ -182,6 +206,12 @@ class MainActivity : AppCompatActivity() {
         setIntent(intent)
         intent.getStringExtra(EXTRA_HIGHLIGHT_TASK_ID)?.let {
             logsViewModel.highlightLogEntry(it)
+        }
+        AppNavigation.parseSettingsFocusRow(intent.getStringExtra(EXTRA_NAVIGATE_TO_SETTINGS_ROW))?.let {
+            _settingsFocusRow.value = it
+            // Strip it so the retained intent cannot replay the deep link on a
+            // later configuration-change recreation (same contract as onCreate).
+            intent.removeExtra(EXTRA_NAVIGATE_TO_SETTINGS_ROW)
         }
         captureTestNavigation(intent)
     }
