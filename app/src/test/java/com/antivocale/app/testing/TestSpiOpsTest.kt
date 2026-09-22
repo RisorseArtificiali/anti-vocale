@@ -418,7 +418,7 @@ class TestSpiOpsTest {
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "import", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "import", "notify_memory_error", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
@@ -426,7 +426,10 @@ class TestSpiOpsTest {
 
     @Test
     fun `missing op returns help and unknown op returns help with an error`() = runTest {
-        assertFalse(ops.handle(null).contains("error"))
+        // Assert on the JSON field, not the raw string: the ops list now
+        // contains "notify_memory_error", whose name would false-positive a
+        // substring check.
+        assertFalse(JSONObject(ops.handle(null)).has("error"))
         assertTrue(ops.handle("bogus").contains("unknown op 'bogus'"))
     }
 
