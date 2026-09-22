@@ -265,6 +265,9 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.13.1:
+• Behoben: Warnungen bei wenig Speicher haben jetzt eine Aktion "Einstellung öffnen", die direkt zur passenden Zeile in den Einstellungen führt
+• Geändert: Modelle werden immer gestartet; der Speicherschutz blockiert standardmäßig nicht mehr und ist optional (Einstellungen > Erweitert)
 Neuigkeiten in Version 1.13.0:
 • Neu: Sprecher-Markierungen in Transkripten (zwei Sprecher automatisch)
 • Neu: Dual-Modus: schneller Erstdurchlauf, dann verfeinerter Text
@@ -318,6 +321,9 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>
+Novedades de la versión 1.13.1:
+• Corregido: los avisos de memoria insuficiente ahora tienen una acción "Abrir ajuste" que lleva a la fila exacta en Ajustes
+• Cambiado: los modelos siempre intentan ejecutarse; la protección de memoria ya no bloquea por defecto y es opcional (Ajustes > Avanzado)
 Novedades de la versión 1.13.0:
 • Nuevo: etiquetas de hablante en las transcripciones (dos detectados)
 • Nuevo: modo dual: primera pasada rápida y luego texto refinado
@@ -371,6 +377,9 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.13.1 :
+• Corrigé : les alertes de mémoire insuffisante proposent désormais une action "Ouvrir le réglage" qui mène à la ligne exacte dans les Paramètres
+• Modifié : les modèles tentent toujours de se lancer ; la protection mémoire ne bloque plus par défaut et est optionnelle (Paramètres > Avancé)
 Nouveautés de la version 1.13.0 :
 • Nouveau : étiquettes de locuteur (deux locuteurs détectés)
 • Nouveau : mode double : passe rapide puis texte affiné
@@ -424,6 +433,9 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>
+Novidades da versão 1.13.1:
+• Corrigido: os avisos de memória insuficiente agora têm uma ação "Abrir configuração" que leva exatamente à linha certa em Configurações
+• Alterado: os modelos sempre tentam rodar; a proteção de memória não bloqueia mais por padrão e é opcional (Configurações > Avançado)
 Novidades da versão 1.13.0:
 • Novo: rótulos de falante nas transcrições (dois detectados)
 • Novo: modo duplo: primeira passada rápida e depois texto refinado
@@ -477,6 +489,9 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>
+Что нового в версии 1.13.1:
+• Исправлено: предупреждения о нехватке памяти теперь содержат действие «Открыть настройку», ведущее к нужной строке настроек
+• Изменено: модели всегда запускаются; защита памяти больше не блокирует по умолчанию и включается вручную (Настройки > Дополнительно)
 Что нового в версии 1.13.0:
 • Новое: метки дикторов в транскрипциях (до двух дикторов автоматически)
 • Новое: двухэтапный режим: быстрый черновик, затем уточнённый текст
@@ -530,6 +545,9 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>
+Sürüm 1.13.1'deki yenilikler:
+• Düzeltildi: yetersiz bellek uyarıları artık tam doğru ayar satırına götüren "Ayarı aç" eylemi içeriyor
+• Değişti: modeller her zaman çalışmayı dener; bellek koruması varsayılan olarak engellemez ve isteğe bağlıdır (Ayarlar > Gelişmiş)
 Sürüm 1.13.0\'daki yenilikler:
 • Yeni: transkriptlerde konuşmacı etiketleri (iki konuşmacı otomatik)
 • Yeni: çift mod: hızlı ilk taslak, sonra rafine metin
@@ -583,6 +601,9 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.13.1:
+• Poprawiono: alerty o małej pamięci mają teraz działanie "Otwórz ustawienie", prowadzące dokładnie do właściwego wiersza w Ustawieniach
+• Zmieniono: modele zawsze próbują się uruchomić; ochrona pamięci domyślnie nie blokuje i jest opcjonalna (Ustawienia > Zaawansowane)
 Nowości w wersji 1.13.0:
 • Nowe: etykiety mówców w transkrypcjach (do dwóch mówców automatycznie)
 • Nowe: tryb podwójny: szybki wstęp, a potem dopracowany tekst
@@ -636,6 +657,9 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>
+संस्करण 1.13.1 में नया क्या है:
+• ठीक: कम मेमोरी वाले अलर्ट में अब "सेटिंग खोलें" कार्रवाई है जो सेटिंग्स की सही पंक्ति तक ले जाती है
+• बदलाव: मॉडल हमेशा चलने की कोशिश करते हैं; मेमोरी गार्ड अब डिफ़ॉल्ट रूप से रोकता नहीं और वैकल्पिक है (सेटिंग्स > उन्नत)
 संस्करण 1.13.0 में नया क्या है:
 • नया: प्रतिलेखों में वक्ता लेबल (दो वक्ताओं तक स्वतः पहचान)
 • नया: दोहरा मोड: तेज़ पहला पास, फिर परिष्कृत पाठ
