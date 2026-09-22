@@ -208,6 +208,21 @@ fi
 say "phase 2/3: fork push (only if local recipe commits are pending)"
 BR="$(git -C "$FORK_CHECKOUT" branch --show-current)"
 [ -n "$BR" ] || fail "fork checkout is on a detached HEAD; check out the recipe branch first"
+# 2026-09-21 incident: the checkout sat on another app's branch (cookies-
+# extractor-1.0.0) and finalize happily force-pushed this release's recipe
+# onto that app's MR. The lane rule is the app PREFIX, not the exact
+# version: an anti-vocale-<X.Y.Z> branch of a DIFFERENT version is the
+# documented state while an MR is still open when the next version drops
+# (fdroid maintainers ask for the newer bump pushed to the SAME branch;
+# docs/research/2026-09-01-fdroiddata-branch-conventions.md section 4), so
+# only non-anti-vocale lanes are refused. No remediation command printed:
+# creating the branch here would cut it from whatever HEAD the drifted
+# checkout sits on; the runbook (step 4) owns the reset-onto-upstream dance.
+EXPECTED_BR="anti-vocale-${TAG#v}"
+case "$BR" in
+  anti-vocale-*) ;;
+  *) fail "fork checkout is on branch '$BR' but this release pushes an anti-vocale-* lane (expected '$EXPECTED_BR' or the open-MR branch); see docs/release-runbook.md" ;;
+esac
 git -C "$FORK_CHECKOUT" fetch -q origin
 LOCAL_SHA="$(git -C "$FORK_CHECKOUT" rev-parse HEAD)"
 REMOTE_SHA="$(git -C "$FORK_CHECKOUT" rev-parse -q --verify "origin/$BR" || true)"

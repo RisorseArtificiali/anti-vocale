@@ -21,6 +21,13 @@
 # all three per-ABI signed APK URLs to resolve. Every other ref passes
 # untouched. Local-only pushes (remote sha all zeros) pass: nothing leaves
 # the machine, no pipeline starts.
+#
+# Lane check (2026-09-21 incident class, seventh review round): a push whose
+# tree carries the recipe may only land on an anti-vocale-* release branch
+# or the sync lanes (master/main). The finalize script has its own guard,
+# but the runbook's manual-push fallback crosses only THIS hook, and the
+# content keying alone would happily ship the recipe onto another app's
+# branch in this fork (the cookies-extractor incident was exactly that).
 set -euo pipefail
 
 APP_REPO="${FDROID_CROSSCHECK_APP_REPO:-$HOME/data/repo/personal/anti-vocale}"
@@ -38,6 +45,16 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   # the recipe file is a recipe branch, whatever it is called and whatever
   # this checkout happens to have checked out right now.
   recipe="$(git show "$local_sha:$RECIPE_REL" 2>/dev/null)" || continue
+
+  case "$remote_ref" in
+    refs/heads/master|refs/heads/main|refs/heads/anti-vocale-*) ;;
+    refs/heads/*)
+      echo "pre-push: REFUSED: recipe-carrying push to lane '$remote_ref'." >&2
+      echo "  Only anti-vocale-* release branches and the master/main sync lanes" >&2
+      echo "  may carry this recipe (2026-09-21 cross-app incident class)." >&2
+      exit 1 ;;
+    *) ;;
+  esac
 
   ver="$(awk '/^  - versionName:/{v=$3} END{print v}' <<<"$recipe")"
   [ -n "$ver" ] || { echo "pre-push: no versionName in the pushed recipe; refusing" >&2; exit 1; }
