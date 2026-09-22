@@ -107,7 +107,7 @@ already decodes EMPTY and the family cap is 8, not 9.
 
 App consequence (fixed same night): ExternalSherpaBackend's moonshine family
 chunk cap shipped at 30s in TASK-618 and would have blanked most
-voice-message-length audio for these exports; it is now 9s (correct for every
+voice-message-length audio for these exports; it is now 8s (correct for every
 variant, es included).
 
 Catalog implications for TASK-619:
