@@ -118,7 +118,7 @@ mirrors are csukuangfj2/sherpa-onnx-moonshine-*.)
   re-exporting. What it taught survives on TASK-621: the raw-vs-frame mask
   contract and the mask-free es generation.
 
-## Draft upstream issue (not filed; maintainer approval pending per standing rule)
+## Upstream issue (FILED 2026-09-22: https://github.com/k2-fsa/sherpa-onnx/issues/3975)
 
 Title: moonshine v2: ForwardDecoder feeds encoder_attention_mask at frame
 length; graphs expect raw audio length (silent empty decode above 384
