@@ -316,6 +316,27 @@ scripts/release-fdroid-references.sh finalize vX.Y.Z
 
 Proof: GitLab pipeline `success`; the build is marked "verified reproducible".
 
+## Step 7b. The update MR is the checkupdates bot's job (do NOT open one manually)
+
+Since mid-September 2026 the F-Droid side is autonomous: the recipe carries
+`AutoUpdateMode: Version` + the new `CurrentVersionCode`, so F-Droid's
+**checkupdates bot** detects the GitHub release and opens the update MR on
+fdroiddata by itself (evidence: 414, 434 and 444 all landed as "bot: Update
+Anti-Vocale to <code>" commits; 454 became MR !49871 the morning after the
+v1.13.1 release). Our acts end at Step 6/7: fork branch pushed (reference
+build) and pipeline green. Then VERIFY the bot did its part:
+
+```bash
+scripts/check-fdroid-bot-mr.sh <CurrentVersionCode>
+# e.g. scripts/check-fdroid-bot-mr.sh 454
+```
+
+A manual MR from the fork is the FALLBACK only (the bot has not opened one
+within a few days, or the change is not a plain version bump the bot can
+generate: new app, new srclib, category changes). The 2026-09-23 correction:
+the maintainer had to point out the bot flow after a stale manual-MR habit
+nearly opened a duplicate; the check script exists so no session repeats it.
+
 ## Step 8. Play Store (independent of F-Droid timing)
 
 **Do NOT dispatch anything after the release is published.** The
