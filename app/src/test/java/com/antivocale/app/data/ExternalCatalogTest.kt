@@ -143,7 +143,23 @@ class ExternalCatalogTest {
         // + orukeet italian-focused parakeet fine-tune (2026-09-20, FLEURS-it
         //   gain verified from the publisher's paired evidence; desktop-eval
         //   clean on real voice messages)
+        // + omnilingual 300M CTC multilingual (TASK-635): HELD from the index
+        //   until a release ships omnilingual_ctc (the remote index is live for
+        //   every installed app; v1.13.x would reject the modelType). The entry
+        //   file is pinned by its own test below.
         assertEquals(14, entries.size)
+
+        // TASK-635: the omnilingual entry is HELD from the index until a
+        // release ships omnilingual_ctc; pin the entry file itself so it
+        // cannot rot while held (name, family, modelType, both file pins).
+        val omnilingualJson = java.io.File(
+            "src/main/assets/external-catalog/omnilingual-300m.json").readText()
+        val omnilingual = org.json.JSONObject(omnilingualJson)
+        assertTrue(omnilingual.getString("name").startsWith("Omnilingual ASR 300M"))
+        assertEquals("CTC", omnilingual.getString("family"))
+        assertEquals("omnilingual_ctc", omnilingual.getString("modelType"))
+        assertEquals(2, omnilingual.getJSONArray("files").length())
+
         val sense = ExternalCatalog.filter(entries, "sense")
         assertEquals(1, sense.size)
         assertEquals(ModelFamily.SENSE_VOICE, sense[0].family)

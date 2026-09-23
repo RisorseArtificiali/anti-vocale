@@ -1,0 +1,22 @@
+{
+    "name": "Omnilingual ASR 300M int8 (multilingual, experimental, Apache-2.0)",
+    "family": "CTC",
+    "modelType": "omnilingual_ctc",
+    "languages": [
+        "multilingual"
+    ],
+    "files": [
+        {
+            "name": "encoder.int8.onnx",
+            "url": "https://huggingface.co/Hinotsuba/sherpa-onnx-omnilingual-asr-1600-languages-300M-ctc-int8-2025-11-12/resolve/main/model.int8.onnx",
+            "sha256": "e7c4e54ee4c4c47829cc6667d5d00ed8ea7bef1dcfeef0fce766f77752a2726c",
+            "size": 365352120
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/Hinotsuba/sherpa-onnx-omnilingual-asr-1600-languages-300M-ctc-int8-2025-11-12/resolve/main/tokens.txt",
+            "sha256": "a7a044c52cb29cbe8b0dc1953e92cefd4ca16b0ed968177b6beab21f9a7d0b31",
+            "size": 86423
+        }
+    ]
+}

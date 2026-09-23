@@ -224,7 +224,7 @@ structurally loadable.
 
 ## Family selector
 
-The dropdown above the import buttons sets the model family (see the table above). Below it, a conditional options panel: Whisper gets an optional language field, SenseVoice an optional language plus an inverse-text-normalization switch, CTC a subtype selector (`nemo_ctc` / `zipformer_ctc`), Canary a fixed four-language field (en/es/de/fr, defaulting to en). Moonshine and Dolphin add no options (their recognizers take none); Moonshine accepts both its generations' file shapes and Dolphin shares SenseVoice's, so a `model`+tokens set without a family-name hint asks which family it is. The languages field applies to all families.
+The dropdown above the import buttons sets the model family (see the table above). Below it, a conditional options panel: Whisper gets an optional language field, SenseVoice an optional language plus an inverse-text-normalization switch, CTC a subtype selector (`nemo_ctc` / `zipformer_ctc` / `omnilingual_ctc`), Canary a fixed four-language field (en/es/de/fr, defaulting to en). Moonshine and Dolphin add no options (their recognizers take none); Moonshine accepts both its generations' file shapes and Dolphin shares SenseVoice's, so a `model`+tokens set without a family-name hint asks which family it is. The languages field applies to all families.
 
 The URL import dialog also offers autocomplete suggestions from a small bundled catalog (searchable by name or language code, e.g. "ar" or "arabic"); tapping a suggestion fills the URL and the family.
 
