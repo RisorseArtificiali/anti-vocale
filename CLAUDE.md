@@ -100,7 +100,7 @@ NNAPI is available on ALL devices including MediaTek. If a native crash occurs w
 
 ## Skills
 
-- **`/model-scout [scope]`** -- Scout HuggingFace, GitHub releases, and the ASR landscape for new models, framework updates, and techniques that could improve on-device transcription. Scopes: `full`, `asr`, `llm`, `frameworks`, `parakeet`, `whisper`, `qwen`. Reports saved to `docs/scout-reports/`.
+- **`/model-scout [scope]`** -- Scout HuggingFace, GitHub releases, and the ASR landscape for new models, framework updates, and techniques that could improve on-device transcription in any language (global scope; Italian is the reference bench), with community-catalog importability as a first-class axis. Scopes: `full`, `asr`, `llm`, `frameworks`, `parakeet`, `whisper`, `qwen`, `languages:a,b,c` (per-language sweep). Reports saved to `docs/scout-reports/`.
 
 ## Backlog label taxonomy
 

@@ -135,7 +135,8 @@ Thumbs.db
 *.zip
 
 # Claude Code (skills/ is public: the community-model-conversion skill is the
-# documented DIY path for catalog exporters, linked from docs and CONTRIBUTING)
+# documented DIY path for catalog exporters, linked from docs and CONTRIBUTING;
+# model-scout is advertised by CLAUDE.md, so it ships with the repo too)
 .claude/*
 !.claude/settings.json
 !.claude/hooks/
@@ -143,6 +144,10 @@ Thumbs.db
 .claude/skills/*
 !.claude/skills/community-model-conversion/
 !.claude/skills/fdroid-release-crosscheck/
+!.claude/skills/model-scout/
+!.claude/agents/
+.claude/agents/*
+!.claude/agents/model-scout.md
 
 # Development tooling
 .serena/
