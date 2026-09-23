@@ -31,7 +31,12 @@ Prints the diff summary; applies nothing until --write is passed.
 import argparse
 import re
 import subprocess
+import sys
 from pathlib import Path
+
+# TASK-633: the shared inert-line patterns (one owner with the finalize script).
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from fdroid_recipe_patterns import INERT_LINE_PATTERNS, INERT_LITERAL_REPLACES
 
 REPO = "https://github.com/RisorseArtificiali/anti-vocale"
 
@@ -162,9 +167,13 @@ def main() -> None:
         #   downloaded by this very line and every compile ran r28c.
         # - `zip` in the apt list: the build steps use wget/unzip/rm and
         #   zipalign.py is pure Python.
-        nb = re.sub(r"^[ \t]*- sdkmanager 'ndk;r27c'\n", "", nb, flags=re.M)
-        nb = nb.replace("wget build-essential cmake g++ zip unzip",
-                        "wget build-essential cmake g++ unzip")
+        # TASK-633: the inert-line list has one owner (shared with the
+        # finalize script's normalize_recipe); a divergence there breaks the
+        # bot-first comparison silently.
+        for _, pattern in INERT_LINE_PATTERNS:
+            nb = re.sub(pattern, "", nb, flags=re.M)
+        for _, old_lit, new_lit in INERT_LITERAL_REPLACES:
+            nb = nb.replace(old_lit, new_lit)
         new_blocks.append(nb)
 
     # One canonical blank line between blocks AND before the tail: body already

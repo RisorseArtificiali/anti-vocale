@@ -41,6 +41,9 @@
 
 set -euo pipefail
 
+# TASK-633: this script's directory (the patterns module lives beside it).
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 HERE="$(cd "$(dirname "$0")" && pwd)"
 APP_REPO="$(cd "$HERE/.." && pwd)"
 REPO="RisorseArtificiali/anti-vocale"
@@ -183,8 +186,22 @@ say "phase 1/3: gate C (job success, signed URLs, fork==mirror, clean tree)"
 # sides keeps the skip reachable without widening it to version fields or
 # any build-relevant line.
 normalize_recipe() {
-  sed -e "/^[[:space:]]*- sdkmanager 'ndk;r27c'$/d" \
-      -e 's/wget build-essential cmake g++ zip unzip/wget build-essential cmake g++ unzip/'
+  # TASK-633: the inert-line list has one owner, scripts/fdroid_recipe_patterns.py
+  # (shared with new-fdroid-version.py); a divergence there breaks this
+  # comparison silently. NOTE -c (not a heredoc): a `python3 - <<PY` heredoc
+  # makes the SCRIPT the stdin, so sys.stdin.read() returns empty and both
+  # sides normalize to "" (the comparison would always match, green no-op).
+  python3 -c "
+import re, sys
+sys.path.insert(0, '${SCRIPT_DIR}')
+from fdroid_recipe_patterns import INERT_LINE_PATTERNS, INERT_LITERAL_REPLACES
+text = sys.stdin.read()
+for _, pattern in INERT_LINE_PATTERNS:
+    text = re.sub(pattern, '', text, flags=re.M)
+for _, old_lit, new_lit in INERT_LITERAL_REPLACES:
+    text = text.replace(old_lit, new_lit)
+sys.stdout.write(text)
+"
 }
 MASTER_RAW=""
 # Anonymous API against fdroid/fdroiddata (note: no hyphen; the fork is

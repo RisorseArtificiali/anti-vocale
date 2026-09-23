@@ -149,10 +149,11 @@ jobs:
       # (generated on the fly by Gradle in CI), so they install as-is.
       # playStoreDebug is preferred (matches what the developer tests), but it
       # applies the google-services plugin to the .debug-suffixed package,
-      # which the CI google-services.json may not carry a client for; fall
-      # back to the Firebase-free fdroidDebug in that case. Either flavor
-      # produces the same per-ABI split outputs, just under a different
-      # flavor directory (staged to canonical names below).
+      # TASK-641: fdroidDebug is the deterministic first try (it skips the
+      # google-services plugin entirely); the playStore fallback stays for a
+      # genuine fdroid failure. Either flavor produces the same per-ABI split
+      # outputs, just under a different flavor directory (staged to canonical
+      # names below).
       - name: Build per-ABI debug APKs (tester builds)
         id: debug-apk
         # tag OR commit dispatch: build-first (commit) produces the tester APKs
@@ -160,13 +161,27 @@ jobs:
         if: >-
           github.event_name == 'release' ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.tag != '' || github.event.inputs.commit != ''))
+        # TASK-641: fdroid FIRST. The playStore-first order died twice in one
+        # session on tag dispatches: the CI google-services.json carries no
+        # client for the .debug suffix (assemblePlayStoreDebug fails at
+        # processPlayStoreDebugGoogleServices), and the failed run leaves
+        # half-written per-ABI split outputs that then break the fallback's
+        # packageFdroidDebug (IncrementalSplitterRunnable, same-commit flake:
+        # 35819571034 green at 04:44, 35840619513 red at 09:02). FdroidDebug
+        # skips the google-services plugin entirely (taskNames contains
+        # "Fdroid"), so it is the deterministic first try; the fallback cleans
+        # the polluted incremental state before building.
         run: |
-          if ./gradlew assemblePlayStoreDebug; then
-            echo "flavor=playStore" >> "$GITHUB_OUTPUT"
-          else
-            echo "playStoreDebug failed (likely google-services client for com.antivocale.app.debug); falling back to fdroidDebug"
-            ./gradlew assembleFdroidDebug
+          if ./gradlew assembleFdroidDebug; then
             echo "flavor=fdroid" >> "$GITHUB_OUTPUT"
+          else
+            echo "fdroidDebug failed; falling back to playStoreDebug"
+            # NO clean here: gradle clean wipes app/build/outputs, taking the
+            # fdroid release APKs built earlier in this job with it (the later
+            # staging and attach steps read those files; the fallback must not
+            # destroy the release to save the testers).
+            ./gradlew assemblePlayStoreDebug
+            echo "flavor=playStore" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Build Release AAB
@@ -743,7 +758,11 @@ jobs:
   release-sanity:
     name: Release sanity (loud failure on incomplete releases)
     runs-on: ubuntu-latest
-    needs: [test, build]
+    # TASK-641: reproducible-fdroid joins the needs so the unsigned-vs-signed
+    # check runs AFTER the reference APKs attach, not on a timing accident
+    # (the tag-mode dispatch 35840619513 went red here while the ~4h signing
+    # job was still running; always() keeps reporting on failed siblings).
+    needs: [test, build, reproducible-fdroid]
     # BUILD-FIRST DELEGATION: on a -f commit= dispatch there is no release, so
     # the asset-pairing steps below skip by their tag-only conditions; the
     # completeness check for that mode lives in scripts/release-create.sh

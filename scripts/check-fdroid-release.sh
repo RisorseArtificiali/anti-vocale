@@ -185,6 +185,54 @@ for PIN in $RECIPE_NDK_PINS; do
     || fail "recipe pins ndk $PIN but origin/main's NDK_MAP has no exact version for it (add '$PIN=<sdkmanager version>' to the NDK preinstall step and PUSH the workflow before dispatching)"
 done
 echo "== ndk pins OK: ${RECIPE_NDK_PINS} all mapped in origin/main's workflow"
+# 5b. TASK-633/finding-1: the APP gradle's ndkVersion and the recipe's newest
+# ndk: pin must AGREE (they drift independently; the comment in build.gradle
+# says "keep in sync" with nothing enforcing it). The app pins a full
+# sdkmanager version; the recipe pins rXXc aliases. Compare through the same
+# NDK_MAP alias table the workflow carries (local copy: extend the workflow
+# one when a new NDK ships).
+# App gradle read from the TAG (provenance rule: tag-mode inputs come from
+# the tag's files, so a post-release main bump cannot fake a drift), and the
+# alias table DERIVED from origin/main's workflow NDK_MAP (no third copy of
+# the mapping to lag behind).
+APP_GRADLE_TAG=$(curl -sfL --max-time 30 "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/${TAG}/app/build.gradle.kts" || true)
+if [ -z "$APP_GRADLE_TAG" ]; then
+  APP_GRADLE_TAG=$(cat app/build.gradle.kts)
+  echo "NOTE: tag gradle unreachable, falling back to the working tree (pre-push mode)."
+fi
+APP_NDK=$(sed -n 's/.*ndkVersion = "\(.*\)".*/\1/p' <<<"$APP_GRADLE_TAG" | head -1)
+# Blocks are oldest-first: keep the LAST ndk: pin, not the first.
+RECIPE_NEWEST_NDK=$(awk '/^    ndk:/{pin=$2} END{print pin}' "$RECIPE")
+NDK_ALIAS_MAP=$(grep -oE 'NDK_MAP="[^"]*"' <<<"$WORKFLOW_REMOTE" | head -1 | sed 's/NDK_MAP="//;s/"//' )
+ALIAS_FOR_APP=$(for M in $NDK_ALIAS_MAP; do if [ "${M#*=}" = "$APP_NDK" ]; then echo "${M%%=*}"; fi; done)
+if [ -z "$NDK_ALIAS_MAP" ]; then
+  fail "cannot read NDK_MAP from origin/main's workflow (the agreement check depends on it)"
+fi
+if [ -z "$ALIAS_FOR_APP" ]; then
+  echo "== app/recipe ndk agreement SKIPPED: app ndkVersion $APP_NDK has no exact alias in the workflow's NDK_MAP (family-level divergence: app pins a plain rXX, recipe newest=$RECIPE_NEWEST_NDK)"
+elif [ "$ALIAS_FOR_APP" != "$RECIPE_NEWEST_NDK" ]; then
+  fail "app ndkVersion ($APP_NDK = $ALIAS_FOR_APP) != recipe newest ndk pin ($RECIPE_NEWEST_NDK); update the recipe's newest blocks or the app pin so they agree"
+else
+  echo "== app/recipe ndk agreement OK (app=$APP_NDK = $ALIAS_FOR_APP, recipe newest=$RECIPE_NEWEST_NDK)"
+fi
+# 5c. TASK-633/finding-4: the workflow's apt mirror of the recipe's sudo deps
+# must be a superset (a sherpa tool added to the recipe but not the workflow
+# dies mid-srclib-compile in the ~3h reference build; the divergence already
+# happened once: zip stayed in the workflow after the recipe dropped it).
+# Token-set comparison, no regex: package names like g++ are unquotable in
+# ERE (the + is a quantifier).
+workflow_apt_line=$(grep -m1 "apt-get install -y" <<<"$WORKFLOW_REMOTE" | sed 's/.*apt-get install -y //')
+# ALL distinct recipe apt lines (blocks evolve; the newest block is the one
+# the next reference build runs), not just the oldest block's.
+for recipe_apt_line in $(awk '/apt-get install -y/{print; }' "$RECIPE" | sed 's/.*apt-get install -y //' | tr ' ' '\n' | grep -v '^\s*$' | sort -u); do
+  case " $workflow_apt_line " in
+    *" $recipe_apt_line "*) ;;
+    *) fail "recipe sudo dep '$recipe_apt_line' missing from the workflow's apt install line (the ~3h reference build dies mid-compile without it)" ;;
+  esac
+done
+echo "== apt parity OK: every recipe sudo dep is in the workflow's install line"
+
+
 
 # 6. binary URLs must resolve. Skippable pre-dispatch (SKIP_BINARY_URLS=1):
 # on a fresh release the assets exist only AFTER the reference build, so the
