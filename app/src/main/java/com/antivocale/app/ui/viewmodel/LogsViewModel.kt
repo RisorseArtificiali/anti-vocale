@@ -534,19 +534,40 @@ class LogsViewModel @Inject constructor(
      * ONE StateFlow per row id, cached for the session: the cold Room flow
      * is built once (not per recomposition), deduped (any logs-table write
      * re-runs the DAO query; an unchanged String costs one equals), and
-     * parsed + annotated OFF the composition thread. WhileSubscribed(5000)
-     * stops the query when the row collapses; the cached StateFlow keeps
-     * its last value across collapse/re-expand, so only the FIRST expand
-     * can show the stored text for a frame before the annotated one lands.
+     * parsed + annotated OFF the composition thread. WhileSubscribed stops
+     * the query when the row collapses; the cached value survives only the
+     * stop-timeout + replay-expiration window of [rowSharingStarted]
+     * (TASK-612): beyond it a re-expand shows the stored text for a frame
+     * before the annotated one lands, exactly like the first expand.
      * Null while loading or when the row carries no cues; the caller falls
      * back to the stored text.
      */
     private val annotatedByRow = ConcurrentHashMap<String, StateFlow<String?>>()
     private val firstPassByRow = ConcurrentHashMap<String, StateFlow<String?>>()
 
+    /**
+     * TASK-612: the two per-row reads below MUST build their flows with
+     * [SharingStarted.WhileSubscribed] carrying a finite
+     * replayExpirationMillis. stateIn launches its sharing coroutine into
+     * viewModelScope eagerly, and an idle WhileSubscribed coroutine never
+     * completes, so the scope's job tree pins the flow (and its replayed
+     * value: the full transcript string) until onCleared no matter what the
+     * maps drop. The expiration resets the value to the null initial after
+     * the stop timeout, which is what actually returns the transcript to
+     * GC; a collapse-then-re-expand inside the window keeps the instant
+     * cached text, beyond it the row falls back to the stored text for a
+     * frame (the documented TASK-595 behavior).
+     */
+    private val rowSharingStarted = SharingStarted.WhileSubscribed(5_000, replayExpirationMillis = 5_000)
+
     /** One cached per-row StateFlow per id: the flow is built once, late
      *  collectors share the running upstream, and eviction happens on
-     *  delete/clear. Shared by the two lean per-row reads (TASK-595). */
+     *  delete/clear (TASK-599 F3). Shared by the two lean per-row reads
+     *  (TASK-595). The value payload is bounded by [rowSharingStarted]'s
+     *  replay expiration (TASK-612); the map ENTRY count is unbounded (one
+     *  small skeleton + one idle stateIn job per id ever expanded, evicted
+     *  only by delete/clear), which is the accepted residue now that the
+     *  transcript strings themselves expire. */
     private fun <T> rowFlow(
         cache: ConcurrentHashMap<String, StateFlow<T?>>,
         id: String,
@@ -561,7 +582,7 @@ class LogsViewModel @Inject constructor(
     fun firstPassFlow(id: String): StateFlow<String?> = rowFlow(firstPassByRow, id) {
         logDao.getFirstPass(id)
             .distinctUntilChanged()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+            .stateIn(viewModelScope, rowSharingStarted, null)
     }
 
     fun speakerAnnotatedFlow(id: String): StateFlow<String?> = rowFlow(annotatedByRow, id) {
@@ -574,7 +595,7 @@ class LogsViewModel @Inject constructor(
                     }
                 }
             }
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+            .stateIn(viewModelScope, rowSharingStarted, null)
     }
 
     /** TASK-601: the fast model's DISPLAY name for the first-pass header
