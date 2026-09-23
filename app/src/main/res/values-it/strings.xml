@@ -953,7 +953,7 @@
     <!-- TASK-336: background-kill remediation card -->
     <string name="battery_exemption_title">Consenti funzionamento in background</string>
     <string name="battery_exemption_description">Il sistema ha interrotto il riconoscimento in background. Consenti all\'app di operare in background perché la trascrizione non venga interrotta.</string>
-    <string name="battery_exemption_action">Open setting</string>
+    <string name="battery_exemption_action">Apri impostazione</string>
     <!-- TASK-373: litert-lm HF url import -->
     <string name="litertlm_import_from_url">Importa da URL Hugging Face</string>
     <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>
