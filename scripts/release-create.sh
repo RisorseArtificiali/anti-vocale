@@ -132,8 +132,11 @@ RUN_HEAD=$(echo "$RUN_JSON" | jq -r .headSha)
 [ "$RUN_HEAD" = "$COMMIT" ] \
   || fail "run $RUN_ID headSha is $RUN_HEAD, expected the bump commit $COMMIT (stale run id? re-check: gh run list --event workflow_dispatch --limit 3)"
 # Same job selector as verify-github-workflow-before-recipe-push.sh (twice:
-# the reference-run picker and the in-progress check); three copies total.
-# If the reproducible job is ever renamed, change all of them (keep aligned).
+# the reference-run picker and the in-progress check); three copies total,
+# plus the workflow's needs/release-sanity references to the job id and the
+# runbook's by-name mentions (job walkthrough, Step 5 list, the proof
+# command). If the reproducible job is ever renamed, change all of them
+# (keep aligned).
 REPRO=$(echo "$RUN_JSON" | jq -r '[.jobs[] | select(.name | contains("reproducible"))][0].conclusion // empty')
 [ "$REPRO" = "success" ] || fail "run $RUN_ID reproducible job conclusion: '${REPRO:-absent}' (was this a -f commit=<sha> dispatch?)"
 

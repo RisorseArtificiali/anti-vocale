@@ -147,42 +147,20 @@ jobs:
       # Issue #32: tester-friendly APKs with direct download links. Debug
       # builds are already signed with the standard Android debug keystore
       # (generated on the fly by Gradle in CI), so they install as-is.
-      # playStoreDebug is preferred (matches what the developer tests), but it
-      # applies the google-services plugin to the .debug-suffixed package,
-      # TASK-641: fdroidDebug is the deterministic first try (it skips the
-      # google-services plugin entirely); the playStore fallback stays for a
-      # genuine fdroid failure. Either flavor produces the same per-ABI split
-      # outputs, just under a different flavor directory (staged to canonical
-      # names below).
+      # TASK-641 late review: fdroid ONLY, no playStore fallback. The CI
+      # google-services.json carries no client for the .debug suffix, so
+      # assemblePlayStoreDebug always fails at processPlayStoreDebugGoogleServices
+      # (the same failure that killed the old playStore-first order, leaving
+      # half-written split outputs behind); a fallback that cannot succeed
+      # only buries the fdroid error under a second failure. FdroidDebug skips
+      # the google-services plugin entirely (taskNames contains "Fdroid").
       - name: Build per-ABI debug APKs (tester builds)
-        id: debug-apk
         # tag OR commit dispatch: build-first (commit) produces the tester APKs
         # as artifacts too; only the attach steps below stay tag-only.
         if: >-
           github.event_name == 'release' ||
           (github.event_name == 'workflow_dispatch' && (github.event.inputs.tag != '' || github.event.inputs.commit != ''))
-        # TASK-641: fdroid FIRST. The playStore-first order died twice in one
-        # session on tag dispatches: the CI google-services.json carries no
-        # client for the .debug suffix (assemblePlayStoreDebug fails at
-        # processPlayStoreDebugGoogleServices), and the failed run leaves
-        # half-written per-ABI split outputs that then break the fallback's
-        # packageFdroidDebug (IncrementalSplitterRunnable, same-commit flake:
-        # 35819571034 green at 04:44, 35840619513 red at 09:02). FdroidDebug
-        # skips the google-services plugin entirely (taskNames contains
-        # "Fdroid"), so it is the deterministic first try; the fallback cleans
-        # the polluted incremental state before building.
-        run: |
-          if ./gradlew assembleFdroidDebug; then
-            echo "flavor=fdroid" >> "$GITHUB_OUTPUT"
-          else
-            echo "fdroidDebug failed; falling back to playStoreDebug"
-            # NO clean here: gradle clean wipes app/build/outputs, taking the
-            # fdroid release APKs built earlier in this job with it (the later
-            # staging and attach steps read those files; the fallback must not
-            # destroy the release to save the testers).
-            ./gradlew assemblePlayStoreDebug
-            echo "flavor=playStore" >> "$GITHUB_OUTPUT"
-          fi
+        run: ./gradlew assembleFdroidDebug
 
       - name: Build Release AAB
         if: >-
@@ -249,11 +227,10 @@ jobs:
           set -eu
           mkdir -p test-apks
           # Debug APKs: per-ABI split output (splits.abi applies to every
-          # assemble* variant; see app/build.gradle.kts). Path flavor depends
-          # on the fallback above.
-          DEBUG_FLAVOR=${{ steps.debug-apk.outputs.flavor }}
-          for APK in app/build/outputs/apk/${DEBUG_FLAVOR}/debug/app-${DEBUG_FLAVOR}-*-debug.apk; do
-            ABI=$(basename "$APK" | sed -E "s/^app-${DEBUG_FLAVOR}-(.+)-debug\.apk$/\1/")
+          # assemble* variant; see app/build.gradle.kts). Fdroid flavor only
+          # since the TASK-641 tester fix (the build step above has no other).
+          for APK in app/build/outputs/apk/fdroid/debug/app-fdroid-*-debug.apk; do
+            ABI=$(basename "$APK" | sed -E "s/^app-fdroid-(.+)-debug\.apk$/\1/")
             cp "$APK" "test-apks/antivocale-debug-${ABI}.apk"
           done
           ls test-apks/antivocale-debug-*.apk
@@ -378,8 +355,9 @@ jobs:
     # instead of the old behavior where this job was silently skipped and the
     # release shipped unsigned-only (GitHub issue #27).
     # A dispatch carrying play-store-track is a PUBLISH-ONLY run: the signed APKs
-    # already exist on the release, and re-running this ~70-minute sherpa source
-    # build for a Play upload is pure waste (TASK-414, flagged during v1.11.0).
+    # already exist on the release, and re-running this ~3h sherpa source build
+    # (3 ABIs from source; 3h02m measured on v1.12.0) for a Play upload is pure
+    # waste (TASK-414, flagged during v1.11.0).
     if: >-
       github.event_name == 'release' ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track == '')
@@ -759,9 +737,9 @@ jobs:
     name: Release sanity (loud failure on incomplete releases)
     runs-on: ubuntu-latest
     # TASK-641: reproducible-fdroid joins the needs so the unsigned-vs-signed
-    # check runs AFTER the reference APKs attach, not on a timing accident
-    # (the tag-mode dispatch 35840619513 went red here while the ~4h signing
-    # job was still running; always() keeps reporting on failed siblings).
+    # check runs AFTER the ~3h reference APKs attach, not on a timing accident
+    # (the tag-mode dispatch 35840619513 went red here while the signing job
+    # was still running; always() keeps reporting on failed siblings).
     needs: [test, build, reproducible-fdroid]
     # BUILD-FIRST DELEGATION: on a -f commit= dispatch there is no release, so
     # the asset-pairing steps below skip by their tag-only conditions; the
@@ -783,6 +761,22 @@ jobs:
           echo "::error::this red X is the explicit signal to investigate before promoting the release."
           exit 1
 
+      - name: Fail loudly if the reproducible F-Droid job did not succeed
+        # TASK-641 late review: a needs entry gates ORDERING, not outcome; without
+        # this check a failed signing job still left the final "sanity ok" line
+        # green (vacuous pass against whatever assets were already attached).
+        # Tag-anchored per the job-level BUILD-FIRST DELEGATION note above;
+        # 'skipped' is the job's deliberate opt-out (publish-only dispatches).
+        if: >-
+          (github.event_name == 'release' ||
+            (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')) &&
+          needs.reproducible-fdroid.result != 'success' &&
+          needs.reproducible-fdroid.result != 'skipped'
+        run: |
+          echo "::error::REPRODUCIBLE F-DROID JOB '${{ needs.reproducible-fdroid.result }}': the signed reference APKs for this run are not trustworthy."
+          echo "::error::Do not point the fdroid-data recipe at this tag until a re-run (workflow_dispatch with the tag) is green."
+          exit 1
+
       - name: Fail loudly if any unsigned F-Droid APK has no signed counterpart
         if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
         env:
@@ -792,10 +786,11 @@ jobs:
           set -eu
           # A release carrying app-fdroid-<abi>-release-unsigned.apk without the
           # matching signed app-fdroid-<abi>-release.apk is incomplete: F-Droid's
-          # binary: URLs 404 (issue #27). Normal flow note: right after the release
-          # event this EXPECTEDLY fails until the fork recipe is updated and the
-          # reproducible-fdroid job signs and attaches (see docs/release-runbook.md);
-          # the failure is the reminder, not noise.
+          # binary: URLs 404 (issue #27). TASK-641 late review: on release events
+          # this can no longer be the benign "recipe not pushed yet" reminder
+          # (needs ordering waits out the ~3h signing job, and a failed one exits
+          # at the assert step above before reaching here); red here means a
+          # genuinely broken asset set on a run whose signing job succeeded.
           assets=$(gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq '.assets[].name')
           echo "release assets:"; echo "$assets"
           missing=0
@@ -808,18 +803,24 @@ jobs:
             fi
           done
           if [ "$missing" -ne 0 ]; then
-            echo "::error::Remediation (see docs/release-runbook.md, steps 4-5): push the updated recipe"
-            echo "::error::to the fdroid-data fork, then re-run the reproducible-fdroid job"
-            echo "::error::(workflow_dispatch with tag ${RELEASE_TAG}) to sign and attach."
+            echo "::error::Remediation: the signing job for this run SUCCEEDED (the assert step above"
+            echo "::error::passed), so the recipe is not the problem. Inspect the reproducible-fdroid"
+            echo "::error::job's attach step for which APKs it uploaded, then re-run the tag dispatch"
+            echo "::error::(${RELEASE_TAG}) to rebuild and re-attach the missing signed APKs."
             exit 1
           fi
           echo "OK: every unsigned F-Droid APK has its signed counterpart."
 
       - name: All sanity checks passed
-        # Same predicate as the asset-check step plus a green test job: this message
-        # must never print for a run where a check was skipped or tests were not green.
+        # success() composes the two assert steps above AND the asset check:
+        # this message can only print on a run where every check in THIS job
+        # went green (the assert steps already translate red siblings into
+        # failed steps), so no sibling result needs re-mirroring here.
         if: >-
-          needs.test.result == 'success' &&
+          success() &&
           (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''))
-        run: echo "release sanity ok; test job green, signed/unsigned APK pairing complete"
+        # Reports the siblings' actual results instead of claiming green:
+        # on a tag+track dispatch the reproducible job is deliberately skipped.
+        run: |
+          echo "release sanity ok; test=${{ needs.test.result }} reproducible=${{ needs.reproducible-fdroid.result }} signed/unsigned APK pairing complete"
 

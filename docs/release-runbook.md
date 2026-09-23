@@ -467,9 +467,14 @@ download NDKs in that container, and the reference build died ~40 min in).
 - NEVER `gh release upload --clobber` on the canonical `app-fdroid-<abi>-release.apk`
   names: they are the F-Droid reproducibility references. Interim builds must
   be copied to a distinct filename before upload.
-- The release-event run stays red (release-sanity) while the signing job is
-  still building; the green record is the completed dispatch run. A red sanity
-  with all three signed URLs resolving is the expected intermediate state.
+- The release-event run shows release-sanity as PENDING while the ~3h
+  reproducible job finishes (TASK-641 made sanity wait on it via `needs`, and
+  the result assertion rides in the same job); the green record is the
+  completed dispatch run. Latency corollary: release-sanity's verdict (and
+  its red X for a failed signing job) surfaces only after that wait; a
+  failed sibling's OWN red X still appears on its job within minutes. Once sanity
+  actually runs, red is a REAL failure (test job, signing job, or incomplete
+  asset pairing), never a timing artifact; investigate before promoting.
 
 ## Play Console manual checklist (per release)
 
