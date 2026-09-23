@@ -120,7 +120,7 @@ np.frombuffer.
 - Entry JSON in `app/src/main/assets/external-catalog/<lang>.json` (mirror
   arabic.json exactly: family, per-file url/sha256/size; whisper options use
   the keys `"whisper.language"`/`"whisper.task"` from ModelFamilySupport).
-- index.json: add the entry. **GOTCHA 3: the catalog matcher does substring
+- the CURRENT versioned index (index-<versionName>.json, the highest-versioned index-*.json present; TASK-643): add the entry. NEVER the unsuffixed index.json (frozen legacy channel for <=1.13.x apps). **GOTCHA 3: the catalog matcher does substring
   search over names; "Large" contains "ar" and breaks the arabic by-code
   test in ExternalCatalogTest** (it asserts filter("ar") equals the arabic
   entry alone). Name entries without "ar"-containing words (we used

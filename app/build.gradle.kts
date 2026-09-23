@@ -43,6 +43,25 @@ android {
         // AppAuth redirect scheme for HuggingFace OAuth
         manifestPlaceholders["appAuthRedirectScheme"] = "com.antivocale.app"
 
+        // TASK-643: version-scoped catalog index. Keyed by versionName
+        // (flavor/ABI-independent; versionCode derives per-ABI on F-Droid),
+        // SNAPSHOT stripped so dev builds point at the not-yet-published
+        // release index and fall back to the bundled asset: an entry cannot
+        // reach installed apps earlier than the release that supports it.
+        val catalogIndexVersion = versionName.toString().removeSuffix("-SNAPSHOT")
+        buildConfigField(
+            "String",
+            "CATALOG_INDEX_URL",
+            "\"https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/index-$catalogIndexVersion.json\""
+        )
+        // The bundled asset name, emitted from the SAME version variable so the
+        // URL layout and the asset path cannot drift apart (no string surgery).
+        buildConfigField(
+            "String",
+            "CATALOG_INDEX_ASSET",
+            "\"external-catalog/index-$catalogIndexVersion.json\""
+        )
+
         // Speculative-decoding (MTP) "model update available" prompt gate.
         // Off until the LiteRT-LM runtime can actually engage the Gemma MTP drafter
         // (TASK-221 bumps litertlm-android to 0.13.1+ and flips this to true). The

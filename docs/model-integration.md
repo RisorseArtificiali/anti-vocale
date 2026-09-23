@@ -11,7 +11,7 @@ There are two permanent-integration paths, one per JSON document:
 | Path | Asset | Result |
 |---|---|---|
 | **Built-in backend** | `app/src/main/assets/models_catalog.json` | Model appears in the Model tab like Parakeet/Whisper/GigaAM, with its own backend id, share target and strings |
-| **Curated external entry** | `app/src/main/assets/external-catalog/index.json` | Model appears as an autocomplete suggestion in the URL-import dialog (searches by name/language), downloads via the user-import pipeline |
+| **Curated external entry** | `app/src/main/assets/external-catalog/index-<versionName>.json (the CURRENT versioned index, TASK-643; the unsuffixed index.json is the frozen legacy channel and receives no new entries)` | Model appears as an autocomplete suggestion in the URL-import dialog (searches by name/language), downloads via the user-import pipeline |
 
 The parser is **strict** (`data/catalog/ModelCatalog.kt`): any structural error
 throws with the offending entry/file named, so a wrong document fails at startup

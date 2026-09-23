@@ -1,5 +1,7 @@
 package com.antivocale.app.data
 
+import com.antivocale.app.BuildConfig
+
 import kotlinx.coroutines.flow.Flow
 
 interface PreferencesManager {
@@ -43,6 +45,8 @@ interface PreferencesManager {
      *  index published in our repo; an override persists until changed back. */
     val externalCatalogUrl: Flow<String>
     suspend fun saveExternalCatalogUrl(url: String)
+    /** TASK-643: reset by REMOVING the key, so the default re-resolves per build. */
+    suspend fun clearExternalCatalogUrl()
     val autoCopyEnabled: Flow<Boolean>
     val outputFolderUri: Flow<String?>
     /** GH #92: auto-save file format, a [SubtitleFormatter.Format] name. Default TXT. */
@@ -226,8 +230,14 @@ interface PreferencesManager {
         /** TASK-546: the chip mitigates invisible wrong-language detection; on by default. */
         const val DEFAULT_LANGUAGE_CHIP_ENABLED = true
 
-        /** The maintained community index, published from this repo. */
-        const val DEFAULT_EXTERNAL_CATALOG_URL =
-            "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/index.json"
+        /**
+         * The maintained community index, published from this repo.
+         * TASK-643: version-scoped (index-<versionName>.json, derived by
+         * gradle from the release bump). Apps <=1.13.x keep reading the
+         * unsuffixed index.json, which is frozen: new entries land only in
+         * the newest version's file, so an entry never reaches an app older
+         * than the modelType it requires.
+         */
+        val DEFAULT_EXTERNAL_CATALOG_URL: String get() = BuildConfig.CATALOG_INDEX_URL
     }
 }

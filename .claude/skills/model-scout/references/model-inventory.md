@@ -4,10 +4,10 @@ Detailed inventory of models currently used by Anti-Vocale. Built-ins below; the
 
 ## Community Catalog (external-model platform)
 
-- **Index:** `app/src/main/assets/external-catalog/index.json` (the single source of truth; read it each run)
+- **Index:** the CURRENT versioned `app/src/main/assets/external-catalog/index-<versionName>.json` (TASK-643; highest-versioned index-*.json present; the unsuffixed index.json is the frozen <=1.13.x legacy channel)
 - **Shape:** entries with `name`, `languages`, `family` (seven: Transducer/Whisper/CTC/SenseVoice/Canary/Moonshine/Dolphin), `entryUrl` (per-entry JSON)
 - **Channel semantics:** a catalog entry reaches users without an app release; conversion pipeline = the community-model-conversion skill (proven on Whisper fine-tunes; other families unproven, flag effort accordingly)
-- **Scope:** 14 entries live (4 CANARY en/fr/de/es, 5 TRANSDUCER including the German and Spanish Kroko zipformers plus Persian Shenava, 4 WHISPER including Arabic dialectal and Swiss German, 1 SENSE_VOICE zh/en/yue/ja/ko) + the omnilingual 300M CTC entry file HELD from the index until a release ships omnilingual_ctc (TASK-635); the index is the truth
+- **Scope:** the 1.14.0 versioned index ships 15 (TASK-643: index-<versionName>.json is the app-scoped channel; unsuffixed index.json frozen at 14 for installed <=1.13.x): 4 CANARY en/fr/de/es, 5 TRANSDUCER (Kroko de/es, Orukeet it, Shenava fa, Zipformer ru), 4 WHISPER (ar, de, de-gsw, multilingual tiny), 1 SENSE_VOICE zh/en/yue/ja/ko, 1 CTC omnilingual 300M multilingual (TASK-635); the index is the truth
 
 ## ASR Models (sherpa-onnx / ONNX Runtime)
 

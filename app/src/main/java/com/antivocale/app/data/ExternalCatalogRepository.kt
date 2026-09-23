@@ -1,5 +1,7 @@
 package com.antivocale.app.data
 
+import com.antivocale.app.BuildConfig
+
 import android.content.Context
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -82,8 +84,25 @@ class ExternalCatalogRepository(
         }.getOrDefault(false)
     }
 
-    private companion object {
+    internal companion object {
         const val CATALOG_DIR = "catalog"
-        const val BUNDLED_INDEX = "external-catalog/index.json"
+        /**
+         * TASK-643: the versioned index (same name the default URL points
+         * at). The repo's unsuffixed index.json stays frozen as the remote
+         * legacy index for installed apps <=1.13.x; bundling the versioned
+         * file keeps the offline fallback in sync with what this app
+         * supports.
+         */
+        val BUNDLED_INDEX: String = BuildConfig.CATALOG_INDEX_ASSET
+
+        /**
+         * TASK-643: the pre-versioning default URL. Builds <=1.13.x persisted
+         * this literal on "Restore the official catalog"; the startup
+         * migration clears it so those users move to this build's index
+         * instead of being pinned to the frozen legacy file as phantom
+         * overrides.
+         */
+        val LEGACY_DEFAULT_CATALOG_URL: String =
+            "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/index.json"
     }
 }

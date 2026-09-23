@@ -72,6 +72,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override fun sherpaModelPath(entryId: String): Flow<String?> = _sherpaModelPath(entryId)
     override val externalCatalogUrl: Flow<String> get() = _externalCatalogUrl
     override suspend fun saveExternalCatalogUrl(url: String) { _externalCatalogUrl.value = url }
+    override suspend fun clearExternalCatalogUrl() { _externalCatalogUrl.value = PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL }
 
     override val externalMigrationDone: Flow<Boolean> get() = _externalMigrationDone
     override val customTransducerModelPath: Flow<String?> get() = _customTransducerModelPath

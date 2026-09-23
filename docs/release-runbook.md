@@ -27,6 +27,36 @@ published at different times; there is no hard coupling. The one hard
 dependency: the F-Droid recipe `binary:` URLs must resolve (HTTP 200) **before**
 the recipe is pushed to the fork, otherwise the F-Droid pipeline fails.
 
+## Step 0. Version-scoped catalog index (TASK-643, at the version bump)
+
+The community-catalog index is version-scoped: the app reads
+index-<versionName>.json (derived by gradle from the release bump, SNAPSHOT
+stripped) and bundles that same file as its offline asset. At the version
+bump: copy the newest existing index file to the new version's name, add the
+entries the new app supports (the previous release's entry additions wait
+here), and update ExternalCatalogTest's count pin + the docs row + the
+model-inventory note. The unsuffixed index.json stays FROZEN: it is the
+remote index every installed app <=1.13.x reads, and it never receives new
+entries (only compatible fixes, e.g. a broken mirror URL). Dev builds point
+at the not-yet-published versioned file and fall back to the bundled asset,
+so an entry cannot reach installed apps before the release that supports it.
+
+**Three mechanical duties around the versioned files (all fail loudly if
+forgotten: the pre-push guard check-release-version.py now verifies the
+versioned asset exists and parses):**
+- RELEASE bump: copy the newest index to the new version's name (the guard
+  fails the push otherwise).
+- SNAPSHOT bump (the post-release same-day bump): copy the CURRENT released
+  version's index to the new snapshot name too, or every dev build of the
+  window hard-fails its catalog load (remote 404 + missing asset).
+- RELEASE cleanup: DELETE the previous release's versioned index (the running
+  build only ever reads its own versionName's file; keeping old ones ships
+  dead KB in every APK). The assets dir must hold exactly index.json + one
+  index-<version>.json, pinned by a test.
+- Compatible fixes (e.g. a broken mirror URL) must be applied to EVERY live
+  file carrying the entry: the frozen index.json AND every shipped versioned
+  index (1.14.0-installed apps read index-1.14.0.json forever).
+
 ## Step 1. Version bump (in the app repo)
 
 In `app/build.gradle.kts`:

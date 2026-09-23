@@ -46,6 +46,7 @@ import com.antivocale.app.R
 import com.antivocale.app.ui.AppNavigation
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.antivocale.app.data.ExternalCatalogRepository
 import com.antivocale.app.data.ModelDownloader
 import com.antivocale.app.data.ExternalCatalog
 import com.antivocale.app.data.ExternalModelRecord
@@ -826,7 +827,7 @@ fun ModelTab(
 // ==================== Curated language section (GH #70) ====================
 
 /** Bundled community-index snapshot the curated profiles resolve against. */
-private const val CURATED_COMMUNITY_INDEX = "external-catalog/index.json"
+private val CURATED_COMMUNITY_INDEX = ExternalCatalogRepository.BUNDLED_INDEX
 
 /**
  * The "For your language" elevation (GH #70): the profile's ranked

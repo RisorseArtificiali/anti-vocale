@@ -5,7 +5,7 @@ import org.json.JSONObject
 /**
  * The bundled external-model catalog index (TASK-331 Task 13): a minimal list of
  * curated models (name, languages, family, entry-JSON URL) shipped as an asset at
- * assets/external-catalog/index.json. The import-from-catalog dialog browses it
+ * the versioned assets/external-catalog/index-<version>.json (TASK-643). The import-from-catalog dialog browses it
  * by language; the query matcher below is its text-search surface and the
  * unit-test surface.
  *

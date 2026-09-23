@@ -180,7 +180,12 @@ internal class TestSpiOps(
         "punctuation_prompt" to preferences::savePunctuationPrompt,
         "default_prompt" to preferences::saveDefaultPrompt,
         "summary_prompt" to preferences::saveSummaryPrompt,
-        "external_catalog_url" to preferences::saveExternalCatalogUrl,
+        // TASK-643: blank clears the key (a saved default literal would become a
+        // phantom override at the next version bump); any other value saves.
+        "external_catalog_url" to { v ->
+            if (v.isNullOrBlank()) preferences.clearExternalCatalogUrl()
+            else preferences.saveExternalCatalogUrl(v)
+        },
         // An unset SAF folder is null, not "": blank clears.
         "output_folder" to { preferences.saveOutputFolderUri(it.ifBlank { null }) },
         "language" to preferences::saveTranscriptionLanguage,

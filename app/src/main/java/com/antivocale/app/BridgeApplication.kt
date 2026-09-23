@@ -1,6 +1,7 @@
 package com.antivocale.app
 
 import android.app.Application
+import kotlinx.coroutines.flow.first
 import androidx.work.Configuration
 import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.data.PreferencesManager
@@ -71,6 +72,21 @@ class BridgeApplication : Application(), Configuration.Provider {
                 preferencesManager.saveExternalMigrationDone(false)
             }
         }
+        // TASK-643: builds <=1.13.x persisted the unsuffixed catalog URL on
+        // "Restore"; that literal is now the FROZEN legacy index and would
+        // read as a phantom override (custom-source badge, no asset fallback,
+        // never sees new entries). Clear it once here; a genuine custom URL
+        // never equals the legacy default.
+        runCatching {
+            kotlinx.coroutines.runBlocking {
+                if (preferencesManager.externalCatalogUrl.first() ==
+                    com.antivocale.app.data.ExternalCatalogRepository.LEGACY_DEFAULT_CATALOG_URL
+                ) {
+                    preferencesManager.clearExternalCatalogUrl()
+                }
+            }
+        }
+
         // TASK-640: a leaked pendingBackendLoad marker means the previous
         // launch died inside a native model load. Quarantine the external
         // record (it becomes unresolvable for the cleaner below) and tell the

@@ -22,7 +22,7 @@ import com.antivocale.app.R
  *    Italian Distil inside the Whisper card); ids and variant names must exist
  *    in assets/models_catalog.json.
  *  - [CuratedRecommendation.Community] references a community-catalog index
- *    entry by its EXACT name in assets/external-catalog/index.json (community
+ *    entry by its EXACT name in the versioned assets/external-catalog/index-<version>.json (TASK-643) (community
  *    entries have no id field); the curated card offers a one-tap import from
  *    that snapshot. The bundled asset is the resolution source on purpose: a
  *    user's catalog-URL override must not be able to change what the official

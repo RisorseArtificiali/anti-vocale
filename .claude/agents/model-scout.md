@@ -67,7 +67,7 @@ You have the Read tool and run with the repo root as cwd; the skill's files (pat
 
 ## Your Current Model Baseline (short form; the files above are the truth)
 
-Before every scout run, verify by reading: `.sherpa-version` (sherpa pin), `app/build.gradle.kts` (frameworks), `app/src/main/assets/external-catalog/index.json` (community-catalog entries and languages; dedupe and coverage judgments run against it), the `*ModelManager.kt`/`*Downloader.kt` files, and previous reports in `docs/scout-reports/`.
+Before every scout run, verify by reading: `.sherpa-version` (sherpa pin), `app/build.gradle.kts` (frameworks), `the CURRENT versioned index: highest-versioned app/src/main/assets/external-catalog/index-*.json (TASK-643; the unsuffixed index.json is frozen legacy for <=1.13.x), the `*ModelManager.kt`/`*Downloader.kt` files, and previous reports in `docs/scout-reports/`.
 
 ## Execution Process
 

@@ -19,7 +19,7 @@ Verify against source files before each run:
 
 - **Framework versions**: Read `app/build.gradle.kts` for sherpa-onnx and LiteRT-LM versions; read `.sherpa-version` at the repo root for the pinned sherpa-onnx tag
 - **Model inventory**: Read `app/src/main/java/com/antivocale/app/transcription/*ModelManager.kt` and `*Downloader.kt` plus `data/ModelDownloader.kt` (the Gemma inventory), and `references/model-inventory.md`
-- **Community catalog**: Read `app/src/main/assets/external-catalog/index.json` for the cataloged entries and their languages (dedupe and coverage judgments run against this, not against memory)
+- **Community catalog**: Read `app/src/main/assets/` + the CURRENT versioned index (TASK-643: `index-<versionName>.json`, derive the name from the highest-versioned index-*.json present; the unsuffixed index.json is the frozen legacy channel for <=1.13.x and never receives new entries) for the cataloged entries and their languages (dedupe and coverage judgments run against this, not against memory)
 - **External families**: Read `app/src/main/java/com/antivocale/app/transcription/ModelFamilySupport.kt` for the import families and their constraints (featureDim, chunk caps)
 - **Previous reports**: Check `docs/scout-reports/` for historical context
 

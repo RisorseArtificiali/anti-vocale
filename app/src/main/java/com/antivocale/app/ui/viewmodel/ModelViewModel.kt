@@ -153,7 +153,7 @@ class ModelViewModel @Inject constructor(
     /** Restores the official index as the source. */
     fun resetExternalCatalogUrl() {
         viewModelScope.launch {
-            preferencesManager.saveExternalCatalogUrl(PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL)
+            preferencesManager.clearExternalCatalogUrl()  // TASK-643: reset removes the key; the default re-resolves per build
             loadExternalCatalog(force = true)
         }
     }

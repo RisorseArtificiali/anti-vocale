@@ -343,6 +343,11 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(externalCatalogUrl = url) }
     }
 
+    override suspend fun clearExternalCatalogUrl() {
+        dataStore.edit { preferences -> preferences.remove(EXTERNAL_CATALOG_URL) }
+        cache.updateAndGet { it.copy(externalCatalogUrl = PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL) }
+    }
+
     override suspend fun savePendingBackendLoad(backendId: String?) {
         dataStore.edit { preferences ->
             if (backendId == null) preferences.remove(PENDING_BACKEND_LOAD)

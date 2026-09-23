@@ -37,7 +37,7 @@ class CuratedProfilesTest {
         ModelCatalogJson.parseCatalog(asset("src/main/assets/models_catalog.json").readText())
 
     private fun communityIndex() =
-        ExternalCatalog.parseIndex(asset("src/main/assets/external-catalog/index.json").readText())
+        ExternalCatalog.parseIndex(asset("src/main/assets/" + com.antivocale.app.data.ExternalCatalogRepository.BUNDLED_INDEX).readText())
 
     @Test
     fun `launch seeds are italian german and spanish`() {

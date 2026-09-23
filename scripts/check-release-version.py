@@ -49,6 +49,22 @@ def tagged_version_code(tag: str) -> int | None:
     return int(m.group(1)) if m else None
 
 
+def check_versioned_catalog_index(version_name: str) -> None:
+    """TASK-643: the build's BUNDLED_INDEX asset must exist (the version bump
+    copies the newest index to index-<version>.json; forgetting strands every
+    dev build and fresh install on a catalog hard-failure)."""
+    import re, sys
+    from pathlib import Path
+    v = version_name.removeprefix("v").removesuffix("-SNAPSHOT")
+    asset = Path("app/src/main/assets/external-catalog") / f"index-{v}.json"
+    if not asset.is_file():
+        print(f"ERROR: versioned catalog index missing: {asset} "
+              f"(copy the newest index file to that name; runbook Step 0)")
+        sys.exit(1)
+    import json
+    json.loads(asset.read_text())  # must parse
+    print(f"OK: versioned catalog index {asset.name} present and parseable")
+
 def main() -> None:
     allow_no_tag = "--allow-no-tag" in sys.argv
     code, name = gradle_version_fields()
@@ -60,6 +76,7 @@ def main() -> None:
             sys.exit("FAIL: no vX.Y.Z tag found; pass --allow-no-tag for a first release")
 
     snapshot = name.endswith("-SNAPSHOT")
+    check_versioned_catalog_index(name)
     changelog = ROOT / f"fastlane/metadata/android/en-US/changelogs/{code}.txt"
     locales = sorted(p.name for p in (ROOT / "fastlane/metadata/android").iterdir() if p.is_dir())
     if snapshot:
@@ -93,3 +110,4 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
