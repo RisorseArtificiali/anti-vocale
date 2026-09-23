@@ -201,6 +201,23 @@ This is the slowest step: sherpa-onnx is compiled from source for 3 ABIs (~3h:
 3h02m on v1.12.0, 3h20m on v1.12.1; the historical 25-40 min figures described
 a prebuilt-AAR era recipe).
 
+**Post-publish variant (v1.13.1, 2026-09-23):** when the release already exists
+(the Step-8 discovery path), the references dispatch MUST carry `-f tag=vX.Y.Z`:
+
+```
+gh workflow run android-release.yml --ref vX.Y.Z -f tag=vX.Y.Z
+```
+
+The signed-APK attach step is gated on the tag input; a publish-only dispatch
+(with `-f play-store-track` or with no inputs) builds and signs the references
+in the container and then DISCARDS them at cleanup: on v1.13.1 one such run
+produced all three signed APKs and attached none (70 minutes lost). With the
+tag input the Publish job stays skipped (no track) and the attach steps fire.
+In every case the dispatch goes through the script or this exact form; the
+project hook `block-raw-release-dispatch.py` now blocks hand-typed
+`gh workflow run android-release.yml` in agent sessions (escape marker
+`#release-script-escape` records a justified exception).
+
 Proof: `gh run view <id> --json jobs` shows `reproducible-fdroid` = success and
 the three artifacts present; NOTE the run id (`gh run list --event
 workflow_dispatch --limit 1`) for Step 5b. `gh release view vX.Y.Z` still 404s:
