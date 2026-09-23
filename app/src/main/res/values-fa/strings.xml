@@ -741,30 +741,10 @@
     <string name="pip_enter_button">PiP</string>
     <string name="pip_enter_description">نمایش در پنجره تصویر در تصویر</string>
 
-    <!-- GGUF model descriptions -->
-    <string name="model_title_gemma4_gguf_q4km">Gemma 4 GGUF (Q4_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q4km">4.9GB · Apache 2.0 · تولید متن با llama.cpp. بهترین تعادل کیفیت و حجم.</string>
-    <string name="model_title_gemma4_gguf_q5km">Gemma 4 GGUF (Q5_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q5km">5.3GB · Apache 2.0 · تولید متن با کیفیت بالاتر با llama.cpp.</string>
-    <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
-    <string name="model_desc_gemma4_gguf_q8">7.4GB · Apache 2.0 · باکیفیت‌ترین تولید متن با llama.cpp. نیازمند رم 8GB+.</string>
     <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
     <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
     <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
     <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
-    <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
-    <string name="gguf_inference_unavailable">استنتاج GGUF به کتابخانه بومی llama.cpp نیاز دارد. libllama.so را برای اندروید ARM64 بسازید.</string>
-    <string name="gguf_model_download_error">دانلود مدل GGUF ناموفق بود</string>
-
-    <!-- GGUF model download section -->
-    <string name="gguf_title">Gemma 4 GGUF (تولید متن)</string>
-    <string name="gguf_description">LLM محلی برای تولید متن؛ بدون وابستگی به ابر. نیازمند کتابخانه بومی llama.cpp است.</string>
-    <string name="gguf_unsupported_arch">روی این دستگاه پشتیبانی نمی‌شود (نیازمند ARM64).</string>
-    <string name="gguf_download_confirm_title">%1$s دانلود شود؟</string>
-    <string name="gguf_download_confirm_message">حدود %1$dMB دانلود خواهد شد. مدل‌های GGUF تولید متن محلی بدون اینترنت را ممکن می‌کنند.</string>
-    <string name="gguf_downloaded">%1$s با موفقیت دانلود شد</string>
-    <string name="gguf_delete_message">%1$s حذف شود؟ حدود %2$dMB فضای آزاد می‌شود.</string>
-    <string name="gguf_deleted">%1$s حذف شد</string>
 
     <!-- Model benchmark -->
     <string name="benchmark_title">بنچمارک %1$s</string>

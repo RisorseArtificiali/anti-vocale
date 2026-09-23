@@ -54,10 +54,6 @@ the number and the command; otherwise omit eval numbers entirely.
 ### LiteRT-LM
 [Same format]
 
-### llama-bro (fork)
-- **Status:** [unchanged / new commits / released; GGUF-for-audio remains blocked until the profile and text-only export issues land]
-- **What changed:** [bullet list]
-
 ## Landscape Developments
 [Brief paragraphs on new architectures, techniques, or research relevant to on-device ASR]
 

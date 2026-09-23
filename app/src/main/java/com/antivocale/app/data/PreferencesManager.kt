@@ -43,7 +43,6 @@ interface PreferencesManager {
      *  index published in our repo; an override persists until changed back. */
     val externalCatalogUrl: Flow<String>
     suspend fun saveExternalCatalogUrl(url: String)
-    val ggufModelPath: Flow<String?>
     val autoCopyEnabled: Flow<Boolean>
     val outputFolderUri: Flow<String?>
     /** GH #92: auto-save file format, a [SubtitleFormatter.Format] name. Default TXT. */
@@ -100,8 +99,6 @@ interface PreferencesManager {
 
     suspend fun saveExternalMigrationDone(done: Boolean)
 
-    suspend fun saveGgufModelPath(path: String)
-    suspend fun clearGgufModelPath()
     suspend fun saveAutoCopyEnabled(enabled: Boolean)
     suspend fun saveOutputFolderUri(uri: String?)
     /** GH #92: see [transcriptExportFormat]. */

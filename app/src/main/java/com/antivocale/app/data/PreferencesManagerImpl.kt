@@ -60,7 +60,6 @@ class PreferencesManagerImpl(
         private val GIGAAM_MODEL_PATH = stringPreferencesKey("gigaam_model_path")
         private val EXTERNAL_CATALOG_URL = stringPreferencesKey("external_catalog_url")
         private val EXTERNAL_MIGRATION_DONE = booleanPreferencesKey("external_migration_done")
-        private val GGUF_MODEL_PATH = stringPreferencesKey("gguf_model_path")
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
         private val OUTPUT_FOLDER_URI = stringPreferencesKey("output_folder_uri")
         private val TRANSCRIPT_EXPORT_FORMAT = stringPreferencesKey("transcript_export_format")
@@ -109,7 +108,6 @@ class PreferencesManagerImpl(
         val customTransducerModelType: String = PreferencesManager.DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE,
         val externalMigrationDone: Boolean = false,
         val externalCatalogUrl: String = PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL,
-        val ggufModelPath: String? = null,
         val autoCopyEnabled: Boolean = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         val outputFolderUri: String? = null,
         val transcriptExportFormat: String = PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
@@ -155,7 +153,6 @@ class PreferencesManagerImpl(
             ?: PreferencesManager.DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE,
         externalMigrationDone = this[EXTERNAL_MIGRATION_DONE] ?: false,
         externalCatalogUrl = this[EXTERNAL_CATALOG_URL] ?: PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL,
-        ggufModelPath = this[GGUF_MODEL_PATH],
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         outputFolderUri = this[OUTPUT_FOLDER_URI],
         transcriptExportFormat = this[TRANSCRIPT_EXPORT_FORMAT] ?: PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
@@ -327,9 +324,6 @@ class PreferencesManagerImpl(
         .map { it[CUSTOM_TRANSDUCER_MODEL_TYPE] ?: PreferencesManager.DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE }
         .onStart { emit(cache.get().customTransducerModelType) }
 
-    override val ggufModelPath: Flow<String?> = dataStore.data.map { it[GGUF_MODEL_PATH] }
-        .onStart { emit(cache.get().ggufModelPath) }
-
     override val externalMigrationDone: Flow<Boolean> = dataStore.data.map { it[EXTERNAL_MIGRATION_DONE] ?: false }
         .onStart { emit(cache.get().externalMigrationDone) }
 
@@ -348,20 +342,6 @@ class PreferencesManagerImpl(
             preferences[EXTERNAL_MIGRATION_DONE] = done
         }
         cache.updateAndGet { it.copy(externalMigrationDone = done) }
-    }
-
-    override suspend fun saveGgufModelPath(path: String) {
-        dataStore.edit { preferences ->
-            preferences[GGUF_MODEL_PATH] = path
-        }
-        cache.updateAndGet { it.copy(ggufModelPath = path) }
-    }
-
-    override suspend fun clearGgufModelPath() {
-        dataStore.edit { preferences ->
-            preferences.remove(GGUF_MODEL_PATH)
-        }
-        cache.updateAndGet { it.copy(ggufModelPath = null) }
     }
 
     override val autoCopyEnabled: Flow<Boolean> = dataStore.data.map { it[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED }

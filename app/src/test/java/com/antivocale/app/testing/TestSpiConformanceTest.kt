@@ -70,13 +70,13 @@ class TestSpiConformanceTest {
             .filter { it !in setOf("op", "paths") }
 
         // Flows deliberately NOT in get: partial-transcription resume state
-        // (write-path only), benchmark history, the retired GGUF backend's
-        // state, the one-shot external-migration marker, and the path flows
+        // (write-path only), benchmark history, the one-shot external-migration
+        // marker, and the path flows
         // that render inside "paths"/"activeModelPath" instead.
         val excluded = setOf(
             "partialTranscriptionText", "partialTranscriptionTimestamp",
             "allBenchmarkResults",
-            "customTransducerModelPath", "customTransducerModelType", "ggufModelPath",
+            "customTransducerModelPath", "customTransducerModelType",
             "externalMigrationDone",
             "modelPath", // rendered as activeModelPath/paths.llm
             "externalModelsJson", // op=records covers it

@@ -721,30 +721,10 @@
     <string name="pip_enter_button">PiP</string>
     <string name="pip_enter_description">पिक्चर-इन-पिक्चर विंडो में दिखाएं</string>
 
-    <!-- GGUF model descriptions -->
-    <string name="model_title_gemma4_gguf_q4km">Gemma 4 GGUF (Q4_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q4km">4.9 GB · Apache 2.0 · llama.cpp से टेक्स्ट जनरेशन। क्वालिटी और साइज़ का सबसे अच्छा संतुलन।</string>
-    <string name="model_title_gemma4_gguf_q5km">Gemma 4 GGUF (Q5_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q5km">5.3 GB · Apache 2.0 · llama.cpp से बेहतर क्वालिटी वाला टेक्स्ट जनरेशन।</string>
-    <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
-    <string name="model_desc_gemma4_gguf_q8">7.4 GB · Apache 2.0 · llama.cpp से सर्वोच्च क्वालिटी टेक्स्ट जनरेशन। 8GB+ RAM चाहिए।</string>
     <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
     <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
     <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
     <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
-    <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
-    <string name="gguf_inference_unavailable">GGUF इन्फ़रेंस के लिए नेटिव llama.cpp लाइब्रेरी चाहिए। Android ARM64 के लिए libllama.so बिल्ड करें।</string>
-    <string name="gguf_model_download_error">GGUF मॉडल डाउनलोड करने में विफल</string>
-
-    <!-- GGUF model download section -->
-    <string name="gguf_title">Gemma 4 GGUF (टेक्स्ट जनरेशन)</string>
-    <string name="gguf_description">टेक्स्ट जनरेशन के लिए ऑन-डिवाइस LLM, किसी क्लाउड पर निर्भरता नहीं। नेटिव llama.cpp लाइब्रेरी चाहिए।</string>
-    <string name="gguf_unsupported_arch">इस डिवाइस पर समर्थित नहीं (ARM64 चाहिए)।</string>
-    <string name="gguf_download_confirm_title">%1$s डाउनलोड करें?</string>
-    <string name="gguf_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। GGUF मॉडल बिना इंटरनेट के लोकल टेक्स्ट जनरेशन करते हैं।</string>
-    <string name="gguf_downloaded">%1$s सफलतापूर्वक डाउनलोड हुआ</string>
-    <string name="gguf_delete_message">%1$s मिटाएं? इससे ~%2$dMB स्टोरेज खाली होगा।</string>
-    <string name="gguf_deleted">%1$s मिटाया गया</string>
 
     <!-- Language filter (native language names, kept in native form per glossary) -->
     <string name="lang_filter_label">भाषा से फ़िल्टर करें</string>

@@ -708,24 +708,15 @@ class ModelViewModel @Inject constructor(
                     // check). This when-block stays here because it drives the statusMessage, not
                     // because it dispatches preferences (that is now the repository's job).
                     // TASK-324: key on the registry descriptor instead of the backend-id strings,
-                    // mirroring TranscriptionOrchestrator.ensureBackendLoaded. The disabled GGUF
-                    // backend is unregistered, so its literal id is matched before the lookup; the
-                    // registered LLM backend ("llm") and unknown ids (null descriptor) both fall to
-                    // validateModelPath, exactly as the former string-keyed else did.
-                    val isValid = when (active.backendId) {
-                        "gemma4_gguf" -> {
-                            val file = File(path)
-                            file.exists() && file.isFile
-                        }
-                        else -> when (val descriptor = backendRegistry.byBackendId(active.backendId)) {
-                            null -> validateModelPath(path)
-                            else -> when {
-                                BuiltInBackendIds.isLlm(descriptor.backendId) -> validateModelPath(path)
-                                else -> {
-                                    val dir = File(path)
-                                    dir.exists() && dir.isDirectory
-                                }
-                            }
+                    // mirroring TranscriptionOrchestrator.ensureBackendLoaded. The registered LLM
+                    // backend ("llm") and unknown ids (null descriptor) both fall to
+                    // validateModelPath; catalog backends need an existing directory.
+                    val descriptor = backendRegistry.byBackendId(active.backendId)
+                    val isValid = when {
+                        descriptor == null || BuiltInBackendIds.isLlm(active.backendId) -> validateModelPath(path)
+                        else -> {
+                            val dir = File(path)
+                            dir.exists() && dir.isDirectory
                         }
                     }
                     val displayName = name ?: path.substringAfterLast("/")

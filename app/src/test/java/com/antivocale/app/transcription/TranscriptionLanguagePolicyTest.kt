@@ -201,7 +201,7 @@ class TranscriptionLanguagePolicyTest {
             emptySet<String>(),
             TranscriptionLanguagePolicy.offeredLanguages(null, null),
         )
-        // The LLM backend, the disabled GGUF backend, external imports, and a
+        // The LLM backend, external imports, and a
         // missing whisper catalog entry: no conditioning, empty set.
         assertEquals(
             emptySet<String>(),
@@ -209,7 +209,7 @@ class TranscriptionLanguagePolicyTest {
         )
         assertEquals(
             emptySet<String>(),
-            TranscriptionLanguagePolicy.offeredLanguages("/models/gemma.gguf", null),
+            TranscriptionLanguagePolicy.offeredLanguages("/models/gemma.bin", null),
         )
         assertEquals(
             emptySet<String>(),

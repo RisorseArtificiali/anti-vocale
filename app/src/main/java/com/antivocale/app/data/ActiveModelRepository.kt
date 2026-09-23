@@ -23,10 +23,7 @@ import javax.inject.Singleton
  * The per-backend dispatch lives in [BackendRegistry]: the backend id is
  * resolved to a [BackendDescriptor] whose model-path flow and display-name
  * derivation supply the emission. Backend ids without a registered
- * descriptor keep today's fallback behavior: the disabled GGUF backend
- * (`gemma4_gguf`, deliberately unregistered because it has no BACKEND_ID
- * constant) reads its own `ggufModelPath` preference, and any other unknown
- * id degrades to the generic [PreferencesManager.modelPath].
+ * descriptor degrade to the generic [PreferencesManager.modelPath].
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @Singleton
@@ -47,20 +44,18 @@ class ActiveModelRepository @Inject constructor(
     val activeModelFlow: Flow<ActiveModel> =
         preferencesManager.transcriptionBackend.flatMapLatest { backend ->
             val descriptor = backendRegistry.byBackendId(backend)
-            modelPathFlowFor(backend, descriptor).map { path ->
+            modelPathFlowFor(descriptor).map { path ->
                 path.toActiveModel(backend, descriptor)
             }
         }
 
     /**
-     * The descriptor's saved-model-path flow, falling back for backend ids the
-     * registry does not know: the disabled GGUF backend's dedicated preference,
-     * then the generic preference for any other unknown id.
+     * The descriptor's saved-model-path flow, falling back to the generic
+     * preference for backend ids the registry does not know.
      */
-    private fun modelPathFlowFor(backend: String, descriptor: BackendDescriptor?): Flow<String?> =
+    private fun modelPathFlowFor(descriptor: BackendDescriptor?): Flow<String?> =
         when {
             descriptor != null -> descriptor.modelPathFlow(preferencesManager)
-            backend == GGUF_BACKEND_ID -> preferencesManager.ggufModelPath
             else -> preferencesManager.modelPath
         }
 
@@ -86,10 +81,6 @@ class ActiveModelRepository @Inject constructor(
         )
     }
 
-    private companion object {
-        /** Backend id of the disabled GGUF backend; see the class KDoc. */
-        const val GGUF_BACKEND_ID = "gemma4_gguf"
-    }
 }
 
 data class ActiveModel(

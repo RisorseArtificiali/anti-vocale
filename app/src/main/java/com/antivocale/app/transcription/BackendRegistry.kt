@@ -176,8 +176,8 @@ internal fun variantAwareDisplayName(
  * Dispatch-site status (the sherpa-onnx consolidation removed the bookkeeping
  * [ExtractionService.ModelType] enum; all sites now key on backend-id strings):
  *  - [com.antivocale.app.data.ActiveModelRepository] — descriptor's model-path
- *    flow + display-name derivation; GGUF and unknown ids keep their legacy
- *    fallbacks locally (ggufModelPath / generic modelPath)
+ *    flow + display-name derivation; unknown ids keep the generic-modelPath
+ *    fallback locally
  *  - [com.antivocale.app.transcription.TranscriptionOrchestrator] — backend
  *    load keys on the [backendId]; its calibration display-name derivation is a
  *    string-keyed when (BACKEND_ID constants) that keeps its own dir-name
@@ -189,11 +189,6 @@ internal fun variantAwareDisplayName(
  *    (via ActiveModelRepository's activeModelFlow)
  *  - [com.antivocale.app.ui.viewmodel.ModelViewModel] (generic catalog layer)
  *  - [com.antivocale.app.service.ExtractionService] (downloads keyed by entry id)
- *
- * Deliberately not registered: the disabled GGUF backend (`gemma4_gguf`). It
- * has no BACKEND_ID constant and its manager is disabled (see the commented-out
- * provider in [com.antivocale.app.di.TranscriptionModule]); follow-up: give it
- * a BACKEND_ID and a descriptor if it is ever re-enabled.
  */
 @Singleton
 class BackendRegistry @Inject constructor(

@@ -60,14 +60,13 @@ Detailed inventory of models currently used by Anti-Vocale. Built-ins below; the
 - **Languages:** Russian only
 - **Notes:** punctuates natively; 30s chunk cap (quality-bounded, TASK-448)
 
-## LLM Models (LiteRT-LM runtime; GGUF blocked)
+## LLM Models (LiteRT-LM runtime)
 
-### Gemma 4 E4B-it OBLITERATED
-- **Source:** https://huggingface.co/OBLITERATUS/gemma-4-E4B-it-OBLITERATED
-- **Size:** 4.9 GB (Q4_K_M), 5.3 GB (Q5_K_M), 7.4 GB (Q8_0)
-- **Format:** GGUF
-- **Languages:** 140+
-- **License:** Apache 2.0
+### Gemma 4 (E2B/E4B/3n variants)
+- **Source:** litert-community HuggingFace (the .litertlm files)
+- **Format:** .litertlm
+- **License:** per model card
+- **Status:** the only Gemma runtime path (GGUF/llama-bro removed, TASK-639)
 
 ## Frameworks
 
@@ -75,14 +74,6 @@ Detailed inventory of models currently used by Anti-Vocale. Built-ins below; the
 - **Version:** v1.13.8 (the pin lives in `.sherpa-version` at the repo root: tag + srclib commit; the AAR is a local binary `libs/sherpa-onnx.aar`)
 - **Format:** AAR bundled at `libs/sherpa-onnx.aar`
 - **Purpose:** ONNX-based ASR inference runtime
-
-### llama-bro
-- **Version (fork):** v1.3.0-gemma4 (`com.github.paoloantinori:llama-bro:v1.3.0-gemma4`)
-- **Version (upstream):** v1.2.3 (`com.github.whyisitworking:llama-bro`)
-- **GitHub (fork):** https://github.com/paoloantinori/llama-bro
-- **Purpose:** GGUF LLM inference on Android
-- **Status:** **BLOCKED for Gemma 4 GGUF**: fork adds native `LLM_ARCH_GEMMA4` but the SDK profile layer (`ModelProfiles.GEMMA`) does not configure Gemma 4 correctly, and the GGUF download UI section was removed from ModelTab entirely.
-- **Text-only limitation:** The OBLITERATUS GGUF models lack audio encoder. `Gemma4GgufBackend` hardcodes `supportsAudio = false`. Even with profile fix, GGUF can only do text generation, not audio transcription.
 
 ### LiteRT-LM (working Gemma path)
 - **Backend:** `LlmTranscriptionBackend` → `LlmManager`

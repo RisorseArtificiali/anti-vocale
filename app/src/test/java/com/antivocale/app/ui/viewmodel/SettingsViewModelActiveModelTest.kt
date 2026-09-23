@@ -128,17 +128,19 @@ class SettingsViewModelActiveModelTest {
         viewModel.loadCurrentModel()
         runCurrent()
 
-        // Switch to a second backend that has a DIFFERENT saved model path.
-        fakePrefs._ggufModelPath.value = "/models/gemma-4-e2b-it.gguf"
-        fakePrefs._transcriptionBackend.value = "gemma4_gguf"
+        // Switch to a second backend that has a DIFFERENT saved model path
+        // (deliberately unregistered: the generic modelPath preference serves
+        // it and the name derives from the file name).
+        fakePrefs._modelPath.value = "/models/gemma-4-e2b-it.taskml"
+        fakePrefs._transcriptionBackend.value = "no-such-backend"
         runCurrent()
 
         // Assertions (profile: model fields exactly; chosen over full-state
         // equality to stay robust against unrelated UiState churn).
         val state = viewModel.uiState.value
-        assertEquals("gemma4_gguf", state.transcriptionBackend)
-        assertEquals("/models/gemma-4-e2b-it.gguf", state.currentModelPath)
-        assertEquals("gemma-4-e2b-it.gguf", state.currentModelName)
+        assertEquals("no-such-backend", state.transcriptionBackend)
+        assertEquals("/models/gemma-4-e2b-it.taskml", state.currentModelPath)
+        assertEquals("gemma-4-e2b-it.taskml", state.currentModelName)
     }
 
     /**

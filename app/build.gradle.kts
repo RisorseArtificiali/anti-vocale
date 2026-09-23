@@ -264,12 +264,6 @@ dependencies {
     // Stock prebuilt AAR (all 4 ABIs).
     implementation(files("libs/sherpa-onnx.aar"))
 
-    // GGUF/llama-bro: disabled until llama-bro supports Gemma 4 architecture
-    // Re-enable: ./gradlew -Penable.gguf installDebug
-    if (project.hasProperty("enable.gguf")) {
-        implementation("com.github.paoloantinori:llama-bro:v1.3.0-gemma4")
-    }
-
     // Apache Commons Compress for tar.bz2 extraction
     implementation("org.apache.commons:commons-compress:1.26.1")
 

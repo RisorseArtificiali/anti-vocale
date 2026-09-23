@@ -52,9 +52,3 @@
 -keep @androidx.annotation.Keep class * { *; }
 -keepclassmembers class * { @androidx.annotation.Keep *; }
 
-# GGUF: disabled — uncomment all below when re-enabling llama-bro
-# -keep class com.antivocale.app.llm.** { *; }
-# -keepclassmembers class com.antivocale.app.llm.** { *; }
-# -keep class com.suhel.llamabro.** { *; }
-# -keepclassmembers class com.suhel.llamabro.** { *; }
-# -dontwarn com.suhel.llamabro.**

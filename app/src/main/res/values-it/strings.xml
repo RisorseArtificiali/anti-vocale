@@ -741,30 +741,10 @@
     <string name="pip_enter_button">PiP</string>
     <string name="pip_enter_description">Mostra in finestra Picture-in-Picture</string>
 
-    <!-- GGUF model descriptions -->
-    <string name="model_title_gemma4_gguf_q4km">Gemma 4 GGUF (Q4_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q4km">4,9 GB · Apache 2.0 · Generazione testo via llama.cpp. Miglior rapporto qualità/dimensione.</string>
-    <string name="model_title_gemma4_gguf_q5km">Gemma 4 GGUF (Q5_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q5km">5,3 GB · Apache 2.0 · Generazione testo di qualità superiore via llama.cpp.</string>
-    <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
-    <string name="model_desc_gemma4_gguf_q8">7,4 GB · Apache 2.0 · Generazione testo della migliore qualità via llama.cpp. Richiede 8GB+ RAM.</string>
     <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
     <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
     <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
     <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
-    <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
-    <string name="gguf_inference_unavailable">Inferenza GGUF richiede la libreria nativa llama.cpp. Compila libllama.so per Android ARM64.</string>
-    <string name="gguf_model_download_error">Download del modello GGUF non riuscito</string>
-
-    <!-- GGUF model download section -->
-    <string name="gguf_title">Gemma 4 GGUF (Generazione Testo)</string>
-    <string name="gguf_description">LLM locale per generazione testo — nessuna dipendenza cloud. Richiede libreria nativa llama.cpp.</string>
-    <string name="gguf_unsupported_arch">Non supportato su questo dispositivo (richiede ARM64).</string>
-    <string name="gguf_download_confirm_title">Scaricare %1$s?</string>
-    <string name="gguf_download_confirm_message">Verranno scaricati ~%1$dMB. I modelli GGUF consentono generazione testo locale senza internet.</string>
-    <string name="gguf_downloaded">%1$s scaricato con successo</string>
-    <string name="gguf_delete_message">Eliminare %1$s? Verranno liberati ~%2$dMB di spazio.</string>
-    <string name="gguf_deleted">%1$s eliminato</string>
 
     <!-- Benchmark modello -->
     <string name="benchmark_title">Benchmark %1$s</string>

@@ -160,19 +160,21 @@ class ModelViewModelActiveModelTest {
         runCurrent()
 
         // Switch to a second backend that has a DIFFERENT saved model path.
-        // The .gguf file does not exist, so the gemma4_gguf validity check fails.
-        fakePrefs._ggufModelPath.value = "/models/gemma-4-e2b-it.gguf"
-        fakePrefs._transcriptionBackend.value = "gemma4_gguf"
+        // The id is deliberately unregistered (no descriptor), so the generic
+        // modelPath preference serves it and the file check fails: the same
+        // path-derived-name semantics the retired gguf backend used to pin.
+        fakePrefs._modelPath.value = "/models/gemma-4-e2b-it.taskml"
+        fakePrefs._transcriptionBackend.value = "no-such-backend"
         runCurrent()
 
         // Assertions (profile: model fields + statusMessage; the stale-statusMessage
         // class is exactly what this task fixes, so the flip to "not found" is
         // asserted, not just the name/path pair).
         val state = viewModel.uiState.value
-        assertEquals("/models/gemma-4-e2b-it.gguf", state.modelPath)
-        assertEquals("gemma-4-e2b-it.gguf", state.modelName)
+        assertEquals("/models/gemma-4-e2b-it.taskml", state.modelPath)
+        assertEquals("gemma-4-e2b-it.taskml", state.modelName)
         assertEquals(
-            "str:${R.string.backend_model_not_found}:gemma-4-e2b-it.gguf",
+            "str:${R.string.backend_model_not_found}:gemma-4-e2b-it.taskml",
             state.statusMessage
         )
     }

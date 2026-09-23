@@ -757,30 +757,10 @@
     <string name="pip_enter_button">PiP</string>
     <string name="pip_enter_description">הצגה בחלון תמונה-בתוך-תמונה</string>
 
-    <!-- GGUF model descriptions -->
-    <string name="model_title_gemma4_gguf_q4km">Gemma 4 GGUF (Q4_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q4km">4.9 GB · Apache 2.0 · יצירת טקסט דרך llama.cpp. האיזון הטוב ביותר בין איכות לגודל.</string>
-    <string name="model_title_gemma4_gguf_q5km">Gemma 4 GGUF (Q5_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q5km">5.3 GB · Apache 2.0 · יצירת טקסט באיכות גבוהה יותר דרך llama.cpp.</string>
-    <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
-    <string name="model_desc_gemma4_gguf_q8">7.4 GB · Apache 2.0 · יצירת טקסט באיכות הגבוהה ביותר דרך llama.cpp. דורש 8GB RAM ומעלה.</string>
     <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
     <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
     <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
     <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
-    <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
-    <string name="gguf_inference_unavailable">הסקת GGUF דורשת את ספריית llama.cpp המקורית. יש לבנות את libllama.so עבור Android ARM64.</string>
-    <string name="gguf_model_download_error">הורדת מודל GGUF נכשלה</string>
-
-    <!-- GGUF model download section -->
-    <string name="gguf_title">Gemma 4 GGUF (יצירת טקסט)</string>
-    <string name="gguf_description">מודל LLM מקומי ליצירת טקסט, ללא תלות בענן. דורש את ספריית llama.cpp המקורית.</string>
-    <string name="gguf_unsupported_arch">לא נתמך במכשיר זה (דורש ARM64).</string>
-    <string name="gguf_download_confirm_title">להוריד את %1$s?</string>
-    <string name="gguf_download_confirm_message">פעולה זו תוריד כ-%1$dMB. מודלי GGUF מאפשרים יצירת טקסט מקומית ללא אינטרנט.</string>
-    <string name="gguf_downloaded">%1$s הורד בהצלחה</string>
-    <string name="gguf_delete_message">למחוק את %1$s? פעולה זו תפנה כ-%2$dMB אחסון.</string>
-    <string name="gguf_deleted">%1$s נמחק</string>
 
     <!-- Language filter -->
     <string name="lang_filter_label">סינון לפי שפה</string>

@@ -68,33 +68,26 @@ class BenchmarkViewModel @Inject constructor(
             val providerPref = preferencesManager.inferenceProvider.first()
             val resolvedProvider = InferenceProvider.resolve(providerPref)
 
-            val config = when {
-                backendId == GGUF_BACKEND_ID -> BackendConfig.GgufConfig(
-                    modelPath = modelPath,
-                    threadCount = threadCount
-                )
-                else -> {
-                    val entry = BundledCatalog.byId(backendId) ?: run {
-                        _benchmarkState.value = BenchmarkState.Error("Unsupported backend for benchmark")
-                        return@launch
-                    }
-                    val lang = preferencesManager.transcriptionLanguage.first()
-                    // Same language resolution as the orchestrator's load path: the
-                    // benchmark must measure what transcription would actually run
-                    // with, and the "system" default must never reach the recognizer
-                    // as a literal language code.
-                    BackendConfig.SherpaOnnxConfig(
-                        modelDir = modelPath,
-                        numThreads = threadCount,
-                        language = TranscriptionLanguagePolicy.resolveForEntry(
-                            phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(appContext),
-                            entry = entry,
-                            preference = lang,
-                        ),
-                        provider = resolvedProvider
-                    )
-                }
+            val entry = BundledCatalog.byId(backendId) ?: run {
+                _benchmarkState.value = BenchmarkState.Error("Unsupported backend for benchmark")
+                return@launch
             }
+
+            val lang = preferencesManager.transcriptionLanguage.first()
+            // Same language resolution as the orchestrator's load path: the
+            // benchmark must measure what transcription would actually run
+            // with, and the "system" default must never reach the recognizer
+            // as a literal language code.
+            val config = BackendConfig.SherpaOnnxConfig(
+                modelDir = modelPath,
+                numThreads = threadCount,
+                language = TranscriptionLanguagePolicy.resolveForEntry(
+                    phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(appContext),
+                    entry = entry,
+                    preference = lang,
+                ),
+                provider = resolvedProvider
+            )
 
             val result = benchmarkManager.runBenchmark(backend, config) { progress ->
                 _benchmarkState.value = BenchmarkState.Running(progress)
@@ -127,8 +120,4 @@ class BenchmarkViewModel @Inject constructor(
         benchmarkJob?.cancel()
     }
 
-    companion object {
-        /** Backend id of the disabled GGUF backend; deliberately unregistered in BackendRegistry. */
-        private const val GGUF_BACKEND_ID = "gemma4_gguf"
-    }
 }

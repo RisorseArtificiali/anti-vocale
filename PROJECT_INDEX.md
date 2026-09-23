@@ -4,7 +4,7 @@ Generated: 2026-05-01
 
 ## Project Overview
 
-On-device voice message transcription for Android. Multiple ASR backends (Whisper, Parakeet, Qwen3, Gemma4/GGUF) run entirely locally via sherpa-onnx and LiteRT-LM. Integrates with Tasker for automation and shares transcriptions to other apps.
+On-device voice message transcription for Android. Multiple ASR backends (Whisper, Parakeet, Qwen3, Gemma) run entirely locally via sherpa-onnx and LiteRT-LM. Integrates with Tasker for automation and shares transcriptions to other apps.
 
 **Package:** `com.antivocale.app` | **Language:** Kotlin | **UI:** Jetpack Compose | **DI:** Hilt | **~23K LOC**
 
@@ -22,7 +22,6 @@ anti-vocale/
 │       ├── audio/                # Audio preprocessing & VAD
 │       ├── data/                 # Preferences, HuggingFace API, downloads
 │       ├── di/                   # Hilt DI modules
-│       ├── llm/                  # GGUF inference engines (LlamaCpp-based)
 │       ├── manager/              # LLM manager orchestration
 │       ├── receiver/             # Broadcast receivers (Tasker, share, preload)
 │       ├── service/              # Foreground services (inference, extraction)
@@ -105,9 +104,6 @@ ASR backend abstraction and orchestration. Key interfaces and classes:
 - `ModelPreloadReceiver` — Pre-load model via broadcast intent
 - `BenchmarkActivity` — Runs benchmarks from notification
 
-### llm/ (2 files)
-- `GgufInferenceEngine` — GGUF model inference interface
-- `LlamaBroEngine` — LlamaCpp-based GGUF engine wrapper
 
 ## Test Coverage
 

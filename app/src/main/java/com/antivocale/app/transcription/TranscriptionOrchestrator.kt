@@ -74,8 +74,6 @@ class TranscriptionOrchestrator @Inject constructor(
         // noise in availMem. Tunable; see TASK-314 spec. ~300MB derived from the SmoothQuant incident.
         private const val MEMORY_HEADROOM_BYTES = 300L * MB
 
-        /** Backend id of the disabled GGUF backend; deliberately unregistered in [BackendRegistry]. */
-        private const val GGUF_BACKEND_ID = "gemma4_gguf"
 
         internal fun isNoModelConfiguredError(error: Throwable): Boolean {
             return error is TranscriptionException.NotInitialized ||
@@ -938,10 +936,9 @@ class TranscriptionOrchestrator @Inject constructor(
 
             // Sherpa-onnx consolidation: the load dispatch keys on the registry
             // descriptor (the catalog entry id); every built-in model goes through
-            // the one generic [loadCatalogBackend]. The disabled GGUF backend is
-            // unregistered, so its literal id is matched before the lookup; unknown
-            // ids yield a null descriptor and fall through to the LLM loader, exactly
-            // as the former ModelType-keyed when did.
+            // the one generic [loadCatalogBackend]. Unknown ids yield a null
+            // descriptor and fall through to the LLM loader, exactly as the
+            // former ModelType-keyed when did.
             // External ids are intercepted BEFORE the registry lookup for a behavioral
             // reason, not a registry gap: a prefix-matched id whose record is gone must
             // fail fast with ExternalModelUnavailable instead of falling through to the
@@ -949,7 +946,6 @@ class TranscriptionOrchestrator @Inject constructor(
             val loadResult = if (preferredBackendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX)) {
                 loadExternalBackend(context, preferredBackendId)
             } else when (preferredBackendId) {
-                GGUF_BACKEND_ID -> loadGgufBackend(context)
                 // The LLM backend ("llm") stores its model in the generic preference.
                 LlmTranscriptionBackend.BACKEND_ID -> loadLlmBackend(context)
                 else -> backendRegistry.byBackendId(preferredBackendId)?.let { descriptor ->
@@ -1443,24 +1439,6 @@ class TranscriptionOrchestrator @Inject constructor(
                 provider = provider,
             )
         }
-    }
-
-    // GGUF: disabled — move files from gguf-disabled/ to re-enable the body below
-    private suspend fun loadGgufBackend(context: Context): Result<Unit> {
-        return Result.failure(IllegalStateException("GGUF backend not available"))
-        // val modelPath = preferencesManager.ggufModelPath.first()
-        // if (modelPath.isNullOrBlank()) {
-        //     return Result.failure(IllegalStateException("No GGUF model configured. Download or select a model in Settings."))
-        // }
-        // Log.i(TAG, "Auto-loading GGUF model from: $modelPath")
-        // return backendManager.setActiveBackend(
-        //     backendId = "gemma4_gguf",
-        //     context = context,
-        //     config = BackendConfig.GgufConfig(
-        //         modelPath = modelPath,
-        //         threadCount = preferencesManager.threadCount.first()
-        //     )
-        // )
     }
 
     // ---- Text Processing ----
@@ -3003,15 +2981,13 @@ class TranscriptionOrchestrator @Inject constructor(
     /**
      * Saved model path for [backendId], read via the registry descriptor's model-path
      * flow (TASK-322; the descriptor for the LLM backend already points at the generic
-     * [PreferencesManager.modelPath]). The unregistered GGUF backend keeps its dedicated
-     * preference and any other unknown id degrades to the generic one, matching the
-     * former string-keyed when.
+     * [PreferencesManager.modelPath]). Any unknown id degrades to the generic one,
+     * matching the former string-keyed when.
      */
     private suspend fun modelPathForBackend(backendId: String): String {
         val descriptor = backendRegistry.byBackendId(backendId)
         return when {
             descriptor != null -> descriptor.modelPathFlow(preferencesManager).first()
-            backendId == GGUF_BACKEND_ID -> preferencesManager.ggufModelPath.first()
             else -> preferencesManager.modelPath.first()
         } ?: ""
     }

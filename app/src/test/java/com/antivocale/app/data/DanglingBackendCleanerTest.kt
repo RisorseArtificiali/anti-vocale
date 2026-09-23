@@ -79,4 +79,13 @@ class DanglingBackendCleanerTest {
         DanglingBackendCleaner(prefs, store).cleanIfNeeded()
         assertEquals("whisper", prefs._transcriptionBackend.value)
     }
+
+    @Test
+    fun `retired gguf backend id is reset to default`() = runTest {
+        // TASK-639: the loader is gone; without the reset the stale id would
+        // fall through to the LLM loader and cold-reload it on every request.
+        prefs._transcriptionBackend.value = "gemma4_gguf"
+        DanglingBackendCleaner(prefs, store).cleanIfNeeded()
+        assertEquals(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND, prefs._transcriptionBackend.value)
+    }
 }

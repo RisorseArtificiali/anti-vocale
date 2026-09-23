@@ -162,15 +162,6 @@ object ModelInfoProvider {
                 performanceNotes = R.string.model_info_notes_gemma
             )
 
-            put("gemma-4-gguf-q4km", gemmaInfoBase.copy(
-                quantizationLevel = "Q4_K_M"))
-
-            put("gemma-4-gguf-q5km", gemmaInfoBase.copy(
-                quantizationLevel = "Q5_K_M"))
-
-            put("gemma-4-gguf-q8", gemmaInfoBase.copy(
-                quantizationLevel = "Q8_0"))
-
             put("gemma-4-e2b", gemmaInfoBase.copy())
 
             put("gemma-4-e4b", gemmaInfoBase.copy(

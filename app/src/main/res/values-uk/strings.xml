@@ -767,30 +767,10 @@
     <string name="pip_enter_button">PiP</string>
     <string name="pip_enter_description">Показати у вікні «картинка в картинці»</string>
 
-    <!-- GGUF model descriptions -->
-    <string name="model_title_gemma4_gguf_q4km">Gemma 4 GGUF (Q4_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q4km">4,9 ГБ · Apache 2.0 · Генерування тексту через llama.cpp. Найкращий баланс якості та розміру.</string>
-    <string name="model_title_gemma4_gguf_q5km">Gemma 4 GGUF (Q5_K_M)</string>
-    <string name="model_desc_gemma4_gguf_q5km">5,3 ГБ · Apache 2.0 · Якісніше генерування тексту через llama.cpp.</string>
-    <string name="model_title_gemma4_gguf_q8">Gemma 4 GGUF (Q8_0)</string>
-    <string name="model_desc_gemma4_gguf_q8">7,4 ГБ · Apache 2.0 · Найкраща якість генерування тексту через llama.cpp. Потребує 8ГБ+ ОЗП.</string>
     <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
     <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
     <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
     <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
-    <string name="backend_gemma4_gguf">Gemma 4 (GGUF)</string>
-    <string name="gguf_inference_unavailable">Вивід GGUF потребує рідної бібліотеки llama.cpp. Зберіть libllama.so для Android ARM64.</string>
-    <string name="gguf_model_download_error">Не вдалося завантажити модель GGUF</string>
-
-    <!-- GGUF model download section -->
-    <string name="gguf_title">Gemma 4 GGUF (генерування тексту)</string>
-    <string name="gguf_description">Локальна LLM для генерування тексту на пристрої; без залежності від хмари. Потребує рідної бібліотеки llama.cpp.</string>
-    <string name="gguf_unsupported_arch">Не підтримується на цьому пристрої (потрібен ARM64).</string>
-    <string name="gguf_download_confirm_title">Завантажити %1$s?</string>
-    <string name="gguf_download_confirm_message">Буде завантажено ~%1$dМБ. Моделі GGUF уможливлюють локальне генерування тексту без інтернету.</string>
-    <string name="gguf_downloaded">%1$s успішно завантажено</string>
-    <string name="gguf_delete_message">Видалити %1$s? Це звільнить ~%2$dМБ пам\'яті.</string>
-    <string name="gguf_deleted">%1$s видалено</string>
 
     <!-- Language filter -->
     <string name="lang_filter_label">Фільтрувати за мовою</string>

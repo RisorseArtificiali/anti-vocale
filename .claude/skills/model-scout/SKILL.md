@@ -29,9 +29,10 @@ Verify against source files before each run:
 - LLM: Gemma 4 via `.litertlm` through `LlmTranscriptionBackend` (the working audio path; Gemma 4 E2B and E4B variants)
 - Frameworks: sherpa-onnx (pinned via `.sherpa-version`), LiteRT-LM
 
-**Important context for LLM/GGUF findings:**
-- The GGUF Gemma 4 path is blocked: llama-bro's `ModelProfiles.GEMMA` does not configure Gemma 4 for audio, and the OBLITERATUS GGUF exports are text-only. The GGUF backend is disabled in the app (`gemma4_gguf` literal, no registry descriptor).
-- When reporting new Gemma GGUF variants, always note: "GGUF path blocked for audio; evaluate only for text generation, or pursue .litertlm conversion."
+**Important context for LLM/GGUF findings:** GGUF has NO path in the app at all (the llama-bro
+backend was removed entirely, TASK-639 2026-09-23: fork deleted upstream and the exports are
+text-only anyway); `.litertlm` via LiteRT-LM is the only Gemma runtime. When reporting Gemma GGUF
+variants, always note: "no GGUF runtime in the app; relevant only if a .litertlm conversion appears."
 
 ## Scope Handling
 
@@ -111,7 +112,6 @@ Items the scout should check for updates on each run. For each item, search for 
 | VibeVoice TTS support in sherpa-onnx | https://github.com/k2-fsa/sherpa-onnx/issues/3106 | ONNX-exported VibeVoice models exist (FluffyBunnies/vibevoice-onnx-v2). If sherpa-onnx adds native support, could enable TTS features. Check for new comments, labels, or linked PRs. | 2026-04-30 |
 | Cohere Transcribe int8 in sherpa-onnx | https://huggingface.co/CohereLabs/cohere-transcribe-03-2026 | First non-Whisper/non-Parakeet ASR in the sherpa-onnx ecosystem (2B params, 14 langs, Apache 2.0, 1.6GB int8). Check for: distilled/smaller variants, WER benchmarks per language, community quality reports. | 2026-05-02 |
 | LiteRT-community TFLite ASR models | https://huggingface.co/litert-community | Qwen3-ASR 0.6B and Parakeet CTC 0.6b in TFLite with Qualcomm NPU builds. Check for: new model additions, TDT (not just CTC) conversions, broader Qualcomm SoC support, community benchmarks. | 2026-05-02 |
-| Gemma 4 GGUF backend unblock | https://github.com/paoloantinor/llama-bro | GGUF path blocked: SDK profile issue plus text-only models. Check for: upstream llama-bro Gemma 4 profile support, llama.cpp Gemma 4 audio support progress, .litertlm conversion tools for E2B. | 2026-05-02 |
 
 ## Key Sources to Monitor
 

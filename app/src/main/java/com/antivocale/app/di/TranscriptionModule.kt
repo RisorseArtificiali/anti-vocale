@@ -52,10 +52,6 @@ class TranscriptionModule {
         @Singleton
         fun provideGigaAmBackend(): TranscriptionBackend = SherpaBackend(BuiltInBackendIds.GIGAAM)
 
-        // GGUF: re-enable by moving files from gguf-disabled/ and adding back:
-        // @Binds abstract fun bindGgufInferenceEngine(impl: LlamaBroEngine): GgufInferenceEngine
-        // @Provides @IntoSet @Singleton fun provideGemma4GgufBackend(engine: GgufInferenceEngine): TranscriptionBackend = Gemma4GgufBackend(engine)
-
         @Provides
         @Singleton
         fun provideExternalModelRecordsProvider(

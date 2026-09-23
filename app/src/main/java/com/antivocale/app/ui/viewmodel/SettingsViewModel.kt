@@ -26,8 +26,6 @@ import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.manager.LlmManager
-// GGUF: import com.antivocale.app.transcription.Gemma4GgufBackend
-// GGUF: import com.antivocale.app.transcription.Gemma4GgufModelManager
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.ui.appearance.LauncherIconManager
 import com.antivocale.app.ui.appearance.LauncherIconVariant

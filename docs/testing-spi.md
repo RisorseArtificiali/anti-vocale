@@ -79,7 +79,7 @@ Set keys and value formats:
 
 Paths are written as given and not validated against the filesystem. A test that writes a bogus path and then transcribes will fail at model load; set paths that came out of `op=get` or `op=records`, or a real download directory.
 
-Deliberately NOT reachable through the SPI (kept out on purpose): `partialTranscription*` (transient crash-recovery state) and benchmark results (their own domain, reset from the UI); legacy one-shot markers (`externalMigrationDone`, `customTransducer*`); the disabled GGUF path (`ggufModelPath`); `externalModelsJson` (read via `op=records`, written by the import pipeline).
+Deliberately NOT reachable through the SPI (kept out on purpose): `partialTranscription*` (transient crash-recovery state) and benchmark results (their own domain, reset from the UI); legacy one-shot markers (`externalMigrationDone`, `customTransducer*`); `externalModelsJson` (read via `op=records`, written by the import pipeline).
 
 ## Ready-to-paste: navigation
 

@@ -271,7 +271,7 @@ class ExtractionService : Service() {
                 ModelDownloader.cancel()
             }
         }
-        // Unknown/GGUF/external keys: no service-driven downloader.
+        // Unknown/external keys: no service-driven downloader.
     }
 
     private fun handleCancel(intent: Intent) {

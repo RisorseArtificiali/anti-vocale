@@ -141,12 +141,6 @@ sealed class BackendConfig {
         val provider: String = "cpu"
     ) : BackendConfig()
 
-    data class GgufConfig(
-        val modelPath: String,
-        val contextSize: Int = 2048,
-        val threadCount: Int = 4
-    ) : BackendConfig()
-
     data class ExternalConfig(
         val record: ExternalModelRecord,
         val numThreads: Int,

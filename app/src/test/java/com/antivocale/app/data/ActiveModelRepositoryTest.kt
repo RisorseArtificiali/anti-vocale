@@ -32,7 +32,7 @@ import org.junit.Test
  *
  * Name assertion strategy:
  *   modelName is asserted for backends whose name is derived from the file path
- *   (llm / gguf backends: filename without extension). These don't need Android resources.
+ *   (the llm test asserts the fixed localized label and that the raw file name does NOT leak).
  *   For other backends (sherpa-onnx, whisper, qwen3-asr, nemotron) the name comes from
  *   Context.getString, which requires Robolectric or an instrumented test. We only assert
  *   that modelName is not blank for those, keeping this test resource-independent.
@@ -58,7 +58,7 @@ class ActiveModelRepositoryTest {
      * A relaxed mockk Context stands in for @ApplicationContext in unit tests.
      * Resource-backed name derivation (parakeet/nemotron/whisper-variant) is
      * never asserted exactly here, so the mock returning defaults for getString
-     * is fine. The backends we assert names on (gemma4_gguf, llm) derive the
+     * is fine. The llm name assertion exercises context.getString through the relaxed mock.
      * name from the file path and never touch Context.
      */
     private val mockContext: Context = mockk<Context>(relaxed = true)
@@ -211,31 +211,7 @@ class ActiveModelRepositoryTest {
     }
 
     // -- Path-derived model name assertions --
-    // "gemma4_gguf" reads ggufModelPath and derives the name from the filename.
     // "llm" reads modelPath and derives the name from the filename.
-    // These two are distinct backends reading distinct flows (verified against the
-    // real dispatch table: grep BACKEND_ID + the "gemma4_gguf" literal in source).
-
-    @Test
-    fun `gemma4_gguf backend derives modelName from gguf filename`() = runTest {
-        fakePrefs._transcriptionBackend.value = "gemma4_gguf"
-        fakePrefs._ggufModelPath.value = "/data/models/gemma-4-e2b-it.gguf"
-
-        val repo = makeRepo()
-        val emissions = mutableListOf<ActiveModel>()
-
-        val job = backgroundScope.launch {
-            repo.activeModelFlow.collect { emissions.add(it) }
-        }
-        runCurrent()
-
-        assertEquals("gemma4_gguf", emissions.last().backendId)
-        assertEquals("/data/models/gemma-4-e2b-it.gguf", emissions.last().modelPath)
-        // GGUF backend derives name from the filename WITH extension (matches old File(path).name behavior)
-        assertEquals("gemma-4-e2b-it.gguf", emissions.last().modelName)
-
-        job.cancel()
-    }
 
     @Test
     fun `llm backend reads modelPath and shows the fixed localized name`() = runTest {

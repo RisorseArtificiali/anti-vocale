@@ -34,7 +34,6 @@ internal class FakePreferencesManager : PreferencesManager {
     val _externalMigrationDone = MutableStateFlow(false)
     val _customTransducerModelPath = MutableStateFlow<String?>(null)
     val _customTransducerModelType = MutableStateFlow(PreferencesManager.DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE)
-    val _ggufModelPath = MutableStateFlow<String?>(null)
     val _autoCopyEnabled = MutableStateFlow(false)
     val _outputFolderUri = MutableStateFlow<String?>(null)
     val _vadEnabled = MutableStateFlow(false)
@@ -74,7 +73,6 @@ internal class FakePreferencesManager : PreferencesManager {
     override val externalMigrationDone: Flow<Boolean> get() = _externalMigrationDone
     override val customTransducerModelPath: Flow<String?> get() = _customTransducerModelPath
     override val customTransducerModelType: Flow<String> get() = _customTransducerModelType
-    override val ggufModelPath: Flow<String?> get() = _ggufModelPath
     override val autoCopyEnabled: Flow<Boolean> get() = _autoCopyEnabled
     override val outputFolderUri: Flow<String?> get() = _outputFolderUri
     private val _transcriptExportFormat = MutableStateFlow(PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT)
@@ -116,8 +114,6 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveSherpaModelPath(entryId: String, path: String) { _sherpaModelPath(entryId).value = path }
     override suspend fun clearSherpaModelPath(entryId: String) { _sherpaModelPath(entryId).value = null }
     override suspend fun saveExternalMigrationDone(done: Boolean) { _externalMigrationDone.value = done }
-    override suspend fun saveGgufModelPath(path: String) { _ggufModelPath.value = path }
-    override suspend fun clearGgufModelPath() { _ggufModelPath.value = null }
     override suspend fun saveAutoCopyEnabled(enabled: Boolean) { _autoCopyEnabled.value = enabled }
     override suspend fun saveOutputFolderUri(uri: String?) { _outputFolderUri.value = uri }
     override suspend fun saveTranscriptExportFormat(format: String) { _transcriptExportFormat.value = format }
