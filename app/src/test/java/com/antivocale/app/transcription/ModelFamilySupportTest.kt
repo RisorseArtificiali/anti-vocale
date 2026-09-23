@@ -71,6 +71,8 @@ class ModelFamilySupportTest {
 
         assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.CTC, "nemo_ctc"))
         assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.CTC, "zipformer_ctc"))
+        // TASK-635: Meta omnilingual CTC (dedicated sherpa config field).
+        assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.CTC, "omnilingual_ctc"))
         assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.CTC, ""))
         assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.CTC, "nemo_transducer"))
 
@@ -533,6 +535,17 @@ class ModelFamilySupportTest {
             .buildModelConfig(record(ModelFamily.CTC, modelType = "zipformer_ctc"), numThreads = 2, provider = "nnpapi")
         assertEquals("/models/external/test-abc123/encoder.int8.onnx", config.zipformerCtc.model)
         assertEquals("zipformer_ctc", config.modelType)
+    }
+
+    @Test
+    fun `ctc omnilingual model config builds OfflineOmnilingualAsrCtcModelConfig`() {
+        // Mirrors sherpa's from_omnilingual_asr_ctc: dedicated config field,
+        // empty model_type (TASK-635: the device pass proved the generic
+        // nemo_ctc path crashes the process on this model class).
+        val config = ModelFamilySupport.forFamily(ModelFamily.CTC)
+            .buildModelConfig(record(ModelFamily.CTC, modelType = "omnilingual_ctc"), numThreads = 2, provider = "cpu")
+        assertEquals("/models/external/test-abc123/encoder.int8.onnx", config.omnilingual.model)
+        assertEquals("", config.modelType)
     }
 
     @Test(expected = IllegalArgumentException::class)

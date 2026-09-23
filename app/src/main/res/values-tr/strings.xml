@@ -905,6 +905,7 @@
     <string name="external_option_itn">Ters metin normalleştirme</string>
     <string name="external_ctc_subtype">CTC alt türü</string>
     <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_omnilingual">Çok dilli CTC (1600+ dil, deneysel)</string>
     <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
     <string name="external_notice_single_pass">Çok uzun sesler büyük modellerle tek geçişte işlenemeyebilir. Sesi kısaltın veya daha küçük bir model seçin.</string>
     <string name="external_notice_family">Metin çıkarma hatasız şekilde kilitleniyorsa mimari yanlış olabilir: modeli silin ve başka bir mimari seçerek yeniden içe aktarın.</string>

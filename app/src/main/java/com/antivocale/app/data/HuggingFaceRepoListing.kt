@@ -179,7 +179,7 @@ object ExternalModelEntryJson {
         if (!ModelFamilySupport.isValidModelType(family, modelType)) {
             throw IllegalArgumentException(
                 "$family family has invalid modelType: $modelType (valid values depend on the family; " +
-                    "CTC takes nemo_ctc or zipformer_ctc, TRANSDUCER takes nemo_transducer, " +
+                    "CTC takes nemo_ctc, zipformer_ctc or omnilingual_ctc, TRANSDUCER takes nemo_transducer, " +
                     "conformer_transducer, or empty, WHISPER/SENSE_VOICE/CANARY/MOONSHINE/DOLPHIN take empty)")
         }
 

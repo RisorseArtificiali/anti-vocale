@@ -909,6 +909,7 @@
     <string name="external_option_itn">נרמול טקסט הפוך (ITN)</string>
     <string name="external_ctc_subtype">תת-סוג CTC</string>
     <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_omnilingual">CTC רב-לשוני (1600+ שפות, ניסיוני)</string>
     <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
     <string name="external_notice_single_pass">ייתכן שמודלים גדולים לא יעבדו אודיו ארוך מאוד בהעברה אחת. קצר את האודיו או בחר מודל קטן יותר.</string>
     <string name="external_notice_family">אם התמלול קורס בלי הודעת שגיאה, ייתכן שהארכיטקטורה שגויה: מחק וייבא מחדש את המודל עם ארכיטקטורה אחרת שנבחרה.</string>

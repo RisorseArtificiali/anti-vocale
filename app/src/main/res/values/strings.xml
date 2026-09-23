@@ -908,6 +908,7 @@
     <string name="external_option_itn">Inverse text normalization</string>
     <string name="external_ctc_subtype">CTC subtype</string>
     <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_omnilingual">Omnilingual CTC (1600+ languages, experimental)</string>
     <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
     <string name="external_notice_single_pass">Very long audio may not be processed by large models in one pass. Trim the audio or choose a smaller model.</string>
     <string name="external_notice_family">If transcription crashes with no error, the architecture may be wrong: delete and re-import the model with a different architecture selected.</string>

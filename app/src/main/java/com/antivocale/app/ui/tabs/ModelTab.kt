@@ -1718,9 +1718,13 @@ private fun ExternalModelsSection(
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
                     OutlinedTextField(
-                        value = if (selection.ctcModelType == ModelFamilySupport.CTC_TYPE_ZIPFORMER)
-                            stringResource(R.string.external_ctc_subtype_zipformer)
-                        else stringResource(R.string.external_ctc_subtype_nemo),
+                        value = when (selection.ctcModelType) {
+                            ModelFamilySupport.CTC_TYPE_ZIPFORMER ->
+                                stringResource(R.string.external_ctc_subtype_zipformer)
+                            ModelFamilySupport.CTC_TYPE_OMNILINGUAL ->
+                                stringResource(R.string.external_ctc_subtype_omnilingual)
+                            else -> stringResource(R.string.external_ctc_subtype_nemo)
+                        },
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(stringResource(R.string.external_ctc_subtype)) },
@@ -1739,6 +1743,13 @@ private fun ExternalModelsSection(
                             text = { Text(stringResource(R.string.external_ctc_subtype_zipformer)) },
                             onClick = {
                                 onSelectionChange(selection.copy(ctcModelType = ModelFamilySupport.CTC_TYPE_ZIPFORMER))
+                                ctcExpanded = false
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text(stringResource(R.string.external_ctc_subtype_omnilingual)) },
+                            onClick = {
+                                onSelectionChange(selection.copy(ctcModelType = ModelFamilySupport.CTC_TYPE_OMNILINGUAL))
                                 ctcExpanded = false
                             }
                         )

@@ -863,6 +863,7 @@
     <string name="external_option_itn">इनवर्स टेक्स्ट नॉर्मलाइज़ेशन</string>
     <string name="external_ctc_subtype">CTC सबटाइप</string>
     <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_omnilingual">बहुभाषी CTC (1600+ भाषाएँ, प्रायोगिक)</string>
     <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
     <string name="external_notice_single_pass">बहुत लंबा ऑडियो बड़े मॉडल से एक बार में प्रोसेस नहीं हो सकता। ऑडियो छोटा करें या छोटा मॉडल चुनें।</string>
     <string name="external_notice_family">अगर ट्रांसक्रिप्शन बिना गड़बड़ी के क्रैश हो, तो आर्किटेक्चर गलत हो सकता है: मॉडल मिटाकर दूसरा आर्किटेक्चर चुनकर फिर इंपोर्ट करें।</string>

@@ -864,6 +864,7 @@
     <string name="external_option_itn">Inverse Textnormalisierung</string>
     <string name="external_ctc_subtype">CTC-Subtyp</string>
     <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_omnilingual">Omnilinguales CTC (1600+ Sprachen, experimentell)</string>
     <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
     <string name="external_notice_single_pass">Sehr lange Audioaufnahmen können große Modelle in einem Durchlauf überfordern. Kürze das Audio oder wähle ein kleineres Modell.</string>
     <string name="external_notice_family">Wenn die Transkription ohne Fehlermeldung abstürzt, kann die Architektur falsch sein: Lösche das Modell und importiere es mit einer anderen Architektur erneut.</string>

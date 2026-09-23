@@ -433,7 +433,7 @@ internal class TestSpiOps(
             "am broadcast -a com.antivocale.app.TEST_SPI --es op=<$OP_GET|$OP_SET|$OP_RECORDS|$OP_IMPORT|$OP_HELP> " +
                 "[--es key=<setKey> --es value=<newValue>] [--es entry=<catalogId> (sherpa_path only)] " +
                 "[--es url=<entry-or-repo url> (import only)] [--es family=<ModelFamily> (import only, optional override)] "
-            + "[--es model_type=<subtype> (import only, CTC: nemo_ctc/zipformer_ctc)]")
+            + "[--es model_type=<subtype> (import only, CTC: nemo_ctc/zipformer_ctc/omnilingual_ctc)]")
         .put(
             "transcription",
             "transcription is NOT triggered here: broadcast com.antivocale.app.PROCESS_REQUEST with extras " +

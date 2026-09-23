@@ -23,7 +23,7 @@ The family selector above the import buttons picks the architecture; expected fi
 |---|---|---|---|
 | Transducer (NeMo/Zipformer) | `encoder` + `decoder` + `joiner`/`joint` + tokens `.onnx`/`.txt` | `nemo_transducer` (default), `""` (zipformer), `conformer_transducer` | none |
 | Whisper | `encoder` + `decoder` + tokens | `""` | `whisper.language` (optional; blank = auto, falls back to the record's first language) |
-| CTC | `encoder` + tokens | `nemo_ctc` or `zipformer_ctc` (explicit, no default) | none |
+| CTC | `encoder` + tokens | `nemo_ctc`, `zipformer_ctc` or `omnilingual_ctc` (explicit, no default) | none |
 | SenseVoice | `model` + tokens | `""` | `sensevoice.language` (optional), `sensevoice.itn` (`true`/`false`) |
 | Canary (NeMo) | `encoder` + `decoder` + tokens | `""` | `canary.language` (one of `en`, `es`, `de`, `fr`; conditions the recognizer itself: there is no auto-detection) |
 | Moonshine | v1: `preprocess` + `encode` + `uncached_decode` + `cached_decode` + tokens; v2: `encoder_model.ort` + `decoder_model_merged.ort` + tokens | `""` | none (English and the 2026 exports; 8 s chunking: the 2026-02-27 v2 .ort exports decode empty above ~9 s of input) |
@@ -105,7 +105,7 @@ A single-model manifest with integrity pins. This is how third parties share a m
 |---|---|---|
 | `name` | yes | Display name shown in the Model tab |
 | `family` | no (default `TRANSDUCER`) | one of `TRANSDUCER`, `WHISPER`, `CTC`, `SENSE_VOICE`, `CANARY`, `MOONSHINE`, `DOLPHIN`; unknown values are rejected |
-| `modelType` | no (family-aware default) | `nemo_transducer` for TRANSDUCER without the field, `""` for WHISPER/SENSE_VOICE/CANARY/MOONSHINE/DOLPHIN; CTC requires `nemo_ctc` or `zipformer_ctc` |
+| `modelType` | no (family-aware default) | `nemo_transducer` for TRANSDUCER without the field, `""` for WHISPER/SENSE_VOICE/CANARY/MOONSHINE/DOLPHIN; CTC requires `nemo_ctc`, `zipformer_ctc` or `omnilingual_ctc` |
 | `languages` | yes for new entries (`family` present) | normalized ISO codes (`["ar"]`); doubles as the Whisper default language |
 | `options` | no | flat map of family options (`{"whisper.language": "ar"}`) |
 | `streaming` | no (default `false`) | `true` for streaming zipformer transducers (decoded via the online recognizer, whole-clip batch); `TRANSDUCER` family only, rejected otherwise |
@@ -155,7 +155,7 @@ Per-family required keys (the app validates these at import time):
 | `nemo_transducer` | `vocab_size`, `subsampling_factor`, `model_type` |
 | icefall transducer (`""` / zipformer) | `vocab_size` |
 | `whisper` | `model_type` whose value starts with `whisper` (value-checked, not just key-present) |
-| `nemo_ctc` / `zipformer_ctc` (CTC family) | none (structural discriminators only) |
+| `nemo_ctc` / `zipformer_ctc` / `omnilingual_ctc` (CTC family) | none (structural discriminators only) |
 
 Note `vocab_size` is the vocab file line count MINUS one (sherpa adds the blank).
 `subsampling_factor` comes from the original training config (the NVIDIA conformers

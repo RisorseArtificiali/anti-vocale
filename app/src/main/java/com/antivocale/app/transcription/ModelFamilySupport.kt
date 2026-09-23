@@ -7,6 +7,7 @@ import com.k2fsa.sherpa.onnx.OfflineDolphinModelConfig
 import com.k2fsa.sherpa.onnx.OfflineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineMoonshineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineNemoEncDecCtcModelConfig
+import com.k2fsa.sherpa.onnx.OfflineOmnilingualAsrCtcModelConfig
 import com.k2fsa.sherpa.onnx.OfflineSenseVoiceModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTransducerModelConfig
 import com.k2fsa.sherpa.onnx.OfflineWhisperModelConfig
@@ -218,7 +219,7 @@ sealed interface ModelFamilySupport {
 
         /** Error raised when CTC is imported without an explicit modelType (single definition). */
         const val CTC_MODEL_TYPE_REQUIRED =
-            "CTC family requires an explicit modelType: nemo_ctc or zipformer_ctc"
+            "CTC family requires an explicit modelType: nemo_ctc, zipformer_ctc or omnilingual_ctc"
 
         /** The two sherpa CTC config subtypes (single definition for the
          *  engine mapping above, the import UI defaults, and the family
@@ -226,6 +227,9 @@ sealed interface ModelFamilySupport {
          *  must spell these identically). */
         const val CTC_TYPE_NEMO = "nemo_ctc"
         const val CTC_TYPE_ZIPFORMER = "zipformer_ctc"
+
+        /** TASK-635: Meta omnilingual CTC (sherpa OfflineOmnilingualAsrCtcModelConfig). */
+        const val CTC_TYPE_OMNILINGUAL = "omnilingual_ctc"
 
         /** Record option keys, single definition for the supports and the import UI. */
         const val OPTION_WHISPER_LANGUAGE = "whisper.language"
@@ -250,7 +254,7 @@ sealed interface ModelFamilySupport {
          *  ONE table both [isValidModelType] and error messages derive from. */
         fun validModelTypes(family: ModelFamily): List<String> = when (family) {
             ModelFamily.TRANSDUCER -> listOf("", "nemo_transducer", "conformer_transducer")
-            ModelFamily.CTC -> listOf("nemo_ctc", "zipformer_ctc")
+            ModelFamily.CTC -> listOf("nemo_ctc", "zipformer_ctc", CTC_TYPE_OMNILINGUAL)
             ModelFamily.WHISPER, ModelFamily.SENSE_VOICE, ModelFamily.CANARY,
             ModelFamily.MOONSHINE, ModelFamily.DOLPHIN -> listOf("")
         }
@@ -535,8 +539,14 @@ object CtcSupport : ModelFamilySupport {
                 zipformerCtc = OfflineZipformerCtcModelConfig(model = encoderPath),
                 modelType = "zipformer_ctc",
             ).withCommonTail(record, numThreads, provider)
+            ModelFamilySupport.CTC_TYPE_OMNILINGUAL -> OfflineModelConfig(
+                // Mirrors sherpa's from_omnilingual_asr_ctc: the dedicated
+                // config field, no model_type (empty default).
+                omnilingual = OfflineOmnilingualAsrCtcModelConfig(model = encoderPath),
+                modelType = "",
+            ).withCommonTail(record, numThreads, provider)
             else -> throw IllegalArgumentException(
-                "unknown CTC modelType \"${record.modelType}\"; valid values: nemo_ctc, zipformer_ctc")
+                "unknown CTC modelType \"${record.modelType}\"; valid values: nemo_ctc, zipformer_ctc, omnilingual_ctc")
         }
     }
 }

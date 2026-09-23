@@ -881,6 +881,7 @@
     <string name="external_option_itn">نرمال‌سازی معکوس متن</string>
     <string name="external_ctc_subtype">زیرنوع CTC</string>
     <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_omnilingual">چندزبانه CTC (۱۶۰۰+ زبان، آزمایشی)</string>
     <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
     <string name="external_notice_single_pass">صدای خیلی طولانی ممکن است توسط مدل‌های بزرگ در یک مرحله پردازش نشود. صدا را کوتاه کنید یا مدل کوچک‌تری انتخاب کنید.</string>
     <string name="external_notice_family">اگر رونویسی بدون خطا نیمه‌کاره بماند، ممکن است معماری درست نباشد: مدل را حذف کنید و با معماری دیگری دوباره وارد کنید.</string>

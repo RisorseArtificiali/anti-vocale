@@ -903,6 +903,7 @@
     <string name="external_option_itn">Обратная нормализация текста</string>
     <string name="external_ctc_subtype">Подтип CTC</string>
     <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_omnilingual">Омниязычный CTC (1600+ языков, экспериментально)</string>
     <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
     <string name="external_notice_single_pass">Очень длинное аудио может не обработаться крупной моделью за один проход. Обрежьте аудио или выберите модель меньшего размера</string>
     <string name="external_notice_family">Если распознавание завершается сбоем без ошибки, возможно, выбрана неверная архитектура: удалите модель и импортируйте её заново с другой архитектурой.</string>
