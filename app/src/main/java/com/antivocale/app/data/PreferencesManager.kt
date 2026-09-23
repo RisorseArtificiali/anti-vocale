@@ -158,6 +158,15 @@ interface PreferencesManager {
 
     val partialTranscriptionText: Flow<String?>
     val partialTranscriptionTimestamp: Flow<Long?>
+
+    /**
+     * TASK-640: the backend id whose native load is in flight. Set before the
+     * recognizer construction, cleared when it returns; a native death leaves
+     * it set, and the next launch quarantines the model (external ids) instead
+     * of walking into the same crash again.
+     */
+    val pendingBackendLoad: Flow<String?>
+    suspend fun savePendingBackendLoad(backendId: String?)
     suspend fun savePartialTranscriptionState(text: String)
     suspend fun clearPartialTranscriptionState()
 

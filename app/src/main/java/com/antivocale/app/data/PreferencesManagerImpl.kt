@@ -60,6 +60,7 @@ class PreferencesManagerImpl(
         private val GIGAAM_MODEL_PATH = stringPreferencesKey("gigaam_model_path")
         private val EXTERNAL_CATALOG_URL = stringPreferencesKey("external_catalog_url")
         private val EXTERNAL_MIGRATION_DONE = booleanPreferencesKey("external_migration_done")
+        private val PENDING_BACKEND_LOAD = stringPreferencesKey("pending_backend_load")
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
         private val OUTPUT_FOLDER_URI = stringPreferencesKey("output_folder_uri")
         private val TRANSCRIPT_EXPORT_FORMAT = stringPreferencesKey("transcript_export_format")
@@ -107,6 +108,7 @@ class PreferencesManagerImpl(
         val customTransducerModelPath: String? = null,
         val customTransducerModelType: String = PreferencesManager.DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE,
         val externalMigrationDone: Boolean = false,
+        val pendingBackendLoad: String? = null,
         val externalCatalogUrl: String = PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL,
         val autoCopyEnabled: Boolean = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         val outputFolderUri: String? = null,
@@ -152,6 +154,7 @@ class PreferencesManagerImpl(
         customTransducerModelType = this[CUSTOM_TRANSDUCER_MODEL_TYPE]
             ?: PreferencesManager.DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE,
         externalMigrationDone = this[EXTERNAL_MIGRATION_DONE] ?: false,
+        pendingBackendLoad = this[PENDING_BACKEND_LOAD],
         externalCatalogUrl = this[EXTERNAL_CATALOG_URL] ?: PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL,
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
         outputFolderUri = this[OUTPUT_FOLDER_URI],
@@ -327,6 +330,9 @@ class PreferencesManagerImpl(
     override val externalMigrationDone: Flow<Boolean> = dataStore.data.map { it[EXTERNAL_MIGRATION_DONE] ?: false }
         .onStart { emit(cache.get().externalMigrationDone) }
 
+    override val pendingBackendLoad: Flow<String?> = dataStore.data.map { it[PENDING_BACKEND_LOAD] }
+        .onStart { emit(cache.get().pendingBackendLoad) }
+
     override val externalCatalogUrl: Flow<String> = dataStore.data.map { it[EXTERNAL_CATALOG_URL] ?: PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL }
         .onStart { emit(cache.get().externalCatalogUrl) }
 
@@ -335,6 +341,14 @@ class PreferencesManagerImpl(
             preferences[EXTERNAL_CATALOG_URL] = url
         }
         cache.updateAndGet { it.copy(externalCatalogUrl = url) }
+    }
+
+    override suspend fun savePendingBackendLoad(backendId: String?) {
+        dataStore.edit { preferences ->
+            if (backendId == null) preferences.remove(PENDING_BACKEND_LOAD)
+            else preferences[PENDING_BACKEND_LOAD] = backendId
+        }
+        cache.updateAndGet { it.copy(pendingBackendLoad = backendId) }
     }
 
     override suspend fun saveExternalMigrationDone(done: Boolean) {

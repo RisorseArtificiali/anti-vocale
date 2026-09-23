@@ -57,6 +57,9 @@ internal class FakePreferencesManager : PreferencesManager {
     val _languageChipEnabled = MutableStateFlow(PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED)
     val _externalModelsJson = MutableStateFlow<String?>(null)
     val _partialTranscriptionText = MutableStateFlow<String?>(null)
+    val _pendingBackendLoad = MutableStateFlow<String?>(null)
+    override val pendingBackendLoad: Flow<String?> get() = _pendingBackendLoad
+    override suspend fun savePendingBackendLoad(backendId: String?) { _pendingBackendLoad.value = backendId }
     val _partialTranscriptionTimestamp = MutableStateFlow<Long?>(null)
     val _benchmarkResults = MutableStateFlow<Map<String, String>>(emptyMap())
 

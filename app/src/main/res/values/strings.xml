@@ -279,6 +279,8 @@
     <string name="native_crash_go_to_model">Go to Model tab</string>
     <string name="model_load_low_memory">Not enough free memory for this model (%1$s available, about %2$s needed). Memory protection is active: close other apps, use a smaller model, or turn it off in Settings to try anyway.</string>
     <string name="transcribe_low_memory">Not enough free memory to transcribe with this model (about %1$s free, %2$s needed). Memory protection is active: close other apps and try again, or turn it off in Settings to try anyway.</string>
+    <string name="external_model_quarantined_title">External model disabled after a crash</string>
+    <string name="external_model_quarantined_text">Loading "%1$s" closed the app, so it has been disabled to prevent repeat crashes. Delete and re-import the model in the Models tab to try again.</string>
     <string name="memory_protection">Memory protection</string>
     <string name="memory_protection_desc">Block loading a model when free memory looks insufficient, to avoid silent app crashes. Off by default: normally the app always tries to run the model.</string>
     <string name="copy">Copy</string>

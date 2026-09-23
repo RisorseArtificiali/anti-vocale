@@ -1,5 +1,6 @@
 package com.antivocale.app.service
 
+import com.antivocale.app.data.CrashQuarantineCheck
 import com.antivocale.app.receiver.ShareReceiverActivity
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.work.SubtitleChoiceTimeoutWorker
@@ -40,6 +41,7 @@ class ReservedNotificationIdContractTest {
     fun `reserved base sits above every fixed and banded notification id`() {
         val base = ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE
         assertTrue(InferenceService.NOTIFICATION_ID < base)
+        assertTrue(CrashQuarantineCheck.NOTIFICATION_ID < base)
         assertTrue(SubtitleChoiceTimeoutWorker.NOTIFICATION_ID < base)
         assertTrue(ExtractionService.NOTIFICATION_ID_BASE + ExtractionService.NOTIFICATION_ID_RANGE - 1 < base)
         assertTrue(ShareReceiverActivity.CHOICE_ID_BAND_BASE + ShareReceiverActivity.CHOICE_ID_BAND_RANGE - 1 < base)
@@ -57,6 +59,7 @@ class ReservedNotificationIdContractTest {
     fun `every notification id band is pairwise disjoint`() {
         val intervals = listOf(
             "inference-foreground" to (InferenceService.NOTIFICATION_ID..InferenceService.NOTIFICATION_ID),
+            "crash-quarantine-fixed" to (CrashQuarantineCheck.NOTIFICATION_ID..CrashQuarantineCheck.NOTIFICATION_ID),
             "worker-foreground" to (SubtitleChoiceTimeoutWorker.NOTIFICATION_ID..SubtitleChoiceTimeoutWorker.NOTIFICATION_ID),
             "download-band" to (ExtractionService.NOTIFICATION_ID_BASE until
                 ExtractionService.NOTIFICATION_ID_BASE + ExtractionService.NOTIFICATION_ID_RANGE),

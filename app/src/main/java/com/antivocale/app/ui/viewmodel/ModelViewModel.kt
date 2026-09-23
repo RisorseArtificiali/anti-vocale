@@ -1473,9 +1473,14 @@ class ModelViewModel @Inject constructor(
     private val _externalImportState = MutableStateFlow<ExternalImportState>(ExternalImportState.Idle)
     val externalImportState: StateFlow<ExternalImportState> = _externalImportState.asStateFlow()
 
-    /** Valid external records for the section cards (dir exists on disk). */
+    /**
+     * Full external inventory for the section cards: TASK-640 quarantined
+     * records must stay listed and deletable (the notification points here),
+     * so this reads recordsFlow, not the loadability-filtered
+     * validRecordsFlow.
+     */
     val externalModels: StateFlow<List<ExternalModelRecord>> =
-        externalModelStore.validRecordsFlow
+        externalModelStore.recordsFlow
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     /** Persisted active backend id, for card active-state keyed on identity (not display name). */

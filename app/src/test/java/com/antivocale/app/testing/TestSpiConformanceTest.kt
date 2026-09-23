@@ -78,6 +78,7 @@ class TestSpiConformanceTest {
             "allBenchmarkResults",
             "customTransducerModelPath", "customTransducerModelType",
             "externalMigrationDone",
+            "pendingBackendLoad", // TASK-640: crash marker, write-path only
             "modelPath", // rendered as activeModelPath/paths.llm
             "externalModelsJson", // op=records covers it
         )

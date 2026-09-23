@@ -98,6 +98,22 @@ class ResultNotificationFactory(private val context: Context) {
         return builder.build()
     }
 
+    /**
+     * TASK-640: a plain high-importance alert on the result channel (title,
+     * text, app-launch content intent). The quarantine notice and any future
+     * one-shot alerts compose here instead of hand-rolling builders outside
+     * the service layer.
+     */
+    fun alertNotification(title: String, text: String): Notification =
+        NotificationCompat.Builder(context, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(plainLaunchPendingIntent())
+            .setAutoCancel(true)
+            .build()
+
     /** The plain app launch both error surfaces default to. */
     private fun plainLaunchPendingIntent(): PendingIntent = PendingIntent.getActivity(
         context, RC_ERROR_LAUNCH_DEFAULT,
@@ -350,6 +366,7 @@ class ResultNotificationFactory(private val context: Context) {
          * today, all below 3000:
          * - 1001: InferenceService.NOTIFICATION_ID (service foreground/progress)
          * - 1003: SubtitleChoiceTimeoutWorker.NOTIFICATION_ID (worker foreground)
+         * - 1005: CrashQuarantineCheck.NOTIFICATION_ID (TASK-640 quarantine notice)
          * - 2001..2100: ExtractionService download-progress band (per-jobKey hash)
          * - 2201..2300: TaskerRequestReceiver fallback band (sequential slots)
          * - 2401..2500: ShareReceiverActivity choice + share-error band

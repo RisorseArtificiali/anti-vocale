@@ -1291,6 +1291,7 @@ class TranscriptionOrchestrator @Inject constructor(
         if (!modelDir.exists() || !modelDir.isDirectory) {
             return Result.failure(IllegalStateException("$label model directory not found: ${modelDir.absolutePath}"))
         }
+
         // Pre-flight memory check: refuse to load if free memory is below the model size + headroom.
         // TASK-631: runs ONLY when the opt-in memoryProtection preference is on; off (the default)
         // the app always attempts the load and never refuses on its own (two healthy-device
@@ -1337,11 +1338,28 @@ class TranscriptionOrchestrator @Inject constructor(
         }
         Log.i(TAG, "Auto-loading $label model from: ${modelDir.absolutePath}")
         Log.i(TAG, "Inference provider: resolved=$resolvedProviderPref")
-        val loadResult = backendManager.setActiveBackend(
-            backendId = backendId,
-            context = context,
-            config = configBlock(threadCountPref, resolvedProviderPref),
-        )
+        // TASK-640: arm the crash marker around backendManager.setActiveBackend,
+        // whose window includes both the PREVIOUS backend's native unload and the
+        // new model's native init (an unload crash would over-quarantine the new
+        // id: accepted, splitting unload from init is a manager-level change).
+        // External ids only: that is the class CrashQuarantineCheck acts on.
+        // The clear is NonCancellable: a task-swipe cancellation must still clear
+        // the marker, or the next cold start would falsely quarantine a healthy
+        // model. Scope: sherpa loads only; the LLM and benchmark loads are
+        // unarmed by design (their quarantine is not specified).
+        val armed = backendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX)
+        if (armed) preferencesManager.savePendingBackendLoad(backendId)
+        val loadResult = try {
+            backendManager.setActiveBackend(
+                backendId = backendId,
+                context = context,
+                config = configBlock(threadCountPref, resolvedProviderPref),
+            )
+        } finally {
+            if (armed) kotlinx.coroutines.withContext(kotlinx.coroutines.NonCancellable) {
+                preferencesManager.savePendingBackendLoad(null)
+            }
+        }
         // TASK-575: record the measured footprint of a successful load so the
         // next pre-flight uses it instead of the disk-size estimate. Failures
         // here never fail the load itself. The merge runs inside the storage

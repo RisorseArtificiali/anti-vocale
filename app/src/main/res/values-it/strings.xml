@@ -273,6 +273,8 @@
     <string name="native_crash_go_to_model">Vai alla scheda Modello</string>
     <string name="model_load_low_memory">Memoria libera insufficiente per questo modello (%1$s disponibili, circa %2$s necessari). La protezione memoria è attiva: chiudi altre app, usa un modello più piccolo, oppure disattivala nelle impostazioni per provare comunque.</string>
     <string name="transcribe_low_memory">Memoria libera insufficiente per trascrivere con questo modello (circa %1$s liberi, servono %2$s). La protezione memoria è attiva: chiudi altre app e riprova, oppure disattivala nelle impostazioni per provare comunque.</string>
+    <string name="external_model_quarantined_title">Modello esterno disabilitato dopo un arresto</string>
+    <string name="external_model_quarantined_text">Il caricamento di «%1$s» ha chiuso l\'app, quindi è stato disattivato per evitare arresti ripetuti. Elimina e reimporta il modello nella scheda Modelli per riprovare.</string>
     <string name="memory_protection">Protezione memoria</string>
     <string name="memory_protection_desc">Blocca il caricamento del modello quando la memoria libera sembra insufficiente, per evitare chiusure silenziose dell\'app. Disattivata per impostazione predefinita: normalmente l\'app tenta sempre di eseguire il modello.</string>
     <string name="copy">Copia</string>

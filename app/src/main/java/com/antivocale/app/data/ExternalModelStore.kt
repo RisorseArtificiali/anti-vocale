@@ -22,13 +22,23 @@ class ExternalModelStore(
     val recordsFlow: Flow<List<ExternalModelRecord>> =
         preferencesManager.externalModelsJson.map(ExternalModelListJson::decode)
 
+    /**
+     * Loadable records (dir exists and not quarantined): the single
+     * loadability predicate consumed by backend resolution, the registry
+     * provider and the pickers. The Models-tab inventory deliberately reads
+     * [recordsFlow] instead, so quarantined records stay listed and deletable.
+     */
     val validRecordsFlow: Flow<List<ExternalModelRecord>> =
-        recordsFlow.map { records -> records.filter { dirExists(it.dir) } }
+        recordsFlow.map { records -> records.filter { isLoadable(it) } }
 
     suspend fun records(): List<ExternalModelRecord> = recordsFlow.first()
 
-    /** Valid records only: a record whose directory vanished derives no descriptor anywhere. */
-    suspend fun validRecords(): List<ExternalModelRecord> = records().filter { dirExists(it.dir) }
+    /** Loadable records only (see [validRecordsFlow]). */
+    suspend fun validRecords(): List<ExternalModelRecord> =
+        records().filter { isLoadable(it) }
+
+    private fun isLoadable(record: ExternalModelRecord) =
+        !record.quarantined && dirExists(record.dir)
 
     suspend fun byId(id: String): ExternalModelRecord? =
         validRecords().firstOrNull { it.id == id }
@@ -44,6 +54,11 @@ class ExternalModelStore(
      */
     suspend fun updateDir(id: String, dir: String) = mutate { list ->
         list.map { if (it.id == id) it.copy(dir = dir) else it }
+    }
+
+    /** TASK-640: quarantine after a load killed the process; re-enable is delete + re-import. */
+    suspend fun quarantine(id: String) = mutate { list ->
+        list.map { if (it.id == id) it.copy(quarantined = true) else it }
     }
     suspend fun delete(id: String): ExternalModelRecord? {
         val removed = records().firstOrNull { it.id == id }

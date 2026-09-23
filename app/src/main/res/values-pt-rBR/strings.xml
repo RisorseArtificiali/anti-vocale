@@ -226,6 +226,8 @@
     <string name="native_crash_go_to_model">Ir para a aba Modelo</string>
     <string name="model_load_low_memory">Memória livre insuficiente para este modelo (%1$s disponível, ~%2$s necessário). A proteção de memória está ativa: feche outros apps, use um modelo menor ou desative-a nas Configurações para tentar mesmo assim.</string>
     <string name="transcribe_low_memory">Memória livre insuficiente para transcrever com este modelo (cerca de %1$s livres, são necessários %2$s). A proteção de memória está ativa: feche outros apps e tente de novo, ou desative-a nas configurações para tentar mesmo assim.</string>
+    <string name="external_model_quarantined_title">Modelo externo desativado após uma falha</string>
+    <string name="external_model_quarantined_text">Carregar "%1$s" fechou o app, então ele foi desativado para evitar falhas repetidas. Exclua e reimporte o modelo na aba Modelos para tentar de novo.</string>
     <string name="memory_protection">Proteção de memória</string>
     <string name="memory_protection_desc">Bloqueia o carregamento de um modelo quando a memória livre parece insuficiente, para evitar fechamentos silenciosos do app. Desativada por padrão: normalmente o app sempre tenta executar o modelo.</string>
     <string name="copy">Copiar</string>

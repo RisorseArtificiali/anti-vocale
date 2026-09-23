@@ -276,6 +276,8 @@
     <string name="native_crash_go_to_model">Model sekmesine git</string>
     <string name="model_load_low_memory">Bu model için yeterli boş bellek yok (%1$s boş, yaklaşık %2$s gerekiyor). Bellek koruması etkin: diğer uygulamaları kapatın, daha küçük bir model kullanın veya yine de denemek için bunu Ayarlar\'dan kapatın.</string>
     <string name="transcribe_low_memory">Bu modelle transkripsiyon için yeterli boş bellek yok (yaklaşık %1$s boş, %2$s gerekiyor). Bellek koruması etkin: diğer uygulamaları kapatıp tekrar deneyin veya yine de denemek için bunu Ayarlar\'dan kapatın.</string>
+    <string name="external_model_quarantined_title">Çöküşten sonra harici model devre dışı bırakıldı</string>
+    <string name="external_model_quarantined_text">"%1$s" yüklenmesi uygulamayı kapattığı için tekrarlayan çökmeleri önlemek amacıyla devre dışı bırakıldı. Tekrar denemek için modeli Modeller sekmesinde silip yeniden içe aktarın.</string>
     <string name="memory_protection">Bellek koruması</string>
     <string name="memory_protection_desc">Boş bellek yetersiz görünüyorsa model yüklenmesini engeller, böylece uygulamanın sessizce kapanması önlenir. Varsayılan olarak kapalıdır: uygulama normalde modeli her zaman çalıştırmayı dener.</string>
     <string name="copy">Kopyala</string>

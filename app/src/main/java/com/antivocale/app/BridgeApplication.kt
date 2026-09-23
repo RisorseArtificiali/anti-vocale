@@ -71,9 +71,22 @@ class BridgeApplication : Application(), Configuration.Provider {
                 preferencesManager.saveExternalMigrationDone(false)
             }
         }
+        // TASK-640: a leaked pendingBackendLoad marker means the previous
+        // launch died inside a native model load. Quarantine the external
+        // record (it becomes unresolvable for the cleaner below) and tell the
+        // user, instead of reloading the same crashing model on every launch.
+        runCatching {
+            kotlinx.coroutines.runBlocking {
+                com.antivocale.app.data.CrashQuarantineCheck(preferencesManager, externalModelStore)
+                    .check(this@BridgeApplication)
+            }
+        }.onFailure { e ->
+            android.util.Log.e("BridgeApplication", "Crash-quarantine check failed (marker cleared, no quarantine applied)", e)
+        }
         // Also before syncAll: a persisted external backend id whose record is gone
-        // (deleted through another path, files vanished) must fall back to the default
-        // backend, or every transcription request fails on an unloadable id (TASK-342).
+        // (deleted through another path, files vanished, quarantined) must fall back
+        // to the default backend, or every transcription request fails on an
+        // unloadable id (TASK-342).
         runCatching {
             kotlinx.coroutines.runBlocking {
                 com.antivocale.app.data.DanglingBackendCleaner(preferencesManager, externalModelStore).cleanIfNeeded()
