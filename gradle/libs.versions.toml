@@ -1,0 +1,104 @@
+# TASK-252: single owner for every version the build resolves. Adding or
+# bumping a dependency happens HERE; the build files reference the aliases
+# and carry no coordinates. The F-Droid reproducible build makes silent
+# resolution drift impossible to undo after a release: after any edit here,
+# re-run the dependency-graph diff (see the task's final summary) and prove
+# the resolved graph changed only where intended.
+
+[versions]
+agp = "8.10.0"
+kotlin = "2.4.10"
+ksp = "2.3.11"
+hilt = "2.58"
+androidxHilt = "1.2.0"
+composeBom = "2025.01.00"
+coreKtx = "1.12.0"
+appcompat = "1.6.1"
+material = "1.11.0"
+lifecycle = "2.7.0"
+activityCompose = "1.8.2"
+coroutines = "1.7.3"
+datastore = "1.1.1"
+okhttp = "4.12.0"
+securityCrypto = "1.1.0-alpha06"
+appauth = "0.11.1"
+reveal = "3.2.2"
+litertlm = "0.17.1"
+mediapipeGenai = "0.10.33"
+commonsCompress = "1.26.1"
+work = "2.10.0"
+room = "2.7.1"
+junit = "4.13.2"
+orgJson = "20231013"
+mockk = "1.13.10"
+androidxTestCore = "1.5.0"
+androidxTestExtJunit = "1.1.5"
+robolectric = "4.12.1"
+espresso = "3.5.1"
+firebaseBom = "34.0.0"
+googleServices = "4.4.4"
+crashlyticsPlugin = "3.0.6"
+kotlinMetadataJvm = "2.4.10"
+
+[libraries]
+# GenAI engines (JNI; keep rules in proguard-rules.pro track these packages)
+litertlm = { group = "com.google.ai.edge.litertlm", name = "litertlm-android", version.ref = "litertlm" }
+mediapipe-genai = { group = "com.google.mediapipe", name = "tasks-genai", version.ref = "mediapipeGenai" }
+# Compose (BOM keeps the UI stack aligned; no per-artifact versions)
+compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+compose-ui = { group = "androidx.compose.ui", name = "ui" }
+compose-material3 = { group = "androidx.compose.material3", name = "material3" }
+compose-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+compose-icons-extended = { group = "androidx.compose.material", name = "material-icons-extended" }
+compose-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+compose-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+compose-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+reveal-core = { group = "com.svenjacobs.reveal", name = "reveal-core", version.ref = "reveal" }
+# AndroidX baseline
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycle" }
+androidx-lifecycle-viewmodel-compose = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-compose", version.ref = "lifecycle" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+coroutines-android = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-android", version.ref = "coroutines" }
+coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "coroutines" }
+androidx-datastore-preferences = { group = "androidx.datastore", name = "datastore-preferences", version.ref = "datastore" }
+okhttp = { group = "com.squareup.okhttp3", name = "okhttp", version.ref = "okhttp" }
+mockwebserver = { group = "com.squareup.okhttp3", name = "mockwebserver", version.ref = "okhttp" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
+appauth = { group = "net.openid", name = "appauth", version.ref = "appauth" }
+commons-compress = { group = "org.apache.commons", name = "commons-compress", version.ref = "commonsCompress" }
+# DI
+hilt-android = { group = "com.google.dagger", name = "hilt-android", version.ref = "hilt" }
+hilt-compiler = { group = "com.google.dagger", name = "hilt-compiler", version.ref = "hilt" }
+hilt-android-testing = { group = "com.google.dagger", name = "hilt-android-testing", version.ref = "hilt" }
+androidx-hilt-navigation-compose = { group = "androidx.hilt", name = "hilt-navigation-compose", version.ref = "androidxHilt" }
+androidx-hilt-work = { group = "androidx.hilt", name = "hilt-work", version.ref = "androidxHilt" }
+androidx-hilt-compiler = { group = "androidx.hilt", name = "hilt-compiler", version.ref = "androidxHilt" }
+# Background + storage
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "work" }
+androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
+androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
+kotlin-metadata-jvm = { group = "org.jetbrains.kotlin", name = "kotlin-metadata-jvm", version.ref = "kotlinMetadataJvm" }
+# Testing
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
+mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
+androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "androidxTestCore" }
+androidx-test-ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "androidxTestExtJunit" }
+robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espresso" }
+# Firebase (playStore flavor only; fdroid stays Firebase-free)
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebaseBom" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
+crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "crashlyticsPlugin" }

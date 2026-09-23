@@ -1,9 +1,9 @@
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("org.jetbrains.kotlin.plugin.compose")
-    id("com.google.devtools.ksp")
-    id("com.google.dagger.hilt.android")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.hilt)
 }
 
 import java.util.Properties
@@ -226,53 +226,53 @@ dependencies {
     // + ads-adservices, which inject AD_ID / ACCESS_ADSERVICES_* permissions that contradict the
     // app's "no tracking, no ads" promise. Crashlytics needs none of those. Install/country stats
     // come from the Play Console, not Firebase, so Analytics is unused here.
-    "playStoreImplementation"(platform("com.google.firebase:firebase-bom:34.0.0"))
-    "playStoreImplementation"("com.google.firebase:firebase-crashlytics")
+    "playStoreImplementation"(platform(libs.firebase.bom))
+    "playStoreImplementation"(libs.firebase.crashlytics)
 
     // LiteRT-LM for multimodal inference (text + audio). v0.13.1 adds MTP speculative-
     // decoding runtime support (TASK-221); pairs with the version-stamp prompt in TASK-236.
     // https://maven.google.com/web/index.html#com.google.ai.edge.litertlm:litertlm-android
-    implementation("com.google.ai.edge.litertlm:litertlm-android:0.17.1")
+    implementation(libs.litertlm)
 
     // MediaPipe GenAI - kept as fallback for text-only inference
-    implementation("com.google.mediapipe:tasks-genai:0.10.33")
+    implementation(libs.mediapipe.genai)
 
     // Jetpack Compose BOM
-    implementation(platform("androidx.compose:compose-bom:2025.01.00"))
-    implementation("androidx.compose.ui:ui")
-    implementation("androidx.compose.material3:material3")
-    implementation("androidx.compose.ui:ui-tooling-preview")
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.icons.extended)
 
     // TASK-491: coach-mark overlays for the first-install welcome tour.
     // v3.2.x is the line built against OUR compose-bom (2025.01.00); v3.3+
     // needs a BOM bump (see the task notes before upgrading).
-    implementation("com.svenjacobs.reveal:reveal-core:3.2.2")
+    implementation(libs.reveal.core)
 
     // AndroidX Core
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.appcompat)
 
     // Material Components (for XML Material3 theme)
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
-    implementation("androidx.activity:activity-compose:1.8.2")
+    implementation(libs.material)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    implementation(libs.androidx.activity.compose)
 
     // Coroutines
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation(libs.coroutines.android)
 
     // DataStore for preferences
-    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    implementation(libs.androidx.datastore.preferences)
 
     // OkHttp for model downloads
-    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation(libs.okhttp)
 
     // Security for encrypted shared preferences
-    implementation("androidx.security:security-crypto:1.1.0-alpha06")
+    implementation(libs.androidx.security.crypto)
 
     // AppAuth for OAuth authentication (HuggingFace)
-    implementation("net.openid:appauth:0.11.1")
+    implementation(libs.appauth)
 
     // sherpa-onnx v1.13.8 for ONNX-based ASR (Parakeet TDT, Whisper, Qwen3-ASR, Nemotron).
     // v1.13.8: ORT 1.28.2, Qwen3 mel-frontend fix (PR #3873) + PRNG data-race fix
@@ -284,53 +284,53 @@ dependencies {
     implementation(files("libs/sherpa-onnx.aar"))
 
     // Apache Commons Compress for tar.bz2 extraction
-    implementation("org.apache.commons:commons-compress:1.26.1")
+    implementation(libs.commons.compress)
 
     // Hilt dependency injection
-    implementation("com.google.dagger:hilt-android:2.58")
-    ksp("com.google.dagger:hilt-compiler:2.58")
-    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
+    implementation(libs.hilt.android)
+    ksp(libs.hilt.compiler)
+    implementation(libs.androidx.hilt.navigation.compose)
 
     // WorkManager + hilt-work: powers the subtitle-choice timeout worker (Task 9).
     // hilt-work pinned to 1.2.0 to match androidx.hilt:hilt-navigation-compose above.
-    implementation("androidx.work:work-runtime-ktx:2.10.0")
-    implementation("androidx.hilt:hilt-work:1.2.0")
-    ksp("androidx.hilt:hilt-compiler:1.2.0")
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler)
 
     // Room database for log persistence
-    implementation("androidx.room:room-runtime:2.7.1")
-    implementation("androidx.room:room-ktx:2.7.1")
-    ksp("androidx.room:room-compiler:2.7.1")
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    ksp(libs.androidx.room.compiler)
 
     // Debug
-    debugImplementation("androidx.compose.ui:ui-tooling")
-    debugImplementation("androidx.compose.ui:ui-test-manifest")
+    debugImplementation(libs.compose.ui.tooling)
+    debugImplementation(libs.compose.ui.test.manifest)
 
     // Testing
-    testImplementation("junit:junit:4.13.2")
-    testImplementation("org.json:json:20231013")
-    testImplementation("io.mockk:mockk:1.13.10")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-    testImplementation("com.squareup.okhttp3:mockwebserver:4.12.0")
-    testImplementation("androidx.test:core-ktx:1.5.0")
-    testImplementation("androidx.test.ext:junit:1.1.5")
-    testImplementation("org.robolectric:robolectric:4.12.1")
-    testImplementation("androidx.compose.ui:ui-test-junit4")
-    testImplementation("androidx.compose.ui:ui-test-manifest")
+    testImplementation(libs.junit)
+    testImplementation(libs.org.json)
+    testImplementation(libs.mockk)
+    testImplementation(libs.coroutines.test)
+    testImplementation(libs.mockwebserver)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.androidx.test.ext.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.compose.ui.test.junit4)
+    testImplementation(libs.compose.ui.test.manifest)
 
     // Hilt testing
-    testImplementation("com.google.dagger:hilt-android-testing:2.58")
-    kspTest("com.google.dagger:hilt-compiler:2.58")
+    testImplementation(libs.hilt.android.testing)
+    kspTest(libs.hilt.compiler)
     // Hilt 2.58 (last AGP-8 line) ships kotlin-metadata-jvm 2.2.20, which cannot
     // read the Kotlin 2.4 metadata our classes now carry. Forcing the matching
     // version on the KSP classpath; drop this when Hilt requires AGP 9 and we
     // follow (2.59+ embeds a new enough metadata reader).
-    "ksp"("org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.10")
-    "kspTest"("org.jetbrains.kotlin:kotlin-metadata-jvm:2.4.10")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    androidTestImplementation(platform("androidx.compose:compose-bom:2025.01.00"))
-    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    "ksp"(libs.kotlin.metadata.jvm)
+    "kspTest"(libs.kotlin.metadata.jvm)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.espresso.core)
+    androidTestImplementation(platform(libs.compose.bom))
+    androidTestImplementation(libs.compose.ui.test.junit4)
 }
 
 // Apply Firebase plugins only for playStore builds (and IDE syncs, which run no
