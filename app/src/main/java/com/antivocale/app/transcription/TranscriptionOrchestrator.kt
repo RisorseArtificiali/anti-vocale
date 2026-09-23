@@ -921,13 +921,19 @@ class TranscriptionOrchestrator @Inject constructor(
         backendOverride: String? = null
     ): Result<Unit> {
         val hasBackend = backendManager.hasActiveBackend()
-        val backendReady = backendManager.getActiveBackend()?.isReady() ?: false
+        val activeBackend = backendManager.getActiveBackend()
+        val backendReady = activeBackend?.isReady() ?: false
         val preferredBackendId = backendOverride ?: preferencesManager.transcriptionBackend.first()
-        val activeBackendId = backendManager.getActiveBackend()?.id
+        val activeBackendId = activeBackend?.id
         val backendMismatch = hasBackend && activeBackendId != preferredBackendId
+        // TASK-626: the backend id alone is not a residency identity. Switching
+        // variant within one entry (useModel) or writing the saved path directly
+        // (TEST_SPI) keeps the id and swaps the model: a warm backend would keep
+        // decoding with the OLD recognizer while the UI names the new variant.
+        val variantMismatch = !backendMismatch && variantChanged(activeBackend, preferredBackendId)
 
-        if (!hasBackend || !backendReady || backendMismatch) {
-            Log.i(TAG, "Backend needs (re)load (hasBackend=$hasBackend, ready=$backendReady, active=$activeBackendId, preferred=$preferredBackendId)")
+        if (!hasBackend || !backendReady || backendMismatch || variantMismatch) {
+            Log.i(TAG, "Backend needs (re)load (hasBackend=$hasBackend, ready=$backendReady, active=$activeBackendId, preferred=$preferredBackendId, variantMismatch=$variantMismatch)")
 
             if (hasBackend) {
                 Log.i(TAG, "Unloading previous backend: $activeBackendId")
@@ -964,6 +970,41 @@ class TranscriptionOrchestrator @Inject constructor(
         }
 
         return Result.success(Unit)
+    }
+
+    /**
+     * TASK-626: true when the warm [activeBackend] holds a different model
+     * than the saved path names for [preferredBackendId] (same id, different
+     * variant). The saved path is the single source every writer converges on
+     * (useModel persists the variant choice; [loadCatalogBackend] persists
+     * its resolution), so this one comparison covers them all. A blank side
+     * is no identity claim, not a mismatch: every shipped backend reports a
+     * concrete path while ready (unload nulls path and readiness together),
+     * and a blank saved path means auto-resolution, which the loader
+     * persists so the mismatch cannot flap. One corner keeps serving warm
+     * by design: a variant DELETED while its backend stays warm leaves the
+     * saved path blank (deleteModel clears it) and the resident engine
+     * answers until idle-unload, exactly as before this fix.
+     *
+     * The expected side deliberately does NOT reuse [modelPathForBackend]:
+     * its unknown-id fallback answers the GENERIC Gemma path, which would
+     * compare an unrelated preference against e.g. an external engine whose
+     * record is mid-deletion (registry descriptor already gone) and
+     * manufacture a reload whose only outcome is failing a request the old
+     * code served warm. Unknown-to-the-registry ids carry no path identity.
+     */
+    private suspend fun variantChanged(
+        activeBackend: TranscriptionBackend?,
+        preferredBackendId: String
+    ): Boolean {
+        val loaded = activeBackend?.getModelPath()?.takeIf { it.isNotBlank() } ?: return false
+        val expected = when {
+            preferredBackendId == LlmTranscriptionBackend.BACKEND_ID ->
+                preferencesManager.modelPath.first()
+            else -> backendRegistry.byBackendId(preferredBackendId)
+                ?.modelPathFlow?.invoke(preferencesManager)?.first()
+        } ?: return false
+        return expected.isNotBlank() && expected != loaded
     }
 
     private suspend fun loadLlmBackend(context: Context): Result<Unit> {

@@ -8,6 +8,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
+import org.junit.Rule
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -343,6 +344,94 @@ class TranscriptionOrchestratorTest : TranscriptionOrchestratorTestBase() {
             listener = listener,
             coroutineScope = this
         )
+
+        verify { backendManager.unloadActiveBackend() }
+    }
+
+    // --- TASK-626: variant-switch residency ---
+
+    @get:Rule
+    val variantTmp = org.junit.rules.TemporaryFolder()
+
+    /** A warm whisper engine resident at [path]; also wires the manager stubs. */
+    private fun warmWhisperAt(path: String): TranscriptionBackend =
+        mockk<TranscriptionBackend>(relaxed = true) {
+            every { id } returns "whisper"
+            every { isReady() } returns true
+            every { getModelPath() } returns path
+        }.also { backend ->
+            every { backendManager.hasActiveBackend() } returns true
+            every { backendManager.getActiveBackend() } returns backend
+        }
+
+    private suspend fun kotlinx.coroutines.test.TestScope.driveTextRequest(taskId: String) {
+        orchestrator.processRequest(
+            taskId = taskId,
+            requestType = "text",
+            prompt = "hi",
+            filePath = null,
+            source = null,
+            sourcePackage = null,
+            queuePosition = 1,
+            queueTotal = 1,
+            context = mockk<Context>(relaxed = true),
+            cacheDir = java.io.File("/cache"),
+            listener = listener,
+            coroutineScope = this,
+        )
+    }
+
+    // Same backend id, different saved variant path. The id-keyed check
+    // passes, so only the path identity can force the reload; the re-load
+    // must also configure the NEW variant, not re-assert the old one.
+    @Test
+    fun `ensureBackendLoaded reloads warm backend when the saved variant path changes within one entry`() = runTest {
+        // Only the SAVED variant must exist on disk (loadCatalogBackend's
+        // isDirectory check); the warm one is just an identity string.
+        val variantA = "/models/whisper-a"
+        val variantB = variantTmp.newFolder("whisper-b")
+        warmWhisperAt(variantA)
+        every { preferencesManager.transcriptionBackend } returns flowOf("whisper")
+        every { preferencesManager.sherpaModelPath("whisper") } returns flowOf(variantB.absolutePath)
+        every { preferencesManager.threadCount } returns flowOf(4)
+        every { preferencesManager.inferenceProvider } returns flowOf("cpu")
+        every { preferencesManager.keepAliveTimeout } returns flowOf(5)
+
+        val configSlot = slot<BackendConfig>()
+        coEvery { backendManager.setActiveBackend(any(), any(), capture(configSlot)) } returns Result.success(Unit)
+
+        driveTextRequest("test-variant-switch")
+
+        verify { backendManager.unloadActiveBackend() }
+        val config = configSlot.captured as BackendConfig.SherpaOnnxConfig
+        assertEquals(variantB.absolutePath, config.modelDir)
+    }
+
+    // Negative: same id and the path the backend was loaded with. Residency
+    // holds, no unload, and the warm backend keeps serving.
+    @Test
+    fun `ensureBackendLoaded keeps warm backend when the saved variant path is unchanged`() = runTest {
+        warmWhisperAt("/models/whisper-a")
+        every { preferencesManager.transcriptionBackend } returns flowOf("whisper")
+        every { preferencesManager.sherpaModelPath("whisper") } returns flowOf("/models/whisper-a")
+
+        driveTextRequest("test-variant-hold")
+
+        verify(exactly = 0) { backendManager.unloadActiveBackend() }
+        coVerify(exactly = 0) { backendManager.setActiveBackend(any(), any(), any()) }
+    }
+
+    // A saved path whose directory is GONE still names a different variant:
+    // the stale resident engine must not serve it. The reload itself then
+    // fails on the mock context (no resolvable dir), which is fine: the
+    // assertion is that the unload was forced, not that the request served.
+    @Test
+    fun `ensureBackendLoaded does not serve a warm variant when the saved path points to a deleted directory`() = runTest {
+        warmWhisperAt("/models/whisper-gone-a")
+        every { preferencesManager.transcriptionBackend } returns flowOf("whisper")
+        every { preferencesManager.sherpaModelPath("whisper") } returns flowOf("/models/whisper-gone-b")
+
+        driveTextRequest("test-variant-dangling")
 
         verify { backendManager.unloadActiveBackend() }
     }

@@ -157,7 +157,7 @@ adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debu
 adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op set --es key provider --es value nnapi
 ```
 
-Saved model paths (llm uses the generic preference; sherpa catalog backends need `entry`):
+Saved model paths (llm uses the generic preference; sherpa catalog backends need `entry`). TASK-626 caveat: writing a `sherpa_path` whose directory does not exist while the backend is warm forces a reload at the NEXT transcription, and the loader persists the auto-resolved variant over the written value; a get right after the transcription can read a path the test never wrote. Set valid directories, or read the preference before transcribing.
 
 ```bash
 adb shell am broadcast -a com.antivocale.app.TEST_SPI -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver --es op set --es key model_path --es value /data/local/tmp/gemma.taskml
