@@ -144,7 +144,11 @@ private fun copyTranscriptionToClipboard(
 ) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
             as android.content.ClipboardManager
-    val clip = ClipData.newPlainText(context.getString(labelRes), text)
+    // TASK-650 F5: the clipboard is an exit surface here too.
+    val sig = com.antivocale.app.util.TranscriptSignature.lastResolved
+    val clip = ClipData.newPlainText(
+        context.getString(labelRes),
+        com.antivocale.app.util.TranscriptSignature.apply(text, sig.text, sig.position))
     clipboard.setPrimaryClip(clip)
     ToastCompat.show(context, context.getString(R.string.copied_to_clipboard))
 }
@@ -165,9 +169,13 @@ private fun cancelTask(context: Context, taskId: String) {
  * Shares transcription text via an intent chooser.
  */
 private fun shareTranscription(context: Context, text: String) {
+    // TASK-650 F5: sharing is an exit surface here too.
+    val sig = com.antivocale.app.util.TranscriptSignature.lastResolved
     val sendIntent = Intent().apply {
         action = Intent.ACTION_SEND
-        putExtra(Intent.EXTRA_TEXT, text)
+        putExtra(
+            Intent.EXTRA_TEXT,
+            com.antivocale.app.util.TranscriptSignature.apply(text, sig.text, sig.position))
         type = "text/plain"
     }
     val shareIntent = Intent.createChooser(

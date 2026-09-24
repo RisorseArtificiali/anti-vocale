@@ -57,8 +57,20 @@ object ResultNotificationRefresher {
         }
         val spec = ResultNotificationSpec(
             transcriptionText = text,
-            signatureText = intent.getStringExtra(NotificationActionReceiver.EXTRA_SIGNATURE_TEXT) ?: "",
-            signaturePosition = intent.getStringExtra(NotificationActionReceiver.EXTRA_SIGNATURE_POSITION) ?: "append",
+            // TASK-650 F7: while this process has resolved the signature at
+            // least once, the LIVE preference wins over the values baked at
+            // post time (an edit or disabling mid-notification must apply);
+            // in a fresh process the baked extras are the best knowledge.
+            signatureText = if (com.antivocale.app.util.TranscriptSignature.lastResolvedIsLive) {
+                com.antivocale.app.util.TranscriptSignature.lastResolved.text
+            } else {
+                intent.getStringExtra(NotificationActionReceiver.EXTRA_SIGNATURE_TEXT) ?: ""
+            },
+            signaturePosition = if (com.antivocale.app.util.TranscriptSignature.lastResolvedIsLive) {
+                com.antivocale.app.util.TranscriptSignature.lastResolved.position
+            } else {
+                intent.getStringExtra(NotificationActionReceiver.EXTRA_SIGNATURE_POSITION) ?: "append"
+            },
             taskId = intent.getStringExtra(NotificationActionReceiver.EXTRA_TASK_ID),
             sourcePackage = sourcePackage,
             confidence = if (intent.hasExtra(NotificationActionReceiver.EXTRA_CONFIDENCE)) {

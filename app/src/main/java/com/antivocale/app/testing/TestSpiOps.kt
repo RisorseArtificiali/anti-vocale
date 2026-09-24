@@ -292,9 +292,22 @@ internal class TestSpiOps(
     /** Every key accepted by op=set: the dispatch map IS the list (TASK-469). */
     val SET_KEYS: List<String> = setDispatch.keys.sorted()
 
+    /**
+     * TASK-649: keys whose handlers document blank-clear semantics. `am
+     * broadcast --es value ""` DROPS the empty extra at the shell layer, so
+     * the value arrives null; for these keys that null IS the intentional
+     * blank (the documented way to clear), not a malformed broadcast.
+     */
+    private val blankClearingKeys = setOf(
+        "external_catalog_url", "output_folder", "signature_text",
+        "punctuation_prompt", "default_prompt", "summary_prompt",
+    )
+
     private suspend fun set(key: String?, value: String?, entry: String?): String {
         if (key == null) return setError("missing key extra")
-        if (value == null) return setError("missing value extra for key '$key'")
+        val effectiveValue = if (value == null && key in blankClearingKeys) "" else value
+        if (effectiveValue == null) return setError("missing value extra for key '$key'")
+        val value = effectiveValue
         // Lookup and invocation must stay separate: a found handler whose
         // validation passes returns null, which must not collapse into the
         // unknown-key branch.

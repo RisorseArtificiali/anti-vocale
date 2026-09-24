@@ -50,16 +50,7 @@ object TranscriptFileSaver {
         val decision = SubtitleFormatter.resolveExport(
             SubtitleFormatter.Format.fromStored(storedFormat), transcript, segments, failedChunkCount,
         )
-        // TASK-647: the export is an exit surface. Plain text rides the
-        // signature inline (the same assembly as copy/share); the timed
-        // subtitle formats take it as a leading NOTE/comment block instead,
-        // never inline (a stray line would corrupt cue timing/rendering).
-        val content = if (signature.isBlank()) decision.content else when (decision.format) {
-            SubtitleFormatter.Format.TXT, SubtitleFormatter.Format.TXT_TIMED ->
-                TranscriptSignature.apply(decision.content, signature, signaturePosition)
-            SubtitleFormatter.Format.SRT, SubtitleFormatter.Format.VTT ->
-                noteBlock(decision.format, signature, decision.content)
-        }
+        val content = signedExport(decision, signature, signaturePosition)
         // The "first words" preview must come from the transcript: the
         // formatted payload opens with timestamps ("WEBVTT", "00:00:01")
         // and names the file after the clock instead of the words.
@@ -69,6 +60,23 @@ object TranscriptFileSaver {
     /** TASK-647: the disclaimer header for timed formats (a comment block
      *  every player renders or safely ignores; VTT has NOTE, SRT has no
      *  official comment so a blank-separated line is the convention). */
+    /**
+     * TASK-647: the export's signed content. Plain text rides the signature
+     * inline (the same assembly as copy/share); the timed subtitle formats
+     * take it as a leading NOTE/comment block instead, never inline (a
+     * stray line would corrupt cue timing/rendering). Pure and tested.
+     */
+    internal fun signedExport(
+        decision: SubtitleFormatter.ExportDecision,
+        signature: String,
+        signaturePosition: String,
+    ): String = if (signature.isBlank()) decision.content else when (decision.format) {
+        SubtitleFormatter.Format.TXT, SubtitleFormatter.Format.TXT_TIMED ->
+            TranscriptSignature.apply(decision.content, signature, signaturePosition)
+        SubtitleFormatter.Format.SRT, SubtitleFormatter.Format.VTT ->
+            noteBlock(decision.format, signature, decision.content)
+    }
+
     /**
      * The signature must be ONE line without the cue separator: a multi-line
      * signature (the field allows it) would end the VTT NOTE block early,

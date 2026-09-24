@@ -330,6 +330,7 @@ fun SettingsTab(
     val signatureOn by viewModel.signatureEnabled.collectAsState()
     val signatureTextValue by viewModel.signatureText.collectAsState()
     val signaturePositionValue by viewModel.signaturePosition.collectAsState()
+    val signaturePositionTitle = stringResource(R.string.signature_position_title)
     val currentPunctuationMode by viewModel.currentPunctuationMode.collectAsState()
 
     // Show sub-screens or main settings
@@ -951,10 +952,21 @@ fun SettingsTab(
                         text = signatureTextValue,
                         onSave = { viewModel.saveSignatureText(it) }
                     )
-                    SignaturePositionCard(
-                        position = signaturePositionValue,
-                        onSelect = { viewModel.saveSignaturePosition(it) }
-                    )
+                    SectionCard(
+                        icon = Icons.Default.SwapVert,
+                        title = signaturePositionTitle,
+                        description = null
+                    ) {
+                        SettingsDropdown(
+                            currentValue = signaturePositionValue,
+                            options = PreferencesManager.SIGNATURE_POSITIONS,
+                            currentValueDisplay = signaturePositionLabel(signaturePositionValue),
+                            optionDisplay = { signaturePositionLabel(it) },
+                            onOptionSelected = { viewModel.saveSignaturePosition(it) },
+                            label = signaturePositionTitle,
+                            enabled = true
+                        )
+                    }
                 }
             }
 
@@ -2471,35 +2483,10 @@ private fun SignatureTextCard(
     placeholderRes = R.string.signature_default_text,
 )
 
-/** TASK-647: the two-option position selector (prepend/append). */
 @Composable
-private fun SignaturePositionCard(
-    position: String,
-    onSelect: (String) -> Unit,
-) {
-    Card(modifier = Modifier.fillMaxWidth()) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = stringResource(R.string.signature_position_title),
-                style = MaterialTheme.typography.titleSmall,
-            )
-            Row(
-                modifier = Modifier.padding(top = 8.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-                FilterChip(
-                    selected = position == "prepend",
-                    onClick = { onSelect("prepend") },
-                    label = { Text(stringResource(R.string.signature_position_prepend)) },
-                )
-                FilterChip(
-                    selected = position == "append",
-                    onClick = { onSelect("append") },
-                    label = { Text(stringResource(R.string.signature_position_append)) },
-                )
-            }
-        }
-    }
+private fun signaturePositionLabel(value: String): String = when (value) {
+    "prepend" -> stringResource(R.string.signature_position_prepend)
+    else -> stringResource(R.string.signature_position_append)
 }
 
 

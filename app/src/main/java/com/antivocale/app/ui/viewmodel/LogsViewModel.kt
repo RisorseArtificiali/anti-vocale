@@ -196,6 +196,22 @@ class LogsViewModel @Inject constructor(
     val interruptedTranscription: StateFlow<String?> = _interruptedTranscription.asStateFlow()
 
     init {
+        // TASK-650 F5: keep the signature snapshot live while the History
+        // tab is subscribed so its non-suspend copy/share helpers sign with
+        // the current preference state.
+        viewModelScope.launch {
+            combine(
+                preferencesManager.signatureEnabled,
+                preferencesManager.signatureText,
+                preferencesManager.signaturePosition,
+            ) { enabled, text, position ->
+                com.antivocale.app.util.TranscriptSignature.Spec(
+                    text = if (enabled) text else "",
+                    position = position,
+                )
+            }.collect { com.antivocale.app.util.TranscriptSignature.lastResolved = it }
+        }
+
         viewModelScope.launch {
             val text = preferencesManager.partialTranscriptionText.first()
             if (text != null) {

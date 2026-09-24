@@ -77,7 +77,7 @@ Set keys and value formats:
 | `summary_prompt` | `saveSummaryPrompt` | free text, 500-char cap; blank = the built-in two-to-three-sentence prompt |
 | `swipe_action` | `saveSwipeActionMode` | `REVEAL` or `IMMEDIATE_DELETE` (the Logs settings dropdown's exact set) |
 | `default_prompt` | `saveDefaultPrompt` | free text, 500-char cap (like `punctuation_prompt`); the Tasker default prompt |
-| `external_catalog_url` | `saveExternalCatalogUrl` | URL of the community-catalog JSON source |
+| `external_catalog_url` | `saveExternalCatalogUrl` | URL of the community-catalog JSON source | (TASK-649: a dropped/empty value CLEARS the key; the shell drops empty --es extras)
 | `output_folder` | `saveOutputFolderUri` | SAF tree URI; a blank value clears the preference back to unset (`null`). Only URIs the app was granted through the SAF picker work: the SPI stores the string but cannot take the persistable URI grant, so a never-granted tree fails silently at the next auto-save. Set folders that came out of a real picker session |
 
 Paths are written as given and not validated against the filesystem. A test that writes a bogus path and then transcribes will fail at model load; set paths that came out of `op=get` or `op=records`, or a real download directory.

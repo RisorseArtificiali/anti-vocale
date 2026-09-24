@@ -38,6 +38,23 @@ object TranscriptSignature {
      * fail-open (a preferences failure must never cost the result
      * notification), defaulting to the declared constants.
      */
+    /**
+     * TASK-650 F5: the last resolution, readable from non-suspend exit sites
+     * (the History copy/share helpers). Updated by every [effectiveSpec]
+     * call and by the view models while their screens are subscribed, so a
+     * user-visible copy sees the live preference state.
+     */
+    @Volatile
+    var lastResolved: Spec = Spec("", com.antivocale.app.data.PreferencesManager.DEFAULT_SIGNATURE_POSITION)
+
+    /**
+     * True once any resolution ran in THIS process: the snapshot then
+     * reflects the live preferences (including "off"), so rebuild surfaces
+     * prefer it over values baked at notification-post time (TASK-650 F7).
+     */
+    @Volatile
+    var lastResolvedIsLive: Boolean = false
+
     suspend fun effectiveSpec(
         preferences: com.antivocale.app.data.PreferencesManager,
         defaultText: String,
@@ -50,4 +67,8 @@ object TranscriptSignature {
                 .ifBlank { com.antivocale.app.data.PreferencesManager.DEFAULT_SIGNATURE_POSITION },
         )
     }.getOrDefault(Spec("", com.antivocale.app.data.PreferencesManager.DEFAULT_SIGNATURE_POSITION))
+        .also {
+            lastResolved = it
+            lastResolvedIsLive = true
+        }
 }

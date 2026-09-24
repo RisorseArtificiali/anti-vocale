@@ -374,6 +374,15 @@ class TestSpiOpsTest {
             JSONObject(ops.handle(TestSpiOps.OP_GET)).isNull("outputFolderUri"))
     }
 
+    /** TASK-649: a null value (the shell drops empty --es extras) is the
+     *  documented blank-clear for these keys, not a malformed broadcast. */
+    @Test
+    fun `null value clears the blank-clearing keys instead of erroring`() = runTest {
+        val json = org.json.JSONObject(
+            ops.handle(TestSpiOps.OP_SET, key = "external_catalog_url", value = null))
+        assertFalse("must not error: ${json}", json.has("error"))
+    }
+
     @Test
     fun `every SET_KEYS entry dispatches a valid sample without error`() = runTest {
         // The completeness guard: SET_KEYS derives from the dispatch tables,
