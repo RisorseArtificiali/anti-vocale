@@ -419,6 +419,13 @@ class AudioPreprocessor @Inject constructor() {
 
                 val outputSampleRate = if (inputSampleRate != TARGET_SAMPLE_RATE) TARGET_SAMPLE_RATE else inputSampleRate
 
+                // TASK-586: same rule as the whole-file path: the DECODER'S
+                // output rate rules the per-chunk resampling; the declared
+                // input rate is only the pre-decode assumption (the header's
+                // duration estimate already comes from the granule/duration,
+                // not from sample counts).
+                var decodeRate = inputSampleRate
+
                 channel.trySendBlocking(StreamEvent.Header(StreamHeader(
                     sampleRate = outputSampleRate,
                     totalDurationSeconds = totalDurationSeconds,
@@ -461,8 +468,8 @@ class AudioPreprocessor @Inject constructor() {
                             val outputBuffer = decoder.getOutputBuffer(outputBufferIndex)
                             if (outputBuffer != null && bufferInfo.size > 0) {
                                 var decoded = decodeChunkToMonoFloat(outputBuffer, bufferInfo, inputChannels)
-                                if (inputSampleRate != TARGET_SAMPLE_RATE) {
-                                    decoded = resampleFloat(decoded, inputSampleRate.toDouble() / TARGET_SAMPLE_RATE)
+                                if (decodeRate != TARGET_SAMPLE_RATE) {
+                                    decoded = resampleFloat(decoded, decodeRate.toDouble() / TARGET_SAMPLE_RATE)
                                 }
                                 accumulator.add(decoded)
                                 accumulatedSamples += decoded.size
@@ -482,6 +489,17 @@ class AudioPreprocessor @Inject constructor() {
                             decoder.releaseOutputBuffer(outputBufferIndex, false)
                             if ((bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM) != 0) outputEOS = true
                         } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                            val changed = runCatching {
+                                decoder.outputFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+                            }.getOrNull()
+                            if (changed != null && changed != decodeRate) {
+                                if (accumulatedSamples == 0) {
+                                    Log.w(TAG, "Decoder output rate $changed != container rate $decodeRate; resampling from the real rate (TASK-586)")
+                                    decodeRate = changed
+                                } else {
+                                    Log.e(TAG, "Decoder output rate changed to $changed after decoding started at $decodeRate; ignoring (unsupported mid-stream rate change)")
+                                }
+                            }
                             Log.d(TAG, "Output format changed: ${decoder.outputFormat}")
                         }
                     }
@@ -599,9 +617,17 @@ class AudioPreprocessor @Inject constructor() {
             // the input-rate signal is never held whole (the old collect-then-merge
             // held chunks + merged copy, ~230MB for a 10-minute 48kHz file: the
             // Crashlytics Java-heap OOM class). sampleChunks collect 16kHz output.
-            val streamResampler =
-                if (inputSampleRate != TARGET_SAMPLE_RATE)
-                    SincStreamResampler(inputSampleRate.toDouble() / TARGET_SAMPLE_RATE) else null
+            // TASK-586: the resampler keys on the DECODER'S OUTPUT rate, not the
+            // container's declared input rate: opus decoders always output 48k
+            // even when the track format declares 16k, and consuming 48k PCM as
+            // 16k tripled the duration (the 90s -> 270s report). The output rate
+            // arrives at INFO_OUTPUT_FORMAT_CHANGED, which by contract precedes
+            // the first output buffer; if it never arrives, the declared rate
+            // stands.
+            var decodeRate = inputSampleRate
+            var streamResampler: SincStreamResampler? =
+                if (decodeRate != TARGET_SAMPLE_RATE)
+                    SincStreamResampler(decodeRate.toDouble() / TARGET_SAMPLE_RATE) else null
             val sampleChunks = mutableListOf<FloatArray>()
             try {
                 decoder.configure(inputFormat, null, null, 0)
@@ -650,6 +676,20 @@ class AudioPreprocessor @Inject constructor() {
                             outputEOS = true
                         }
                     } else if (outputBufferIndex == MediaCodec.INFO_OUTPUT_FORMAT_CHANGED) {
+                        // TASK-586: the decoder's OWN output rate is the truth.
+                        val changed = runCatching {
+                            decoder.outputFormat.getInteger(MediaFormat.KEY_SAMPLE_RATE)
+                        }.getOrNull()
+                        if (changed != null && changed != decodeRate) {
+                            if (sampleChunks.isEmpty()) {
+                                Log.w(TAG, "Decoder output rate $changed != container rate $decodeRate; resampling from the real rate (TASK-586)")
+                                decodeRate = changed
+                                streamResampler = if (decodeRate != TARGET_SAMPLE_RATE)
+                                    SincStreamResampler(decodeRate.toDouble() / TARGET_SAMPLE_RATE) else null
+                            } else {
+                                Log.e(TAG, "Decoder output rate changed to $changed after decoding started at $decodeRate; ignoring (unsupported mid-stream rate change)")
+                            }
+                        }
                         Log.d(TAG, "Output format changed: ${decoder.outputFormat}")
                     }
                 }
