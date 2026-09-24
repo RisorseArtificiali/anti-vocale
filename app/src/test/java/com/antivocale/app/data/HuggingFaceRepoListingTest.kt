@@ -267,10 +267,10 @@ class HuggingFaceRepoListingTest {
 
     // ---- end-to-end against the mock server ----
 
-    private val encoderBytes = ByteArray(64) { 1 } + "vocab_size=1024 subsampling_factor=8 model_type=nemo_transducer".toByteArray()
-    private val decoderBytes = ByteArray(16) { 2 }
-    private val joinerBytes = ByteArray(16) { 3 }
-    private val tokensBytes = "<unk> 0\n. 1\n".toByteArray()
+    private val encoderBytes = ByteArray(2048) { if (it == 0) 8 else 1 } + "vocab_size=1024 subsampling_factor=8 model_type=nemo_transducer".toByteArray()
+    private val decoderBytes = ByteArray(2048) { if (it == 0) 8 else 2 }
+    private val joinerBytes = ByteArray(2048) { if (it == 0) 8 else 3 }
+    private val tokensBytes = (0..99).joinToString("\n") { "tok$it $it" }.toByteArray()
 
     @Test
     fun `importFromHuggingFaceRepo downloads under canonical names with TOFU for non-LFS`() = runTest {
@@ -352,7 +352,7 @@ class HuggingFaceRepoListingTest {
     fun `entry missing the onnx sidecar its encoder references fails loudly`() = runTest {
         val base = server.url("/").toString().trimEnd('/')
         // Split encoder: the protobuf references its external-data file by name.
-        val splitEncoder = ByteArray(32) { 1 } +
+        val splitEncoder = ByteArray(2048) { if (it == 0) 8 else 1 } +
             "vocab_size=1024 subsampling_factor=8 model_type=nemo_transducer some_encoder.onnx.data".toByteArray()
         server.enqueue(MockResponse().setBody("""
             {"name":"GigaAM split","modelType":"nemo_transducer",
@@ -376,10 +376,10 @@ class HuggingFaceRepoListingTest {
     fun `importFromEntryJson drives family, options and languages from the entry`() = runTest {
         val base = server.url("/").toString().trimEnd('/')
         // Protobuf-framed metadata prop so the value-aware whisper validation reads it.
-        val whisperEncoder = ByteArray(32) { 1 } +
+        val whisperEncoder = ByteArray(2048) { if (it == 0) 8 else 1 } +
             "model_type".toByteArray() + byteArrayOf(0x12, 0x0B) + "whisper-tiny".toByteArray()
-        val whisperDecoder = ByteArray(16) { 2 }
-        val whisperTokens = "<unk> 0\n".toByteArray()
+        val whisperDecoder = ByteArray(2048) { if (it == 0) 8 else 2 }
+        val whisperTokens = (0..99).joinToString("\n") { "tok$it $it" }.toByteArray()
         server.enqueue(MockResponse().setBody("""
             {"name":"Arabic Whisper","family":"WHISPER","languages":["ar"],
              "options":{"whisper.language":"ar","whisper.task":"transcribe"},

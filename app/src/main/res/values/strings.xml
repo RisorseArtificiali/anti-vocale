@@ -34,6 +34,7 @@
     <string name="saved_model_found">Saved model found</string>
     <string name="saved_model_not_found">Saved model not found</string>
     <string name="model_selected">Model selected: %1$s</string>
+    <string name="model_import_invalid_file">The selected file does not seem to be a usable LiteRT-LM model file (%1$s)</string>
     <string name="model_copy_failed">Failed to copy model file</string>
     <string name="model_file_not_found">Model file not found at: %1$s</string>
     <string name="model_loading">Loading model into memory…</string>

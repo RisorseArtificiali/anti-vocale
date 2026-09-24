@@ -5,6 +5,8 @@ import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import com.antivocale.app.data.download.DownloadConfig
+import com.antivocale.app.data.download.DownloadedModelIntegrity
+import com.antivocale.app.data.download.details
 import com.antivocale.app.data.download.HashVerifier
 import com.antivocale.app.data.download.ResumeDownloadHelper
 import com.antivocale.app.transcription.ModelFamilyDetector
@@ -514,6 +516,15 @@ class ExternalModelImporter(
                     "the files may be corrupt, an incompatible export, or the wrong family.$guidance")
         }
         support.validateImportedModel(metadataValue)
+
+        // TASK-304: cheap header/magic integrity at registration, before the
+        // record persists: a wrong or truncated file becomes an import-time
+        // error in milliseconds (the same gate the catalog download path
+        // already runs) instead of a slow native-load failure later.
+        val integrityFindings = DownloadedModelIntegrity.validate(targetDir)
+        if (integrityFindings.isNotEmpty()) {
+            throw IllegalArgumentException("integrity check failed: " + integrityFindings.details())
+        }
 
         // Same-hash dedupe BEFORE creating a new record. The fresh copy is removed
         // unless it landed on the existing record's own directory (same-path

@@ -239,7 +239,7 @@ class SherpaOnnxModelDownloader<V>(
         val integrityFindings = DownloadedModelIntegrity.validate(modelDir)
         if (integrityFindings.isNotEmpty()) {
             val errorMsg = "Downloaded model is incomplete or corrupt: " +
-                integrityFindings.joinToString { "${it.file.name} (${it.reason})" }
+                integrityFindings.details()
             Log.e(config.tag, errorMsg)
             onStateChange(DownloadState.Error(errorMsg))
             modelDir.deleteRecursively()

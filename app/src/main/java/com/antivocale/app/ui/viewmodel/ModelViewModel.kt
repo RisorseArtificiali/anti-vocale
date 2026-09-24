@@ -747,6 +747,31 @@ class ModelViewModel @Inject constructor(
 
     fun onModelSelected(context: Context, uri: Uri) {
         viewModelScope.launch {
+            // TASK-304: cheap import-time gate before the copy work: only the
+            // LiteRT-LM container formats load here, and anything under the
+            // 1 MB floor the engine also enforces at load time is a stub or a
+            // truncated download. Rejecting in milliseconds beats failing
+            // deep in the native stack (LlmManager.kt's "model is null").
+            // moveToFirst + isNull discipline (code review): without
+            // moveToFirst every pick crashes at position -1, and SIZE is
+            // null-when-unknown (getLong would coerce it to 0 and falsely
+            // reject a valid model from a size-unknown provider).
+            val size = context.contentResolver.query(uri, null, null, null, null)?.use { c ->
+                if (!c.moveToFirst()) return@use -1L
+                val sizeIdx = c.getColumnIndex(android.provider.OpenableColumns.SIZE)
+                when {
+                    sizeIdx < 0 -> -1L
+                    c.isNull(sizeIdx) -> -1L
+                    else -> c.getLong(sizeIdx)
+                }
+            } ?: -1L
+            if (size in 0 until 1L * 1024 * 1024) {
+                _uiState.update { it.copy(
+                    status = ModelStatus.ERROR,
+                    statusMessage = ctx.getString(R.string.model_import_invalid_file, "under 1 MB")
+                )}
+                return@launch
+            }
             // Copy file to app-specific storage for reliable access
             val copiedPath = copyModelToAppStorage(context, uri)
 

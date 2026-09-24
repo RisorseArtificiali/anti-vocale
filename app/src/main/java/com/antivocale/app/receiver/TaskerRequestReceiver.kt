@@ -102,6 +102,29 @@ class TaskerRequestReceiver : BroadcastReceiver() {
         val prompt = intent.getStringExtra(EXTRA_PROMPT) ?: ""
         val filePath = intent.getStringExtra(EXTRA_FILE_PATH)
         val taskId = intent.getStringExtra(EXTRA_TASK_ID) ?: "unknown_${System.currentTimeMillis()}"
+        // TASK-274: path allowlist. The only legitimately transcribable-by-path
+        // sources are the app's own staged audio (filesDir/shared_audio) and
+        // preprocessing intermediates (cacheDir); every other path already
+        // fails unreadable at decode time (device-proven 2026-09-03), so this
+        // rejects nothing that ever worked while closing the path-oracle and
+        // traversal surface. Canonicalized to defeat '..'.
+        if (filePath != null) {
+            val canonical = java.io.File(filePath).canonicalFile
+            val sharedAudio = java.io.File(context.filesDir, "shared_audio").canonicalFile
+            val cache = context.cacheDir.canonicalFile
+            val allowed = canonical.path.startsWith(sharedAudio.path + java.io.File.separator) ||
+                canonical.path.startsWith(cache.path + java.io.File.separator)
+            if (!allowed) {
+                Log.w(TAG, "Rejected file_path outside the allowlist: $filePath")
+                context.sendBroadcast(Intent(ACTION_TASKER_REPLY).apply {
+                    putExtra(EXTRA_TASK_ID, taskId)
+                    putExtra(EXTRA_STATUS, STATUS_ERROR)
+                    putExtra(EXTRA_ERROR_MESSAGE,
+                        "file_path must live under the app's shared_audio or cache directory")
+                })
+                return
+            }
+        }
         // TASK-394: one-shot backend override. Unknown ids fail loudly instead of
         // silently falling back to the saved preference (wrong model, looks like success).
         val backendOverride = intent.getStringExtra(EXTRA_BACKEND_ID)
@@ -123,6 +146,13 @@ class TaskerRequestReceiver : BroadcastReceiver() {
             putExtra(EXTRA_FILE_PATH, filePath)
             putExtra(EXTRA_TASK_ID, taskId)
             putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, backendOverride)
+            // TASK-274(f): pin the reply sink. API 34+ names the sending
+            // package; the reply broadcast becomes point-to-point instead of
+            // world-visible. Below 34 (or system-sent) the field is absent and
+            // the service keeps the historical unpinned reply.
+            if (android.os.Build.VERSION.SDK_INT >= 34) {
+                sentFromPackage?.let { putExtra(InferenceService.EXTRA_REQUESTER_PACKAGE, it) }
+            }
         }
 
         // F6: the shared enqueue owns the restriction fallback (trampoline

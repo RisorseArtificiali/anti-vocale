@@ -4,6 +4,8 @@ import android.content.Context
 import android.util.Log
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ModelFamily
+import com.antivocale.app.data.download.DownloadedModelIntegrity
+import com.antivocale.app.data.download.details
 import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
 import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
@@ -181,6 +183,25 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                 Log.e(TAG, "Family validation failed for ${record.backendId}: ${e.message}")
                 return@withContext Result.failure(TranscriptionException.ModelLoadError(
                     "family validation failed for ${record.backendId}: ${e.message ?: "no detail provided"}", e))
+            }
+
+            // TASK-304: cheap header/magic gate before the native recognizer
+            // is constructed: files corrupted AFTER import (partial
+            // re-download, disk issues) fail here in milliseconds with the
+            // specific finding instead of inside OfflineRecognizer
+            // construction. ~10 8-byte reads per load.
+            // runCatching: an IOException (file vanished mid-load) must degrade
+            // to a ModelLoadError, not escape the sealed Result contract.
+            val integrityFindings = runCatching { DownloadedModelIntegrity.validate(dir) }
+                .getOrElse { e ->
+                    return@withContext Result.failure(TranscriptionException.ModelLoadError(
+                        "integrity check could not read the model files: ${e.message}"))
+                }
+            if (integrityFindings.isNotEmpty()) {
+                val detail = integrityFindings.details()
+                Log.e(TAG, "Integrity gate failed for ${record.backendId}: $detail")
+                return@withContext Result.failure(TranscriptionException.ModelLoadError(
+                    "integrity check failed: $detail. The model files may be corrupt; try re-importing them."))
             }
 
             // TASK-368: streaming records build the OnlineRecognizer instead. The

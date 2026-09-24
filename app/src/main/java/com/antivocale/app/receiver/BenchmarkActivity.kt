@@ -2,6 +2,7 @@ package com.antivocale.app.receiver
 
 import android.content.Intent
 import android.os.Bundle
+import com.antivocale.app.BuildConfig
 import android.util.Log
 import androidx.activity.ComponentActivity
 import com.antivocale.app.data.PreferencesManager
@@ -39,6 +40,15 @@ class BenchmarkActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // TASK-274(h): the activity is exported in the main manifest but is a
+        // debug-only harness; in RELEASE builds any foreground app could
+        // otherwise drive it to overwrite four persisted user preferences
+        // (backend, VAD, progressive, provider) and steer transcription.
+        if (!BuildConfig.DEBUG) {
+            Log.w("BenchmarkActivity", "Rejected an external launch in a release build")
+            finish()
+            return
+        }
         handleIntent(intent)
     }
 

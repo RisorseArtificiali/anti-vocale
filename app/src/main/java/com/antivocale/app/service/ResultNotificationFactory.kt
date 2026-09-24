@@ -367,6 +367,8 @@ class ResultNotificationFactory(private val context: Context) {
          * - 1001: InferenceService.NOTIFICATION_ID (service foreground/progress)
          * - 1003: SubtitleChoiceTimeoutWorker.NOTIFICATION_ID (worker foreground)
          * - 1005: CrashQuarantineCheck.NOTIFICATION_ID (TASK-640 quarantine notice)
+         * - 1006: TranscriptionOrchestrator.MEMORY_MARGIN_WARNING_ID (TASK-631
+         *   part-2 dismissable tight-margin warning, default path)
          * - 2001..2100: ExtractionService download-progress band (per-jobKey hash)
          * - 2201..2300: TaskerRequestReceiver fallback band (sequential slots)
          * - 2401..2500: ShareReceiverActivity choice + share-error band

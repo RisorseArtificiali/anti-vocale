@@ -21,7 +21,9 @@ object DownloadedModelIntegrity {
     /** Tokens smaller than this are a stub (a real BPE/vocab file is >= hundreds of bytes). */
     private const val MIN_TOKENS_BYTES: Long = 64L
 
-    data class Finding(val file: File, val reason: String)
+    data class Finding(val file: File, val reason: String) {
+        fun describe(): String = "${file.name} ($reason)"
+    }
 
     /** Bytes 4-7 read "ORTM" (the ort flatbuffer file identifier). */
     private fun ByteArray.or_tm(): Boolean =
@@ -103,3 +105,7 @@ object DownloadedModelIntegrity {
         }
     }
 }
+
+/** TASK-304: one renderer for the finding lists (importer, backend, downloader). */
+fun List<DownloadedModelIntegrity.Finding>.details(): String =
+    joinToString("; ") { it.describe() }

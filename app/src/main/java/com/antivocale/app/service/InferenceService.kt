@@ -87,6 +87,8 @@ class InferenceService : Service(), TranscriptionListener {
         const val EXTRA_SHARED_URI = "shared_uri"
         const val EXTRA_MIME_TYPE = "mime_type"
         const val EXTRA_BACKEND_OVERRIDE = "backend_override"
+        /** TASK-274(f): the broadcast sender's package, pinned onto replies. */
+        const val EXTRA_REQUESTER_PACKAGE = "requester_package"
 
         const val ACTION_CANCEL = "com.antivocale.app.CANCEL_TRANSCRIPTION"
 
@@ -153,7 +155,9 @@ class InferenceService : Service(), TranscriptionListener {
         val source: String? = null,
         val sourcePackage: String? = null,
         val backendOverride: String? = null,
-        val trackIndex: Int = -1
+        val trackIndex: Int = -1,
+        /** TASK-274(f): reply-sink pin (null = pre-34 sender, unpinned reply). */
+        val requesterPackage: String? = null
     )
 
     // ---- Android Lifecycle ----
@@ -196,11 +200,13 @@ class InferenceService : Service(), TranscriptionListener {
             requestType = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE) ?: "text",
             prompt = intent?.getStringExtra(TaskerRequestReceiver.EXTRA_PROMPT) ?: "",
             filePath = filePath,
+            requesterPackage = intent?.getStringExtra(EXTRA_REQUESTER_PACKAGE),
             source = intent?.getStringExtra(EXTRA_SOURCE),
             sourcePackage = intent?.getStringExtra(EXTRA_SOURCE_PACKAGE),
             backendOverride = intent?.getStringExtra(EXTRA_BACKEND_OVERRIDE),
             trackIndex = intent?.getIntExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, -1) ?: -1
         )
+        rememberRequester(request)
 
         // Dedup by taskId: drop a duplicate before it enters the queue. This covers both the
         // queued case (a request with the same taskId is waiting) and the in-flight case (a
@@ -573,6 +579,7 @@ class InferenceService : Service(), TranscriptionListener {
         refinementOutcome: String?
     ) {
         sendSuccessReply(taskId, resultText)
+        forgetRequester(taskId)
         // Every completed task moves the model-recency source: re-derive the
         // launcher's dynamic share shortcuts. Metadata-only side effect on the
         // service scope (IO), must never reach the result path.
@@ -607,6 +614,7 @@ class InferenceService : Service(), TranscriptionListener {
         isMemoryFailure: Boolean
     ) {
         sendErrorReply(taskId, errorCode, errorMessage)
+        forgetRequester(taskId)
         // TASK-307: in-app failures get the same notification as share failures.
         // The Logs row records the error either way, but a user actively waiting on
         // an in-app transcription had no immediate signal unless they expanded the row.
@@ -621,20 +629,43 @@ class InferenceService : Service(), TranscriptionListener {
 
     // ---- Broadcast Replies ----
 
+    /**
+     * TASK-274(f): the reply sink is PINNED point-to-point. The receiver
+     * records the sending package (API 34+); replies go only there, and
+     * share-flow requests are never replied to at all (their consumer is the
+     * result notification; nothing legitimate listens for share_* taskIds, so
+     * a world-visible reply was pure exfiltration surface). A null pin (pre-34
+     * device or system-sent broadcast) keeps the historical unpinned reply,
+     * which cannot be made worse than it already was.
+     */
+    private val requesterByTask = java.util.concurrent.ConcurrentHashMap<String, PendingRequest>()
+    private fun rememberRequester(request: PendingRequest) {
+        requesterByTask[request.taskId] = request
+    }
+    private fun forgetRequester(taskId: String) {
+        requesterByTask.remove(taskId)
+    }
+
     private fun sendSuccessReply(taskId: String, resultText: String) {
+        val request = requesterByTask[taskId]
+        if (request?.source == "share") return
         val replyIntent = Intent(TaskerRequestReceiver.ACTION_TASKER_REPLY).apply {
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
             putExtra(TaskerRequestReceiver.EXTRA_STATUS, TaskerRequestReceiver.STATUS_SUCCESS)
             putExtra(TaskerRequestReceiver.EXTRA_RESULT_TEXT, resultText)
+            request?.requesterPackage?.let { setPackage(it) }
         }
         sendBroadcast(replyIntent)
     }
 
     private fun sendErrorReply(taskId: String, errorCode: String, errorMessage: String) {
+        val request = requesterByTask[taskId]
+        if (request?.source == "share") return
         val replyIntent = Intent(TaskerRequestReceiver.ACTION_TASKER_REPLY).apply {
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
             putExtra(TaskerRequestReceiver.EXTRA_STATUS, TaskerRequestReceiver.STATUS_ERROR)
             putExtra(TaskerRequestReceiver.EXTRA_ERROR_MESSAGE, "$errorCode: $errorMessage")
+            request?.requesterPackage?.let { setPackage(it) }
         }
         sendBroadcast(replyIntent)
     }

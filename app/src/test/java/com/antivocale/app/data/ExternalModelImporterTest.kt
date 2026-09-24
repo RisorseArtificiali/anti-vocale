@@ -46,11 +46,11 @@ class ExternalModelImporterTest {
     private fun sourceDir(name: String = "gigaam-v3"): File {
         val dir = tmp.newFolder(name)
         File(dir, "some_encoder_int8.onnx").writeBytes(
-            ByteArray(64) { 1 } + "vocab_size=1024 subsampling_factor=8 ".toByteArray() +
+            ByteArray(2048) { if (it == 0) 8 else 1 } + "vocab_size=1024 subsampling_factor=8 ".toByteArray() +
                 metadataProp("model_type", "nemo_transducer"))
-        File(dir, "some_decoder.onnx").writeBytes(ByteArray(16) { 2 })
-        File(dir, "some_joiner.onnx").writeBytes(ByteArray(16) { 3 })
-        File(dir, "tokens.txt").writeText("<unk> 0\n. 1\n")
+        File(dir, "some_decoder.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 2 })
+        File(dir, "some_joiner.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 3 })
+        File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
         return dir
     }
 
@@ -103,9 +103,31 @@ class ExternalModelImporterTest {
     }
 
     @Test
+    fun `corrupt onnx magic is rejected at import time with the integrity finding`() = runTest {
+        // TASK-304: a file past the size floor but without the ONNX leading
+        // byte (a zip, a renamed blob) fails in milliseconds at registration,
+        // never reaching the native load.
+        val src = tmp.newFolder("corrupt")
+        File(src, "encoder.onnx").writeBytes(
+            ByteArray(2048) { 0x7f } + "vocab_size=1024 subsampling_factor=8 ".toByteArray() +
+                metadataProp("model_type", "nemo_transducer"))
+        File(src, "decoder.onnx").writeBytes(ByteArray(2048) { 2 })
+        File(src, "joiner.onnx").writeBytes(ByteArray(2048) { 3 })
+        File(src, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
+
+        val result = runCatching { importer.importFromDirectory(src) }
+
+        assertTrue(result.isFailure)
+        assertTrue(
+            "expected the integrity finding, got: ${result.exceptionOrNull()?.message}",
+            result.exceptionOrNull()?.message!!.contains("integrity check failed"))
+        assertEquals(0, store.records().size)
+    }
+
+    @Test
     fun `missing role fails with a clean error and registers nothing`() = runTest {
         val src = tmp.newFolder("incomplete")
-        File(src, "tokens.txt").writeText("x")
+        File(src, "tokens.txt").writeText((0..99).joinToString(" ") { "tok$it $it" })
 
         val result = runCatching { importer.importFromDirectory(src) }
 
@@ -117,10 +139,10 @@ class ExternalModelImporterTest {
     @Test
     fun `missing transducer metadata error carries the export guidance`() = runTest {
         val src = tmp.newFolder("nometa")
-        File(src, "encoder.onnx").writeBytes(ByteArray(32) { 7 })
-        File(src, "decoder.onnx").writeBytes(ByteArray(8) { 2 })
-        File(src, "joiner.onnx").writeBytes(ByteArray(8) { 3 })
-        File(src, "tokens.txt").writeText("x")
+        File(src, "encoder.onnx").writeBytes(ByteArray(maxOf(32, 2048)) { if (it == 0) 8 else 7 })
+        File(src, "decoder.onnx").writeBytes(ByteArray(maxOf(8, 2048)) { if (it == 0) 8 else 2 })
+        File(src, "joiner.onnx").writeBytes(ByteArray(maxOf(8, 2048)) { if (it == 0) 8 else 3 })
+        File(src, "tokens.txt").writeText((0..99).joinToString(" ") { "tok$it $it" })
 
         val result = runCatching { importer.importFromDirectory(src) }
 
@@ -135,13 +157,13 @@ class ExternalModelImporterTest {
         // TASK-481: the hand-patched-encoder class. Key present, value junk.
         val dir = tmp.newFolder("fakevocab")
         File(dir, "encoder_a.onnx").writeBytes(
-            ByteArray(64) { 1 } +
+            ByteArray(2048) { if (it == 0) 8 else 1 } +
                 metadataProp("vocab_size", "0") +
                 metadataProp("subsampling_factor", "8") +
                 metadataProp("model_type", "nemo_transducer"))
-        File(dir, "decoder_b.onnx").writeBytes(ByteArray(16) { 2 })
-        File(dir, "joiner_c.onnx").writeBytes(ByteArray(16) { 3 })
-        File(dir, "tokens.txt").writeText("<unk> 0\n. 1\n")
+        File(dir, "decoder_b.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 2 })
+        File(dir, "joiner_c.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 3 })
+        File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
 
         val result = runCatching { importer.importFromDirectory(dir) }
 
@@ -155,10 +177,10 @@ class ExternalModelImporterTest {
     @Test
     fun `encoder without metadata fails import cleanly`() = runTest {
         val src = tmp.newFolder("badmeta")
-        File(src, "encoder.onnx").writeBytes(ByteArray(32) { 7 })
-        File(src, "decoder.onnx").writeBytes(ByteArray(8) { 2 })
-        File(src, "joiner.onnx").writeBytes(ByteArray(8) { 3 })
-        File(src, "tokens.txt").writeText("x")
+        File(src, "encoder.onnx").writeBytes(ByteArray(maxOf(32, 2048)) { if (it == 0) 8 else 7 })
+        File(src, "decoder.onnx").writeBytes(ByteArray(maxOf(8, 2048)) { if (it == 0) 8 else 2 })
+        File(src, "joiner.onnx").writeBytes(ByteArray(maxOf(8, 2048)) { if (it == 0) 8 else 3 })
+        File(src, "tokens.txt").writeText((0..99).joinToString(" ") { "tok$it $it" })
 
         val result = runCatching { importer.importFromDirectory(src) }
 
@@ -182,17 +204,17 @@ class ExternalModelImporterTest {
     private fun whisperSourceDir(name: String = "whisper-tiny"): File {
         val dir = tmp.newFolder(name)
         File(dir, "whisper_encoder.onnx").writeBytes(
-            ByteArray(32) { 1 } + metadataProp("model_type", "whisper-tiny"))
-        File(dir, "whisper_decoder.onnx").writeBytes(ByteArray(16) { 2 })
-        File(dir, "tokens.txt").writeText("<unk> 0\n")
+            ByteArray(2048) { if (it == 0) 8 else 1 } + metadataProp("model_type", "whisper-tiny"))
+        File(dir, "whisper_decoder.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 2 })
+        File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
         return dir
     }
 
     /** SenseVoice source dir: the single acoustic model plus tokens. */
     private fun senseVoiceSourceDir(name: String = "sense-voice"): File {
         val dir = tmp.newFolder(name)
-        File(dir, "model.int8.onnx").writeBytes(ByteArray(32) { 5 })
-        File(dir, "tokens.txt").writeText("<unk> 0\n")
+        File(dir, "model.int8.onnx").writeBytes(ByteArray(maxOf(32, 2048)) { if (it == 0) 8 else 5 })
+        File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
         return dir
     }
 
@@ -262,10 +284,10 @@ class ExternalModelImporterTest {
     @Test
     fun `onnx sidecar is planned as an extra entry under its source base name`() = runTest {
         val dir = tmp.newFolder("whisper-split")
-        File(dir, "whisper_encoder.int8.onnx").writeBytes(ByteArray(32) { 1 } + metadataProp("model_type", "whisper-tiny"))
-        File(dir, "whisper_encoder.int8.onnx.data").writeBytes(ByteArray(24) { 9 })
-        File(dir, "whisper_decoder.onnx").writeBytes(ByteArray(16) { 2 })
-        File(dir, "tokens.txt").writeText("<unk> 0\n")
+        File(dir, "whisper_encoder.int8.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 1 } + metadataProp("model_type", "whisper-tiny"))
+        File(dir, "whisper_encoder.int8.onnx.data").writeBytes(ByteArray(maxOf(24, 2048)) { if (it == 0) 8 else 9 })
+        File(dir, "whisper_decoder.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 2 })
+        File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
 
         val record = importer.importFromDirectory(dir, modelType = "", family = ModelFamily.WHISPER)
 
@@ -358,8 +380,8 @@ class ExternalModelImporterTest {
     @Test
     fun `family CTC without an explicit modelType is rejected`() = runTest {
         val dir = tmp.newFolder("ctc")
-        File(dir, "v3_ctc.int8.onnx").writeBytes(ByteArray(16) { 4 })
-        File(dir, "tokens.txt").writeText("<unk> 0\n")
+        File(dir, "v3_ctc.int8.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 4 })
+        File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
 
         val result = runCatching {
             importer.importFromDirectory(dir, family = ModelFamily.CTC)
@@ -378,8 +400,8 @@ class ExternalModelImporterTest {
         // app native-exits exit(255) at first load; resolveModelType is the
         // one path every funnel converges on.
         val dir = tmp.newFolder("badpair")
-        File(dir, "v3_ctc.int8.onnx").writeBytes(ByteArray(16) { 4 })
-        File(dir, "tokens.txt").writeText("<unk> 0\n")
+        File(dir, "v3_ctc.int8.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 4 })
+        File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
 
         val result = runCatching {
             importer.importFromDirectory(dir, family = ModelFamily.TRANSDUCER, modelType = "nemo_ctc")
@@ -402,9 +424,9 @@ class ExternalModelImporterTest {
         val huge = File(src, "encoder.onnx")
         // Length only, no allocation: the pre-flight reads lengths, RandomAccessFile sets them sparsely.
         createSparse(huge, sparseLengthBiggerThanFreeSpace(src))
-        File(src, "decoder.onnx").writeBytes(ByteArray(4))
-        File(src, "joiner.onnx").writeBytes(ByteArray(4))
-        File(src, "tokens.txt").writeText("x")
+        File(src, "decoder.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 4 })
+        File(src, "joiner.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 4 })
+        File(src, "tokens.txt").writeText((0..99).joinToString(" ") { "tok$it $it" })
 
         val result = runCatching { tightImporter.importFromDirectory(src) }
         assertTrue(result.isFailure)
@@ -417,12 +439,12 @@ class ExternalModelImporterTest {
         // engine load time.
         val dir = tmp.newFolder("split-missing-sidecar")
         File(dir, "some_encoder_int8.onnx").writeBytes(
-            ByteArray(64) { 1 } + "vocab_size=1024 subsampling_factor=8 ".toByteArray() +
+            ByteArray(2048) { if (it == 0) 8 else 1 } + "vocab_size=1024 subsampling_factor=8 ".toByteArray() +
                 metadataProp("model_type", "nemo_transducer") +
                 "some_encoder_int8.onnx.data".toByteArray())
-        File(dir, "some_decoder.onnx").writeBytes(ByteArray(16) { 2 })
-        File(dir, "some_joiner.onnx").writeBytes(ByteArray(16) { 3 })
-        File(dir, "tokens.txt").writeText("<unk> 0\n. 1\n")
+        File(dir, "some_decoder.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 2 })
+        File(dir, "some_joiner.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 3 })
+        File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
 
         val result = runCatching { importer.importFromDirectory(dir) }
 

@@ -36,6 +36,7 @@
     <string name="saved_model_found">Сохранённая модель найдена</string>
     <string name="saved_model_not_found">Сохранённая модель не найдена</string>
     <string name="model_selected">Выбрана модель: %1$s</string>
+    <string name="model_import_invalid_file">Выбранный файл не похож на пригодную модель LiteRT-LM (%1$s)</string>
     <string name="model_copy_failed">Не удалось скопировать файл модели</string>
     <string name="model_file_not_found">Файл модели не найден: %1$s</string>
     <string name="model_loading">Загрузка модели в память…</string>

@@ -37,6 +37,7 @@
     <string name="saved_model_found">Kayıtlı model bulundu</string>
     <string name="saved_model_not_found">Kayıtlı model bulunamadı</string>
     <string name="model_selected">Model seçildi: %1$s</string>
+    <string name="model_import_invalid_file">Seçilen dosya kullanılabilir bir LiteRT-LM modeli gibi görünmüyor (%1$s)</string>
     <string name="model_copy_failed">Model dosyası kopyalanamadı</string>
     <string name="model_file_not_found">Model dosyası şurada bulunamadı: %1$s</string>
     <string name="model_loading">Model belleğe yükleniyor…</string>

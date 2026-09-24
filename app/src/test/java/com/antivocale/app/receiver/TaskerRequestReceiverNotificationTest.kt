@@ -134,6 +134,42 @@ class TaskerRequestReceiverNotificationTest {
     }
 
     @Test
+    fun `file_path outside the allowlist is rejected with no service start`() {
+        // TASK-274: only shared_audio and cacheDir are path-transcribable;
+        // a databases/ or traversal path must never reach the enqueue.
+        val receiver = TaskerRequestReceiver()
+        val outside = java.io.File(context.filesDir, "databases/../../databases/anti_vocale_database")
+        val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
+            putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
+            putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, "t274path")
+            putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, outside.absolutePath)
+        }
+        receiver.onReceive(context, intent)
+        val shadow = shadowOf(context.applicationContext as Application)
+        assertNull(shadow.nextStartedService)
+        val reply = shadow.broadcastIntents.lastOrNull()
+        assertNotNull(reply)
+        assertEquals(TaskerRequestReceiver.STATUS_ERROR,
+            reply!!.getStringExtra(TaskerRequestReceiver.EXTRA_STATUS))
+    }
+
+    @Test
+    fun `file_path inside shared_audio is forwarded to the service`() {
+        val receiver = TaskerRequestReceiver()
+        val inside = java.io.File(context.filesDir, "shared_audio/note.ogg")
+        val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
+            putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, "audio")
+            putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, "t274ok")
+            putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, inside.absolutePath)
+        }
+        receiver.onReceive(context, intent)
+        val started = shadowOf(context.applicationContext as Application).nextStartedService
+        assertNotNull(started)
+        assertEquals(inside.absolutePath,
+            started.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH))
+    }
+
+    @Test
     fun `unknown backend_id fails loudly with no service start`() {
         val receiver = TaskerRequestReceiver()
         val intent = Intent(TaskerRequestReceiver.ACTION_PROCESS_REQUEST).apply {
