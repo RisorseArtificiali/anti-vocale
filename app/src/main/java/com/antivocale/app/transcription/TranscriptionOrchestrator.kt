@@ -1621,6 +1621,18 @@ class TranscriptionOrchestrator @Inject constructor(
             return Result.failure(IllegalArgumentException("No file path provided"))
         }
 
+        // TASK-600 F11: ONE collector seam. Both decode arms record their
+        // sample timeline here; the collector fires exactly once, at this
+        // function's tail, instead of being re-plumbed per arm (the fixed
+        // wiring bug was the recurrence proof).
+        var sampleTimeline: List<FloatArray>? = null
+        var sampleTimelineRate = 16000
+
+        fun fireCollector() {
+            sampleTimeline?.let { collectSamples?.invoke(it, sampleTimelineRate) }
+        }
+
+
         val backend = backendManager.getActiveBackend()
             ?: return Result.failure(IllegalStateException("No active backend"))
 
@@ -1748,26 +1760,33 @@ class TranscriptionOrchestrator @Inject constructor(
         val totalStartMs = System.currentTimeMillis()
 
         if (pipelineChunkSeconds != null) {
-            return applyFinalGenerativePass(
-                backend, promptPlan.finalPass,
-                processPipelinedAudio(
-                    taskId = taskId,
-                    filePath = filePath,
-                    backend = backend,
-                    maxChunkDurationSeconds = pipelineChunkSeconds,
-                    streamedWithoutVad = fellBackFromVad,
-                    context = context,
-                    coroutineScope = coroutineScope,
-                    listener = listener,
-                    prompt = promptPlan.perChunk,
-                    progressiveEnabled = progressiveEnabled,
-                    emitInterim = emitInterim,
-                    // GH #83: the pipeline is the DEFAULT contiguous path
-                    // (Parakeet); without this the collector only reached
-                    // the whole-file branch and every default run skipped
-                    // labels (caught on the first real device trial).
-                    collectSamples = collectSamples
-                ))
+            val pipelined = processPipelinedAudio(
+                taskId = taskId,
+                filePath = filePath,
+                backend = backend,
+                maxChunkDurationSeconds = pipelineChunkSeconds,
+                streamedWithoutVad = fellBackFromVad,
+                context = context,
+                coroutineScope = coroutineScope,
+                listener = listener,
+                prompt = promptPlan.perChunk,
+                progressiveEnabled = progressiveEnabled,
+                emitInterim = emitInterim,
+                // GH #83: the pipeline is the DEFAULT contiguous path
+                // (Parakeet); without this the collector only reached
+                // the whole-file branch and every default run skipped
+                // labels (caught on the first real device trial).
+                // TASK-600 F11: the arm only RECORDS the timeline; the
+                // collector fires once at this function's tail.
+                collectSamples = collectSamples?.let {
+                    { chunks, rate ->
+                        sampleTimeline = chunks
+                        sampleTimelineRate = rate
+                    }
+                }
+            )
+            fireCollector()
+            return applyFinalGenerativePass(backend, promptPlan.finalPass, pipelined)
         }
 
         val preprocessStartMs = System.currentTimeMillis()
@@ -1808,8 +1827,9 @@ class TranscriptionOrchestrator @Inject constructor(
         // single-speech-span arm offsets cues by originMs while the
         // concatenation starts at the speech onset (code review F3); the
         // offset mapping is a tracked follow-up, not a v1 guess.
-        if (collectSamples != null && !vadEnabled) {
-            collectSamples(preprocessingResult.chunks, preprocessingResult.sampleRate)
+        if (!vadEnabled) {
+            sampleTimeline = preprocessingResult.chunks
+            sampleTimelineRate = preprocessingResult.sampleRate
         }
 
         val chunkCount = preprocessingResult.chunkCount
@@ -1865,6 +1885,7 @@ class TranscriptionOrchestrator @Inject constructor(
             }
             val inferMs = System.currentTimeMillis() - t0
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
+            fireCollector()
             return when {
                 result.isSuccess -> {
                     val tr = result.getOrNull()!!
@@ -1906,6 +1927,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         // Progressive path: VAD-segmented audio + progressive toggle enabled
         if (preprocessingResult.isVadSegmented && progressiveEnabled) {
+            fireCollector()
             return applyFinalGenerativePass(
                 backend, promptPlan.finalPass,
                 processProgressiveSegments(
@@ -1926,7 +1948,10 @@ class TranscriptionOrchestrator @Inject constructor(
                 ))
         }
 
-        // Multi-chunk path: parallel processing with progress tracking
+        // Multi-chunk path: parallel processing with progress tracking.
+        // TASK-600 F11: fire the collector at the single seam before the
+        // result leaves this function (no-op when nothing was recorded).
+        fireCollector()
         return applyFinalGenerativePass(
             backend, promptPlan.finalPass,
             processParallelChunks(
