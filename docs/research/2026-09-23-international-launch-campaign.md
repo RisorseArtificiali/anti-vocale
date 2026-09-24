@@ -341,6 +341,8 @@ GitHub. Розробка велася з допомогою ШІ, це вказ�
 вітаються.
 
 ### TR (r/turkey con approvazione mod + Technopat dopo soglia)
+VALIDATED 2026-09-24 (Mac, FLEURS tr, 10 clips): PARAKEET v3 FAILS TURKISH HARD (CER 90.6%, phonetic Latin gibberish; NOT a supported language of the stock v3 weights despite multilingual branding). Campaign copy: "Whisper recommended" for tr (whisper small 6.9% CER); omnilingual 300M as the light fallback (6.5% CER, 2x faster, but 29.7% WER).
+
 
 Baslik: Anti-Vocale, Android icin cevrimdisi sesli mesaj transkripsiyonu (FOSS)
 
@@ -358,6 +360,8 @@ GitHub'da. Gelistirme yapay zeka destegliydi, README'de belirtiliyor.
 Geri bildirim bekliyorum.
 
 ### PL (forum.android.com.pl)
+VALIDATED 2026-09-24 (Mac, FLEURS pl, 10 clips): PARAKEET v3 IS ADVERTISABLE. CER 3.0% / WER 10.7%, RTF 0.29 (2.5-6x faster than whisper small, which is also 2.3x worse at this size). The campaign copy can lead with Parakeet for PL.
+
 
 Tytul: Anti-Vocale, offline transkrypcja wiadomosci glosowych na Androidzie (FOSS)
 
