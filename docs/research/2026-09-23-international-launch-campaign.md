@@ -279,6 +279,8 @@ codigo no GitHub. O desenvolvimento teve assistencia de IA, declarado no
 README. Feedback bem-vindo.
 
 ### EN global (r/fossdroid + Show HN + r/droidappshowcase)
+POSTED 2026-09-24: r/speechtech https://www.reddit.com/r/speechtech/comments/1wpce5x/antivocale_ondevice_speechtotext_for_android/ (the technical-architecture pitch: seven families, swappable models, versioned catalog without releases; live 2m after posting, no removal markers).
+
 POSTED 2026-09-24: r/droidappshowcase https://www.reddit.com/r/droidappshowcase/comments/1wpakga/antivocale_offline_voicemessage_transcription/ (Promo flair, store links first, notification screenshot).
 
 
