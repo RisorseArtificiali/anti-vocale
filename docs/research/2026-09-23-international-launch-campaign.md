@@ -421,8 +421,13 @@ Hindi-model suggestions welcome.
 
 1. The WhatsApp language claims rest on the official FAQ fetched 2026-09-23
    (Android: en/pt/es/ru only). Re-fetch the page on posting day.
-2. r/fossdroid decision: AI-assisted app vs their rule 11 (AI-written posts
-   are banned; the app's AI-assist disclosure is public).
+2. r/fossdroid: VERIFIED BANNED (the 2026-09 announcement was removed with
+   the explicit reason "appears to contain AI-generated text, images, or
+   code", fossdroid-ModTeam; the maintainer's UI showed "You're currently
+   banned"). MANDATORY PATH: a modmail to the mods asking ban status +
+   whether an honest hand-written announcement with the AI-assist
+   disclosure is welcome; NO post until the mods answer. Ban status cannot
+   be verified from the workstation (account-scoped, reddit blocks reads).
 3. r/france only with the aged active French account; r/turkey and r/spain
    need mod approval first; Cafe Bazaar needs the registration answer from
    developers@cafebazaar.ir.
