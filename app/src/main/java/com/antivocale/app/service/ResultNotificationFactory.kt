@@ -18,6 +18,11 @@ import java.util.concurrent.atomic.AtomicInteger
 /** Everything needed to (re)build one result notification (TASK-327). */
 data class ResultNotificationSpec(
     val transcriptionText: String,
+    /** TASK-647: resolved signature for the EXIT surfaces (copy/share
+     *  actions). Blank = feature off (the raw text goes out unchanged);
+     *  the body and the nav intents always carry the raw transcript. */
+    val signatureText: String = "",
+    val signaturePosition: String = "append",
     val taskId: String?,
     val sourcePackage: String?,
     val confidence: Float?,
@@ -167,7 +172,7 @@ class ResultNotificationFactory(private val context: Context) {
             .addAction(
                 android.R.drawable.ic_menu_save,
                 context.getString(R.string.copy),
-                copyPendingIntent(text)
+                copyPendingIntent(text, spec)
             )
 
         // On-device finding (TASK-327 Task 8, Realme RMX3853 / Android 16): the shade
@@ -243,7 +248,7 @@ class ResultNotificationFactory(private val context: Context) {
         if (useQuickShareBack) {
             val shareBackIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, spec.transcriptionText)
+                putExtra(Intent.EXTRA_TEXT, com.antivocale.app.util.TranscriptSignature.apply(spec.transcriptionText, spec.signatureText, spec.signaturePosition))
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 // Family normalization (forks, flavor builds) lives in the one
                 // known-app table in AppInfoUtils (TASK-433).
@@ -263,7 +268,7 @@ class ResultNotificationFactory(private val context: Context) {
         } else {
             val shareChooserIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, spec.transcriptionText)
+                putExtra(Intent.EXTRA_TEXT, com.antivocale.app.util.TranscriptSignature.apply(spec.transcriptionText, spec.signatureText, spec.signaturePosition))
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             val sharePickerIntent = Intent.createChooser(
@@ -284,10 +289,12 @@ class ResultNotificationFactory(private val context: Context) {
         }
     }
 
-    private fun copyPendingIntent(text: String): PendingIntent {
+    private fun copyPendingIntent(text: String, spec: ResultNotificationSpec): PendingIntent {
+        val signed = com.antivocale.app.util.TranscriptSignature.apply(
+            text, spec.signatureText, spec.signaturePosition)
         val copyIntent = Intent(context, NotificationActionReceiver::class.java).apply {
             action = NotificationActionReceiver.ACTION_COPY_TRANSCRIPTION
-            putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, text)
+            putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, signed)
         }
         return PendingIntent.getBroadcast(
             context,

@@ -212,6 +212,10 @@ class TranscriptionNotificationListener(
         val id = ResultNotificationFactory.nextNotificationId()
         val spec = ResultNotificationSpec(
             transcriptionText = transcriptionText,
+            signatureText = com.antivocale.app.util.TranscriptSignature.effective(
+                preferencesManager, appContext.getString(R.string.signature_default_text)),
+            signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
+                .getOrDefault("append"),
             taskId = taskId,
             sourcePackage = sourcePackage,
             confidence = confidence,
