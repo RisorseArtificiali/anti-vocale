@@ -42,6 +42,15 @@ object SummaryPolicy {
      * transcript scaled by [MAX_SUMMARY_FRACTION] is a rewrite, not a
      * summary; both are dropped (no summary attached, transcript delivered).
      */
+    /**
+     * TASK-607 F6: a floor for a LONE partial (one map chunk surviving of a
+     * multi-chunk transcript): the length guard alone passes a chunk-echo; a
+     * lone recap must cover at least [MIN_LONE_PARTIAL_COVERAGE_FRACTION] of
+     * the transcript to count as a summary of it.
+     */
+    fun hasCoverageFloor(lonePartial: String, transcriptLength: Int): Boolean =
+        lonePartial.length >= (transcriptLength * MIN_LONE_PARTIAL_COVERAGE_FRACTION).toInt().coerceAtLeast(MIN_SUMMARY_CHARS)
+
     fun acceptableSummary(summary: String, transcript: String): Boolean {
         if (summary.length < MIN_SUMMARY_CHARS) return false
         return summary.length <= transcript.length * MAX_SUMMARY_FRACTION
@@ -52,6 +61,9 @@ object SummaryPolicy {
 
     /** Floor for a plausible summary; see [acceptableSummary]. */
     const val MIN_SUMMARY_CHARS = 20
+
+    /** TASK-607 F6: the lone-partial coverage floor fraction. */
+    const val MIN_LONE_PARTIAL_COVERAGE_FRACTION = 0.25
 
     /** Stable DB tokens for why an attended summary attempt produced none.
      *  Rendered localized at the single LogsTab caption mapping; never

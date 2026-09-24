@@ -728,7 +728,10 @@ class TranscriptionOrchestrator @Inject constructor(
                 Log.i(TAG, "Custom summary prompt did not produce an acceptable map-reduce summary; retrying with the built-in prompt")
             }
             val generation = summarizeWithMapReduce(llm, instruction, result.text, MAX_SUMMARY_LEVELS)
-            lastFailure = generation.failure ?: lastFailure
+            // TASK-607 F7: the LATEST attempt's outcome wins, matching the
+            // single-shot ladder (which overwrites): timeout-then-guards
+            // must record GUARDS, not stick to the stale timeout failure.
+            lastFailure = generation.failure
             val summary = generation.summary
             if (summary != null && SummaryPolicy.acceptableSummary(summary, result.text)) {
                 Log.i(TAG, "Summary map-reduce applied (${result.text.length} chars -> ${summary.length}-char summary)")
@@ -805,8 +808,19 @@ class TranscriptionOrchestrator @Inject constructor(
         }
         if (partials.isEmpty()) return SummaryGeneration(null, failure = lastFailure)
         // A lone surviving partial cannot gain coverage from a reduce over
-        // itself: return it and let the whole-transcript guard judge it.
-        if (partials.size == 1) return SummaryGeneration(partials.first(), failure = lastFailure)
+        // itself. TASK-607 F6: a one-chunk recap of a multi-chunk transcript
+        // has no coverage floor (length 20..1.2x passes a chunk-echo), the
+        // exact hazard the timeout branch refuses: deliver it only when it
+        // covers a floor of the transcript, else treat as a failed map stage.
+        if (partials.size == 1) {
+            val lone = partials.first()
+            return if (SummaryPolicy.hasCoverageFloor(lone, text.length)) {
+                SummaryGeneration(lone, failure = lastFailure)
+            } else {
+                Log.w(TAG, "Summary map stage: the lone partial fails the coverage floor; refusing the one-chunk recap")
+                SummaryGeneration(null, failure = lastFailure)
+            }
+        }
         return summarizeWithMapReduce(llm, instruction, partials.joinToString("\n\n"), levelsLeft - 1)
     }
 

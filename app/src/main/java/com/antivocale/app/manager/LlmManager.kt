@@ -567,9 +567,19 @@ open class LlmManager @Inject constructor(
             Result.success(response.toString())
         }
     } catch (e: CancellationException) {
-        // TASK-594: caller cancellation is not a generation failure; the
-        // ceiling already cancelled the native generation. Propagate.
-        throw e
+        // TASK-594/607 F4: caller cancellation is not a generation failure...
+        // but litertlm's onError can close the flow channel with a NATIVE
+        // CancellationException (an arbitrary Throwable) for a run the user
+        // never cancelled; treating that as caller cancellation aborts a
+        // live run and discards the accumulated transcript. Only propagate
+        // when the CALLER's job is actually being cancelled; a native cancel
+        // surfaces as a generation failure and degrades gracefully.
+        if (kotlinx.coroutines.currentCoroutineContext().isActive) {
+            Log.e(TAG, "LiteRT $label generation hit a NATIVE cancellation (caller job alive): treating as failure", e)
+            Result.failure(e)
+        } else {
+            throw e
+        }
     } catch (e: Exception) {
         Log.e(TAG, "LiteRT $label generation failed", e)
         Result.failure(e)
