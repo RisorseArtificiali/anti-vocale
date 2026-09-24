@@ -101,6 +101,8 @@ A single-model manifest with integrity pins. This is how third parties share a m
 
 #### Schema
 
+**Adding an entry = adding a license check** (TASK-415 rule): the curated index is free-licenses-only (apache-2.0, MIT, BSD, CC-BY, CC-BY-SA), because F-Droid policy treats runtime-downloaded non-free models as a NonFreeAsset anti-feature for the whole app. Before an entry lands, read the source repo's license from the HF API machine fields (`license` and the `license:*` tags), not the card prose; when the mirror is untagged, anchor the verdict on the upstream model repo, and record the license in the audit table in the task tracker. Custom licenses need a clause-level read: a permissive grant is not enough (the FunASR Model License grants free use but terminates on criticism, which fails DFSG-3; the Niagara ABR license restricts commercial use, which is non-free outright). User-initiated URL imports are outside our curation and unaffected.
+
 | Field | Required | Description |
 |---|---|---|
 | `name` | yes | Display name shown in the Model tab |
