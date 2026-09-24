@@ -1,0 +1,22 @@
+{
+    "name": "IndicConformer Gujarati int8 (3.9% CER)",
+    "family": "CTC",
+    "modelType": "nemo_ctc",
+    "languages": [
+        "gu"
+    ],
+    "files": [
+        {
+            "name": "model.int8.onnx",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/gu/model.int8.onnx",
+            "sha256": "822ed7f0b809bbd479275bf91c913d05564b88c0d082bbcba2f37999b88cb598",
+            "size": 197595461
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/tokens.txt",
+            "sha256": "ee60967630213f31951817ac8b402b92ec18cce80718a24a49b388e56672dfb2",
+            "size": 67605
+        }
+    ]
+}

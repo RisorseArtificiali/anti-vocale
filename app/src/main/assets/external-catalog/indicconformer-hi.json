@@ -1,0 +1,22 @@
+{
+    "name": "IndicConformer Hindi int8 (5.8% CER)",
+    "family": "CTC",
+    "modelType": "nemo_ctc",
+    "languages": [
+        "hi"
+    ],
+    "files": [
+        {
+            "name": "model.int8.onnx",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/hi/model.int8.onnx",
+            "sha256": "915c71e04dd7e5378a4057fdebb252b3a587188e4e99db6d7ce0909ad5ad05fa",
+            "size": 197595593
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/tokens.txt",
+            "sha256": "ee60967630213f31951817ac8b402b92ec18cce80718a24a49b388e56672dfb2",
+            "size": 67605
+        }
+    ]
+}

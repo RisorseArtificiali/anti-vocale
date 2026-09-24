@@ -1,0 +1,22 @@
+{
+    "name": "IndicConformer Telugu int8 (weaker on loanwords, 13.7% CER)",
+    "family": "CTC",
+    "modelType": "nemo_ctc",
+    "languages": [
+        "te"
+    ],
+    "files": [
+        {
+            "name": "model.int8.onnx",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/te/model.int8.onnx",
+            "sha256": "710f176e33080f1be84b4f38bb5f33be3f522dcf4f191bf4d5cc89f7a85924f3",
+            "size": 197595693
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/tokens.txt",
+            "sha256": "ee60967630213f31951817ac8b402b92ec18cce80718a24a49b388e56672dfb2",
+            "size": 67605
+        }
+    ]
+}

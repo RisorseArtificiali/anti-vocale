@@ -157,7 +157,7 @@ class ExternalCatalogTest {
         //   are Parakeet pseudo-refs, not ground truth)
         // + omnilingual 300M CTC multilingual (TASK-635/643: version-scoped
         //   index; the unsuffixed index.json stays frozen at 14 for <=1.13.x)
-        assertEquals(15, entries.size)
+        assertEquals(21, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -200,6 +200,23 @@ class ExternalCatalogTest {
         // languages (TASK-596: orukeet now declares its full 24-language
         // set, so it joins the German results)
         assertEquals(5, ExternalCatalog.filter(entries, "de").size)
+        // TASK-652: the six IndicConformer entries surface via their codes
+        assertEquals(1, ExternalCatalog.filter(entries, "hi").size)
+        assertEquals(1, ExternalCatalog.filter(entries, "te").size)
+        assertEquals(6, ExternalCatalog.filter(entries, "indicconformer").size)
+    }
+
+    @Test
+    fun `every index entryUrl is an absolute URL`() {
+        // TASK-652: the dialog fetches entryUrl via OkHttp with no base
+        // resolution; a relative path throws at tap-to-import time. The
+        // simplify review caught exactly this bug in the IndicConformer
+        // batch; pin it so no future entry ships relative.
+        val text = java.io.File(BUNDLED_INDEX_PATH).readText()
+        ExternalCatalog.parseIndex(text).forEach {
+            assertTrue("relative entryUrl: ${it.name} -> ${it.entryUrl}",
+                it.entryUrl.startsWith("https://"))
+        }
     }
 
     @Test

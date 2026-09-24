@@ -1,0 +1,22 @@
+{
+    "name": "IndicConformer Bengali int8 (2.4% CER)",
+    "family": "CTC",
+    "modelType": "nemo_ctc",
+    "languages": [
+        "bn"
+    ],
+    "files": [
+        {
+            "name": "model.int8.onnx",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/bn/model.int8.onnx",
+            "sha256": "e9120a534f69df065314be468bf15579f1b92a4cd8c07ad119b80b69244718a8",
+            "size": 197595578
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/tokens.txt",
+            "sha256": "ee60967630213f31951817ac8b402b92ec18cce80718a24a49b388e56672dfb2",
+            "size": 67605
+        }
+    ]
+}

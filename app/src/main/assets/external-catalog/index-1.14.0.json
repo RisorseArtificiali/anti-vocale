@@ -33,6 +33,54 @@
             "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-spanish.json"
         },
         {
+            "name": "IndicConformer Bengali int8 (2.4% CER)",
+            "languages": [
+                "bn"
+            ],
+            "family": "CTC",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/indicconformer-bn.json"
+        },
+        {
+            "name": "IndicConformer Gujarati int8 (3.9% CER)",
+            "languages": [
+                "gu"
+            ],
+            "family": "CTC",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/indicconformer-gu.json"
+        },
+        {
+            "name": "IndicConformer Hindi int8 (5.8% CER)",
+            "languages": [
+                "hi"
+            ],
+            "family": "CTC",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/indicconformer-hi.json"
+        },
+        {
+            "name": "IndicConformer Marathi int8 (4.4% CER)",
+            "languages": [
+                "mr"
+            ],
+            "family": "CTC",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/indicconformer-mr.json"
+        },
+        {
+            "name": "IndicConformer Tamil int8 (9.6% CER)",
+            "languages": [
+                "ta"
+            ],
+            "family": "CTC",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/indicconformer-ta.json"
+        },
+        {
+            "name": "IndicConformer Telugu int8 (weaker on loanwords, 13.7% CER)",
+            "languages": [
+                "te"
+            ],
+            "family": "CTC",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/indicconformer-te.json"
+        },
+        {
             "name": "Kroko Community Zipformer German (streaming, CC-BY-SA 4.0, Banafo / kroko.ai)",
             "languages": [
                 "de"

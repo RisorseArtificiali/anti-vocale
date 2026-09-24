@@ -1,0 +1,22 @@
+{
+    "name": "IndicConformer Marathi int8 (4.4% CER)",
+    "family": "CTC",
+    "modelType": "nemo_ctc",
+    "languages": [
+        "mr"
+    ],
+    "files": [
+        {
+            "name": "model.int8.onnx",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/mr/model.int8.onnx",
+            "sha256": "1ea81e55c4b9b12624c9d02a5b9c1b6f7c871c78a55ff52d333f81cb5136eaf2",
+            "size": 197595593
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/parismitaglobalsolutions/indicconformer-sherpa-onnx/resolve/main/tokens.txt",
+            "sha256": "ee60967630213f31951817ac8b402b92ec18cce80718a24a49b388e56672dfb2",
+            "size": 67605
+        }
+    ]
+}
