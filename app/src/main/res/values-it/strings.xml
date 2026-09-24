@@ -731,6 +731,7 @@
     <string name="loading_model">Caricamento modello %1$s…</string>
     <string name="preprocessing_audio">Pre-elaborazione audio…</string>
     <string name="clipboard_label_transcription">Trascrizione</string>
+    <string name="signature_default_text">Trascritto in locale sul telefono con un modello IA.</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">Apri impostazioni prompt</string>

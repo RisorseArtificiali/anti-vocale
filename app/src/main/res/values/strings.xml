@@ -748,6 +748,7 @@
     <string name="loading_model">Loading %1$s model…</string>
     <string name="preprocessing_audio">Preprocessing audio…</string>
     <string name="clipboard_label_transcription">Transcription</string>
+    <string name="signature_default_text">Transcribed on-device with an AI model.</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">Open prompt settings</string>

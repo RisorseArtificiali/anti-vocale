@@ -757,6 +757,7 @@
     <string name="loading_model">Завантаження моделі %1$s…</string>
     <string name="preprocessing_audio">Попередня обробка аудіо…</string>
     <string name="clipboard_label_transcription">Результат</string>
+    <string name="signature_default_text">Транскрибовано локально на телефоні за допомогою ШІ-моделі.</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">Відкрити налаштування запитів</string>

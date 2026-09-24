@@ -619,6 +619,7 @@
     <string name="loading_model">Chargement du modèle %1$s…</string>
     <string name="preprocessing_audio">Prétraitement de l\'audio…</string>
     <string name="clipboard_label_transcription">Transcription</string>
+    <string name="signature_default_text">Transcrit localement sur le téléphone avec un modèle d\'IA.</string>
     <string name="open_prompt_settings">Ouvrir les paramètres d\'invite</string>
     <string name="open_per_app_settings">Ouvrir les paramètres par application</string>
     <string name="open_performance_stats">Ouvrir les statistiques de performance</string>

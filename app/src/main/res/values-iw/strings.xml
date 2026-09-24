@@ -747,6 +747,7 @@
     <string name="loading_model">טוען מודל %1$s…</string>
     <string name="preprocessing_audio">מעבד מקדים את האודיו…</string>
     <string name="clipboard_label_transcription">תמלול</string>
+    <string name="signature_default_text">תומלל מקומית בטלפון עם מודל בינה מלאכותית.</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">פתיחת הגדרות פרומפט</string>

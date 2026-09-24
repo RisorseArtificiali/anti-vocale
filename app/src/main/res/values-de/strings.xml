@@ -712,6 +712,7 @@
     <string name="loading_model">%1$s-Modell wird geladen…</string>
     <string name="preprocessing_audio">Audio wird vorverarbeitet…</string>
     <string name="clipboard_label_transcription">Transkription</string>
+    <string name="signature_default_text">Lokal auf dem Telefon mit einem KI-Modell transkribiert.</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">Prompt-Einstellungen öffnen</string>

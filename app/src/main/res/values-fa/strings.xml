@@ -731,6 +731,7 @@
     <string name="loading_model">در حال بارگذاری مدل %1$s…</string>
     <string name="preprocessing_audio">در حال پیش‌پردازش صدا…</string>
     <string name="clipboard_label_transcription">رونویسی</string>
+    <string name="signature_default_text">به‌صورت محلی روی گوشی با یک مدل هوش مصنوعی رونویسی شد.</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">باز کردن تنظیمات دستور</string>

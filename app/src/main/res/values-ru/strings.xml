@@ -739,6 +739,7 @@
     <string name="loading_model">Загрузка модели %1$s…</string>
     <string name="preprocessing_audio">Предобработка аудио…</string>
     <string name="clipboard_label_transcription">Результат</string>
+    <string name="signature_default_text">Транскрибировано локально на телефоне с помощью ИИ-модели.</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">Открыть настройки запроса</string>

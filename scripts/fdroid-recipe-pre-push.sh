@@ -46,6 +46,20 @@ while read -r local_ref local_sha remote_ref remote_sha; do
   # this checkout happens to have checked out right now.
   recipe="$(git show "$local_sha:$RECIPE_REL" 2>/dev/null)" || continue
 
+  # A push CARRIES the recipe only when it changes it on that ref. MR branches
+  # in this fork legitimately contain other apps' recipes because they ride
+  # on master; blob-equality with the remote tip means nothing recipe-shaped
+  # is landing, so pass. (2026-09-24: tree-presence keying started blocking
+  # the cookies-extractor MR updates once anti-vocale 1.13.0 landed on
+  # fdroiddata master.)
+  if [ "$remote_sha" != "0000000000000000000000000000000000000000" ]; then
+    local_blob="$(git rev-parse "$local_sha:$RECIPE_REL" 2>/dev/null)" || local_blob=absent
+    remote_blob="$(git rev-parse "$remote_sha:$RECIPE_REL" 2>/dev/null)" || remote_blob=missing-locally
+    if [ "$local_blob" = "$remote_blob" ]; then
+      continue
+    fi
+  fi
+
   case "$remote_ref" in
     refs/heads/master|refs/heads/main|refs/heads/anti-vocale-*) ;;
     refs/heads/*)

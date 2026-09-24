@@ -745,6 +745,7 @@
     <string name="loading_model">%1$s modeli yükleniyor…</string>
     <string name="preprocessing_audio">Ses ön işlemeden geçiyor…</string>
     <string name="clipboard_label_transcription">Metin Çıkarma</string>
+    <string name="signature_default_text">Telefonda yerel olarak bir yapay zeka modeliyle transkribe edildi.</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">Komut ayarlarını aç</string>

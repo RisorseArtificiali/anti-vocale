@@ -673,6 +673,18 @@ class InferenceService : Service(), TranscriptionListener {
     // ---- Auto-Copy ----
 
     /** @return true when the text was copied (TASK-385: rides the result notification subText). */
+    /**
+     * TASK-647: the effective signature text for an exit surface: the user's
+     * custom text when set, else the localized default. Empty when the
+     * signature feature is off, so TranscriptSignature.apply is a no-op.
+     */
+    private suspend fun effectiveSignatureText(): String {
+        if (!preferencesManager.signatureEnabled.first()) return ""
+        return preferencesManager.signatureText.first().ifBlank {
+            getString(R.string.signature_default_text)
+        }
+    }
+
     private suspend fun autoCopyIfEnabled(transcriptionText: String, sourcePackage: String?): Boolean {
         // Effective auto-copy = global toggle OR per-app preference (issue #13). The global
         // "Auto-Copy Transcription" toggle is the master enable; per-app preferences add their
@@ -690,7 +702,13 @@ class InferenceService : Service(), TranscriptionListener {
 
         if (globalAutoCopy || perAppAutoCopy) {
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText(getString(R.string.clipboard_label_transcription), transcriptionText)
+            // TASK-647: the clipboard is an exit surface; the AI-disclaimer
+            // signature (when enabled) rides exactly here.
+            val signedText = com.antivocale.app.util.TranscriptSignature.apply(
+                transcriptionText,
+                effectiveSignatureText(),
+                preferencesManager.signaturePosition.first())
+            val clip = ClipData.newPlainText(getString(R.string.clipboard_label_transcription), signedText)
             clipboardManager.setPrimaryClip(clip)
             Log.i(TAG, "Auto-copied transcription to clipboard (${transcriptionText.length} chars), source=$sourcePackage, global=$globalAutoCopy, perApp=$perAppAutoCopy")
 

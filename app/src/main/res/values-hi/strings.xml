@@ -711,6 +711,7 @@
     <string name="loading_model">%1$s मॉडल लोड हो रहा है…</string>
     <string name="preprocessing_audio">ऑडियो प्रीप्रोसेस हो रहा है…</string>
     <string name="clipboard_label_transcription">ट्रांसक्रिप्शन</string>
+    <string name="signature_default_text">फ़ोन पर स्थानीय रूप से एआई मॉडल से ट्रांसक्राइब किया गया।</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">प्रॉम्प्ट सेटिंग खोलें</string>

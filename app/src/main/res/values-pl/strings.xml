@@ -755,6 +755,7 @@
     <string name="loading_model">Wczytywanie modelu %1$s…</string>
     <string name="preprocessing_audio">Wstępne przetwarzanie audio…</string>
     <string name="clipboard_label_transcription">Transkrypcja</string>
+    <string name="signature_default_text">Transkrybowano lokalnie na telefonie za pomocą modelu AI.</string>
 
     <!-- Settings accessibility -->
     <string name="open_prompt_settings">Otwórz ustawienia podpowiedzi</string>
