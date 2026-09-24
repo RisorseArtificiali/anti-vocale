@@ -277,6 +277,8 @@ codigo no GitHub. O desenvolvimento teve assistencia de IA, declarado no
 README. Feedback bem-vindo.
 
 ### EN global (r/fossdroid + Show HN + r/droidappshowcase)
+POSTED 2026-09-24: r/droidappshowcase https://www.reddit.com/r/droidappshowcase/comments/1wpakga/antivocale_offline_voicemessage_transcription/ (Promo flair, store links first, notification screenshot).
+
 
 Title: Anti-Vocale, offline voice-message transcription for Android (FOSS)
 
