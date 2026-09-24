@@ -51,7 +51,9 @@
         {
             "name": "Omnilingual ASR 300M int8 (multilingual, experimental, Apache-2.0)",
             "languages": [
-                "multilingual"
+                "uk",
+                "tr",
+                "pl"
             ],
             "family": "CTC",
             "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/omnilingual-300m.json"

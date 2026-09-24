@@ -3,7 +3,9 @@
     "family": "CTC",
     "modelType": "omnilingual_ctc",
     "languages": [
-        "multilingual"
+        "uk",
+        "tr",
+        "pl"
     ],
     "files": [
         {
