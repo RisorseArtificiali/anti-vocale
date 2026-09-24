@@ -488,6 +488,13 @@
     <string name="punctuation_prompt_description">Instrukcja dla kroku interpunkcji. Zostaw puste, aby użyć wbudowanej.</string>
     <string name="punctuation_prompt_placeholder">Wbudowany prompt</string>
     <string name="summary_prompt_title">Prompt podsumowania</string>
+    <string name="signature_setting_title">Podpis transkrypcji (zastrzeżenie AI)</string>
+    <string name="signature_setting_description">Dodaje wiersz podpisu do każdej transkrypcji opuszczającej aplikację: kopii, udostępnień i eksportowanych plików. Ekrany aplikacji zachowują zwykły tekst.</string>
+    <string name="signature_text_title">Tekst podpisu</string>
+    <string name="signature_text_description">Zostaw puste, aby użyć standardowego zastrzeżenia.</string>
+    <string name="signature_position_title">Położenie</string>
+    <string name="signature_position_prepend">Przed transkrypcją</string>
+    <string name="signature_position_append">Po transkrypcji</string>
     <string name="summary_prompt_description">Własna instrukcja podsumowania AI. Puste używa wbudowanej (dwa-trzy zdania).</string>
     <string name="punctuation_default_prompt">Dodaj interpunkcję i wielkie litery do tej transkrypcji. Zachowaj każde słowo dokładnie jak napisane; niczego nie poprawiaj, nie tłumacz, nie dodawaj ani nie usuwaj. Zwróć tylko poprawioną transkrypcję.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

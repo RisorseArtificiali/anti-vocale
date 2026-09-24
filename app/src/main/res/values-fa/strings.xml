@@ -468,6 +468,13 @@
     <string name="punctuation_prompt_description">دستور مرحله نشانه‌گذاری. برای استفاده از دستور داخلی خالی بگذارید.</string>
     <string name="punctuation_prompt_placeholder">دستور داخلی</string>
     <string name="summary_prompt_title">دستور خلاصه</string>
+    <string name="signature_setting_title">امضای رونویسی (سلب مسئولیت هوش مصنوعی)</string>
+    <string name="signature_setting_description">به هر رونویسی که از برنامه خارج می‌شود (کپی‌ها، اشتراک‌گذاری‌ها و فایل‌های صادرشده) یک خط امضا اضافه می‌کند. صفحه‌های برنامه متن ساده را نگه می‌دارند.</string>
+    <string name="signature_text_title">متن امضا</string>
+    <string name="signature_text_description">برای سلب مسئولیت استاندارد خالی بگذارید.</string>
+    <string name="signature_position_title">موقعیت</string>
+    <string name="signature_position_prepend">قبل از رونویسی</string>
+    <string name="signature_position_append">بعد از رونویسی</string>
     <string name="summary_prompt_description">دستور خلاصه‌سازی هوش مصنوعی را جایگزین کنید. خالی یعنی دستور داخلی (دو سه جمله).</string>
     <string name="punctuation_default_prompt">به این رونویسی نشانه‌گذاری و بزرگ‌نویسی حروف اضافه کنید. هر کلمه را دقیقاً همان‌طور که نوشته شده نگه دارید؛ چیزی را تصحیح، ترجمه، اضافه یا حذف نکنید. فقط رونویسی اصلاح‌شده را برگردانید.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

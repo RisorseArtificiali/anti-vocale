@@ -757,6 +757,26 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    // TASK-647: the AI-disclaimer signature on exit surfaces.
+    val signatureEnabled: StateFlow<Boolean> = preferencesManager.signatureEnabled
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+    val signatureText: StateFlow<String> = preferencesManager.signatureText
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "")
+    val signaturePosition: StateFlow<String> = preferencesManager.signaturePosition
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), "append")
+
+    fun saveSignatureEnabled(enabled: Boolean) {
+        viewModelScope.launch { preferencesManager.saveSignatureEnabled(enabled) }
+    }
+
+    fun saveSignatureText(text: String) {
+        viewModelScope.launch { preferencesManager.saveSignatureText(text) }
+    }
+
+    fun saveSignaturePosition(position: String) {
+        viewModelScope.launch { preferencesManager.saveSignaturePosition(position) }
+    }
+
     /**
      * Saves the swipe action mode preference.
      */

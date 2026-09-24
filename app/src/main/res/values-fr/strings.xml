@@ -398,6 +398,13 @@
     <string name="punctuation_prompt_description">Instruction pour la passe de ponctuation. Laisser vide pour utiliser celle intégrée.</string>
     <string name="punctuation_prompt_placeholder">Prompt intégré</string>
     <string name="summary_prompt_title">Invite du résumé</string>
+    <string name="signature_setting_title">Signature de transcription (mention IA)</string>
+    <string name="signature_setting_description">Ajoute une ligne de signature à chaque transcription qui quitte l\'app : copies, partages et fichiers exportés. Les écrans de l\'app gardent le texte simple.</string>
+    <string name="signature_text_title">Texte de la signature</string>
+    <string name="signature_text_description">Laisser vide pour la mention standard.</string>
+    <string name="signature_position_title">Position</string>
+    <string name="signature_position_prepend">Avant la transcription</string>
+    <string name="signature_position_append">Après la transcription</string>
     <string name="summary_prompt_description">Instruction personnalisée pour le résumé IA. Vide utilise l\'invite intégrée (deux ou trois phrases).</string>
     <string name="punctuation_default_prompt">Ajoute la ponctuation et les majuscules à cette transcription. Garde chaque mot exactement comme écrit ; ne corrige, traduis, ajoute ni retire rien. Renvoie uniquement la transcription corrigée.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

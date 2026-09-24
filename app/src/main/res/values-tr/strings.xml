@@ -480,6 +480,13 @@
     <string name="punctuation_prompt_description">Noktalama adımı için yönerge. Yerleşik olanı kullanmak için boş bırakın.</string>
     <string name="punctuation_prompt_placeholder">Yerleşik istem</string>
     <string name="summary_prompt_title">Özet istemi</string>
+    <string name="signature_setting_title">Transkript imzası (yapay zeka uyarısı)</string>
+    <string name="signature_setting_description">Uygulamadan çıkan her transkripte (kopyalar, paylaşımlar ve dışa aktarılan dosyalar) bir imza satırı ekler. Uygulama ekranları sade metinde kalır.</string>
+    <string name="signature_text_title">İmza metni</string>
+    <string name="signature_text_description">Standart uyarı için boş bırakın.</string>
+    <string name="signature_position_title">Konum</string>
+    <string name="signature_position_prepend">Transkriptten önce</string>
+    <string name="signature_position_append">Transkriptten sonra</string>
     <string name="summary_prompt_description">Yapay zekâ özeti talimatını değiştirin. Boş bırakılırsa yerleşik istem (iki-üç cümle) kullanılır.</string>
     <string name="punctuation_default_prompt">Bu transkripte noktalama ve büyük harfler ekle. Her kelimeyi tam yazıldığı gibi koru; hiçbir şeyi düzeltme, çevirme, ekleme veya çıkarma. Yalnızca düzeltilmiş transkripti yaz.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

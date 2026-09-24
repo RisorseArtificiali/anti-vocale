@@ -481,6 +481,13 @@
     <string name="punctuation_prompt_description">הוראה לשלב הפיסוק. השאר ריק כדי להשתמש בפרומפט המובנה.</string>
     <string name="punctuation_prompt_placeholder">פרומפט מובנה</string>
     <string name="summary_prompt_title">פרומפט סיכום</string>
+    <string name="signature_setting_title">חתימת תמליל (כתב ויתור בינה מלאכותית)</string>
+    <string name="signature_setting_description">מוסיף שורת חתימה לכל תמליל שיוצא מהאפליקציה: העתקות, שיתופים וקבצים מיוצאים. המסכים של האפליקציה נשארים עם הטקסט הפשוט.</string>
+    <string name="signature_text_title">טקסט החתימה</string>
+    <string name="signature_text_description">השאר ריק לכתב הוויתור הרגיל.</string>
+    <string name="signature_position_title">מקום</string>
+    <string name="signature_position_prepend">לפני התמליל</string>
+    <string name="signature_position_append">אחרי התמליל</string>
     <string name="summary_prompt_description">מחליף את הוראת הסיכום של ה-AI. ריק משתמש בפרומפט המובנה של שניים עד שלושה משפטים.</string>
     <string name="punctuation_default_prompt">הוסף פיסוק ואותיות רישיות לתמליל הזה. שמור על כל מילה בדיוק כפי שנכתבה; אל תתקן, תתרגם, תוסיף או תסיר דבר. החזר רק את התמליל המתוקן.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

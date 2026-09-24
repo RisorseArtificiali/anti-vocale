@@ -472,6 +472,13 @@
     <string name="punctuation_prompt_description">Инструкция для этапа пунктуации. Оставьте пустым, чтобы использовать встроенную.</string>
     <string name="punctuation_prompt_placeholder">Встроенный промпт</string>
     <string name="summary_prompt_title">Промпт резюме</string>
+    <string name="signature_setting_title">Подпись транскрипции (уведомление об ИИ)</string>
+    <string name="signature_setting_description">Добавляет строку подписи к каждой транскрипции, покидающей приложение: копии, отправленные и экспортированные файлы. Экраны приложения остаются с простым текстом.</string>
+    <string name="signature_text_title">Текст подписи</string>
+    <string name="signature_text_description">Оставьте пустым для стандартного уведомления.</string>
+    <string name="signature_position_title">Положение</string>
+    <string name="signature_position_prepend">Перед транскрипцией</string>
+    <string name="signature_position_append">После транскрипции</string>
     <string name="summary_prompt_description">Своя инструкция для ИИ-резюме. Пусто означает встроенный промпт (два-три предложения).</string>
     <string name="punctuation_default_prompt">Добавь пунктуацию и заглавные буквы в эту расшифровку. Сохрани каждое слово точно как написано; ничего не исправляй, не переводи, не добавляй и не удаляй. Выведи только исправленную расшифровку.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

@@ -6,6 +6,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.receiver.NotificationActionReceiver
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -40,11 +41,15 @@ class ResultNotificationFactoryTest {
 
     private fun spec(
         text: String,
+        signatureText: String = "",
+        signaturePosition: String = "append",
         page: Int = 0,
         repost: Boolean = false,
         sourcePackage: String = "org.telegram.messenger"
     ) = ResultNotificationSpec(
         transcriptionText = text,
+        signatureText = signatureText,
+        signaturePosition = signaturePosition,
         taskId = "task-1",
         sourcePackage = sourcePackage,
         confidence = 0.9f,
@@ -218,5 +223,28 @@ class ResultNotificationFactoryTest {
         // confidence_low: "Low confidence"
         val n = factory.build(langSpec(longText(3), page = 1), prefs)
         assertEquals("Page 2 of 3 · Detected: Italiano · Low confidence", n.subTextCompat())
+    }
+    /** TASK-647: the copy and share actions carry the signed text; the notification BODY stays raw. */
+    @Test
+    fun `signature signs the copy action while the body stays raw`() {
+        val n = factory.build(
+            spec("ciao", signatureText = "-- AI --", signaturePosition = "append"), prefs)
+        assertEquals("ciao", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        val copyAction = n.actions.first { it.actionIntent != null }
+        val saved = org.robolectric.Shadows.shadowOf(copyAction.actionIntent).savedIntent
+        assertEquals(
+            "ciao\n-- AI --",
+            saved.getStringExtra(com.antivocale.app.receiver.NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT))
+    }
+
+    @Test
+    fun `blank signature leaves the copy action raw`() {
+        val n = factory.build(spec("ciao"), prefs)
+        assertEquals("ciao", n.extras.getCharSequence(Notification.EXTRA_TEXT).toString())
+        val copyAction = n.actions.first { it.actionIntent != null }
+        val saved = org.robolectric.Shadows.shadowOf(copyAction.actionIntent).savedIntent
+        assertEquals(
+            "ciao",
+            saved.getStringExtra(com.antivocale.app.receiver.NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT))
     }
 }

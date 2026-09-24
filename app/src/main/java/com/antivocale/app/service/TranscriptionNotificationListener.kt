@@ -19,6 +19,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.util.AppNotificationChannel
+import com.antivocale.app.util.TranscriptSignature
 import com.antivocale.app.util.TranscriptFileSaver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -179,7 +180,7 @@ class TranscriptionNotificationListener(
                 preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
-                signature = com.antivocale.app.util.TranscriptSignature.effective(
+                signature = TranscriptSignature.effective(
                     preferencesManager, appContext.getString(R.string.signature_default_text)),
                 signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
                     .getOrDefault("append"),
@@ -217,7 +218,7 @@ class TranscriptionNotificationListener(
         val id = ResultNotificationFactory.nextNotificationId()
         val spec = ResultNotificationSpec(
             transcriptionText = transcriptionText,
-            signatureText = com.antivocale.app.util.TranscriptSignature.effective(
+            signatureText = TranscriptSignature.effective(
                 preferencesManager, appContext.getString(R.string.signature_default_text)),
             signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
                 .getOrDefault("append"),

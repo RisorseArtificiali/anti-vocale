@@ -483,6 +483,13 @@
     <string name="punctuation_prompt_description">Instruction for the punctuation pass. Leave empty to use the built-in prompt.</string>
     <string name="punctuation_prompt_placeholder">Built-in prompt</string>
     <string name="summary_prompt_title">Summary prompt</string>
+    <string name="signature_setting_title">Transcription signature (AI disclaimer)</string>
+    <string name="signature_setting_description">Adds a signature line to every transcript that leaves the app: copies, shares and exported files. The app\'s own screens keep the plain text.</string>
+    <string name="signature_text_title">Signature text</string>
+    <string name="signature_text_description">Leave empty to use the standard disclaimer.</string>
+    <string name="signature_position_title">Position</string>
+    <string name="signature_position_prepend">Before the transcript</string>
+    <string name="signature_position_append">After the transcript</string>
     <string name="summary_prompt_description">Override the AI summary instruction. Blank uses the built-in two-to-three-sentence prompt.</string>
     <string name="punctuation_default_prompt">Add punctuation and capitalization to this transcript. Keep every word exactly as written; do not fix, translate, add, or remove anything. Output only the corrected transcript.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

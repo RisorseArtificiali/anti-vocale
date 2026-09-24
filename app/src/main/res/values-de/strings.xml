@@ -451,6 +451,13 @@
     <string name="punctuation_prompt_description">Anweisung für den Zeichensetzungsschritt. Leer lassen, um den eingebauten Prompt zu verwenden.</string>
     <string name="punctuation_prompt_placeholder">Eingebauter Prompt</string>
     <string name="summary_prompt_title">Zusammenfassungsprompt</string>
+    <string name="signature_setting_title">Transkript-Signatur (KI-Hinweis)</string>
+    <string name="signature_setting_description">Fügt jeder Transkriptzeile, die die App verlässt, eine Signaturzeile hinzu: Kopien, Freigaben und exportierte Dateien. Die App-Ansichten bleiben beim einfachen Text.</string>
+    <string name="signature_text_title">Signaturtext</string>
+    <string name="signature_text_description">Leer lassen für den Standardhinweis.</string>
+    <string name="signature_position_title">Position</string>
+    <string name="signature_position_prepend">Vor dem Transkript</string>
+    <string name="signature_position_append">Nach dem Transkript</string>
     <string name="summary_prompt_description">Eigene Anweisung für die KI-Zusammenfassung. Leer verwendet den integrierten Standard (zwei bis drei Sätze).</string>
     <string name="punctuation_default_prompt">Füge dieser Transkription Zeichensetzung und Großschreibung hinzu. Behalte jedes Wort genau wie geschrieben; korrigiere, übersetze, ergänze oder entferne nichts. Gib nur die korrigierte Transkription aus.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

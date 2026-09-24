@@ -3,6 +3,7 @@ package com.antivocale.app.service
 import android.app.Notification
 import android.app.NotificationManager
 import com.antivocale.app.util.AppNotificationChannel
+import com.antivocale.app.util.TranscriptSignature
 import android.app.Service
 import android.content.ClipData
 import android.content.ClipboardManager
@@ -704,7 +705,7 @@ class InferenceService : Service(), TranscriptionListener {
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             // TASK-647: the clipboard is an exit surface; the AI-disclaimer
             // signature (when enabled) rides exactly here.
-            val signedText = com.antivocale.app.util.TranscriptSignature.apply(
+            val signedText = TranscriptSignature.apply(
                 transcriptionText,
                 effectiveSignatureText(),
                 preferencesManager.signaturePosition.first())
@@ -737,7 +738,7 @@ class InferenceService : Service(), TranscriptionListener {
                 preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
-                signature = com.antivocale.app.util.TranscriptSignature.effective(
+                signature = TranscriptSignature.effective(
                     preferencesManager, getString(R.string.signature_default_text)),
                 signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
                     .getOrDefault("append"),
@@ -908,7 +909,7 @@ class InferenceService : Service(), TranscriptionListener {
         val id = ResultNotificationFactory.nextNotificationId()
         val spec = ResultNotificationSpec(
             transcriptionText = transcriptionText,
-            signatureText = com.antivocale.app.util.TranscriptSignature.effective(
+            signatureText = TranscriptSignature.effective(
                 preferencesManager, getString(R.string.signature_default_text)),
             signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
                 .getOrDefault("append"),

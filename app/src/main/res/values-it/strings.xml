@@ -468,6 +468,13 @@
     <string name="punctuation_prompt_description">Istruzione per la passata di punteggiatura. Lascia vuoto per usare quella integrata.</string>
     <string name="punctuation_prompt_placeholder">Prompt integrato</string>
     <string name="summary_prompt_title">Prompt del riepilogo</string>
+    <string name="signature_setting_title">Firma della trascrizione (avvertenza IA)</string>
+    <string name="signature_setting_description">Aggiunge una riga di firma a ogni trascrizione che esce dall\'app: copie, condivisioni e file esportati. Le schermate dell\'app restano col testo semplice.</string>
+    <string name="signature_text_title">Testo della firma</string>
+    <string name="signature_text_description">Lascia vuoto per usare l\'avvertenza standard.</string>
+    <string name="signature_position_title">Posizione</string>
+    <string name="signature_position_prepend">Prima della trascrizione</string>
+    <string name="signature_position_append">Dopo la trascrizione</string>
     <string name="summary_prompt_description">Sostituisci l\'istruzione per il riepilogo AI. Vuoto usa il prompt integrato (due o tre frasi).</string>
     <string name="punctuation_default_prompt">Aggiungi punteggiatura e maiuscole a questa trascrizione. Mantieni ogni parola esattamente come scritta; non correggere, tradurre, aggiungere o rimuovere nulla. Restituisci solo la trascrizione corretta.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

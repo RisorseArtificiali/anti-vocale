@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 import com.antivocale.app.transcription.TimedSegment
+import com.antivocale.app.util.TranscriptSignature
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -55,7 +56,7 @@ object TranscriptFileSaver {
         // never inline (a stray line would corrupt cue timing/rendering).
         val content = if (signature.isBlank()) decision.content else when (decision.format) {
             SubtitleFormatter.Format.TXT, SubtitleFormatter.Format.TXT_TIMED ->
-                com.antivocale.app.util.TranscriptSignature.apply(decision.content, signature, signaturePosition)
+                TranscriptSignature.apply(decision.content, signature, signaturePosition)
             SubtitleFormatter.Format.SRT, SubtitleFormatter.Format.VTT ->
                 noteBlock(decision.format, signature, decision.content)
         }

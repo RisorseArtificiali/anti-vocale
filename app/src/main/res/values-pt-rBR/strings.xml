@@ -398,6 +398,13 @@
     <string name="punctuation_prompt_description">Instrução para a etapa de pontuação. Deixe vazio para usar a integrada.</string>
     <string name="punctuation_prompt_placeholder">Prompt integrado</string>
     <string name="summary_prompt_title">Prompt do resumo</string>
+    <string name="signature_setting_title">Assinatura de transcrição (aviso de IA)</string>
+    <string name="signature_setting_description">Adiciona uma linha de assinatura a cada transcrição que sai do app: cópias, compartilhamentos e arquivos exportados. As telas do app mantêm o texto simples.</string>
+    <string name="signature_text_title">Texto da assinatura</string>
+    <string name="signature_text_description">Deixe vazio para usar o aviso padrão.</string>
+    <string name="signature_position_title">Posição</string>
+    <string name="signature_position_prepend">Antes da transcrição</string>
+    <string name="signature_position_append">Depois da transcrição</string>
     <string name="summary_prompt_description">Instrução personalizada para o resumo IA. Vazio usa o prompt integrado (duas ou três frases).</string>
     <string name="punctuation_default_prompt">Adicione pontuação e maiúsculas a esta transcrição. Mantenha cada palavra exatamente como escrita; não corrija, traduza, adicione nem remova nada. Retorne apenas a transcrição corrigida.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

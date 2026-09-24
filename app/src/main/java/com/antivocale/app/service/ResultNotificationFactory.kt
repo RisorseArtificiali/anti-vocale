@@ -10,6 +10,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.receiver.NotificationActionReceiver
 import com.antivocale.app.util.AppInfoUtils
+import com.antivocale.app.util.TranscriptSignature
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.ui.SettingsFocusRow
@@ -248,7 +249,7 @@ class ResultNotificationFactory(private val context: Context) {
         if (useQuickShareBack) {
             val shareBackIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, com.antivocale.app.util.TranscriptSignature.apply(spec.transcriptionText, spec.signatureText, spec.signaturePosition))
+                putExtra(Intent.EXTRA_TEXT, TranscriptSignature.apply(spec.transcriptionText, spec.signatureText, spec.signaturePosition))
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 // Family normalization (forks, flavor builds) lives in the one
                 // known-app table in AppInfoUtils (TASK-433).
@@ -268,7 +269,7 @@ class ResultNotificationFactory(private val context: Context) {
         } else {
             val shareChooserIntent = Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
-                putExtra(Intent.EXTRA_TEXT, com.antivocale.app.util.TranscriptSignature.apply(spec.transcriptionText, spec.signatureText, spec.signaturePosition))
+                putExtra(Intent.EXTRA_TEXT, TranscriptSignature.apply(spec.transcriptionText, spec.signatureText, spec.signaturePosition))
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             val sharePickerIntent = Intent.createChooser(
@@ -290,7 +291,7 @@ class ResultNotificationFactory(private val context: Context) {
     }
 
     private fun copyPendingIntent(text: String, spec: ResultNotificationSpec): PendingIntent {
-        val signed = com.antivocale.app.util.TranscriptSignature.apply(
+        val signed = TranscriptSignature.apply(
             text, spec.signatureText, spec.signaturePosition)
         val copyIntent = Intent(context, NotificationActionReceiver::class.java).apply {
             action = NotificationActionReceiver.ACTION_COPY_TRANSCRIPTION

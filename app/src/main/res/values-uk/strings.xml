@@ -490,6 +490,13 @@
     <string name="punctuation_prompt_description">Інструкція для кроку пунктуації. Залиште порожнім, щоб використати вбудовану.</string>
     <string name="punctuation_prompt_placeholder">Вбудований промпт</string>
     <string name="summary_prompt_title">Промпт підсумку</string>
+    <string name="signature_setting_title">Підпис транскрипції (повідомлення про ШІ)</string>
+    <string name="signature_setting_description">Додає рядок підпису до кожної транскрипції, що залишає застосунок: копії, поширення та експортовані файли. Екрани застоску залишаються зі звичайним текстом.</string>
+    <string name="signature_text_title">Текст підпису</string>
+    <string name="signature_text_description">Залиште порожнім для стандартного повідомлення.</string>
+    <string name="signature_position_title">Розташування</string>
+    <string name="signature_position_prepend">Перед транскрипцією</string>
+    <string name="signature_position_append">Після транскрипції</string>
     <string name="summary_prompt_description">Власна інструкція для ШІ-підсумку. Порожньо означає вбудований промпт (два-три речення).</string>
     <string name="punctuation_default_prompt">Додай пунктуацію та великі літери до цієї розшифровки. Збережи кожне слово точно як написано; нічого не виправляй, не перекладай, не додавай і не видаляй. Виведи лише виправлену розшифровку.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->

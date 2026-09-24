@@ -326,6 +326,10 @@ fun SettingsTab(
     // groups can mirror each card's runtime condition exactly.
     val backgroundKills by viewModel.backgroundKills.collectAsState()
     val summarizeOn by viewModel.summarizeEnabled.collectAsState()
+    // TASK-647: the AI-disclaimer signature on exit surfaces.
+    val signatureOn by viewModel.signatureEnabled.collectAsState()
+    val signatureTextValue by viewModel.signatureText.collectAsState()
+    val signaturePositionValue by viewModel.signaturePosition.collectAsState()
     val currentPunctuationMode by viewModel.currentPunctuationMode.collectAsState()
 
     // Show sub-screens or main settings
@@ -447,6 +451,7 @@ fun SettingsTab(
                 ) else null,
                 if (gemmaConfigured) listOf(
                     R.string.summarize_title, R.string.summarize_description,
+                    R.string.signature_setting_title, R.string.signature_setting_description,
                 ) else null,
                 if (gemmaConfigured && summarizeOn) listOf(
                     R.string.summary_prompt_title, R.string.summary_prompt_description,
@@ -917,6 +922,34 @@ fun SettingsTab(
                             onSave = { viewModel.saveSummaryPrompt(it) }
                         )
                     }
+                }
+            }
+
+            // TASK-647: the AI-disclaimer signature. Applies to what LEAVES
+            // the app (copy, share, export); the in-app screens stay raw.
+            SearchFilterRow(
+                searchQuery,
+                stringResource(R.string.signature_setting_title),
+                stringResource(R.string.signature_setting_description)
+            ) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Notes,
+                    title = stringResource(R.string.signature_setting_title),
+                    description = stringResource(R.string.signature_setting_description),
+                    checked = signatureOn,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveSignatureEnabled(enabled)
+                    }
+                )
+                if (signatureOn) {
+                    SignatureTextCard(
+                        text = signatureTextValue,
+                        onSave = { viewModel.saveSignatureText(it) }
+                    )
+                    SignaturePositionCard(
+                        position = signaturePositionValue,
+                        onSelect = { viewModel.saveSignaturePosition(it) }
+                    )
                 }
             }
 
@@ -2425,6 +2458,49 @@ private val transcriptionSentinelLabels = mapOf(
  * the punctuation prompt card: blank means the built-in two-to-three-sentence
  * default, commits on focus loss, 500-char cap.
  */
+@Composable
+private fun SignatureTextCard(
+    text: String,
+    onSave: (String) -> Unit,
+) = EditablePromptCard(
+    prompt = text,
+    onSave = onSave,
+    titleRes = R.string.signature_text_title,
+    descriptionRes = R.string.signature_text_description,
+    placeholderRes = R.string.signature_default_text,
+)
+
+/** TASK-647: the two-option position selector (prepend/append). */
+@Composable
+private fun SignaturePositionCard(
+    position: String,
+    onSelect: (String) -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.signature_position_title),
+                style = MaterialTheme.typography.titleSmall,
+            )
+            Row(
+                modifier = Modifier.padding(top = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                FilterChip(
+                    selected = position == "prepend",
+                    onClick = { onSelect("prepend") },
+                    label = { Text(stringResource(R.string.signature_position_prepend)) },
+                )
+                FilterChip(
+                    selected = position == "append",
+                    onClick = { onSelect("append") },
+                    label = { Text(stringResource(R.string.signature_position_append)) },
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun SummaryPromptCard(
     prompt: String,
