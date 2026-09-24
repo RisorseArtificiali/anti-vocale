@@ -152,9 +152,9 @@ class ExternalCatalogTest {
         // + whisper tiny multilingual (TASK-475, low-RAM) + sense voice
         // small multilingual (TASK-476, zh/en/yue/ja/ko)
         // + shenava persian transducer (TASK-550, desktop-validated on FLEURS fa)
-        // + orukeet italian-focused parakeet fine-tune (2026-09-20, FLEURS-it
-        //   gain verified from the publisher's paired evidence; desktop-eval
-        //   clean on real voice messages)
+        // + orukeet multilingual parakeet fine-tune (2026-09-20; the Italian
+        //   FLEURS gain is the PUBLISHER's self-report - our eval references
+        //   are Parakeet pseudo-refs, not ground truth)
         // + omnilingual 300M CTC multilingual (TASK-635/643: version-scoped
         //   index; the unsuffixed index.json stays frozen at 14 for <=1.13.x)
         assertEquals(15, entries.size)
@@ -196,8 +196,10 @@ class ExternalCatalogTest {
         assertTrue(ExternalCatalog.filter(entries, "ry").isEmpty())
         // a real name word still finds the four flash entries...
         assertEquals(4, ExternalCatalog.filter(entries, "canary").size)
-        // ...and the "de" code surfaces every German-capable entry via languages
-        assertEquals(4, ExternalCatalog.filter(entries, "de").size)
+        // ...and the "de" code surfaces every German-capable entry via
+        // languages (TASK-596: orukeet now declares its full 24-language
+        // set, so it joins the German results)
+        assertEquals(5, ExternalCatalog.filter(entries, "de").size)
     }
 
     @Test

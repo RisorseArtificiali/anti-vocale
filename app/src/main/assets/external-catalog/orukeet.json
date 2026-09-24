@@ -1,35 +1,58 @@
 {
-  "name": "Orukeet multilingual int8 (Parakeet TDT v3 fine-tune, Italian gain, CC BY-SA 4.0)",
-  "family": "TRANSDUCER",
-  "modelType": "nemo_transducer",
-  "languages": [
-    "it"
-  ],
-  "options": {},
-  "files": [
-    {
-      "name": "encoder.int8.onnx",
-      "url": "https://huggingface.co/oruk/orukeet/resolve/main/onnx/sherpa-v0.1.0-int8/encoder.int8.onnx",
-      "sha256": "7b55f2a504a20a8e462899f5befd45f4a1784948d76ed0127902d9cf39405487",
-      "size": 653182378
-    },
-    {
-      "name": "decoder.int8.onnx",
-      "url": "https://huggingface.co/oruk/orukeet/resolve/main/onnx/sherpa-v0.1.0-int8/decoder.int8.onnx",
-      "sha256": "c185c2afb4c77c94bb1314807ecb3dc1623057a3dc540b83e10301af9bf4cfca",
-      "size": 11845332
-    },
-    {
-      "name": "joiner.int8.onnx",
-      "url": "https://huggingface.co/oruk/orukeet/resolve/main/onnx/sherpa-v0.1.0-int8/joiner.int8.onnx",
-      "sha256": "1a7e90abf7172d926dd7e2edac2a5d5035c24dfb641a15e131d57b6a5f63cdd3",
-      "size": 6355335
-    },
-    {
-      "name": "tokens.txt",
-      "url": "https://huggingface.co/oruk/orukeet/resolve/main/onnx/sherpa-v0.1.0-int8/tokens.txt",
-      "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d",
-      "size": 93939
-    }
-  ]
+    "name": "Orukeet multilingual int8 (Parakeet TDT v3 fine-tune, 24 languages incl. Italian, CC BY-SA 4.0)",
+    "family": "TRANSDUCER",
+    "modelType": "nemo_transducer",
+    "languages": [
+        "bg",
+        "cs",
+        "da",
+        "de",
+        "el",
+        "en",
+        "es",
+        "et",
+        "fi",
+        "fr",
+        "hr",
+        "hu",
+        "it",
+        "lt",
+        "lv",
+        "mt",
+        "nl",
+        "pl",
+        "pt",
+        "ro",
+        "sk",
+        "sl",
+        "sv",
+        "uk"
+    ],
+    "options": {},
+    "files": [
+        {
+            "name": "encoder.int8.onnx",
+            "url": "https://huggingface.co/oruk/orukeet/resolve/main/onnx/sherpa-v0.1.0-int8/encoder.int8.onnx",
+            "sha256": "7b55f2a504a20a8e462899f5befd45f4a1784948d76ed0127902d9cf39405487",
+            "size": 653182378
+        },
+        {
+            "name": "decoder.int8.onnx",
+            "url": "https://huggingface.co/oruk/orukeet/resolve/main/onnx/sherpa-v0.1.0-int8/decoder.int8.onnx",
+            "sha256": "c185c2afb4c77c94bb1314807ecb3dc1623057a3dc540b83e10301af9bf4cfca",
+            "size": 11845332
+        },
+        {
+            "name": "joiner.int8.onnx",
+            "url": "https://huggingface.co/oruk/orukeet/resolve/main/onnx/sherpa-v0.1.0-int8/joiner.int8.onnx",
+            "sha256": "1a7e90abf7172d926dd7e2edac2a5d5035c24dfb641a15e131d57b6a5f63cdd3",
+            "size": 6355335
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/oruk/orukeet/resolve/main/onnx/sherpa-v0.1.0-int8/tokens.txt",
+            "sha256": "d58544679ea4bc6ac563d1f545eb7d474bd6cfa467f0a6e2c1dc1c7d37e3c35d",
+            "size": 93939
+        }
+    ]
 }
