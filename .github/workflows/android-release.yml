@@ -31,6 +31,14 @@ on:
 permissions:
   contents: write
 
+env:
+  # TASK-645: true on every release-tagged mode (release event, or a dispatch
+  # carrying an explicit tag). Steps that must not run on build-first
+  # (commit-only) or publish-only (track-only) dispatches key on this env
+  # instead of repeating the event matrix inline; the runbook's dispatch-mode
+  # section remains the source of truth for what each mode means.
+  TAG_ANCHORED: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '') }}
+
 jobs:
   test:
     name: Unit tests
@@ -267,8 +275,7 @@ jobs:
           done
 
       - name: Attach APKs to GitHub Release
-        if: >-
-          (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''))
+        if: env.TAG_ANCHORED == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || '' }}
@@ -282,8 +289,7 @@ jobs:
       # Issue #32: direct-download tester APKs (no GitHub login needed, unlike
       # workflow artifacts). Same trigger conditions as the attach step above.
       - name: Attach tester APKs to GitHub Release
-        if: >-
-          (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''))
+        if: env.TAG_ANCHORED == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || '' }}
@@ -704,9 +710,7 @@ jobs:
       # on a tagless dispatch (build-first included), creating a release on a
       # nonsense "main" tag. Build-first uploads artifacts below instead.
       - name: Attach signed per-ABI reference APKs to GitHub Release
-        if: >-
-          github.event_name == 'release' ||
-          (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
+        if: env.TAG_ANCHORED == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
@@ -768,8 +772,7 @@ jobs:
         # Tag-anchored per the job-level BUILD-FIRST DELEGATION note above;
         # 'skipped' is the job's deliberate opt-out (publish-only dispatches).
         if: >-
-          (github.event_name == 'release' ||
-            (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')) &&
+          env.TAG_ANCHORED == 'true' &&
           needs.reproducible-fdroid.result != 'success' &&
           needs.reproducible-fdroid.result != 'skipped'
         run: |
@@ -778,7 +781,7 @@ jobs:
           exit 1
 
       - name: Fail loudly if any unsigned F-Droid APK has no signed counterpart
-        if: github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
+        if: env.TAG_ANCHORED == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
@@ -816,9 +819,7 @@ jobs:
         # this message can only print on a run where every check in THIS job
         # went green (the assert steps already translate red siblings into
         # failed steps), so no sibling result needs re-mirroring here.
-        if: >-
-          success() &&
-          (github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != ''))
+        if: success() && env.TAG_ANCHORED == 'true'
         # Reports the siblings' actual results instead of claiming green:
         # on a tag+track dispatch the reproducible job is deliberately skipped.
         run: |
