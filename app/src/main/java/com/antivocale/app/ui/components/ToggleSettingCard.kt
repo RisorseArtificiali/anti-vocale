@@ -59,12 +59,14 @@ fun ToggleSettingCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 CardTitleRow(icon = icon, title = title)
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (!LocalSettingsSearchCompact.current) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = description,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 supportingText?.let {
                     Text(
                         text = it,

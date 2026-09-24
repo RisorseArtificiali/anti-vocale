@@ -358,6 +358,12 @@ fun SettingsTab(
             onBack = { showPromptSettings = false }
         )
     } else {
+    // TASK-628: compact rendering while search is active (descriptions
+    // suppressed) so matched cards are reachable below tall merged cards.
+    androidx.compose.runtime.CompositionLocalProvider(
+        com.antivocale.app.ui.components.LocalSettingsSearchCompact provides
+            searchQuery.isNotBlank()
+    ) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -2010,6 +2016,7 @@ fun SettingsTab(
         // Spacer for scroll
         Spacer(modifier = Modifier.height(32.dp))
         }
+    }
     } // End of if-else for showPerAppSettings
 }
 

@@ -90,7 +90,8 @@ fun SectionCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CardTitleRow(icon = icon, title = title, iconTint = iconTint)
-            description?.let {
+            // TASK-628: suppressed while Settings search is compact.
+            if (!LocalSettingsSearchCompact.current) description?.let {
                 Text(
                     text = it,
                     style = MaterialTheme.typography.bodySmall,
