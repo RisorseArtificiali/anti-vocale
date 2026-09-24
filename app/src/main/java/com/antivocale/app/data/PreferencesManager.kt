@@ -48,6 +48,12 @@ interface PreferencesManager {
     /** TASK-643: reset by REMOVING the key, so the default re-resolves per build. */
     suspend fun clearExternalCatalogUrl()
     val autoCopyEnabled: Flow<Boolean>
+
+    /** TASK-647: AI-disclaimer signature applied to every exit surface (copy/share/export). */
+    val signatureEnabled: Flow<Boolean>
+    val signatureText: Flow<String>
+    val signaturePosition: Flow<String>
+
     val outputFolderUri: Flow<String?>
     /** GH #92: auto-save file format, a [SubtitleFormatter.Format] name. Default TXT. */
     val transcriptExportFormat: Flow<String>
@@ -104,6 +110,10 @@ interface PreferencesManager {
     suspend fun saveExternalMigrationDone(done: Boolean)
 
     suspend fun saveAutoCopyEnabled(enabled: Boolean)
+    suspend fun saveSignatureEnabled(enabled: Boolean)
+    suspend fun saveSignatureText(text: String)
+    suspend fun saveSignaturePosition(position: String)
+
     suspend fun saveOutputFolderUri(uri: String?)
     /** GH #92: see [transcriptExportFormat]. */
     suspend fun saveTranscriptExportFormat(format: String)
@@ -181,6 +191,12 @@ interface PreferencesManager {
         const val DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES = 5
         val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2).coerceAtMost(8)
         const val DEFAULT_AUTO_COPY_ENABLED = false
+        /** TASK-647: blank text = use the localized default at assembly time. */
+        const val DEFAULT_SIGNATURE_ENABLED = false
+        const val DEFAULT_SIGNATURE_TEXT = ""
+        const val DEFAULT_SIGNATURE_POSITION = "append"
+        val SIGNATURE_POSITIONS = listOf("prepend", "append")
+
         /** GH #92: plain .txt is the default; timed formats are strictly opt-in. */
         const val DEFAULT_TRANSCRIPT_EXPORT_FORMAT = "TXT"
         const val DEFAULT_VAD_ENABLED = false

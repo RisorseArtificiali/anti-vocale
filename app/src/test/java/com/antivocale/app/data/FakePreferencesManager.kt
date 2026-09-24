@@ -35,6 +35,9 @@ internal class FakePreferencesManager : PreferencesManager {
     val _customTransducerModelPath = MutableStateFlow<String?>(null)
     val _customTransducerModelType = MutableStateFlow(PreferencesManager.DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE)
     val _autoCopyEnabled = MutableStateFlow(false)
+    val _signatureEnabled = MutableStateFlow(false)
+    val _signatureText = MutableStateFlow("")
+    val _signaturePosition = MutableStateFlow("append")
     val _outputFolderUri = MutableStateFlow<String?>(null)
     val _vadEnabled = MutableStateFlow(false)
     val _vadAdvisoryDismissed = MutableStateFlow(false)
@@ -78,6 +81,9 @@ internal class FakePreferencesManager : PreferencesManager {
     override val customTransducerModelPath: Flow<String?> get() = _customTransducerModelPath
     override val customTransducerModelType: Flow<String> get() = _customTransducerModelType
     override val autoCopyEnabled: Flow<Boolean> get() = _autoCopyEnabled
+    override val signatureEnabled: Flow<Boolean> get() = _signatureEnabled
+    override val signatureText: Flow<String> get() = _signatureText
+    override val signaturePosition: Flow<String> get() = _signaturePosition
     override val outputFolderUri: Flow<String?> get() = _outputFolderUri
     private val _transcriptExportFormat = MutableStateFlow(PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT)
     override val transcriptExportFormat: Flow<String> get() = _transcriptExportFormat
@@ -119,6 +125,9 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun clearSherpaModelPath(entryId: String) { _sherpaModelPath(entryId).value = null }
     override suspend fun saveExternalMigrationDone(done: Boolean) { _externalMigrationDone.value = done }
     override suspend fun saveAutoCopyEnabled(enabled: Boolean) { _autoCopyEnabled.value = enabled }
+    override suspend fun saveSignatureEnabled(enabled: Boolean) { _signatureEnabled.value = enabled }
+    override suspend fun saveSignatureText(text: String) { _signatureText.value = text.trim() }
+    override suspend fun saveSignaturePosition(position: String) { _signaturePosition.value = position }
     override suspend fun saveOutputFolderUri(uri: String?) { _outputFolderUri.value = uri }
     override suspend fun saveTranscriptExportFormat(format: String) { _transcriptExportFormat.value = format }
     override suspend fun saveVadEnabled(enabled: Boolean) { _vadEnabled.value = enabled }

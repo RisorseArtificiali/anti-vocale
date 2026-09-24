@@ -62,6 +62,9 @@ class PreferencesManagerImpl(
         private val EXTERNAL_MIGRATION_DONE = booleanPreferencesKey("external_migration_done")
         private val PENDING_BACKEND_LOAD = stringPreferencesKey("pending_backend_load")
         private val AUTO_COPY_ENABLED = booleanPreferencesKey("auto_copy_enabled")
+        private val SIGNATURE_ENABLED = booleanPreferencesKey("signature_enabled")
+        private val SIGNATURE_TEXT = stringPreferencesKey("signature_text")
+        private val SIGNATURE_POSITION = stringPreferencesKey("signature_position")
         private val OUTPUT_FOLDER_URI = stringPreferencesKey("output_folder_uri")
         private val TRANSCRIPT_EXPORT_FORMAT = stringPreferencesKey("transcript_export_format")
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
@@ -111,6 +114,9 @@ class PreferencesManagerImpl(
         val pendingBackendLoad: String? = null,
         val externalCatalogUrl: String = PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL,
         val autoCopyEnabled: Boolean = PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
+        val signatureEnabled: Boolean = PreferencesManager.DEFAULT_SIGNATURE_ENABLED,
+        val signatureText: String = PreferencesManager.DEFAULT_SIGNATURE_TEXT,
+        val signaturePosition: String = PreferencesManager.DEFAULT_SIGNATURE_POSITION,
         val outputFolderUri: String? = null,
         val transcriptExportFormat: String = PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
         val vadEnabled: Boolean = PreferencesManager.DEFAULT_VAD_ENABLED,
@@ -157,6 +163,9 @@ class PreferencesManagerImpl(
         pendingBackendLoad = this[PENDING_BACKEND_LOAD],
         externalCatalogUrl = this[EXTERNAL_CATALOG_URL] ?: PreferencesManager.DEFAULT_EXTERNAL_CATALOG_URL,
         autoCopyEnabled = this[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED,
+        signatureEnabled = this[SIGNATURE_ENABLED] ?: PreferencesManager.DEFAULT_SIGNATURE_ENABLED,
+        signatureText = this[SIGNATURE_TEXT] ?: PreferencesManager.DEFAULT_SIGNATURE_TEXT,
+        signaturePosition = this[SIGNATURE_POSITION] ?: PreferencesManager.DEFAULT_SIGNATURE_POSITION,
         outputFolderUri = this[OUTPUT_FOLDER_URI],
         transcriptExportFormat = this[TRANSCRIPT_EXPORT_FORMAT] ?: PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
         vadEnabled = this[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED,
@@ -366,11 +375,35 @@ class PreferencesManagerImpl(
     override val autoCopyEnabled: Flow<Boolean> = dataStore.data.map { it[AUTO_COPY_ENABLED] ?: PreferencesManager.DEFAULT_AUTO_COPY_ENABLED }
         .onStart { emit(cache.get().autoCopyEnabled) }
 
+    override val signatureEnabled: Flow<Boolean> = dataStore.data.map { it[SIGNATURE_ENABLED] ?: PreferencesManager.DEFAULT_SIGNATURE_ENABLED }
+        .onStart { emit(cache.get().signatureEnabled) }
+    override val signatureText: Flow<String> = dataStore.data.map { it[SIGNATURE_TEXT] ?: PreferencesManager.DEFAULT_SIGNATURE_TEXT }
+        .onStart { emit(cache.get().signatureText) }
+    override val signaturePosition: Flow<String> = dataStore.data.map { it[SIGNATURE_POSITION] ?: PreferencesManager.DEFAULT_SIGNATURE_POSITION }
+        .onStart { emit(cache.get().signaturePosition) }
+
     override suspend fun saveAutoCopyEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[AUTO_COPY_ENABLED] = enabled
         }
         cache.updateAndGet { it.copy(autoCopyEnabled = enabled) }
+    }
+
+    override suspend fun saveSignatureEnabled(enabled: Boolean) {
+        dataStore.edit { preferences -> preferences[SIGNATURE_ENABLED] = enabled }
+        cache.updateAndGet { it.copy(signatureEnabled = enabled) }
+    }
+
+    override suspend fun saveSignatureText(text: String) {
+        val trimmed = text.trim()
+        dataStore.edit { preferences -> preferences[SIGNATURE_TEXT] = trimmed }
+        cache.updateAndGet { it.copy(signatureText = trimmed) }
+    }
+
+    override suspend fun saveSignaturePosition(position: String) {
+        require(position in PreferencesManager.SIGNATURE_POSITIONS) { "unknown signature position: $position" }
+        dataStore.edit { preferences -> preferences[SIGNATURE_POSITION] = position }
+        cache.updateAndGet { it.copy(signaturePosition = position) }
     }
 
     override val outputFolderUri: Flow<String?> = dataStore.data.map { it[OUTPUT_FOLDER_URI] }
