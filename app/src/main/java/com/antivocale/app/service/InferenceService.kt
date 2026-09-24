@@ -737,6 +737,11 @@ class InferenceService : Service(), TranscriptionListener {
                 preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
+                signature = com.antivocale.app.util.TranscriptSignature.effective(
+                    preferencesManager, getString(R.string.signature_default_text)),
+                signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
+                    .getOrDefault("append"),
+            
             )
         }
         if (name != null) {

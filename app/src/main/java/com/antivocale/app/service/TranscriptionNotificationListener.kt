@@ -179,6 +179,11 @@ class TranscriptionNotificationListener(
                 preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
+                signature = com.antivocale.app.util.TranscriptSignature.effective(
+                    preferencesManager, appContext.getString(R.string.signature_default_text)),
+                signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
+                    .getOrDefault("append"),
+            
             )
         }
         if (name != null) {
