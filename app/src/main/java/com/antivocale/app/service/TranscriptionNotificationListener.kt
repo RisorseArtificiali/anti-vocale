@@ -151,9 +151,14 @@ class TranscriptionNotificationListener(
 
         if (globalAutoCopy || perAppAutoCopy) {
             val clipboardManager = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            // TASK-647: the clipboard is an exit surface on this route too
+            // (code review F2: this twin of InferenceService.autoCopyIfEnabled
+            // must stay in sync with it, signature included).
+            val sig = TranscriptSignature.effectiveSpec(
+                preferencesManager, appContext.getString(R.string.signature_default_text))
             val clip = ClipData.newPlainText(
                 appContext.getString(R.string.clipboard_label_transcription),
-                transcriptionText
+                TranscriptSignature.apply(transcriptionText, sig.text, sig.position)
             )
             clipboardManager.setPrimaryClip(clip)
             Log.i(TAG, "Auto-copied transcription (${transcriptionText.length} chars), source=$sourcePackage, global=$globalAutoCopy, perApp=$perAppAutoCopy")
@@ -180,10 +185,10 @@ class TranscriptionNotificationListener(
                 preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
-                signature = TranscriptSignature.effective(
-                    preferencesManager, appContext.getString(R.string.signature_default_text)),
-                signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
-                    .getOrDefault("append"),
+                signature = TranscriptSignature.effectiveSpec(
+                    preferencesManager, appContext.getString(R.string.signature_default_text)).let { it.text },
+                signaturePosition = TranscriptSignature.effectiveSpec(
+                    preferencesManager, appContext.getString(R.string.signature_default_text)).position,
             
             )
         }
@@ -218,10 +223,10 @@ class TranscriptionNotificationListener(
         val id = ResultNotificationFactory.nextNotificationId()
         val spec = ResultNotificationSpec(
             transcriptionText = transcriptionText,
-            signatureText = TranscriptSignature.effective(
-                preferencesManager, appContext.getString(R.string.signature_default_text)),
-            signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
-                .getOrDefault("append"),
+            signatureText = TranscriptSignature.effectiveSpec(
+                preferencesManager, appContext.getString(R.string.signature_default_text)).let { it.text },
+            signaturePosition = TranscriptSignature.effectiveSpec(
+                preferencesManager, appContext.getString(R.string.signature_default_text)).position,
             taskId = taskId,
             sourcePackage = sourcePackage,
             confidence = confidence,

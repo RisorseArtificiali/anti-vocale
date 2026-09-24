@@ -29,20 +29,25 @@ object TranscriptSignature {
         }
     }
 
+
+    /** TASK-647: the resolved pair every exit surface consumes. */
+    data class Spec(val text: String, val position: String)
+
     /**
-     * TASK-647: the effective signature for an exit surface: the user's
-     * custom text when set, else the localized default; empty when the
-     * feature is off (apply() is then a no-op). Shared by every exit-surface
-     * caller (services, listeners).
+     * The one seam (code review F8): text + position resolved together,
+     * fail-open (a preferences failure must never cost the result
+     * notification), defaulting to the declared constants.
      */
-    suspend fun effective(
+    suspend fun effectiveSpec(
         preferences: com.antivocale.app.data.PreferencesManager,
         defaultText: String,
-    ): String = runCatching {
-        if (!preferences.signatureEnabled.first()) return@runCatching ""
-        preferences.signatureText.first().ifBlank { defaultText }
-    }.getOrDefault("")
-        // Fail-open deliberately: the signature is cosmetic on exit surfaces;
-        // a preferences-read failure must never cost the result notification
-        // (the same philosophy as the memory gate).
+    ): Spec = runCatching {
+        val enabled = preferences.signatureEnabled.first()
+        val text = preferences.signatureText.first().ifBlank { defaultText }
+        Spec(
+            text = if (enabled) text else "",
+            position = preferences.signaturePosition.first()
+                .ifBlank { com.antivocale.app.data.PreferencesManager.DEFAULT_SIGNATURE_POSITION },
+        )
+    }.getOrDefault(Spec("", com.antivocale.app.data.PreferencesManager.DEFAULT_SIGNATURE_POSITION))
 }

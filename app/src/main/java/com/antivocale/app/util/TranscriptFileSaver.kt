@@ -63,18 +63,26 @@ object TranscriptFileSaver {
         // The "first words" preview must come from the transcript: the
         // formatted payload opens with timestamps ("WEBVTT", "00:00:01")
         // and names the file after the clock instead of the words.
-        return save(context, Uri.parse(treeUriString), decision.format, decision.content, sourcePackage, transcript)
+        return save(context, Uri.parse(treeUriString), decision.format, content, sourcePackage, transcript)
     }
 
     /** TASK-647: the disclaimer header for timed formats (a comment block
      *  every player renders or safely ignores; VTT has NOTE, SRT has no
      *  official comment so a blank-separated line is the convention). */
+    /**
+     * The signature must be ONE line without the cue separator: a multi-line
+     * signature (the field allows it) would end the VTT NOTE block early,
+     * and '-->' anywhere invalidates WebVTT (strict parsers reject the file).
+     */
+    private fun sanitized(signature: String): String =
+        signature.replace("\r?\n".toRegex(), " ").replace("-->", "-")
+
     private fun noteBlock(format: SubtitleFormatter.Format, signature: String, content: String): String =
         if (format == SubtitleFormatter.Format.VTT) {
             // WEBVTT must stay the first line; the NOTE goes right after it.
             val headerEnd = content.indexOf('\n')
             if (headerEnd < 0) content else {
-                content.substring(0, headerEnd + 1) + "NOTE $signature\n\n" + content.substring(headerEnd + 1)
+                content.substring(0, headerEnd + 1) + "NOTE ${sanitized(signature)}\n\n" + content.substring(headerEnd + 1)
             }
         } else {
             // SRT has no official comment: a plain line before the first cue

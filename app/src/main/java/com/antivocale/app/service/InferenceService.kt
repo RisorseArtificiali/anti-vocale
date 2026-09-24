@@ -674,18 +674,6 @@ class InferenceService : Service(), TranscriptionListener {
     // ---- Auto-Copy ----
 
     /** @return true when the text was copied (TASK-385: rides the result notification subText). */
-    /**
-     * TASK-647: the effective signature text for an exit surface: the user's
-     * custom text when set, else the localized default. Empty when the
-     * signature feature is off, so TranscriptSignature.apply is a no-op.
-     */
-    private suspend fun effectiveSignatureText(): String {
-        if (!preferencesManager.signatureEnabled.first()) return ""
-        return preferencesManager.signatureText.first().ifBlank {
-            getString(R.string.signature_default_text)
-        }
-    }
-
     private suspend fun autoCopyIfEnabled(transcriptionText: String, sourcePackage: String?): Boolean {
         // Effective auto-copy = global toggle OR per-app preference (issue #13). The global
         // "Auto-Copy Transcription" toggle is the master enable; per-app preferences add their
@@ -705,10 +693,9 @@ class InferenceService : Service(), TranscriptionListener {
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             // TASK-647: the clipboard is an exit surface; the AI-disclaimer
             // signature (when enabled) rides exactly here.
-            val signedText = TranscriptSignature.apply(
-                transcriptionText,
-                effectiveSignatureText(),
-                preferencesManager.signaturePosition.first())
+            val sig = TranscriptSignature.effectiveSpec(
+                preferencesManager, getString(R.string.signature_default_text))
+            val signedText = TranscriptSignature.apply(transcriptionText, sig.text, sig.position)
             val clip = ClipData.newPlainText(getString(R.string.clipboard_label_transcription), signedText)
             clipboardManager.setPrimaryClip(clip)
             Log.i(TAG, "Auto-copied transcription to clipboard (${transcriptionText.length} chars), source=$sourcePackage, global=$globalAutoCopy, perApp=$perAppAutoCopy")
@@ -738,10 +725,10 @@ class InferenceService : Service(), TranscriptionListener {
                 preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
-                signature = TranscriptSignature.effective(
-                    preferencesManager, getString(R.string.signature_default_text)),
-                signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
-                    .getOrDefault("append"),
+                signature = TranscriptSignature.effectiveSpec(
+                    preferencesManager, getString(R.string.signature_default_text)).let { it.text },
+                signaturePosition = TranscriptSignature.effectiveSpec(
+                    preferencesManager, getString(R.string.signature_default_text)).position,
             
             )
         }
@@ -909,10 +896,10 @@ class InferenceService : Service(), TranscriptionListener {
         val id = ResultNotificationFactory.nextNotificationId()
         val spec = ResultNotificationSpec(
             transcriptionText = transcriptionText,
-            signatureText = TranscriptSignature.effective(
-                preferencesManager, getString(R.string.signature_default_text)),
-            signaturePosition = runCatching { preferencesManager.signaturePosition.first() }
-                .getOrDefault("append"),
+            signatureText = TranscriptSignature.effectiveSpec(
+                preferencesManager, getString(R.string.signature_default_text)).let { it.text },
+            signaturePosition = TranscriptSignature.effectiveSpec(
+                preferencesManager, getString(R.string.signature_default_text)).position,
             taskId = taskId,
             sourcePackage = sourcePackage,
             confidence = confidence,

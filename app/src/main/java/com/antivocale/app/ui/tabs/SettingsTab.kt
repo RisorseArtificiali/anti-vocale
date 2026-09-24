@@ -451,11 +451,16 @@ fun SettingsTab(
                 ) else null,
                 if (gemmaConfigured) listOf(
                     R.string.summarize_title, R.string.summarize_description,
-                    R.string.signature_setting_title, R.string.signature_setting_description,
                 ) else null,
                 if (gemmaConfigured && summarizeOn) listOf(
                     R.string.summary_prompt_title, R.string.summary_prompt_description,
                 ) else null,
+                // TASK-647: the card renders unconditionally, so its search
+                // group must too (review F3: bundling it with the Gemma-gated
+                // summarize group hid it for non-Gemma users).
+                listOf(
+                    R.string.signature_setting_title, R.string.signature_setting_description,
+                ),
                 if (isLlmBackend) listOf(
                     R.string.default_prompt_title, R.string.default_prompt_description,
                 ) else null,
@@ -2453,11 +2458,7 @@ private val transcriptionSentinelLabels = mapOf(
     TranscriptionLanguagePolicy.PREF_AUTO to R.string.transcription_language_auto,
 )
 
-/**
- * TASK-483: editable override of the summary-pass prompt. Same contract as
- * the punctuation prompt card: blank means the built-in two-to-three-sentence
- * default, commits on focus loss, 500-char cap.
- */
+/** TASK-647: the free-text signature (blank = the localized default); inherits EditablePromptCard's cap and focus-loss commit. */
 @Composable
 private fun SignatureTextCard(
     text: String,
@@ -2501,6 +2502,12 @@ private fun SignaturePositionCard(
     }
 }
 
+
+/**
+ * TASK-483: editable override of the summary-pass prompt. Same contract as
+ * the punctuation prompt card: blank means the built-in two-to-three-sentence
+ * default, commits on focus loss, 500-char cap.
+ */
 @Composable
 private fun SummaryPromptCard(
     prompt: String,
