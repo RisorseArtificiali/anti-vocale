@@ -206,6 +206,8 @@ AI, dichiarato nel README. Commenti e ISSUE benvenuti, anche per aggiungere
 modelli per altre lingue.
 
 ### DE (android-hilfe.de App-Vorstellungen + kuketz Empfehlungsecke)
+POSTED 2026-09-24: android-hilfe.de App-Vorstellungen https://www.android-hilfe.de/forum/app-vorstellungen.1351/kostenlos-anti-vocale-sprachnachrichten-offline-transkribieren-open-source-ohne-root.1328761.html - the formal rules-compliant post ([Kostenlos] prefix, proper German, sections Funktionsweise/Warum/Technik/Root/Preis/Quelle, screenshots as attachments, child-safe declaration). The scraper renders only the login bar (thread likely members-visible or fresh); verified by the maintainer posting it. The WhatsApp demand thread (37 replies, whatsapp.820/whatsapp-transkribtion-ohne-deutsche-sprachauswahl.1113434) remains a good future REPLY when the discussion restarts; last activity 2025-12 so necroposting risk.
+
 
 Titel: [Kostenlos] Anti-Vocale: Sprachnachrichten offline transkribieren (Open Source)
 
