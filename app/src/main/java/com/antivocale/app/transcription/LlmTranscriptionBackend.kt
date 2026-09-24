@@ -68,4 +68,7 @@ class LlmTranscriptionBackend @Inject constructor(
     }
 
     override fun getModelPath(): String? = llmManager.getModelPath()
+
+    /** TASK-644: a native generation is in flight (the withWork bracket). */
+    override fun isBusy(): Boolean = llmManager.isBusy()
 }

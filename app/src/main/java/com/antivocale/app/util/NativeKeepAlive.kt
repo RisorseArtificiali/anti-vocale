@@ -94,6 +94,10 @@ class NativeKeepAlive(
         return ((deadline - clock()) / 1000L).coerceAtLeast(0L)
     }
 
+    /** TASK-644: live in-flight native-call count (production read for
+     *  [com.antivocale.app.transcription.TranscriptionBackend.isBusy]). */
+    fun workInFlightCount(): Int = workInFlight.get()
+
     /** TASK-451: in-flight generation count, for the bracket tests. */
     fun workInFlightForTest(): Int = workInFlight.get()
 

@@ -375,4 +375,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     }
 
     override fun getModelPath(): String? = modelDir
+
+    /** TASK-644: a native decode is in flight (the transcribe bracket). */
+    override fun isBusy(): Boolean = keepAlive.workInFlightCount() > 0
 }

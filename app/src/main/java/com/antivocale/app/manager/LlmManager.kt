@@ -200,6 +200,18 @@ open class LlmManager @Inject constructor(
     internal fun keepAliveForTest(): NativeKeepAlive = keepAlive
 
     /**
+     * TASK-644 test seam: mark the engine warm on [path] WITHOUT any native
+     * load, so JVM tests can pin the initialize residency contract (the
+     * path-aware re-init) without the LiteRT stack.
+     */
+    @androidx.annotation.VisibleForTesting
+    internal fun warmForTest(path: String) {
+        modelPath = path
+        isInitialized = true
+        _isReady.value = true
+    }
+
+    /**
      * Sets a callback to be invoked when the model is automatically unloaded due to timeout.
      */
     fun setOnAutoUnloadCallback(callback: (() -> Unit)?) {
@@ -250,7 +262,23 @@ open class LlmManager @Inject constructor(
     @Synchronized
     fun initialize(context: Context, path: String): Result<Unit> {
         if (isInitialized) {
-            if (engineWedged) {
+            // TASK-644: residency keys on the model path, not the initialized
+            // flag alone. The engine is warmed outside backendManager's
+            // bookkeeping (the preload receiver initializes directly; a later
+            // saved-path change reaches LlmTranscriptionBackend.initialize
+            // with the manager's activeBackend already null, so the
+            // orchestrator's variantChanged cannot intercept it), and a path
+            // switch while warm would silently keep serving the OLD variant
+            // through the early return. Deliberately STRICTER than the
+            // orchestrator's two-sided blank-tolerant compare: a blank
+            // resident path cannot co-occur with isInitialized here (unload
+            // nulls both together), so any divergence is a real switch.
+            // Converging both into one shared identity check is the
+            // manager-side residency-token follow-up recorded in TASK-644.
+            if (path != modelPath) {
+                Log.i(TAG, "Model path changed while initialized ($modelPath -> $path); re-initializing")
+                unload()
+            } else if (engineWedged) {
                 // TASK-606 F3: the advertised recovery must be reachable. A
                 // wedged engine must not early-return READY: tear it down
                 // (unload skips the native close on a wedged engine, see
@@ -793,6 +821,9 @@ open class LlmManager @Inject constructor(
      * Gets the current model path.
      */
     fun getModelPath(): String? = modelPath
+
+    /** TASK-644: a native generation is in flight (the withWork bracket). */
+    fun isBusy(): Boolean = keepAlive.workInFlightCount() > 0
 
     /**
      * Gets the remaining idle time before auto-unload in seconds.

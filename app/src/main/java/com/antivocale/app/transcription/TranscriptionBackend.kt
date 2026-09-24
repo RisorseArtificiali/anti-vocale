@@ -113,6 +113,15 @@ interface TranscriptionBackend {
     fun setOnAutoUnloadCallback(callback: (() -> Unit)?) {}
 
     /**
+     * TASK-644: true while a native call is executing on this backend.
+     * Callers that would tear the engine down (the benchmark's warm-engine
+     * displacement, its post-run unload) must refuse or defer while busy:
+     * releasing a native recognizer mid-decode is a use-after-free crash.
+     * Default false for backends without a native in-flight bracket.
+     */
+    fun isBusy(): Boolean = false
+
+    /**
      * Returns the path to the model file.
      */
     fun getModelPath(): String?

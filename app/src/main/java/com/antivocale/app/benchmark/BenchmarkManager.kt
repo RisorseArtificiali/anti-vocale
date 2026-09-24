@@ -105,16 +105,30 @@ class BenchmarkManager @Inject constructor(
     ): Result<BenchmarkResult> {
         return try {
             onProgress(0.1f)
-            val wasReady = backend.isReady()
+            // TASK-644: never benchmark a resident engine: its config is
+            // whatever the last load left there (initialize also short-circuits
+            // on a ready engine, so the exact config would not even apply).
+            // Refuse while a native call runs on it (releasing a recognizer
+            // mid-decode is a use-after-free), then unload, initialize the
+            // exact config, and unload in the finally. Costs: a displaced
+            // warm engine pays one extra full load here plus one on the next
+            // transcription (the residency token follow-up would let the
+            // matching-config case reuse the warm engine safely).
+            if (backend.isBusy()) {
+                return Result.failure(IllegalStateException(
+                    "A transcription is running on ${backend.displayName}; benchmark it again when idle"))
+            }
+            if (backend.isReady()) {
+                Log.i(TAG, "Displacing warm backend ${backend.id} for an exact-config benchmark")
+                backend.unload()
+            }
+            Log.i(TAG, "Initializing backend ${backend.id} for benchmark")
 
             try {
-                if (!wasReady) {
-                    Log.i(TAG, "Initializing backend ${backend.id} for benchmark")
-                    val initResult = backend.initialize(context, config)
-                    if (initResult.isFailure) {
-                        return Result.failure(initResult.exceptionOrNull()
-                            ?: Exception("Failed to initialize ${backend.displayName}"))
-                    }
+                val initResult = backend.initialize(context, config)
+                if (initResult.isFailure) {
+                    return Result.failure(initResult.exceptionOrNull()
+                        ?: Exception("Failed to initialize ${backend.displayName}"))
                 }
 
                 onProgress(0.3f)
@@ -151,7 +165,13 @@ class BenchmarkManager @Inject constructor(
 
                 Result.success(result)
             } finally {
-                if (!wasReady) {
+                // TASK-644: a request may have landed on the shared engine
+                // mid-benchmark (initialize short-circuits on it); unloading
+                // under that decode would release the recognizer mid-flight,
+                // so leave it warm and let the idle timer reclaim it.
+                if (backend.isBusy()) {
+                    Log.w(TAG, "Transcription arrived during the benchmark; leaving ${backend.id} warm")
+                } else {
                     backend.unload()
                 }
             }

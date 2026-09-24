@@ -815,6 +815,9 @@ class SherpaBackend(
     }
 
     override fun getModelPath(): String? = modelDir
+
+    /** TASK-644: a native decode is in flight (the transcribe bracket). */
+    override fun isBusy(): Boolean = keepAlive.workInFlightCount() > 0
 }
 /**
  * Lazily-allocated, shared all-zero silence buffer for tail padding (TASK-340 Fix 1b).
