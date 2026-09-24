@@ -156,6 +156,7 @@ internal class TestSpiOps(
         "compact_result_actions" to preferences::saveCompactResultActions,
         "technical_details" to preferences::saveShowTechnicalDetails,
         "language_chip" to preferences::saveLanguageChipEnabled,
+        "signature_enabled" to preferences::saveSignatureEnabled,
     )
 
     /**
@@ -171,6 +172,7 @@ internal class TestSpiOps(
         "theme" to Pair(THEME_TYPES, preferences::saveThemePreference),
         "theme_mode" to Pair(THEME_MODES, preferences::saveThemeMode),
         "text_scale" to Pair(TEXT_SCALES, preferences::saveTextScale),
+        "signature_position" to Pair(PreferencesManager.SIGNATURE_POSITIONS, preferences::saveSignaturePosition),
         // GH #92: device tests flip the auto-save format over adb.
         "transcript_export_format" to Pair(
             SubtitleFormatter.Format.entries.map { it.name },
@@ -183,6 +185,7 @@ internal class TestSpiOps(
         "punctuation_prompt" to preferences::savePunctuationPrompt,
         "default_prompt" to preferences::saveDefaultPrompt,
         "summary_prompt" to preferences::saveSummaryPrompt,
+        "signature_text" to preferences::saveSignatureText,
         // TASK-643: blank clears the key (a saved default literal would become a
         // phantom override at the next version bump); any other value saves.
         "external_catalog_url" to { v ->

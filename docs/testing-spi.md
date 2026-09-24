@@ -55,6 +55,9 @@ Set keys and value formats:
 | `backend` | `saveTranscriptionBackend` | a catalog id (`sherpa-onnx`, `whisper`, `qwen3-asr`, `nemotron-streaming`, `gigaam`), `llm`, or `external:<record id>`; unknown ids are rejected without writing |
 | `advanced_sharing` | `saveAdvancedSharingEnabled` | `true` or `false` (strict) |
 | `auto_copy` | `saveAutoCopyEnabled` | `true` or `false` (strict) |
+| `signature_enabled` | `saveSignatureEnabled` | true/false |
+| `signature_text` | `saveSignatureText` | free text (blank = localized default at assembly) |
+| `signature_position` | `saveSignaturePosition` | `prepend` or `append` |
 | `compact_result_actions` | `saveCompactResultActions` | `true` or `false` (strict) |
 | `language_chip` | `saveLanguageChipEnabled` | `true` or `false` (strict); TASK-546: gates the detected-language chip on results |
 | `memory_protection` | `saveMemoryProtection` | `true` or `false` (strict) |

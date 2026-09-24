@@ -387,6 +387,7 @@ class TestSpiOpsTest {
             "output_folder" to "", "keep_alive" to "5", "subtitle_timeout" to "5", "threads" to "4",
             "backend" to "llm", "language" to "auto", "model_path" to "/m",
             "sherpa_path" to "/m", "transcript_export_format" to "SRT",
+            "signature_position" to "append", "signature_text" to "sig",
         )
         for (key in ops.SET_KEYS) {
             val sample = samples[key] ?: "true"
