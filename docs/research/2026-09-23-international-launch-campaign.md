@@ -184,6 +184,8 @@ on-device too; our differentiators are Android language coverage, model
 choice, whole-history and video-file support, FOSS).
 
 ### IT (r/ItalyInformatica "Mostrami il codice" + mastodon.uno)
+ALREADY POSTED (pre-campaign, ~2 months ago): the "Mostrami il codice" comment is live (share link https://www.reddit.com/r/ItalyInformatica/s/ZTGjsokrE3). IT channel status: DONE on the primary venue; mastodon.uno remains the optional IT second step.
+
 
 Titolo: Anti-Vocale, trascrizione offline dei vocal per Android (FOSS)
 
