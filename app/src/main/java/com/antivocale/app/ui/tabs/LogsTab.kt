@@ -280,7 +280,12 @@ private fun buildSwipeActions(
                 label = copyLabel,
                 tint = colors.onPrimaryContainer,
                 background = colors.primaryContainer,
-                onClick = { copyTranscriptionToClipboard(context, log.result) }
+                onClick = {
+                    // GH #107/TASK-598 F3: the swipe copy hands off the
+                    // speaker-annotated text when the row carries labels.
+                    copyTranscriptionToClipboard(
+                        context, viewModel.speakerAnnotatedFlow(log.id).value ?: log.result)
+                }
             )
         )
         actions.add(
@@ -289,7 +294,10 @@ private fun buildSwipeActions(
                 label = shareLabel,
                 tint = colors.onSecondaryContainer,
                 background = colors.secondaryContainer,
-                onClick = { shareTranscription(context, log.result) }
+                onClick = {
+                    shareTranscription(
+                        context, viewModel.speakerAnnotatedFlow(log.id).value ?: log.result)
+                }
             )
         )
     }
@@ -974,7 +982,10 @@ fun LogEntryItem(
                             when (action) {
                                 ContextMenuAction.RETRANSCRIBE -> onRetranscribe?.invoke()
                                 ContextMenuAction.CANCEL -> onCancel?.invoke()
-                                ContextMenuAction.COPY -> copyTranscriptionToClipboard(context, log.result)
+                                ContextMenuAction.COPY -> copyTranscriptionToClipboard(
+                                    // GH #107/TASK-598 F3: the stateless row
+                                    // already receives the annotated text.
+                                    context, speakerAnnotated ?: log.result)
                                 ContextMenuAction.REPORT -> reportTranscription(context, log)
                                 ContextMenuAction.DELETE -> onDelete?.invoke()
                             }
