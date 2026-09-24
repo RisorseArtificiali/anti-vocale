@@ -108,12 +108,24 @@ object SubtitleFormatter {
      */
     fun speakerAnnotated(segments: List<TimedSegment>): String? {
         if (segments.none { it.speaker != null }) return null
-        return buildString {
-            segments.forEachIndexed { index, segment ->
-                if (index > 0) append('\n')
-                speakerPrefix(segments, index)?.let { append(it) }
-                append(segment.text)
-            }
+        // TASK-600 F9: the shared cue-join body (renderBuffer convention like
+        // renderCues/timedTxt), not a third hand-rolled loop.
+        return with(renderBuffer(segments)) {
+            appendCueBody(segments)
+            toString()
+        }
+    }
+
+    /**
+     * TASK-600 F9: one cue-join body shared by speakerAnnotated and timedTxt:
+     * newline-separated speaker-prefixed text, no timestamps (the caller
+     * prepends its own timing columns).
+     */
+    private fun StringBuilder.appendCueBody(segments: List<TimedSegment>) {
+        segments.forEachIndexed { index, segment ->
+            if (index > 0) append('\n')
+            speakerPrefix(segments, index)?.let { append(it) }
+            append(segment.text)
         }
     }
 
@@ -127,6 +139,10 @@ object SubtitleFormatter {
         }
         toString()
     }
+    // TASK-600 F9 note: timedTxt keeps its inline loop because its body
+    // interleaves the timing columns; appendCueBody serves the two
+    // no-timestamp joins (speakerAnnotated now, renderCues already shares
+    // renderBuffer).
 
     /** SRT and VTT clock: HH:MM:SS with [decimal] (comma or dot) plus milliseconds. */
     private fun fullClock(ms: Long, decimal: String): String {

@@ -384,8 +384,15 @@ class TranscriptionOrchestrator @Inject constructor(
             // preprocessed chunks), labels each cue by speech-time voting,
             // and can only ADD metadata: any failure logs and delivers the
             // unlabeled result, never breaking the run.
-            if (collectSpeakers && diarizationChunks == null && requestType == "audio") {
-                Log.i(TAG, "Speaker labels skipped: streaming or VAD-segmented decode path")
+            // TASK-600 F13: an honest skip reason. The log names the decode
+            // path ONLY when a decode actually delivered and the pass had
+            // something to skip; a failed run (memory refusal, decode error,
+            // pipeline exception) never decoded, so nothing was skipped and
+            // the old blanket line misattributed those failures to the path.
+            if (collectSpeakers && diarizationChunks == null && requestType == "audio" &&
+                delivered.isSuccess && delivered.getOrNull()?.text?.isNotBlank() == true
+            ) {
+                Log.i(TAG, "Speaker labels skipped: the decode path delivered no sample timeline (streaming or VAD-segmented)")
             }
             val speakerLabeled: Result<TranscriptionResult> =
                 if (delivered.isSuccess && diarizationChunks != null) {
