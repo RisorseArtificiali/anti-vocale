@@ -57,6 +57,8 @@ object ResultNotificationRefresher {
         }
         val spec = ResultNotificationSpec(
             transcriptionText = text,
+            signatureText = intent.getStringExtra(NotificationActionReceiver.EXTRA_SIGNATURE_TEXT) ?: "",
+            signaturePosition = intent.getStringExtra(NotificationActionReceiver.EXTRA_SIGNATURE_POSITION) ?: "append",
             taskId = intent.getStringExtra(NotificationActionReceiver.EXTRA_TASK_ID),
             sourcePackage = sourcePackage,
             confidence = if (intent.hasExtra(NotificationActionReceiver.EXTRA_CONFIDENCE)) {

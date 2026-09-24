@@ -38,6 +38,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
         /** Swipe-dismiss of the subtitle-choice prompt: cancel the fallback, start nothing. */
         const val ACTION_DISMISS_CHOICE = "com.antivocale.app.DISMISS_CHOICE"
         const val EXTRA_TRANSCRIPTION_TEXT = "transcription_text"
+        /** TASK-647: carried across nav taps so rebuilt actions keep signing. */
+        const val EXTRA_SIGNATURE_TEXT = "signature_text"
+        const val EXTRA_SIGNATURE_POSITION = "signature_position"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
         const val ACTION_PAGE_PREV = "com.antivocale.app.PAGE_PREV"
         const val ACTION_PAGE_NEXT = "com.antivocale.app.PAGE_NEXT"

@@ -318,6 +318,10 @@ class ResultNotificationFactory(private val context: Context) {
                 NotificationActionReceiver.ACTION_PAGE_NEXT
             }
             putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, spec.transcriptionText)
+            // TASK-647: the rebuilt notification's copy/share actions must
+            // keep signing; the body stays raw.
+            putExtra(NotificationActionReceiver.EXTRA_SIGNATURE_TEXT, spec.signatureText)
+            putExtra(NotificationActionReceiver.EXTRA_SIGNATURE_POSITION, spec.signaturePosition)
             putExtra(NotificationActionReceiver.EXTRA_PAGE_INDEX, pageIndex)
             putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, spec.notificationId)
             putExtra(NotificationActionReceiver.EXTRA_FIRST_POSTED_AT, spec.firstPostedAt)
