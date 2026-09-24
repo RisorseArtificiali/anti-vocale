@@ -192,6 +192,15 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
     class InsufficientMemory(detail: String) :
         TranscriptionException("Insufficient memory: $detail")
 
+    /**
+     * TASK-607 F5: a generation timed out under its ceiling WITHOUT the
+     * engine being wedged (the healthy-but-slow case). Lives in the project's
+     * sealed seam so the pairing with the summarize/chunk ladders is
+     * compiler-checked; nothing matches the raw JDK TimeoutException anymore
+     * (grep-verified at conversion time).
+     */
+    class GenerationTimeout(detail: String) : TranscriptionException(detail)
+
     /** The persisted external model record is gone or its files vanished (TASK-342). */
     class ExternalModelUnavailable(backendId: String) :
         TranscriptionException("External model no longer available: $backendId")

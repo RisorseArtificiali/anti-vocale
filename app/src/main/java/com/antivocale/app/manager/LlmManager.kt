@@ -560,7 +560,9 @@ open class LlmManager @Inject constructor(
                 Result.failure(EngineWedgeTimeoutException(
                     "LiteRT $label generation timed out after ${generationTimeoutMs / 1000}s"))
             } else {
-                Result.failure(TimeoutException(
+                // TASK-607 F5: the project's typed seam, not the raw JDK type
+                // (any future wrapping stays compiler-checkable).
+                Result.failure(com.antivocale.app.transcription.TranscriptionException.GenerationTimeout(
                     "LiteRT $label generation timed out after ${generationTimeoutMs / 1000}s"))
             }
         } else {
