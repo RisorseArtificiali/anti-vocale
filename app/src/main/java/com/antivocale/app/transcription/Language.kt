@@ -13,9 +13,10 @@ object Language {
     val FILTER_ENTRIES: List<String> = listOf(
         "af", "ar", "az", "be", "bg", "bn", "ca", "cs", "cy", "da",
         "de", "el", "en", "es", "et", "eu", "fa", "fi", "fr", "gl",
+        "gu",
         "he", "hi", "hr", "hu", "id", "it", "ja", "ka", "ko", "lt",
-        "lv", "mk", "ms", "nl", "no", "pl", "pt", "ro", "ru", "sk",
-        "sl", "sq", "sr", "sv", "sw", "ta", "th", "tr", "uk", "ur",
+        "lv", "mk", "ms", "mr", "nl", "no", "pl", "pt", "ro", "ru", "sk",
+        "sl", "sq", "sr", "sv", "sw", "ta", "te", "th", "tr", "uk", "ur",
         "uz", "vi", "zh",
     )
 

@@ -75,7 +75,11 @@ object ExternalCatalog {
                 val e = arr.optJSONObject(i) ?: continue
                 val name = e.optString("name")
                 val url = e.optString("entryUrl")
-                if (name.isBlank() || url.isBlank()) continue
+                // TASK-652 review: skip relative entryUrls at the parse
+                // boundary too (the CI pin covers only the source tree; a
+                // remote or override index could ship them, and OkHttp
+                // throws at tap-to-import with a cryptic error).
+                if (name.isBlank() || url.isBlank() || !url.startsWith("http")) continue
                 val family = runCatching {
                     ModelFamily.valueOf(e.optString("family", ModelFamily.TRANSDUCER.name))
                 }.getOrNull() ?: continue

@@ -157,6 +157,8 @@ class ExternalCatalogTest {
         //   are Parakeet pseudo-refs, not ground truth)
         // + omnilingual 300M CTC multilingual (TASK-635/643: version-scoped
         //   index; the unsuffixed index.json stays frozen at 14 for <=1.13.x)
+        // + indicconformer per-language CTC hi/bn/mr/gu/ta/te (TASK-652:
+        //   the India gap, validated 5.8-13.7% CER on FLEURS)
         assertEquals(21, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
@@ -201,9 +203,40 @@ class ExternalCatalogTest {
         // set, so it joins the German results)
         assertEquals(5, ExternalCatalog.filter(entries, "de").size)
         // TASK-652: the six IndicConformer entries surface via their codes
-        assertEquals(1, ExternalCatalog.filter(entries, "hi").size)
-        assertEquals(1, ExternalCatalog.filter(entries, "te").size)
+        listOf("bn", "gu", "hi", "mr", "ta", "te").forEach { code ->
+            assertEquals("filter($code) must surface exactly the IndicConformer entry",
+                1, ExternalCatalog.filter(entries, code).size)
+        }
         assertEquals(6, ExternalCatalog.filter(entries, "indicconformer").size)
+    }
+
+    /** TASK-652 review: pin the six entry files like the omnilingual
+     *  precedent (a typo in modelType, sha, or size must fail HERE, not at
+     *  import time on a user device), and pair every index entryUrl
+     *  basename with a committed asset file (hebrew.json has been dead
+     *  weight since 2026-09-20 because nothing performs this check). */
+    @Test
+    fun `indicconformer entry files carry the expected shape and every index entry has its asset`() {
+        val indexNames = ExternalCatalog.parseIndex(
+            java.io.File(BUNDLED_INDEX_PATH).readText()).map { it.name }.toSet()
+        for (code in listOf("bn", "gu", "hi", "mr", "ta", "te")) {
+            val json = java.io.File("src/main/assets/external-catalog/indicconformer-$code.json").readText()
+            val obj = org.json.JSONObject(json)
+            assertEquals("CTC", obj.getString("family"))
+            assertEquals("nemo_ctc", obj.getString("modelType"))
+            assertEquals(code, obj.getJSONArray("languages").getString(0))
+            assertEquals(2, obj.getJSONArray("files").length())
+        }
+        // every index entryUrl basename must be a committed asset
+        val assetDir = java.io.File("src/main/assets/external-catalog")
+        val assets = assetDir.listFiles()?.map { it.name }?.toSet() ?: emptySet()
+        indexNames.forEach { name ->
+            val basename = java.io.File(
+                ExternalCatalog.parseIndex(java.io.File(BUNDLED_INDEX_PATH).readText())
+                    .first { it.name == name }.entryUrl).name
+            assertTrue("index entry $name references $basename but no such asset exists",
+                basename in assets)
+        }
     }
 
     @Test
