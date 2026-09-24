@@ -224,6 +224,8 @@ steht im README. Feedback und Ergaenzungen fuer weitere Sprachen sind
 willkommen.
 
 ### FR (linuxfr.org journal + forum.frandroid.com)
+POSTED 2026-09-24: linuxfr.org journal https://linuxfr.org/users/risorseartificiali/journaux/anti-vocale-transcription-hors-ligne-des-messages-vocaux-sur-android-libre (accents right, store links, AI disclosure).
+
 
 Titre: Anti-Vocale, transcription hors ligne des messages vocaux sur Android (libre)
 
