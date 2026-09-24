@@ -1,5 +1,6 @@
 package com.antivocale.app.transcription
 
+import android.app.NotificationManager
 import android.content.Context
 import android.util.Log
 import com.antivocale.app.R
@@ -7,6 +8,7 @@ import com.antivocale.app.manager.EngineWedgeTimeoutException
 import com.antivocale.app.util.DecodedOfTotalFormat
 import com.antivocale.app.audio.AudioDurationPolicy
 import com.antivocale.app.audio.AudioPreprocessor
+import com.antivocale.app.service.ResultNotificationFactory
 import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.audio.AudioPreprocessor.StreamEvent
 import com.antivocale.app.transcription.diarization.DiarizationModels
@@ -60,6 +62,12 @@ class TranscriptionOrchestrator @Inject constructor(
 ) {
     companion object {
         private const val TAG = "TranscriptionOrchestrator"
+        /**
+         * TASK-631 part 2: fixed id (reserved-range table, below the result
+         * allocator's 3000 base) for the default path's dismissable
+         * tight-margin warning.
+         */
+        internal const val MEMORY_MARGIN_WARNING_ID = 1006
         // TASK-406: each in-flight chunk carries its own attention activations, so peak
         // memory multiplies by the permit count. Measured (desktop, 6-min file, 60s
         // chunks): 2 permits cut wall-clock ~14% (28.6s vs 33.1s) for +23% peak
@@ -1367,7 +1375,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     Log.i(TAG, "Pre-flight uses the measured footprint for $label: required=${r / MB}MB (loadDelta=${measured.maxLoadDeltaBytes / MB}MB over ${measured.runs} run(s))")
                     r
                 } else {
-                    modelDir.walkTopDown().filter { it.isFile }.sumOf { it.length() } + MEMORY_HEADROOM_BYTES
+                    modelSizeBytes(modelDir) + MEMORY_HEADROOM_BYTES
                 }
                 if (shouldRefuseForMemory(memoryProtectionOn, availBytes, requiredBytes)) {
                     Log.w(TAG, "Blocking $label load: avail=${availBytes / MB}MB < required=${requiredBytes / MB}MB (basis=${if (measured != null) "measured" else "size+headroom"}, headroom=${MEMORY_HEADROOM_BYTES / MB}MB)")
@@ -1376,6 +1384,10 @@ class TranscriptionOrchestrator @Inject constructor(
                     ))
                 }
             }
+        } else {
+            // TASK-631 part 2: the default path never blocks, but a tight
+            // margin warns once per model identity.
+            maybeWarnTightMargin(context, label, backendId, modelDir, resolvedProviderPref, threadCountPref, availBeforeLoad)
         }
         Log.i(TAG, "Auto-loading $label model from: ${modelDir.absolutePath}")
         Log.i(TAG, "Inference provider: resolved=$resolvedProviderPref")
@@ -1444,8 +1456,61 @@ class TranscriptionOrchestrator @Inject constructor(
      * under a different provider (NNAPI driver buffers vs CPU arena, issue
      * #26) has a different footprint (review F2).
      */
+
+    /**
+     * TASK-575: the per-model key for the measured-footprint records. The
+     * provider and thread count are part of the identity: the same model
+     * under a different provider (NNAPI driver buffers vs CPU arena, issue
+     * #26) has a different footprint (review F2).
+     */
     private fun memoryKey(backendId: String, modelDir: File, provider: String, threadCount: Int): String =
         backendId + '@' + provider + '@' + threadCount + '@' + modelDir.absolutePath
+
+    /**
+     * TASK-631 part 2: the default path's dismissable tight-margin warning.
+     * Never blocks; posts ONCE per model identity per process (swiping the
+     * notification away does not re-arm: the dedup key is the identity, not
+     * the notification's lifetime). The measured footprint is preferred,
+     * mirroring the opt-in branch; the size walk is a few stat() calls.
+     */
+    @androidx.annotation.VisibleForTesting
+    internal suspend fun maybeWarnTightMargin(
+        context: Context,
+        label: String,
+        backendId: String,
+        modelDir: File,
+        provider: String,
+        threads: Int,
+        availBytes: Long,
+    ) {
+        if (availBytes <= 0) return
+        val key = memoryKey(backendId, modelDir, provider, threads)
+        // Dedup first: a repeat load of the same identity skips both the
+        // preference read and the size work entirely.
+        if (key in warnedMarginKeys) return
+        // Measured-basis ONLY (review finding): the disk-size estimate is the
+        // figure this file documents as overshooting ~1GB (GH #63/#106); the
+        // first load of an identity has no record yet and must not cry wolf
+        // on healthy devices. After one successful load the record exists and
+        // the warning speaks from measured data.
+        val measured = preferencesManager.measuredModelMemory.first()[key] ?: return
+        val requiredBytes = MeasuredModelMemory.requiredBytes(measured, MEMORY_HEADROOM_BYTES)
+        if (availBytes < requiredBytes && warnedMarginKeys.add(key)) {
+            Log.w(TAG, "Tight memory margin for $label (avail=${availBytes / MB}MB < required=${requiredBytes / MB}MB); posting the dismissable warning")
+            runCatching {
+                val nm = context.getSystemService(NotificationManager::class.java)
+                nm.notify(
+                    MEMORY_MARGIN_WARNING_ID,
+                    ResultNotificationFactory(context).alertNotification(
+                        title = context.getString(R.string.memory_margin_warning_title),
+                        text = context.getString(R.string.memory_margin_warning_body, label),
+                    ))
+            }.onFailure { Log.w(TAG, "Could not post the memory-margin warning", it) }
+        }
+    }
+
+    /** TASK-631 part 2: one warning per model identity per process. */
+    private val warnedMarginKeys: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
 
     /**
      * Sherpa-onnx backend loader: validates the model dir, delegates to the shared

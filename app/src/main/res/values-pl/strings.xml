@@ -279,6 +279,8 @@
     <string name="native_crash_title">Aplikacja zamknęła się nieoczekiwanie</string>
     <string name="native_crash_go_to_model">Przejdź do karty Model</string>
     <string name="model_load_low_memory">Za mało wolnej pamięci dla tego modelu (dostępne %1$s, potrzeba ok. %2$s). Ochrona pamięci jest aktywna: zamknij inne aplikacje, użyj mniejszego modelu albo wyłącz ją w Ustawieniach, aby spróbować mimo to.</string>
+    <string name="memory_margin_warning_title">Model blisko limitu pamięci tego telefonu</string>
+    <string name="memory_margin_warning_body">Model %1$s może być blisko granicy możliwości tego telefonu. Transkrypcja i tak zostanie wykonana; możesz włączyć ochronę pamięci w Ustawieniach, aby blokować takie wczytywanie.</string>
     <string name="transcribe_low_memory">Za mało wolnej pamięci, aby transkrybować tym modelem (około %1$s wolne, wymagane %2$s). Ochrona pamięci jest aktywna: zamknij inne aplikacje i spróbuj ponownie albo wyłącz ją w ustawieniach, aby spróbować mimo to.</string>
     <string name="external_model_quarantined_title">Model zewnętrzny wyłączony po awarii</string>
     <string name="external_model_quarantined_text">Wczytanie "%1$s" zamknęło aplikację, więc został wyłączony, aby uniknąć powtarzających się awarii. Usuń i zaimportuj model ponownie w zakładce Modele.</string>

@@ -225,6 +225,8 @@
     <string name="native_crash_title">La app se cerró inesperadamente</string>
     <string name="native_crash_go_to_model">Ir a la pestaña Modelo</string>
     <string name="model_load_low_memory">No hay memoria libre suficiente para este modelo (%1$s disponible, ~%2$s necesario). La protección de memoria está activa: cierra otras apps, usa un modelo más ligero o desactívala en Ajustes para intentarlo de todos modos.</string>
+    <string name="memory_margin_warning_title">Modelo cerca del límite de memoria de este teléfono</string>
+    <string name="memory_margin_warning_body">El modelo %1$s puede estar cerca de lo que este teléfono puede soportar. La transcripción continúa de todos modos; puedes activar la protección de memoria en Ajustes para bloquear estas cargas.</string>
     <string name="transcribe_low_memory">No hay memoria libre suficiente para transcribir con este modelo (unas %1$s libres, se necesitan %2$s). La protección de memoria está activa: cierra otras apps e inténtalo de nuevo, o desactívala en Ajustes para intentarlo de todos modos.</string>
     <string name="external_model_quarantined_title">Modelo externo desactivado tras un fallo</string>
     <string name="external_model_quarantined_text">Cargar "%1$s" cerró la aplicación, por lo que se ha desactivado para evitar fallos repetidos. Elimina y reimporta el modelo en la pestaña Modelos para reintentarlo.</string>

@@ -256,6 +256,8 @@
     <string name="native_crash_title">App unerwartet geschlossen</string>
     <string name="native_crash_go_to_model">Zum Tab \"Modell\" gehen</string>
     <string name="model_load_low_memory">Nicht genug freier Speicher für dieses Modell (%1$s verfügbar, etwa %2$s benötigt). Speicherschutz ist aktiv: Schließe andere Apps, verwende ein kleineres Modell oder deaktiviere ihn in den Einstellungen, um es trotzdem zu versuchen.</string>
+    <string name="memory_margin_warning_title">Modell nahe am Speicherlimit dieses Telefons</string>
+    <string name="memory_margin_warning_body">Das Modell %1$s liegt möglicherweise an der Grenze dessen, was dieses Telefon tragen kann. Die Transkription läuft trotzdem; du kannst in den Einstellungen den Speicherschutz aktivieren, um solche Ladevorgänge zu blockieren.</string>
     <string name="transcribe_low_memory">Nicht genug freier Speicher, um mit diesem Modell zu transkribieren (etwa %1$s frei, %2$s benötigt). Speicherschutz ist aktiv: Schließe andere Apps und versuche es erneut oder deaktiviere ihn in den Einstellungen, um es trotzdem zu versuchen.</string>
     <string name="external_model_quarantined_title">Externes Modell nach Absturz deaktiviert</string>
     <string name="external_model_quarantined_text">Das Laden von "%1$s" hat die App beendet, daher wurde es deaktiviert, um wiederholte Abstürze zu vermeiden. Entferne und importiere das Modell im Tab Modelle erneut.</string>

@@ -274,6 +274,8 @@
     <string name="native_crash_title">האפליקציה נסגרה באופן בלתי צפוי</string>
     <string name="native_crash_go_to_model">מעבר ללשונית מודלים</string>
     <string name="model_load_low_memory">אין מספיק זיכרון פנוי למודל הזה (%1$s זמינים, דרושים כ-%2$s). הגנת הזיכרון פעילה: סגור אפליקציות אחרות, השתמש במודל קטן יותר, או כבה אותה בהגדרות כדי לנסות בכל זאת.</string>
+    <string name="memory_margin_warning_title">מודל קרוב למגבלת הזיכרון של הטלפון הזה</string>
+    <string name="memory_margin_warning_body">ייתכן שהמודל %1$s קרוב למה שהטלפון הזה יכול להחזיק. התמלול ממשיך בכל מקרה; תוכל להפעיל את הגנת הזיכרון בהגדרות כדי לחסום טעינות כאלה.</string>
     <string name="transcribe_low_memory">אין מספיק זיכרון פנוי לתמלל עם המודל הזה (כ-%1$s פנויים, דרושים %2$s). הגנת הזיכרון פעילה: סגור אפליקציות אחרות ונסה שוב, או כבה אותה בהגדרות כדי לנסות בכל זאת.</string>
     <string name="external_model_quarantined_title">מודל חיצוני הושבת לאחר קריסה</string>
     <string name="external_model_quarantined_text">טעינת "%1$s" סגרה את האפליקציה, ולכן הוא הושבת כדי למנוע קריסות חוזרות. מחקו וייבאו מחדש את המודל בלשונית המודלים כדי לנסות שוב.</string>
