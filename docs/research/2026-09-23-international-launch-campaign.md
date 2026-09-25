@@ -52,8 +52,8 @@ must not claim quality we have not verified (the scout's per-language rule).
 | FR | - | Canary Flash 180M fr (catalog), Whisper, Parakeet | - |
 | PT-BR | WhatsApp native transcription covers PT (verify Android availability in BR today) | Whisper Turbo/Medium (101 langs), Parakeet | hook is offline/privacy, not language gap |
 | RU | GigaAM v3 Russian (native punctuation), Zipformer RU (catalog); 4pda-class forums; Play availability constrained in RU | GigaAM v3, Zipformer ru | F-Droid/APK direct is the realistic channel; state plainly |
-| TR | Parakeet v3 (25 EU langs incl tr), Whisper 101 langs | Parakeet v3, Whisper | no TR-specific model measured; say "works via multilingual models" |
-| PL | Parakeet v3, Whisper | Parakeet v3, Whisper | same as TR |
+| TR | WhatsApp Android transcription does not support Turkish | Whisper small (6.9% CER, measured 2026-09-24), omnilingual 300M as light fallback (6.5% CER, ~2x faster, 29.7% WER) | Parakeet v3 HARD-FAILS tr (90.6% CER, phonetic gibberish; tr is nominally in the 25-lang list but the stock v3 weights do not carry it): NEVER advertise Parakeet for Turkish, copy says "Whisper recommended" |
+| PL | WhatsApp Android transcription does not support Polish | Parakeet v3 (3.0% CER / 10.7% WER, measured 2026-09-24, RTF 0.29), Whisper | Parakeet is the lead for pl (2.3x better than whisper small at this size): validated advertisable |
 | HI | WhatsApp native transcription covers HI (verify) | Whisper (101), Parakeet? (check hi in the 25) | omnilingual 300M incoming (TASK-635) but hi showed script-confusion: do NOT promise quality |
 | FA | Shenava Koochik Persian (community catalog, NeMo RNNT int8) | Shenava | our only fa-verified option; IR: Play unavailable, F-Droid/APK direct |
 | HE | none language-specific | Whisper (101 langs) | omnilingual he measured WEAK (25.5% CER, script confusion): be honest, "multilingual Whisper, quality varies" |
@@ -249,37 +249,37 @@ Retours bienvenus.
 
 ### ES (r/spain con approvazione mod + masto.es)
 
-Titulo: Anti-Vocale, transcripcion offline de notas de voz en Android (libre)
+Título: Anti-Vocale, transcripción offline de notas de voz en Android (libre)
 
-Escribi una app Android que transcribe notas de voz en local, en el
-telefono. Ningun audio sale del dispositivo. Compartis el vocal desde
-WhatsApp o Telegram y el texto llega como notificacion; queda en el
+Escribí una app Android que transcribe notas de voz en local, en el
+teléfono. Ningún audio sale del dispositivo. Compartes la nota de voz desde
+WhatsApp o Telegram y el texto llega como notificación; queda en el
 historial interno.
 
-La transcripcion nativa de WhatsApp en Android no incluye el espanol. Esta
-app si, con varios modelos: un Canary Flash 180M en espanol (pequeno y
-rapido), Whisper y el Parakeet multilingue. Tambien acepta archivos de
-video.
+La transcripción nativa de WhatsApp en Android no incluye el español. Esta
+app sí, con varios modelos: un Canary Flash 180M en español (pequeño y
+rápido), Whisper y el Parakeet multilingüe. También acepta archivos de
+vídeo.
 
-Software libre, sin publicidad ni rastreo. En F-Droid y Play Store, codigo en
-GitHub. El desarrollo fue asistido por IA, esta declarado en el README.
+Software libre, sin publicidad ni rastreo. En F-Droid y Play Store, código en
+GitHub. El desarrollo fue asistido por IA, está declarado en el README.
 Comentarios bienvenidos.
 
 ### PT-BR (r/programacao + Android Dev BR, dopo presentazione)
 
-Titulo: Anti-Vocale: transcricao offline de mensagens de voz no Android (FOSS)
+Título: Anti-Vocale: transcrição offline de mensagens de voz no Android (FOSS)
 
 Escrevi um app Android que transcreve mensagens de voz localmente, no
-celular. Nenhum audio sai do aparelho. Compartilha o audio do WhatsApp ou
-Telegram e o texto chega como notificacao; fica no historico interno.
+celular. Nenhum áudio sai do aparelho. Compartilha o áudio do WhatsApp ou
+Telegram e o texto chega como notificação; fica no histórico interno.
 
-A transcricao nativa do WhatsApp no Android cobre portugues, mas depende do
-servico deles e do aparelho; aqui o diferencial e outro: escolha de modelos
-(Whisper, Parakeet multilingue), transcricao de todo o historico e de
-arquivos de video, tudo offline e gratuito para sempre.
+A transcrição nativa do WhatsApp no Android cobre português, mas depende do
+serviço deles e do aparelho; aqui o diferencial é outro: escolha de modelos
+(Whisper, Parakeet multilíngue), transcrição de todo o histórico e de
+arquivos de vídeo, tudo offline e gratuito para sempre.
 
-Software livre, sem anuncios, sem rastreio. No F-Droid e na Play Store,
-codigo no GitHub. O desenvolvimento teve assistencia de IA, declarado no
+Software livre, sem anúncios, sem rastreamento. No F-Droid e na Play Store,
+código no GitHub. O desenvolvimento teve assistência de IA, declarado no
 README. Feedback bem-vindo.
 
 ### EN global (r/fossdroid + Show HN + r/droidappshowcase)
@@ -344,39 +344,39 @@ GitHub. Розробка велася з допомогою ШІ, це вказ�
 VALIDATED 2026-09-24 (Mac, FLEURS tr, 10 clips): PARAKEET v3 FAILS TURKISH HARD (CER 90.6%, phonetic Latin gibberish; NOT a supported language of the stock v3 weights despite multilingual branding). Campaign copy: "Whisper recommended" for tr (whisper small 6.9% CER); omnilingual 300M as the light fallback (6.5% CER, 2x faster, but 29.7% WER).
 
 
-Baslik: Anti-Vocale, Android icin cevrimdisi sesli mesaj transkripsiyonu (FOSS)
+Başlık: Anti-Vocale, Android için çevrimdışı sesli mesaj transkripsiyonu (FOSS)
 
-Android icin, sesli mesajlari telefonun kendisinde metne ceviren bir uygulama
-yazdim. Hicbir ses dosyasi cihazi terk etmiyor. WhatsApp veya Telegram'dan
-sesli mesaji paylastiginizda metin bildirim olarak geliyor ve ic
-gecmiste kaliyor.
+Android için, sesli mesajları telefonun kendisinde metne çeviren bir uygulama
+yazdım. Hiçbir ses dosyası cihazı terk etmiyor. WhatsApp veya Telegram'dan
+sesli mesajı paylaştığınızda metin bildirim olarak geliyor ve iç geçmişte
+kalıyor.
 
-WhatsApp'in Android'deki yerlesik transkripsiyonu Turkce desteklemiyor. Bu
-uygulama destekliyor: cok dilli modeller (Parakeet, Whisper) ile. Video
-dosyalari da kabul ediliyor.
+WhatsApp'ın Android'deki yerleşik transkripsiyonu Türkçeyi desteklemiyor. Bu
+uygulama destekliyor: Türkçe için önerilen model Whisper; küçük ve hızlı bir
+çok dilli model de seçilebilir. Video dosyaları da kabul ediliyor.
 
-Ozgun yazilim, reklamsiz, izleme yok. F-Droid ve Play Store'da, kaynak kodu
-GitHub'da. Gelistirme yapay zeka destegliydi, README'de belirtiliyor.
+Özgür yazılım, reklamsız, izleme yok. F-Droid ve Play Store'da, kaynak kodu
+GitHub'da. Geliştirme yapay zekâ destekliydi, README'de belirtiliyor.
 Geri bildirim bekliyorum.
 
 ### PL (forum.android.com.pl)
 VALIDATED 2026-09-24 (Mac, FLEURS pl, 10 clips): PARAKEET v3 IS ADVERTISABLE. CER 3.0% / WER 10.7%, RTF 0.29 (2.5-6x faster than whisper small, which is also 2.3x worse at this size). The campaign copy can lead with Parakeet for PL.
 
 
-Tytul: Anti-Vocale, offline transkrypcja wiadomosci glosowych na Androidzie (FOSS)
+Tytuł: Anti-Vocale, offline transkrypcja wiadomości głosowych na Androidzie (FOSS)
 
-Napisalem aplikacje na Androida, ktora transkrybuje wiadomosci glosowe
-lokalnie, na telefonie. Zadne audio nie opuszcza urzadzenia. Glosowka z
-WhatsApp lub Telegrama trafia do aplikacji, tekst przychodzi jako
-powiadomienie i zostaje w wewnetrznej historii.
+Napisałem aplikację na Androida, która transkrybuje wiadomości głosowe
+lokalnie, na telefonie. Żadne audio nie opuszcza urządzenia. Głosówka z
+WhatsAppa lub Telegrama trafia do aplikacji, tekst przychodzi jako
+powiadomienie i zostaje w wewnętrznej historii.
 
-Wbudowana transkrypcja WhatsApp na Androidzie nie obsluguje jezyka
-polskiego. Ta aplikacja tak: modelami wielojezycznymi (Parakeet, Whisper).
-Pliki wideo tez sa obslugiwane.
+Wbudowana transkrypcja WhatsApp na Androidzie nie obsługuje języka
+polskiego. Ta aplikacja tak: modelami wielojęzycznymi (dla polskiego
+zwłaszcza Parakeet, obok Whispera). Pliki wideo też są obsługiwane.
 
-Wolne oprogramowanie, bez reklam i sledzenia. F-Droid i Play Store, kod na
-GitHubie. Rozwoj byl wspierany AI, co jest zadeklarowane w README. Uwagi
-witelane.
+Wolne oprogramowanie, bez reklam i śledzenia. F-Droid i Play Store, kod na
+GitHubie. Rozwój był wspierany przez AI, co jest zadeklarowane w README.
+Uwagi mile widziane.
 
 ### HI (r/developersIndia "I Made This")
 
