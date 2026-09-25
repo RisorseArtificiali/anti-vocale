@@ -2451,7 +2451,32 @@ class TranscriptionOrchestrator @Inject constructor(
         collectSamples: ((List<FloatArray>, Int) -> Unit)? = null,
     ): Result<TranscriptionResult> {
         val resolvedPrompt = resolvePrompt(prompt)
-        val speakerChunks = if (collectSamples != null) mutableListOf<FloatArray>() else null
+        // TASK-597: the streaming path's sample retention has no memory
+        // budget (the valve is a flat 7200s while the whole-file arm gates
+        // on min(ram/4, heap/2)); with speaker labels on, every decoded
+        // chunk is pinned for the whole run (64KiB/s: 115MB at 30min,
+        // 460MB at 2h) and applySpeakerLabels' merge allocates a second
+        // copy. Apply the SAME budget: estimate the retention cost from
+        // the source duration, and if it exceeds the memory-derived
+        // ceiling, disable collection (labels skipped, the reason logged
+        // and reported like the whole-file arm's ceiling).
+        val effectiveCollectSamples = if (collectSamples != null) {
+            val speakerCeilingSec = AudioDurationPolicy.ceilingSeconds(
+                AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
+                availableMemoryBytes(context).takeIf { it > 0 },
+                MemoryReadings.maxHeapBytes().takeIf { it > 0 })
+            val sourceDurationSec = runCatching {
+                audioPreprocessor.getAudioDuration(filePath)
+            }.getOrNull()
+            if (sourceDurationSec != null && sourceDurationSec > speakerCeilingSec) {
+                Log.w(TAG, "Speaker labels skipped: audio ${sourceDurationSec.toInt()}s exceeds the " +
+                    "memory budget ${speakerCeilingSec}s (streaming retention " +
+                    "${sourceDurationSec.toLong() * AudioDurationPolicy.PCM_BYTES_PER_SECOND / MB}MB); " +
+                    "TASK-597 gate")
+                null
+            } else collectSamples
+        } else null
+        val speakerChunks = if (effectiveCollectSamples != null) mutableListOf<FloatArray>() else null
         var speakerSampleRate = 16000
 
         val pipelineStartMs = System.currentTimeMillis()
@@ -2625,7 +2650,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // silence and cue times derive from the same accumulated decoded
         // seconds, so the timelines match; chunks are references, the
         // concatenated copy is built lazily inside the pass.
-        speakerChunks?.let { collectSamples?.invoke(it, speakerSampleRate) }
+        speakerChunks?.let { effectiveCollectSamples?.invoke(it, speakerSampleRate) }
 
         // TASK-622: logged BEFORE the blank fail-fast so an all-blank run
         // (the swallowed-decode signature) still leaves the tell in logcat;
