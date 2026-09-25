@@ -820,6 +820,7 @@
     <string name="summary_skipped_no_model">Resumo ignorado: nenhum modelo Gemma configurado. Baixe-o na aba Modelos para ativar resumos.</string>
     <string name="summary_skipped_failed">Falha ao gerar o resumo; a transcrição está intacta.</string>
     <string name="summary_skipped_guard">Resumo ignorado: o resumo gerado ficou fora dos limites de comprimento (curto ou longo demais para ser um resumo).</string>
+    <string name="summary_partial_note">(algumas partes da transcrição não puderam ser resumidas)</string>
     <string name="copy_summary">Copiar resumo</string>
     <string name="copy_original">Copiar original</string>
     <string name="logs_model_label">Modelo: %1$s</string>

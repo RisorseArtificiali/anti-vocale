@@ -97,6 +97,7 @@
     <string name="summary_skipped_no_model">Özet atlandı: Gemma modeli yapılandırılmamış. Özetleri etkinleştirmek için Modeller sekmesinden indirin.</string>
     <string name="summary_skipped_failed">Özet oluşturulamadı; transkript sağlam.</string>
     <string name="summary_skipped_guard">Özet atlandı: üretilen özet uzunluk sınırlarının dışında kaldı (bir özet için çok kısa veya çok uzun).</string>
+    <string name="summary_partial_note">(transkriptin bazı bölümleri özetlenemedi)</string>
     <string name="copy_summary">Özeti kopyala</string>
     <string name="copy_original">Orijinali kopyala</string>
     <string name="logs_model_label">Model: %1$s</string>

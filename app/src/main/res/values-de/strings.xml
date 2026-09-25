@@ -952,6 +952,7 @@
     <string name="summary_skipped_no_model">Zusammenfassung übersprungen: kein Gemma-Modell konfiguriert. Lade es im Tab Modelle herunter, um Zusammenfassungen zu aktivieren.</string>
     <string name="summary_skipped_failed">Zusammenfassung scheiterte bei der Erzeugung; die Transkription ist unversehrt.</string>
     <string name="summary_skipped_guard">Zusammenfassung übersprungen: Die erzeugte Zusammenfassung lag außerhalb der Längengrenzen (zu kurz oder zu lang für eine Zusammenfassung).</string>
+    <string name="summary_partial_note">(einige Teile der Transkription konnten nicht zusammengefasst werden)</string>
     <string name="copy_summary">Zusammenfassung kopieren</string>
     <string name="copy_original">Original kopieren</string>
     <string name="logs_model_label">Modell: %1$s</string>

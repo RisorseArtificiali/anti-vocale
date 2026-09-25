@@ -95,6 +95,7 @@
     <string name="summary_skipped_no_model">הסיכום דולג: לא הוגדר מודל Gemma. הורד אותו מהלשונית מודלים כדי לאפשר סיכומים.</string>
     <string name="summary_skipped_failed">יצירת הסיכום נכשלה; התמליל עצמו שלם.</string>
     <string name="summary_skipped_guard">הסיכום דולג: הסיכום שנוצר חרג ממגבלות האורך (קצר מדי או ארוך מדי מכדי להיחשב סיכום).</string>
+    <string name="summary_partial_note">(לא ניתן היה לסכם חלקים מהתמליל)</string>
     <string name="copy_summary">העתקת הסיכום</string>
     <string name="copy_original">העתקת המקור</string>
     <string name="logs_model_label">מודל: %1$s</string>

@@ -94,6 +94,7 @@
     <string name="summary_skipped_no_model">Summary skipped: no Gemma model configured. Download it from the Models tab to enable summaries.</string>
     <string name="summary_skipped_failed">Summary failed while generating; the transcript is intact.</string>
     <string name="summary_skipped_guard">Summary skipped: the generated summary fell outside the length limits (too short or too long to be a summary).</string>
+    <string name="summary_partial_note">(some parts of the transcript could not be summarized)</string>
     <string name="copy_summary">Copy summary</string>
     <string name="copy_original">Copy original</string>
     <string name="logs_model_label">Model: %1$s</string>

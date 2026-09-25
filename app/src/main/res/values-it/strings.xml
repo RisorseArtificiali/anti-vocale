@@ -94,6 +94,7 @@
     <string name="summary_skipped_no_model">Riepilogo saltato: nessun modello Gemma configurato. Scaricalo dalla scheda Modelli per attivare i riepiloghi.</string>
     <string name="summary_skipped_failed">Generazione del riepilogo non riuscita; la trascrizione è intatta.</string>
     <string name="summary_skipped_guard">Riepilogo saltato: il riepilogo generato era fuori dai limiti di lunghezza (troppo breve o troppo lungo per essere un riepilogo).</string>
+    <string name="summary_partial_note">(alcune parti della trascrizione non sono state riassunte)</string>
     <string name="copy_summary">Copia riepilogo</string>
     <string name="copy_original">Copia originale</string>
     <string name="logs_model_label">Modello: %1$s</string>

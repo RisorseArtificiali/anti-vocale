@@ -99,6 +99,7 @@
     <string name="summary_skipped_no_model">Pominięto podsumowanie: brak modelu Gemma. Pobierz go w karcie Modele, aby włączyć podsumowania.</string>
     <string name="summary_skipped_failed">Nie udało się wygenerować podsumowania; transkrypcja jest nienaruszona.</string>
     <string name="summary_skipped_guard">Pominięto podsumowanie: wygenerowane podsumowanie wyszło poza limity długości (za krótkie lub za długie na podsumowanie).</string>
+    <string name="summary_partial_note">(niektórych części transkrypcji nie udało się podsumować)</string>
     <string name="copy_summary">Kopiuj podsumowanie</string>
     <string name="copy_original">Kopiuj oryginał</string>
     <string name="logs_model_label">Model: %1$s</string>

@@ -820,6 +820,7 @@
     <string name="summary_skipped_no_model">Resumen omitido: no hay modelo Gemma configurado. Descárgalo en la pestaña Modelos para activar resúmenes.</string>
     <string name="summary_skipped_failed">El resumen falló al generarse; la transcripción está intacta.</string>
     <string name="summary_skipped_guard">Resumen omitido: el resumen generado quedó fuera de los límites de longitud (demasiado corto o demasiado largo para ser un resumen).</string>
+    <string name="summary_partial_note">(algunas partes de la transcripción no se pudieron resumir)</string>
     <string name="copy_summary">Copiar resumen</string>
     <string name="copy_original">Copiar original</string>
     <string name="logs_model_label">Modelo: %1$s</string>

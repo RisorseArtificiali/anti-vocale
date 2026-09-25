@@ -101,6 +101,7 @@
     <string name="summary_skipped_no_model">Резюме пропущено: модель Gemma не налаштована. Завантажте її на вкладці «Моделі», щоб увімкнути резюме.</string>
     <string name="summary_skipped_failed">Не вдалося створити резюме; транскрипція не постраждала.</string>
     <string name="summary_skipped_guard">Резюме пропущено: згенероване резюме вийшло за межі обмежень довжини (занадто коротке чи задовге для резюме).</string>
+    <string name="summary_partial_note">(деякі частини транскрипції не вдалося резюмувати)</string>
     <string name="copy_summary">Копіювати резюме</string>
     <string name="copy_original">Копіювати оригінал</string>
     <string name="logs_model_label">Модель: %1$s</string>

@@ -94,6 +94,7 @@
     <string name="summary_skipped_no_model">خلاصه انجام نشد: هیچ مدل Gemma تنظیم نشده است. برای فعال شدن خلاصه‌ها آن را از زبانه مدل‌ها دانلود کنید.</string>
     <string name="summary_skipped_failed">تولید خلاصه ناموفق بود؛ متن رونویسی سالم است.</string>
     <string name="summary_skipped_guard">خلاصه انجام نشد: خلاصه تولیدشده خارج از محدوده طول مجاز بود (برای خلاصه زیادی کوتاه یا زیادی بلند).</string>
+    <string name="summary_partial_note">(برخی بخش‌های متن رونویسی قابل خلاصه‌سازی نبود)</string>
     <string name="copy_summary">کپی خلاصه</string>
     <string name="copy_original">کپی اصل</string>
     <string name="logs_model_label">مدل: %1$s</string>

@@ -951,6 +951,7 @@
     <string name="summary_skipped_no_model">सारांश छोड़ा गया: कोई Gemma मॉडल कॉन्फ़िगर नहीं है। सारांश चालू करने के लिए मॉडल्स टैब से डाउनलोड करें।</string>
     <string name="summary_skipped_failed">सारांश बनाते समय विफलता; ट्रांसक्रिप्ट सुरक्षित है।</string>
     <string name="summary_skipped_guard">सारांश छोड़ा गया: बनाया गया सारांश लंबाई सीमाओं से बाहर था (सारांश के लिए बहुत छोटा या बहुत लंबा)।</string>
+    <string name="summary_partial_note">(ट्रांसक्रिप्ट के कुछ हिस्सों को सारांशित नहीं किया जा सका)</string>
     <string name="copy_summary">सारांश कॉपी करें</string>
     <string name="copy_original">मूल कॉपी करें</string>
     <string name="logs_model_label">मॉडल: %1$s</string>

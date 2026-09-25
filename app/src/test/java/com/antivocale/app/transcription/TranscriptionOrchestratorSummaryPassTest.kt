@@ -1,6 +1,7 @@
 package com.antivocale.app.transcription
 
 import android.content.Context
+import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.R
 import com.antivocale.app.data.local.LogEntity
 import io.mockk.coEvery
@@ -16,6 +17,9 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -25,8 +29,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  * transcript, swaps to the LLM backend, attaches the summary as metadata
  * (the delivered text stays the transcript), and every skip/degrade path
  * (toggle off, short transcript, no Gemma configured, generation failure,
- * collapse guard) delivers the transcript with no summary.
+ * collapse guard) delivers the transcript with no summary. Robolectric (plain
+ * Application) because the TASK-538 partial-note assertions must resolve the
+ * REAL localized resource: the relaxed mock Context answers "".
  */
+@RunWith(RobolectricTestRunner::class)
+@Config(sdk = [34], application = android.app.Application::class)
 class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBase() {
 
     @get:Rule
@@ -95,8 +103,11 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
         }
     }
 
-    /** Drives one whole-file audio request inside the caller's runTest scope. */
-    private suspend fun CoroutineScope.runAudioRequest(taskId: String, context: Context = mockk(relaxed = true)) =
+    /** Drives one whole-file audio request inside the caller's runTest scope.
+     *  The context defaults to the REAL Robolectric application (the relaxed
+     *  mock answers "" from getString, so prompts would build with no
+     *  instruction: a shape production never sends). */
+    private suspend fun CoroutineScope.runAudioRequest(taskId: String, context: Context = ApplicationProvider.getApplicationContext()) =
         orchestrator.processRequest(
             taskId = taskId, requestType = "audio", prompt = "",
             filePath = temporaryFolder.newFile("audio.ogg").absolutePath,
@@ -426,14 +437,27 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
             Result.success(TranscriptionResult(text = hugeTranscript))
     }
 
-    @Test
-    fun `map-reduce summarizes a transcript past the context guard`() = runTest {
+    /** The shared arrange of every map-reduce test: pass on, no custom
+     *  prompt, the swap, the huge request, and the chunk count the 12k
+     *  budget yields for the fixture. */
+    private fun stubMapReducePass(): Int {
         every { preferencesManager.summarizeEnabled } returns flowOf(true)
         every { preferencesManager.summaryPrompt } returns flowOf("")
         stubSwapToLlm()
         stubHugeTranscriptRequest()
+        return ContextChunker.split(hugeTranscript).size
+    }
 
-        val expectedChunks = com.antivocale.app.transcription.ContextChunker.split(hugeTranscript).size
+    /** The expected delivered summary when the TASK-538 partial note rides
+     *  it: the note is a real localized resource, resolved from the real
+     *  Robolectric context (the relaxed mock answers ""). */
+    private fun withPartialNote(summary: String): String =
+        summary + "\n\n" + ApplicationProvider.getApplicationContext<Context>()
+            .getString(R.string.summary_partial_note)
+
+    @Test
+    fun `map-reduce summarizes a transcript past the context guard`() = runTest {
+        val expectedChunks = stubMapReducePass()
         // Load-bearing pin (not self-referential): the fixture is 371
         // repeats of an 81-char sentence (~30k chars), so the 12k budget
         // must yield exactly 3 chunks (148 sentences, 148, remainder).
@@ -463,12 +487,7 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
 
     @Test
     fun `map-reduce degrades gracefully when one chunk fails`() = runTest {
-        every { preferencesManager.summarizeEnabled } returns flowOf(true)
-        every { preferencesManager.summaryPrompt } returns flowOf("")
-        stubSwapToLlm()
-        stubHugeTranscriptRequest()
-
-        val expectedChunks = com.antivocale.app.transcription.ContextChunker.split(hugeTranscript).size
+        val expectedChunks = stubMapReducePass()
         val responses = ArrayDeque<Result<String>>()
         responses.addLast(Result.failure(IllegalStateException("generation died")))
         repeat(expectedChunks - 1) { responses.addLast(Result.success("Parte ${it + 2}: nomi dei responsabili.")) }
@@ -478,19 +497,64 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
         val delivered = runAudioRequest("summ-map-partial")
 
         assertEquals(hugeTranscript, delivered.getOrNull())
+        // TASK-538: the gap disclosure rides the delivered summary itself, so
+        // every surface that renders the summary shows it covers less than
+        // the whole call. The trim-pin guards the value: a blanked resource
+        // would deliver a dangling blank line and these expectations would
+        // follow it down green.
+        assertTrue(withPartialNote("").trim().isNotEmpty())
         coVerify(atLeast = 1) { logDao.update(match { e ->
-            e.summary == "Riassunto dalle parti disponibili della riunione."
+            e.summary == withPartialNote("Riassunto dalle parti disponibili della riunione.")
         }) }
     }
 
     @Test
-    fun `map-reduce records failed when the reduce generation crashes`() = runTest {
-        every { preferencesManager.summarizeEnabled } returns flowOf(true)
-        every { preferencesManager.summaryPrompt } returns flowOf("")
-        stubSwapToLlm()
-        stubHugeTranscriptRequest()
+    fun `map-reduce with no chunk failures delivers the reduce output without the note`() = runTest {
+        val expectedChunks = stubMapReducePass()
+        val reduce = "Riunione su budget, scadenze e responsabili del progetto vocale."
+        val responses = ArrayDeque<Result<String>>()
+        repeat(expectedChunks) { responses.addLast(Result.success("Parte ${it + 1}: budget e scadenze discussi.")) }
+        responses.addLast(Result.success(reduce))
+        coEvery { llmBackend.generateText(any()) } coAnswers { responses.removeFirst() }
 
-        val expectedChunks = com.antivocale.app.transcription.ContextChunker.split(hugeTranscript).size
+        val delivered = runAudioRequest("summ-map-clean")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        // TASK-538: nothing was dropped, so the exact reduce output ships with
+        // no disclosure appended.
+        coVerify(atLeast = 1) { logDao.update(match { e -> e.summary == reduce }) }
+    }
+
+    @Test
+    fun `map-reduce lone partial passing the coverage floor delivers with the note`() = runTest {
+        val expectedChunks = stubMapReducePass()
+
+        // The lone partial must clear the TASK-607 F6 coverage floor (25% of
+        // the transcript) while staying inside the per-chunk 1.2x guard: 8k
+        // chars does both against the ~12k first chunk.
+        val lone = buildString {
+            while (length < 8_000) append("seconda parte della riunione con i nomi dei responsabili. ")
+        }.trim()
+        val responses = ArrayDeque<Result<String>>()
+        responses.addLast(Result.success(lone))
+        repeat(expectedChunks - 1) { responses.addLast(Result.failure(IllegalStateException("generation died"))) }
+        coEvery { llmBackend.generateText(any()) } coAnswers { responses.removeFirst() }
+
+        val delivered = runAudioRequest("summ-map-lone")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        // TASK-538: the lone partial delivers as the summary AND carries the
+        // chunks.size - 1 drops as the appended note.
+        coVerify(atLeast = 1) { logDao.update(match { e ->
+            e.summary == withPartialNote(lone)
+        }) }
+        // A lone partial is never reduced over itself: no extra generation.
+        coVerify(exactly = expectedChunks) { llmBackend.generateText(any()) }
+    }
+
+    @Test
+    fun `map-reduce records failed when the reduce generation crashes`() = runTest {
+        val expectedChunks = stubMapReducePass()
         val responses = ArrayDeque<Result<String>>()
         repeat(expectedChunks) { responses.addLast(Result.success("Parte ${it + 1}: budget e scadenze.")) }
         responses.addLast(Result.failure(IllegalStateException("reduce died")))
@@ -508,10 +572,7 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
 
     @Test
     fun `map-reduce records failed when every chunk generation crashes`() = runTest {
-        every { preferencesManager.summarizeEnabled } returns flowOf(true)
-        every { preferencesManager.summaryPrompt } returns flowOf("")
-        stubSwapToLlm()
-        stubHugeTranscriptRequest()
+        stubMapReducePass()
 
         coEvery { llmBackend.generateText(any()) } returns
             Result.failure(IllegalStateException("map died"))

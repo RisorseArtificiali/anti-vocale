@@ -715,12 +715,15 @@ class TranscriptionOrchestrator @Inject constructor(
      * instruction gets a full map-reduce attempt before the next runs.
      * Per-chunk failures degrade by dropping that partial; only a total
      * map failure (or the last attempt's reduce failure) fails the pass,
-     * because an optional extra may never break the delivery.
+     * because an optional extra may never break the delivery. A summary
+     * delivered despite dropped chunks carries the TASK-538 partial note
+     * ([partialNote]) so the user sees it covers less than the whole call.
      */
     private suspend fun summarizeLongTranscript(
         llm: TranscriptionBackend,
         instructions: List<String>,
         result: TranscriptionResult,
+        partialNote: String,
     ): TranscriptionResult {
         var lastFailure: Throwable? = null
         for ((attempt, instruction) in instructions.withIndex()) {
@@ -734,8 +737,15 @@ class TranscriptionOrchestrator @Inject constructor(
             lastFailure = generation.failure
             val summary = generation.summary
             if (summary != null && SummaryPolicy.acceptableSummary(summary, result.text)) {
-                Log.i(TAG, "Summary map-reduce applied (${result.text.length} chars -> ${summary.length}-char summary)")
-                return result.copy(summary = summary)
+                // TASK-538: the guards above judged the MODEL output; the note
+                // is app-added disclosure and never a guard input. It rides the
+                // summary text itself so every surface that renders the
+                // summary (the History block and its copy button) discloses
+                // the coverage gap; share and export carry only the
+                // transcript, which has its own partial banner.
+                val delivered = if (generation.droppedChunks > 0) "$summary\n\n$partialNote" else summary
+                Log.i(TAG, "Summary map-reduce applied (${result.text.length} chars -> ${delivered.length}-char summary)")
+                return result.copy(summary = delivered)
             }
         }
         // Match the single-shot tail: a THROWN generation (map or reduce)
@@ -777,6 +787,7 @@ class TranscriptionOrchestrator @Inject constructor(
         Log.i(TAG, "Summary map stage: ${chunks.size} chunks (${text.length} chars)")
         val partials = mutableListOf<String>()
         var lastFailure: Throwable? = null
+        var droppedChunks = 0
         for ((index, chunk) in chunks.withIndex()) {
             val generated = runCatching {
                 llm.generateText(ChunkPromptPolicy.finalPrompt(instruction, chunk)).map { it.trim() }
@@ -803,6 +814,10 @@ class TranscriptionOrchestrator @Inject constructor(
                     return SummaryGeneration(null, failure = failure)
                 }
                 failure?.let { lastFailure = it }
+                // TASK-538: a chunk that contributes no partial narrows what
+                // the delivered summary can cover; the count feeds the
+                // partial-coverage note in summarizeLongTranscript.
+                droppedChunks++
                 Log.w(TAG, "Summary map stage: chunk ${index + 1}/${chunks.size} produced no usable partial; continuing")
             }
         }
@@ -815,19 +830,23 @@ class TranscriptionOrchestrator @Inject constructor(
         if (partials.size == 1) {
             val lone = partials.first()
             return if (SummaryPolicy.hasCoverageFloor(lone, text.length)) {
-                SummaryGeneration(lone, failure = lastFailure)
+                SummaryGeneration(lone, failure = lastFailure, droppedChunks = droppedChunks)
             } else {
                 Log.w(TAG, "Summary map stage: the lone partial fails the coverage floor; refusing the one-chunk recap")
                 SummaryGeneration(null, failure = lastFailure)
             }
         }
-        return summarizeWithMapReduce(llm, instruction, partials.joinToString("\n\n"), levelsLeft - 1)
+        val reduced = summarizeWithMapReduce(llm, instruction, partials.joinToString("\n\n"), levelsLeft - 1)
+        return reduced.copy(droppedChunks = droppedChunks + reduced.droppedChunks)
     }
 
-    /** TASK-520: the map-reduce core's verdict (a summary, or why not). */
+    /** TASK-520: the map-reduce core's verdict (a summary, or why not).
+     *  TASK-538: [droppedChunks] counts map chunks that contributed no partial
+     *  (timeouts excepted; they abort the attempt instead). */
     private data class SummaryGeneration(
         val summary: String?,
         val failure: Throwable? = null,
+        val droppedChunks: Int = 0,
     )
 
     /**
@@ -892,7 +911,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 // map stage dies entirely (see summarizeLongTranscript).
                 Log.i(TAG, "Summary pass: ${result.text.length} chars exceeds the context guard; map-reduce over chunks")
                 return@runCatching summarizeLongTranscript(
-                    llm = llm, instructions = instructions, result = result)
+                    llm = llm, instructions = instructions, result = result,
+                    partialNote = context.getString(R.string.summary_partial_note))
             }
             var summary: String? = null
             var generationFailure: Throwable? = null
