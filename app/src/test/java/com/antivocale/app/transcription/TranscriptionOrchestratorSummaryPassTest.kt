@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.R
 import com.antivocale.app.data.local.LogEntity
+import com.antivocale.app.manager.EngineWedgeTimeoutException
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
@@ -580,6 +581,116 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
         val delivered = runAudioRequest("summ-map-all-fail")
 
         assertEquals(hugeTranscript, delivered.getOrNull())
+        coVerify(atLeast = 1) { logDao.update(match {
+            it.summary == null && it.summarySkipReason == SummaryPolicy.SKIP_REASON_FAILED
+        }) }
+    }
+
+    // ---- TASK-659: prefill-overflow re-split in the map stage ----
+
+    /** The engine's state-entry overflow signal, wrapped the way a JNI
+     *  failure may reach the orchestrator (the detector walks causes). */
+    private fun prefillOverflow(): Throwable = IllegalStateException(
+        "text generation failed",
+        RuntimeException(
+            "Prefill input length exceeds available state entries (remaining capacity: 1398)"))
+
+    /** The pieces TASK-659's one re-split level yields for [chunk]. */
+    private fun resplitPieces(chunk: String): List<String> =
+        SummaryPolicy.reSplitPieces(chunk, chunk.length / 2)
+
+    /** Length-driven responder, deterministic regardless of the halving
+     *  tree's shape: prompts longer than [overflowAbove] fail with the
+     *  overflow signal (units that can, halve); prompts at or below
+     *  [reduceCeiling] are the reduce's joined partials and succeed; units
+     *  in between (the floor-size pieces) succeed while [floorSuccessBudget]
+     *  lasts, then overflow and DROP (floor units cannot halve). */
+    private fun stubLengthDrivenOverflow(
+        overflowAbove: Int,
+        reduceCeiling: Int = 1200,
+        floorSuccessBudget: Int = Int.MAX_VALUE,
+    ) {
+        var budget = floorSuccessBudget
+        coEvery { llmBackend.generateText(any()) } coAnswers {
+            val prompt = firstArg<String>()
+            when {
+                prompt.length > overflowAbove -> Result.failure(prefillOverflow())
+                prompt.length <= reduceCeiling -> Result.success("Riassunto: budget, scadenze, responsabili.")
+                budget > 0 -> { budget--; Result.success("Pezzo: budget e scadenze.") }
+                else -> Result.failure(prefillOverflow())
+            }
+        }
+    }
+
+    @Test
+    fun `persistent overflow halves units down under the limit and delivers clean`() = runTest {
+        stubMapReducePass()
+        // Every unit above 2000 prompt chars overflows and halves until its
+        // pieces fit; nothing drops, the reduce succeeds: no partial note.
+        stubLengthDrivenOverflow(overflowAbove = 2000)
+
+        val delivered = runAudioRequest("summ-map-halving-clean")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        coVerify(atLeast = 1) { logDao.update(match { e ->
+            e.summary != null && e.summarySkipReason == null
+        }) }
+    }
+
+    @Test
+    fun `floor-size units that still overflow drop and the note discloses the gap`() = runTest {
+        stubMapReducePass()
+        // Same halving, but only the FIRST six floor pieces fit; the later
+        // floor units overflow and, unable to halve again, DROP: the TASK-538
+        // partial note rides the delivered summary.
+        stubLengthDrivenOverflow(overflowAbove = 2000, floorSuccessBudget = 6)
+
+        val delivered = runAudioRequest("summ-map-halving-drop")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        coVerify(atLeast = 1) { logDao.update(match { e ->
+            e.summary != null && e.summary!!.endsWith(
+                androidx.test.core.app.ApplicationProvider.getApplicationContext<Context>().getString(R.string.summary_partial_note).trim())
+        }) }
+    }
+
+    @Test
+    fun `a non-overflow chunk failure drops without a re-split`() = runTest {
+        val expectedChunks = stubMapReducePass()
+        val responses = ArrayDeque<Result<String>>()
+        responses.addLast(Result.failure(IllegalStateException("generation died")))
+        repeat(expectedChunks - 1) { responses.addLast(Result.success("Parte ${it + 2}: nomi dei responsabili.")) }
+        responses.addLast(Result.success("Riassunto dalle parti disponibili della riunione."))
+        coEvery { llmBackend.generateText(any()) } coAnswers { responses.removeFirst() }
+
+        val delivered = runAudioRequest("summ-map-no-resplit")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        // No overflow signal: the chunk drops once, nothing regenerates at a
+        // smaller budget (exactly chunks + reduce generations).
+        coVerify(exactly = expectedChunks + 1) { llmBackend.generateText(any()) }
+        coVerify(atLeast = 1) { logDao.update(match { e ->
+            e.summary == withPartialNote("Riassunto dalle parti disponibili della riunione.")
+        }) }
+    }
+
+    @Test
+    fun `a wedge timeout during a re-split piece aborts the attempt`() = runTest {
+        stubMapReducePass()
+        // Chunk 1 overflows, its first piece wedges: the TASK-594 breaker
+        // must hold inside the re-split too (no grinding the remaining
+        // pieces and chunks at one ceiling each).
+        val responses = ArrayDeque<Result<String>>()
+        responses.addLast(Result.failure(prefillOverflow()))
+        responses.addLast(Result.failure(
+            EngineWedgeTimeoutException("LiteRT text generation timed out after 300s")))
+        coEvery { llmBackend.generateText(any()) } coAnswers { responses.removeFirst() }
+
+        val delivered = runAudioRequest("summ-map-overflow-wedge")
+
+        assertEquals(hugeTranscript, delivered.getOrNull())
+        // The abort fires on the wedge, exactly two generations in.
+        coVerify(exactly = 2) { llmBackend.generateText(any()) }
         coVerify(atLeast = 1) { logDao.update(match {
             it.summary == null && it.summarySkipReason == SummaryPolicy.SKIP_REASON_FAILED
         }) }

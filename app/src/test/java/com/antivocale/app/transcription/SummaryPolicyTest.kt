@@ -76,4 +76,26 @@ class SummaryPolicyTest {
         val atCeiling = "x".repeat((longTranscript.length * SummaryPolicy.MAX_SUMMARY_FRACTION).toInt())
         assertTrue(SummaryPolicy.acceptableSummary(atCeiling, longTranscript))
     }
+
+    // ---- TASK-659: the prefill-overflow signal detector ----
+
+    @Test
+    fun `isPrefillOverflow matches the JNI signal bare and through wrapped causes`() {
+        // The exact device wording (2026-09-25): the capacity suffix must not
+        // matter, only the engine's fixed preamble.
+        val jni = RuntimeException(
+            "Prefill input length exceeds available state entries (remaining capacity: 1398)")
+        assertTrue(SummaryPolicy.isPrefillOverflow(jni))
+        // The orchestrator may receive it wrapped; the chain is walked.
+        assertTrue(SummaryPolicy.isPrefillOverflow(
+            IllegalStateException("text generation failed", jni)))
+    }
+
+    @Test
+    fun `isPrefillOverflow rejects null and unrelated failures`() {
+        assertFalse(SummaryPolicy.isPrefillOverflow(null))
+        assertFalse(SummaryPolicy.isPrefillOverflow(IllegalStateException("generation died")))
+        assertFalse(SummaryPolicy.isPrefillOverflow(
+            IllegalStateException("wrapped", IllegalStateException("generation died"))))
+    }
 }

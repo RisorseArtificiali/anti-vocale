@@ -82,6 +82,11 @@ class TranscriptionOrchestrator @Inject constructor(
         private const val PARTIAL_SAVE_INTERVAL_MS = 5000L
         /** TASK-520: map -> reduce recursion budget; partials shrink hard per level. */
         private const val MAX_SUMMARY_LEVELS = 3
+
+        /** TASK-659: below this a re-split piece drops instead of halving
+         *  again (the bounded-halving floor; ~2k chars keeps every piece a
+         *  plausible summary input while capping depth at ~3 levels). */
+        private const val RE_SPLIT_FLOOR_CHARS = 2000
         private const val MB = 1024L * 1024L
         // Headroom over the on-disk model size: absorbs sherpa inference buffers and reclaimable-cache
         // noise in availMem. Tunable; see TASK-314 spec. ~300MB derived from the SmoothQuant incident.
@@ -732,7 +737,9 @@ class TranscriptionOrchestrator @Inject constructor(
      * Runs AFTER the common gates and swap in [applySummaryPass], on the
      * already-loaded LLM. The TASK-498 retry ladder applies here too: each
      * instruction gets a full map-reduce attempt before the next runs.
-     * Per-chunk failures degrade by dropping that partial; only a total
+     * Per-chunk failures degrade by dropping that partial (TASK-659
+     * exception: the engine's prefill-overflow signal re-splits the chunk
+     * once instead of dropping it); only a total
      * map failure (or the last attempt's reduce failure) fails the pass,
      * because an optional extra may never break the delivery. A summary
      * delivered despite dropped chunks carries the TASK-538 partial note
@@ -782,7 +789,10 @@ class TranscriptionOrchestrator @Inject constructor(
      * null failure = completed but rejected (guards); null summary with a
      * failure = a generation crashed (failed). Cancellation always
      * propagates (the house contract): the map loop rethrows it instead
-     * of recording it as a chunk failure.
+     * of recording it as a chunk failure. TASK-659: a chunk that overflows
+     * a fresh session's token-bounded state entries (the JNI prefill
+     * signal) is re-split once at half budget instead of dropped; see the
+     * map loop.
      */
     private suspend fun summarizeWithMapReduce(
         llm: TranscriptionBackend,
@@ -792,6 +802,10 @@ class TranscriptionOrchestrator @Inject constructor(
     ): SummaryGeneration {
         // Single generation whenever the text fits the guard (the common
         // reduce case: joined partials are a fraction of the original).
+        // TASK-659 review F2: the CHAR guard can still exceed the engine's
+        // token state entries (the motivating heavy-script case); on that
+        // signal fall through to the map stage instead of failing the whole
+        // attempt with every map partial already in hand.
         if (SummaryPolicy.withinContextLimit(text)) {
             val generated = llm.generateText(ChunkPromptPolicy.finalPrompt(instruction, text))
                 .map { it.trim() }
@@ -799,7 +813,11 @@ class TranscriptionOrchestrator @Inject constructor(
             if (candidate != null && SummaryPolicy.acceptableSummary(candidate, text)) {
                 return SummaryGeneration(candidate)
             }
-            return SummaryGeneration(null, failure = generated.exceptionOrNull())
+            val singleFailure = generated.exceptionOrNull()
+            if (singleFailure == null || !SummaryPolicy.isPrefillOverflow(singleFailure)) {
+                return SummaryGeneration(null, failure = singleFailure)
+            }
+            Log.i(TAG, "Summary stage: single-shot overflowed a fresh session's state entries; chunking")
         }
         if (levelsLeft <= 0) return SummaryGeneration(null)
         val chunks = ContextChunker.split(text)
@@ -808,16 +826,26 @@ class TranscriptionOrchestrator @Inject constructor(
         var lastFailure: Throwable? = null
         var droppedChunks = 0
         for ((index, chunk) in chunks.withIndex()) {
-            val generated = runCatching {
-                llm.generateText(ChunkPromptPolicy.finalPrompt(instruction, chunk)).map { it.trim() }
-            }.getOrElse { e ->
-                if (e is kotlinx.coroutines.CancellationException) throw e
-                Result.failure(e)
-            }
-            val candidate = generated.getOrNull()
-            if (candidate != null && SummaryPolicy.acceptableSummary(candidate, chunk)) {
-                partials += candidate
-            } else {
+            // TASK-659: mechanics of the adaptive re-split (the WHY lives in
+            // SummaryPolicy.isPrefillOverflow's KDoc): an overflowing chunk
+            // re-splits ONCE at half budget, pieces generate in place (the
+            // worklist keeps the single wedge-abort and drop sites below),
+            // and a piece never re-splits again.
+            val pending = ArrayDeque<MapUnit>()
+            pending.addLast(MapUnit(chunk, canResplit = chunk.length > RE_SPLIT_FLOOR_CHARS))
+            while (pending.isNotEmpty()) {
+                val unit = pending.removeFirst()
+                val generated = runCatching {
+                    llm.generateText(ChunkPromptPolicy.finalPrompt(instruction, unit.text)).map { it.trim() }
+                }.getOrElse { e ->
+                    if (e is kotlinx.coroutines.CancellationException) throw e
+                    Result.failure(e)
+                }
+                val candidate = generated.getOrNull()
+                if (candidate != null && SummaryPolicy.acceptableSummary(candidate, unit.text)) {
+                    partials += candidate
+                    continue
+                }
                 val failure = generated.exceptionOrNull()
                 if (failure is EngineWedgeTimeoutException) {
                     // TASK-594 circuit breaker: a timeout means the engine is
@@ -832,12 +860,34 @@ class TranscriptionOrchestrator @Inject constructor(
                     // ladder's failure path to SKIP_REASON_FAILED instead.
                     return SummaryGeneration(null, failure = failure)
                 }
+                // TASK-659: bounded halving on the overflow signal. The
+                // first overflow of a chunk pays one doomed prefill; every
+                // later unit of this stage halves preemptively is NOT done
+                // (the signal is per-session and content-dependent), so a
+                // same-script sibling chunk pays its own one prefill before
+                // halving: accepted cost, bounded by the chunk count.
+                if (unit.canResplit && failure != null &&
+                    SummaryPolicy.isPrefillOverflow(failure)
+                ) {
+                    val budget = (unit.text.length / 2).coerceAtLeast(RE_SPLIT_FLOOR_CHARS / 2)
+                    val pieces = SummaryPolicy.reSplitPieces(unit.text, budget)
+                    Log.i(TAG, "Summary map stage: unit of chunk ${index + 1}/${chunks.size} overflowed a fresh " +
+                        "session's state entries; halving into ${pieces.size} pieces")
+                    pieces.forEach {
+                        pending.addLast(MapUnit(it, canResplit = it.length > RE_SPLIT_FLOOR_CHARS))
+                    }
+                    continue
+                }
                 failure?.let { lastFailure = it }
                 // TASK-538: a chunk that contributes no partial narrows what
                 // the delivered summary can cover; the count feeds the
-                // partial-coverage note in summarizeLongTranscript.
+                // partial-coverage note in summarizeLongTranscript. TASK-659:
+                // a dropped re-split piece counts as a dropped
+                // chunk-equivalent so the disclosure stays honest.
                 droppedChunks++
-                Log.w(TAG, "Summary map stage: chunk ${index + 1}/${chunks.size} produced no usable partial; continuing")
+                val unitLabel = if (unit.text.length <= RE_SPLIT_FLOOR_CHARS) "a floor-size piece of chunk ${index + 1}/${chunks.size}"
+                    else "chunk ${index + 1}/${chunks.size}"
+                Log.w(TAG, "Summary map stage: $unitLabel produced no usable partial; continuing")
             }
         }
         if (partials.isEmpty()) return SummaryGeneration(null, failure = lastFailure)
@@ -858,6 +908,13 @@ class TranscriptionOrchestrator @Inject constructor(
         val reduced = summarizeWithMapReduce(llm, instruction, partials.joinToString("\n\n"), levelsLeft - 1)
         return reduced.copy(droppedChunks = droppedChunks + reduced.droppedChunks)
     }
+
+    /** TASK-659: one unit of the map stage's worklist: an original chunk or
+     *  a re-split piece. [canResplit] is the bounded-halving guard: a unit
+     *  above [RE_SPLIT_FLOOR_CHARS] may halve again on overflow; below it,
+     *  the drop path takes over (the depth is logarithmic by construction:
+     *  at most log2(12k/floor) halvings per chunk). */
+    private data class MapUnit(val text: String, val canResplit: Boolean)
 
     /** TASK-520: the map-reduce core's verdict (a summary, or why not).
      *  TASK-538: [droppedChunks] counts map chunks that contributed no partial
