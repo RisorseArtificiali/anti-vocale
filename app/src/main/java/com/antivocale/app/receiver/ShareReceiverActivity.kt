@@ -367,6 +367,12 @@ class ShareReceiverActivity : Activity() {
     private fun processSharedAudio(uri: Uri, mimeType: String?) {
         dispatchStarted = true
         appScope.launch(Dispatchers.Main) {
+            // TASK-578: a content-URI grant dies with the activity; the
+            // copy must complete inside this activity's lifetime. It runs
+            // here (Main dispatcher, called from onCreate, no finish() path
+            // can fire while withContext(IO) holds the main thread
+            // suspended), so the grant is alive for the whole copy. Voice
+            // messages are small (1-10MB): the blocking IO is bounded.
             val result = withContext(Dispatchers.IO) {
                 SharedAudioHandler.copyToAppStorage(applicationContext, uri, mimeType)
             }
