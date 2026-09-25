@@ -215,18 +215,6 @@ class ModelAccuracyTest {
         }
     }
 
-    /**
-     * Mirror of ExternalModelImporter.sanitizeDirName. If the importer's rule
-     * ever changes, this fails together with the dialog join and the Python
-     * mirror in scripts/generate-accuracy-artifact.py, forcing a coordinated
-     * update instead of silently unrenderable rows.
-     */
-    private fun sanitizeDirName(name: String): String =
-        name.replace(Regex("[^A-Za-z0-9._-]"), "-")
-            .replace(Regex("-+"), "-")
-            .trim('-', '.')
-            .ifBlank { "model" }
-
     @Test
     fun `bundled asset decodes and every row is well-formed`() {
         val rows = ModelAccuracy.decode(
@@ -245,32 +233,19 @@ class ModelAccuracyTest {
     }
 
     @Test
-    fun `the sanitize mirror equals the importer rule over catalog entry names`() {
-        // TASK-658 review F2: the tripwire the generator script cannot give.
-        // The Kotlin rule is the authority; this mirror must track it or the
-        // artifact's external rows silently stop rendering.
+    fun `bundled external variants match importer-sanitized catalog entry names`() {
+        // The REAL importer rule (TASK-658 simplify: the hand mirror and its
+        // equality test are gone; an importer change makes the artifact's
+        // baked variants fall out of this set, which is the tripwire).
         val importer = ExternalModelImporter(
             store = mockk(relaxed = true),
             filesRoot = { java.io.File("/tmp/unused") },
         )
-        val names = repoFile("src/main/assets/external-catalog")
-            .listFiles { f -> f.name.endsWith(".json") && !f.name.startsWith("index") }
-            .orEmpty()
-            .map { JSONObject(it.readText()).getString("name") }
-        assertTrue("no external catalog entries found", names.isNotEmpty())
-        names.forEach { n ->
-            assertEquals("mirror drifted from the importer rule on '$n'",
-                importer.sanitizeDirName(n), sanitizeDirName(n))
-        }
-    }
-
-    @Test
-    fun `bundled external variants match importer-sanitized catalog entry names`() {
         val externalVariants = repoFile("src/main/assets/external-catalog")
             .listFiles { f -> f.name.endsWith(".json") && !f.name.startsWith("index") }
             .orEmpty()
             .map { JSONObject(it.readText()).getString("name") }
-            .map(::sanitizeDirName)
+            .map { importer.sanitizeDirName(it) }
             .toSet()
         assertTrue("no external catalog entries found", externalVariants.isNotEmpty())
         val bundled = ModelAccuracy.decode(repoFile("src/main/assets/model-accuracy.json").readText())

@@ -87,9 +87,9 @@ fun PerformanceStatsDialog(
                         // Real-time factor: lower ms/s = faster. RTF < 1.0 means faster than real-time.
                         val rtf = profile.msPerSecondOfAudio / 1000f
                         val speedLabel = if (rtf <= 1f) {
-                            String.format(java.util.Locale.ROOT, "%.1fx real-time", 1f / rtf)
+                            String.format(Locale.ROOT, "%.1fx real-time", 1f / rtf)
                         } else {
-                            String.format(java.util.Locale.ROOT, "%.2fx real-time", 1f / rtf)
+                            String.format(Locale.ROOT, "%.2fx real-time", 1f / rtf)
                         }
                         val relativeSpeed = if (slowestMsPerSec > 0 && profiles.size > 1) {
                             slowestMsPerSec / profile.msPerSecondOfAudio
@@ -151,7 +151,7 @@ fun PerformanceStatsDialog(
                                     )
                                     if (relativeSpeed != null) {
                                         Text(
-                                            text = String.format(java.util.Locale.ROOT, "(%.1fx)", relativeSpeed),
+                                            text = String.format(Locale.ROOT, "(%.1fx)", relativeSpeed),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )

@@ -20,6 +20,7 @@ Validation (exit 1 with every problem listed; nothing is written on failure):
 """
 
 import csv
+import math
 import json
 import re
 import sys
@@ -105,7 +106,6 @@ def main() -> int:
             # otherwise pass the < 0 check, then json.dumps writes bare
             # NaN/Infinity which org.json cannot decode (the whole section
             # would silently vanish). Month range: 2026-13 matches \d{4}-\d{2}.
-            import math
             if numeric is not None and (numeric < 0 or not math.isfinite(numeric)):
                 problems.append(f"{where}: value must be a finite number >= 0, got {value!r}")
             if not corpus:
