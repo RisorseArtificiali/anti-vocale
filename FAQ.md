@@ -53,7 +53,7 @@ With **Auto-detect**, Whisper detects the language of the audio itself, and that
 
 ### My transcriptions used to come out in my language, and after updating they come out in English. What changed?
 
-Before version 1.12 the app silently applied the phone's language when the model supported forcing one. Many people speak a language different from their phone's, and for them that silent forcing produced the wrong output, so since 1.12 the default is Auto-detect for everyone: the model listens to the audio and decides. When that guess misfires, the transcript comes out in the wrong language. If you transcribe mostly in one language, set it explicitly in **Settings → Transcription → Transcription Language**; an explicit choice applies to the models that accept it (the Whisper family and the streaming model), while Parakeet keeps detecting on its own.
+Before version 1.12 the app silently applied the phone's language when the model supported forcing one. Many people speak a language different from their phone's, and for them that silent forcing produced the wrong output, so since 1.12 the default is Auto-detect for everyone: the model listens to the audio and decides. When that guess misfires, the transcript comes out in the wrong language. Every result shows the language it was transcribed in as a small chip on its History card (a star marks a detected language, no star means you pinned it); tapping the chip explains what happened and leads to the setting. If you transcribe mostly in one language, set it explicitly in **Settings → Transcription → Transcription Language**; an explicit choice applies to the models that accept it (the Whisper family and the streaming model), while Parakeet keeps detecting on its own.
 
 ## Queue and concurrent requests
 
