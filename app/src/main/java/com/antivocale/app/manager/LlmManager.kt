@@ -103,9 +103,10 @@ open class LlmManager @Inject constructor(
         private const val DEFAULT_NATIVE_CANCEL_TIMEOUT_MS = 5_000L
         private const val MAX_TOKENS = 2048
 
-        // Single source of truth for the LiteRT conversation/sampler config of TEXT chat,
-        // shared by the initial conversation (initializeLiteRT) and the post-audio restore.
-        // Hoisted so the text paths cannot drift apart. Internal for the pinned unit test.
+        // Single source of truth for the LiteRT conversation/sampler config of TEXT
+        // pass generations (each generation creates its own fresh conversation with
+        // this config). Hoisted so the text path cannot drift. Internal for the
+        // pinned unit test.
         internal val DEFAULT_CONVERSATION_CONFIG = ConversationConfig(
             samplerConfig = SamplerConfig(topK = 40, topP = 0.95, temperature = 0.8)
         )
@@ -146,7 +147,6 @@ open class LlmManager @Inject constructor(
 
     // LiteRT-LM engine (preferred for multimodal)
     private var litertEngine: Engine? = null
-    private var litertConversation: Conversation? = null
 
     // MediaPipe fallback (text only). MediaPipe's LlmInference is deprecated upstream
     // (GenAI is in maintenance mode, superseded by LiteRT-LM), but retained as a text-only
@@ -180,6 +180,14 @@ open class LlmManager @Inject constructor(
     // Mutex to serialize audio transcription — LiteRT-LM only supports ONE conversation at a time,
     // so parallel chunk processing must be serialized to avoid "Conversation is closed" errors.
     private val audioMutex = Mutex()
+
+    // Mutex serializing every fresh-conversation lifecycle (both generation
+    // paths): LiteRT-LM permits ONE live conversation per engine, and the
+    // text paths take no audioMutex, so WITHOUT this a subtitle-timeout
+    // request (which bypasses the service queue) could overlap a queued
+    // one and create two live conversations. audioMutex stays outer-scoped
+    // for its keep-alive bracket; nesting order is always audio -> this.
+    private val conversationMutex = Mutex()
 
     // Callback for when model is auto-unloaded
     private val onAutoUnloadCallback = AtomicReference<(() -> Unit)?>(null)
@@ -351,9 +359,12 @@ open class LlmManager @Inject constructor(
             Log.i(TAG, "Initializing engine (this may take 10-30 seconds)...")
             litertEngine!!.initialize()
 
-            Log.i(TAG, "Creating conversation...")
-            // Create default conversation
-            litertConversation = litertEngine!!.createConversation(DEFAULT_CONVERSATION_CONFIG)
+            // Init-time smoke: a model that initializes but cannot host a
+            // conversation must fail HERE (falling back to MediaPipe inside
+            // this try), not minutes later mid-request at the first
+            // generation. The shared conversation this replaces used to
+            // provide this fail-fast for free.
+            closeConversationSafe(litertEngine!!.createConversation(DEFAULT_CONVERSATION_CONFIG))
 
             currentBackend = Backend.LITERT_LM
             modelPath = path
@@ -447,7 +458,7 @@ open class LlmManager @Inject constructor(
      * awaitClose is a no-op, bytecode-verified 0.13.1), so on timeout the
      * native generation must be explicitly cancelled via [cancel]:
      * otherwise the session stays wedged and every later generation on
-     * the process-wide conversation burns another full ceiling, leaking
+     * a fresh conversation burns another full ceiling, leaking
      * one native callback per timeout. The same coverage applies to a
      * CALLER cancellation, which escapes withTimeoutOrNull untouched:
      * it cancels the native generation too, then rethrows. Internal for
@@ -588,13 +599,69 @@ open class LlmManager @Inject constructor(
     }
 
     /**
-     * Generates text using LiteRT-LM backend: the shared chat-tuned
-     * conversation under the generation ceiling.
+     * Generates text using LiteRT-LM backend: a FRESH conversation per call,
+     * under the generation ceiling. Pass work (punctuation, summaries) is
+     * deterministic one-shot content and must not share state: the former
+     * shared conversation accumulated state entries until the summary
+     * map-reduce overflowed it on device (LiteRtLmJniException "Prefill
+     * input length exceeds available state entries (remaining capacity:
+     * 1398)", 2026-09-25: chunk 1 consumed the budget, chunks 2..4 could not
+     * enter). The TASK-370 lesson for the audio path, applied to text.
      */
-    private suspend fun generateTextLiteRT(prompt: String): Result<String> {
-        val conversation = litertConversation
-            ?: return Result.failure(IllegalStateException("LiteRT conversation not available"))
-        return generateUnderCeiling(conversation, label = "text", Contents.of(Content.Text(prompt)))
+    private suspend fun generateTextLiteRT(prompt: String): Result<String> =
+        generateInFreshConversation(
+            DEFAULT_CONVERSATION_CONFIG,
+            label = "text",
+            Contents.of(Content.Text(prompt)),
+        )
+
+    /**
+     * The ONE fresh-conversation lifecycle, shared by both LiteRT generation
+     * paths (the generateUnderCeiling precedent: two hand-rolled copies drift;
+     * the drift was found in review the day the second copy was born). Owns
+     * create-with-catch, the ceiling, the native-Error wrap, and the
+     * close-in-finally: a caller-cancellation rethrow or a native Error must
+     * never leak the conversation, which the library holds as ONE live
+     * session per engine. TASK-606: on a WEDGED engine even this close is
+     * skipped: the abandoned cancelProcess may still be inside it.
+     */
+    private suspend fun generateInFreshConversation(
+        config: ConversationConfig,
+        label: String,
+        contents: Contents,
+    ): Result<String> = conversationMutex.withLock {
+        val engine = litertEngine
+            ?: return Result.failure(IllegalStateException("LiteRT engine not available"))
+        var outcome: Result<String>
+        var abandonedByCaller = false
+        var conversation: Conversation? = null
+        try {
+            conversation = engine.createConversation(config)
+            outcome = generateUnderCeiling(conversation, label, contents)
+        } catch (e: CancellationException) {
+            // The caller abandoned this generation; the ceiling already
+            // dispatched an unawaited native cancel that may still be inside
+            // this conversation. Closing now would race it (the TASK-606
+            // crash class), so the conversation is leaked until the engine
+            // unloads: the safe ordering on the one-live-conversation engine.
+            abandonedByCaller = true
+            Log.w(TAG, "LiteRT $label generation abandoned by caller; conversation left to engine unload")
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "LiteRT $label generation failed", e)
+            outcome = Result.failure(e)
+        } catch (e: Error) {
+            // Native errors (SIGSEGV, etc.): preserve the original as the
+            // cause, and LATCH the wedge (the MediaPipe-timeout precedent):
+            // the engine may be corrupt, and the next generation must fail
+            // fast instead of re-entering native createConversation.
+            engineWedged = true
+            Log.e(TAG, "LiteRT native error ($label); engine marked wedged", e)
+            outcome = Result.failure(IllegalStateException("Native error during $label generation: ${e.message}", e))
+        } finally {
+            if (!engineWedged && !abandonedByCaller) closeConversationSafe(conversation)
+        }
+        outcome
     }
 
     /**
@@ -705,114 +772,22 @@ open class LlmManager @Inject constructor(
     }
 
     /**
-     * Generates text from audio using LiteRT-LM backend.
-     *
-     * LiteRT-LM permits only ONE live [Conversation] at a time, so this method closes the
-     * main conversation, processes audio in a FRESH conversation, and then ALWAYS restores
-     * a valid main conversation in a `finally` block — on success, exception, AND native
-     * error paths. This robustness is critical for multi-chunk processing: a failure on one
-     * chunk must never leave `litertConversation` pointing at a stale/closed instance,
-     * otherwise subsequent chunks (and orchestrator retries) cascade into total failure.
+     * Generates text from audio using LiteRT-LM backend, in a FRESH
+     * conversation per call through the shared lifecycle helper
+     * ([generateInFreshConversation]); LiteRT-LM permits only ONE live
+     * [Conversation] at a time.
      */
-    private suspend fun generateFromAudioLiteRT(prompt: String, audioData: ByteArray): Result<String> {
-        val engine = litertEngine
-            ?: return Result.failure(IllegalStateException("LiteRT engine not available"))
-
-        // Close the main session via the safe helper and NULL the field immediately so it
-        // never holds a stale/closed reference. LiteRT only supports ONE session at a time.
-        closeConversationSafe(litertConversation)
-        litertConversation = null
-
-        // Audio gets the ASR-tuned config (greedy sampler + transcription system
-        // instruction); the main conversation restored in `finally` stays chat-tuned.
-        val conversationConfig = AUDIO_CONVERSATION_CONFIG
-
-        var freshConversation: Conversation? = null
-        var outcome: Result<String> = Result.failure(IllegalStateException("Audio processing did not complete"))
-        var caughtNativeError = false
-
-        try {
-            Log.d(TAG, "Creating fresh conversation for audio (temporarily replacing main session)...")
-            freshConversation = engine.createConversation(conversationConfig)
-
-            Log.d(TAG, "Processing audio in fresh conversation...")
-            Log.d(TAG, "Audio data size: ${audioData.size} bytes")
-
-            // TASK-594: the audio path hung forever before this ceiling; a
-            // wedged native stream held audioMutex and the keep-alive work
-            // bracket with it.
-            generateUnderCeiling(
-                freshConversation,
-                label = "audio",
-                Contents.of(
-                    // E4 REFUTED ON DEVICE 2026-08-24 (g240-e2be4): raw PCM made every
-                    // chunk return blank ("No transcription produced"); the litertlm
-                    // 0.13.1 Kotlin AudioBytes path decodes the WAV container via
-                    // miniaudio and does NOT accept headerless PCM (the Gallery
-                    // reference's raw-PCM feed goes through a different layer).
-                    Content.AudioBytes(audioData),
-                    Content.Text(prompt)
-                )
-            ).onSuccess { result ->
-                Log.d(TAG, "Fresh conversation audio processing complete: ${result.length} chars")
-                outcome = Result.success(result)
-            }.onFailure { e ->
-                outcome = Result.failure(e)
-            }
-        } catch (e: CancellationException) {
-            // TASK-594: caller cancellation propagates; the finally block
-            // below still releases the fresh conversation.
-            throw e
-        } catch (e: Exception) {
-            Log.e(TAG, "LiteRT audio processing failed", e)
-            outcome = Result.failure(e)
-        } catch (e: Error) {
-            // Catch native errors (SIGSEGV, etc.) — preserve the original as the cause.
-            caughtNativeError = true
-            Log.e(TAG, "LiteRT native error", e)
-            outcome = Result.failure(IllegalStateException("Native error during audio processing: ${e.message}", e))
-        } finally {
-            // Release the fresh conversation (safe helper swallows double-close).
-            // TASK-606: on a WEDGED engine even this close is skipped: the
-            // abandoned cancelProcess was issued against THIS conversation
-            // and may still be inside it (a close would race it).
-            if (!engineWedged) closeConversationSafe(freshConversation)
-            freshConversation = null
-            if (caughtNativeError || engineWedged) {
-                // After a native Error the engine/runtime may be corrupt: do NOT re-enter
-                // native here (createConversation), or a second crash could escape `finally`
-                // (its inner catch is Exception-only) and suppress the captured `outcome`.
-                // litertConversation is already null (set at entry), so the next caller sees a
-                // clean "not available" rather than risking another native crash.
-                // TASK-606 F4: the same skip applies to a WEDGED engine: an
-                // abandoned cancelProcess may still be inside the engine, and
-                // close()/createConversation() here would race it under
-                // audioMutex with no ceiling (the frozen-caller class again).
-                Log.w(TAG, "Skipping main-conversation restore after native error or wedge (engine may be unstable)")
-            } else {
-                // Recreate a valid main conversation so the next chunk/retry starts from a
-                // valid state on BOTH success and ordinary-exception paths.
-                try {
-                    // DEFAULT (chat-tuned), NOT the local `conversationConfig`: after an
-                    // audio chunk the restored chat conversation must not inherit the ASR
-                    // system instruction and greedy sampler, or text chat and the final
-                    // generative pass (generateText reads this conversation) are conditioned
-                    // as a transcription engine (reviewer-caught wiring bug).
-                    litertConversation = engine.createConversation(DEFAULT_CONVERSATION_CONFIG)
-                    Log.d(TAG, "Restored main conversation for text chat")
-                } catch (restoreError: Exception) {
-                    // Broad catch is intentional: this runs in `finally` and must never mask the
-                    // real `outcome` already captured above, nor throw out of finally. Engine may
-                    // be in a bad state — leave the field null so callers see the real failure
-                    // rather than a stale closed conversation on the next call.
-                    Log.e(TAG, "Failed to restore conversation after audio processing", restoreError)
-                    litertConversation = null
-                }
-            }
-        }
-
-        return outcome
-    }
+    private suspend fun generateFromAudioLiteRT(prompt: String, audioData: ByteArray): Result<String> =
+        // E4 REFUTED ON DEVICE 2026-08-24 (g240-e2be4): raw PCM made every
+        // chunk return blank ("No transcription produced"); the litertlm
+        // 0.13.1 Kotlin AudioBytes path decodes the WAV container via
+        // miniaudio and does NOT accept headerless PCM (the Gallery
+        // reference's raw-PCM feed goes through a different layer).
+        generateInFreshConversation(
+            AUDIO_CONVERSATION_CONFIG,
+            label = "audio",
+            Contents.of(Content.AudioBytes(audioData), Content.Text(prompt)),
+        )
 
     /**
      * Checks if the model is ready for inference.
@@ -884,8 +859,6 @@ open class LlmManager @Inject constructor(
         }
 
         // Close LiteRT resources (use safe helper, never throws on double-close)
-        if (!skipNativeClose) closeConversationSafe(litertConversation)
-        litertConversation = null
         if (!skipNativeClose) litertEngine?.close()
         litertEngine = null
 
