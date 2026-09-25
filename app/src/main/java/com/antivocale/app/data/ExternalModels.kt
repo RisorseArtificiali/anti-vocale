@@ -9,6 +9,13 @@ enum class ModelFamily { TRANSDUCER, WHISPER, CTC, SENSE_VOICE, CANARY, MOONSHIN
 enum class ExternalModelSource { LOCAL, URL, CATALOG }
 
 /**
+ * Directory name under filesDir that holds imported external models. Single
+ * definition shared by the importer's root (AppModule) and the startup dir
+ * sweep (TASK-657, GH #117): both must resolve the same directory.
+ */
+const val EXTERNAL_MODELS_DIR_NAME = "models/external"
+
+/**
  * Internal helper: parse a JSONObject from a JSON object, returning emptyMap if absent or null.
  * Used by both ExternalModelRecord.fromJson and ExternalModelEntryJson.parse.
  */

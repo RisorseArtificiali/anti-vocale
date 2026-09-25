@@ -342,6 +342,18 @@ if (!buildingFdroidOnly) {
     apply(plugin = "com.google.firebase.crashlytics")
 }
 
+// Environmental isolation: test workers default java.io.tmpdir to the machine
+// tmpfs, whose per-USER quota is shared with every other session on this
+// workstation (a neighbor's 12G burst makes the whole suite fail with Disk
+// quota exceeded). -PtestTmpDir=<path> redirects ONLY the test JVMs' tmpdir
+// (TemporaryFolder, native extractions); the daemon and build caches are
+// unaffected. Used by the overnight runs; nothing changes without the flag.
+if (project.hasProperty("testTmpDir")) {
+    tasks.withType<Test>().configureEach {
+        systemProperty("java.io.tmpdir", project.property("testTmpDir").toString())
+    }
+}
+
 // TASK-387: -Pbyteman wires the agent into every Test JVM. Tests opt in by
 // assuming the byteman.agent system property (JUnit4 Assume; JUnit5 has
 // @EnabledIfSystemProperty); without the property the suite is identical

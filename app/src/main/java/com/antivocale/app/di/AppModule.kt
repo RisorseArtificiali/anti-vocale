@@ -12,6 +12,7 @@ import com.antivocale.app.data.RecentModelUse
 import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
+import com.antivocale.app.data.EXTERNAL_MODELS_DIR_NAME
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.catalog.BundledModelCatalog
@@ -132,7 +133,7 @@ object AppModule {
     ): com.antivocale.app.data.ExternalModelImportOperations =
         ExternalModelImporter(
             store = store,
-            filesRoot = { java.io.File(context.filesDir, "models/external") },
+            filesRoot = { java.io.File(context.filesDir, EXTERNAL_MODELS_DIR_NAME) },
             repoListing = com.antivocale.app.data.HuggingFaceRepoListing(okHttpClient),
         )
 

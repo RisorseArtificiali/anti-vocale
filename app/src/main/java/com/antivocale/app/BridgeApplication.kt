@@ -110,6 +110,21 @@ class BridgeApplication : Application(), Configuration.Provider {
         }.onFailure { e ->
             android.util.Log.e("BridgeApplication", "Dangling-backend cleanup failed (will retry on next launch)", e)
         }
+        // TASK-657 (GH #117): external dirs whose record was deleted in an earlier
+        // run accumulate invisibly; reconcile the external root against the store's
+        // records. Launched, not runBlocking: the delete can span GBs and must not
+        // block cold start; contained so a sweep failure never crashes startup.
+        // No import can be in flight yet (every import entry is UI or debug-SPI
+        // driven, in-process), so no in-flight dir needs excluding.
+        applicationScope.launch(Dispatchers.IO) {
+            runCatching {
+                com.antivocale.app.data.OrphanedExternalModelDirCleaner(externalModelStore) {
+                    java.io.File(filesDir, com.antivocale.app.data.EXTERNAL_MODELS_DIR_NAME)
+                }.cleanIfNeeded()
+            }.onFailure { e ->
+                android.util.Log.e("BridgeApplication", "External-model dir sweep failed (will retry on next launch)", e)
+            }
+        }
         // GH #51: rows left QUEUED/PROCESSING by a process death can never complete
         // (START_NOT_STICKY restores nothing); fail them so they don't render as a
         // permanently in-flight queue. Runs at process start, before the service can
