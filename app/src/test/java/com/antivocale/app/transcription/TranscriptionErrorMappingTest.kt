@@ -34,6 +34,17 @@ class TranscriptionErrorMappingTest {
     }
 
     @Test
+    fun `CorruptModelFiles maps to the corrupt-healed re-download string`() {
+        // TASK-660: the typed corruption verdict routes to the re-download
+        // message. The former message-prefix match could never fire because
+        // ModelLoadError prepends "Model load failed: " to every detail.
+        val error = TranscriptionException.CorruptModelFiles(
+            "corrupted model files (removed, re-download from the Models tab): turbo-encoder.int8.onnx")
+        val msg = TranscriptionOrchestrator.userFacingErrorMessage(context, error)
+        assertEquals(context.getString(R.string.error_model_corrupt_healed), msg)
+    }
+
+    @Test
     fun `NativeError maps to error_native string`() {
         val error = TranscriptionException.NativeError("JNI crash in sherpa-onnx")
         val msg = TranscriptionOrchestrator.userFacingErrorMessage(context, error)
@@ -82,6 +93,20 @@ class TranscriptionErrorMappingTest {
         )
         assertTrue("ModelLoadError and NativeError should produce different messages",
             modelMsg != nativeMsg)
+    }
+
+    @Test
+    fun `CorruptModelFiles message differs from the generic ModelLoadError message`() {
+        // TASK-660: the heal verdict must surface the re-download instruction,
+        // not the generic load failure.
+        val corruptMsg = TranscriptionOrchestrator.userFacingErrorMessage(
+            context, TranscriptionException.CorruptModelFiles("test")
+        )
+        val modelMsg = TranscriptionOrchestrator.userFacingErrorMessage(
+            context, TranscriptionException.ModelLoadError("test")
+        )
+        assertTrue("CorruptModelFiles and ModelLoadError should produce different messages",
+            corruptMsg != modelMsg)
     }
 
     @Test

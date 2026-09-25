@@ -22,6 +22,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.data.catalog.CatalogDisplay
+import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogStringKeys
 import com.antivocale.app.data.local.FailureContext
 import com.antivocale.app.data.local.FailureContextJson
@@ -58,6 +59,10 @@ class TranscriptionOrchestrator @Inject constructor(
     private val backendManager: TranscriptionBackendManager,
     private val audioPreprocessor: AudioPreprocessor,
     private val backendRegistry: BackendRegistry,
+    // TASK-660 review F2: the corruption heal must retire the entry's share
+    // surfaces exactly like the Models-tab delete does.
+    private val shareTargetManager: com.antivocale.app.data.ShareTargetManager,
+    private val shareShortcutManager: com.antivocale.app.data.ShareShortcutManager,
     private val externalModelStore: ExternalModelStore,
 ) {
     companion object {
@@ -100,15 +105,15 @@ class TranscriptionOrchestrator @Inject constructor(
                     // the notification and the Tasker reply carry the localized
                     // generic failure (the technical detail stays in logcat).
                     context.getString(R.string.transcription_failed)
+                is TranscriptionException.CorruptModelFiles ->
+                    // TASK-660: the typed corruption verdict carries the
+                    // actionable "removed, re-download" instruction; it
+                    // replaces a message-prefix match that could never fire
+                    // (ModelLoadError prepends "Model load failed: " to every
+                    // detail).
+                    context.getString(R.string.error_model_corrupt_healed)
                 is TranscriptionException.ModelLoadError ->
-                    // The heal path (TASK-479) carries the actionable
-                    // "corrupt files removed, re-download" instruction;
-                    // every other load error keeps the generic string.
-                    if (error.message?.startsWith("corrupt model files") == true) {
-                        context.getString(R.string.error_model_corrupt_healed)
-                    } else {
-                        context.getString(R.string.error_model_load)
-                    }
+                    context.getString(R.string.error_model_load)
                 is TranscriptionException.InsufficientMemory ->
                     // The exception already carries the localized low-memory message with the
                     // measured numbers; surface it directly instead of the generic model-load string.
@@ -1160,7 +1165,7 @@ class TranscriptionOrchestrator @Inject constructor(
             is CatalogDisplay.Resource -> context.getString(CatalogStringKeys.resolve(d.key))
             is CatalogDisplay.Literal -> d.text
         }
-        return configureSherpaBackend(
+        val load = configureSherpaBackend(
             backendId = descriptor.backendId,
             modelPath = resolvedPath,
             label = label,
@@ -1168,6 +1173,70 @@ class TranscriptionOrchestrator @Inject constructor(
             context = context,
             modelType = entry.modelType,
         )
+        // TASK-660 layer 2: the self-heal. Only the typed corruption verdict
+        // deletes anything; a generic load failure (OOM, NNAPI, wedge, missing
+        // metadata) must leave the model dir on disk. When the heal itself
+        // fails (the dir could not be deleted) the row must NOT claim the
+        // files were removed, so the failure is downgraded to the generic
+        // message (review F3).
+        val loadFailure = load.exceptionOrNull()
+        if (loadFailure is TranscriptionException.CorruptModelFiles) {
+            if (!healCorruptModelDir(context, descriptor, resolvedPath)) {
+                return Result.failure(TranscriptionException.ModelLoadError(
+                    "corrupt model dir could not be removed: $resolvedPath"))
+            }
+        }
+        return load
+    }
+
+    /**
+     * TASK-660 layer 2: deletes the corrupt model DIRECTORY and re-resolves
+     * the saved path the same WAY as the Models-tab delete (delete dir; a
+     * remaining healthy sibling variant stays active, none leaves the entry
+     * not-installed for a clean re-download), INCLUDING the tab's
+     * share-surface retirement on the cleared branch (review F2: the alias
+     * must not stay selectable for a not-installed model). The one tab side
+     * effect deliberately NOT mirrored is the in-memory CatalogState update:
+     * that cache belongs to the Models tab's ViewModel.
+     *
+     * Layer split, deliberate (reviews F1+F3): the backend's gate leaves the
+     * corrupt files ON DISK so its typed verdict stays repeatable for every
+     * caller (a direct initialize like the benchmark cannot heal and must not
+     * wedge the entry behind a stripped dir); THIS heal then removes the whole
+     * directory and rewrites the saved-path preference, which only the
+     * orchestrator owns. Returns false when the deletion fails, so the caller
+     * downgrades to the generic error instead of claiming removal.
+     */
+    private suspend fun healCorruptModelDir(
+        context: Context,
+        descriptor: BackendDescriptor,
+        resolvedPath: String,
+    ): Boolean {
+        val manager = SherpaModelManager.of(descriptor.backendId)
+        val deleted = manager.deleteModel(resolvedPath)
+        if (!deleted) {
+            // Review F3: with the dir still on disk (and the corrupt files
+            // still in it; the backend no longer strips them), every later
+            // load re-runs this heal; claiming removal now would be a lie on
+            // every History row until one deletion succeeds.
+            Log.e(TAG, "Corrupt model dir deletion FAILED at $resolvedPath; " +
+                "delivering the generic error and retrying the heal on the next load")
+            return false
+        }
+        Log.w(TAG, "Corrupt model dir deleted at $resolvedPath; " +
+            "the Models tab offers the re-download")
+        val next = manager.resolveActiveModelPath(context)
+        if (next != null) {
+            descriptor.saveModelPath(preferencesManager, next)
+        } else {
+            descriptor.clearModelPath(preferencesManager)
+            // Review F2: mirror the Models-tab delete's share-surface
+            // retirement (the alias must not stay selectable for a
+            // not-installed model).
+            shareTargetManager.onModelDeleted(descriptor.backendId)
+            shareShortcutManager.refresh()
+        }
+        return true
     }
 
     /**

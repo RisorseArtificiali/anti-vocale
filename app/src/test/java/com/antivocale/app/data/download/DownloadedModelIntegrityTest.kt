@@ -40,6 +40,18 @@ class DownloadedModelIntegrityTest {
     }
 
     @Test
+    fun `empty onnx file is flagged by the floor`() {
+        // TASK-660: the zero-byte file is the degenerate truncation; the same
+        // size floor must catch it before any recognizer construction.
+        val dir = tmp.newFolder()
+        File(dir, "encoder.int8.onnx").writeBytes(ByteArray(0))
+
+        val findings = DownloadedModelIntegrity.validate(dir)
+        assertEquals(1, findings.size)
+        assertTrue(findings[0].reason.contains("small"))
+    }
+
+    @Test
     fun `non-onnx payload in an onnx file is flagged`() {
         val dir = tmp.newFolder()
         onnx("encoder.int8.onnx", validHeader = false).copyTo(File(dir, "encoder.int8.onnx"))

@@ -446,14 +446,24 @@ class SherpaBackend(
             // files the catalog pins. Failed files are removed with their
             // sidecars so the next attempt is a clean re-download, not
             // another abort.
+            // TASK-660: the verdict is the TYPED
+            // [TranscriptionException.CorruptModelFiles] the orchestrator
+            // heals on; the abort mechanism this gate exists to prevent lives
+            // in that exception's KDoc (the one authoritative home).
             val integrityFailures = ModelDirIntegrity.verify(dir, variant, verifyPins = variantMatchesDir)
             if (integrityFailures.isNotEmpty()) {
+                // TASK-660 review F1: the files stay ON DISK (no removeFailed
+                // here) so the typed verdict stays REPEATABLE: a direct
+                // backend caller that cannot heal (the benchmark) would
+                // otherwise strip them, and every later load would fail the
+                // completeness check with a generic missing-files error the
+                // heal can never fire on. The orchestrator's heal removes the
+                // whole directory on the first ordinary load.
                 Log.e(TAG, "Corrupt model files in $modelDirectory: " +
                     integrityFailures.joinToString { "${it.file.name} (${it.reason})" } +
-                    " - removing for re-download")
-                ModelDirIntegrity.removeFailed(integrityFailures)
-                return@withContext Result.failure(TranscriptionException.ModelLoadError(
-                    "corrupt model files (removed, re-download from the Models tab): " +
+                    " - the orchestrator heal removes the dir for re-download")
+                return@withContext Result.failure(TranscriptionException.CorruptModelFiles(
+                    "corrupted model files (re-download from the Models tab): " +
                     integrityFailures.joinToString { it.file.name })
                 )
             }

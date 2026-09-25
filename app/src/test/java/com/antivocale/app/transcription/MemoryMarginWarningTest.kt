@@ -51,6 +51,8 @@ class MemoryMarginWarningTest {
             mockk<TranscriptionBackendManager>(relaxed = true),
             mockk<AudioPreprocessor>(relaxed = true),
             staticRegistry(),
+            mockk(relaxed = true),
+            mockk(relaxed = true),
             ExternalModelStore(preferences, dirExists = { true }),
         )
     }

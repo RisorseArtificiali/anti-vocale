@@ -26,6 +26,8 @@ class TranscriptionOrchestratorQueueStatusTest {
             backendManager = mockk(relaxed = true),
             audioPreprocessor = mockk<AudioPreprocessor>(),
             backendRegistry = staticRegistry(),
+            shareTargetManager = mockk(relaxed = true),
+            shareShortcutManager = mockk(relaxed = true),
             externalModelStore = mockk(relaxed = true),
         )
 

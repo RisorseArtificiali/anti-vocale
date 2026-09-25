@@ -179,8 +179,23 @@ sealed class BackendConfig {
 sealed class TranscriptionException(message: String, cause: Throwable? = null) :
     Exception(message, cause) {
     /** The model file is missing, corrupt, truncated, or the wrong format for this backend. */
-    class ModelLoadError(detail: String, cause: Throwable? = null) :
+    open class ModelLoadError(detail: String, cause: Throwable? = null) :
         TranscriptionException("Model load failed: $detail", cause)
+
+    /**
+     * TASK-660: the pre-load integrity gate rejected the model files before any
+     * recognizer construction (structural header/magic and size floors via the
+     * shared import-time validator, pinned SHA-256 where the catalog carries
+     * pins). A distinct TYPE, not message text: the orchestrator deletes the
+     * corrupt model directory and routes the History row to the re-download
+     * message ONLY on this verdict, while a generic [ModelLoadError] (OOM,
+     * NNAPI, metadata) must delete nothing. The rejected bytes would otherwise
+     * reach OfflineRecognizer.newFromFile, whose native Ort::Exception escapes
+     * the JNI boundary and aborts the process (uncatchable from Kotlin;
+     * upstream k2-fsa/sherpa-onnx#3987), so this validation is the only
+     * barrier.
+     */
+    class CorruptModelFiles(detail: String) : ModelLoadError(detail)
 
     /** The model loaded but a native/decoding error occurred during transcription. */
     class NativeError(detail: String, cause: Throwable? = null) :

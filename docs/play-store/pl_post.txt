@@ -1,0 +1,14 @@
+Anti-Vocale, transkrypcja wiadomości głosowych offline (FOSS, GPL)
+
+Napisałem aplikację na Androida, która transkrybuje wiadomości głosowe lokalnie, na telefonie. Żadne audio nie opuszcza urządzenia. Głosówka z WhatsAppa lub Telegrama trafia do aplikacji przez udostępnienie, tekst przychodzi jako powiadomienie i zostaje w historii z wyszukiwarką i eksportem TXT/SRT/VTT.
+
+Wbudowana transkrypcja WhatsApp na Androidzie nie obsługuje polskiego. Ta aplikacja tak: domyślny model Parakeet osiąga ok. 3% CER na testowej próbce nagrań (FLEURS, 10 klipów). Modele można wymieniać w locie, jest też katalog modeli społecznościowych. Działa też z plikami wideo (napisy z nagrań).
+
+Wolne oprogramowanie, bez reklam i śledzenia. Rozwój był wspierany przez AI, co jest zadeklarowane w README.
+
+Linki:
+- Play Store: https://play.google.com/store/apps/details?id=com.antivocale.app
+- F-Droid: https://f-droid.org/packages/com.antivocale.app/
+- Kod źródłowy: https://github.com/RisorseArtificiali/anti-vocale
+
+Uwagi mile widziane.

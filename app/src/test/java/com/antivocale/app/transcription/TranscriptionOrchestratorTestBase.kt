@@ -74,6 +74,9 @@ abstract class TranscriptionOrchestratorTestBase {
         orchestrator = TranscriptionOrchestrator(
             preferencesManager, logDao, transcriptionCalibrator, backendManager, audioPreprocessor,
             staticRegistry(),
+            // TASK-660 review F2: the heal's share-surface retirement hooks.
+            mockk(relaxed = true),
+            mockk(relaxed = true),
             fakeStore,
         )
 
