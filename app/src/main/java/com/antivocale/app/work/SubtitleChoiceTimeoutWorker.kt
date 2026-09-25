@@ -88,6 +88,18 @@ class SubtitleChoiceTimeoutWorker @AssistedInject constructor(
             coroutineScope = workerScope
         )
 
+        // TASK-526: the worker bypasses InferenceService's enqueue layer,
+        // so the QUEUED row the service creates never exists here;
+        // markProcessing and logError inside processRequest are no-ops
+        // without it (getByTaskId() ?: return), and the failure left
+        // nothing in History while the notification fired. Insert the row
+        // ourselves before the request starts.
+        orchestrator.logQueued(
+            taskId = taskId,
+            requestType = com.antivocale.app.receiver.TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
+            filePath = filePath,
+            sourcePackageName = sourcePackage
+        )
         return try {
             val cacheDir = applicationContext.cacheDir
             val result = orchestrator.processRequest(
