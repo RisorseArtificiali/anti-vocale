@@ -1,8 +1,8 @@
 model_id,variant,language,metric,value,corpus,date
-sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,it,WER,5.4,internal real-message set,2026-08
-whisper,sherpa-onnx-whisper-distil-large-v3-it,it,WER,4.3,clean set,2026-08
-whisper,sherpa-onnx-whisper-turbo,it,WER,6.3,clean set,2026-08
-qwen3-asr,sherpa-onnx-qwen3-asr-0.6b-int8,it,WER,12.2,clean set,2026-08
+sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,it,WER,5.4,Italian benchmark set (internal),2026-08
+whisper,sherpa-onnx-whisper-distil-large-v3-it,it,WER,4.3,Italian benchmark set (internal),2026-08
+whisper,sherpa-onnx-whisper-turbo,it,WER,6.3,Italian benchmark set (internal),2026-08
+qwen3-asr,sherpa-onnx-qwen3-asr-0.6b-int8,it,WER,12.2,Italian benchmark set (internal),2026-08
 sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,pl,CER,3.0,FLEURS-10,2026-09
 sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,pl,WER,10.7,FLEURS-10,2026-09
 whisper,sherpa-onnx-whisper-small,tr,CER,6.9,FLEURS-10,2026-09

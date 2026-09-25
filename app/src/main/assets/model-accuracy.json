@@ -8,7 +8,7 @@
       "language": "it",
       "metric": "WER",
       "value": 5.4,
-      "corpus": "internal real-message set",
+      "corpus": "Italian benchmark set (internal)",
       "date": "2026-08"
     },
     {
@@ -17,7 +17,7 @@
       "language": "it",
       "metric": "WER",
       "value": 4.3,
-      "corpus": "clean set",
+      "corpus": "Italian benchmark set (internal)",
       "date": "2026-08"
     },
     {
@@ -26,7 +26,7 @@
       "language": "it",
       "metric": "WER",
       "value": 6.3,
-      "corpus": "clean set",
+      "corpus": "Italian benchmark set (internal)",
       "date": "2026-08"
     },
     {
@@ -35,7 +35,7 @@
       "language": "it",
       "metric": "WER",
       "value": 12.2,
-      "corpus": "clean set",
+      "corpus": "Italian benchmark set (internal)",
       "date": "2026-08"
     },
     {

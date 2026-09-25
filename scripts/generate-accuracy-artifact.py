@@ -101,11 +101,16 @@ def main() -> int:
             except ValueError:
                 problems.append(f"{where}: value is not a number: {value!r}")
                 numeric = None
-            if numeric is not None and numeric < 0:
-                problems.append(f"{where}: value must be >= 0, got {value!r}")
+            # math.isfinite: float("nan")/float("inf") parse cleanly and would
+            # otherwise pass the < 0 check, then json.dumps writes bare
+            # NaN/Infinity which org.json cannot decode (the whole section
+            # would silently vanish). Month range: 2026-13 matches \d{4}-\d{2}.
+            import math
+            if numeric is not None and (numeric < 0 or not math.isfinite(numeric)):
+                problems.append(f"{where}: value must be a finite number >= 0, got {value!r}")
             if not corpus:
                 problems.append(f"{where}: missing corpus")
-            if not re.fullmatch(r"\d{4}-\d{2}", date):
+            if not (re.fullmatch(r"\d{4}-\d{2}", date) and 1 <= int(date[5:7]) <= 12):
                 problems.append(f"{where}: date must be YYYY-MM, got {date!r}")
             if model_id and model_id != EXTERNAL_MODEL_ID:
                 if model_id not in builtin:

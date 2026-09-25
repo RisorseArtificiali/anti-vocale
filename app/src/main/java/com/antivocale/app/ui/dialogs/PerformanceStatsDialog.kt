@@ -87,9 +87,9 @@ fun PerformanceStatsDialog(
                         // Real-time factor: lower ms/s = faster. RTF < 1.0 means faster than real-time.
                         val rtf = profile.msPerSecondOfAudio / 1000f
                         val speedLabel = if (rtf <= 1f) {
-                            String.format("%.1fx real-time", 1f / rtf)
+                            String.format(java.util.Locale.ROOT, "%.1fx real-time", 1f / rtf)
                         } else {
-                            String.format("%.2fx real-time", 1f / rtf)
+                            String.format(java.util.Locale.ROOT, "%.2fx real-time", 1f / rtf)
                         }
                         val relativeSpeed = if (slowestMsPerSec > 0 && profiles.size > 1) {
                             slowestMsPerSec / profile.msPerSecondOfAudio
@@ -151,7 +151,7 @@ fun PerformanceStatsDialog(
                                     )
                                     if (relativeSpeed != null) {
                                         Text(
-                                            text = String.format("(%.1fx)", relativeSpeed),
+                                            text = String.format(java.util.Locale.ROOT, "(%.1fx)", relativeSpeed),
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
@@ -225,11 +225,17 @@ fun PerformanceStatsDialog(
                                             fontWeight = FontWeight.Medium
                                         )
                                         Text(
+                                            // Measured numbers render with the invariant
+                                            // period across locales (an identifier of the
+                                            // measurement, not prose); the speed rows below
+                                            // use Locale.ROOT for the same reason.
                                             text = "${m.metric} ${m.displayValue}%",
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                         Text(
-                                            text = m.corpus,
+                                            // The date rides the corpus: after an engine or
+                                            // mirror update a stale number must read as stale.
+                                            text = "${m.corpus} (${m.date})",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.weight(1f)

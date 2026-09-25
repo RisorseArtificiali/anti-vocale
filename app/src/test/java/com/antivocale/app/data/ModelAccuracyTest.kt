@@ -238,7 +238,7 @@ class ModelAccuracyTest {
             assertTrue("variant blank in $m", m.variant.isNotBlank())
             assertTrue("language not a code in $m", Regex("[a-z]{2}").matches(m.language))
             assertTrue("metric neither WER nor CER in $m", m.metric == "WER" || m.metric == "CER")
-            assertTrue("value not finite positive in $m", m.value > 0 && !m.value.isNaN())
+            assertTrue("value not finite non-negative in $m", m.value >= 0 && !m.value.isNaN() && !m.value.isInfinite())
             assertTrue("corpus blank in $m", m.corpus.isNotBlank())
             assertTrue("date not YYYY-MM in $m", Regex("\\d{4}-\\d{2}").matches(m.date))
         }
