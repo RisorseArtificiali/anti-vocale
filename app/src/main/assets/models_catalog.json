@@ -262,9 +262,18 @@
             "repo": "pantinor/sherpa-onnx-whisper-turbo"
           },
           "files": [
-            "turbo-encoder.int8.onnx",
-            "turbo-decoder.int8.onnx",
-            "turbo-tokens.txt"
+            {
+              "name": "turbo-encoder.int8.onnx",
+              "sha256": "b02dcdf54f348741e93fe732b67d933c8dcb6735655f710640143081db38878b"
+            },
+            {
+              "name": "turbo-decoder.int8.onnx",
+              "sha256": "20accd02388482eb3a46bd615631adfdc85e1eb2c7db9ea3f02a40ffe6b81547"
+            },
+            {
+              "name": "turbo-tokens.txt",
+              "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126"
+            }
           ]
         },
         {
@@ -385,9 +394,18 @@
             "repo": "pantinor/sherpa-onnx-whisper-medium"
           },
           "files": [
-            "medium-encoder.int8.onnx",
-            "medium-decoder.int8.onnx",
-            "medium-tokens.txt"
+            {
+              "name": "medium-encoder.int8.onnx",
+              "sha256": "1c54582b4d829de0089f6cb63bbbdb3bf7555398bacaf855fbecf1a84dfd193e"
+            },
+            {
+              "name": "medium-decoder.int8.onnx",
+              "sha256": "595d00a338a365a7bfa0ca7f296cabc639583bef770ab6130df90f49a6412747"
+            },
+            {
+              "name": "medium-tokens.txt",
+              "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126"
+            }
           ]
         },
         {
@@ -508,9 +526,18 @@
             "repo": "pantinor/sherpa-onnx-whisper-small"
           },
           "files": [
-            "small-encoder.int8.onnx",
-            "small-decoder.int8.onnx",
-            "small-tokens.txt"
+            {
+              "name": "small-encoder.int8.onnx",
+              "sha256": "4cbe7b22fa9026b843b60a68640c747de05bafb1a11b57edc0e66c232d9f33a9"
+            },
+            {
+              "name": "small-decoder.int8.onnx",
+              "sha256": "acad50b5c782696e91b55914cc5ab4f756f1532f76e22aa6fc615f39fb69a8ee"
+            },
+            {
+              "name": "small-tokens.txt",
+              "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126"
+            }
           ]
         },
         {
@@ -532,9 +559,18 @@
             "repo": "pantinor/sherpa-onnx-whisper-distil-large-v3-it"
           },
           "files": [
-            "distil-large-v3-it-encoder.int8.onnx",
-            "distil-large-v3-it-decoder.int8.onnx",
-            "distil-large-v3-it-tokens.txt"
+            {
+              "name": "distil-large-v3-it-encoder.int8.onnx",
+              "sha256": "f049fb181a314ae40bdd27f8ec8b04d8c87414b43d932533bc0832319bac51b9"
+            },
+            {
+              "name": "distil-large-v3-it-decoder.int8.onnx",
+              "sha256": "0b6d5e44fb9f65d274e635e4ae7fba3b2b41710a51424af71ee3978976d8d9a1"
+            },
+            {
+              "name": "distil-large-v3-it-tokens.txt",
+              "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126"
+            }
           ]
         }
       ]
@@ -636,12 +672,30 @@
             "repo": "pantinor/sherpa-onnx-qwen3-asr-0.6b-int8"
           },
           "files": [
-            "conv_frontend.onnx",
-            "encoder.int8.onnx",
-            "decoder.int8.onnx",
-            "tokenizer/merges.txt",
-            "tokenizer/tokenizer_config.json",
-            "tokenizer/vocab.json"
+            {
+              "name": "conv_frontend.onnx",
+              "sha256": "d22dc4423e0940e49884e903d2ea2f7e5567c14fc1aed97e4e26d6b8f208ef9e"
+            },
+            {
+              "name": "encoder.int8.onnx",
+              "sha256": "60748d3e6744a57c9c91e1b17424a6c2990567e8adceb0783940c03ed98fa9d9"
+            },
+            {
+              "name": "decoder.int8.onnx",
+              "sha256": "61e5f8249f9e7c82d5e01e1938c79fb3f5b3135f91664928033029e42451bd18"
+            },
+            {
+              "name": "tokenizer/merges.txt",
+              "sha256": "8831e4f1a044471340f7c0a83d7bd71306a5b867e95fd870f74d0c5308a904d5"
+            },
+            {
+              "name": "tokenizer/tokenizer_config.json",
+              "sha256": "4942d005604266809309cabc9f4e9cb89ce855d59b14681fdc0e1cc62ea26c4c"
+            },
+            {
+              "name": "tokenizer/vocab.json",
+              "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+            }
           ]
         }
       ]
@@ -726,10 +780,22 @@
             "repo": "csukuangfj2/sherpa-onnx-nemotron-3.5-asr-streaming-0.6b-1120ms-int8-2026-06-11"
           },
           "files": [
-            "encoder.int8.onnx",
-            "decoder.int8.onnx",
-            "joiner.int8.onnx",
-            "tokens.txt"
+            {
+              "name": "encoder.int8.onnx",
+              "sha256": "2fff2166acaa535bd969fb223c1f0783d71029f143cb298bc54c2afe85abf772"
+            },
+            {
+              "name": "decoder.int8.onnx",
+              "sha256": "19f9c98fc6d0a2c33a65a43b36fdb2e914c26c0aa9764be3aebc502a1e982fb0"
+            },
+            {
+              "name": "joiner.int8.onnx",
+              "sha256": "4101c7c679a0bc30483794b27a059e34e79232aa2068d78d51231a22c8b0d7ce"
+            },
+            {
+              "name": "tokens.txt",
+              "sha256": "729cc103155bafa785f9cd45746cd41cabe97eab7182fc04d594129587958f8a"
+            }
           ]
         }
       ]
