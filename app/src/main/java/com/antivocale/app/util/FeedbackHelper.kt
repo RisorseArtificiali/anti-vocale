@@ -75,6 +75,8 @@ object FeedbackHelper {
         val isPartial: Boolean = false,
         /** TASK-511: how many chunks decoded blank/failed. */
         val failedChunkCount: Int = 0,
+        /** TASK-545: detected language + the pin the run executed under. */
+        val languageLine: String? = null,
     )
 
     /** Localized labels for the per-transcription body template. */
@@ -118,6 +120,7 @@ object FeedbackHelper {
         if (f.isPartial) {
             appendLine("(${f.failedChunkCount} chunk(s) failed; transcript is partial)")
         }
+        f.languageLine?.takeIf { it.isNotBlank() }?.let { appendLine(it) }
         f.failureDiagnostics?.takeIf { it.isNotBlank() }?.let { appendLine(it) }
         // TASK-512: standalone attribution + the tail that instantly tells
         // truncation from a repetition loop (the head alone cannot).

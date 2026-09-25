@@ -122,6 +122,10 @@ private fun reportTranscription(context: Context, log: LogEntry) {
                     ProcessingContextConverter.fromJson(log.processingContext)),
                 isPartial = log.isPartial,
                 failedChunkCount = log.failedChunkCount,
+                languageLine = listOfNotNull(
+                    log.detectedLanguage?.let { "detected=$it" },
+                    log.languagePin?.takeIf { it.isNotBlank() }?.let { "pin=$it" }
+                ).takeIf { it.isNotEmpty() }?.joinToString(" "),
             ),
             FeedbackHelper.TranscriptLabels(
                 task = context.getString(R.string.feedback_label_task),
