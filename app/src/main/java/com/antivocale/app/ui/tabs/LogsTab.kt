@@ -50,6 +50,7 @@ import com.antivocale.app.MainActivity
 import com.antivocale.app.R
 import com.antivocale.app.ui.onboarding.tourRevealable
 import com.antivocale.app.transcription.SummaryPolicy
+import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.data.local.FailureContextJson
 import com.antivocale.app.data.local.ProcessingContextConverter
 import com.antivocale.app.util.AppInfoUtils
@@ -62,6 +63,10 @@ import com.antivocale.app.service.InferenceService
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.animation.Crossfade
 import com.antivocale.app.ui.components.SkeletonTranscriptionCard
+import com.antivocale.app.ui.components.languageOptionLabel
+import com.antivocale.app.ui.components.transcriptionSentinelLabels
+import com.antivocale.app.ui.components.transcriptionPickerFor
+import com.antivocale.app.util.LocaleManager
 import com.antivocale.app.ui.components.SkeletonTranscriptionPreview
 import com.antivocale.app.ui.components.SwipeAction
 import com.antivocale.app.ui.components.VadAdvisoryCard
@@ -923,6 +928,15 @@ fun LogEntryItem(
     onOpenLanguageSetting: (() -> Unit)? = null,
     /** TASK-546: render the language chip (the Settings flag's value). */
     showLanguageChip: Boolean = false,
+    /** TASK-546 AC3: the languages the active backend offers for the chip's
+     *  per-request re-run; empty keeps the chip dialog facts-only. No default,
+     *  like the callback below: a call site that forgets the pass-through
+     *  must be a compile error, not a silently dead arm. */
+    reRunLanguages: Set<String>,
+    /** TASK-546 AC3: re-run this row's audio with the chosen language. No
+     *  default, like showTechnicalDetails: a call site that forgets the
+     *  pass-through must be a compile error. */
+    onReRunWithLanguage: (String) -> Unit,
     /** TASK-616: render the technical processing-context line. No default:
      *  a call site that forgets the pass-through must be a compile error,
      *  not a silently dropped diagnostics line. */
@@ -1307,6 +1321,8 @@ fun LogEntryItem(
                                 LanguageChip(
                                     detected = log.detectedLanguage,
                                     pinned = log.languagePin,
+                                    reRunLanguages = reRunLanguages,
+                                    onReRunWithLanguage = onReRunWithLanguage,
                                     onOpenSetting = { onOpenLanguageSetting?.invoke() },
                                 )
                             }
@@ -1542,6 +1558,10 @@ private fun LogEntryWithSwipe(
     val context = LocalContext.current
     // TASK-546: the chip flag, collected once here (the item stays stateless).
     val showLanguageChip by viewModel.languageChipEnabled.collectAsState()
+    // TASK-546 AC3: the re-run picker's offered codes, same collection point
+    // (the derivation lives in the ViewModel through the Settings picker's
+    // owner, so the two cannot drift).
+    val reRunLanguages by viewModel.offeredLanguageCodes.collectAsState()
     // TASK-616: same pattern for the technical processing-context line.
     val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
     // TASK-599: the expanded row's annotated transcript is collected HERE
@@ -1631,6 +1651,8 @@ private fun LogEntryWithSwipe(
                 onNavigateToSettings = onNavigateToSettings,
                 onOpenLanguageSetting = onOpenLanguageSetting,
                 showLanguageChip = showLanguageChip,
+                reRunLanguages = reRunLanguages,
+                onReRunWithLanguage = { code -> viewModel.reTranscribeWithLanguage(log, code, context) },
                 showTechnicalDetails = showTechnicalDetails,
             )
         }
@@ -1685,6 +1707,8 @@ private fun LogEntryWithSwipe(
                 onNavigateToSettings = onNavigateToSettings,
                 onOpenLanguageSetting = onOpenLanguageSetting,
                 showLanguageChip = showLanguageChip,
+                reRunLanguages = reRunLanguages,
+                onReRunWithLanguage = { code -> viewModel.reTranscribeWithLanguage(log, code, context) },
                 showTechnicalDetails = showTechnicalDetails,
             )
         }
@@ -1809,19 +1833,30 @@ private fun summarySkipCaptionRes(reason: String?): Int? = when (reason) {
  * the path to the language setting (the recovery arm: pin there, then
  * re-transcribe the same audio). Hidden entirely when neither fact exists
  * (old rows, text entries) or via the Settings toggle (maintainer directive).
+ *
+ * TASK-546 AC3: the dialog's second recovery arm, "re-run with a language",
+ * a TRANSIENT per-request override (distinct from pinning in Settings, which
+ * stays the confirm action). The neutral action renders only when the active
+ * backend's offered set is non-empty; otherwise the dialog stays facts-only.
  */
 @Composable
 private fun LanguageChip(
     detected: String?,
     pinned: String?,
+    /** TASK-546 AC3: the languages the ACTIVE backend conditions on; empty hides the neutral action. */
+    reRunLanguages: Set<String>,
+    /** TASK-546 AC3: re-run this row's audio with the chosen language. */
+    onReRunWithLanguage: (String) -> Unit,
     onOpenSetting: () -> Unit,
 ) {
     val autoDetected = pinned == null || pinned == "auto"
     val code = if (autoDetected) detected else pinned
     if (code.isNullOrBlank()) return
-    var showFacts by remember { mutableStateOf(false) }
+    // TASK-546 AC3: null = hidden; one mode variable instead of two booleans
+    // (the hidden/facts/pick space has no fourth state).
+    var mode by remember { mutableStateOf<LanguageChipMode?>(null) }
     TextButton(
-        onClick = { showFacts = true },
+        onClick = { mode = LanguageChipMode.Facts },
         contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
         modifier = Modifier.height(28.dp)
     ) {
@@ -1832,34 +1867,93 @@ private fun LanguageChip(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
-    if (showFacts) {
+    if (mode != null) {
+        // TASK-546 AC3: the SAME picker model the Settings card renders
+        // (sentinel-first, locale-collated native names), built from the
+        // repository-owned offered set; presentation cannot drift from Settings.
+        val context = LocalContext.current
+        val picker = remember(reRunLanguages) {
+            transcriptionPickerFor(
+                reRunLanguages,
+                LocaleManager.effectiveLocale(),
+                phoneLanguage = LocaleManager.phoneLanguage(context),
+            )
+        }
         AlertDialog(
-            onDismissRequest = { showFacts = false },
-            title = { Text(stringResource(R.string.language_chip_dialog_title)) },
-            text = { Text(
-                if (autoDetected)
-                    stringResource(
-                        R.string.language_chip_detected_body,
-                        LanguageNames.nativeLanguageName(detected ?: code))
-                else
-                    stringResource(
-                        R.string.language_chip_pinned_body,
-                        LanguageNames.nativeLanguageName(code))
-            ) },
+            onDismissRequest = { mode = null },
+            title = { Text(stringResource(
+                if (mode == LanguageChipMode.Pick) R.string.language_chip_re_run
+                else R.string.language_chip_dialog_title)) },
+            text = {
+                if (mode == LanguageChipMode.Facts) {
+                    Column {
+                        Text(
+                            if (autoDetected)
+                                stringResource(
+                                    R.string.language_chip_detected_body,
+                                    LanguageNames.nativeLanguageName(detected ?: code))
+                            else
+                                stringResource(
+                                    R.string.language_chip_pinned_body,
+                                    LanguageNames.nativeLanguageName(code))
+                        )
+                        // TASK-546 AC3: the neutral action, full-width below the
+                        // facts (M3 dialogs carry two button slots, both taken).
+                        // A SINGLE offered language hides the arm too: a
+                        // single-language variant (Distil-IT) forces its own
+                        // code at the engine regardless of the config, so the
+                        // re-run could reload the recognizer and pin a
+                        // language that never governed the decode (review F1).
+                        if (reRunLanguages.size > 1) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            TextButton(
+                                onClick = { mode = LanguageChipMode.Pick },
+                                contentPadding = PaddingValues(horizontal = 8.dp),
+                                modifier = Modifier.align(Alignment.Start)
+                            ) { Text(stringResource(R.string.language_chip_re_run)) }
+                        }
+                    }
+                } else {
+                    // Capped and scrollable: the Whisper multilingual variant
+                    // offers ~100 codes and a dialog's text slot never scrolls
+                    // by itself, so the tail would be unreachable.
+                    Column(
+                        modifier = Modifier
+                            .heightIn(max = 384.dp)
+                            .verticalScroll(rememberScrollState())
+                    ) {
+                        picker.options.forEach { option ->
+                            DropdownMenuItem(
+                                text = { Text(languageOptionLabel(option.code, transcriptionSentinelLabels, picker.optionByCode)) },
+                                onClick = {
+                                    mode = null
+                                    onReRunWithLanguage(option.code)
+                                },
+                            )
+                        }
+                    }
+                }
+            },
             confirmButton = {
-                TextButton(onClick = {
-                    showFacts = false
-                    onOpenSetting()
-                }) { Text(stringResource(R.string.language_chip_open_setting)) }
+                // Picker mode acts on selection; Cancel (dismiss slot) is its only button.
+                if (mode == LanguageChipMode.Facts) {
+                    TextButton(onClick = {
+                        mode = null
+                        onOpenSetting()
+                    }) { Text(stringResource(R.string.language_chip_open_setting)) }
+                }
             },
             dismissButton = {
-                TextButton(onClick = { showFacts = false }) {
+                TextButton(onClick = { mode = null }) {
                     Text(stringResource(android.R.string.cancel))
                 }
             },
         )
     }
 }
+
+/** TASK-546 AC3: the chip dialog's two bodies (null = closed). */
+private enum class LanguageChipMode { Facts, Pick }
 
 /**
  * A labeled secondary transcript block of the expanded log card (summary,

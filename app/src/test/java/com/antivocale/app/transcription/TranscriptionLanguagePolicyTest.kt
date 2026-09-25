@@ -42,6 +42,21 @@ class TranscriptionLanguagePolicyTest {
 
     // ---- The online languageOption (Nemotron) mapping is unchanged ----
 
+    /**
+     * TASK-546 AC3: the chip's re-run override speaks the preference
+     * vocabulary, so an explicit "auto" must detect exactly like the
+     * untouched preference does on a passLanguage (Whisper) entry.
+     */
+    @Test
+    fun `explicit auto resolves to model detection on a passLanguage entry`() {
+        assertEquals(
+            "",
+            TranscriptionLanguagePolicy.resolveForEntry(
+                whisperEntry(),
+                TranscriptionLanguagePolicy.PREF_AUTO),
+        )
+    }
+
     @Test
     fun `stream mapping sends auto for sentinels and passes codes through`() {
         assertEquals("auto", TranscriptionLanguagePolicy.resolveStream(TranscriptionLanguagePolicy.PREF_SYSTEM))

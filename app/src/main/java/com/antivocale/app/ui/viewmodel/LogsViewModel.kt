@@ -20,8 +20,10 @@ import com.antivocale.app.data.local.TimedSegmentsConverter
 import com.antivocale.app.data.local.LogEntity
 import com.antivocale.app.data.local.toEntity
 import com.antivocale.app.data.local.toLogEntry
+import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.TranscriptionCalibrator
+import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.service.InferenceEnqueue
 import com.antivocale.app.service.InferenceService
@@ -30,6 +32,7 @@ import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.transcription.variantAwareDisplayName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -125,6 +128,9 @@ class LogsViewModel @Inject constructor(
     private val backendRegistry: BackendRegistry,
     private val audioPreprocessor: AudioPreprocessor,
     private val transcriptionCalibrator: TranscriptionCalibrator,
+    /** TASK-546 AC3: the offered-language derivation's reactive source (the
+     *  Settings picker's owner; collected so the two pickers cannot drift). */
+    private val activeModelRepository: ActiveModelRepository,
     @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: Context,
 ) : ViewModel() {
     companion object {
@@ -527,6 +533,16 @@ class LogsViewModel @Inject constructor(
     val languageChipEnabled: StateFlow<Boolean> = preferencesManager.languageChipEnabled
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED)
 
+    /**
+     * TASK-546 AC3: the language codes the ACTIVE backend conditions on, for
+     * the chip's re-run picker. The repository owns the derivation
+     * ([ActiveModelRepository.offeredLanguageCodes]), the same single source
+     * the Settings picker collects; empty = no language conditioning, the
+     * chip dialog stays facts-only.
+     */
+    val offeredLanguageCodes: StateFlow<Set<String>> = activeModelRepository.offeredLanguageCodes
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptySet())
+
     fun saveLanguageChip(enabled: Boolean) {
         viewModelScope.launch { preferencesManager.saveLanguageChipEnabled(enabled) }
     }
@@ -693,19 +709,48 @@ class LogsViewModel @Inject constructor(
         backendId: String,
         context: android.content.Context
     ) {
+        viewModelScope.launch { reTranscribe(originalEntry, backendId, context) }
+    }
+
+    /**
+     * TASK-546 AC3: the chip's one-tap recovery. Re-runs the same audio with
+     * a chosen language as a TRANSIENT per-request override
+     * ([InferenceService.EXTRA_LANGUAGE_OVERRIDE]): the persisted preference
+     * stays untouched, unlike the Settings pin. Rides the ACTIVE backend
+     * (LogEntity has no backend id to pin the row's original one).
+     */
+    fun reTranscribeWithLanguage(
+        originalEntry: LogEntry,
+        languageCode: String,
+        context: android.content.Context
+    ) {
+        viewModelScope.launch {
+            // The ACTIVE backend runs the request; the gate must estimate with
+            // the same id (the in-memory id can be null while the model is
+            // idle-unloaded, so the persisted preference decides).
+            val backendId = preferencesManager.transcriptionBackend.first()
+            reTranscribe(originalEntry, backendId, context, languageCode)
+        }
+    }
+
+    /** The shared retranscribe scaffold: file guard (off the caller's main
+     *  thread), the TASK-432 long-audio gate (retranscribe and browse run the
+     *  identical decision), dispatch. */
+    private suspend fun reTranscribe(
+        originalEntry: LogEntry,
+        backendId: String,
+        context: android.content.Context,
+        /** TASK-546 AC3: request-scoped language; absent on the backend retranscribe. */
+        languageOverride: String? = null
+    ) {
         val filePath = originalEntry.filePath ?: return
         if (!File(filePath).exists()) {
             Toast.makeText(context, context.getString(R.string.retranscribe_file_not_found), Toast.LENGTH_SHORT).show()
             return
         }
-
-        viewModelScope.launch {
-            // The shared TASK-432 gate (fail-open probe, dialogCapable);
-            // retranscribe and browse run the identical decision.
-            val appContext = context.applicationContext
-            longAudioGate(backendId, filePath, appContext) {
-                dispatchTranscription(originalEntry, backendId, filePath, appContext)
-            }
+        val appContext = context.applicationContext
+        longAudioGate(backendId, filePath, appContext) {
+            dispatchTranscription(originalEntry, backendId, filePath, appContext, languageOverride)
         }
     }
 
@@ -713,7 +758,9 @@ class LogsViewModel @Inject constructor(
         originalEntry: LogEntry,
         backendId: String,
         filePath: String,
-        context: android.content.Context
+        context: android.content.Context,
+        /** TASK-546 AC3: request-scoped language; absent on the backend retranscribe. */
+        languageOverride: String? = null
     ) {
         val newTaskId = UUID.randomUUID().toString()
 
@@ -724,6 +771,9 @@ class LogsViewModel @Inject constructor(
             putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
             putExtra(InferenceService.EXTRA_SOURCE, "retranscribe")
             putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, backendId)
+            languageOverride?.let {
+                putExtra(InferenceService.EXTRA_LANGUAGE_OVERRIDE, it)
+            }
             originalEntry.sourcePackageName?.let {
                 putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, it)
             }

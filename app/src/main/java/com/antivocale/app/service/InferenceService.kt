@@ -88,6 +88,13 @@ class InferenceService : Service(), TranscriptionListener {
         const val EXTRA_SHARED_URI = "shared_uri"
         const val EXTRA_MIME_TYPE = "mime_type"
         const val EXTRA_BACKEND_OVERRIDE = "backend_override"
+
+        /**
+         * TASK-546 AC3: transient per-request language override (the chip's
+         * re-run arm). Speaks the preference vocabulary ("auto" or a concrete
+         * code); never persists, unlike a Settings pin.
+         */
+        const val EXTRA_LANGUAGE_OVERRIDE = "language_override"
         /** TASK-274(f): the broadcast sender's package, pinned onto replies. */
         const val EXTRA_REQUESTER_PACKAGE = "requester_package"
 
@@ -156,6 +163,8 @@ class InferenceService : Service(), TranscriptionListener {
         val source: String? = null,
         val sourcePackage: String? = null,
         val backendOverride: String? = null,
+        /** TASK-546 AC3: request-scoped language override, like [backendOverride]. */
+        val languageOverride: String? = null,
         val trackIndex: Int = -1,
         /** TASK-274(f): reply-sink pin (null = pre-34 sender, unpinned reply). */
         val requesterPackage: String? = null
@@ -205,6 +214,7 @@ class InferenceService : Service(), TranscriptionListener {
             source = intent?.getStringExtra(EXTRA_SOURCE),
             sourcePackage = intent?.getStringExtra(EXTRA_SOURCE_PACKAGE),
             backendOverride = intent?.getStringExtra(EXTRA_BACKEND_OVERRIDE),
+            languageOverride = intent?.getStringExtra(EXTRA_LANGUAGE_OVERRIDE),
             trackIndex = intent?.getIntExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, -1) ?: -1
         )
         rememberRequester(request)
@@ -308,6 +318,7 @@ class InferenceService : Service(), TranscriptionListener {
                                     source = request.source,
                                     sourcePackage = request.sourcePackage,
                                     backendOverride = request.backendOverride,
+                                    languageOverride = request.languageOverride,
                                     trackIndex = request.trackIndex,
                                     queuePosition = currentIndex,
                                     queueTotal = totalInBatch,

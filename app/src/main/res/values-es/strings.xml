@@ -879,6 +879,7 @@
     <string name="language_chip_detected_body">Detectado automáticamente: %1$s. ¿Idioma equivocado? Cambia el idioma de transcripción y transcribe el audio de nuevo.</string>
     <string name="language_chip_pinned_body">Fijado: %1$s. Para cambiarlo, abre el ajuste del idioma de transcripción.</string>
     <string name="language_chip_open_setting">Abrir ajuste de idioma</string>
+    <string name="language_chip_re_run">Repetir con un idioma</string>
     <string name="curated_section_title">Para tu idioma</string>
     <string name="curated_browse_all">Ver todos los idiomas</string>
     <string name="curated_suggest_model">Sugiere un modelo para tu idioma</string>

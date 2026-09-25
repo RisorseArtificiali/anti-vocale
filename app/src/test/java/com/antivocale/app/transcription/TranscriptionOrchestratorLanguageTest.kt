@@ -66,7 +66,13 @@ class TranscriptionOrchestratorLanguageTest : TranscriptionOrchestratorTestBase(
             }
         }
 
-    private fun assertLoadedLanguage(dir: File, preference: String, expected: String) = runTest {
+    private fun assertLoadedLanguage(
+        dir: File,
+        preference: String,
+        expected: String,
+        /** TASK-546 AC3: the per-request override the request carries (null = none). */
+        override: String? = null,
+    ) = runTest {
         every { preferencesManager.transcriptionBackend } returns flowOf(BuiltInBackendIds.WHISPER)
         every { preferencesManager.sherpaModelPath(BuiltInBackendIds.WHISPER) } returns flowOf(dir.absolutePath)
         every { preferencesManager.threadCount } returns flowOf(4)
@@ -82,6 +88,7 @@ class TranscriptionOrchestratorLanguageTest : TranscriptionOrchestratorTestBase(
             filePath = null,
             source = null,
             sourcePackage = null,
+            languageOverride = override,
             queuePosition = 1,
             queueTotal = 1,
             context = createMockContext(),
@@ -133,6 +140,250 @@ class TranscriptionOrchestratorLanguageTest : TranscriptionOrchestratorTestBase(
     @Test
     fun `pinned language passes through on the small variant`() {
         assertLoadedLanguage(createVariantDir("small"), preference = "it", expected = "it")
+    }
+
+    // ---- TASK-546 AC3: the per-request language override (the chip's re-run arm) ----
+
+    @Test
+    fun `language override forces its code over the persisted preference`() {
+        // The re-run rides a transient override; the persisted preference
+        // ("auto" here) is never consulted for THIS request.
+        assertLoadedLanguage(
+            createVariantDir("small"),
+            preference = TranscriptionLanguagePolicy.PREF_AUTO,
+            override = "de",
+            expected = "de",
+        )
+    }
+
+    @Test
+    fun `language override auto keeps model-side detection`() {
+        // The override speaks the preference vocabulary: "auto" detects even
+        // when the persisted preference pins a concrete code.
+        assertLoadedLanguage(
+            createVariantDir("small"),
+            preference = "it",
+            override = TranscriptionLanguagePolicy.PREF_AUTO,
+            expected = "",
+        )
+    }
+
+    /**
+     * The warm-backend residency matrix. The configured language is part of
+     * the recognizer's identity (offline backends bake it into the config,
+     * streaming reads the configured field per stream): a DIFFERENT desired
+     * language must force the reconfigure path, the SAME desired language
+     * must stay warm (a batch of same-language re-runs reloads once, not per
+     * row), and an override language left resident must be recovered on the
+     * next ordinary request (the preference wins again).
+     */
+    private fun warmBackend(dir: File, residentLanguage: String): TranscriptionBackend =
+        mockk<TranscriptionBackend>(relaxed = true) {
+            every { id } returns BuiltInBackendIds.WHISPER
+            every { isReady() } returns true
+            every { getModelPath() } returns dir.absolutePath
+            every { getConfiguredLanguage() } returns residentLanguage
+        }
+
+    private fun stubWarmWhisper(dir: File, residentLanguage: String) {
+        every { preferencesManager.transcriptionBackend } returns flowOf(BuiltInBackendIds.WHISPER)
+        every { preferencesManager.sherpaModelPath(BuiltInBackendIds.WHISPER) } returns flowOf(dir.absolutePath)
+        every { preferencesManager.threadCount } returns flowOf(4)
+        every { preferencesManager.transcriptionLanguage } returns flowOf(TranscriptionLanguagePolicy.PREF_AUTO)
+        every { preferencesManager.keepAliveTimeout } returns flowOf(5)
+        every { backendManager.hasActiveBackend() } returns true
+        every { backendManager.getActiveBackend() } returns warmBackend(dir, residentLanguage)
+        coEvery { backendManager.setActiveBackend(any(), any(), any()) } returns Result.success(Unit)
+    }
+
+    @Test
+    fun `language override reconfigures when the warm language differs`() = runTest {
+        val dir = createVariantDir("small")
+        // Warm under auto-detect (the backend stores the blank resolution as "auto").
+        stubWarmWhisper(dir, residentLanguage = "auto")
+
+        orchestrator.processRequest(
+            taskId = "test-language-warm-differs",
+            requestType = "text",
+            prompt = "hi",
+            filePath = null,
+            source = null,
+            sourcePackage = null,
+            languageOverride = "de",
+            queuePosition = 1,
+            queueTotal = 1,
+            context = createMockContext(),
+            cacheDir = File("/cache"),
+            listener = listener,
+            coroutineScope = this
+        )
+
+        verify(atLeast = 1) { backendManager.unloadActiveBackend() }
+        coVerify(atLeast = 1) {
+            backendManager.setActiveBackend(
+                backendId = BuiltInBackendIds.WHISPER,
+                context = any(),
+                config = match { it is BackendConfig.SherpaOnnxConfig && it.language == "de" }
+            )
+        }
+    }
+
+    @Test
+    fun `language override equal to the warm language stays warm`() = runTest {
+        val dir = createVariantDir("small")
+        // A batch of wrong-language messages: rows 2..N re-run under the same
+        // language the engine already holds. Reloading would re-map hundreds
+        // of MB of weights per row for an identical configuration.
+        stubWarmWhisper(dir, residentLanguage = "de")
+
+        orchestrator.processRequest(
+            taskId = "test-language-warm-equal",
+            requestType = "text",
+            prompt = "hi",
+            filePath = null,
+            source = null,
+            sourcePackage = null,
+            languageOverride = "de",
+            queuePosition = 1,
+            queueTotal = 1,
+            context = createMockContext(),
+            cacheDir = File("/cache"),
+            listener = listener,
+            coroutineScope = this
+        )
+
+        verify(exactly = 0) { backendManager.unloadActiveBackend() }
+        coVerify(exactly = 0) { backendManager.setActiveBackend(any(), any(), any()) }
+    }
+
+    @Test
+    fun `an override language left warm is recovered on the next ordinary request`() = runTest {
+        val dir = createVariantDir("small")
+        // After an override run the engine holds "de" while the preference
+        // still says auto: the next ordinary request must reconfigure back,
+        // not serve the stale override while pinning the preference.
+        stubWarmWhisper(dir, residentLanguage = "de")
+
+        orchestrator.processRequest(
+            taskId = "test-language-warm-recover",
+            requestType = "text",
+            prompt = "hi",
+            filePath = null,
+            source = null,
+            sourcePackage = null,
+            languageOverride = null,
+            queuePosition = 1,
+            queueTotal = 1,
+            context = createMockContext(),
+            cacheDir = File("/cache"),
+            listener = listener,
+            coroutineScope = this
+        )
+
+        verify(atLeast = 1) { backendManager.unloadActiveBackend() }
+        coVerify(atLeast = 1) {
+            backendManager.setActiveBackend(
+                backendId = BuiltInBackendIds.WHISPER,
+                context = any(),
+                // The auto preference resolves to blank on a passLanguage entry.
+                config = match { it is BackendConfig.SherpaOnnxConfig && it.language == "" }
+            )
+        }
+    }
+
+    /**
+     * The override must land on the ROW too: languagePin records what the
+     * request actually ran under, not the persisted preference (the TASK-545
+     * report-time lesson). Warm-backend audio run, mirroring the
+     * single-chunk success fixture of TranscriptionOrchestratorAudioTest
+     * (the streaming pipeline path: maxChunkDuration != null routes there).
+     */
+    @Test
+    fun `language override pins the row language as what actually ran`() = runTest {
+        val backend = stubWhisperBackend()
+        stubDefaultWhisperPreferences()
+        // The override forces the reconfigure path (see the warm test below),
+        // so this run must survive a REAL catalog load: give the entry a
+        // variant dir the loader can resolve.
+        val variantDir = createVariantDir("small")
+        every { preferencesManager.sherpaModelPath(BuiltInBackendIds.WHISPER) } returns
+            flowOf(variantDir.absolutePath)
+        every { preferencesManager.transcriptionLanguage } returns flowOf("it")
+        // The forced reload (below) reaches the real catalog load; its
+        // setActiveBackend must answer like the assertLoadedLanguage fixture.
+        coEvery { backendManager.setActiveBackend(any(), any(), any()) } returns Result.success(Unit)
+        val audioFile = File(
+            File(System.getProperty("java.io.tmpdir"), "lang-override-${System.nanoTime()}")
+                .apply { mkdirs(); tempDirs.add(this) },
+            "audio.ogg").apply { writeBytes(byteArrayOf(1)) }
+        every {
+            audioPreprocessor.prepareAudioForMediaPipe(
+                inputPath = audioFile.absolutePath,
+                cacheDir = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any(),
+                vadNumThreads = any(),
+                vadProvider = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
+        } returns com.antivocale.app.audio.AudioPreprocessor.PreprocessingResult(
+            chunks = listOf(FloatArray(3) { it.toFloat() }),
+            sampleRate = 16000,
+            totalDurationSeconds = 5.0,
+            chunkCount = 1,
+            isVadSegmented = false,
+        )
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
+        } returns kotlinx.coroutines.flow.flow {
+            emit(com.antivocale.app.audio.AudioPreprocessor.StreamEvent.Header(
+                com.antivocale.app.audio.AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = 5.0,
+                    expectedChunkCount = 1
+                )
+            ))
+            emit(com.antivocale.app.audio.AudioPreprocessor.StreamEvent.Chunk(
+                com.antivocale.app.audio.AudioPreprocessor.StreamChunk(
+                    samples = FloatArray(3) { it.toFloat() },
+                    sampleRate = 16000,
+                    chunkIndex = 0,
+                    isLast = true
+                )
+            ))
+        }
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns
+            Result.success(TranscriptionResult(text = "Hallo Welt"))
+        coEvery { logDao.getByTaskId("lang-override-row") } returns
+            com.antivocale.app.data.local.LogEntity(
+                id = "1", timestamp = 0L, taskId = "lang-override-row",
+                type = "AUDIO", status = "PROCESSING", prompt = "")
+
+        orchestrator.processRequest(
+            taskId = "lang-override-row",
+            requestType = "audio",
+            prompt = "",
+            filePath = audioFile.absolutePath,
+            source = null,
+            sourcePackage = null,
+            languageOverride = "de",
+            queuePosition = 1,
+            queueTotal = 1,
+            context = createMockContext(),
+            cacheDir = File("/cache"),
+            listener = listener,
+            coroutineScope = this
+        )
+
+        // The override pins as itself; the persisted "it" never ran.
+        coVerify(atLeast = 1) { logDao.update(match { it.languagePin == "de" }) }
     }
 
     /**

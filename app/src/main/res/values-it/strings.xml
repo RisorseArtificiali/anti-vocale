@@ -1015,7 +1015,7 @@
     <string name="language_chip_detected_body">Rilevata automaticamente: %1$s. Lingua sbagliata? Cambia la lingua di trascrizione e ritrasscrivi l\'audio.</string>
     <string name="language_chip_pinned_body">Fissata: %1$s. Per cambiarla, apri l\'impostazione della lingua di trascrizione.</string>
     <string name="language_chip_open_setting">Apri impostazione lingua</string>
-
+    <string name="language_chip_re_run">Riesegui con una lingua</string>
     <!-- Curated Model-tab profiles (GH #70): per-language recommendation copy -->
     <string name="curated_section_title">Per la tua lingua</string>
     <string name="curated_browse_all">Sfoglia tutte le lingue</string>

@@ -2,6 +2,8 @@ package com.antivocale.app.ui.viewmodel
 
 import org.junit.Assert.*
 import org.junit.Test
+import com.antivocale.app.ui.components.languageOptionsFor
+import com.antivocale.app.ui.components.transcriptionPickerFor
 import java.io.File
 import java.util.Locale
 

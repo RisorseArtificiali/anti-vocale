@@ -1029,6 +1029,7 @@
     <string name="language_chip_detected_body">Wykryty automatycznie: %1$s. Zły język? Zmień język transkrypcji i przetranskrybuj audio ponownie.</string>
     <string name="language_chip_pinned_body">Przypięty: %1$s. Aby zmienić, otwórz ustawienie języka transkrypcji.</string>
     <string name="language_chip_open_setting">Otwórz ustawienie języka</string>
+    <string name="language_chip_re_run">Uruchom ponownie w innym języku</string>
     <string name="curated_section_title">Dla Twojego języka</string>
     <string name="curated_browse_all">Przeglądaj wszystkie języki</string>
     <string name="curated_suggest_model">Zaproponuj model dla swojego języka</string>

@@ -125,6 +125,17 @@ interface TranscriptionBackend {
      * Returns the path to the model file.
      */
     fun getModelPath(): String?
+
+    /**
+     * TASK-546 AC3: the language this backend was last CONFIGURED with, in the
+     * backend's normalized vocabulary (blank preference resolved to "auto").
+     * Third component of the load-path residency identity (backend id + model
+     * path + language): a warm engine decodes under this value, so callers
+     * comparing a desired language against a resident backend compare against
+     * it. Null (the default) means no language identity claim: treat a null
+     * as warm-eligible, the [getModelPath] convention.
+     */
+    fun getConfiguredLanguage(): String? = null
 }
 
 /**

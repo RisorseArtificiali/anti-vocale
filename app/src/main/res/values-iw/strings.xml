@@ -1018,6 +1018,7 @@
     <string name="language_chip_detected_body">זוהתה אוטומטית: %1$s. שפה שגויה? שנה את שפת התמלול ותמלל את השמע שוב.</string>
     <string name="language_chip_pinned_body">מוגדרת: %1$s. לשינוי, פתח את הגדרת שפת התמלול.</string>
     <string name="language_chip_open_setting">פתח הגדרת שפה</string>
+    <string name="language_chip_re_run">הפעלה מחדש עם שפה</string>
     <string name="curated_section_title">עבור השפה שלך</string>
     <string name="curated_browse_all">עיין בכל השפות</string>
     <string name="curated_suggest_model">הצע מודל עבור השפה שלך</string>

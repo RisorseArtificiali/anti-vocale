@@ -1011,6 +1011,7 @@
     <string name="language_chip_detected_body">Automatisch erkannt: %1$s. Falsche Sprache? Ändere die Transkriptionssprache und transkribiere das Audio erneut.</string>
     <string name="language_chip_pinned_body">Festgelegt: %1$s. Zum Ändern öffne die Einstellung der Transkriptionssprache.</string>
     <string name="language_chip_open_setting">Spracheinstellung öffnen</string>
+    <string name="language_chip_re_run">Erneut mit einer Sprache ausführen</string>
     <string name="curated_section_title">Für deine Sprache</string>
     <string name="curated_browse_all">Alle Sprachen durchsuchen</string>
     <string name="curated_suggest_model">Schlage ein Modell für deine Sprache vor</string>

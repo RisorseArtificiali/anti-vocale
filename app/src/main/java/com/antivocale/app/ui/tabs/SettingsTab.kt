@@ -70,6 +70,8 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
 import com.antivocale.app.ui.components.CardTitleRow
+import com.antivocale.app.ui.components.languageOptionLabel
+import com.antivocale.app.ui.components.transcriptionSentinelLabels
 import com.antivocale.app.ui.components.CollapsibleSection
 import com.antivocale.app.ui.components.HF_TOKEN_SETTINGS_URL
 import com.antivocale.app.ui.components.OAuthLoginSection
@@ -88,7 +90,7 @@ import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.service.InferenceService
-import com.antivocale.app.ui.viewmodel.LanguageOption
+import com.antivocale.app.ui.components.LanguageOption
 import com.antivocale.app.ui.components.EditablePromptCard
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 
@@ -2433,49 +2435,9 @@ private fun OutputFolderSettingCard(
     }
 }
 
-/**
- * Single label policy for the language dropdowns: a sentinel code resolves to
- * its string resource, everything else goes through the option list and falls
- * back to an ICU native name. Shared by both dropdowns so the fallback chain
- * cannot drift apart. [sentinelLabels] carries each sentinel's code → label
- * resource; both dropdowns pass the same hoisted map to the current-value and
- * per-option label calls.
- */
-@Composable
-private fun languageOptionLabel(
-    code: String,
-    sentinelLabels: Map<String, Int>,
-    options: Map<String, LanguageOption>,
-): String {
-    // TASK-547 AC#2: the phone sentinel formats with the resolved language's
-    // NAME (a raw ISO code reads as noise; every sibling row shows a native
-    // name), blank only when the locale is unreadable.
-    if (code == TranscriptionLanguagePolicy.PREF_PHONE) {
-        val phone = com.antivocale.app.util.LocaleManager.phoneLanguage(
-            androidx.compose.ui.platform.LocalContext.current
-        )
-        return stringResource(
-            R.string.language_phone_option,
-            phone?.let { LanguageNames.nativeLanguageName(it) } ?: "",
-        )
-    }
-    sentinelLabels[code]?.let { return stringResource(it) }
-    return options[code]?.displayName
-        ?: LanguageNames.nativeLanguageName(code)
-}
-
 /** App-language dropdown sentinel (the per-app "System Default" entry). */
 private val appLanguageSentinelLabels = mapOf("system" to R.string.language_system)
 
-/**
- * Transcription-language dropdown sentinel (TASK-457): "auto" is the
- * model-side detection choice. A stored "system" (the pre-457 untouched
- * default) resolves identically now that the app-locale pinning is gone, so
- * it renders with the same label instead of a second sentinel entry.
- */
-private val transcriptionSentinelLabels = mapOf(
-    TranscriptionLanguagePolicy.PREF_AUTO to R.string.transcription_language_auto,
-)
 
 /** TASK-647: the free-text signature (blank = the localized default); inherits EditablePromptCard's cap and focus-loss commit. */
 @Composable

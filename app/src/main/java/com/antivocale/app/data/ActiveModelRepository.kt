@@ -1,8 +1,10 @@
 package com.antivocale.app.data
 
 import android.content.Context
+import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.transcription.BackendDescriptor
 import com.antivocale.app.transcription.BackendRegistry
+import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.transcription.variantAwareDisplayName
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -47,6 +49,21 @@ class ActiveModelRepository @Inject constructor(
             modelPathFlowFor(descriptor).map { path ->
                 path.toActiveModel(backend, descriptor)
             }
+        }
+
+    /**
+     * TASK-546 AC3: the language codes the ACTIVE backend conditions on
+     * ([TranscriptionLanguagePolicy.offeredLanguages] over the active entry).
+     * The ONE owner of this derivation: the Settings language picker and the
+     * History chip's re-run picker both collect it, so which catalog lookup
+     * and which path feed the offered set can never drift between surfaces.
+     */
+    val offeredLanguageCodes: Flow<Set<String>> =
+        activeModelFlow.map { active ->
+            TranscriptionLanguagePolicy.offeredLanguages(
+                modelPath = active.modelPath,
+                entry = BundledCatalog.byId(active.backendId),
+            )
         }
 
     /**

@@ -174,6 +174,13 @@ class TranscriptionOrchestrator @Inject constructor(
         source: String?,
         sourcePackage: String?,
         backendOverride: String? = null,
+        /**
+         * TASK-546 AC3: request-scoped language override (the chip's re-run
+         * arm). Speaks the preference vocabulary ("auto" or a concrete code),
+         * replaces the persisted preference for THIS request only, and never
+         * writes it. Null (every other caller) keeps reading the preference.
+         */
+        languageOverride: String? = null,
         trackIndex: Int = -1,
         queuePosition: Int,
         queueTotal: Int,
@@ -233,6 +240,7 @@ class TranscriptionOrchestrator @Inject constructor(
             val fastFirstPass = runCatching {
                 runRefinementFirstPass(
                     taskId = taskId, requestType = requestType, backendOverride = backendOverride,
+                    languageOverride = languageOverride,
                     filePath = filePath, prompt = prompt, queuePosition = queuePosition,
                     queueTotal = queueTotal, context = context, cacheDir = cacheDir,
                     listener = listener, coroutineScope = coroutineScope,
@@ -259,7 +267,13 @@ class TranscriptionOrchestrator @Inject constructor(
             }
 
             // Ensure the correct backend is loaded
-            val loadResult = ensureBackendLoaded(context, backendOverride)
+            val loadResult = ensureBackendLoaded(context, backendOverride, languageOverride)
+            // TASK-546 AC3 review F2: snapshot the pin at LOAD time, when the
+            // engine's language is decided. Reading the preference at success
+            // time (a minute later on a long run) would pin the row with a
+            // Settings change made mid-run that the decode never used (the
+            // TASK-545 misattribution class).
+            val runLanguagePin = resolvedLanguagePin(context, languageOverride)
             // Design F4: the accurate model failed to load but a complete
             // first pass exists. recoverFirstPass below routes it through the
             // SAME funnel as F5 (punctuation and summary included), so both
@@ -441,7 +455,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                 ?: dualSkipLoopMetrics,
                         ),
                         detectedLanguage = transcriptionResult.detectedLanguage,
-                        languagePin = resolvedLanguagePin(context),
+                        languagePin = runLanguagePin,
                         firstPassTranscript = when {
                             // F4/F5 delivered the first pass AS the final text:
                             // no duplicate block; the caption carries the story.
@@ -967,7 +981,9 @@ class TranscriptionOrchestrator @Inject constructor(
 
     private suspend fun ensureBackendLoaded(
         context: Context,
-        backendOverride: String? = null
+        backendOverride: String? = null,
+        /** TASK-546 AC3: replaces the persisted language preference for this request's config. */
+        languageOverride: String? = null
     ): Result<Unit> {
         val hasBackend = backendManager.hasActiveBackend()
         val activeBackend = backendManager.getActiveBackend()
@@ -980,9 +996,17 @@ class TranscriptionOrchestrator @Inject constructor(
         // (TEST_SPI) keeps the id and swaps the model: a warm backend would keep
         // decoding with the OLD recognizer while the UI names the new variant.
         val variantMismatch = !backendMismatch && variantChanged(activeBackend, preferredBackendId)
+        // TASK-546 AC3: the configured language is the third identity
+        // component, compared by VALUE: a re-run override must reach the
+        // recognizer, and the next ordinary request must recover the
+        // preference after an override run left a different language warm
+        // (without this, that stale language would silently serve while the
+        // row pins the preference).
+        val languageMismatch = !backendMismatch &&
+            languageResidencyMismatch(context, activeBackend, preferredBackendId, languageOverride)
 
-        if (!hasBackend || !backendReady || backendMismatch || variantMismatch) {
-            Log.i(TAG, "Backend needs (re)load (hasBackend=$hasBackend, ready=$backendReady, active=$activeBackendId, preferred=$preferredBackendId, variantMismatch=$variantMismatch)")
+        if (!hasBackend || !backendReady || backendMismatch || variantMismatch || languageMismatch) {
+            Log.i(TAG, "Backend needs (re)load (hasBackend=$hasBackend, ready=$backendReady, active=$activeBackendId, preferred=$preferredBackendId, variantMismatch=$variantMismatch, languageMismatch=$languageMismatch)")
 
             if (hasBackend) {
                 Log.i(TAG, "Unloading previous backend: $activeBackendId")
@@ -1004,7 +1028,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 // The LLM backend ("llm") stores its model in the generic preference.
                 LlmTranscriptionBackend.BACKEND_ID -> loadLlmBackend(context)
                 else -> backendRegistry.byBackendId(preferredBackendId)?.let { descriptor ->
-                    loadCatalogBackend(context, descriptor)
+                    loadCatalogBackend(context, descriptor, languageOverride)
                 } ?: loadLlmBackend(context)
             }
 
@@ -1056,6 +1080,36 @@ class TranscriptionOrchestrator @Inject constructor(
         return expected.isNotBlank() && expected != loaded
     }
 
+    /**
+     * TASK-546 AC3: whether the warm backend's CONFIGURED language differs
+     * from what this request would configure (the override when present, the
+     * preference otherwise), resolved through the same policy the load path
+     * uses. Null resident (the interface default) or an unknown-to-the-catalog
+     * id carries no language identity: warm, the [variantChanged] convention.
+     * The backend stores blank-resolved config values as "auto", so the
+     * expected side normalizes identically before comparing.
+     */
+    private suspend fun languageResidencyMismatch(
+        context: Context,
+        activeBackend: TranscriptionBackend?,
+        preferredBackendId: String,
+        languageOverride: String?,
+    ): Boolean {
+        // Blank = no claim, the null convention: the real backend never stores
+        // a blank (the store normalizes the blank resolution to "auto"), so a
+        // blank answer means "this backend does not track its language"
+        // (test doubles, non-sherpa engines) and stays warm.
+        val resident = activeBackend?.getConfiguredLanguage()?.takeIf { it.isNotEmpty() } ?: return false
+        val entry = BundledCatalog.byId(preferredBackendId) ?: return false
+        val preference = languageOverride ?: preferencesManager.transcriptionLanguage.first()
+        val expected = TranscriptionLanguagePolicy.resolveForEntry(
+            phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(context),
+            entry = entry,
+            preference = preference,
+        )
+        return expected.ifBlank { "auto" } != resident
+    }
+
     private suspend fun loadLlmBackend(context: Context): Result<Unit> {
         val modelPath = preferencesManager.modelPath.first()
         if (modelPath.isNullOrBlank()) {
@@ -1068,7 +1122,12 @@ class TranscriptionOrchestrator @Inject constructor(
         )
     }
 
-    private suspend fun loadCatalogBackend(context: Context, descriptor: BackendDescriptor): Result<Unit> {
+    private suspend fun loadCatalogBackend(
+        context: Context,
+        descriptor: BackendDescriptor,
+        /** TASK-546 AC3: request-scoped language override; null reads the preference. */
+        languageOverride: String?
+    ): Result<Unit> {
         val entry = BundledCatalog.byId(descriptor.backendId)
             ?: return Result.failure(TranscriptionException.NotInitialized())
         // The saved path is the user's explicit variant choice (useModel(variant)): honor
@@ -1087,8 +1146,9 @@ class TranscriptionOrchestrator @Inject constructor(
         // or a code per stream; passLanguage (offline Whisper) maps "auto" to "" so the
         // model auto-detects and passes a concrete code through; everything else gets "".
         // Single-language variants (Distil-IT) are forced later in SherpaBackend, which
-        // keeps winning over this resolution.
-        val languagePref = preferencesManager.transcriptionLanguage.first()
+        // keeps winning over this resolution. TASK-546 AC3: a per-request override
+        // speaks the same vocabulary and replaces the read, never the stored value.
+        val languagePref = languageOverride ?: preferencesManager.transcriptionLanguage.first()
         val language = TranscriptionLanguagePolicy.resolveForEntry(
             // TASK-547: the phone-locale pin needs the DEVICE locale (the
             // system one, not the app locale); LocaleManager owns that read.
@@ -1123,6 +1183,10 @@ class TranscriptionOrchestrator @Inject constructor(
         taskId: String,
         requestType: String,
         backendOverride: String?,
+        /** TASK-546 AC3: the streaming pass loads through the same catalog
+         *  config path, so the override applies here too (a re-run must not
+         *  stream one language and refine under another). */
+        languageOverride: String?,
         filePath: String?,
         prompt: String,
         queuePosition: Int,
@@ -1143,7 +1207,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         // F1: a fast-model load failure skips phase 1 silently; the run
         // degrades to single-model (the skip token rides the context).
-        val load = ensureBackendLoaded(context, fastId)
+        val load = ensureBackendLoaded(context, fastId, languageOverride)
         if (load.isFailure) {
             Log.i(TAG, "Fast first pass skipped (load failed): ${load.exceptionOrNull()?.message}")
             onSkipped(DualRefinementPolicy.SKIP_FAST_LOAD_FAILED, null)
@@ -2896,10 +2960,13 @@ class TranscriptionOrchestrator @Inject constructor(
      * picker displays it: untouched preference = "auto"; the phone pin = the
      * device's language; a code pin = itself. Row-level fact: report-time
      * reads would misattribute settings changed since the run (the TASK-545
-     * review lesson).
+     * review lesson). TASK-546 AC3: a per-request override replaces the
+     * preference read (the one normalization below covers both sources), so
+     * the row reflects what actually ran instead of the preference the
+     * request never consulted.
      */
-    private suspend fun resolvedLanguagePin(context: Context): String {
-        val pref = preferencesManager.transcriptionLanguage.first()
+    private suspend fun resolvedLanguagePin(context: Context, languageOverride: String?): String {
+        val pref = languageOverride ?: preferencesManager.transcriptionLanguage.first()
         return when {
             pref.isBlank() || pref == TranscriptionLanguagePolicy.PREF_SYSTEM -> TranscriptionLanguagePolicy.PREF_AUTO
             pref == TranscriptionLanguagePolicy.PREF_PHONE ->

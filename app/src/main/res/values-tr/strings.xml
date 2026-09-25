@@ -1011,6 +1011,7 @@
     <string name="language_chip_detected_body">Otomatik algılandı: %1$s. Yanlış dil mi? Transkripsiyon dilini değiştirip sesi yeniden dönüştürün.</string>
     <string name="language_chip_pinned_body">Sabitlendi: %1$s. Değiştirmek için transkripsiyon dili ayarını açın.</string>
     <string name="language_chip_open_setting">Dil ayarını aç</string>
+    <string name="language_chip_re_run">Başka bir dille yeniden çalıştır</string>
     <string name="curated_section_title">Diliniz için</string>
     <string name="curated_browse_all">Tüm dilleri görüntüle</string>
     <string name="curated_suggest_model">Diliniz için bir model önerin</string>

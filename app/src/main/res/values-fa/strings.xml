@@ -1016,6 +1016,7 @@
     <string name="language_chip_detected_body">به‌طور خودکار شناسایی شد: %1$s. زبان اشتباه است؟ زبان رونویسی را عوض کنید و صدا را دوباره رونویسی کنید.</string>
     <string name="language_chip_pinned_body">تنظیم‌شده: %1$s. برای تغییر، تنظیم زبان رونویسی را باز کنید.</string>
     <string name="language_chip_open_setting">باز کردن تنظیم زبان</string>
+    <string name="language_chip_re_run">اجرای مجدد با یک زبان</string>
     <string name="curated_section_title">برای زبان شما</string>
     <string name="curated_browse_all">مشاهده همه زبان‌ها</string>
     <string name="curated_suggest_model">مدلی برای زبان خود پیشنهاد دهید</string>

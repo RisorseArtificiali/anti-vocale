@@ -816,6 +816,9 @@ class SherpaBackend(
 
     override fun getModelPath(): String? = modelDir
 
+    /** TASK-546 AC3: the configured language IS the engine's decode language (streaming reads [language] per stream via setOption; offline bakes it in at init), so residency compares against it. */
+    override fun getConfiguredLanguage(): String = language
+
     /** TASK-644: a native decode is in flight (the transcribe bracket). */
     override fun isBusy(): Boolean = keepAlive.workInFlightCount() > 0
 }
