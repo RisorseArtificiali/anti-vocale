@@ -71,6 +71,10 @@ object FeedbackHelper {
         val deviceModel: String? = null,
         /** TASK-512: rendered processing context (decode path, chunks, cap, RAM). */
         val processingLine: String? = null,
+        /** TASK-511: the row is a partial delivery (some chunks failed). */
+        val isPartial: Boolean = false,
+        /** TASK-511: how many chunks decoded blank/failed. */
+        val failedChunkCount: Int = 0,
     )
 
     /** Localized labels for the per-transcription body template. */
@@ -111,6 +115,9 @@ object FeedbackHelper {
         // repeating the label on a second line (which read as a duplicate).
         val errorSuffix = f.errorMessage?.takeIf { it.isNotBlank() }?.let { " ($it)" } ?: ""
         appendLine("${l.status}: ${f.status}$errorSuffix")
+        if (f.isPartial) {
+            appendLine("(${f.failedChunkCount} chunk(s) failed; transcript is partial)")
+        }
         f.failureDiagnostics?.takeIf { it.isNotBlank() }?.let { appendLine(it) }
         // TASK-512: standalone attribution + the tail that instantly tells
         // truncation from a repetition loop (the head alone cannot).

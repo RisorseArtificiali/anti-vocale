@@ -120,6 +120,8 @@ private fun reportTranscription(context: Context, log: LogEntry) {
                 deviceModel = "${android.os.Build.MANUFACTURER} ${android.os.Build.MODEL}".trim(),
                 processingLine = ProcessingContextConverter.render(
                     ProcessingContextConverter.fromJson(log.processingContext)),
+                isPartial = log.isPartial,
+                failedChunkCount = log.failedChunkCount,
             ),
             FeedbackHelper.TranscriptLabels(
                 task = context.getString(R.string.feedback_label_task),
