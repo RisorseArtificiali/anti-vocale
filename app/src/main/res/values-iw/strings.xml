@@ -719,6 +719,8 @@
     <string name="performance_stats_hours_ago">לפני %1$d שע׳</string>
     <string name="performance_stats_days_ago">לפני %1$d ימים</string>
     <string name="performance_stats_total_audio">סה״כ: %1$s אודיו שעובד</string>
+    <string name="performance_stats_accuracy_title">דיוק</string>
+    <string name="performance_stats_accuracy_footnote">נמדד על מסגרות של הודעות קוליות אמיתיות ומסגרות נקיות, דגימות מסוג FLEURS או מדדי קהילה; מה שאינו מופיע ברשימה לא נמדד.</string>
 
     <!-- Transcription active protection -->
     <string name="dialog_transcription_active_title">תמלול בעיצומו</string>

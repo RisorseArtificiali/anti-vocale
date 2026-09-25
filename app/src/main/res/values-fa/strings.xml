@@ -715,6 +715,8 @@
     <string name="performance_stats_hours_ago">%1$d ساعت پیش</string>
     <string name="performance_stats_days_ago">%1$d روز پیش</string>
     <string name="performance_stats_total_audio">مجموع: %1$s صدا پردازش شد</string>
+    <string name="performance_stats_accuracy_title">دقت</string>
+    <string name="performance_stats_accuracy_footnote">روی مجموعه‌های پیام‌های واقعی و مجموعه‌های پاک ما، نمونه‌های از نوع FLEURS یا بنچمارک‌های انجمن اندازه‌گیری شده است؛ هر چه فهرست نشده است اندازه‌گیری نشده است.</string>
 
     <!-- Model unload -->
     <string name="action_unload">تخلیه</string>

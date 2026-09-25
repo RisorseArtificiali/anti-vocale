@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "generatedFrom": "scripts/generate-accuracy-artifact.py",
+  "measurements": [
+    {
+      "modelId": "sherpa-onnx",
+      "variant": "parakeet-tdt-0.6b-v3-smoothquant",
+      "language": "it",
+      "metric": "WER",
+      "value": 5.4,
+      "corpus": "internal real-message set",
+      "date": "2026-08"
+    },
+    {
+      "modelId": "whisper",
+      "variant": "sherpa-onnx-whisper-distil-large-v3-it",
+      "language": "it",
+      "metric": "WER",
+      "value": 4.3,
+      "corpus": "clean set",
+      "date": "2026-08"
+    },
+    {
+      "modelId": "whisper",
+      "variant": "sherpa-onnx-whisper-turbo",
+      "language": "it",
+      "metric": "WER",
+      "value": 6.3,
+      "corpus": "clean set",
+      "date": "2026-08"
+    },
+    {
+      "modelId": "qwen3-asr",
+      "variant": "sherpa-onnx-qwen3-asr-0.6b-int8",
+      "language": "it",
+      "metric": "WER",
+      "value": 12.2,
+      "corpus": "clean set",
+      "date": "2026-08"
+    },
+    {
+      "modelId": "sherpa-onnx",
+      "variant": "parakeet-tdt-0.6b-v3-smoothquant",
+      "language": "pl",
+      "metric": "CER",
+      "value": 3.0,
+      "corpus": "FLEURS-10",
+      "date": "2026-09"
+    },
+    {
+      "modelId": "sherpa-onnx",
+      "variant": "parakeet-tdt-0.6b-v3-smoothquant",
+      "language": "pl",
+      "metric": "WER",
+      "value": 10.7,
+      "corpus": "FLEURS-10",
+      "date": "2026-09"
+    },
+    {
+      "modelId": "whisper",
+      "variant": "sherpa-onnx-whisper-small",
+      "language": "tr",
+      "metric": "CER",
+      "value": 6.9,
+      "corpus": "FLEURS-10",
+      "date": "2026-09"
+    },
+    {
+      "modelId": "external",
+      "variant": "Omnilingual-ASR-300M-int8-multilingual-experimental-Apache-2.0",
+      "language": "tr",
+      "metric": "CER",
+      "value": 6.5,
+      "corpus": "FLEURS-10",
+      "date": "2026-09"
+    },
+    {
+      "modelId": "external",
+      "variant": "Omnilingual-ASR-300M-int8-multilingual-experimental-Apache-2.0",
+      "language": "he",
+      "metric": "CER",
+      "value": 25.5,
+      "corpus": "FLEURS-class (weak)",
+      "date": "2026-09"
+    },
+    {
+      "modelId": "external",
+      "variant": "IndicConformer-Hindi-int8-5.8-CER",
+      "language": "hi",
+      "metric": "WER",
+      "value": 7.65,
+      "corpus": "community benchmark (RNNT 100 samples)",
+      "date": "2026-09"
+    }
+  ]
+}

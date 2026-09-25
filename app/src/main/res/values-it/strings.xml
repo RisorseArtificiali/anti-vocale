@@ -715,6 +715,8 @@
     <string name="performance_stats_hours_ago">%1$dh fa</string>
     <string name="performance_stats_days_ago">%1$dg fa</string>
     <string name="performance_stats_total_audio">Totale: %1$s audio elaborati</string>
+    <string name="performance_stats_accuracy_title">Accuratezza</string>
+    <string name="performance_stats_accuracy_footnote">Misurato sui nostri set di messaggi reali e set puliti, su campioni di tipo FLEURS o benchmark della community; ciò che non è elencato non è stato misurato.</string>
 
     <!-- Model unload -->
     <string name="action_unload">Scarica</string>

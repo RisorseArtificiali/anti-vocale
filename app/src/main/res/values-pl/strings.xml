@@ -727,6 +727,8 @@
     <string name="performance_stats_hours_ago">%1$dh temu</string>
     <string name="performance_stats_days_ago">%1$dd temu</string>
     <string name="performance_stats_total_audio">Łącznie: przetworzono %1$s audio</string>
+    <string name="performance_stats_accuracy_title">Dokładność</string>
+    <string name="performance_stats_accuracy_footnote">Mierzone na naszych zbiorach prawdziwych wiadomości i zbiorach czystych, próbkach typu FLEURS lub benchmarkach społeczności; tego, czego nie ma na liście, nie zmierzono.</string>
 
     <!-- Transcription active protection -->
     <string name="dialog_transcription_active_title">Transkrypcja w toku</string>

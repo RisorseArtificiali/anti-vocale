@@ -111,7 +111,7 @@ object AppModule {
             recentUsage = {
                 transcriptionCalibrator.getAllProfiles().map { profile ->
                     RecentModelUse(
-                        backendId = transcriptionCalibrator.backendIdOf(profile.modelId),
+                        backendId = TranscriptionCalibrator.backendIdOf(profile.modelId),
                         lastUsedAtMillis = profile.lastTimestamp,
                     )
                 }

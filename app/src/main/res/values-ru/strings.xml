@@ -710,6 +710,8 @@
     <string name="performance_stats_hours_ago">%1$d ч назад</string>
     <string name="performance_stats_days_ago">%1$d дн назад</string>
     <string name="performance_stats_total_audio">Всего обработано аудио: %1$s</string>
+    <string name="performance_stats_accuracy_title">Точность</string>
+    <string name="performance_stats_accuracy_footnote">Измерено на наших наборах реальных сообщений и чистых наборах, выборках класса FLEURS или общественных бенчмарках; то, чего нет в списке, не измерялось.</string>
 
     <!-- Transcription active protection -->
     <string name="dialog_transcription_active_title">Идёт распознавание</string>

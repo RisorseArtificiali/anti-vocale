@@ -598,6 +598,8 @@
     <string name="performance_stats_hours_ago">hace %1$dh</string>
     <string name="performance_stats_days_ago">hace %1$dd</string>
     <string name="performance_stats_total_audio">Total: %1$s de audio procesado</string>
+    <string name="performance_stats_accuracy_title">Precisión</string>
+    <string name="performance_stats_accuracy_footnote">Medido en nuestros conjuntos de mensajes reales y conjuntos limpios, muestras de tipo FLEURS o benchmarks de la comunidad; lo que no aparece en la lista no se ha medido.</string>
     <string name="dialog_transcription_active_title">Transcripción en curso</string>
     <string name="dialog_delete_active_model_message">No se puede eliminar «%1$s»: el modelo está en uso para una transcripción. Espera a que termine.</string>
     <string name="dialog_delete_inactive_model_message">Hay una transcripción en curso. Eliminar «%1$s» no la afectará, pero procede con cautela.</string>

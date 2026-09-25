@@ -720,6 +720,8 @@
     <string name="performance_stats_hours_ago">%1$dh ago</string>
     <string name="performance_stats_days_ago">%1$dd ago</string>
     <string name="performance_stats_total_audio">Total: %1$s audio processed</string>
+    <string name="performance_stats_accuracy_title">Accuracy</string>
+    <string name="performance_stats_accuracy_footnote">Measured on our real-message and clean test sets, FLEURS-class samples, or community benchmarks; anything not listed is unmeasured.</string>
 
     <!-- Transcription active protection -->
     <string name="dialog_transcription_active_title">Transcription in Progress</string>

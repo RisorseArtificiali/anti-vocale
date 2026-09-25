@@ -21,12 +21,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
+import com.antivocale.app.data.ModelAccuracy
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,6 +40,12 @@ fun PerformanceStatsDialog(
     onReset: () -> Unit
 ) {
     var showResetConfirm by remember { mutableStateOf(false) }
+
+    // TASK-658 / GH #120: the measured-accuracy artifact, the only source of
+    // accuracy numbers in the app. Loaded fail-open: a corrupt asset yields
+    // an empty list and the section below simply does not render.
+    val context = LocalContext.current
+    val accuracyMeasurements = remember { ModelAccuracy.load(context) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -183,6 +192,54 @@ fun PerformanceStatsDialog(
                                 R.string.performance_stats_total_audio,
                                 formatAudioDuration(totalAudio)
                             ),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    // TASK-658 / GH #120: lab-measured accuracy, one tap deeper
+                    // than the model list (the numbers never render inline
+                    // there). Only profile rows whose (modelId, variant) has a
+                    // measurement render; the footnote names the corpora so
+                    // unlisted combinations read as unmeasured, not missing.
+                    val accuracyGroups = ModelAccuracy.rowsFor(profiles, accuracyMeasurements)
+                    if (accuracyGroups.isNotEmpty()) {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 2.dp))
+                        Text(
+                            text = stringResource(R.string.performance_stats_accuracy_title),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        accuracyGroups.forEach { (profile, rows) ->
+                            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                Text(
+                                    text = profile.displayName,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                rows.forEach { m ->
+                                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        Text(
+                                            text = m.language.uppercase(Locale.ROOT),
+                                            style = MaterialTheme.typography.labelSmall,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                        Text(
+                                            text = "${m.metric} ${m.displayValue}%",
+                                            style = MaterialTheme.typography.bodySmall
+                                        )
+                                        Text(
+                                            text = m.corpus,
+                                            style = MaterialTheme.typography.labelSmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        Text(
+                            text = stringResource(R.string.performance_stats_accuracy_footnote),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

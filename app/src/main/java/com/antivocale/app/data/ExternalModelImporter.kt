@@ -606,7 +606,10 @@ class ExternalModelImporter(
             throw e
         }
 
-    private fun sanitizeDirName(name: String): String =
+    /** TASK-658: internal so ModelAccuracyTest can anchor the accuracy
+     *  artifact's Python-side sanitize mirror against THIS rule (the drift
+     *  tripwire the generator script alone cannot provide). */
+    internal fun sanitizeDirName(name: String): String =
         name.replace(Regex("[^A-Za-z0-9._-]"), "-")
             .replace(Regex("-+"), "-")
             .trim('-', '.')

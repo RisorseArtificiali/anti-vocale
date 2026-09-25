@@ -38,6 +38,35 @@ class TranscriptionCalibrator(context: Context) {
          * which owns the split rule.
          */
         private const val KEY_SEPARATOR = "__"
+
+        /**
+         * Decodes the backend-id half of a persisted calibration key: the inverse
+         * of [buildKey] for the first half. Splits on the FIRST separator only,
+         * because backend ids never contain it while dirNames may (a dirName like
+         * "model__v2" must not be mistaken for more segments). A key without any
+         * separator (a legacy backend-id-only key) returns itself unchanged.
+         *
+         * Consumers reading keys as a usage-recency source (the share-shortcut
+         * ranking) inherit the calibration store's semantics: [resetAll] clears
+         * every key, hence recency; and runs with non-positive audio duration are
+         * never recorded ([record] returns early), hence uncounted.
+         *
+         * TASK-658: these pure key decoders moved to the companion so
+         * [ModelAccuracy] can join artifact rows onto profiles without a
+         * calibrator instance; instance call sites keep compiling.
+         */
+        fun backendIdOf(key: String): String = key.substringBefore(KEY_SEPARATOR)
+
+        /**
+         * Decodes the dirName half of a persisted calibration key: the inverse of
+         * [buildKey] for the second half, split on the FIRST separator for the
+         * same reason as [backendIdOf]. A key without any separator (a legacy
+         * backend-id-only key) yields an empty dirName, which matches nothing.
+         *
+         * TASK-658 / GH #120: the PerformanceStatsDialog accuracy section joins
+         * asset rows onto profiles by (backendId, dirName) via [ModelAccuracy].
+         */
+        fun dirNameOf(key: String): String = key.substringAfter(KEY_SEPARATOR, "")
     }
 
     private val dataStore = context.calibrationDataStore
@@ -72,20 +101,6 @@ class TranscriptionCalibrator(context: Context) {
         val dirName = File(modelPath).name
         return "${backendId}${KEY_SEPARATOR}${dirName}"
     }
-
-    /**
-     * Decodes the backend-id half of a persisted calibration key: the inverse
-     * of [buildKey] for the first half. Splits on the FIRST separator only,
-     * because backend ids never contain it while dirNames may (a dirName like
-     * "model__v2" must not be mistaken for more segments). A key without any
-     * separator (a legacy backend-id-only key) returns itself unchanged.
-     *
-     * Consumers reading keys as a usage-recency source (the share-shortcut
-     * ranking) inherit the calibration store's semantics: [resetAll] clears
-     * every key, hence recency; and runs with non-positive audio duration are
-     * never recorded ([record] returns early), hence uncounted.
-     */
-    fun backendIdOf(key: String): String = key.substringBefore(KEY_SEPARATOR)
 
     private fun msKey(id: String) = floatPreferencesKey("cal_${id}_msPerSec")
     private fun countKey(id: String) = intPreferencesKey("cal_${id}_count")

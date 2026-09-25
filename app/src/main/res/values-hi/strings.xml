@@ -682,6 +682,8 @@
     <string name="performance_stats_hours_ago">%1$d घंटे पहले</string>
     <string name="performance_stats_days_ago">%1$d दिन पहले</string>
     <string name="performance_stats_total_audio">कुल: %1$s ऑडियो प्रोसेस हुआ</string>
+    <string name="performance_stats_accuracy_title">सटीकता</string>
+    <string name="performance_stats_accuracy_footnote">हमारे वास्तविक संदेश सेट और साफ़ टेस्ट सेट, FLEURS-वर्ग नमूनों या कम्युनिटी बेंचमार्क पर मापा गया; जो सूचीबद्ध नहीं है वह मापा नहीं गया है।</string>
 
     <!-- Transcription active protection -->
     <string name="dialog_transcription_active_title">ट्रांसक्रिप्शन जारी है</string>

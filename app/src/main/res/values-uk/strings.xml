@@ -729,6 +729,8 @@
     <string name="performance_stats_hours_ago">%1$dг тому</string>
     <string name="performance_stats_days_ago">%1$dд тому</string>
     <string name="performance_stats_total_audio">Всього: оброблено %1$s аудіо</string>
+    <string name="performance_stats_accuracy_title">Точність</string>
+    <string name="performance_stats_accuracy_footnote">Виміряно на наших наборах реальних повідомлень і чистих наборах, вибірках класу FLEURS або громадських бенчмарках; те, чого немає в списку, не вимірювалося.</string>
 
     <!-- Transcription active protection -->
     <string name="dialog_transcription_active_title">Триває розшифровка</string>

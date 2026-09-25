@@ -717,6 +717,8 @@
     <string name="performance_stats_hours_ago">%1$dh önce</string>
     <string name="performance_stats_days_ago">%1$dd önce</string>
     <string name="performance_stats_total_audio">Toplam: %1$s ses işlendi</string>
+    <string name="performance_stats_accuracy_title">Doğruluk</string>
+    <string name="performance_stats_accuracy_footnote">Gerçek mesaj kümelerimiz ve temiz kümeler, FLEURS sınıfı örnekler veya topluluk kıyaslamalarıyla ölçüldü; listelenmeyenler ölçülmemiştir.</string>
 
     <!-- Transcription active protection -->
     <string name="dialog_transcription_active_title">Metin Çıkarma Sürüyor</string>
