@@ -287,6 +287,10 @@
     <string name="external_model_quarantined_text">Loading "%1$s" closed the app, so it has been disabled to prevent repeat crashes. Delete and re-import the model in the Models tab to try again.</string>
     <string name="memory_protection">Memory protection</string>
     <string name="memory_protection_desc">Block loading a model when free memory looks insufficient, to avoid silent app crashes. Off by default: normally the app always tries to run the model.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">External automation (Tasker)</string>
+    <string name="external_automation_description">Lets other apps start transcriptions through the automation API (e.g. Tasker). Off by default.</string>
+    <string name="external_automation_disabled">External automation is disabled. Enable it in Settings > Advanced > External automation.</string>
     <string name="copy">Copy</string>
     <string name="share">Share</string>
     <string name="char_counter">%1$d of %2$d chars</string>

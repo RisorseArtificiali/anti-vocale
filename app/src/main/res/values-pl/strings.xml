@@ -288,6 +288,10 @@
     <string name="external_model_quarantined_text">Wczytanie "%1$s" zamknęło aplikację, więc został wyłączony, aby uniknąć powtarzających się awarii. Usuń i zaimportuj model ponownie w zakładce Modele.</string>
     <string name="memory_protection">Ochrona pamięci</string>
     <string name="memory_protection_desc">Blokuje wczytywanie modelu, gdy wolnej pamięci wydaje się brakować, aby uniknąć cichego zamykania aplikacji. Wyłączona domyślnie: normalnie aplikacja zawsze próbuje uruchomić model.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">Automatyzacja zewnętrzna (Tasker)</string>
+    <string name="external_automation_description">Pozwala innym aplikacjom rozpoczynać transkrypcje przez API automatyzacji (np. Tasker). Domyślnie wyłączona.</string>
+    <string name="external_automation_disabled">Automatyzacja zewnętrzna jest wyłączona. Włącz ją w Ustawienia > Zaawansowane > Automatyzacja zewnętrzna.</string>
     <string name="copy">Kopiuj</string>
     <string name="share">Udostępnij</string>
     <string name="char_counter">%1$d z %2$d znaków</string>

@@ -233,6 +233,10 @@
     <string name="external_model_quarantined_text">Le chargement de «%1$s» a fermé l\'application, il a donc été désactivé pour éviter des plantages répétés. Supprimez puis réimportez le modèle dans l\'onglet Modèles pour réessayer.</string>
     <string name="memory_protection">Protection de la mémoire</string>
     <string name="memory_protection_desc">Bloque le chargement d\'un modèle quand la mémoire libre semble insuffisante, pour éviter les fermetures silencieuses de l\'application. Désactivée par défaut : normalement, l\'application tente toujours d\'exécuter le modèle.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">Automatisation externe (Tasker)</string>
+    <string name="external_automation_description">Permet à d\'autres applications de lancer des transcriptions via l\'API d\'automatisation (par ex. Tasker). Désactivée par défaut.</string>
+    <string name="external_automation_disabled">L\'automatisation externe est désactivée. Activez-la dans Paramètres > Avancé > Automatisation externe.</string>
     <string name="copy">Copier</string>
     <string name="share">Partager</string>
     <string name="char_counter">%1$d sur %2$d caractères</string>

@@ -284,6 +284,10 @@
     <string name="external_model_quarantined_text">"%1$s" yüklenmesi uygulamayı kapattığı için tekrarlayan çökmeleri önlemek amacıyla devre dışı bırakıldı. Tekrar denemek için modeli Modeller sekmesinde silip yeniden içe aktarın.</string>
     <string name="memory_protection">Bellek koruması</string>
     <string name="memory_protection_desc">Boş bellek yetersiz görünüyorsa model yüklenmesini engeller, böylece uygulamanın sessizce kapanması önlenir. Varsayılan olarak kapalıdır: uygulama normalde modeli her zaman çalıştırmayı dener.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">Harici otomasyon (Tasker)</string>
+    <string name="external_automation_description">Diğer uygulamaların otomasyon API\'si (örnek: Tasker) aracılığıyla transkripsiyon başlatmasına izin verir. Varsayılan olarak kapalıdır.</string>
+    <string name="external_automation_disabled">Harici otomasyon devre dışı. Ayarlar > Gelişmiş > Harici otomasyon bölümünden etkinleştirin.</string>
     <string name="copy">Kopyala</string>
     <string name="share">Paylaş</string>
     <string name="char_counter">%2$d karakterden %1$d</string>

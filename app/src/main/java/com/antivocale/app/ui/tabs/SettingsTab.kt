@@ -126,6 +126,7 @@ fun SettingsTab(
     val advancedSharingEnabled by viewModel.advancedSharingEnabled.collectAsState()
     val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
     val memoryProtection by viewModel.memoryProtection.collectAsState()
+    val externalAutomationEnabled by viewModel.externalAutomationEnabled.collectAsState()
     val compactResultActions by viewModel.compactResultActions.collectAsState()
     val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
     // TASK-546: the chip flag (maintainer directive: the flag lives here).
@@ -506,6 +507,7 @@ fun SettingsTab(
                 ),
                 listOf(R.string.subtitle_timeout_title, R.string.subtitle_timeout_description),
                 listOf(R.string.memory_protection, R.string.memory_protection_desc),
+                listOf(R.string.external_automation_title, R.string.external_automation_description),
                 listOf(R.string.per_app_settings_title, R.string.per_app_settings_description),
                 listOf(R.string.performance_stats_title, R.string.performance_stats_subtitle),
             ).map { group -> group.map { context.getString(it) } }
@@ -1883,6 +1885,23 @@ fun SettingsTab(
                     modifier = Modifier
                         .onGloballyPositioned { memoryProtectionRowY = it.positionInRoot().y.toInt() }
                         .border(2.dp, highlightColor, MaterialTheme.shapes.medium)
+                )
+            }
+
+            // TASK-274: consent gate for the exported automation receivers
+            // (Tasker surface); while off they answer with the error that
+            // names this toggle.
+            val externalAutomationTitle = stringResource(R.string.external_automation_title)
+            val externalAutomationDescription = stringResource(R.string.external_automation_description)
+            SearchFilterRow(searchQuery, externalAutomationTitle, externalAutomationDescription) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Build,
+                    title = externalAutomationTitle,
+                    description = externalAutomationDescription,
+                    checked = externalAutomationEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveExternalAutomationEnabled(enabled)
+                    }
                 )
             }
 

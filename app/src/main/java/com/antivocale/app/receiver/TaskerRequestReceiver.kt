@@ -5,8 +5,13 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.antivocale.app.R
+import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.transcription.BuiltInBackendIds
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 
 /**
  * BroadcastReceiver for handling Tasker requests.
@@ -31,7 +36,12 @@ import com.antivocale.app.transcription.BuiltInBackendIds
  * If that fails, it posts a notification the user can tap — the tap is user-initiated,
  * satisfying the FGS restriction and allowing the service to start.
  */
+@AndroidEntryPoint
 class TaskerRequestReceiver : BroadcastReceiver() {
+
+    // TASK-274: the consent gate below reads the preference; this receiver
+    // gained injection for exactly that (the ModelPreloadReceiver shape).
+    @Inject lateinit var preferencesManager: PreferencesManager
 
     companion object {
         const val TAG = "TaskerRequestReceiver"
@@ -102,6 +112,23 @@ class TaskerRequestReceiver : BroadcastReceiver() {
         val prompt = intent.getStringExtra(EXTRA_PROMPT) ?: ""
         val filePath = intent.getStringExtra(EXTRA_FILE_PATH)
         val taskId = intent.getStringExtra(EXTRA_TASK_ID) ?: "unknown_${System.currentTimeMillis()}"
+        // TASK-274: consent gate, BEFORE the allowlist and any enqueue. The
+        // automation surface is opt-in (default off); the reply names the
+        // setting so an existing Tasker user learns what to flip. The
+        // blocking first() reads ONLY the preference cache (the flow emits
+        // the cached value onStart, never DataStore): the cache is warm
+        // because the Hilt singleton's initialize() runs during THIS
+        // receiver's own injection. If initialize() ever turns lazy or
+        // async, first() would silently return the constructor default and
+        // every enabled user would get fail-closed rejections: revisit this
+        // gate with that refactor.
+        if (!runBlocking { preferencesManager.externalAutomationEnabled.first() }) {
+            Log.w(TAG, "Rejected automation request: external automation is disabled")
+            sendTaskerReply(
+                context, taskId, STATUS_ERROR,
+                errorMessage = context.getString(R.string.external_automation_disabled))
+            return
+        }
         // TASK-274: path allowlist. The only legitimately transcribable-by-path
         // sources are the app's own staged audio (filesDir/shared_audio) and
         // preprocessing intermediates (cacheDir); every other path already
@@ -172,9 +199,10 @@ class TaskerRequestReceiver : BroadcastReceiver() {
         }
     }
 
-    // The BackendRegistry is Hilt-scoped and this receiver has no injection, so
-    // the valid-id space is the ONE shared static predicate (record validity is
-    // enforced downstream with a loud ExternalModelUnavailable).
+    // The registry carries Hilt-scoped constructor state, but this check needs
+    // only the static valid-id space, so the ONE shared predicate stays right
+    // even now that the receiver has injection (record validity is enforced
+    // downstream with a loud ExternalModelUnavailable).
     private fun isKnownBackendId(id: String): Boolean = BuiltInBackendIds.isSelectableBackendId(id)
 
 

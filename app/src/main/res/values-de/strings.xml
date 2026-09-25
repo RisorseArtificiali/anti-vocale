@@ -264,6 +264,10 @@
     <string name="external_model_quarantined_text">Das Laden von "%1$s" hat die App beendet, daher wurde es deaktiviert, um wiederholte Abstürze zu vermeiden. Entferne und importiere das Modell im Tab Modelle erneut.</string>
     <string name="memory_protection">Speicherschutz</string>
     <string name="memory_protection_desc">Das Laden eines Modells blockieren, wenn der freie Speicher nicht auszureichen scheint, um stilles Schließen der App zu vermeiden. Standardmäßig aus: Normalerweise versucht die App immer, das Modell auszuführen.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">Externe Automatisierung (Tasker)</string>
+    <string name="external_automation_description">Ermöglicht anderen Apps, über die Automatisierungs-API Transkriptionen zu starten (z. B. Tasker). Standardmäßig aus.</string>
+    <string name="external_automation_disabled">Externe Automatisierung ist deaktiviert. Aktivieren Sie sie unter Einstellungen > Erweitert > Externe Automatisierung.</string>
     <string name="copy">Kopieren</string>
     <string name="share">Teilen</string>
     <string name="char_counter">%1$d von %2$d Zeichen</string>

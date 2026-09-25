@@ -281,6 +281,10 @@
     <string name="external_model_quarantined_text">بارگذاری «%1$s» برنامه را بست، بنابراین برای جلوگیری از خرابی‌های مکرر غیرفعال شد. برای تلاش دوباره، مدل را در تب مدل‌ها حذف و دوباره وارد کنید.</string>
     <string name="memory_protection">محافظت از حافظه</string>
     <string name="memory_protection_desc">بارگذاری مدل را وقتی حافظه آزاد کافی به نظر نمی‌رسد مسدود می‌کند تا از بسته شدن بی‌صدا برنامه جلوگیری شود. به طور پیش‌فرض خاموش است: معمولاً برنامه همیشه سعی می‌کند مدل را اجرا کند.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">اتوماسیون خارجی (Tasker)</string>
+    <string name="external_automation_description">به دیگر برنامه‌ها اجازه می‌دهد از طریق API اتوماسیون (مثلاً Tasker) رونویسی را شروع کنند. به طور پیش‌فرض خاموش است.</string>
+    <string name="external_automation_disabled">اتوماسیون خارجی خاموش است. آن را در تنظیمات > پیشرفته > اتوماسیون خارجی روشن کنید.</string>
     <string name="copy">کپی</string>
     <string name="share">هم‌رسانی</string>
     <string name="char_counter">%1$d از %2$d نویسه</string>

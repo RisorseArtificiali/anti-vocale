@@ -61,6 +61,7 @@ Set keys and value formats:
 | `compact_result_actions` | `saveCompactResultActions` | `true` or `false` (strict) |
 | `language_chip` | `saveLanguageChipEnabled` | `true` or `false` (strict); TASK-546: gates the detected-language chip on results |
 | `memory_protection` | `saveMemoryProtection` | `true` or `false` (strict) |
+| `external_automation` | `saveExternalAutomationEnabled` | `true` or `false` (strict); TASK-274: consent gate for the exported automation receivers (Tasker surface) |
 | `group_logs` | `saveGroupLogsByConversation` | `true` or `false` (strict) |
 | `technical_details` | `saveShowTechnicalDetails` | `true` or `false` (strict); TASK-616: gates the technical processing-context line on transcript entries |
 | `show_retranscribe` | `saveShowRetranscribeButton` | `true` or `false` (strict) |

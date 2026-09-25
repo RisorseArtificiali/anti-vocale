@@ -88,6 +88,9 @@ interface PreferencesManager {
     val advancedSharingEnabled: Flow<Boolean>
     val showRetranscribeButton: Flow<Boolean>
     val memoryProtection: Flow<Boolean>
+
+    /** TASK-274: consent gate for the exported automation receivers (Tasker surface). */
+    val externalAutomationEnabled: Flow<Boolean>
     val compactResultActions: Flow<Boolean>
     /** TASK-546: show the detected-language chip on results. */
     val languageChipEnabled: Flow<Boolean>
@@ -138,6 +141,9 @@ interface PreferencesManager {
     suspend fun saveAdvancedSharingEnabled(enabled: Boolean)
     suspend fun saveShowRetranscribeButton(enabled: Boolean)
     suspend fun saveMemoryProtection(enabled: Boolean)
+
+    /** TASK-274: see [externalAutomationEnabled]. */
+    suspend fun saveExternalAutomationEnabled(enabled: Boolean)
     suspend fun saveCompactResultActions(enabled: Boolean)
     suspend fun saveLanguageChipEnabled(enabled: Boolean)
 
@@ -242,6 +248,9 @@ interface PreferencesManager {
         const val DEFAULT_SHOW_RETRANSCRIBE_BUTTON = true
         /** TASK-631: protection is opt-in; by default the app never refuses a load on its own. */
         const val DEFAULT_MEMORY_PROTECTION = false
+        /** TASK-274: the automation receivers are opt-in; off, they answer with the error
+         *  naming this setting instead of running the request. */
+        const val DEFAULT_EXTERNAL_AUTOMATION_ENABLED = false
         const val DEFAULT_COMPACT_RESULT_ACTIONS = true
         /** TASK-546: the chip mitigates invisible wrong-language detection; on by default. */
         const val DEFAULT_LANGUAGE_CHIP_ENABLED = true

@@ -2,6 +2,12 @@
 
 This guide explains how to configure Tasker to use Anti-Vocale for on-device text generation and audio transcription.
 
+## External automation toggle
+
+The automation receivers (`PROCESS_REQUEST` and `PRELOAD_MODEL`) answer only after you enable them once in the app: **Settings > Advanced > External automation (Tasker)**. The toggle is **off by default**. While it is off, every request is rejected with the error `External automation is disabled. Enable it in Settings > Advanced > External automation.` and nothing is run; flipping the toggle on restores the behavior this guide describes.
+
+Audio requests have a second constraint: `file_path` must point inside the app's private staging directory (`/data/data/com.antivocale.app.debug/files/shared_audio/`). Every other path, including all `/sdcard` paths (which the app cannot read), is rejected before the transcription starts. See *Staging audio files* below for how a file gets there.
+
 ## Prerequisites
 
 1. **Install Anti-Vocale** from the APK
@@ -39,6 +45,26 @@ This guide explains how to configure Tasker to use Anti-Vocale for on-device tex
 | `status` | String | `"success"` or `"error"` |
 | `result_text` | String | Generated text (on success) |
 | `error_message` | String | Error description (on error) |
+
+### Staging audio files
+
+The app only reads `file_path` values inside its private staging directory
+(`/data/data/com.antivocale.app.debug/files/shared_audio/`; its cache directory is also accepted). This is deliberate: the app cannot read `/sdcard` paths, so a broadcast pointing there always fails. Ways to place a file in the staging directory:
+
+- Share the file to Anti-Vocale from any app: the app copies it into the
+  staging directory itself and transcribes it.
+- From adb on a debug build (`run-as` does not work on release builds):
+
+```bash
+adb push voice_message.m4a /data/local/tmp/
+adb shell (Debug builds install as com.antivocale.app.debug, the applicationIdSuffix; run-as cannot target the release id because release builds are not debuggable.)
+
+run-as com.antivocale.app.debug mkdir -p files/shared_audio
+adb shell run-as com.antivocale.app.debug cp /data/local/tmp/voice_message.m4a files/shared_audio/
+```
+
+- On a rooted device, Tasker's **Run Shell** action with *Use Root* checked
+  can copy the file in (Profile 3 below uses this).
 
 ---
 
@@ -102,8 +128,9 @@ Transcribe a voice recording to text.
 
 2. **Variable Set**
    - Name: `%audio_path`
-   - Value: `/sdcard/Download/voice_message.m4a`
-   - (Or use a variable from a previous step)
+   - Value: `/data/data/com.antivocale.app.debug/files/shared_audio/voice_message.m4a`
+   - The file must already be staged there (see *Staging audio files* above);
+     `/sdcard` paths are rejected as unreadable.
 
 3. **Send Intent**
    - Action: `com.antivocale.app.PROCESS_REQUEST`
@@ -151,26 +178,36 @@ Automatically transcribe incoming WhatsApp voice messages.
 2. **Wait**
    - Seconds: `2` (allow file to finish writing)
 
-3. **Variable Set**
+3. **Run Shell** (stage the file where the app can read it; requires root, see *Staging audio files*)
+   - Command: `f="%voice_file"; cp "$f" /data/data/com.antivocale.app.debug/files/shared_audio/; basename "$f"`
+   - Store Output In: `%voice_name`
+   - Use Root: checked
+
+4. **Variable Set**
    - Name: `%task_id`
    - Value: `wa_%TIMEMS`
 
-4. **Send Intent**
+5. **Variable Set**
+   - Name: `%staged_path`
+   - Value: `/data/data/com.antivocale.app.debug/files/shared_audio/%voice_name`
+
+6. **Send Intent**
    - Action: `com.antivocale.app.PROCESS_REQUEST`
    - Extra: `request_type:audio`
    - Extra: `task_id:%task_id`
-   - Extra: `file_path:%voice_file`
+   - Extra: `file_path:%staged_path`
    - Package: `com.antivocale.app`
+   - Class: `com.antivocale.app.receiver.TaskerRequestReceiver`
    - Target: `Broadcast Receiver`
 
-5. **Wait**
+7. **Wait**
    - Seconds: `30`
 
-6. **Profile: Response Handler**
+8. **Profile: Response Handler**
    - Event: Intent Received
    - Action: `net.dinglisch.android.tasker.ACTION_TASKER_INTENT`
 
-7. **Task: Show Transcription**
+9. **Task: Show Transcription**
    - If `%status` eq `success`
      - Notify: `Voice Transcription: %result_text`
    - Else
@@ -238,22 +275,29 @@ Audio is automatically converted to 16kHz mono WAV internally.
 
 ## Advanced: ADB Shell Testing
 
-Test the integration directly via ADB:
+Test the integration directly via ADB. Use the explicit component (`-n`): implicit shell broadcasts are silently dropped on some devices. Audio requests need the file staged in the app's private directory first (see *Staging audio files*):
 
 ```bash
 # Text request
 adb shell am broadcast \
+  -n com.antivocale.app/com.antivocale.app.receiver.TaskerRequestReceiver \
   -a com.antivocale.app.PROCESS_REQUEST \
   --es request_type "text" \
   --es task_id "test_001" \
   --es prompt "Hello, how are you?"
 
+# Stage the audio (debug builds: run-as does not work on release builds)
+adb push test.m4a /data/local/tmp/
+adb shell run-as com.antivocale.app.debug mkdir -p files/shared_audio
+adb shell run-as com.antivocale.app.debug cp /data/local/tmp/test.m4a files/shared_audio/
+
 # Audio request
 adb shell am broadcast \
+  -n com.antivocale.app/com.antivocale.app.receiver.TaskerRequestReceiver \
   -a com.antivocale.app.PROCESS_REQUEST \
   --es request_type "audio" \
   --es task_id "test_002" \
-  --es file_path "/sdcard/Download/test.m4a"
+  --es file_path "/data/data/com.antivocale.app.debug/files/shared_audio/test.m4a"
 
 # Monitor responses
 adb logcat -s TaskerRequestReceiver InferenceService
@@ -270,4 +314,4 @@ adb logcat -s TaskerRequestReceiver InferenceService
 
 ---
 
-*Last Updated: 2026-02-28*
+*Last Updated: 2026-09-25*

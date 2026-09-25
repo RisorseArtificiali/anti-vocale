@@ -56,6 +56,8 @@ internal class FakePreferencesManager : PreferencesManager {
     val _advancedSharingEnabled = MutableStateFlow(false)
     val _showRetranscribeButton = MutableStateFlow(true)
     val _memoryProtection = MutableStateFlow(false)
+    // TASK-274: consent gate for the exported automation receivers.
+    val _externalAutomationEnabled = MutableStateFlow(PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED)
     val _compactResultActions = MutableStateFlow(PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS)
     val _languageChipEnabled = MutableStateFlow(PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED)
     val _externalModelsJson = MutableStateFlow<String?>(null)
@@ -107,6 +109,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val advancedSharingEnabled: Flow<Boolean> get() = _advancedSharingEnabled
     override val showRetranscribeButton: Flow<Boolean> get() = _showRetranscribeButton
     override val memoryProtection: Flow<Boolean> get() = _memoryProtection
+    override val externalAutomationEnabled: Flow<Boolean> get() = _externalAutomationEnabled
     override val compactResultActions: Flow<Boolean> get() = _compactResultActions
     override val languageChipEnabled: Flow<Boolean> get() = _languageChipEnabled
     override val externalModelsJson: Flow<String?> get() = _externalModelsJson
@@ -147,6 +150,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveAdvancedSharingEnabled(enabled: Boolean) { _advancedSharingEnabled.value = enabled }
     override suspend fun saveShowRetranscribeButton(enabled: Boolean) { _showRetranscribeButton.value = enabled }
     override suspend fun saveMemoryProtection(enabled: Boolean) { _memoryProtection.value = enabled }
+    override suspend fun saveExternalAutomationEnabled(enabled: Boolean) { _externalAutomationEnabled.value = enabled }
     override suspend fun saveCompactResultActions(enabled: Boolean) { _compactResultActions.value = enabled }
     override suspend fun saveLanguageChipEnabled(enabled: Boolean) { _languageChipEnabled.value = enabled }
     override suspend fun saveExternalModelsJson(json: String) { _externalModelsJson.value = json }

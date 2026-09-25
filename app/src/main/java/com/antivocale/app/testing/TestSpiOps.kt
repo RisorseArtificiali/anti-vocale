@@ -98,6 +98,7 @@ internal class TestSpiOps(
             .put("signatureText", preferences.signatureText.first())
             .put("signaturePosition", preferences.signaturePosition.first())
             .put("memoryProtection", preferences.memoryProtection.first())
+            .put("externalAutomationEnabled", preferences.externalAutomationEnabled.first())
             .put("compactResultActions", preferences.compactResultActions.first())
             .put("languageChipEnabled", preferences.languageChipEnabled.first())
             // TASK-575: read-only over the SPI (records are written by loads).
@@ -153,6 +154,8 @@ internal class TestSpiOps(
         "advanced_sharing" to preferences::saveAdvancedSharingEnabled,
         "show_retranscribe" to preferences::saveShowRetranscribeButton,
         "memory_protection" to preferences::saveMemoryProtection,
+        // TASK-274: consent gate for the exported automation receivers.
+        "external_automation" to preferences::saveExternalAutomationEnabled,
         "compact_result_actions" to preferences::saveCompactResultActions,
         "technical_details" to preferences::saveShowTechnicalDetails,
         "language_chip" to preferences::saveLanguageChipEnabled,
@@ -462,7 +465,9 @@ internal class TestSpiOps(
             "transcription",
             "transcription is NOT triggered here: broadcast com.antivocale.app.PROCESS_REQUEST with extras " +
                 "request_type=audio file_path=<appReadablePath> task_id=<id> [backend_id=<backend>] " +
-                "(TaskerRequestReceiver)")
+                "(TaskerRequestReceiver). TASK-274: that receiver is gated by the external_automation " +
+                "consent toggle (default OFF): set key=external_automation value=true first or every " +
+                "request answers STATUS_ERROR")
         .toString()
 
     companion object {

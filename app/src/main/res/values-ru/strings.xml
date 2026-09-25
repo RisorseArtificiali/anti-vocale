@@ -273,6 +273,10 @@
     <string name="external_model_quarantined_text">Загрузка «%1$s» привела к закрытию приложения, поэтому она отключена, чтобы избежать повторных сбоев. Удалите и импортируйте модель заново на вкладке Модели.</string>
     <string name="memory_protection">Защита памяти</string>
     <string name="memory_protection_desc">Блокирует загрузку модели, когда свободной памяти кажется недостаточно, чтобы избежать тихого закрытия приложения. По умолчанию выключена: обычно приложение всегда пытается запустить модель.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">Внешняя автоматизация (Tasker)</string>
+    <string name="external_automation_description">Позволяет другим приложениям запускать транскрипцию через API автоматизации (например, Tasker). По умолчанию отключено.</string>
+    <string name="external_automation_disabled">Внешняя автоматизация отключена. Включите её в разделе Настройки > Дополнительно > Внешняя автоматизация.</string>
     <string name="copy">Копировать</string>
     <string name="share">Поделиться</string>
     <string name="char_counter">%1$d из %2$d символов</string>

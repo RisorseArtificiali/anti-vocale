@@ -233,6 +233,10 @@
     <string name="external_model_quarantined_text">Cargar "%1$s" cerró la aplicación, por lo que se ha desactivado para evitar fallos repetidos. Elimina y reimporta el modelo en la pestaña Modelos para reintentarlo.</string>
     <string name="memory_protection">Protección de memoria</string>
     <string name="memory_protection_desc">Bloquea la carga de un modelo cuando la memoria libre parece insuficiente, para evitar cierres silenciosos de la app. Desactivada por defecto: normalmente la app siempre intenta ejecutar el modelo.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">Automatización externa (Tasker)</string>
+    <string name="external_automation_description">Permite que otras apps inicien transcripciones mediante la API de automatización (p. ej., Tasker). Desactivada por defecto.</string>
+    <string name="external_automation_disabled">La automatización externa está desactivada. Actívala en Ajustes > Avanzado > Automatización externa.</string>
     <string name="copy">Copiar</string>
     <string name="share">Compartir</string>
     <string name="char_counter">%1$d de %2$d caracteres</string>

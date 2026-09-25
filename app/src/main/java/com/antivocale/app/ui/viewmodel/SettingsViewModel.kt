@@ -406,6 +406,20 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    /** TASK-274: consent gate for the exported automation receivers (Tasker surface). */
+    val externalAutomationEnabled: StateFlow<Boolean> = preferencesManager.externalAutomationEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED
+        )
+
+    fun saveExternalAutomationEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveExternalAutomationEnabled(enabled)
+        }
+    }
+
     val compactResultActions: StateFlow<Boolean> = preferencesManager.compactResultActions
         .stateIn(
             scope = viewModelScope,

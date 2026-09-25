@@ -90,6 +90,8 @@ class PreferencesManagerImpl(
         // signal was an opt-out of the block, which the new default (no block) grants
         // to everyone, so a stored old value is deliberately never read again.
         private val MEMORY_PROTECTION = booleanPreferencesKey("memory_protection")
+        // TASK-274: consent gate for the exported automation receivers.
+        private val EXTERNAL_AUTOMATION_ENABLED = booleanPreferencesKey("external_automation_enabled")
         private val COMPACT_RESULT_ACTIONS = booleanPreferencesKey("compact_result_actions")
         private val LANGUAGE_CHIP_ENABLED = booleanPreferencesKey("language_chip_enabled")
         private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
@@ -137,6 +139,7 @@ class PreferencesManagerImpl(
         val advancedSharingEnabled: Boolean = PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         val memoryProtection: Boolean = PreferencesManager.DEFAULT_MEMORY_PROTECTION,
+        val externalAutomationEnabled: Boolean = PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
         val compactResultActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         val languageChipEnabled: Boolean = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         val externalModelsJson: String? = null
@@ -186,6 +189,7 @@ class PreferencesManagerImpl(
         advancedSharingEnabled = this[ADVANCED_SHARING_ENABLED] ?: PreferencesManager.DEFAULT_ADVANCED_SHARING_ENABLED,
         showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         memoryProtection = this[MEMORY_PROTECTION] ?: PreferencesManager.DEFAULT_MEMORY_PROTECTION,
+        externalAutomationEnabled = this[EXTERNAL_AUTOMATION_ENABLED] ?: PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
         compactResultActions = this[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         languageChipEnabled = this[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         externalModelsJson = this[EXTERNAL_MODELS_JSON]
@@ -703,6 +707,9 @@ class PreferencesManagerImpl(
     override val memoryProtection: Flow<Boolean> = dataStore.data.map { it[MEMORY_PROTECTION] ?: PreferencesManager.DEFAULT_MEMORY_PROTECTION }
         .onStart { emit(cache.get().memoryProtection) }
 
+    override val externalAutomationEnabled: Flow<Boolean> = dataStore.data.map { it[EXTERNAL_AUTOMATION_ENABLED] ?: PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED }
+        .onStart { emit(cache.get().externalAutomationEnabled) }
+
     override val compactResultActions: Flow<Boolean> = dataStore.data.map { it[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS }
         .onStart { emit(cache.get().compactResultActions) }
     override val languageChipEnabled: Flow<Boolean> = dataStore.data.map { it[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED }
@@ -727,6 +734,13 @@ class PreferencesManagerImpl(
             preferences[MEMORY_PROTECTION] = enabled
         }
         cache.updateAndGet { it.copy(memoryProtection = enabled) }
+    }
+
+    override suspend fun saveExternalAutomationEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[EXTERNAL_AUTOMATION_ENABLED] = enabled
+        }
+        cache.updateAndGet { it.copy(externalAutomationEnabled = enabled) }
     }
 
     override val externalModelsJson: Flow<String?> = dataStore.data.map { it[EXTERNAL_MODELS_JSON] }

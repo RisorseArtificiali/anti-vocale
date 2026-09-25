@@ -283,6 +283,10 @@
     <string name="external_model_quarantined_text">טעינת "%1$s" סגרה את האפליקציה, ולכן הוא הושבת כדי למנוע קריסות חוזרות. מחקו וייבאו מחדש את המודל בלשונית המודלים כדי לנסות שוב.</string>
     <string name="memory_protection">הגנת זיכרון</string>
     <string name="memory_protection_desc">חוסם טעינת מודל כשנראה שאין מספיק זיכרון פנוי, כדי למנוע סגירה שקטה של האפליקציה. כבוי כברירת מחדל: בדרך כלל האפליקציה תמיד מנסה להריץ את המודל.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">אוטומציה חיצונית (Tasker)</string>
+    <string name="external_automation_description">מאפשר לאפליקציות אחרות להתחיל תמלול דרך API האוטומציה (למשל Tasker). כבוי כברירת מחדל.</string>
+    <string name="external_automation_disabled">אוטומציה חיצונית כבויה. הפעל אותה בהגדרות > מתקדם > אוטומציה חיצונית.</string>
     <string name="copy">העתקה</string>
     <string name="share">שיתוף</string>
     <string name="char_counter">%1$d מתוך %2$d תווים</string>

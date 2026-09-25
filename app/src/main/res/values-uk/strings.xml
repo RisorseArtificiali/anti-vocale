@@ -290,6 +290,10 @@
     <string name="external_model_quarantined_text">Завантаження «%1$s» закрило застосунок, тому її вимкнено, щоб уникнути повторних збоїв. Видаліть і знову імпортуйте модель у вкладці Моделі, щоб спробувати ще раз.</string>
     <string name="memory_protection">Захист памʼяті</string>
     <string name="memory_protection_desc">Блокує завантаження моделі, коли вільної памʼяті видається недостатньо, щоб уникнути тихого закриття додатка. Типово вимкнена: зазвичай додаток завжди намагається запустити модель.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">Зовнішня автоматизація (Tasker)</string>
+    <string name="external_automation_description">Дозволяє іншим додаткам запускати транскрипцію через API автоматизації (наприклад, Tasker). Типово вимкнено.</string>
+    <string name="external_automation_disabled">Зовнішня автоматизація вимкнена. Увімкніть її в розділі Налаштування > Розширені > Зовнішня автоматизація.</string>
     <string name="copy">Копіювати</string>
     <string name="share">Поділитися</string>
     <string name="char_counter">%1$d з %2$d символів</string>

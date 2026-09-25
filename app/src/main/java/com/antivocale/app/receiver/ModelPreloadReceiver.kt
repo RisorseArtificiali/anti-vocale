@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.antivocale.app.R
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.util.CrashReporter
@@ -50,12 +51,31 @@ class ModelPreloadReceiver : BroadcastReceiver() {
         }
 
         Log.i(TAG, "Received preload model request")
+        // TASK-274 review F1: API 34+ names the sending package (a
+        // BroadcastReceiver member, the TaskerRequestReceiver idiom); the
+        // gate rejection below targets it so the caller the message is FOR
+        // (an external automation user) actually receives it.
+        val sentFromPackage =
+            if (android.os.Build.VERSION.SDK_INT >= 34) sentFromPackage else null
 
         val pendingResult = goAsync()
         val isSilent = intent.getBooleanExtra(EXTRA_SILENT, false)
 
         CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler).launch {
             try {
+                // TASK-274: consent gate, same as TaskerRequestReceiver. This
+                // receiver has a reply channel too, so a rejected caller
+                // learns which setting to enable instead of seeing silence.
+                if (!preferencesManager.externalAutomationEnabled.first()) {
+                    Log.w(TAG, "Rejected preload request: external automation is disabled")
+                    if (!isSilent) {
+                        sendReply(context, "AUTOMATION_DISABLED",
+                            context.getString(R.string.external_automation_disabled),
+                            targetPackage = sentFromPackage)
+                    }
+                    return@launch
+                }
+
                 // Check if model is already loaded
                 if (llmManager.isReady()) {
                     Log.i(TAG, "Model already loaded, resetting keep-alive timer")
@@ -126,12 +146,20 @@ class ModelPreloadReceiver : BroadcastReceiver() {
         }
     }
 
-    private fun sendReply(context: Context, status: String, message: String) {
+    private fun sendReply(
+        context: Context,
+        status: String,
+        message: String,
+        /** TASK-274 review F1: the gate rejection addresses the CALLER when the
+         *  platform named it; every other reply stays app-pinned (the reply-sink
+         *  posture). */
+        targetPackage: String? = null,
+    ) {
         // Send a broadcast reply that Tasker can receive
         val replyIntent = Intent("com.antivocale.app.PRELOAD_RESULT").apply {
             putExtra("status", status)
             putExtra("message", message)
-            setPackage(context.packageName)
+            setPackage(targetPackage ?: context.packageName)
         }
         context.sendBroadcast(replyIntent)
     }
