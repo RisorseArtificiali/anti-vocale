@@ -393,6 +393,8 @@ class TranscriptionOrchestrator @Inject constructor(
             // TASK-121.4: the summary pass chains AFTER it and only attaches
             // metadata; the delivered text is whatever the punctuation pass
             // left (or the raw transcript when it skipped).
+            // TASK-672: the repetition-loop collapse sits between the two, so
+            // the summary judges the collapsed text, not the loop.
             val delivered: Result<TranscriptionResult> =
                 if (requestType == "audio" && result.isSuccess) {
                     // Captured once here (not re-read inside the pass): the
@@ -413,6 +415,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                     if (asrBackendId == null) result
                     else result
+                        .map { applyRepetitionCollapse(it) }
                         .map { applyPunctuationPass(context, asrBackendId, it, listener) }
                         .map { applySummaryPass(context, it, listener) }
                 } else result
@@ -720,7 +723,13 @@ class TranscriptionOrchestrator @Inject constructor(
             val effectiveText = polished.ifBlank { result.text }
             result.copy(
                 text = effectiveText,
-                rawTranscript = if (effectiveText != result.text) result.text else null
+                // TASK-672 review F3: with the collapse now UPSTREAM, the
+                // polish receives an already-altered text; an existing
+                // rawTranscript is the deeper original and must survive
+                // (the first altering pass records it; later passes never
+                // clobber it).
+                rawTranscript = result.rawTranscript
+                    ?: result.text.takeIf { it != effectiveText }
             )
         }.fold(
             onSuccess = { polished ->
@@ -732,6 +741,55 @@ class TranscriptionOrchestrator @Inject constructor(
             onFailure = { e ->
                 degradeTo(result, "Punctuation", e)
             },
+        )
+    }
+
+    /**
+     * TASK-672 (GH #72): the deterministic repetition-loop collapse
+     * (RepetitionCollapse, ported from Omnivoice's refinement tier; the
+     * algorithm and its guards live there). Runs immediately after the
+     * punctuation pass on the delivered text only: the pre-collapse
+     * transcript rides the same rawTranscript seam the punctuation pass
+     * uses, so the TASK-583 warning and the annotated-lineage surfaces
+     * keep the raw recoverable. The dual-model loop detection (the
+     * first-pass and fold arms above) reads the phase texts UPSTREAM of
+     * this funnel and must keep seeing them uncollapsed. No preference
+     * gate: this is crash-class artifact cleanup, the pass constants
+     * are the guard.
+     */
+    /**
+     * TASK-672: the deterministic loop collapse. Review F6: an optional
+     * polish may never fail a completed transcription, so it degrades to
+     * the uncollapsed result on any failure (the sibling passes' contract).
+     */
+    private fun applyRepetitionCollapse(result: TranscriptionResult): TranscriptionResult =
+        runCatching { collapseRepetition(result) }.fold(
+            onSuccess = { it },
+            onFailure = { degradeTo(result, "RepetitionCollapse", it) },
+        )
+
+    private fun collapseRepetition(result: TranscriptionResult): TranscriptionResult {
+        val collapsed = RepetitionCollapse.collapse(result.text)
+        // Review F7: the early return first; per-cue collapse is paid only
+        // when the text itself actually carried a loop.
+        if (collapsed == result.text) return result
+        Log.i(TAG, "Repetition collapse applied (${result.text.length} -> ${collapsed.length} chars)")
+        // Simplify F1 + review F4: cue-derived surfaces (SRT/VTT, annotated
+        // share, auto-saved TXT) render segment.text verbatim; each cue
+        // collapses too, and a cue whose text collapses to blank is DROPPED
+        // (an empty VTT cue is invalid; with speaker labels it would render
+        // a dangling prefix). Residual, documented: a loop split across a
+        // cue boundary survives in the per-cue exports; fixing that needs
+        // chunk-boundary stitching, out of this tier's scope.
+        val collapsedSegments = result.segments
+            .map { it.copy(text = RepetitionCollapse.collapse(it.text)) }
+            .filter { it.text.isNotBlank() }
+        return result.copy(
+            text = collapsed,
+            segments = collapsedSegments,
+            // The punctuation pass may already hold the pre-polish
+            // original here; the deepest text is the recoverable raw.
+            rawTranscript = result.rawTranscript ?: result.text,
         )
     }
 

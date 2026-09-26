@@ -129,8 +129,28 @@ RUN_JSON=$(gh run view "$RUN_ID" -R "$REPO" --json status,conclusion,headSha,job
 # the bump, Step 5 dispatches immediately); a main push in between fails here
 # loudly, which is the safe direction.
 RUN_HEAD=$(echo "$RUN_JSON" | jq -r .headSha)
-[ "$RUN_HEAD" = "$COMMIT" ] \
-  || fail "run $RUN_ID headSha is $RUN_HEAD, expected the bump commit $COMMIT (stale run id? re-check: gh run list --event workflow_dispatch --limit 3)"
+# Micro-release order (release/vX.Y.Z branch, runbook's v1.11.3 pattern) merges
+# the branch into main AROUND the dispatch, so headSha can legitimately be a
+# main tip that is not the bump SHA. The equivalent binding proof for that
+# flow: the workflow's own recipe-commit guard step ran and succeeded inside
+# THIS run (it fails the job fast when the recipe's commit: is not the
+# dispatched SHA, so its success pins the built tree to $COMMIT).
+RECIPE_GUARD_OK=$(echo "$RUN_JSON" | jq -r '
+  [.jobs[].steps[]? | select(.name | test("Verify recipe commit"))] |
+  (length > 0) and all(.conclusion == "success")')
+# Review F8: the step succeeding only proves the run validated ITS OWN
+# dispatch input; a stale run of a DIFFERENT build-first dispatch would
+# pass that alone. Bind materially: the run's own log must contain the
+# expected commit SHA at the guard step (the comparison prints both SHAs).
+if [ "$RECIPE_GUARD_OK" = "true" ]; then
+  if ! gh run view "$RUN_ID" -R "$REPO" --log 2>/dev/null |
+      grep -A 3 "Verify recipe commit" | grep -q "$COMMIT"; then
+    RECIPE_GUARD_OK=false
+  fi
+fi
+if [ "$RUN_HEAD" != "$COMMIT" ] && [ "$RECIPE_GUARD_OK" != "true" ]; then
+  fail "run $RUN_ID headSha is $RUN_HEAD, expected the bump commit $COMMIT, and the run's recipe-commit guard step did not succeed (stale run id? re-check: gh run list --event workflow_dispatch --limit 3)"
+fi
 # Same job selector as verify-github-workflow-before-recipe-push.sh (twice:
 # the reference-run picker and the in-progress check); three copies total,
 # plus the workflow's needs/release-sanity references to the job id and the
