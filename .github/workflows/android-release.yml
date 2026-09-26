@@ -40,9 +40,13 @@ env:
   TAG_ANCHORED: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '') }}
 
 jobs:
+  # TASK-683.9: every runs-on in this file is pinned to ubuntu-24.04 because
+  # the ubuntu-latest label migrates to Ubuntu 26 beginning 2026-10-19
+  # (actions/runner-images issue 14748, seen as a job annotation on the
+  # 2026-09-26 runs). Unpin deliberately, after validating 26, never by drift.
   test:
     name: Unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -61,8 +65,11 @@ jobs:
       # path makes the fetch a local hit after the first run. NOTE: the jars must
       # NOT be declared as Gradle test dependencies - on the classpath they break
       # Robolectric's sandbox (verified: 10 previously-green tests fail).
+      # TASK-683.9: actions/cache@v4 targets Node 20 and is force-migrated to
+      # Node 24 (GitHub changelog 2025-09-19); v5 is the first major running
+      # node24 natively.
       - name: Cache Robolectric android-all artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository/org/robolectric
           key: robolectric-androidall-4.12.1-sdk31-34
@@ -89,14 +96,16 @@ jobs:
 
       - name: Upload test results on failure
         if: failure()
-        uses: actions/upload-artifact@v4
+        # TASK-683.9: v4 targets Node 20 (forced to Node 24); v6 is the first
+        # major that runs node24 by default with no behavior change.
+        uses: actions/upload-artifact@v6
         with:
           name: unit-test-results
           path: app/build/reports/tests/testFdroidDebugUnitTest/
 
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout code
@@ -122,8 +131,11 @@ jobs:
       # path makes the fetch a local hit after the first run. NOTE: the jars must
       # NOT be declared as Gradle test dependencies - on the classpath they break
       # Robolectric's sandbox (verified: 10 previously-green tests fail).
+      # TASK-683.9: actions/cache@v4 targets Node 20 and is force-migrated to
+      # Node 24 (GitHub changelog 2025-09-19); v5 is the first major running
+      # node24 natively.
       - name: Cache Robolectric android-all artifacts
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: ~/.m2/repository/org/robolectric
           key: robolectric-androidall-4.12.1-sdk31-34
@@ -193,7 +205,8 @@ jobs:
 
       - name: Upload fdroid Release APK artifact
         if: steps.fdroid-apk.outcome == 'success'
-        uses: actions/upload-artifact@v4
+        # TASK-683.9: node24-native major (see the test-job comment).
+        uses: actions/upload-artifact@v6
         with:
           name: app-fdroid-release
           path: app/build/outputs/apk/fdroid/release/app-fdroid-*-release-unsigned.apk
@@ -310,7 +323,7 @@ jobs:
         if: >-
           github.event_name == 'workflow_dispatch' &&
           github.event.inputs.commit != '' && github.event.inputs.tag == ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tester-apks
           path: test-apks/*.apk
@@ -318,21 +331,27 @@ jobs:
 
   publish-play-store:
     name: Publish to Play Store
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     if: >-
       (github.event_name == 'release' && github.event.action == 'published') ||
       (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
-    needs: build
+    # TASK-683.6: `needs: build` alone let a red test suite reach the production
+    # environment gate (the human approver was the only barrier). tests must
+    # pass before publish is even scheduled.
+    needs: [test, build]
     environment: production
 
     steps:
+      # TASK-683.9: v7 is the first download-artifact major running node24 by
+      # default (v5 changed single-artifact path behavior, v6 still defaulted
+      # to Node 20).
       - name: Download Release AAB
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: app-release-aab
 
       - name: Download release notes
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: release-notes
           path: whats-new
@@ -343,9 +362,68 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.antivocale.app
           releaseFiles: app-playStore-release.aab
-          track: ${{ github.event.inputs.play-store-track || 'internal' }}
+          # TASK-683.9: the `track` input is deprecated upstream (job annotation,
+          # 2026-09-26 run); `tracks` takes the same single value here.
+          tracks: ${{ github.event.inputs.play-store-track || 'internal' }}
           status: ${{ (github.event_name == 'workflow_dispatch' && github.event.inputs.draft-release == 'true') && 'draft' || 'completed' }}
           whatsNewDirectory: whats-new
+
+  # TASK-683.8: cheap API-only pre-check so the release-event run does not
+  # burn ~3h45m rebuilding byte-identical signed references. It skips the
+  # rebuild only when BOTH hold: the signed per-ABI APKs are already attached
+  # to the release (the build-first flow: scripts/release-create.sh attached
+  # the dispatch run's references moments before creating the tag) AND the
+  # mirror recipe still points at the tag's commit (same identity test the
+  # rebuild's own guard performs). A separate job because a job-level if
+  # cannot call the API; on any doubt it answers skip=false and the full
+  # build runs. To FORCE a rebuild, delete the signed assets first (prepare's
+  # stale-asset cleanup does exactly that).
+  reproducible-skip-decision:
+    name: Decide whether the reproducible rebuild is needed
+    runs-on: ubuntu-24.04
+    if: >-
+      github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
+    outputs:
+      skip: ${{ steps.decide.outputs.skip }}
+    steps:
+      - name: Check for identical signed references already on the release
+        id: decide
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.inputs.tag || github.ref_name }}
+        run: |
+          set -eu
+          assets_ok=false
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" --jq '.assets[].name' > /tmp/assets 2>/dev/null; then
+            cat /tmp/assets
+            if grep -qx 'app-fdroid-armeabi-v7a-release.apk' /tmp/assets \
+               && grep -qx 'app-fdroid-arm64-v8a-release.apk' /tmp/assets \
+               && grep -qx 'app-fdroid-x86_64-release.apk' /tmp/assets; then
+              assets_ok=true
+            fi
+          else
+            echo "release ${RELEASE_TAG} has no assets yet (or does not exist)"
+          fi
+          echo "signed references present: ${assets_ok}"
+          tag_commit=$(git ls-remote https://github.com/RisorseArtificiali/anti-vocale "refs/tags/${RELEASE_TAG}^{}" | awk '{print $1}')
+          if [ -z "$tag_commit" ]; then
+            tag_commit=$(git ls-remote https://github.com/RisorseArtificiali/anti-vocale "refs/tags/${RELEASE_TAG}" | awk '{print $1}')
+          fi
+          recipe_commit=$(curl -sfL \
+            https://raw.githubusercontent.com/paoloantinori/fdroid-data-mirror/av1100-slim/metadata/com.antivocale.app.yml \
+            | awk '/^[[:space:]]+commit:/{c=$2} END{print c}')
+          recipe_ok=false
+          if [ -n "$tag_commit" ] && [ -n "$recipe_commit" ] && [ "$tag_commit" = "$recipe_commit" ]; then
+            recipe_ok=true
+          fi
+          echo "tag ${RELEASE_TAG} -> ${tag_commit:-unknown}; mirror recipe newest commit: ${recipe_commit:-unknown}; recipe unchanged: ${recipe_ok}"
+          skip=false
+          if [ "$assets_ok" = true ] && [ "$recipe_ok" = true ]; then
+            skip=true
+            echo "SKIP: signed references for ${RELEASE_TAG} (armeabi-v7a, arm64-v8a, x86_64) already exist at recipe commit ${recipe_commit}; skipping the ~3h reproducible rebuild (TASK-683.8)"
+          fi
+          echo "skip=${skip}" >> "$GITHUB_OUTPUT"
 
   # Produces the three byte-reproducible per-ABI reference APKs for F-Droid's
   # per-build binary: check (armeabi-v7a, arm64-v8a, x86_64). Built inside
@@ -354,7 +432,7 @@ jobs:
   # the reference APK for that ABI.
   reproducible-fdroid:
     name: Build reproducible F-Droid reference APKs (per-ABI)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # Manual dispatch (the runbook flow: recipe pushed to the fork first) AND every
     # release event. On a fresh release the fork recipe usually still points at the
     # previous tag, so the recipe guard below fails LOUDLY with remediation text
@@ -364,9 +442,15 @@ jobs:
     # already exist on the release, and re-running this ~3h sherpa source build
     # (3 ABIs from source; 3h02m measured on v1.12.0) for a Play upload is pure
     # waste (TASK-414, flagged during v1.11.0).
+    # TASK-683.8: needs + the skip output gate the ~3h rebuild behind the
+    # decision job above. An empty output (decision job skipped, i.e. every
+    # build-first dispatch) means "run": the comparison can never skip a
+    # flow that has no pre-existing references to reuse.
+    needs: reproducible-skip-decision
     if: >-
-      github.event_name == 'release' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track == '')
+      (github.event_name == 'release' ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track == '')) &&
+      needs.reproducible-skip-decision.outputs.skip != 'true'
     container:
       image: registry.gitlab.com/fdroid/fdroidserver:buildserver-trixie
       options: --user root
@@ -730,7 +814,7 @@ jobs:
         if: >-
           github.event_name == 'workflow_dispatch' &&
           github.event.inputs.commit != '' && github.event.inputs.tag == ''
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: fdroid-signed-references
           path: app-fdroid-*-release.apk
@@ -742,12 +826,16 @@ jobs:
   # release-level signal. This job turns both into a named red X with remediation.
   release-sanity:
     name: Release sanity (loud failure on incomplete releases)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # TASK-641: reproducible-fdroid joins the needs so the unsigned-vs-signed
     # check runs AFTER the ~3h reference APKs attach, not on a timing accident
     # (the tag-mode dispatch 35840619513 went red here while the signing job
     # was still running; always() keeps reporting on failed siblings).
-    needs: [test, build, reproducible-fdroid]
+    # TASK-683.3: publish-play-store joins the needs so this job can assert its
+    # result; green sanity now also means the publish decision resolved. The
+    # price is honest: on a run parked at the production gate, sanity waits
+    # with it instead of printing a green that said nothing about publish.
+    needs: [test, build, reproducible-fdroid, publish-play-store]
     # BUILD-FIRST DELEGATION: on a -f commit= dispatch there is no release, so
     # the asset-pairing steps below skip by their tag-only conditions; the
     # completeness check for that mode lives in scripts/release-create.sh
@@ -758,6 +846,30 @@ jobs:
       always() &&
       (github.event_name == 'release' || github.event_name == 'workflow_dispatch')
     steps:
+      - name: Fail loudly if the build job did not succeed
+        # TASK-683.3 (live 2026-09-26, run 36257611232: Build=failure with
+        # sanity=success while the signing job still ran): sanity never looked
+        # at the build result. != success covers failure, cancelled, skipped.
+        if: needs.build.result != 'success'
+        run: |
+          echo "::error::BUILD JOB '${{ needs.build.result }}': the release binaries were never produced (or not from this run)."
+          echo "::error::Do not promote anything from this release; re-dispatch the build and re-check."
+          exit 1
+
+      - name: Fail loudly if the Play publish job failed where publishing was in scope
+        # TASK-683.3 (live 2026-09-26, run 36262228446: Publish=failure with
+        # sanity=success). 'skipped' is legitimate on runs where publishing
+        # was never in scope (no release event, no play-store-track input) or
+        # where the test gate above already red-flagged the run (TASK-683.6
+        # skips publish on a red test job).
+        if: >-
+          needs.publish-play-store.result != 'success' &&
+          needs.publish-play-store.result != 'skipped'
+        run: |
+          echo "::error::PUBLISH TO PLAY STORE '${{ needs.publish-play-store.result }}': the Play upload failed (check the production environment gate decision and the upload step)."
+          echo "::error::Green sanity previously ignored this; it no longer does. Re-dispatch with the play-store-track input once fixed."
+          exit 1
+
       - name: Fail loudly if the test suite did not pass on a release run
         # != success covers failure, cancelled, and skipped: anything short of a
         # green test job must not leave a green release signal (review issue 1).
@@ -826,5 +938,5 @@ jobs:
         # Reports the siblings' actual results instead of claiming green:
         # on a tag+track dispatch the reproducible job is deliberately skipped.
         run: |
-          echo "release sanity ok; test=${{ needs.test.result }} reproducible=${{ needs.reproducible-fdroid.result }} signed/unsigned APK pairing complete"
+          echo "release sanity ok; test=${{ needs.test.result }} build=${{ needs.build.result }} publish=${{ needs.publish-play-store.result }} reproducible=${{ needs.reproducible-fdroid.result }} signed/unsigned APK pairing complete"
 

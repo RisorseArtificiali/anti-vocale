@@ -25,6 +25,14 @@
 #  6. Fork recipe sherpa srclib pin == the k2-fsa/sherpa-onnx tag commit that
 #     matches the AAR version (a stale pin ships the F-Droid build with native
 #     bugs the GitHub build already fixed).
+#  7. On a non-main branch (the micro-release cut): the workflow file AT THIS
+#     TREE carries the release-gate markers. A side-branch cut executes the
+#     workflow frozen at the branch point, so gate commits left on main
+#     silently do not apply to the release-event run (TASK-683.5).
+#  8. The production environment's deployment-branch policy admits the refs
+#     this release flow uses (current branch + main); the v1.13.2 incident
+#     burned a full runner cycle before the policy rejected release/* at the
+#     gate (TASK-683.4). Online only.
 set -uo pipefail
 
 REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
@@ -158,6 +166,56 @@ if [ "$OFFLINE" -eq 0 ] && [ -n "$TAG" ]; then
   else
     fail "fork recipe not found at $recipe (set FORK_DATA_DIR if the fork lives elsewhere)"
   fi
+fi
+
+# --- 7. Workflow gate markers present at this tree (TASK-683.5) -------------
+branch="$(git -C "$REPO_DIR" branch --show-current 2>/dev/null)"
+workflow="$REPO_DIR/.github/workflows/android-release.yml"
+if [ -n "$branch" ] && [ "$branch" != "main" ]; then
+  # Fixed-string greps against the exact needs lines the gates live in; if the
+  # workflow's needs wiring is ever renamed, update these markers WITH it.
+  grep -qF 'needs: [test, build]' "$workflow" \
+    && grep -qF 'needs: [test, build, reproducible-fdroid, publish-play-store]' "$workflow" \
+    && ok "workflow gate markers present on $branch" \
+    || fail "$branch does not carry the release gates (sanity needs, publish needs test): a micro cut executes the workflow frozen at the branch point, so cherry-pick the gate commits (TASK-641, TASK-683.6) onto $branch before dispatching"
+else
+  ok "workflow gates: on main (or detached HEAD); branch-point check not applicable"
+fi
+
+# --- 8. Production deployment-branch policy admits the release refs (683.4) --
+if [ "$OFFLINE" -eq 0 ]; then
+  policy_file=$(mktemp)
+  if gh api "repos/RisorseArtificiali/anti-vocale/environments/production/deployment-branch-policies" \
+      --jq '.branch_policies[].name' >"$policy_file" 2>/dev/null && [ -s "$policy_file" ]; then
+    ref_admitted() {
+      local ref="$1" pat
+      while IFS= read -r pat; do
+        # shellcheck disable=SC2254  # deliberate glob match on the policy pattern
+        case "$ref" in $pat) return 0 ;; esac
+      done <"$policy_file"
+      return 1
+    }
+    if ref_admitted main; then
+      ok "deployment-branch policy admits main; patterns: $(tr '\n' ' ' <"$policy_file")"
+    else
+      fail "deployment-branch policy does not admit main; patterns: $(tr '\n' ' ' <"$policy_file") (query: gh api repos/RisorseArtificiali/anti-vocale/environments/production/deployment-branch-policies)"
+    fi
+    # The v1.13.2 incident (2026-09-26): the release event fires on the
+    # release/* branch and the policy only had main + v*, so the whole run
+    # died at the gate AFTER build+tests. Check the branch this tree sits on.
+    if [ -n "$branch" ] && [ "$branch" != "main" ]; then
+      if ref_admitted "$branch"; then
+        ok "deployment-branch policy admits $branch"
+      else
+        fail "deployment-branch policy does not admit '$branch' (patterns: $(tr '\n' ' ' <"$policy_file")); the release-event run would be rejected at the production gate. Amend: gh api -X POST repos/RisorseArtificiali/anti-vocale/environments/production/deployment-branch-policies -f name='<pattern>'"
+      fi
+    fi
+  else
+    fail "cannot read the production deployment-branch policies (gh api repos/RisorseArtificiali/anti-vocale/environments/production/deployment-branch-policies); the v1.13.2 failure class is unverifiable"
+  fi
+  rm -f "$policy_file"
+else
+  ok "deployment-branch policy: skipped (offline)"
 fi
 
 echo

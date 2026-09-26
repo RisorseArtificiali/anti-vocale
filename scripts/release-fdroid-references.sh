@@ -78,6 +78,18 @@ fi
 cd "$APP_REPO"
 
 if [ "$PHASE" = "prepare" ]; then
+  # TASK-683.1: preflight is phase 0 of prepare. Refusing before the mirror
+  # sync and the dispatch turns a mid-run CI failure into a local, seconds-
+  # cost stop. Read-only, so it runs under DRY_RUN too.
+  say "phase 0/4: release preflight"
+  PREFLIGHT_ARGS=(--tag "$TAG")
+  if [ -n "$COMMIT" ]; then
+    PREFLIGHT_ARGS+=(--commit "$COMMIT")
+  fi
+  if ! "$HERE/release-preflight.sh" "${PREFLIGHT_ARGS[@]}"; then
+    fail "release-preflight.sh exited nonzero: fix the named blocker(s) above before dispatching (the exit code, not the text, is the verdict)"
+  fi
+
   say "phase 1/4: mirror sync (fetches the fork; the remote is written only at finalize)"
   DRY_RUN="${DRY_RUN:-0}" "$HERE/sync-fdroid-mirror.sh"
 

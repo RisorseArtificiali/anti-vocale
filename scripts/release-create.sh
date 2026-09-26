@@ -99,6 +99,14 @@ cd "$APP_REPO"
 
 # --- guards: this script PUBLISHES, so every input is verified first --------
 
+# TASK-683.1: preflight is guard 0. The gate script existed but nothing ran
+# it; both 2026-09-26 release-day failures (stale fallback literal, notes
+# extraction) were preflight-detectable and surfaced only mid-run instead.
+# Read-only, so it runs under DRY_RUN too; its nonzero exit is authoritative.
+say "guard 0/5: release preflight (refusal here costs seconds, not runner hours)"
+"$HERE/release-preflight.sh" --tag "$TAG" --commit "$COMMIT" \
+  || fail "release-preflight.sh exited nonzero: fix the named blocker(s) above before publishing (the exit code, not the text, is the verdict)"
+
 say "guard 1/5: tag $TAG must not exist yet"
 EXISTING=$(tag_commit "$TAG")
 [ -z "$EXISTING" ] || fail "tag $TAG already exists at $EXISTING (already published? re-dispatch instead)"
