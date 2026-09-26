@@ -1330,15 +1330,29 @@ fun LogEntryItem(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             }
-                            // Model that produced the transcription (GH #45); null on pre-v4
-                            // rows. Long external-import names wrap (TASK-495) instead of
-                            // ellipsizing their tail.
-                            log.modelName?.let { name ->
+                            // TASK-677 (GH #92): subtitle-sourced rows (a handed
+                            // .srt/.vtt import, or a video's embedded track) are
+                            // honestly labeled with their source: they are not
+                            // ASR output and carry no model (AC#5).
+                            if (remember(log.processingContext) {
+                                    ProcessingContextConverter.isSubtitleSourced(log.processingContext)
+                                }) {
                                 Text(
-                                    text = stringResource(R.string.logs_model_label, name),
+                                    text = stringResource(R.string.logs_subtitle_sourced),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
+                            } else {
+                                // Model that produced the transcription (GH #45); null on pre-v4
+                                // rows. Long external-import names wrap (TASK-495) instead of
+                                // ellipsizing their tail.
+                                log.modelName?.let { name ->
+                                    Text(
+                                        text = stringResource(R.string.logs_model_label, name),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                             if (showLanguageChip) {
                                 LanguageChip(
