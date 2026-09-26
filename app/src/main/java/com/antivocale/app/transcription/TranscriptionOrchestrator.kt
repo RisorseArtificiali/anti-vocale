@@ -133,6 +133,17 @@ class TranscriptionOrchestrator @Inject constructor(
                     context.getString(R.string.error_model_unavailable)
                 is TranscriptionException.NoTranscriptionProduced ->
                     context.getString(R.string.transcription_failed)
+                // TASK-681: the LAN-offload failure classes; each carries its
+                // own advice (budget tripped, box unreachable, server said no)
+                // instead of the generic failure string.
+                is TranscriptionException.RemoteTimeoutException ->
+                    context.getString(
+                        R.string.error_remote_timeout,
+                        (RemoteOmnivoiceBackend.WALL_CLOCK_BUDGET_MS / 60000L).toInt())
+                is TranscriptionException.RemoteUnreachableException ->
+                    context.getString(R.string.error_remote_unreachable)
+                is TranscriptionException.RemoteServerError ->
+                    context.getString(R.string.error_remote_server, error.statusCode)
                 // TASK-432: the pre-read duration refusal and every other
                 // preprocessing failure reach users through the notification and
                 // the Tasker reply; this branch routes them to localized advice.
@@ -347,6 +358,9 @@ class TranscriptionOrchestrator @Inject constructor(
                         // The first-pass text stays on the row; phase 2's
                         // growing partials must not overwrite it (design D6).
                         emitInterim = fastFirstPass == null,
+                        // TASK-681: the override must reach the LAN-offload
+                        // arm too (its language is a request field).
+                        languageOverride = languageOverride,
                         collectSamples = if (collectSpeakers) {
                             { chunks, rate ->
                                 diarizationChunks = chunks
@@ -416,7 +430,7 @@ class TranscriptionOrchestrator @Inject constructor(
             if (collectSpeakers && diarizationChunks == null && requestType == "audio" &&
                 delivered.isSuccess && delivered.getOrNull()?.text?.isNotBlank() == true
             ) {
-                Log.i(TAG, "Speaker labels skipped: the decode path delivered no sample timeline (streaming or VAD-segmented)")
+                Log.i(TAG, "Speaker labels skipped: the decode path delivered no sample timeline (streaming, VAD-segmented or TASK-681 remote-offloaded)")
             }
             val speakerLabeled: Result<TranscriptionResult> =
                 if (delivered.isSuccess && diarizationChunks != null) {
@@ -1066,9 +1080,15 @@ class TranscriptionOrchestrator @Inject constructor(
         // row pins the preference).
         val languageMismatch = !backendMismatch &&
             languageResidencyMismatch(context, activeBackend, preferredBackendId, languageOverride)
+        // TASK-681: the LAN-offload backend is stateless (no native engine
+        // to keep warm), so while it is the preferred backend its config is
+        // re-resolved EVERY request: the path identity above cannot see a
+        // Settings key or model edit, and the reload costs nothing.
+        val remoteResync = preferredBackendId == RemoteOmnivoiceBackend.BACKEND_ID &&
+            activeBackendId == RemoteOmnivoiceBackend.BACKEND_ID
 
-        if (!hasBackend || !backendReady || backendMismatch || variantMismatch || languageMismatch) {
-            Log.i(TAG, "Backend needs (re)load (hasBackend=$hasBackend, ready=$backendReady, active=$activeBackendId, preferred=$preferredBackendId, variantMismatch=$variantMismatch, languageMismatch=$languageMismatch)")
+        if (!hasBackend || !backendReady || backendMismatch || variantMismatch || languageMismatch || remoteResync) {
+            Log.i(TAG, "Backend needs (re)load (hasBackend=$hasBackend, ready=$backendReady, active=$activeBackendId, preferred=$preferredBackendId, variantMismatch=$variantMismatch, languageMismatch=$languageMismatch, remoteResync=$remoteResync)")
 
             if (hasBackend) {
                 Log.i(TAG, "Unloading previous backend: $activeBackendId")
@@ -1089,6 +1109,10 @@ class TranscriptionOrchestrator @Inject constructor(
             } else when (preferredBackendId) {
                 // The LLM backend ("llm") stores its model in the generic preference.
                 LlmTranscriptionBackend.BACKEND_ID -> loadLlmBackend(context)
+                // TASK-681: the LAN-offload backend; its loader owns the
+                // not-enabled verdict so a disabled service can never fall
+                // through to the LLM loader below.
+                RemoteOmnivoiceBackend.BACKEND_ID -> loadRemoteBackend(context)
                 else -> backendRegistry.byBackendId(preferredBackendId)?.let { descriptor ->
                     loadCatalogBackend(context, descriptor, languageOverride)
                 } ?: loadLlmBackend(context)
@@ -1181,6 +1205,33 @@ class TranscriptionOrchestrator @Inject constructor(
             backendId = LlmTranscriptionBackend.BACKEND_ID,
             context = context,
             config = BackendConfig.LiteRTConfig(modelPath = modelPath)
+        )
+    }
+
+    /**
+     * TASK-681: the LAN-offload loader. No model lives on disk: the
+     * configuration is the Settings triple (enabled, endpoint, key) and the
+     * endpoint doubles as the path identity. A disabled toggle or a blank
+     * endpoint is the [TranscriptionException.NotInitialized] no-model UX
+     * (the error notification's model-selection action), never a silent
+     * fallthrough to the LLM loader.
+     */
+    private suspend fun loadRemoteBackend(context: Context): Result<Unit> {
+        if (!preferencesManager.remoteOmnivoiceEnabled.first()) {
+            return Result.failure(TranscriptionException.NotInitialized())
+        }
+        val endpoint = preferencesManager.remoteOmnivoiceEndpoint.first().trim()
+        if (endpoint.isBlank()) {
+            return Result.failure(TranscriptionException.NotInitialized())
+        }
+        return backendManager.setActiveBackend(
+            backendId = RemoteOmnivoiceBackend.BACKEND_ID,
+            context = context,
+            config = BackendConfig.RemoteConfig(
+                baseUrl = endpoint,
+                apiKey = preferencesManager.remoteOmnivoiceApiKey.first().trim(),
+                model = preferencesManager.remoteOmnivoiceModel.first().trim(),
+            )
         )
     }
 
@@ -1840,6 +1891,10 @@ class TranscriptionOrchestrator @Inject constructor(
          *  speaker-labeling pass. Streaming and VAD-segmented runs never
          *  invoke it and the pass is skipped for them. */
         collectSamples: ((List<FloatArray>, Int) -> Unit)? = null,
+        /** TASK-681: request-scoped language override, forwarded to the
+         *  LAN-offload arm (its language is a request field, not engine
+         *  config; local backends keep resolving it at load time). */
+        languageOverride: String? = null,
     ): Result<TranscriptionResult> {
         if (filePath.isNullOrEmpty()) {
             return Result.failure(IllegalArgumentException("No file path provided"))
@@ -1864,6 +1919,25 @@ class TranscriptionOrchestrator @Inject constructor(
             return Result.failure(IllegalStateException(
                 "${backend.displayName} does not support audio transcription"
             ))
+        }
+
+        // TASK-681: the whole-file offload arm. Everything below this point
+        // exists to feed a phone-side decoder (decode, VAD, chunk seams); a
+        // whole-container backend uploads the ORIGINAL file and the server
+        // chunks internally, so no PCM is ever materialized on the phone.
+        // That is also what lets this arm serve the multi-hour files the
+        // whole-file path must refuse for RAM. The capability flag (not a
+        // backend id) gates it, so a second whole-file backend reuses the
+        // arm unchanged.
+        if (backend.transcribesWholeContainer) {
+            return processRemoteAudioRequest(
+                taskId = taskId,
+                filePath = filePath,
+                backend = backend,
+                languageOverride = languageOverride,
+                context = context,
+                listener = listener,
+            )
         }
 
         // Read settings. TASK-370 forced VAD-aligned segmentation for the llm
@@ -2199,6 +2273,57 @@ class TranscriptionOrchestrator @Inject constructor(
                 progressiveEnabled = progressiveEnabled,
                 emitInterim = emitInterim
             ))
+    }
+
+    /**
+     * TASK-681: the LAN-offload arm of [processAudioRequest]. No phone-side
+     * decode: the original container is uploaded whole (the OmniVoice server
+     * chunks internally). The metadata duration still feeds the row and the
+     * calibration profile; cue timing is honestly absent (the json response
+     * carries text only), and the wall-clock budget inside the backend is
+     * the honest ceiling for a wedged or offline box.
+     */
+    private suspend fun processRemoteAudioRequest(
+        taskId: String,
+        filePath: String,
+        backend: TranscriptionBackend,
+        languageOverride: String?,
+        context: Context,
+        listener: TranscriptionListener,
+    ): Result<TranscriptionResult> {
+        val chunkProcessingStartTime = System.currentTimeMillis()
+        // Metadata-only probe (the same read the long-audio gate uses); a
+        // container without duration tags reports 0 and the row simply
+        // carries no duration, which the Logs already tolerate.
+        val durationSeconds = runCatching { audioPreprocessor.getAudioDuration(filePath) }.getOrNull() ?: 0.0
+        if (durationSeconds > 0.0) {
+            updateAudioDuration(taskId, durationSeconds)
+        }
+        listener.onStatusUpdate(context.getString(R.string.remote_offload_status))
+        // The language pin is a REQUEST field here (the endpoint's optional
+        // ISO-639-1): the untouched default stays model-side detection, an
+        // explicit pin (or the phone-locale pin) passes through, the same
+        // mapping the offline catalog entries use.
+        val languagePref = languageOverride ?: preferencesManager.transcriptionLanguage.first()
+        val language = TranscriptionLanguagePolicy.resolveOffline(
+            languagePref, com.antivocale.app.util.LocaleManager.phoneLanguage(context))
+        val result = backend.transcribeFile(filePath, language = language)
+        if (durationSeconds > 0.0) {
+            recordCalibration(backend, durationSeconds.toInt(), chunkProcessingStartTime)
+        }
+        return result.map { tr ->
+            tr.copy(
+                text = tr.text.trim(),
+                processing = ProcessingContext(
+                    backendId = backend.id,
+                    decodePath = "remote_offload",
+                    transcribedSeconds = durationSeconds.takeIf { it > 0.0 },
+                    // No VAD decision and no RAM constraint applies: this run
+                    // decoded nothing on the phone, so neither field claims one.
+                    vadRequested = null,
+                    availableRamBytes = null,
+                ))
+        }
     }
 
     /**

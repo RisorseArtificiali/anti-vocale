@@ -92,6 +92,11 @@ class PreferencesManagerImpl(
         private val MEMORY_PROTECTION = booleanPreferencesKey("memory_protection")
         // TASK-274: consent gate for the exported automation receivers.
         private val EXTERNAL_AUTOMATION_ENABLED = booleanPreferencesKey("external_automation_enabled")
+        // TASK-681: the LAN-offload (OmniVoice) consent gate and its config triple.
+        private val REMOTE_OMNIVOICE_ENABLED = booleanPreferencesKey("remote_omnivoice_enabled")
+        private val REMOTE_OMNIVOICE_ENDPOINT = stringPreferencesKey("remote_omnivoice_endpoint")
+        private val REMOTE_OMNIVOICE_API_KEY = stringPreferencesKey("remote_omnivoice_api_key")
+        private val REMOTE_OMNIVOICE_MODEL = stringPreferencesKey("remote_omnivoice_model")
         private val COMPACT_RESULT_ACTIONS = booleanPreferencesKey("compact_result_actions")
         private val LANGUAGE_CHIP_ENABLED = booleanPreferencesKey("language_chip_enabled")
         private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
@@ -140,6 +145,10 @@ class PreferencesManagerImpl(
         val showRetranscribeButton: Boolean = PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         val memoryProtection: Boolean = PreferencesManager.DEFAULT_MEMORY_PROTECTION,
         val externalAutomationEnabled: Boolean = PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
+        val remoteOmnivoiceEnabled: Boolean = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
+        val remoteOmnivoiceEndpoint: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT,
+        val remoteOmnivoiceApiKey: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY,
+        val remoteOmnivoiceModel: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_MODEL,
         val compactResultActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         val languageChipEnabled: Boolean = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         val externalModelsJson: String? = null
@@ -190,6 +199,11 @@ class PreferencesManagerImpl(
         showRetranscribeButton = this[SHOW_RETRANSCRIBE_BUTTON] ?: PreferencesManager.DEFAULT_SHOW_RETRANSCRIBE_BUTTON,
         memoryProtection = this[MEMORY_PROTECTION] ?: PreferencesManager.DEFAULT_MEMORY_PROTECTION,
         externalAutomationEnabled = this[EXTERNAL_AUTOMATION_ENABLED] ?: PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
+        remoteOmnivoiceEnabled = this[REMOTE_OMNIVOICE_ENABLED] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
+        remoteOmnivoiceEndpoint = this[REMOTE_OMNIVOICE_ENDPOINT] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT,
+        remoteOmnivoiceApiKey = this[REMOTE_OMNIVOICE_API_KEY] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY,
+        remoteOmnivoiceModel = this[REMOTE_OMNIVOICE_MODEL]
+            ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_MODEL,
         compactResultActions = this[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         languageChipEnabled = this[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
         externalModelsJson = this[EXTERNAL_MODELS_JSON]
@@ -709,6 +723,90 @@ class PreferencesManagerImpl(
 
     override val externalAutomationEnabled: Flow<Boolean> = dataStore.data.map { it[EXTERNAL_AUTOMATION_ENABLED] ?: PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED }
         .onStart { emit(cache.get().externalAutomationEnabled) }
+
+    // TASK-681: the LAN-offload gate and its config triple. Re-emits on
+    // unrelated writes are fine here, like the siblings above: the
+    // collectors only compare values.
+    override val remoteOmnivoiceEnabled: Flow<Boolean> = dataStore.data.map { it[REMOTE_OMNIVOICE_ENABLED] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED }
+        .onStart { emit(cache.get().remoteOmnivoiceEnabled) }
+
+    override val remoteOmnivoiceEndpoint: Flow<String> = dataStore.data.map { it[REMOTE_OMNIVOICE_ENDPOINT] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT }
+        .onStart { emit(cache.get().remoteOmnivoiceEndpoint) }
+
+    override val remoteOmnivoiceApiKey: Flow<String> = dataStore.data.map { it[REMOTE_OMNIVOICE_API_KEY] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY }
+        .onStart { emit(cache.get().remoteOmnivoiceApiKey) }
+
+    override val remoteOmnivoiceModel: Flow<String> = dataStore.data.map {
+        it[REMOTE_OMNIVOICE_MODEL] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_MODEL
+    }
+        .onStart { emit(cache.get().remoteOmnivoiceModel) }
+
+    /**
+     * TASK-681: the gate write carries the coupled invariant: disabling the
+     * service removes it from the selectable space, so a persisted selection
+     * pointing at it resets to the default IN THE SAME transaction (every
+     * writer gets the reset, and there is no torn disabled-but-selected
+     * state between two writes).
+     */
+    override suspend fun saveRemoteOmnivoiceEnabled(enabled: Boolean) {
+        var resetBackend = false
+        dataStore.edit { preferences ->
+            preferences[REMOTE_OMNIVOICE_ENABLED] = enabled
+            if (!enabled && preferences[TRANSCRIPTION_BACKEND] == com.antivocale.app.transcription.RemoteOmnivoiceBackend.BACKEND_ID) {
+                preferences[TRANSCRIPTION_BACKEND] = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
+                resetBackend = true
+            }
+        }
+        cache.updateAndGet {
+            it.copy(
+                remoteOmnivoiceEnabled = enabled,
+                transcriptionBackend = if (resetBackend) PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND else it.transcriptionBackend,
+            )
+        }
+    }
+
+    /** TASK-681: one user action, one transaction; see the interface KDoc. */
+    override suspend fun saveRemoteOmnivoiceConfig(endpoint: String, apiKey: String, model: String) {
+        val endpointValue = endpoint.trim()
+        val keyValue = apiKey.trim()
+        val modelValue = model.trim()
+        dataStore.edit { preferences ->
+            preferences[REMOTE_OMNIVOICE_ENDPOINT] = endpointValue
+            preferences[REMOTE_OMNIVOICE_API_KEY] = keyValue
+            preferences[REMOTE_OMNIVOICE_MODEL] = modelValue
+        }
+        cache.updateAndGet {
+            it.copy(
+                remoteOmnivoiceEndpoint = endpointValue,
+                remoteOmnivoiceApiKey = keyValue,
+                remoteOmnivoiceModel = modelValue,
+            )
+        }
+    }
+
+    override suspend fun saveRemoteOmnivoiceEndpoint(url: String) {
+        val trimmed = url.trim()
+        dataStore.edit { preferences ->
+            preferences[REMOTE_OMNIVOICE_ENDPOINT] = trimmed
+        }
+        cache.updateAndGet { it.copy(remoteOmnivoiceEndpoint = trimmed) }
+    }
+
+    override suspend fun saveRemoteOmnivoiceApiKey(key: String) {
+        val trimmed = key.trim()
+        dataStore.edit { preferences ->
+            preferences[REMOTE_OMNIVOICE_API_KEY] = trimmed
+        }
+        cache.updateAndGet { it.copy(remoteOmnivoiceApiKey = trimmed) }
+    }
+
+    override suspend fun saveRemoteOmnivoiceModel(model: String) {
+        val trimmed = model.trim()
+        dataStore.edit { preferences ->
+            preferences[REMOTE_OMNIVOICE_MODEL] = trimmed
+        }
+        cache.updateAndGet { it.copy(remoteOmnivoiceModel = trimmed) }
+    }
 
     override val compactResultActions: Flow<Boolean> = dataStore.data.map { it[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS }
         .onStart { emit(cache.get().compactResultActions) }

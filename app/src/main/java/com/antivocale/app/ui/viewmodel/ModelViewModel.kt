@@ -1514,6 +1514,38 @@ class ModelViewModel @Inject constructor(
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000),
                 PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
 
+    /**
+     * TASK-681: the LAN-offload service card's state, collected from the
+     * registry descriptor's path flow (the ONE owner of the
+     * enabled-and-configured rule; null while off, so no card, no selection
+     * surface). The endpoint doubles as the card's service line.
+     */
+    val remoteOmnivoiceEndpoint: StateFlow<String?> =
+        (backendRegistry.byBackendId(com.antivocale.app.transcription.RemoteOmnivoiceBackend.BACKEND_ID)
+            ?.modelPathFlow(preferencesManager)
+            ?: kotlinx.coroutines.flow.flowOf(null))
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /**
+     * TASK-681: selects the LAN-offload backend (the Use action on the
+     * service card). The card only renders while the service is enabled and
+     * configured, so no guard is duplicated here.
+     */
+    fun useRemoteOmnivoice() {
+        viewModelScope.launch {
+            preferencesManager.saveTranscriptionBackend(
+                com.antivocale.app.transcription.RemoteOmnivoiceBackend.BACKEND_ID)
+            _uiState.update {
+                it.copy(
+                    modelName = ctx.getString(R.string.remote_omnivoice_name),
+                    status = ModelStatus.UNLOADED,
+                    statusMessage = ctx.getString(
+                        R.string.model_selected_message, ctx.getString(R.string.remote_omnivoice_name)),
+                )
+            }
+        }
+    }
+
     /** TASK-513: lists a picked SAF folder and detects the family, so the
      *  import dialog can prefill it instead of failing a transducer-shaped
      *  validation on a valid Canary/Whisper/CTC/SenseVoice set. */

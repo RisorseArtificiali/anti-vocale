@@ -92,6 +92,8 @@ class TestSpiConformanceTest {
             when (prop) {
                 "progressiveTranscription" -> "progressiveEnabled"
                 "keepAliveTimeout" -> "keepAliveTimeoutMinutes"
+                // TASK-681: the LAN-offload key is readable only masked.
+                "remoteOmnivoiceApiKey" -> "remoteOmnivoiceApiKeyMasked"
                 else -> prop
             }
         }.toSet() + "activeModelPath"

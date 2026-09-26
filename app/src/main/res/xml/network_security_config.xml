@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    TASK-681: the opt-in LAN offload uploads audio to a user-entered
+    http:// address (a self-hosted OmniVoice box on the LAN carries no TLS
+    certificate), which Android's default cleartext block would refuse with
+    an IOException in release builds (debug builds already allow it via the
+    debug manifest). Cleartext is enabled for the base config because the
+    destination is only known at runtime; every fixed endpoint the app
+    itself calls (model downloads, the community catalog, HuggingFace) is
+    https and keeps its secure treatment regardless.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

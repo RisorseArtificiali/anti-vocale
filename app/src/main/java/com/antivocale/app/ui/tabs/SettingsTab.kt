@@ -64,6 +64,7 @@ import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.PunctuationPolicy
+import com.antivocale.app.transcription.RemoteOmnivoiceBackend
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
@@ -508,6 +509,12 @@ fun SettingsTab(
                 listOf(R.string.subtitle_timeout_title, R.string.subtitle_timeout_description),
                 listOf(R.string.memory_protection, R.string.memory_protection_desc),
                 listOf(R.string.external_automation_title, R.string.external_automation_description),
+                // TASK-681: the toggle card renders unconditionally; its
+                // fields ride the same group.
+                listOf(
+                    R.string.remote_offload_title, R.string.remote_offload_description,
+                    R.string.remote_offload_disclosure,
+                ),
                 listOf(R.string.per_app_settings_title, R.string.per_app_settings_description),
                 listOf(R.string.performance_stats_title, R.string.performance_stats_subtitle),
             ).map { group -> group.map { context.getString(it) } }
@@ -1905,6 +1912,34 @@ fun SettingsTab(
                 )
             }
 
+            // TASK-681: LAN offload (experimental). Opt-in delegation to the
+            // user's own OmniVoice box on their network; the supporting text
+            // IS the privacy contract and stays visible while off too.
+            val remoteOffloadTitle = stringResource(R.string.remote_offload_title)
+            val remoteOffloadDescription = stringResource(R.string.remote_offload_description)
+            val remoteOffloadDisclosure = stringResource(R.string.remote_offload_disclosure)
+            val remoteOffloadEnabled by viewModel.remoteOmnivoiceEnabled.collectAsState()
+            SearchFilterRow(
+                searchQuery,
+                remoteOffloadTitle,
+                remoteOffloadDescription,
+                remoteOffloadDisclosure,
+            ) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Lan,
+                    title = remoteOffloadTitle,
+                    description = remoteOffloadDescription,
+                    supportingText = remoteOffloadDisclosure,
+                    checked = remoteOffloadEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveRemoteOmnivoiceEnabled(enabled)
+                    }
+                )
+                if (remoteOffloadEnabled) {
+                    RemoteOmnivoiceConfigCard(viewModel)
+                }
+            }
+
             // Per-App Settings Navigation Card
             SearchFilterRow(
                 searchQuery,
@@ -2511,6 +2546,108 @@ private fun PunctuationPromptCard(
     descriptionRes = R.string.punctuation_prompt_description,
     placeholderRes = R.string.punctuation_prompt_placeholder,
 )
+
+/**
+ * TASK-681: the LAN-offload config card: endpoint, API key (password
+ * style), the pass-through model name, Save, and the connection probe.
+ * Test uses the TYPED field values, so a configuration can be verified
+ * before it is saved.
+ */
+@Composable
+private fun RemoteOmnivoiceConfigCard(viewModel: SettingsViewModel) {
+    val endpoint by viewModel.remoteEndpointInput.collectAsState()
+    val apiKey by viewModel.remoteApiKeyInput.collectAsState()
+    val model by viewModel.remoteModelInput.collectAsState()
+    val testing by viewModel.remoteConnectionTesting.collectAsState()
+    val testResult by viewModel.remoteConnectionTest.collectAsState()
+    var keyVisible by remember { mutableStateOf(false) }
+    val clipboardManager = LocalContext.current.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            OutlinedTextField(
+                value = endpoint,
+                onValueChange = { viewModel.remoteEndpointInput.value = it },
+                label = { Text(stringResource(R.string.remote_offload_endpoint_label)) },
+                placeholder = { Text(stringResource(R.string.remote_offload_endpoint_placeholder)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            TokenInputField(
+                value = apiKey,
+                onValueChange = { viewModel.remoteApiKeyInput.value = it },
+                tokenPasswordVisible = keyVisible,
+                onPasswordVisibilityToggle = { keyVisible = !keyVisible },
+                clipboardManager = clipboardManager,
+                modifier = Modifier.fillMaxWidth(),
+                labelRes = R.string.remote_offload_key_label,
+            )
+            OutlinedTextField(
+                value = model,
+                onValueChange = { viewModel.remoteModelInput.value = it },
+                label = { Text(stringResource(R.string.remote_offload_model_label)) },
+                supportingText = { Text(stringResource(R.string.remote_offload_model_hint)) },
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth(),
+            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                OutlinedButton(
+                    onClick = { viewModel.saveRemoteOmnivoiceConfig() },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Text(stringResource(R.string.remote_offload_save))
+                }
+                Button(
+                    onClick = { viewModel.testRemoteConnection() },
+                    enabled = endpoint.isNotBlank() && !testing,
+                    modifier = Modifier.weight(1f),
+                ) {
+                    if (testing) {
+                        CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(stringResource(
+                        if (testing) R.string.remote_offload_test_running
+                        else R.string.remote_offload_test))
+                }
+            }
+            testResult?.let { result ->
+                val success = result is RemoteOmnivoiceBackend.ConnectionTestResult.Success
+                Text(
+                    text = remoteTestReasonText(result),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (success) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.error,
+                )
+            }
+        }
+    }
+}
+
+/** TASK-681: the probe verdict in the user's language; codes stay as-is. */
+@Composable
+private fun remoteTestReasonText(
+    result: com.antivocale.app.transcription.RemoteOmnivoiceBackend.ConnectionTestResult,
+): String = when (result) {
+    is RemoteOmnivoiceBackend.ConnectionTestResult.Success ->
+        stringResource(R.string.remote_offload_test_success)
+    is RemoteOmnivoiceBackend.ConnectionTestResult.Unreachable ->
+        stringResource(R.string.remote_test_reason_unreachable)
+    is RemoteOmnivoiceBackend.ConnectionTestResult.AuthRejected ->
+        stringResource(R.string.remote_test_reason_auth)
+    is RemoteOmnivoiceBackend.ConnectionTestResult.Timeout ->
+        stringResource(
+            R.string.remote_test_reason_timeout,
+            (RemoteOmnivoiceBackend.TEST_BUDGET_MS / 1000L).toInt())
+    is RemoteOmnivoiceBackend.ConnectionTestResult.ServerError ->
+        stringResource(R.string.remote_test_reason_server, result.statusCode)
+}
 
 /** TASK-276: pref value -> localized label, one fallback for unknown values. */
 @Composable

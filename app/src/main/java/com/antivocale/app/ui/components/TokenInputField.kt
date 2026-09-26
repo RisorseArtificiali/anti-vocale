@@ -29,12 +29,16 @@ fun TokenInputField(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     isError: Boolean = false,
+    /** TASK-681: label/placeholder override; the HuggingFace defaults keep
+     *  the three existing call sites unchanged. */
+    labelRes: Int = R.string.huggingface_token_label,
+    placeholderRes: Int = R.string.token_placeholder,
 ) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(stringResource(R.string.huggingface_token_label)) },
-        placeholder = { Text(stringResource(R.string.token_placeholder)) },
+        label = { Text(stringResource(labelRes)) },
+        placeholder = { Text(stringResource(placeholderRes)) },
         singleLine = true,
         visualTransformation = if (tokenPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
         trailingIcon = {

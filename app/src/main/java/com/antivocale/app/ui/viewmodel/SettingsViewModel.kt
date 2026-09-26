@@ -80,7 +80,10 @@ class SettingsViewModel @Inject constructor(
     private val shareTargetManager: ShareTargetManager,
     private val shareShortcutManager: ShareShortcutManager,
     private val activeModelRepository: ActiveModelRepository,
-    private val launcherIconManager: LauncherIconManager
+    private val launcherIconManager: LauncherIconManager,
+    // TASK-681: the LAN-offload connection probe runs through the real
+    // backend (its OkHttp timeouts are the fail-fast contract).
+    private val remoteOmnivoiceBackend: com.antivocale.app.transcription.RemoteOmnivoiceBackend
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -417,6 +420,64 @@ class SettingsViewModel @Inject constructor(
     fun saveExternalAutomationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveExternalAutomationEnabled(enabled)
+        }
+    }
+
+    // ---- TASK-681: LAN offload (OmniVoice) ----
+
+    /** The consent gate; while off, the backend has no surface anywhere. */
+    val remoteOmnivoiceEnabled: StateFlow<Boolean> = preferencesManager.remoteOmnivoiceEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED
+        )
+
+    /** Editable fields, seeded from the stored config; saved by [saveRemoteOmnivoiceConfig]. */
+    val remoteEndpointInput = MutableStateFlow("")
+    val remoteApiKeyInput = MutableStateFlow("")
+    val remoteModelInput = MutableStateFlow("")
+
+    init {
+        viewModelScope.launch {
+            remoteEndpointInput.value = preferencesManager.remoteOmnivoiceEndpoint.first()
+            remoteApiKeyInput.value = preferencesManager.remoteOmnivoiceApiKey.first()
+            remoteModelInput.value = preferencesManager.remoteOmnivoiceModel.first()
+        }
+    }
+
+    fun saveRemoteOmnivoiceConfig() {
+        viewModelScope.launch {
+            preferencesManager.saveRemoteOmnivoiceConfig(
+                remoteEndpointInput.value,
+                remoteApiKeyInput.value,
+                remoteModelInput.value)
+        }
+    }
+
+    /**
+     * The gate write; the disable-resets-selection invariant lives in the
+     * preference layer (one transaction, every writer covered).
+     */
+    fun saveRemoteOmnivoiceEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveRemoteOmnivoiceEnabled(enabled)
+        }
+    }
+
+    /** The Test-connection probe's outcome; null = idle, the card renders it localized. */
+    val remoteConnectionTest = MutableStateFlow<com.antivocale.app.transcription.RemoteOmnivoiceBackend.ConnectionTestResult?>(null)
+    val remoteConnectionTesting = MutableStateFlow(false)
+
+    /** Tests the TYPED values (works before saving); Dispatchers.IO lives inside the backend. */
+    fun testRemoteConnection() {
+        viewModelScope.launch {
+            remoteConnectionTesting.value = true
+            remoteConnectionTest.value = remoteOmnivoiceBackend.testConnection(
+                remoteEndpointInput.value,
+                remoteApiKeyInput.value,
+                remoteModelInput.value)
+            remoteConnectionTesting.value = false
         }
     }
 

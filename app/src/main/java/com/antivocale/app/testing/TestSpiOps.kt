@@ -11,6 +11,7 @@ import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.PunctuationPolicy
+import com.antivocale.app.transcription.RemoteOmnivoiceBackend
 import com.antivocale.app.ui.theme.ThemeMode
 import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
@@ -99,6 +100,13 @@ internal class TestSpiOps(
             .put("signaturePosition", preferences.signaturePosition.first())
             .put("memoryProtection", preferences.memoryProtection.first())
             .put("externalAutomationEnabled", preferences.externalAutomationEnabled.first())
+            // TASK-681: the LAN-offload config (endpoint visible for E2E
+            // verification; the key is masked to its last 4 chars).
+            .put("remoteOmnivoiceEnabled", preferences.remoteOmnivoiceEnabled.first())
+            .put("remoteOmnivoiceEndpoint", preferences.remoteOmnivoiceEndpoint.first())
+            .put("remoteOmnivoiceApiKeyMasked", preferences.remoteOmnivoiceApiKey.first()
+                .takeLast(4).let { if (it.length < 4) "" else "****$it" })
+            .put("remoteOmnivoiceModel", preferences.remoteOmnivoiceModel.first())
             .put("compactResultActions", preferences.compactResultActions.first())
             .put("languageChipEnabled", preferences.languageChipEnabled.first())
             // TASK-575: read-only over the SPI (records are written by loads).
@@ -156,6 +164,9 @@ internal class TestSpiOps(
         "memory_protection" to preferences::saveMemoryProtection,
         // TASK-274: consent gate for the exported automation receivers.
         "external_automation" to preferences::saveExternalAutomationEnabled,
+        // TASK-681: the LAN-offload gate (device E2E drives the whole
+        // enable + configure + select sequence over the SPI).
+        "remote_enabled" to preferences::saveRemoteOmnivoiceEnabled,
         "compact_result_actions" to preferences::saveCompactResultActions,
         "technical_details" to preferences::saveShowTechnicalDetails,
         "language_chip" to preferences::saveLanguageChipEnabled,
@@ -199,6 +210,10 @@ internal class TestSpiOps(
         "output_folder" to { preferences.saveOutputFolderUri(it.ifBlank { null }) },
         "language" to preferences::saveTranscriptionLanguage,
         "model_path" to preferences::saveModelPath,
+        // TASK-681: the LAN-offload config triple.
+        "remote_endpoint" to preferences::saveRemoteOmnivoiceEndpoint,
+        "remote_api_key" to preferences::saveRemoteOmnivoiceApiKey,
+        "remote_model" to preferences::saveRemoteOmnivoiceModel,
     )
 
     /**
@@ -274,8 +289,8 @@ internal class TestSpiOps(
             }
             putUnique("backend") { value, _ ->
                 if (!isKnownBackend(value)) {
-                    "unknown backend '$value' (expected a catalog id, '${LlmTranscriptionBackend.BACKEND_ID}' " +
-                        "or '${ExternalModelRecord.BACKEND_ID_PREFIX}<record id>')"
+                    "unknown backend '$value' (expected a catalog id, '${LlmTranscriptionBackend.BACKEND_ID}', " +
+                        "'${RemoteOmnivoiceBackend.BACKEND_ID}' or '${ExternalModelRecord.BACKEND_ID_PREFIX}<record id>')"
                 } else {
                     preferences.saveTranscriptionBackend(value)
                     null

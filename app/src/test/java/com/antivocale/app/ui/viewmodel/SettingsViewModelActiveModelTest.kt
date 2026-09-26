@@ -79,6 +79,9 @@ class SettingsViewModelActiveModelTest {
             launcherIconManager = mockk(relaxed = true) {
                 every { current() } returns LauncherIconVariant.DEFAULT
             },
+            // TASK-681: the LAN-offload probe backend; relaxed mock, these
+            // tests never trigger a connection test.
+            remoteOmnivoiceBackend = mockk(relaxed = true),
             // getString is stubbed so the fixed catalog display name (whisper_title)
             // resolves to a distinguishable value instead of a relaxed-mock empty string.
             activeModelRepository = ActiveModelRepository(

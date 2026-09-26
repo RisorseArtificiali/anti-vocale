@@ -57,7 +57,7 @@ class BackendRegistryTest {
     )
     private val registry = BackendRegistry(store, emptyRecordsProvider())
 
-    /** The six enabled backends, in canonical order (default backend first). */
+    /** The seven enabled backends, in canonical order (default backend first). */
     private val expectedIds = listOf(
         BuiltInBackendIds.PARAKEET,
         BuiltInBackendIds.WHISPER,
@@ -65,9 +65,15 @@ class BackendRegistryTest {
         BuiltInBackendIds.NEMOTRON,
         BuiltInBackendIds.GIGAAM,
         LlmTranscriptionBackend.BACKEND_ID,
+        RemoteOmnivoiceBackend.BACKEND_ID,
     )
 
-    /** backendId -> the FakePreferencesManager backing flow its accessors must use. */
+    /**
+     * backendId -> the FakePreferencesManager backing flow its accessors must
+     * use. The OmniVoice backend is deliberately absent (TASK-681): its
+     * save/clear accessors are inert by design, pinned by the dedicated test
+     * below instead of this loop.
+     */
     private val expectedPrefFlows: Map<String, (FakePreferencesManager) -> MutableStateFlow<String?>> = mapOf(
         BuiltInBackendIds.PARAKEET to { it._sherpaModelPath(BuiltInBackendIds.PARAKEET) },
         BuiltInBackendIds.WHISPER to { it._sherpaModelPath(BuiltInBackendIds.WHISPER) },
@@ -83,7 +89,7 @@ class BackendRegistryTest {
     fun seedCatalog() = seedCatalogForTest()
 
     @Test
-    fun `static six backend ids, dynamic externals counted separately`() {
+    fun `static seven backend ids, dynamic externals counted separately`() {
         val ids = registry.backends.map { it.backendId }
         assertEquals(expectedIds.size, ids.size)
         assertEquals(expectedIds, ids)
@@ -101,6 +107,9 @@ class BackendRegistryTest {
     @Test
     fun `lookup by shareAlias round-trips to the registered descriptor`() {
         for (descriptor in registry.backends) {
+            // TASK-681: the blank no-share-target sentinel has no reverse
+            // lookup (blank is "no alias given"); only real aliases round-trip.
+            if (descriptor.shareAlias.isBlank()) continue
             val found = registry.byShareAlias(descriptor.shareAlias)
             assertEquals("byShareAlias(${descriptor.shareAlias}) must return the registered descriptor", descriptor, found)
         }
@@ -108,6 +117,9 @@ class BackendRegistryTest {
 
     @Test
     fun `share aliases are the ShareReceiverActivity ALIAS values and are unique`() {
+        // The OmniVoice backend carries the blank sentinel (TASK-681: no
+        // share target, the blank alias is a valid value for it), so it joins
+        // the set without a manifest literal.
         val expectedAliases = setOf(
             "com.antivocale.app.ShareParakeet",
             "com.antivocale.app.ShareWhisper",
@@ -115,6 +127,7 @@ class BackendRegistryTest {
             "com.antivocale.app.ShareNemotron",
             "com.antivocale.app.ShareGigaam",
             "com.antivocale.app.ShareGemma",
+            "",
         )
         val aliases = registry.backends.map { it.shareAlias }
         assertEquals(expectedAliases, aliases.toSet())
@@ -127,14 +140,50 @@ class BackendRegistryTest {
         assertNull(registry.byBackendId(null))
         assertNull(registry.byShareAlias("com.antivocale.app.ShareNoSuch"))
         assertNull(registry.byShareAlias(null))
-        assertNull("no static backend carries the blank alias anymore", registry.byShareAlias(""))
+    }
+
+    @Test
+    fun `the OmniVoice descriptor carries the blank alias without joining alias lookups`() {
+        // TASK-681: blank is the no-share-target sentinel; byShareAlias
+        // rejects it at the mechanism (blank is "no alias given", never a
+        // lookup key), so the sentinel can never leak a backend through an
+        // alias resolution.
+        val descriptor = registry.byBackendId(RemoteOmnivoiceBackend.BACKEND_ID)
+        assertNotNull(descriptor)
+        assertEquals("", descriptor!!.shareAlias)
+        assertNull("blank must not resolve to any backend",
+            registry.byShareAlias(""))
+    }
+
+    @Test
+    fun `the OmniVoice path accessors are inert and the endpoint is the path identity`() = runTest {
+        // TASK-681: Settings owns the endpoint field; the descriptor's
+        // save/clear must not write anything, while the path flow mirrors the
+        // endpoint preference GATED on the enable toggle (the has-model
+        // consumers must see "not installed" while off), and it is the
+        // load-path residency identity when on.
+        val fake = FakePreferencesManager()
+        val descriptor = registry.byBackendId(RemoteOmnivoiceBackend.BACKEND_ID)!!
+        fake._remoteOmnivoiceEndpoint.value = "http://192.168.1.10:3900"
+        assertNull("off means no path claim even with an endpoint saved",
+            descriptor.modelPathFlow(fake).first())
+        fake._remoteOmnivoiceEnabled.value = true
+        assertEquals("http://192.168.1.10:3900", descriptor.modelPathFlow(fake).first())
+        descriptor.saveModelPath(fake, "/somewhere/else")
+        assertEquals("saveModelPath must not redirect the endpoint (Settings owns it)",
+            "http://192.168.1.10:3900", fake._remoteOmnivoiceEndpoint.value)
+        descriptor.clearModelPath(fake)
+        assertEquals("clearModelPath must not clear the endpoint (Settings owns it)",
+            "http://192.168.1.10:3900", fake._remoteOmnivoiceEndpoint.value)
     }
 
     @Test
     fun `descriptor identifiers are mutually consistent`() {
         // The two identifier schemes must agree: looking up by one key and
-        // re-reading the other yields the same pair everywhere.
+        // re-reading the other yields the same pair everywhere. The blank
+        // no-share-target sentinel is exempt (TASK-681: blank never resolves).
         for (descriptor in registry.backends) {
+            if (descriptor.shareAlias.isBlank()) continue
             assertEquals(descriptor.backendId, registry.byShareAlias(descriptor.shareAlias)?.backendId)
         }
     }
@@ -171,6 +220,7 @@ class BackendRegistryTest {
         assertEquals(R.string.nemotron_name, registry.byBackendId(BuiltInBackendIds.NEMOTRON)?.displayNameResId)
         assertEquals(R.string.gigaam_name, registry.byBackendId(BuiltInBackendIds.GIGAAM)?.displayNameResId)
         assertEquals(R.string.llm_backend_name, registry.byBackendId(LlmTranscriptionBackend.BACKEND_ID)?.displayNameResId)
+        assertEquals(R.string.remote_omnivoice_name, registry.byBackendId(RemoteOmnivoiceBackend.BACKEND_ID)?.displayNameResId)
     }
 
     @Test
@@ -305,7 +355,7 @@ class BackendRegistryTest {
         // family carries punctuatesOutput=false today. The field stays for
         // any future model that genuinely needs it.
         val ids = registry.backends.map { it.backendId }
-        assertTrue("expected the static six plus external records", ids.size >= 6)
+        assertTrue("expected the static seven plus external records", ids.size >= 7)
         for (descriptor in registry.backends) {
             assertTrue("${descriptor.backendId} must be flagged punctuating",
                 descriptor.punctuatesOutput)

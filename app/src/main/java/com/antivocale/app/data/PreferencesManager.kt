@@ -91,6 +91,34 @@ interface PreferencesManager {
 
     /** TASK-274: consent gate for the exported automation receivers (Tasker surface). */
     val externalAutomationEnabled: Flow<Boolean>
+
+    /**
+     * TASK-681: the LAN-offload consent gate. Off by default; while off the
+     * backend has no surface anywhere and nothing leaves the device. The
+     * disclosure paragraph the Settings card renders is the contract this
+     * toggle gates.
+     */
+    val remoteOmnivoiceEnabled: Flow<Boolean>
+
+    /** TASK-681: OmniVoice base URL as entered by the user ("" = not configured). */
+    val remoteOmnivoiceEndpoint: Flow<String>
+
+    /** TASK-681: the OMNIVOICE_API_KEY bearer for the user's own server. */
+    val remoteOmnivoiceApiKey: Flow<String>
+
+    /** TASK-681: the pass-through model name sent to the server. */
+    val remoteOmnivoiceModel: Flow<String>
+    suspend fun saveRemoteOmnivoiceEnabled(enabled: Boolean)
+
+    /**
+     * TASK-681: persists the config triple as ONE write (one user action,
+     * one DataStore transaction; no torn endpoint-without-key state). The
+     * fine-grained savers below stay for the debug SPI.
+     */
+    suspend fun saveRemoteOmnivoiceConfig(endpoint: String, apiKey: String, model: String)
+    suspend fun saveRemoteOmnivoiceEndpoint(url: String)
+    suspend fun saveRemoteOmnivoiceApiKey(key: String)
+    suspend fun saveRemoteOmnivoiceModel(model: String)
     val compactResultActions: Flow<Boolean>
     /** TASK-546: show the detected-language chip on results. */
     val languageChipEnabled: Flow<Boolean>
@@ -251,6 +279,13 @@ interface PreferencesManager {
         /** TASK-274: the automation receivers are opt-in; off, they answer with the error
          *  naming this setting instead of running the request. */
         const val DEFAULT_EXTERNAL_AUTOMATION_ENABLED = false
+        /** TASK-681: LAN offload is opt-in; off, no audio ever leaves the device. */
+        const val DEFAULT_REMOTE_OMNIVOICE_ENABLED = false
+        const val DEFAULT_REMOTE_OMNIVOICE_ENDPOINT = ""
+        const val DEFAULT_REMOTE_OMNIVOICE_API_KEY = ""
+        /** One source with the backend's own default (the field the server resolves). */
+        const val DEFAULT_REMOTE_OMNIVOICE_MODEL =
+            com.antivocale.app.transcription.RemoteOmnivoiceBackend.DEFAULT_MODEL
         const val DEFAULT_COMPACT_RESULT_ACTIONS = true
         /** TASK-546: the chip mitigates invisible wrong-language detection; on by default. */
         const val DEFAULT_LANGUAGE_CHIP_ENABLED = true

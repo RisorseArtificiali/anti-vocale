@@ -2,12 +2,61 @@ package com.antivocale.app.data
 
 import org.junit.Assert.*
 import org.junit.Test
+import kotlinx.coroutines.flow.first
 
 class PreferencesManagerTest {
 
     @Test
     fun `DEFAULT_KEEP_ALIVE_TIMEOUT is 5 minutes`() {
         assertEquals(5, PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT)
+    }
+
+    // TASK-681: the LAN-offload gate is opt-in and its config starts empty;
+    // the model default comes from the backend constant so the two can never
+    // drift.
+    @Test
+    fun `DEFAULT_REMOTE_OMNIVOICE_ENABLED is false`() {
+        assertFalse(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED)
+    }
+
+    @Test
+    fun `DEFAULT_REMOTE_OMNIVOICE endpoint and key start blank`() {
+        assertEquals("", PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT)
+        assertEquals("", PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY)
+    }
+
+    @Test
+    fun `the fake round-trips the LAN-offload config`() = kotlinx.coroutines.test.runTest {
+        val fake = FakePreferencesManager()
+        assertFalse(fake.remoteOmnivoiceEnabled.first())
+        assertEquals(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_MODEL,
+            fake.remoteOmnivoiceModel.first())
+        fake.saveRemoteOmnivoiceEnabled(true)
+        fake.saveRemoteOmnivoiceEndpoint("  http://192.168.1.10:3900 ")
+        fake.saveRemoteOmnivoiceApiKey(" k ")
+        fake.saveRemoteOmnivoiceModel(" my-engine ")
+        assertTrue(fake.remoteOmnivoiceEnabled.first())
+        assertEquals("http://192.168.1.10:3900", fake.remoteOmnivoiceEndpoint.first())
+        assertEquals("k", fake.remoteOmnivoiceApiKey.first())
+        assertEquals("my-engine", fake.remoteOmnivoiceModel.first())
+        // The combined write mirrors one Save press: all three, trimmed.
+        fake.saveRemoteOmnivoiceConfig(" http://mac.lan:3900 ", "k2", " m2 ")
+        assertEquals("http://mac.lan:3900", fake.remoteOmnivoiceEndpoint.first())
+        assertEquals("k2", fake.remoteOmnivoiceApiKey.first())
+        assertEquals("m2", fake.remoteOmnivoiceModel.first())
+    }
+
+    @Test
+    fun `disabling the LAN-offload gate resets a selection pointing at it`() = kotlinx.coroutines.test.runTest {
+        val fake = FakePreferencesManager()
+        fake.saveTranscriptionBackend(com.antivocale.app.transcription.RemoteOmnivoiceBackend.BACKEND_ID)
+        fake.saveRemoteOmnivoiceEnabled(false)
+        assertEquals(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND, fake.transcriptionBackend.first())
+        // The reset is specific: any other selection survives a disable.
+        fake.saveTranscriptionBackend("whisper")
+        fake.saveRemoteOmnivoiceEnabled(true)
+        fake.saveRemoteOmnivoiceEnabled(false)
+        assertEquals("whisper", fake.transcriptionBackend.first())
     }
 
     @Test

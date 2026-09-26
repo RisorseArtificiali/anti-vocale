@@ -58,6 +58,11 @@ internal class FakePreferencesManager : PreferencesManager {
     val _memoryProtection = MutableStateFlow(false)
     // TASK-274: consent gate for the exported automation receivers.
     val _externalAutomationEnabled = MutableStateFlow(PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED)
+    // TASK-681: the LAN-offload (OmniVoice) gate and its config triple.
+    val _remoteOmnivoiceEnabled = MutableStateFlow(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED)
+    val _remoteOmnivoiceEndpoint = MutableStateFlow(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT)
+    val _remoteOmnivoiceApiKey = MutableStateFlow(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY)
+    val _remoteOmnivoiceModel = MutableStateFlow(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_MODEL)
     val _compactResultActions = MutableStateFlow(PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS)
     val _languageChipEnabled = MutableStateFlow(PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED)
     val _externalModelsJson = MutableStateFlow<String?>(null)
@@ -110,6 +115,28 @@ internal class FakePreferencesManager : PreferencesManager {
     override val showRetranscribeButton: Flow<Boolean> get() = _showRetranscribeButton
     override val memoryProtection: Flow<Boolean> get() = _memoryProtection
     override val externalAutomationEnabled: Flow<Boolean> get() = _externalAutomationEnabled
+    override val remoteOmnivoiceEnabled: Flow<Boolean> get() = _remoteOmnivoiceEnabled
+    override val remoteOmnivoiceEndpoint: Flow<String> get() = _remoteOmnivoiceEndpoint
+    override val remoteOmnivoiceApiKey: Flow<String> get() = _remoteOmnivoiceApiKey
+    override val remoteOmnivoiceModel: Flow<String> get() = _remoteOmnivoiceModel
+    override suspend fun saveRemoteOmnivoiceEnabled(enabled: Boolean) {
+        _remoteOmnivoiceEnabled.value = enabled
+        // TASK-681: mirrors the impl's coupled write (disable resets a
+        // selection pointing at the backend, same turn).
+        if (!enabled && _transcriptionBackend.value ==
+            com.antivocale.app.transcription.RemoteOmnivoiceBackend.BACKEND_ID
+        ) {
+            _transcriptionBackend.value = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND
+        }
+    }
+    override suspend fun saveRemoteOmnivoiceConfig(endpoint: String, apiKey: String, model: String) {
+        _remoteOmnivoiceEndpoint.value = endpoint.trim()
+        _remoteOmnivoiceApiKey.value = apiKey.trim()
+        _remoteOmnivoiceModel.value = model.trim()
+    }
+    override suspend fun saveRemoteOmnivoiceEndpoint(url: String) { _remoteOmnivoiceEndpoint.value = url.trim() }
+    override suspend fun saveRemoteOmnivoiceApiKey(key: String) { _remoteOmnivoiceApiKey.value = key.trim() }
+    override suspend fun saveRemoteOmnivoiceModel(model: String) { _remoteOmnivoiceModel.value = model.trim() }
     override val compactResultActions: Flow<Boolean> get() = _compactResultActions
     override val languageChipEnabled: Flow<Boolean> get() = _languageChipEnabled
     override val externalModelsJson: Flow<String?> get() = _externalModelsJson

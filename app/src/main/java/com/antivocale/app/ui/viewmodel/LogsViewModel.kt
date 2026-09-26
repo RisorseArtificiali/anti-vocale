@@ -368,9 +368,18 @@ class LogsViewModel @Inject constructor(
             ?.let { transcriptionBackendManager.gateInputsFor(it) }
             ?.decodePath(preferencesManager.vadEnabled.first())
             ?: AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM
-        val ceiling = AudioDurationPolicy.ceilingSeconds(
-            decodePath, MemoryReadings.availableRamBytes(context), MemoryReadings.maxHeapBytes())
         val descriptor = backendId?.let { backendRegistry.byBackendId(it) }
+        // TASK-681: an offload run never decodes on the phone, so the
+        // RAM-derived ceilings do not apply; the honest bound is the
+        // backend's wall-clock budget over the server throughput
+        // (budget-seconds x rtf audio-seconds).
+        val ceiling = if (backendId != null && BuiltInBackendIds.isRemoteOmnivoice(backendId)) {
+            (com.antivocale.app.transcription.RemoteOmnivoiceBackend.WALL_CLOCK_BUDGET_MS / 1000L) *
+                (descriptor?.rtfEstimate?.toLong() ?: 1L)
+        } else {
+            AudioDurationPolicy.ceilingSeconds(
+                decodePath, MemoryReadings.availableRamBytes(context), MemoryReadings.maxHeapBytes())
+        }
         val modelPath = descriptor?.modelPathFlow(preferencesManager)?.first()
         val profile = backendId?.let { transcriptionCalibrator.getEstimate(it, modelPath ?: "") }
         val calibrated = profile?.hasEstimate == true

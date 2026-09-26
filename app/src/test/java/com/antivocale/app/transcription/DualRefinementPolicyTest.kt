@@ -57,6 +57,14 @@ class DualRefinementPolicyTest {
     }
 
     @Test
+    fun `an offload run takes no local first pass`() {
+        // TASK-681: the remote backend exists so the phone does NOT decode;
+        // a local streaming preview would duplicate that work and the F4/F5
+        // fallback would mask server-side failures behind local text.
+        assertNull(fast(selected = RemoteOmnivoiceBackend.BACKEND_ID))
+    }
+
+    @Test
     fun `the shipped catalog actually carries a streaming entry the gate can pick`() {
         // The gate's streaming side is catalog-driven; if no entry ever sets
         // isStreaming, DualRefinementPolicy can only return null and the

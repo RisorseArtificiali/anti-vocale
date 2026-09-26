@@ -57,6 +57,7 @@ import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.CatalogStringKeys
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.service.InferenceService
+import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
 import com.antivocale.app.transcription.Language
 import androidx.compose.ui.graphics.Color
@@ -604,6 +605,21 @@ fun ModelTab(
             )
         }
 
+        // TASK-681: the LAN-offload configured-service card. Not a catalog
+        // entry and not downloadable: it exists only while the service is
+        // enabled in Settings, and the endpoint line is its "model".
+        val remoteOmnivoiceEndpoint by viewModel.remoteOmnivoiceEndpoint.collectAsState()
+        remoteOmnivoiceEndpoint?.let { endpoint ->
+            if (!showCuratedSection) {
+                RemoteOmnivoiceServiceCard(
+                    endpoint = endpoint,
+                    isActive = BuiltInBackendIds.isRemoteOmnivoice(activeBackendId),
+                    isTranscribing = isTranscribing,
+                    onUse = { guardedSwitch { viewModel.useRemoteOmnivoice() } },
+                )
+            }
+        }
+
         // Select Model Button - secondary option for local files.
         // SAF (OpenDocument) grants its own URI access, so no storage permission
         // Advanced section: manual model imports, collapsed by default to hide
@@ -1043,6 +1059,76 @@ private fun CuratedCommunityCard(
 }
 
 // ==================== Model Download Section ====================
+
+/**
+ * TASK-681: the LAN-offload service card (the user's own OmniVoice box).
+ * A configured service, not a downloadable model: the endpoint is the
+ * identity line and Use just selects the backend (no download states).
+ */
+@Composable
+private fun RemoteOmnivoiceServiceCard(
+    endpoint: String,
+    isActive: Boolean,
+    isTranscribing: Boolean,
+    onUse: () -> Unit,
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        )
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Lan,
+                    contentDescription = null,
+                    tint = if (isActive) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Column {
+                    Text(
+                        text = stringResource(R.string.remote_omnivoice_name),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = endpoint,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = stringResource(R.string.remote_offload_description),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            if (isActive) {
+                Text(
+                    text = stringResource(R.string.active_badge),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                OutlinedButton(onClick = onUse, enabled = !isTranscribing) {
+                    Text(stringResource(R.string.use_model))
+                }
+            }
+        }
+    }
+}
 
 /**
  * Gemma LiteRT-LM download section using the shared [ModelVariantCard].

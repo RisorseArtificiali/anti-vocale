@@ -51,6 +51,31 @@ interface TranscriptionBackend {
         get() = false
 
     /**
+     * TASK-681: whole-file transcription from the ORIGINAL container, no
+     * phone-side decode. Backends that upload or hash the file as-is (the
+     * LAN-offload OmniVoice backend) override this; every decode-based
+     * backend keeps the samples contract of [transcribeAudio] and inherits
+     * the failing default (routing a file through a decode backend would
+     * silently skip the orchestrator's chunking seams).
+     *
+     * @param path Local audio file path in any container the app accepts
+     * @param language ISO-639-1 hint or blank for model-side detection
+     */
+    suspend fun transcribeFile(path: String, language: String): Result<TranscriptionResult> =
+        Result.failure(UnsupportedOperationException(
+            "$id does not transcribe whole files; use transcribeAudio"))
+
+    /**
+     * TASK-681: true for backends that consume the ORIGINAL audio container
+     * through [transcribeFile] and must never enter the decode/chunk
+     * pipeline. The orchestrator's whole-file arm gates on this capability,
+     * not on a backend id, so a second whole-file backend reuses that arm
+     * unchanged.
+     */
+    val transcribesWholeContainer: Boolean
+        get() = false
+
+    /**
      * Initializes the backend with the given configuration.
      */
     suspend fun initialize(context: Context, config: BackendConfig): Result<Unit>
@@ -166,6 +191,17 @@ sealed class BackendConfig {
         val numThreads: Int,
         val provider: String,
     ) : BackendConfig()
+
+    /**
+     * TASK-681: configuration for the LAN-offload backend (the user's own
+     * OmniVoice server). Not a model on disk: the "path identity" of this
+     * backend is the endpoint URL (see RemoteOmnivoiceBackend.getModelPath).
+     */
+    data class RemoteConfig(
+        val baseUrl: String,
+        val apiKey: String,
+        val model: String,
+    ) : BackendConfig()
 }
 
 /**
@@ -230,6 +266,32 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
     /** The persisted external model record is gone or its files vanished (TASK-342). */
     class ExternalModelUnavailable(backendId: String) :
         TranscriptionException("External model no longer available: $backendId")
+
+    /**
+     * TASK-681: the LAN-offload wall-clock budget tripped before the
+     * OmniVoice server returned (a 2h file can legitimately queue for
+     * minutes; an honest timeout beats an indefinite notification). The
+     * HTTP call itself is cancelled when this is thrown.
+     */
+    class RemoteTimeoutException(detail: String) : TranscriptionException(detail)
+
+    /**
+     * TASK-681: the OmniVoice server could not be contacted at all (box
+     * off, wrong address, no route on the LAN). Distinct from a server-side
+     * rejection so the user-facing advice can say "check the address and
+     * that the server is running", not "the server said no".
+     */
+    class RemoteUnreachableException(detail: String, cause: Throwable? = null) :
+        TranscriptionException(detail, cause)
+
+    /**
+     * TASK-681: the OmniVoice server answered with an HTTP error. The
+     * FastAPI detail (including typed queue/deadline information) rides
+     * [serverDetail] for logcat; the user-facing message keeps the locale
+     * neutral status code.
+     */
+    class RemoteServerError(val statusCode: Int, val serverDetail: String) :
+        TranscriptionException("Remote server error HTTP $statusCode: $serverDetail")
 }
 
 /**

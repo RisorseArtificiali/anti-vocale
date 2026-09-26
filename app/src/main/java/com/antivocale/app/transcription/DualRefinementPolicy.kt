@@ -53,6 +53,12 @@ object DualRefinementPolicy {
         if (!refinementEnabled) return null
         val fast = streamingBackendId ?: return null
         if (fast == selectedBackendId) return null
+        // TASK-681: an offload run takes no local first pass. The remote arm
+        // exists for files the phone should not decode at all; a local
+        // streaming preview would duplicate exactly that work, and the F4/F5
+        // first-pass fallback would mask server-side failures behind local
+        // text, the opposite of the honest-timeout contract.
+        if (selectedBackendId == RemoteOmnivoiceBackend.BACKEND_ID) return null
         return fast
     }
 }

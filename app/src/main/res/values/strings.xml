@@ -291,6 +291,30 @@
     <string name="external_automation_title">External automation (Tasker)</string>
     <string name="external_automation_description">Lets other apps start transcriptions through the automation API (e.g. Tasker). Off by default.</string>
     <string name="external_automation_disabled">External automation is disabled. Enable it in Settings > Advanced > External automation.</string>
+    <!-- TASK-681: LAN offload (the user's own OmniVoice server). The
+         disclosure string is the privacy contract: it must keep saying
+         exactly where audio goes and that the feature is off by default. -->
+    <string name="remote_omnivoice_name">LAN offload (OmniVoice)</string>
+    <string name="remote_offload_title">LAN offload (experimental)</string>
+    <string name="remote_offload_description">Delegate long or heavy transcriptions to your own OmniVoice server on your Wi-Fi network. When enabled, select it in the Model tab.</string>
+    <string name="remote_offload_disclosure">When this is enabled and selected, the audio of those transcriptions is sent only to the server address you enter below, on your own network. Everything else is transcribed on this device. It is disabled by default: nothing leaves your phone unless you turn this on.</string>
+    <string name="remote_offload_endpoint_label">Server address</string>
+    <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
+    <string name="remote_offload_key_label">API key</string>
+    <string name="remote_offload_model_label">Model name</string>
+    <string name="remote_offload_model_hint">The model name your OmniVoice server resolves; the default is whisper-1.</string>
+    <string name="remote_offload_save">Save</string>
+    <string name="remote_offload_test">Test connection</string>
+    <string name="remote_offload_test_running">Testing…</string>
+    <string name="remote_offload_test_success">Connection working.</string>
+    <string name="remote_test_reason_unreachable">Server not reachable. Check the address and that OmniVoice is running.</string>
+    <string name="remote_test_reason_auth">The server rejected the API key.</string>
+    <string name="remote_test_reason_timeout">No answer within %1$d seconds; the server may be busy.</string>
+    <string name="remote_test_reason_server">The server returned an error (HTTP %1$d).</string>
+    <string name="error_remote_timeout">The transcription on your OmniVoice server did not finish within %1$d minutes and was stopped.</string>
+    <string name="error_remote_unreachable">Your OmniVoice server cannot be reached. Check that it is running and that the address in Settings is correct.</string>
+    <string name="error_remote_server">The OmniVoice server refused the request (HTTP %1$d).</string>
+    <string name="remote_offload_status">Transcribing on your OmniVoice server…</string>
     <string name="copy">Copy</string>
     <string name="share">Share</string>
     <string name="char_counter">%1$d of %2$d chars</string>
