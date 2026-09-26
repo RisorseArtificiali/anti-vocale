@@ -569,11 +569,21 @@ fun LogsTab(
                 if (filteredLogs.isEmpty()) {
                 // Search yielded no results
                 Box(
+                    // TASK-662 maintainer trial round 2: TOP-anchored, right
+                    // below the pinned field (fillMaxWidth keeps the horizontal
+                    // centering). The vertical-center first pass landed the
+                    // block at ~67% height, inside the zone the IME covers;
+                    // under the field it is always visible whatever the
+                    // keyboard does.
                     modifier = Modifier
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
+                        .weight(1f)
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.TopCenter
                 ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier.padding(top = 64.dp)
+                    ) {
                         Icon(
                             Icons.Default.SearchOff,
                             contentDescription = null,
