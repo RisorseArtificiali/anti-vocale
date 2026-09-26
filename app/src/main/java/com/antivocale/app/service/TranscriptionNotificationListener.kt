@@ -19,6 +19,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.util.AppNotificationChannel
+import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.util.TranscriptSignature
 import com.antivocale.app.util.TranscriptFileSaver
 import kotlinx.coroutines.CoroutineScope
@@ -114,9 +115,11 @@ class TranscriptionNotificationListener(
         // For share requests, mirror the service: auto-copy (if enabled) + post the result.
         if (isShareRequest) {
             coroutineScope.launch {
-                autoCopyIfEnabled(resultText, sourcePackage)
+                // TASK-598 review F3: same derivation as the notification Copy action.
+                val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
+                autoCopyIfEnabled(annotatedText, sourcePackage)
                 saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
-                showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad)
+                showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad, segments = segments)
             }
         }
     }
@@ -207,8 +210,13 @@ class TranscriptionNotificationListener(
         detectedLanguage: String?,
         isPartial: Boolean = false,
         failedChunkCount: Int = 0,
-        streamedWithoutVad: Boolean = false
+        streamedWithoutVad: Boolean = false,
+        segments: List<TimedSegment>,
     ) {
+        // TASK-598 F5: mirrors InferenceService.showResultNotification (keep
+        // the two paths in sync): the notification's whole text derives the
+        // speaker-annotated form when the run carries labels; raw fallback.
+        val text = SubtitleFormatter.annotatedOrStored(transcriptionText, segments)
         val prefs = if (sourcePackage != null) {
             try {
                 perAppPreferencesManager.getCurrentPreferences(sourcePackage)
@@ -222,7 +230,7 @@ class TranscriptionNotificationListener(
 
         val id = ResultNotificationFactory.nextNotificationId()
         val spec = ResultNotificationSpec(
-            transcriptionText = transcriptionText,
+            transcriptionText = text,
             signatureText = TranscriptSignature.effectiveSpec(
                 preferencesManager, appContext.getString(R.string.signature_default_text)).let { it.text },
             signaturePosition = TranscriptSignature.effectiveSpec(
@@ -239,7 +247,7 @@ class TranscriptionNotificationListener(
         )
         val notification = resultNotificationFactory.build(spec, prefs)
         notificationManager.notify(id, notification)
-        Log.i(TAG, "Worker showed result notification (${transcriptionText.length} chars) (id=$id)")
+        Log.i(TAG, "Worker showed result notification (${text.length} chars) (id=$id)")
     }
 
     private fun showErrorNotification(errorMessage: String, isMemoryFailure: Boolean) {

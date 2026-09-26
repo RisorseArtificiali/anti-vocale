@@ -43,6 +43,9 @@ class LogsViewModelRowCacheTest {
      *  annotation). */
     private val segmentsSource = MutableStateFlow<String?>("[{\"startMs\":0,\"endMs\":1000,\"text\":\"parola\",\"speaker\":0}]")
 
+    /** TASK-598 F2: the stored transcript source for the same flow. */
+    private val resultSource = MutableStateFlow<String?>("parola")
+
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
@@ -50,6 +53,7 @@ class LogsViewModelRowCacheTest {
         every { logDao.getAll() } returns MutableStateFlow(emptyList())
         every { logDao.getFirstPass(any()) } returns firstPassSource
         every { logDao.getSegments(any()) } returns segmentsSource
+        every { logDao.getResult(any()) } returns resultSource
         viewModel = LogsViewModel(mockk(relaxed = true), logDao, stubPreferencesManager(), com.antivocale.app.transcription.staticRegistry(), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true), mockk(relaxed = true))
     }
 
@@ -121,5 +125,29 @@ class LogsViewModelRowCacheTest {
         collector.cancel()
         advanceTimeBy(13_000)
         assertNull(flow.value)
+    }
+
+    /**
+     * TASK-598 F2: the annotated flow derives from the stored transcript
+     * when it is not the cues' plain join (the punctuation pass rewrote
+     * it): the polished words ride into the per-turn rendering. Same
+     * real-dispatcher bootstrap as the test above.
+     */
+    @Test
+    fun `annotated row flow aligns the punctuated stored transcript`() = runTest {
+        segmentsSource.value =
+            "[{\"startMs\":0,\"endMs\":1000,\"text\":\"ciao come va\",\"speaker\":0}," +
+                "{\"startMs\":2000,\"endMs\":3000,\"text\":\"bene tu\",\"speaker\":1}]"
+        resultSource.value = "Ciao, come va? Bene, tu?"
+        val flow = viewModel.speakerAnnotatedFlow("row-f2")
+        val collector = launch { flow.collect { } }
+        var tries = 0
+        while (flow.value == null && tries < 200) {
+            testScheduler.runCurrent()
+            if (flow.value == null) Thread.sleep(5)
+            tries++
+        }
+        assertEquals("SPEAKER 1: Ciao, come va?\nSPEAKER 2: Bene, tu?", flow.value)
+        collector.cancel()
     }
 }

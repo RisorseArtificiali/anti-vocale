@@ -77,6 +77,12 @@ interface LogDao {
     @Query("SELECT firstPassTranscript FROM logs WHERE id = :id")
     fun getFirstPass(id: String): Flow<String?>
 
+    /** TASK-598 F2: the stored transcript of ONE row (the punctuation
+     *  pass's output) for the annotated derivation; see the lean-projection
+     *  note above for why it stays out of the lists. */
+    @Query("SELECT result FROM logs WHERE id = :id")
+    fun getResult(id: String): Flow<String?>
+
     @Query("SELECT * FROM logs WHERE taskId = :taskId LIMIT 1")
     suspend fun getByTaskId(taskId: String): LogEntity?
 

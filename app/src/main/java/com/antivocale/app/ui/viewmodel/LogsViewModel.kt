@@ -562,15 +562,18 @@ class LogsViewModel @Inject constructor(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
 
     /**
-     * GH #83 / TASK-599: the expanded row's speaker-annotated transcript.
-     * ONE StateFlow per row id, cached for the session: the cold Room flow
-     * is built once (not per recomposition), deduped (any logs-table write
-     * re-runs the DAO query; an unchanged String costs one equals), and
-     * parsed + annotated OFF the composition thread. WhileSubscribed stops
-     * the query when the row collapses; the cached value survives only the
-     * stop-timeout + replay-expiration window of [rowSharingStarted]
-     * (TASK-612): beyond it a re-expand shows the stored text for a frame
-     * before the annotated one lands, exactly like the first expand.
+     * GH #83 / TASK-599: the row's speaker-annotated transcript (the
+     * expanded detail since TASK-599, the collapsed one-line preview too
+     * since TASK-598 F15, so the wrapper collects it for every composed
+     * row, not only the expanded one). ONE StateFlow per row id, cached
+     * for the session: the cold Room flow is built once (not per
+     * recomposition), deduped (any logs-table write re-runs the DAO query;
+     * an unchanged pair costs one equals), and parsed + annotated OFF the
+     * composition thread. WhileSubscribed stops the query when the row
+     * leaves composition; the cached value survives only the stop-timeout
+     * + replay-expiration window of [rowSharingStarted] (TASK-612): beyond
+     * it a re-display shows the stored text for a frame before the
+     * annotated one lands, exactly like the first display.
      * Null while loading or when the row carries no cues; the caller falls
      * back to the stored text.
      */
@@ -597,8 +600,10 @@ class LogsViewModel @Inject constructor(
      *  delete/clear (TASK-599 F3). Shared by the two lean per-row reads
      *  (TASK-595). The value payload is bounded by [rowSharingStarted]'s
      *  replay expiration (TASK-612); the map ENTRY count is unbounded (one
-     *  small skeleton + one idle stateIn job per id ever expanded, evicted
-     *  only by delete/clear), which is the accepted residue now that the
+     *  small skeleton + one idle stateIn job per id ever displayed, the
+     *  widened set TASK-598 F15 brought in when the collapsed preview
+     *  started deriving from the annotated form; evicted only by
+     *  delete/clear), which is the accepted residue now that the
      *  transcript strings themselves expire. */
     private fun <T> rowFlow(
         cache: ConcurrentHashMap<String, StateFlow<T?>>,
@@ -618,12 +623,15 @@ class LogsViewModel @Inject constructor(
     }
 
     fun speakerAnnotatedFlow(id: String): StateFlow<String?> = rowFlow(annotatedByRow, id) {
-        logDao.getSegments(id)
+        // TASK-598 F2: the derivation needs the stored transcript too (the
+        // punctuation pass rewrote it while the cues keep the pre-polish
+        // texts); the lean per-row read rides the same lifecycle.
+        combine(logDao.getSegments(id), logDao.getResult(id)) { json, text -> json to text }
             .distinctUntilChanged()
-            .map { json ->
+            .map { (json, text) ->
                 withContext(Dispatchers.Default) {
                     json?.let {
-                        SubtitleFormatter.speakerAnnotated(TimedSegmentsConverter.fromJson(it))
+                        SubtitleFormatter.nullableAnnotated(text, TimedSegmentsConverter.fromJson(it))
                     }
                 }
             }

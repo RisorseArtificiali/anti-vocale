@@ -910,8 +910,9 @@ private fun PartialTranscriptionBanner(failedChunkCount: Int) {
 @Composable
 fun LogEntryItem(
     log: LogEntry,
-    /** TASK-599: the pre-annotated transcript when this row is expanded and
-     *  carries speaker cues; the item stays stateless (no ViewModel). */
+    /** TASK-599: the pre-annotated transcript when this row carries speaker
+     *  cues (the expanded detail since TASK-599; the collapsed preview too,
+     *  TASK-598 F15); the item stays stateless (no ViewModel). */
     speakerAnnotated: String?,
     /** TASK-601: the first-pass header's display name, pre-derived. */
     firstPassLabel: String = "",
@@ -1110,7 +1111,9 @@ fun LogEntryItem(
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = highlightText(
-                        getPreviewText(log.result),
+                        // TASK-598 F15: the preview derives from the
+                        // annotated form when the row carries labels.
+                        getPreviewText(speakerAnnotated ?: log.result),
                         searchQuery,
                         MaterialTheme.colorScheme.tertiary
                     ),
@@ -1140,7 +1143,9 @@ fun LogEntryItem(
                     if (hasResult) {
                         Text(
                             text = highlightText(
-                                getPreviewText(log.result),
+                                // TASK-598 F15: same annotated derivation
+                                // as the completed-row preview above.
+                                getPreviewText(speakerAnnotated ?: log.result),
                                 searchQuery,
                                 MaterialTheme.colorScheme.tertiary
                             ),
@@ -1532,8 +1537,12 @@ private fun formatFullTimestamp(timestamp: Long, context: Context): String {
 
 // Get preview text with ellipsis
 private fun getPreviewText(text: String, maxLength: Int = 50): String {
-    if (text.length <= maxLength) return text
-    return text.take(maxLength) + "…"
+    // TASK-598 F15: a speaker-annotated transcript is one turn per line, so
+    // the preview shows its first turn; plain transcripts are single-line
+    // and the cut changes nothing for them.
+    val firstLine = text.substringBefore('\n')
+    if (firstLine.length <= maxLength) return firstLine
+    return firstLine.take(maxLength) + "…"
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1564,15 +1573,15 @@ private fun LogEntryWithSwipe(
     val reRunLanguages by viewModel.offeredLanguageCodes.collectAsState()
     // TASK-616: same pattern for the technical processing-context line.
     val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
-    // TASK-599: the expanded row's annotated transcript is collected HERE
-    // (the wrapper knows expansion; the item stays stateless) from the
-    // ViewModel's cached per-row flow: no cold-flow-per-recomposition, no
-    // flash of unlabeled text, no JSON parse on the composition thread.
-    val speakerAnnotated = if (isExpanded) {
-        viewModel.speakerAnnotatedFlow(log.id).collectAsState().value
-    } else {
-        null
-    }
+    // TASK-599: the row's annotated transcript is collected HERE (the item
+    // stays stateless) from the ViewModel's cached per-row flow: no
+    // cold-flow-per-recomposition, no flash of unlabeled text, no JSON
+    // parse on the composition thread.
+    // TASK-598 F15: collected for every composed row, not only the expanded
+    // one, because the collapsed one-line preview derives from the annotated
+    // form too; WhileSubscribed still stops the query once the row leaves
+    // composition.
+    val speakerAnnotated = viewModel.speakerAnnotatedFlow(log.id).collectAsState().value
     // TASK-595 F5: the first-pass transcript rides the same lean per-row
     // flow (it left the list projections); collected here, handed down.
     val firstPassTranscript = if (isExpanded) {

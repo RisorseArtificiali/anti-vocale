@@ -31,6 +31,7 @@ import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.ProgressThrottler
+import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.util.TranscriptFileSaver
 import com.antivocale.app.util.formatProcessingTime
 import dagger.hilt.android.AndroidEntryPoint
@@ -605,10 +606,14 @@ class InferenceService : Service(), TranscriptionListener {
             // read as "the notification vanished and nothing arrived" (TASK-336).
             pendingResultNotifications.add(serviceScope.launch {
                 try {
-                    val copied = autoCopyIfEnabled(resultText, sourcePackage)
+                    // TASK-598 review F3: auto-copy must deliver the same text
+                    // the notification's Copy action delivers (the annotated
+                    // form on diarized runs), not the raw stored transcript.
+                    val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
+                    val copied = autoCopyIfEnabled(annotatedText, sourcePackage)
                     saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
                     val refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }
-                    showResultNotification(resultText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED)
+                    showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED, segments = segments)
                 } finally {
                     pendingResultNotifications.remove(coroutineContext[Job])
                 }
@@ -892,7 +897,13 @@ class InferenceService : Service(), TranscriptionListener {
         streamedWithoutVad: Boolean = false,
         refinedFrom: String? = null,
         notRefined: Boolean = false,
+        segments: List<TimedSegment>,
     ) {
+        // TASK-598 F5: the notification's whole text (body, copy, share,
+        // page rebuilds) derives the speaker-annotated form when the run
+        // carries labels, the same derivation as the History surfaces and
+        // the auto-save TXT arm; raw transcript when it does not.
+        val text = SubtitleFormatter.annotatedOrStored(transcriptionText, segments)
         val prefs = if (sourcePackage != null) {
             try {
                 perAppPreferencesManager.getCurrentPreferences(sourcePackage)
@@ -906,7 +917,7 @@ class InferenceService : Service(), TranscriptionListener {
 
         val id = ResultNotificationFactory.nextNotificationId()
         val spec = ResultNotificationSpec(
-            transcriptionText = transcriptionText,
+            transcriptionText = text,
             signatureText = TranscriptSignature.effectiveSpec(
                 preferencesManager, getString(R.string.signature_default_text)).let { it.text },
             signaturePosition = TranscriptSignature.effectiveSpec(
@@ -926,7 +937,7 @@ class InferenceService : Service(), TranscriptionListener {
         )
         val notification = resultNotificationFactory.build(spec, prefs)
         notificationManager.notify(id, notification)
-        Log.i(TAG, "Showed result notification (${transcriptionText.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction} (id=$id)")
+        Log.i(TAG, "Showed result notification (${text.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction} (id=$id)")
     }
 
     private fun showErrorNotification(errorMessage: String, isMemoryFailure: Boolean) {
