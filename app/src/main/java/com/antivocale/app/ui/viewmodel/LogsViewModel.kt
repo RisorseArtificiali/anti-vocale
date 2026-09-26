@@ -432,6 +432,10 @@ class LogsViewModel @Inject constructor(
     }
 
     fun clearLogs() {
+        // TASK-662 review: the query must not survive the history it searched;
+        // a forgotten active query on an empty list would hand the next
+        // arrival a no-results view with a stale query in the field.
+        _searchQuery.value = ""
         annotatedByRow.clear()
         firstPassByRow.clear()
         viewModelScope.launch {
