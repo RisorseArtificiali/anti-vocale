@@ -2621,6 +2621,17 @@ class TranscriptionOrchestrator @Inject constructor(
         if (tokens.isNotEmpty()) SentenceCueBuilder.build(tokens, startMs, endMs, trimmedChunkText)
         else listOf(TimedSegment(startMs, endMs, trimmedChunkText))
 
+    /**
+     * TASK-673: the offline partials contract, VAD-segmented arm. Each
+     * delivered interim costs EXACTLY the chunk decode that produced it: the
+     * chunk text is appended to the accumulation and handed to the
+     * row/notification surfaces as it completes, and nothing is ever
+     * re-decoded to produce a partial. The per-partial cost is therefore
+     * bounded by one chunk (at most [chunkCapSeconds] of audio), never the
+     * whole file. The rejected alternative (re-decoding the still-open audio
+     * on a timer) and the undecided tier-2 candidates for the open tail are
+     * recorded in docs/research/2026-09-26_live-partials-and-demotion-design.md.
+     */
     private suspend fun processProgressiveSegments(
         taskId: String,
         chunkCapSeconds: Int?,
@@ -3157,6 +3168,9 @@ class TranscriptionOrchestrator @Inject constructor(
                                     if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                     accumulatedText.append(trimmed)
                                     segments.addAll(cuesForChunk(tr.tokens, trimmed, chunkStartMs, chunkEndMs))
+                                    // TASK-673: this is the pipeline arm of the
+                                    // offline partials contract; see the KDoc on
+                                    // processProgressiveSegments for the cost bound.
                                     updateInterimResult(taskId, accumulatedText.toString(), writeRow = emitInterim)
                                     if (progressiveEnabled && emitInterim) {
                                         listener.onInterimResult(
@@ -3191,6 +3205,9 @@ class TranscriptionOrchestrator @Inject constructor(
                                             if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
                                             accumulatedText.append(trimmed)
                                             segments.addAll(cuesForChunk(tr.tokens, trimmed, chunkStartMs, chunkEndMs))
+                                            // TASK-673: retry-success arm of the
+                                            // same offline partials contract (see
+                                            // processProgressiveSegments' KDoc).
                                             updateInterimResult(taskId, accumulatedText.toString(), writeRow = emitInterim)
                                             if (progressiveEnabled && emitInterim) {
                                                 listener.onInterimResult(

@@ -40,6 +40,18 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
 
     // ---- Helpers ----
 
+    /**
+     * Sequences the backend's per-chunk decodes to [texts], in chunk order:
+     * call k answers chunk k's text. The one variable across the tests that
+     * need it is the text list; the stub shape itself never changes.
+     */
+    private fun stubChunkTexts(texts: List<String>) {
+        var index = 0
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            Result.success(TranscriptionResult(text = texts[index++]))
+        }
+    }
+
     private fun stubMultiChunkStream(
         chunkCount: Int,
         durationSeconds: Double = 120.0
@@ -110,10 +122,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         stubMultiChunkStream(chunkCount = 3)
 
         val chunkTexts = listOf("first", "second", "third")
-        var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
-        }
+        stubChunkTexts(chunkTexts)
 
         val result = runPipelineRequest()
 
@@ -158,10 +167,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         )
         coEvery { logDao.getByTaskId("test-pipeline") } returns entity
 
-        var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(TranscriptionResult(text = listOf("hello", "world")[callIndex++]))
-        }
+        stubChunkTexts(listOf("hello", "world"))
 
         val result = runPipelineRequest()
 
@@ -174,10 +180,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         stubMultiChunkStream(chunkCount = 3)
 
         val chunkTexts = listOf("first", "   ", "third")
-        var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
-        }
+        stubChunkTexts(chunkTexts)
         // logSuccess reads the row before its update write (the final
         // processing-context land requires it).
         coEvery { logDao.getByTaskId("test-pipeline") } returns com.antivocale.app.data.local.LogEntity(
@@ -271,16 +274,40 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         every { preferencesManager.progressiveTranscription } returns flowOf(false)
         stubMultiChunkStream(chunkCount = 3)
 
-        var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(TranscriptionResult(text = listOf("a", "b", "c")[callIndex++]))
-        }
+        stubChunkTexts(listOf("a", "b", "c"))
 
         val result = runPipelineRequest()
 
         assertTrue(result.isSuccess)
         assertEquals("a b c", result.getOrNull())
         verify(exactly = 0) { listener.onInterimResult(any(), any(), any()) }
+    }
+
+    @Test
+    fun `interim accumulation neither duplicates nor drops words at the chunk seam`() = runTest {
+        // TASK-673 AC4: the k-th interim write is exactly chunks 1..k joined by
+        // one space. The texts repeat their boundary words so a dropped or
+        // duplicated join cannot pass the exact-equality check.
+        stubMultiChunkStream(chunkCount = 4)
+        val chunkTexts = listOf("alpha beta", "beta gamma", "gamma delta", "delta epsilon")
+        stubChunkTexts(chunkTexts)
+
+        // The 5s interim Room-write throttle (TASK-340 Fix 2b) would collapse
+        // the four fast test chunks into one write; step the injectable clock
+        // past the interval on every read so every accumulation is observable.
+        var fakeNowMs = 1_000_000L
+        orchestrator.throttleClock = { fakeNowMs += 60_000L; fakeNowMs }
+
+        val result = runPipelineRequest()
+
+        assertTrue("Expected success but got: ${result.exceptionOrNull()}", result.isSuccess)
+        val interimTexts = mutableListOf<String>()
+        coVerify(atLeast = 0) {
+            logDao.updateInterimResult("test-pipeline", capture(interimTexts), any())
+        }
+        assertEquals(
+            (1..chunkTexts.size).map { n -> chunkTexts.take(n).joinToString(" ") },
+            interimTexts)
     }
 
     @Test
@@ -291,10 +318,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         coEvery { logDao.getByTaskId("test-pipeline") } returns com.antivocale.app.data.local.LogEntity(
             id = "1", timestamp = 0L, taskId = "test-pipeline",
             type = "AUDIO", status = "PROCESSING", prompt = "")
-        var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
-        }
+        stubChunkTexts(chunkTexts)
 
         val result = runPipelineRequest()
 
@@ -346,10 +370,7 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
             throw IllegalStateException("decode died")
         }
 
-        var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(TranscriptionResult(text = listOf("first", "second")[callIndex++]))
-        }
+        stubChunkTexts(listOf("first", "second"))
 
         val result = runPipelineRequest()
 
