@@ -494,6 +494,17 @@ fun LogsTab(
                 }
             }
 
+            // TASK-662 (Reddit r/droidappshowcase): the search field is PINNED
+            // above the content switch, not an item inside the result list. It
+            // used to live as the list's first item, so a query matching
+            // nothing replaced the whole list (field included) with the
+            // no-results state: no field, no clear button, no way back to the
+            // transcripts until app restart. Pinned here, every state keeps
+            // the one-tap clear path. TASK-564: same 16dp inset and surface as
+            // the Settings search field. The emptiness test lives ONCE, in
+            // this switch: empty history shows the placeholder and no field;
+            // every other state shows the field (review: two adjacent gates
+            // drift apart by convention only).
             if (logs.isEmpty()) {
                 Box(
                     modifier = Modifier
@@ -521,7 +532,41 @@ fun LogsTab(
                         )
                     }
                 }
-            } else if (filteredLogs.isEmpty()) {
+            } else {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.onSearchQueryChanged(it) },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
+                    leadingIcon = {
+                        Icon(Icons.Default.Search, contentDescription = null)
+                    },
+                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    trailingIcon = {
+                        // Search-clear when a query is active; history-clear
+                        // otherwise, sharing the trailing slot.
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { viewModel.clearSearch() }) {
+                                Icon(
+                                    Icons.Default.Clear,
+                                    contentDescription = stringResource(R.string.clear_search)
+                                )
+                            }
+                        } else {
+                            IconButton(onClick = { showClearDialog = true }) {
+                                Icon(
+                                    Icons.Default.DeleteSweep,
+                                    contentDescription = stringResource(R.string.logs_clear),
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    },
+                    singleLine = true
+                )
+                if (filteredLogs.isEmpty()) {
                 // Search yielded no results
                 Box(
                     modifier = Modifier
@@ -593,49 +638,6 @@ fun LogsTab(
                         bottom = 96.dp + WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
                     )
                 ) {
-                    item(key = "header") {
-                        // TASK-564 (maintainer): the search field is the
-                        // tab's first element, at the same 16dp inset and on
-                        // the same surface as the Settings search field.
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp)
-                        ) {
-                            OutlinedTextField(
-                                value = searchQuery,
-                                onValueChange = { viewModel.onSearchQueryChanged(it) },
-                                modifier = Modifier.fillMaxWidth(),
-                                placeholder = { Text(stringResource(R.string.logs_search_placeholder)) },
-                                leadingIcon = {
-                                    Icon(Icons.Default.Search, contentDescription = null)
-                                },
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                                trailingIcon = {
-                                    // Search-clear when a query is active;
-                                    // history-clear otherwise (the title row
-                                    // that used to carry it is gone).
-                                    if (searchQuery.isNotEmpty()) {
-                                        IconButton(onClick = { viewModel.clearSearch() }) {
-                                            Icon(
-                                                Icons.Default.Clear,
-                                                contentDescription = stringResource(R.string.clear_search)
-                                            )
-                                        }
-                                    } else if (logs.isNotEmpty()) {
-                                        IconButton(onClick = { showClearDialog = true }) {
-                                            Icon(
-                                                Icons.Default.DeleteSweep,
-                                                contentDescription = stringResource(R.string.logs_clear),
-                                                modifier = Modifier.size(20.dp)
-                                            )
-                                        }
-                                    }
-                                },
-                                singleLine = true
-                            )
-                        }
-                    }
                     item(key = "vad_advisory") {
                         VadAdvisoryCard(
                             visible = showVadAdvisory,
@@ -735,6 +737,7 @@ fun LogsTab(
                     }
                 }
             }
+            }
         }
     }
 }
@@ -832,8 +835,13 @@ private fun startOfDay(timestamp: Long): Long {
     return cal.timeInMillis
 }
 
-/** Fixed LazyColumn items above the date groups: header (0) and vad_advisory (1). */
-private const val FIXED_ITEMS_ABOVE_GROUPS = 2
+/**
+ * Fixed LazyColumn items above the date groups: vad_advisory (0). TASK-662
+ * removed the header item (the search field is pinned above the list now, not
+ * a list item), so this is 1; a wrong value lands every scroll one slot off
+ * (the class of bug a stale pin hides: update IndexOfTaskIdTest with it).
+ */
+private const val FIXED_ITEMS_ABOVE_GROUPS = 1
 
 internal fun indexOfTaskIdInGroups(groups: List<LogGroup>, taskId: String): Int {
     var flatIndex = FIXED_ITEMS_ABOVE_GROUPS

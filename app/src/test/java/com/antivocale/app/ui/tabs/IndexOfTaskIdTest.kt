@@ -27,9 +27,9 @@ class IndexOfTaskIdTest {
             ))
         )
         // header=0, vad_advisory=1, "Today" header=2, a=3, b=4, c=5
-        assertEquals(3, indexOfTaskIdInGroups(groups, "a"))
-        assertEquals(4, indexOfTaskIdInGroups(groups, "b"))
-        assertEquals(5, indexOfTaskIdInGroups(groups, "c"))
+        assertEquals(2, indexOfTaskIdInGroups(groups, "a"))
+        assertEquals(3, indexOfTaskIdInGroups(groups, "b"))
+        assertEquals(4, indexOfTaskIdInGroups(groups, "c"))
     }
 
     @Test
@@ -52,10 +52,10 @@ class IndexOfTaskIdTest {
             DateGroup("Yesterday", listOf(makeEntry("c"), makeEntry("d")))
         )
         // header=0, advisory=1, Today header=2, a=3, b=4, Yesterday header=5, c=6, d=7
-        assertEquals(3, indexOfTaskIdInGroups(groups, "a"))
-        assertEquals(4, indexOfTaskIdInGroups(groups, "b"))
-        assertEquals(6, indexOfTaskIdInGroups(groups, "c"))
-        assertEquals(7, indexOfTaskIdInGroups(groups, "d"))
+        assertEquals(2, indexOfTaskIdInGroups(groups, "a"))
+        assertEquals(3, indexOfTaskIdInGroups(groups, "b"))
+        assertEquals(5, indexOfTaskIdInGroups(groups, "c"))
+        assertEquals(6, indexOfTaskIdInGroups(groups, "d"))
     }
 
     @Test
@@ -67,7 +67,7 @@ class IndexOfTaskIdTest {
             DateGroup("Group4", listOf(makeEntry("target")))
         )
         // header=0, advisory=1; G1 header=2, a=3; G2 header=4, b=5; G3 header=6, c=7; G4 header=8, target=9
-        assertEquals(9, indexOfTaskIdInGroups(groups, "target"))
+        assertEquals(8, indexOfTaskIdInGroups(groups, "target"))
     }
 
     @Test
@@ -75,6 +75,6 @@ class IndexOfTaskIdTest {
         val groups = listOf(
             DateGroup("Today", listOf(makeEntry("only-one")))
         )
-        assertEquals(3, indexOfTaskIdInGroups(groups, "only-one"))
+        assertEquals(2, indexOfTaskIdInGroups(groups, "only-one"))
     }
 }
