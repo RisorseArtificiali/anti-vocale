@@ -119,6 +119,9 @@ object SummaryPolicy {
         // replaced the skip with map-reduce; existing rows still render it
     const val SKIP_REASON_NO_MODEL = "no_model"
     const val SKIP_REASON_FAILED = "failed"
+    // TASK-674: the pass hit its LlmBudget wall clock; the transcript ships
+    // unchanged and the attempt is honestly disclosed.
+    const val SKIP_REASON_TIMEOUT = "timeout"
 
     /** Ceiling relative to the transcript; see [acceptableSummary]. */
     const val MAX_SUMMARY_FRACTION = 1.2

@@ -94,6 +94,7 @@
     <string name="summary_skipped_context">הסיכום דולג: התמליל חורג מהאורך שעיבוד הסיכום מסוגל להתמודד איתו.</string>
     <string name="summary_skipped_no_model">הסיכום דולג: לא הוגדר מודל Gemma. הורד אותו מהלשונית מודלים כדי לאפשר סיכומים.</string>
     <string name="summary_skipped_failed">יצירת הסיכום נכשלה; התמליל עצמו שלם.</string>
+    <string name="summary_skipped_timeout">יצירת הסיכום חרגה ממגבלת הזמן; התמליל עצמו שלם.</string>
     <string name="summary_skipped_guard">הסיכום דולג: הסיכום שנוצר חרג ממגבלות האורך (קצר מדי או ארוך מדי מכדי להיחשב סיכום).</string>
     <string name="summary_partial_note">(לא ניתן היה לסכם חלקים מהתמליל)</string>
     <string name="copy_summary">העתקת הסיכום</string>

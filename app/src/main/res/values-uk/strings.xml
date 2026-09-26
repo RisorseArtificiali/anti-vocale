@@ -100,6 +100,7 @@
     <string name="summary_skipped_context">Резюме пропущено: транскрипція перевищує довжину, яку може обробити прохід резюме.</string>
     <string name="summary_skipped_no_model">Резюме пропущено: модель Gemma не налаштована. Завантажте її на вкладці «Моделі», щоб увімкнути резюме.</string>
     <string name="summary_skipped_failed">Не вдалося створити резюме; транскрипція не постраждала.</string>
+    <string name="summary_skipped_timeout">Створення резюме перевищило ліміт часу; транскрипція не постраждала.</string>
     <string name="summary_skipped_guard">Резюме пропущено: згенероване резюме вийшло за межі обмежень довжини (занадто коротке чи задовге для резюме).</string>
     <string name="summary_partial_note">(деякі частини транскрипції не вдалося резюмувати)</string>
     <string name="copy_summary">Копіювати резюме</string>

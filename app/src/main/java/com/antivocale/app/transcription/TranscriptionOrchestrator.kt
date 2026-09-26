@@ -795,7 +795,12 @@ class TranscriptionOrchestrator @Inject constructor(
                     preferencesManager.punctuationPrompt.first(),
                     context.getString(R.string.punctuation_default_prompt)),
                 result.text)
-            val polished = llm.generateText(prompt).getOrThrow().trim()
+            // TASK-674: the cleanup pass runs under the shared wall clock; a
+            // timeout degrades to the raw transcript exactly like any other
+            // generation failure (typed + breadcrumb inside the owner).
+            val polished = LlmBudget.generateWithBudget(
+                llm, prompt, LlmBudget.CLEANUP_BUDGET_MS, pass = "Punctuation",
+            ).getOrThrow().trim()
             if (!PunctuationPolicy.acceptablePolish(polished, result.text)) {
                 error("punctuation pass collapsed the transcript " +
                     "(${polished.length} vs ${result.text.length} chars); keeping the original")
@@ -903,14 +908,22 @@ class TranscriptionOrchestrator @Inject constructor(
         llm: TranscriptionBackend,
         instructions: List<String>,
         result: TranscriptionResult,
+        clock: LlmBudget.PassClock,
         partialNote: String,
     ): TranscriptionResult {
         var lastFailure: Throwable? = null
         for ((attempt, instruction) in instructions.withIndex()) {
             if (attempt > 0) {
+                // Review R2: a pass-budget timeout spent the SHARED clock;
+                // retrying would enter the engine on a spent clock for a
+                // generation that can never finish in zero time.
+                if (lastFailure is LlmBudget.PassTimeoutException) {
+                    Log.i(TAG, "Summary pass clock spent by the previous attempt; not retrying")
+                    break
+                }
                 Log.i(TAG, "Custom summary prompt did not produce an acceptable map-reduce summary; retrying with the built-in prompt")
             }
-            val generation = summarizeWithMapReduce(llm, instruction, result.text, MAX_SUMMARY_LEVELS)
+            val generation = summarizeWithMapReduce(llm, instruction, result.text, MAX_SUMMARY_LEVELS, clock)
             // TASK-607 F7: the LATEST attempt's outcome wins, matching the
             // single-shot ladder (which overwrites): timeout-then-guards
             // must record GUARDS, not stick to the stale timeout failure.
@@ -953,6 +966,7 @@ class TranscriptionOrchestrator @Inject constructor(
         instruction: String,
         text: String,
         levelsLeft: Int,
+        clock: LlmBudget.PassClock,
     ): SummaryGeneration {
         // Single generation whenever the text fits the guard (the common
         // reduce case: joined partials are a fraction of the original).
@@ -961,7 +975,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // signal fall through to the map stage instead of failing the whole
         // attempt with every map partial already in hand.
         if (SummaryPolicy.withinContextLimit(text)) {
-            val generated = llm.generateText(ChunkPromptPolicy.finalPrompt(instruction, text))
+            val generated = clock.generate(llm, ChunkPromptPolicy.finalPrompt(instruction, text))
                 .map { it.trim() }
             val candidate = generated.getOrNull()
             if (candidate != null && SummaryPolicy.acceptableSummary(candidate, text)) {
@@ -990,7 +1004,7 @@ class TranscriptionOrchestrator @Inject constructor(
             while (pending.isNotEmpty()) {
                 val unit = pending.removeFirst()
                 val generated = runCatching {
-                    llm.generateText(ChunkPromptPolicy.finalPrompt(instruction, unit.text)).map { it.trim() }
+                    clock.generate(llm, ChunkPromptPolicy.finalPrompt(instruction, unit.text)).map { it.trim() }
                 }.getOrElse { e ->
                     if (e is kotlinx.coroutines.CancellationException) throw e
                     Result.failure(e)
@@ -1001,17 +1015,23 @@ class TranscriptionOrchestrator @Inject constructor(
                     continue
                 }
                 val failure = generated.exceptionOrNull()
-                if (failure is EngineWedgeTimeoutException) {
+                if (failure is EngineWedgeTimeoutException ||
+                    failure is LlmBudget.PassTimeoutException
+                ) {
                     // TASK-594 circuit breaker: a timeout means the engine is
                     // wedged, not that this chunk is hard; grinding the
                     // remaining chunks at one ceiling each turns a hang into
                     // a 40-70 minute crawl. Abort with what we have.
+                    // TASK-674: the pass-budget timeout aborts too (it is
+                    // deliberately NOT a wedge marker; the shared PassClock
+                    // has already spent the pass's wall on this chunk).
                     Log.w(TAG, "Summary map stage: generation timeout on chunk " +
                         "${index + 1}/${chunks.size}; aborting the attempt")
                     // No partial salvage: a first-chunk summary would pass the
                     // whole-transcript length guard and ship as if it covered
-                    // the call (review F1). Null routes the timeout through the
-                    // ladder's failure path to SKIP_REASON_FAILED instead.
+                    // the call (review F1). Null routes the timeout through
+                    // the ladder's failure path (SKIP_REASON_TIMEOUT for a
+                    // pass-budget fire, SKIP_REASON_FAILED otherwise).
                     return SummaryGeneration(null, failure = failure)
                 }
                 // TASK-659: bounded halving on the overflow signal. The
@@ -1059,7 +1079,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 SummaryGeneration(null, failure = lastFailure)
             }
         }
-        val reduced = summarizeWithMapReduce(llm, instruction, partials.joinToString("\n\n"), levelsLeft - 1)
+        val reduced = summarizeWithMapReduce(llm, instruction, partials.joinToString("\n\n"), levelsLeft - 1, clock)
         return reduced.copy(droppedChunks = droppedChunks + reduced.droppedChunks)
     }
 
@@ -1112,6 +1132,11 @@ class TranscriptionOrchestrator @Inject constructor(
             // model unloads first and the two are never resident together.
             ensureBackendLoaded(context, LlmTranscriptionBackend.BACKEND_ID).getOrThrow()
             val llm = backendManager.getActiveBackend() ?: error("LLM backend not active after load")
+            // TASK-674: ONE wall clock for the whole summary pass, shared by
+            // the ladder's attempts and the map-reduce chunks so neither can
+            // multiply the budget; on exhaustion the pass degrades with the
+            // honest timeout skip reason (see the fold below).
+            val clock = LlmBudget.PassClock("Summary", LlmBudget.SUMMARY_BUDGET_MS)
             // Language-aware by instruction: the curated default tells the
             // model to answer in the transcript's language (the app locale
             // is deliberately not resolved into the prompt). TASK-483: a
@@ -1142,6 +1167,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 Log.i(TAG, "Summary pass: ${result.text.length} chars exceeds the context guard; map-reduce over chunks")
                 return@runCatching summarizeLongTranscript(
                     llm = llm, instructions = instructions, result = result,
+                    clock = clock,
                     partialNote = context.getString(R.string.summary_partial_note))
             }
             var summary: String? = null
@@ -1149,10 +1175,15 @@ class TranscriptionOrchestrator @Inject constructor(
             var lastCandidateChars = -1
             for ((attempt, instruction) in instructions.withIndex()) {
                 if (attempt > 0) {
+                    // Review R2: same spent-clock break as the map ladder.
+                    if (generationFailure is LlmBudget.PassTimeoutException) {
+                        Log.i(TAG, "Summary pass clock spent by the previous attempt; not retrying")
+                        break
+                    }
                     Log.i(TAG, "Custom summary prompt did not produce an acceptable summary; retrying with the built-in prompt")
                 }
-                val generated = llm.generateText(
-                    ChunkPromptPolicy.finalPrompt(instruction, result.text)
+                val generated = clock.generate(
+                    llm, ChunkPromptPolicy.finalPrompt(instruction, result.text)
                 ).map { it.trim() }
                 // Log every thrown attempt when it happens: the loop below
                 // overwrites generationFailure, and a first crash the retry
@@ -1189,8 +1220,14 @@ class TranscriptionOrchestrator @Inject constructor(
             onFailure = { e ->
                 // TASK-494: an attended attempt that died mid-generation is
                 // as invisible as a guard rejection; record it too, then
-                // degrade as before.
-                degradeTo(result.copy(summarySkipReason = SummaryPolicy.SKIP_REASON_FAILED), "Summary", e)
+                // degrade as before. TASK-674: a wall-clock timeout gets its
+                // own honest token (the UI captions it distinctly).
+                val reason = if (e is LlmBudget.PassTimeoutException) {
+                    SummaryPolicy.SKIP_REASON_TIMEOUT
+                } else {
+                    SummaryPolicy.SKIP_REASON_FAILED
+                }
+                degradeTo(result.copy(summarySkipReason = reason), "Summary", e)
             },
         )
     }
@@ -2479,8 +2516,13 @@ class TranscriptionOrchestrator @Inject constructor(
     ): Result<TranscriptionResult> {
         if (generativePrompt == null || result.isFailure) return result
         val transcript = result.getOrNull()?.text?.takeIf { it.isNotBlank() } ?: return result
-        return backend
-            .generateText(ChunkPromptPolicy.finalPrompt(generativePrompt, transcript))
+        // Review R4: this is the third on-device LLM post-pass; it runs
+        // under the SAME wall-clock owner (the custom-prompt final pass is
+        // a single generation over the transcript, so the cleanup budget
+        // shape fits).
+        return LlmBudget.generateWithBudget(
+            backend, ChunkPromptPolicy.finalPrompt(generativePrompt, transcript),
+            LlmBudget.CLEANUP_BUDGET_MS, "final-generative")
             .fold(
                 onSuccess = { processed ->
                     if (processed.isNotBlank()) result.map { it.copy(text = processed.trim()) }

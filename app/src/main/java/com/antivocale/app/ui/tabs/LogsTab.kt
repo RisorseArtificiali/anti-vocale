@@ -1863,6 +1863,7 @@ private fun summarySkipCaptionRes(reason: String?): Int? = when (reason) {
     SummaryPolicy.SKIP_REASON_CONTEXT -> R.string.summary_skipped_context
     SummaryPolicy.SKIP_REASON_NO_MODEL -> R.string.summary_skipped_no_model
     SummaryPolicy.SKIP_REASON_FAILED -> R.string.summary_skipped_failed
+    SummaryPolicy.SKIP_REASON_TIMEOUT -> R.string.summary_skipped_timeout
     else -> null
 }
 
