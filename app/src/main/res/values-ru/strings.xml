@@ -984,6 +984,9 @@
     <string name="action_transcribe_audio">Распознать аудио</string>
     <string name="subtitle_fallback_status">Не удалось извлечь субтитры, распознаём аудио</string>
     <string name="subtitle_choice_notification_text">Ожидание вашего выбора…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">Не удалось прочитать файл субтитров</string>
+    <string name="logs_subtitle_sourced">Из субтитров (без распознавания)</string>
 
     <!-- 1.11 strings: queue states, model label, limit labels, task details (TASK-251 lint pass) -->
     <string name="logs_status_queued">В очереди</string>
@@ -1090,4 +1093,8 @@
     <string name="external_family_moonshine_help">Требует preprocess + encode + uncached/cached decode + tokens (v1) либо encoder_model.ort + decoder_model_merged.ort + tokens (v2); английский и некоторые экспорты 2026 года</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Требует файлы model + tokens; многоязычная (база zh/en)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">строка пропущена</item>
+    <item quantity="other">строк пропущено</item>
+  </plurals>
 </resources>

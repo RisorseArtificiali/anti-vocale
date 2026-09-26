@@ -6,6 +6,7 @@ import android.util.Log
 import com.antivocale.app.R
 import com.antivocale.app.manager.EngineWedgeTimeoutException
 import com.antivocale.app.util.DecodedOfTotalFormat
+import com.antivocale.app.util.SubtitleParser
 import com.antivocale.app.audio.AudioDurationPolicy
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.service.ResultNotificationFactory
@@ -218,6 +219,23 @@ class TranscriptionOrchestrator @Inject constructor(
         val startTime = System.currentTimeMillis()
 
         try {
+            // TASK-677 (GH #92 import half): a handed subtitle FILE imports as
+            // the transcript: the lenient parser turns cues into TimedSegments,
+            // no model loads, and the row is honestly labeled subtitle-sourced.
+            // A file that yields no cues is a hard error; the ASR fallback
+            // below cannot help a text file.
+            if (requestType == "subtitle_import") {
+                return processSubtitleImportRequest(
+                    taskId = taskId,
+                    filePath = filePath,
+                    sourcePackage = sourcePackage,
+                    isShareRequest = isShareRequest,
+                    startTime = startTime,
+                    context = context,
+                    listener = listener,
+                )
+            }
+
             // Subtitle mode: extract embedded text subtitles WITHOUT loading any model. On
             // extraction failure (null/blank), fall back to the normal audio/ASR path below
             // rather than reporting an error. This branch must run BEFORE ensureBackendLoaded
@@ -642,7 +660,13 @@ class TranscriptionOrchestrator @Inject constructor(
 
         // Extraction succeeded: report exactly as the audio success path does, then return.
         val duration = System.currentTimeMillis() - startTime
-        logSuccess(taskId, text, duration, isPartial = false, failedChunkCount = 0)
+        // TASK-677 AC#5: the row must read as subtitle-sourced, not as ASR
+        // output with a missing model (the History model line derives from
+        // this marker; no modelName is ever written on this path).
+        logSuccess(
+            taskId, text, duration, isPartial = false, failedChunkCount = 0,
+            processing = ProcessingContext(decodePath = ProcessingContext.DECODE_PATH_SUBTITLE_TRACK),
+        )
         listener.onSuccess(
             taskId,
             text,
@@ -655,6 +679,62 @@ class TranscriptionOrchestrator @Inject constructor(
             failedChunkCount = 0
         )
         return Result.success(text)
+    }
+
+    /**
+     * TASK-677 (GH #92 import half): requestType "subtitle_import". The
+     * handed .srt/.vtt file becomes the transcript: cues preserved as
+     * [TimedSegment] with the file's own segmentation (no re-segmentation,
+     * AC#3), routed through the standard success funnel so History, the
+     * result notification, auto-save and the timed exports all see the
+     * cues. The row carries the subtitle_import processing context and no
+     * model name (AC#5: not ASR output). A parse that yields no cues fails
+     * the request; there is no fallback that could help a text file.
+     */
+    private suspend fun processSubtitleImportRequest(
+        taskId: String,
+        filePath: String?,
+        sourcePackage: String?,
+        isShareRequest: Boolean,
+        startTime: Long,
+        context: Context,
+        listener: TranscriptionListener,
+    ): Result<String> {
+        val parsed = SubtitleParser.parseFile(filePath)
+        if (parsed.segments.isEmpty()) {
+            Log.w(TAG, "Subtitle import yielded no cues (taskId=$taskId): ${parsed.errorNote}")
+            val message = context.getString(R.string.subtitle_import_failed)
+            val duration = System.currentTimeMillis() - startTime
+            logError(taskId, message, duration)
+            listener.onError(taskId, "SUBTITLE_IMPORT_FAILED", message, isShareRequest, false, duration)
+            return Result.failure(IllegalStateException("subtitle import yielded no cues: ${parsed.errorNote}"))
+        }
+
+        // Review F2: a partially damaged file must not import as silently
+        // complete; the disclosure rides the transcript tail like the
+        // failed-chunks note on exports (the TASK-538 lineage).
+        val disclosure = if (parsed.skippedCues > 0) {
+            "\n[" + context.resources.getQuantityString(
+                R.plurals.subtitle_import_skipped_cues, parsed.skippedCues, parsed.skippedCues) + "]"
+        } else ""
+        val transcript = parsed.segments.joinToString(" ") { it.text } + disclosure
+        val duration = System.currentTimeMillis() - startTime
+        logSuccess(
+            taskId = taskId,
+            result = transcript,
+            durationMs = duration,
+            segments = parsed.segments,
+            processing = ProcessingContext(decodePath = ProcessingContext.DECODE_PATH_SUBTITLE_IMPORT),
+        )
+        listener.onSuccess(
+            taskId = taskId,
+            resultText = transcript,
+            isShareRequest = isShareRequest,
+            sourcePackage = sourcePackage,
+            durationMs = duration,
+            segments = parsed.segments,
+        )
+        return Result.success(transcript)
     }
 
     // ---- Backend Loading ----

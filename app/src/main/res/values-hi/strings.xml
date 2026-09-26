@@ -938,6 +938,9 @@
     <string name="action_transcribe_audio">ऑडियो ट्रांसक्राइब करें</string>
     <string name="subtitle_fallback_status">सबटाइटल निकाले नहीं जा सके, ऑडियो ट्रांसक्राइब हो रहा है</string>
     <string name="subtitle_choice_notification_text">आपके चुनाव का इंतज़ार…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">सबटाइटल फ़ाइल पढ़ी नहीं जा सकी</string>
+    <string name="logs_subtitle_sourced">सबटाइटल से (ट्रांस्क्राइब नहीं)</string>
     <plurals name="logs_entries_deleted">
         <item quantity="one">%d प्रविष्टि मिटाई गई</item>
         <item quantity="other">%d प्रविष्टियां मिटाई गईं</item>
@@ -1070,4 +1073,8 @@
     <string name="external_family_moonshine_help">को preprocess + encode + uncached/cached decode + tokens (v1) या encoder_model.ort + decoder_model_merged.ort + tokens (v2) चाहिए; अंग्रेज़ी और कुछ 2026 निर्यात</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">model + tokens फ़ाइलें चाहिए; बहुभाषी (zh/en बेस)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">पंक्ति छोड़ी गई</item>
+    <item quantity="other">पंक्तियाँ छोड़ी गईं</item>
+  </plurals>
 </resources>

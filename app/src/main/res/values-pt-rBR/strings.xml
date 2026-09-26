@@ -835,6 +835,9 @@
     <string name="action_transcribe_audio">Transcrever áudio</string>
     <string name="subtitle_fallback_status">Não foi possível extrair legendas, transcrevendo o áudio</string>
     <string name="subtitle_choice_notification_text">Aguardando sua escolha…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">Não foi possível ler o arquivo de legendas</string>
+    <string name="logs_subtitle_sourced">De legendas (sem transcrição)</string>
 
     <!-- 1.11 strings: queue states, model label, limit labels, task details (TASK-251 lint pass) -->
     <string name="logs_status_queued">Na fila</string>
@@ -939,4 +942,8 @@
     <string name="external_family_moonshine_help">Espera preprocess + encode + uncached/cached decode + tokens (v1) ou encoder_model.ort + decoder_model_merged.ort + tokens (v2); inglês e algumas exportações de 2026</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Espera arquivos model + tokens; multilíngue (base zh/en)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">linha ignorada</item>
+    <item quantity="other">linhas ignoradas</item>
+  </plurals>
 </resources>

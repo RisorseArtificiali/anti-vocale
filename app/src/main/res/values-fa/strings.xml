@@ -959,6 +959,9 @@
     <string name="action_transcribe_audio">رونویسی صدا</string>
     <string name="subtitle_fallback_status">استخراج زیرنویس ناموفق بود؛ در حال رونویسی صدا</string>
     <string name="subtitle_choice_notification_text">در انتظار انتخاب شما…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">خواندن فایل زیرنویس ممکن نبود</string>
+    <string name="logs_subtitle_sourced">از زیرنویس (بدون رونویسی)</string>
 
     <!-- TASK-319: keys recovered from the parity audit -->
 
@@ -1076,4 +1079,8 @@
     <string name="external_family_moonshine_help">نیازمند preprocess + encode + uncached/cached decode + tokens (نسخه ۱) یا encoder_model.ort + decoder_model_merged.ort + tokens (نسخه ۲)؛ انگلیسی و چند صادرات ۲۰۲۶</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">نیازمند فایل‌های model + tokens؛ چندزبانه (پایه zh/en)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">خط نادیده گرفته شد</item>
+    <item quantity="other">خط نادیده گرفته شد</item>
+  </plurals>
 </resources>

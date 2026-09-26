@@ -939,6 +939,9 @@
     <string name="action_transcribe_audio">Audio transskribieren</string>
     <string name="subtitle_fallback_status">Untertitel konnten nicht extrahiert werden, Audio wird transskribiert</string>
     <string name="subtitle_choice_notification_text">Warte auf deine Auswahl…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">Untertiteldatei konnte nicht gelesen werden</string>
+    <string name="logs_subtitle_sourced">Aus Untertiteln (nicht transkribiert)</string>
     <plurals name="logs_entries_deleted">
         <item quantity="one">%d Eintrag gelöscht</item>
         <item quantity="other">%d Einträge gelöscht</item>
@@ -1071,4 +1074,8 @@
     <string name="external_family_moonshine_help">Erwartet preprocess + encode + uncached/cached decode + tokens (v1) oder encoder_model.ort + decoder_model_merged.ort + tokens (v2); Englisch und einige 2026-Exporte</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Erwartet model + tokens Dateien; mehrsprachig (zh/en base)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">Zeile übersprungen</item>
+    <item quantity="other">Zeilen übersprungen</item>
+  </plurals>
 </resources>

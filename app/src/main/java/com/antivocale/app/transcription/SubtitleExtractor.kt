@@ -35,7 +35,30 @@ object SubtitleExtractor {
      */
     const val MIME_SUBRIP = "application/x-subrip"
     const val MIME_VTT = "text/vtt"
+
+    /**
+     * TASK-677 simplify F2: the single owner of the SHARE-side subtitle MIME
+     * vocabulary (the SEND intent-filters in AndroidManifest and
+     * SharedAudioHandler's MIME-to-extension map both derive from this set;
+     * the manifest cannot reference constants, so SubtitleMimeManifestTest
+     * pins its literals to this set instead).
+     */
+    val SHARE_SUBTITLE_MIME_TO_EXTENSION: Map<String, String> = mapOf(
+        MIME_SUBRIP to "srt",
+        "application/x-srt" to "srt",
+        "text/srt" to "srt",
+        MIME_VTT to "vtt",
+        "application/webvtt" to "vtt",
+    )
     const val CUE_TIME_SEPARATOR = "-->"
+
+    /**
+     * TASK-677 review F6: the app's speaker-turn prefix pattern, the single
+     * owner for export (SubtitleFormatter), track extraction (here) and the
+     * import parser (SubtitleParser): tolerant of the missing trailing space,
+     * n >= 1. The manifest of this contract must not fork per consumer.
+     */
+    val SPEAKER_PREFIX_PATTERN = "^SPEAKER (\\d+): ?"
     const val VTT_HEADER = "WEBVTT"
 
     /**

@@ -267,6 +267,34 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/mp4" />
             </intent-filter>
+            <!-- TASK-677 (GH #92 import half): subtitle files are an INGEST target:
+                 a shared .srt/.vtt becomes the transcript (cues preserved, ASR skipped).
+                 Explicit MIME list only; text/* would claim every plain-text share. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/x-subrip" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/x-srt" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/srt" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="text/vtt" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.SEND" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:mimeType="application/webvtt" />
+            </intent-filter>
         </activity>
 
         <!-- Share target aliases: each appears as a separate option in the Android share sheet -->

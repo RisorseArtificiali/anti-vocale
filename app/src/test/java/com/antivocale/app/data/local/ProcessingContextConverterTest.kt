@@ -2,7 +2,9 @@ package com.antivocale.app.data.local
 
 import com.antivocale.app.transcription.ProcessingContext
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** TASK-512: the processing-context column codec and its one-line rendering. */
@@ -90,5 +92,26 @@ class ProcessingContextConverterTest {
         assertEquals(
             "vad_chunked chunks=10",
             ProcessingContextConverter.render(ProcessingContext(decodePath = "vad_chunked", totalChunks = 10)))
+    }
+
+    /**
+     * TASK-677 (GH #92): the History card derives the subtitle-sourced label
+     * from a raw substring check, so this pins the fragments to [toJson]'s
+     * actual compact output: if the JSON shape drifts, this fails before any
+     * row silently loses its honest labeling.
+     */
+    @Test
+    fun `subtitle-sourced markers are detected on real toJson output`() {
+        val imported = ProcessingContext(decodePath = ProcessingContext.DECODE_PATH_SUBTITLE_IMPORT)
+        val seeded = ProcessingContext(decodePath = ProcessingContext.DECODE_PATH_SUBTITLE_TRACK)
+        assertTrue(ProcessingContextConverter.isSubtitleSourced(ProcessingContextConverter.toJson(imported)))
+        assertTrue(ProcessingContextConverter.isSubtitleSourced(ProcessingContextConverter.toJson(seeded)))
+
+        // Every non-subtitle context, including ones that merely MENTION the
+        // word elsewhere, stays undetected; null (pre-v10 rows) too.
+        assertFalse(ProcessingContextConverter.isSubtitleSourced(ProcessingContextConverter.toJson(full)))
+        assertFalse(ProcessingContextConverter.isSubtitleSourced(
+            ProcessingContextConverter.toJson(full.copy(backendId = "subtitle_importer"))))
+        assertFalse(ProcessingContextConverter.isSubtitleSourced(null))
     }
 }

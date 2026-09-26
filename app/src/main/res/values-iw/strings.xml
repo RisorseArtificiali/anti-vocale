@@ -990,6 +990,9 @@
     <string name="action_transcribe_audio">תמלול האודיו</string>
     <string name="subtitle_fallback_status">חילוץ הכתוביות נכשל; מתמלל את האודיו</string>
     <string name="subtitle_choice_notification_text">ממתין לבחירה שלך…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">לא ניתן לקרוא את קובץ הכתוביות</string>
+    <string name="logs_subtitle_sourced">מתוך כתוביות (ללא תמלול)</string>
     <!-- TASK-336: background-kill remediation card -->
     <string name="battery_exemption_title">אפשר פעולה ברקע</string>
     <string name="battery_exemption_description">המערכת עצרה את הזיהוי בזמן שהאפליקציה הייתה ברקע. אפשר ל-Anti-Vocale לפעול ברקע כדי שהזיהוי לא יופרע.</string>
@@ -1078,4 +1081,8 @@
     <string name="external_family_moonshine_help">דורש preprocess + encode + uncached/cached decode + tokens (v1) או encoder_model.ort + decoder_model_merged.ort + tokens (v2); אנגלית וכמה ייצואי 2026</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">דורש קבצי model + tokens; רב-לשוני (בסיס zh/en)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">שורה דילגה</item>
+    <item quantity="other">שורות דילגו</item>
+  </plurals>
 </resources>

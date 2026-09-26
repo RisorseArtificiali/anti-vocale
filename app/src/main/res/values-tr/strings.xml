@@ -985,6 +985,9 @@
     <string name="action_transcribe_audio">Sesi metne çıkar</string>
     <string name="subtitle_fallback_status">Altyazılar ayıklanamadı; ses metne çıkarılıyor</string>
     <string name="subtitle_choice_notification_text">Seçiminiz bekleniyor…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">Altyazı dosyası okunamadı</string>
+    <string name="logs_subtitle_sourced">Altyazılardan (transkripsiyon yok)</string>
     <!-- TASK-336: background-kill remediation card -->
     <string name="battery_exemption_title">Arka planda çalışmaya izin ver</string>
     <string name="battery_exemption_description">Sistem, arka planda tanımayı durdurdu. Tanıma yarıda kesilmesin diye uygulamanın arka planda çalışmasına izin verin.</string>
@@ -1071,4 +1074,8 @@
     <string name="external_family_moonshine_help">Preprocess + encode + uncached/cached decode + tokens (v1) ya da encoder_model.ort + decoder_model_merged.ort + tokens (v2) bekler; İngilizce ve bazı 2026 dışa aktarımları</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">model + tokens dosyalarını bekler; çok dilli (zh/en tabanı)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">satır atlandı</item>
+    <item quantity="other">satır atlandı</item>
+  </plurals>
 </resources>

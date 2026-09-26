@@ -991,6 +991,9 @@
     <string name="action_transcribe_audio">Transcribe audio</string>
     <string name="subtitle_fallback_status">Couldn\'t extract subtitles — transcribing audio</string>
     <string name="subtitle_choice_notification_text">Waiting for your choice…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">Couldn\'t read the subtitle file</string>
+    <string name="logs_subtitle_sourced">From subtitles (not transcribed)</string>
     <!-- TASK-336: background-kill remediation card -->
     <string name="battery_exemption_title">Allow Background Operation</string>
     <string name="battery_exemption_description">The system stopped recognition while the app was in the background. Allow Anti-Vocale to run in the background so recognition is not interrupted.</string>
@@ -1072,4 +1075,8 @@
     <string name="external_family_moonshine_help">Expects preprocess + encode + uncached/cached decode + tokens (v1) or encoder_model.ort + decoder_model_merged.ort + tokens (v2); English and a few 2026 exports</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Expects model + tokens files; multi-language (zh/en base)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">cue skipped</item>
+    <item quantity="other">cues skipped</item>
+  </plurals>
 </resources>

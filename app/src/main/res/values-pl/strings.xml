@@ -1001,6 +1001,9 @@
     <string name="action_transcribe_audio">Przepisz audio</string>
     <string name="subtitle_fallback_status">Nie udało się wyodrębnić napisów; przepisywanie audio</string>
     <string name="subtitle_choice_notification_text">Oczekiwanie na Twój wybór…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">Nie udało się odczytać pliku napisów</string>
+    <string name="logs_subtitle_sourced">Z napisów (bez transkrypcji)</string>
     <!-- TASK-336: background-kill remediation card -->
     <string name="battery_exemption_title">Zezwól na działanie w tle</string>
     <string name="battery_exemption_description">System przerwał rozpoznawanie w tle. Zezwól aplikacji na działanie w tle, aby transkrypcja nie została przerwana.</string>
@@ -1089,4 +1092,8 @@
     <string name="external_family_moonshine_help">Wymaga preprocess + encode + uncached/cached decode + tokens (v1) lub encoder_model.ort + decoder_model_merged.ort + tokens (v2); angielski i niektóre eksporty 2026</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Wymaga plików model + tokens; wielojęzyczny (baza zh/en)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">linia pominięta</item>
+    <item quantity="other">linie pominięte</item>
+  </plurals>
 </resources>

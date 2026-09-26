@@ -959,6 +959,9 @@
     <string name="action_transcribe_audio">Trascrivi audio</string>
     <string name="subtitle_fallback_status">Estrazione sottotitoli non riuscita — trascrizione audio</string>
     <string name="subtitle_choice_notification_text">In attesa della tua scelta…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">Impossibile leggere il file dei sottotitoli</string>
+    <string name="logs_subtitle_sourced">Dai sottotitoli (non trascritto)</string>
 
     <!-- TASK-319: chiavi mancanti recuperate dall'audit di parità -->
 
@@ -1076,4 +1079,8 @@
     <string name="external_family_moonshine_help">Richiede preprocess + encode + uncached/cached decode + token (v1) oppure encoder_model.ort + decoder_model_merged.ort + token (v2); inglese e alcune esportazioni 2026</string>
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Richiede i file model + token; multilingua (base zh/en)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">cue saltata</item>
+    <item quantity="other">cue saltate</item>
+  </plurals>
 </resources>

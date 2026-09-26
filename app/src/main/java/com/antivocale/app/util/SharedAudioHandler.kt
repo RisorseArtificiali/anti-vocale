@@ -23,11 +23,22 @@ object SharedAudioHandler {
      *  Public so the Logs tab can mark entries whose source was a video file. */
     val VIDEO_EXTENSIONS = setOf("mp4", "m4v", "mkv", "webm", "mov", "3g2")
 
+    /** TASK-677 (GH #92 import half): subtitle files the share flow imports
+     *  as the transcript instead of decoding audio. */
+    val SUBTITLE_EXTENSIONS = setOf("srt", "vtt")
+
     /** True if [path] is a video container (the audio track is extracted from it
      *  at decode time). Used by the Logs tab to badge video-sourced transcriptions. */
     fun isVideoFile(path: String?): Boolean {
         val ext = path?.substringAfterLast('.')?.lowercase() ?: return false
         return ext in VIDEO_EXTENSIONS
+    }
+
+    /** TASK-677: True if [path] is a subtitle file the share flow imports as
+     *  the transcript (cues preserved, ASR skipped). */
+    fun isSubtitleFile(path: String?): Boolean {
+        val ext = path?.substringAfterLast('.')?.lowercase() ?: return false
+        return ext in SUBTITLE_EXTENSIONS
     }
 
     // Directory name for shared audio files
@@ -241,6 +252,12 @@ object SharedAudioHandler {
                 // Some senders tag .mp4 shares as application/mp4; without this the
                 // file resolves to null and is rejected despite valid bytes.
                 "application/mp4" -> "mp4"
+                // TASK-677 (GH #92 import half): subtitle MIMEs keep their
+                // extension so the share flow can route the file to the
+                // subtitle import instead of the audio path.
+                in com.antivocale.app.transcription.SubtitleExtractor.SHARE_SUBTITLE_MIME_TO_EXTENSION ->
+                    com.antivocale.app.transcription.SubtitleExtractor
+                        .SHARE_SUBTITLE_MIME_TO_EXTENSION.getValue(baseMimeType.lowercase())
                 else -> null
             }
             if (!manualExt.isNullOrBlank()) {

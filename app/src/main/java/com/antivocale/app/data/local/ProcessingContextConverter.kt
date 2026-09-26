@@ -51,6 +51,17 @@ object ProcessingContextConverter {
             }.getOrNull()
         }
 
+    /**
+     * TASK-677 (GH #92): true when the row's context marks the transcript
+     * subtitle-sourced (a handed .srt/.vtt import, or a video's embedded
+     * track). A raw-JSON substring check, not a parse: the History list
+     * runs one check per card on every re-emit (TASK-616's parse-off rule),
+     * and the fragments are pinned to [toJson]'s compact output by test.
+     */
+    fun isSubtitleSourced(raw: String?): Boolean = raw != null && (
+        raw.contains("\"decodePath\":\"${ProcessingContext.DECODE_PATH_SUBTITLE_IMPORT}\"") ||
+            raw.contains("\"decodePath\":\"${ProcessingContext.DECODE_PATH_SUBTITLE_TRACK}\""))
+
     /** One-line human rendering ("pipeline chunks=157 (failed 3) decoded=4620s cap=60s ram=5531MB"). */
     fun render(context: ProcessingContext?): String? = context?.let { c ->
         buildList {

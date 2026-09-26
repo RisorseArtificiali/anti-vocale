@@ -64,6 +64,10 @@ class TaskerRequestReceiver : BroadcastReceiver() {
         const val REQUEST_TYPE_AUDIO = "audio"
         const val REQUEST_TYPE_SUBTITLES = "subtitles"
 
+        /** TASK-677 (GH #92 import half): the handed file IS a .srt/.vtt; its
+         *  cues become the transcript, no model loads. */
+        const val REQUEST_TYPE_SUBTITLE_IMPORT = "subtitle_import"
+
         const val EXTRA_FILE_PATH = "file_path"
         const val EXTRA_TASK_ID = "task_id"
 
