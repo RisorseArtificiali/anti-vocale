@@ -381,6 +381,17 @@ builds, builds the F-Droid reference APKs, and parks its Publish job at the
 (Environment "production" -> pending deployment, or the run page's
 "Review pending deployments"); the AAB is built and waiting by then.
 
+Gate precondition (2026-09-26 lesson): the `production` environment's
+deployment-branch policy must admit the ref the run was dispatched from
+(policy today: `main`, `v*`, and `release/*`; the last was added 2026-09-26
+after run 36262228446 was rejected at the gate). A non-admitted ref fails
+ONLY at the gate, after build and tests already burned ~15 min of runner
+time. Before dispatching from any new ref shape, check the policy (Settings
+-> Environments -> production -> Deployment branches, or
+`gh api repos/RisorseArtificiali/anti-vocale/environments/production/deployment-branch-policies`)
+and add the pattern first. The pre-dispatch predicate that automates this is
+TASK-683.4.
+
 The 2026-09-21 near-miss this rule comes from: the old v1.12.1-era habit of
 ALSO dispatching `-f play-store-track=...` after publishing produced a second
 run with the SAME gated Publish job (and WITHOUT the reference-APK job), so
@@ -394,6 +405,21 @@ the release run was cancelled by mistake: pin the release ref,
 `gh workflow run android-release.yml --ref vX.Y.Z -f play-store-track=internal`
 (a bare SHA is rejected with 422, and a main-tip dispatch after the
 post-release snapshot bump fails the notes extractor on the version mismatch).
+
+Branch-ref recovery form (2026-09-26, v1.13.2): when the release-event build
+itself failed on a defect fixed only AFTER the tag (that day: the
+hi-IN/ru-RU/tr-TR notes headings), the tag-ref form above just rebuilds the
+same broken notes. The working form is a branch-ref dispatch:
+`gh workflow run android-release.yml --ref release/vX.Y.Z -f play-store-track=production`.
+GUARD: this is allowed only when `git diff --name-only vX.Y.Z..release/vX.Y.Z`
+shows release-notes/metadata files only (docs/play-store/** and similar); any
+code delta breaks the same-source-commit invariant and needs a re-cut
+instead. v1.13.2 was recovered this way (Play AAB built at bece9376 while
+tag, recipe and F-Droid binaries are d1769f0a; the delta is notes-only):
+whether that divergence becomes a sanctioned class or forces a re-cut is the
+maintainer decision tracked in TASK-683.7. When only the STORE listing notes
+were wrong and the GitHub release is fine, the console paste (checklist item
+1 below) remains the preferred, divergence-free alternative.
 
 Proof: Play Console shows the new release in review/published.
 
@@ -425,6 +451,16 @@ scripts/release-preflight.sh --tag vX.Y.Z --commit $SHA   # --commit: build-firs
 # exist yet (without it, preflight fails spuriously in build-first order).
 scripts/release-verify.sh vX.Y.Z            # after the publish act completes
 ```
+
+MANDATORY, not advisory (2026-09-26 lesson): both of that day's release
+failures were preflight-detectable, and preflight had not been run (the
+fallback-literal check was failing on the tree through two shipped releases).
+A FAIL blocks the dispatch or the publish, no exceptions; the script's exit
+code is the verdict. Until the entrypoints chain it themselves (TASK-683.1),
+running it is a manual hard step: no dispatch without a green preflight in
+the same sitting. Note the notes-extraction check legitimately fails on
+post-release main (the tree is at the next-version SNAPSHOT with no notes
+section yet); at bump time it must be green.
 
 Device model matrix (TASK-413, GH #68), BEFORE the Step 5 dispatch (a matrix
 failure must not waste the ~3h reproducible run): every bundled backend loads
@@ -483,14 +519,19 @@ download NDKs in that container, and the reference build died ~40 min in).
 - NEVER `gh release upload --clobber` on the canonical `app-fdroid-<abi>-release.apk`
   names: they are the F-Droid reproducibility references. Interim builds must
   be copied to a distinct filename before upload.
-- The release-event run shows release-sanity as PENDING while the ~3h
-  reproducible job finishes (TASK-641 made sanity wait on it via `needs`, and
-  the result assertion rides in the same job); the green record is the
-  completed dispatch run. Latency corollary: release-sanity's verdict (and
-  its red X for a failed signing job) surfaces only after that wait; a
-  failed sibling's OWN red X still appears on its job within minutes. Once sanity
-  actually runs, red is a REAL failure (test job, signing job, or incomplete
-  asset pairing), never a timing artifact; investigate before promoting.
+- Release-sanity's scope, stated exactly (2026-09-26 correction): the
+  `needs`-wait on the reproducible job (TASK-641, commit 21870752) applies
+  only to workflows that CONTAIN that commit. A release cut from a side
+  branch runs the workflow frozen at the branch point, so v1.13.2's
+  release-event run executed sanity with needs [test, build] and went green
+  at 17:14 while the ~3h signing job was still running; until the cut
+  procedure cherry-picks workflow-gate commits onto the release branch
+  (TASK-683.5), assume a side-branch cut runs the OLD gates. KNOWN LIMITATION
+  until TASK-683.3 lands: sanity does NOT assert the Build or Publish job
+  results; on 2026-09-26 it showed green beside a failed Publish
+  (run 36262228446) and beside a failed Build with Publish skipped
+  (run 36257611232). Green sanity means "the checks sanity runs passed",
+  never "every job passed": read the run's job list before promoting.
 
 ## Play Console manual checklist (per release)
 

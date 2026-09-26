@@ -143,8 +143,9 @@ android {
                 else -> 0
             }
             if (abiCode > 0) {
+                // Interim: keep this fallback in sync with the base versionCode (TASK-683.2 removes the literal).
                 (output as com.android.build.api.variant.impl.VariantOutputImpl).versionCode
-                    .set((defaultConfig.versionCode ?: 44) * 10 + abiCode)
+                    .set((defaultConfig.versionCode ?: 46) * 10 + abiCode)
             }
         }
     }
