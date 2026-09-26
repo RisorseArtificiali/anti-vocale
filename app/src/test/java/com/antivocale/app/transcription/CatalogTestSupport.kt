@@ -1,6 +1,7 @@
 package com.antivocale.app.transcription
 
 import com.antivocale.app.data.catalog.BundledCatalog
+import com.antivocale.app.data.catalog.CatalogEntry
 import com.antivocale.app.data.catalog.ModelCatalogJson
 import java.io.File
 
@@ -12,6 +13,16 @@ import java.io.File
  * Idempotent: [BundledCatalog.seed] simply replaces the cache.
  */
 fun seedCatalogForTest() {
+    BundledCatalog.seed(bundledCatalogEntriesForTest())
+}
+
+/**
+ * The parsed entries of the real bundled models_catalog.json, the one asset
+ * probe for tests that reason about the catalog itself (metadata policy,
+ * fixtures contract) without seeding the singleton. TASK-413: the
+ * metadata-policy tests own no private copy of this probe.
+ */
+fun bundledCatalogEntriesForTest(): List<CatalogEntry> {
     val moduleRelative = File("src/main/assets/models_catalog.json")
     val rootRelative = File("app/src/main/assets/models_catalog.json")
     val asset = when {
@@ -20,5 +31,5 @@ fun seedCatalogForTest() {
         else -> throw IllegalStateException(
             "Cannot locate models_catalog.json from ${File(".").absolutePath}")
     }
-    BundledCatalog.seed(ModelCatalogJson.parseCatalog(asset.readText()))
+    return ModelCatalogJson.parseCatalog(asset.readText())
 }

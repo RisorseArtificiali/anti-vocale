@@ -1,0 +1,43 @@
+{
+  "entryId": "sherpa-onnx",
+  "generatedBy": "scripts/extract-metadata-fixtures.py",
+  "method": "onnx metadata_props keys from the last 2 MiB of each pinned encoder (the production scan window)",
+  "modelType": "nemo_transducer",
+  "scanWindowBytes": 2097152,
+  "variants": {
+    "smoothquant": {
+      "encoder": "encoder.int8.onnx",
+      "keys": [
+        "comment",
+        "feat_dim",
+        "model_author",
+        "model_type",
+        "normalize_type",
+        "pred_hidden",
+        "pred_rnn_layers",
+        "subsampling_factor",
+        "url",
+        "version",
+        "vocab_size"
+      ],
+      "sha256": "1db13b37849829eecce166bf2e1c7d4d334ceed9e3b9b95c515188dd870301ae"
+    },
+    "stock-int8": {
+      "encoder": "encoder.int8.onnx",
+      "keys": [
+        "comment",
+        "feat_dim",
+        "model_author",
+        "model_type",
+        "normalize_type",
+        "pred_hidden",
+        "pred_rnn_layers",
+        "subsampling_factor",
+        "url",
+        "version",
+        "vocab_size"
+      ],
+      "sha256": "acfc2b4456377e15d04f0243af540b7fe7c992f8d898d751cf134c3a55fd2247"
+    }
+  }
+}

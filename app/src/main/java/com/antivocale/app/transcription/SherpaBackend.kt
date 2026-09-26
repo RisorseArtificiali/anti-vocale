@@ -102,7 +102,11 @@ class SherpaBackend(
         fun requiredMetadataKeys(entry: CatalogEntry): List<String> =
             entry.flags.metaKeys.ifEmpty { requiredTransducerMetadataKeys(entry.modelType) }
 
-        private const val ONNX_METADATA_SCAN_LIMIT: Long = 2L * 1024 * 1024
+        // TASK-413: internal (not private) so MetadataFixturesContractTest can
+        // assert the fixtures' recorded scan window against the production
+        // window; the extractor and the scanner must read the same bytes.
+        @VisibleForTesting
+        internal const val ONNX_METADATA_SCAN_LIMIT: Long = 2L * 1024 * 1024
 
         /**
          * Returns the metadata keys from [requiredKeys] that are NOT present in [file].

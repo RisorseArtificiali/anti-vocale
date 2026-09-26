@@ -255,6 +255,10 @@ nothing is public yet.
 
 ## Step 5b. Publish: tag + release + all binaries in one act
 
+The device model matrix must already be green (Preflight and verify gates);
+it runs before the Step 5 dispatch so a failure never wastes the reproducible
+run.
+
 `scripts/release-create.sh` downloads the three artifacts, verifies the 12-file
 set, and creates the tag, the release, and every asset with ONE `gh release
 create`. That single command is the moment the version becomes public; from it
@@ -420,6 +424,18 @@ scripts/release-preflight.sh --tag vX.Y.Z --commit $SHA   # --commit: build-firs
 # recipe-commit check run against the bump SHA instead of a tag that does not
 # exist yet (without it, preflight fails spuriously in build-first order).
 scripts/release-verify.sh vX.Y.Z            # after the publish act completes
+```
+
+Device model matrix (TASK-413, GH #68), BEFORE the Step 5 dispatch (a matrix
+failure must not waste the ~3h reproducible run): every bundled backend loads
+and transcribes once on the connected phone, and the script exits 0 only with
+a SUCCESS row for each; skipped models fail the gate explicitly. It exercises
+the debug build installed on the phone (one variant per entry, the one the
+app's own resolver picks), so install the release tree first
+(`./scripts/install.sh`):
+
+```bash
+scripts/device-model-matrix.sh --audio <short real speech clip>
 ```
 
 The preflight encodes every failure mode of the v1.10.0 release day:

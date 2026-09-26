@@ -1,0 +1,16 @@
+{
+  "entryId": "qwen3-asr",
+  "generatedBy": "scripts/extract-metadata-fixtures.py",
+  "method": "onnx metadata_props keys from the last 2 MiB of each pinned encoder (the production scan window)",
+  "modelType": "qwen3_asr",
+  "scanWindowBytes": 2097152,
+  "variants": {
+    "0.6b-int8": {
+      "encoder": "encoder.int8.onnx",
+      "keys": [
+        "onnx.infer"
+      ],
+      "sha256": "60748d3e6744a57c9c91e1b17424a6c2990567e8adceb0783940c03ed98fa9d9"
+    }
+  }
+}

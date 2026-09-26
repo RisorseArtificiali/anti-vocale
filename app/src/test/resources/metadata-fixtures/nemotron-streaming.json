@@ -1,0 +1,38 @@
+{
+  "entryId": "nemotron-streaming",
+  "generatedBy": "scripts/extract-metadata-fixtures.py",
+  "method": "onnx metadata_props keys from the last 2 MiB of each pinned encoder (the production scan window)",
+  "modelType": "",
+  "scanWindowBytes": 2097152,
+  "variants": {
+    "1120ms-int8": {
+      "encoder": "encoder.int8.onnx",
+      "keys": [
+        "auto_prompt_id",
+        "cache_last_channel_dim1",
+        "cache_last_channel_dim2",
+        "cache_last_channel_dim3",
+        "cache_last_time_dim1",
+        "cache_last_time_dim2",
+        "cache_last_time_dim3",
+        "chunk_shift",
+        "chunk_size_ms",
+        "comment",
+        "feat_dim",
+        "model_author",
+        "model_type",
+        "normalize_type",
+        "onnx.infer",
+        "pred_hidden",
+        "pred_rnn_layers",
+        "prompt_dictionary",
+        "subsampling_factor",
+        "url",
+        "version",
+        "vocab_size",
+        "window_size"
+      ],
+      "sha256": "2fff2166acaa535bd969fb223c1f0783d71029f143cb298bc54c2afe85abf772"
+    }
+  }
+}

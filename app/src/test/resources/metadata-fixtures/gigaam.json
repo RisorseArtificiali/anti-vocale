@@ -1,0 +1,28 @@
+{
+  "entryId": "gigaam",
+  "generatedBy": "scripts/extract-metadata-fixtures.py",
+  "method": "onnx metadata_props keys from the last 2 MiB of each pinned encoder (the production scan window)",
+  "modelType": "nemo_transducer",
+  "scanWindowBytes": 2097152,
+  "variants": {
+    "v3": {
+      "encoder": "gigaam_v3_e2e_rnnt_encoder_int8.onnx",
+      "keys": [
+        "comment",
+        "encoder_dim",
+        "is_giga_am",
+        "joint_hidden",
+        "language",
+        "license",
+        "model_author",
+        "model_type",
+        "pred_hidden",
+        "pred_rnn_layers",
+        "subsampling_factor",
+        "version",
+        "vocab_size"
+      ],
+      "sha256": "2cac62d0c270bd128f898f2be1a2d34780d524a6e9483888ebac7b00f97410f1"
+    }
+  }
+}
