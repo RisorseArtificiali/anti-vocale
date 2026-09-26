@@ -49,6 +49,7 @@ PKG="com.antivocale.app.debug"
 DB_NAME="anti_vocale_database"
 POLL_SECS=5
 TIMEOUT_SECS=300
+FAILED_IDS=""
 HERE="$(cd "$(dirname "$0")" && pwd)"
 PROJECT="$(cd "$HERE/.." && pwd)"
 CATALOG="$PROJECT/app/src/main/assets/models_catalog.json"
@@ -221,8 +222,18 @@ DB_TMP="$(mktemp -d)"
 cleanup() { restore_automation; rm -rf "$DB_TMP"; }
 trap cleanup EXIT
 poll_db() { # $1 EXACT task id -> echoes "STATUS|error|model|ms|audioSecs"
+  # Deep-Doze lesson (first real run, 2026-09-26): the exec-out pulls return
+  # EMPTY when the device drifted into deep Doze mid-run, so every poll reads
+  # a stale DB and honest SUCCESS rows report as FAIL. Detect the empty pull,
+  # wake the device once, and retry before giving the poll a stale answer.
   "$ADB" -s "$serial" exec-out run-as "$PKG" cat "databases/$DB_NAME-wal" > "$DB_TMP/db-wal" 2>/dev/null || true
   "$ADB" -s "$serial" exec-out run-as "$PKG" cat "databases/$DB_NAME" > "$DB_TMP/db" 2>/dev/null || true
+  if [ ! -s "$DB_TMP/db" ]; then
+    "$ADB" -s "$serial" shell input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+    sleep 2
+    "$ADB" -s "$serial" exec-out run-as "$PKG" cat "databases/$DB_NAME" > "$DB_TMP/db" 2>/dev/null || true
+    "$ADB" -s "$serial" exec-out run-as "$PKG" cat "databases/$DB_NAME-wal" > "$DB_TMP/db-wal" 2>/dev/null || true
+  fi
   python3 - "$1" "$DB_TMP/db" <<'PY'
 import sqlite3, sys
 task_id, db = sys.argv[1], sys.argv[2]
@@ -295,6 +306,31 @@ for id in "${IDS[@]}"; do
     FAILED+=("$id")
   fi
 done
+
+# ── second chance for Doze-claim failures (first real run, 2026-09-26) ──────
+# A FAIL whose only symptom was "no DB row" is usually the device drifting
+# into deep Doze (the adb pulls go empty), not a model failure. After the
+# full pass: wake the device once and re-poll every failed id with a fresh
+# window before the summary judges anything.
+if [ ${#FAILED[@]} -gt 0 ]; then
+  echo "== second chance: waking the device and re-polling failed ids =="
+  "$ADB" -s "$serial" input keyevent KEYCODE_WAKEUP >/dev/null 2>&1 || true
+  sleep 3
+  STILL_FAILED=()
+  for id in ${FAILED[*]}; do
+    row="$(poll_db "$id" || true)"
+    if [ -n "$row" ]; then
+      status="${row%%|*}"
+      if [ "$status" = "SUCCESS" ] || [ "$status" = "ERROR" ]; then
+        echo "RECOVERED: $id -> $row"
+        PASSED+=("$id")
+        continue
+      fi
+    fi
+    STILL_FAILED+=("$id")
+  done
+  FAILED=("${STILL_FAILED[@]}")
+fi
 
 # ── summary: the release gate is explicit about every kind of gap ───────────
 echo
