@@ -14,7 +14,7 @@ Android app for transcribing voice messages locally on-device, with no internet 
 
 Anti-Vocale receives shared audio files (from WhatsApp, Telegram, etc.), transcribes them using on-device ASR models, and delivers the result via notification with one-tap copy and share-back actions.
 
-It works on recorded calls and meetings too, at any length: recordings beyond a model's limit are split and stitched automatically (up to two hours on the streaming path), a failed long run keeps the transcript it already produced, and results export as subtitles (SRT, VTT) or timestamped text. Speaker separation is not implemented yet ([#83](https://github.com/RisorseArtificiali/anti-vocale/issues/83)).
+It works on recorded calls and meetings too, at any length: recordings beyond a model's limit are split and stitched automatically (up to two hours on the streaming path), a failed long run keeps the transcript it already produced, and results export as subtitles (SRT, VTT) or timestamped text. An optional speaker-labels setting marks who said what in a conversation, rendering SPEAKER turns in results and exports.
 
 ## Why this app exists
 
@@ -48,7 +48,7 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 ### Models
 
 - **Multiple ASR engines** - Choose between Gemma (LLM), Whisper, Parakeet TDT, Qwen3-ASR, GigaAM v3, Nemotron 3.5 (streaming), or import your own
-- **Custom model import** - Bring any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Moonshine, Dolphin) from a folder or HuggingFace URL, no app update needed; one-tap validated entries live in the community catalog, and only models matching a supported family's layout import ([docs](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise))
+- **Custom model import** - Bring any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Canary, Moonshine, Dolphin) from a folder or HuggingFace URL, no app update needed; one-tap validated entries live in the community catalog, and only models matching a supported family's layout import ([docs](docs/external-models.md#what-import-is-for-and-what-it-does-not-promise))
 - **Full user manual** - Getting started, choosing a model, troubleshooting and FAQ, in 8 languages ([user guide](docs/user-guide/))
 - **Any audio length** - Long inputs are automatically split and stitched; practical ceilings are declared up front (2 hours on the streaming path, memory-dependent with VAD enabled) (see the [FAQ](FAQ.md))
 - **Declared limits before download** - Each model card states its audio-length capability up front, so big downloads are informed choices
@@ -61,6 +61,8 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 - **VAD silence stripping** - Optionally strip silent segments before transcription for faster results (boundaries fall on natural speech gaps)
 - **Confidence indicator** - Shows detected language and warns about low-confidence results
 - **Video file support** - Transcribe audio from video files; extract embedded subtitles
+- **Summaries** - With a Gemma model installed, long transcripts get an optional short recap (and a punctuation polish pass), opt-in from Settings
+- **Speaker labels** - Optional per-sentence speaker attribution in conversations, rendered as SPEAKER turns in the result and every export
 - **Calibration-based ETA** - Progress estimates improve as the model adapts to your device
 
 ### Results & history
@@ -251,7 +253,7 @@ Notification (Paging / Copy / Send to [App]) + Confidence Indicator
 
 ## Automation
 
-Anti-Vocale can be triggered via broadcast intents for use with Tasker or other automation tools.
+Anti-Vocale can be triggered via broadcast intents for use with Tasker or other automation tools. Both automation receivers are **off by default**: enable them once under **Settings > Advanced > External automation (Tasker)**, or every request is rejected with a notice pointing there.
 
 ```bash
 # Transcribe an audio file
