@@ -758,7 +758,9 @@ class TranscriptionOrchestrator @Inject constructor(
      * are the guard.
      */
     /**
-     * TASK-672: the deterministic loop collapse. Review F6: an optional
+     * TASK-672: the deterministic loop collapse, FIRST in the polish chain
+     * (review F3: after the punctuation pass, the polish's ", " separators
+     * broke the 6-copy backref on multi-word loops). Review F6: an optional
      * polish may never fail a completed transcription, so it degrades to
      * the uncollapsed result on any failure (the sibling passes' contract).
      */
@@ -787,8 +789,8 @@ class TranscriptionOrchestrator @Inject constructor(
         return result.copy(
             text = collapsed,
             segments = collapsedSegments,
-            // The punctuation pass may already hold the pre-polish
-            // original here; the deepest text is the recoverable raw.
+            // Upstream of every polish: the backend or a refinement may
+            // already hold a raw; the first altering pass records it.
             rawTranscript = result.rawTranscript ?: result.text,
         )
     }

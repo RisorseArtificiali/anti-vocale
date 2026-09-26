@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * TASK-672 (GH #72): the repetition collapse at the transcribeAudio
- * funnel, right after the punctuation pass. The tiers themselves are
+ * funnel, first in the polish chain, before the punctuation pass. The tiers themselves are
  * pinned by RepetitionCollapseTest; these tests pin the wiring: the
  * collapsed text is delivered while the row keeps the pre-collapse
  * transcript as its raw original, and the dual-model loop detection

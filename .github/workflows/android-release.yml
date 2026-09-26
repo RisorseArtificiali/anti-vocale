@@ -516,7 +516,10 @@ jobs:
               exit 1
             fi
             [ -z "$EXISTING" ] && echo "note: tag ${RECIPE_TAG} does not exist yet (build-first; release-create.sh makes it)"
-            echo "OK: recipe commit matches the dispatched commit (build-first)."
+            # TASK-672 review F8: the SHAs must appear on the SUCCESS path too;
+            # release-create.sh's material binding greps this log for the
+            # expected commit on micro-release orders (headSha != the bump).
+            echo "OK: recipe commit $RECIPE_COMMIT matches the dispatched commit $DISPATCH_COMMIT (build-first)."
             exit 0
           fi
           # Resolve the commit the target tag actually points to. ^{} peels an

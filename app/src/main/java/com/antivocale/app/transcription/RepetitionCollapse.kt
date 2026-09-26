@@ -40,7 +40,7 @@ object RepetitionCollapse {
 
     /**
      * Collapses every hallucination loop in [text]: word runs of
-     * [REPETITION_RUN_THRESHOLD]+ identical tokens drop whole, then the
+     * [REPETITION_RUN_THRESHOLD]+ identical tokens collapse to one copy, then the
      * character-level pass removes repeating units of up to
      * [MAX_REPETITION_UNIT_CHARS] chars seen [REPETITION_RUN_THRESHOLD]+
      * times in a row. Idempotent by construction; the tests verify a
