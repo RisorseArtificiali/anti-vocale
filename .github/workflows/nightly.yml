@@ -41,7 +41,7 @@ concurrency:
 jobs:
   nightly:
     name: Build + publish nightly pre-release
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # TASK-683.9: pinned before the 2026-10-19 ubuntu-latest -> Ubuntu 26 migration
 
     steps:
       # Always main: the nightly is "whatever main looks like right now".

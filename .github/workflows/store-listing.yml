@@ -20,7 +20,7 @@ permissions:
 jobs:
   upload:
     name: Validate and upload listing
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # TASK-683.9: pinned before the 2026-10-19 ubuntu-latest -> Ubuntu 26 migration
     steps:
       - uses: actions/checkout@v5
 
