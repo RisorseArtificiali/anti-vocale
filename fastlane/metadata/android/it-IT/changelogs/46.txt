@@ -1,0 +1,1 @@
+Corretto: una ricerca nella Cronologia senza risultati non lascia piu la schermata bloccata; la barra di ricerca resta visibile con il pulsante di cancellazione (TASK-662).

@@ -1,0 +1,1 @@
+Fixed: a History search with no matches no longer leaves the view stuck; the search bar stays visible with its clear button (TASK-662).

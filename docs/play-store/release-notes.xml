@@ -1,4 +1,6 @@
 <en-US>
+What's new in 1.13.2:
+• Fixed: a History search with no matches no longer leaves the view stuck; the search bar stays visible with its clear button
 What's new in 1.13.1:
 • Fixed: low-memory alerts now carry an "Open setting" action that lands on the exact Settings row
 • Changed: models always try to run; the memory guard no longer blocks by default and is opt-in (Settings > Advanced)
@@ -29,6 +31,8 @@ What's new in 1.12.0:
 </en-US>
 
 <it-IT>
+Novità della versione 1.13.2:
+• Corretto: una ricerca nella Cronologia senza risultati non lascia più la schermata bloccata; la barra di ricerca resta visibile con il pulsante di cancellazione
 Novità della versione 1.13.1:
 • Corretto: gli avvisi di memoria insufficiente hanno ora un'azione "Apri impostazione" che porta alla riga giusta
 • Modifica: i modelli vengono sempre avviati; il controllo memoria non blocca più di default ed è facoltativo (Impostazioni > Avanzate)
@@ -265,6 +269,8 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>
+Neuigkeiten in Version 1.13.2:
+• Behoben: Eine Verlaufs-Suche ohne Treffer blockiert die Ansicht nicht länger; das Suchfeld bleibt sichtbar, inklusive Löschen-Schaltfläche
 Neuigkeiten in Version 1.13.1:
 • Behoben: Warnungen bei wenig Speicher haben jetzt eine Aktion "Einstellung öffnen", die direkt zur passenden Zeile in den Einstellungen führt
 • Geändert: Modelle werden immer gestartet; der Speicherschutz blockiert standardmäßig nicht mehr und ist optional (Einstellungen > Erweitert)
@@ -321,6 +327,8 @@ Neuigkeiten in Version 1.11.0:
 </de-DE>
 
 <es-ES>
+Novedades de la versión 1.13.2:
+• Corregido: una búsqueda en el historial sin resultados ya no deja la vista bloqueada; la barra de búsqueda sigue visible con su botón de borrar
 Novedades de la versión 1.13.1:
 • Corregido: los avisos de memoria insuficiente ahora tienen una acción "Abrir ajuste" que lleva a la fila exacta en Ajustes
 • Cambiado: los modelos siempre intentan ejecutarse; la protección de memoria ya no bloquea por defecto y es opcional (Ajustes > Avanzado)
@@ -377,6 +385,8 @@ Novedades de la versión 1.11.0:
 </es-ES>
 
 <fr-FR>
+Nouveautés de la version 1.13.2 :
+• Corrigé : une recherche dans l’historique sans résultat ne bloque plus l’écran ; la barre de recherche reste visible avec son bouton d’effacement
 Nouveautés de la version 1.13.1 :
 • Corrigé : les alertes de mémoire insuffisante proposent désormais une action "Ouvrir le réglage" qui mène à la ligne exacte dans les Paramètres
 • Modifié : les modèles tentent toujours de se lancer ; la protection mémoire ne bloque plus par défaut et est optionnelle (Paramètres > Avancé)
@@ -433,6 +443,8 @@ Nouveautés de la version 1.11.0 :
 </fr-FR>
 
 <pt-BR>
+Novidades da versão 1.13.2:
+• Corrigido: uma busca no histórico sem resultados não deixa mais a tela travada; a barra de busca continua visível com o botão de limpar
 Novidades da versão 1.13.1:
 • Corrigido: os avisos de memória insuficiente agora têm uma ação "Abrir configuração" que leva exatamente à linha certa em Configurações
 • Alterado: os modelos sempre tentam rodar; a proteção de memória não bloqueia mais por padrão e é opcional (Configurações > Avançado)
@@ -489,6 +501,8 @@ Novidades da versão 1.11.0:
 </pt-BR>
 
 <ru-RU>
+Новое в версии 1.13.2:
+• Исправлено: поиск в журнале без совпадений больше не заблокировывает экран; строка поиска остаётся видимой, с кнопкой очистки
 Что нового в версии 1.13.1:
 • Исправлено: предупреждения о нехватке памяти теперь содержат действие «Открыть настройку», ведущее к нужной строке настроек
 • Изменено: модели всегда запускаются; защита памяти больше не блокирует по умолчанию и включается вручную (Настройки > Дополнительно)
@@ -545,6 +559,8 @@ Novidades da versão 1.11.0:
 </ru-RU>
 
 <tr-TR>
+1.13.2 sürümündeki yenilikler:
+• Düzeltildi: sonuç bulunamayan geçmiş araması artık ekranı kilitlemiyor; arama çubuğu temizle düğmesiyle görünür kalıyor
 Sürüm 1.13.1'deki yenilikler:
 • Düzeltildi: yetersiz bellek uyarıları artık tam doğru ayar satırına götüren "Ayarı aç" eylemi içeriyor
 • Değişti: modeller her zaman çalışmayı dener; bellek koruması varsayılan olarak engellemez ve isteğe bağlıdır (Ayarlar > Gelişmiş)
@@ -601,6 +617,8 @@ Sürüm 1.11.0'daki yenilikler:
 </tr-TR>
 
 <pl-PL>
+Nowości w wersji 1.13.2:
+• Poprawka: wyszukiwanie w historii bez wyników nie blokuje już widoku; pasek wyszukiwania pozostaje widoczny wraz z przyciskiem czyszczenia
 Nowości w wersji 1.13.1:
 • Poprawiono: alerty o małej pamięci mają teraz działanie "Otwórz ustawienie", prowadzące dokładnie do właściwego wiersza w Ustawieniach
 • Zmieniono: modele zawsze próbują się uruchomić; ochrona pamięci domyślnie nie blokuje i jest opcjonalna (Ustawienia > Zaawansowane)
@@ -657,6 +675,8 @@ Nowości w wersji 1.11.0:
 </pl-PL>
 
 <hi-IN>
+1.13.2 में नया:
+• सुधार: इतिहास में बिना परिणाम वाली खोज अब स्क्रीन को अटका नहीं रहती; खोज पट्टी दिखती रहती है और साफ़ करने का बटन भी रहता है
 संस्करण 1.13.1 में नया क्या है:
 • ठीक: कम मेमोरी वाले अलर्ट में अब "सेटिंग खोलें" कार्रवाई है जो सेटिंग्स की सही पंक्ति तक ले जाती है
 • बदलाव: मॉडल हमेशा चलने की कोशिश करते हैं; मेमोरी गार्ड अब डिफ़ॉल्ट रूप से रोकता नहीं और वैकल्पिक है (सेटिंग्स > उन्नत)
