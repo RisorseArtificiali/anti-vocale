@@ -111,6 +111,9 @@ internal class TestSpiOps(
             .put("languageChipEnabled", preferences.languageChipEnabled.first())
             // TASK-575: read-only over the SPI (records are written by loads).
             .put("measuredModelMemory", preferences.measuredModelMemory.first().entries.joinToString(",") { e -> e.key + "=" + e.value.runs + "runs" })
+            // TASK-675: read-only over the SPI too (decodes write entries, a
+            // manual selection clears them; device tests only need to read).
+            .put("demotedBackends", JSONArray(preferences.demotedBackends.first()))
             .put("advancedSharingEnabled", preferences.advancedSharingEnabled.first())
             .put("showRetranscribeButton", preferences.showRetranscribeButton.first())
             .put("groupLogsByConversation", preferences.groupLogsByConversation.first())

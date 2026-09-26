@@ -54,6 +54,8 @@ class MemoryMarginWarningTest {
             mockk(relaxed = true),
             mockk(relaxed = true),
             ExternalModelStore(preferences, dirExists = { true }),
+            // TASK-675: real demoter over the same fake preferences.
+            SilentModelDemoter(preferences),
         )
     }
 

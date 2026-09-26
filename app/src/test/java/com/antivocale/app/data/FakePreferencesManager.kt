@@ -245,4 +245,14 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun pruneMeasuredModelMemory(validKeys: Set<String>) {
         _measuredModelMemory.update { it.filterKeys { k -> k in validKeys } }
     }
+
+    // TASK-675: silent-model demotion set (mirrors the Impl's set semantics).
+    val _demotedBackends = MutableStateFlow<Set<String>>(emptySet())
+    override val demotedBackends: Flow<Set<String>> get() = _demotedBackends
+    override suspend fun markBackendDemoted(backendId: String) {
+        _demotedBackends.value = _demotedBackends.value + backendId
+    }
+    override suspend fun clearDemotedBackend(backendId: String) {
+        _demotedBackends.value = _demotedBackends.value - backendId
+    }
 }

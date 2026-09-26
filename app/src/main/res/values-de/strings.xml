@@ -325,6 +325,7 @@
     <string name="active_badge">Aktiv</string>
     <string name="model_selected_message">%1$s ausgewählt</string>
     <string name="model_use_missing_files">Die Modelldateien für %1$s fehlen oder sind unvollständig. Lade die Variante im Tab \"Modell\" erneut herunter.</string>
+    <string name="model_demoted_notice">Wird nicht automatisch gewählt: Dieses Modell hat bei vorhandener Sprache keinen Text geliefert. Wähle es erneut, um ihm eine neue Chance zu geben.</string>
     <string name="delete">Löschen</string>
     <string name="download">Herunterladen</string>
     <string name="model_update_button">Aktualisieren</string>

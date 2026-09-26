@@ -31,6 +31,14 @@ abstract class TranscriptionOrchestratorTestBase {
         dirExists = { true },
     )
 
+    /**
+     * TASK-675: a REAL demoter over its own fake preferences, so tests drive
+     * the actual threshold/persist logic and assert through the same API the
+     * app uses (a relaxed-mock Flow would explode on first()).
+     */
+    protected val silentModelDemoter: SilentModelDemoter =
+        SilentModelDemoter(FakePreferencesManager())
+
     /** Builds a minimal TRANSDUCER record with a nemo_transducer modelType. */
     protected fun externalRecord(id: String, dir: String): ExternalModelRecord = ExternalModelRecord(
         id = id,
@@ -78,6 +86,7 @@ abstract class TranscriptionOrchestratorTestBase {
             mockk(relaxed = true),
             mockk(relaxed = true),
             fakeStore,
+            silentModelDemoter,
         )
 
         // Default the opt-in memory protection to off in tests so it does not interfere with

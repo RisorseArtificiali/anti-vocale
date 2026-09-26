@@ -118,6 +118,8 @@ class ModelViewModelUseModelPersistenceTest {
             litertLmUrlImporter = io.mockk.mockk(relaxed = true),
             externalCatalogRepository = io.mockk.mockk(relaxed = true),
             applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            // TASK-675: real demoter over the same preferences.
+            silentModelDemoter = com.antivocale.app.transcription.SilentModelDemoter(prefs),
         )
 
     }

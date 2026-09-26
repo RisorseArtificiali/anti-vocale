@@ -112,6 +112,8 @@ class ModelViewModelLitertLmImportTest {
             litertLmUrlImporter = importer,
             externalCatalogRepository = mockk(relaxed = true),
             applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            // TASK-675: real demoter over the same preferences.
+            silentModelDemoter = com.antivocale.app.transcription.SilentModelDemoter(prefs),
         )
     }
 
@@ -158,6 +160,17 @@ class ModelViewModelLitertLmImportTest {
 
         viewModel.listLitertLmModels("https://example.com/nope")
         runCurrent()
+
+        // The list runs on the real Dispatchers.IO: the busy flag is cleared
+        // by the failure handler on that coroutine, which can still be in
+        // flight when runCurrent returns (the same IO-vs-virtual-time race
+        // the import test above polls past). Bounded wait, then assert.
+        val deadline = System.currentTimeMillis() + 5_000
+        while (viewModel.uiState.value.litertLmImporting &&
+            System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+            runCurrent()
+        }
 
         assertEquals(null, dataStore.data.first()[backendKey])
         assertEquals(null, dataStore.data.first()[modelPathKey])

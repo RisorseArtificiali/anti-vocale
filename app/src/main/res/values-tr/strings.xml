@@ -352,6 +352,7 @@
     <string name="active_badge">Etkin</string>
     <string name="model_selected_message">%1$s seçildi</string>
     <string name="model_use_missing_files">%1$s için model dosyaları eksik veya tamamlanmamış. Model sekmesinden varyantı yeniden indirin.</string>
+    <string name="model_demoted_notice">Otomatik olarak seçilmez: bu model konuşma varken metin üretmedi. Ona bir şans daha vermek için yeniden seçin.</string>
     <string name="delete">Sil</string>
     <string name="download">İndir</string>
     <string name="model_update_button">Güncelle</string>

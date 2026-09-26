@@ -324,6 +324,7 @@
     <string name="active_badge">सक्रिय</string>
     <string name="model_selected_message">%1$s चुना गया</string>
     <string name="model_use_missing_files">%1$s की मॉडल फ़ाइलें ग़ायब या अधूरी हैं। मॉडल टैब से उस वैरिएंट को फिर से डाउनलोड करें।</string>
+    <string name="model_demoted_notice">अब यह मॉडल अपने आप नहीं चुना जाता: भाषण मौजूद होने पर भी इसने कोई टेक्स्ट नहीं बनाया। इसे फिर से चुनकर इसे एक और मौका दें।</string>
     <string name="delete">मिटाएं</string>
     <string name="download">डाउनलोड करें</string>
     <string name="model_update_button">अपडेट करें</string>

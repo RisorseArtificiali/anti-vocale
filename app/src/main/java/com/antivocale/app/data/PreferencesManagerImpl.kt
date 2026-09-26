@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.flow.Flow
@@ -102,6 +103,8 @@ class PreferencesManagerImpl(
         private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
         private val PARTIAL_TRANSCRIPTION_TIMESTAMP = longPreferencesKey("partial_transcription_timestamp")
         private val EXTERNAL_MODELS_JSON = stringPreferencesKey("external_models_json")
+        // TASK-675: silent-model demotion set (backend ids).
+        private val DEMOTED_BACKENDS = stringSetPreferencesKey("demoted_backends")
     }
 
     private val cache = AtomicReference(CachedPreferences())
@@ -852,5 +855,27 @@ class PreferencesManagerImpl(
             preferences[EXTERNAL_MODELS_JSON] = json
         }
         cache.updateAndGet { it.copy(externalModelsJson = json) }
+    }
+
+    // TASK-675: the demotion set is read-modify-written INSIDE the edit
+    // transaction (the mergeMeasuredModelMemorySample rule), so a demotion
+    // landing while the user re-selects the model cannot lose the clear (or
+    // vice versa).
+    override val demotedBackends: Flow<Set<String>> =
+        dataStore.data.map { it[DEMOTED_BACKENDS] ?: emptySet() }
+
+    override suspend fun markBackendDemoted(backendId: String) {
+        dataStore.edit { preferences ->
+            preferences[DEMOTED_BACKENDS] = (preferences[DEMOTED_BACKENDS] ?: emptySet()) + backendId
+        }
+    }
+
+    override suspend fun clearDemotedBackend(backendId: String) {
+        dataStore.edit { preferences ->
+            val next = (preferences[DEMOTED_BACKENDS] ?: emptySet()) - backendId
+            // An empty set removes the key: a fresh install and a fully
+            // cleared state read identically.
+            if (next.isEmpty()) preferences.remove(DEMOTED_BACKENDS) else preferences[DEMOTED_BACKENDS] = next
+        }
     }
 }

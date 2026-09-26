@@ -360,6 +360,7 @@
     <string name="active_badge">Активна</string>
     <string name="model_selected_message">Вибрано %1$s</string>
     <string name="model_use_missing_files">Файли моделі %1$s відсутні або неповні. Завантажте варіант знову на вкладці «Модель».</string>
+    <string name="model_demoted_notice">Не вибирається автоматично: ця модель не видала тексту за наявності мовлення. Виберіть її знову, щоб дати їй ще один шанс.</string>
     <string name="delete">Видалити</string>
     <string name="download">Завантажити</string>
     <string name="model_update_button">Оновити</string>

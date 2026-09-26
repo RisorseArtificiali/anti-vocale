@@ -877,6 +877,10 @@ private fun CuratedLanguageSection(
             ?.let { ExternalCatalog.parseIndex(it).associateBy { entry -> entry.name } }
             ?: emptyMap()
     }
+    // TASK-675: a model demoted for silent decodes is not a recommendation.
+    // Its card (with the honest line) stays reachable through "Browse all
+    // languages", and re-selecting it there clears the demotion.
+    val demotedBackendIds by viewModel.demotedBackendIds.collectAsState()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -901,6 +905,8 @@ private fun CuratedLanguageSection(
         profile.recommendations.forEach { recommendation ->
             when (recommendation) {
                 is CuratedProfiles.Recommendation.Bundled -> {
+                    // TASK-675: skip demoted entries (see demotedBackendIds above).
+                    if (recommendation.entryId in demotedBackendIds) return@forEach
                     val entry = BundledCatalog.byId(recommendation.entryId)
                     val variants = entry?.let {
                         CatalogVariantUi.forEntry(it.id).filter { variant ->
@@ -1281,6 +1287,10 @@ private fun CatalogModelSection(
     val context = LocalContext.current
     val savedPath by viewModel.savedModelPath(entry.id).collectAsState()
     val isEntryActive = activeBackendId == entry.id
+    // TASK-675: demoted entries keep their card (the Use button is the
+    // give-it-another-chance path) but say why auto-selection skips them.
+    val demotedBackendIds by viewModel.demotedBackendIds.collectAsState()
+    val isEntryDemoted = entry.id in demotedBackendIds
     var showSpeedComparison by remember(entry.id) { mutableStateOf(false) }
 
     val entryTitleResId = (entry.display as? CatalogDisplay.Resource)?.key
@@ -1341,6 +1351,14 @@ private fun CatalogModelSection(
                         // GH #49: declare the audio-length capability BEFORE download
                         val entryLimit = remember(entry) { audioLimitForCatalogEntry(entry) }
                         AudioLimitLabel(entryLimit)
+                        // TASK-675: the honest one-line reason on a demoted card.
+                        if (isEntryDemoted) {
+                            Text(
+                                text = stringResource(R.string.model_demoted_notice),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                 }
                 when {
@@ -1690,6 +1708,8 @@ private fun ExternalModelsSection(
     onDeleteRequest: (ExternalModelRecord) -> Unit,
 ) {
     val records by viewModel.externalModels.collectAsState()
+    // TASK-675: the honest one-line reason travels to external cards too.
+    val demotedBackendIds by viewModel.demotedBackendIds.collectAsState()
     val importState by viewModel.externalImportState.collectAsState()
     var urlDialogOpen by remember { mutableStateOf(false) }
     // TASK-486: op=nav models:import opens the catalog dialog directly.
@@ -1901,6 +1921,7 @@ private fun ExternalModelsSection(
             ExternalModelCard(
                 record = record,
                 isActive = activeBackendId == record.backendId,
+                demoted = record.backendId in demotedBackendIds,
                 onUse = { viewModel.useExternalModel(record) },
                 onDelete = { onDeleteRequest(record) },
             )
@@ -2159,6 +2180,8 @@ private fun CatalogPickRow(
 private fun ExternalModelCard(
     record: com.antivocale.app.data.ExternalModelRecord,
     isActive: Boolean,
+    /** TASK-675: renders the honest silent-decode reason; Use stays available. */
+    demoted: Boolean = false,
     onUse: () -> Unit,
     onDelete: () -> Unit,
 ) {
@@ -2208,6 +2231,15 @@ private fun ExternalModelCard(
                         tint = MaterialTheme.colorScheme.primary
                     )
                 }
+            }
+
+            // TASK-675: the honest one-line reason on a demoted card.
+            if (demoted) {
+                Text(
+                    text = stringResource(R.string.model_demoted_notice),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
             }
 
             // Action buttons: same arrangement as ModelVariantCard

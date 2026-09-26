@@ -358,6 +358,7 @@
     <string name="active_badge">Aktywny</string>
     <string name="model_selected_message">Wybrano %1$s</string>
     <string name="model_use_missing_files">Pliki modelu %1$s są brakujące lub niekompletne. Pobierz ponownie wariant z karty Model.</string>
+    <string name="model_demoted_notice">Nie jest wybierany automatycznie: ten model nie wygenerował tekstu, choć była mowa. Wybierz go ponownie, aby dać mu jeszcze jedną szansę.</string>
     <string name="delete">Usuń</string>
     <string name="download">Pobierz</string>
     <string name="model_update_button">Zaktualizuj</string>

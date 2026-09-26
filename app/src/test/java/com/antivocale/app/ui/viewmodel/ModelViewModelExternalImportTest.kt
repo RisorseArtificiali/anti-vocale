@@ -135,6 +135,8 @@ class ModelViewModelExternalImportTest {
             litertLmUrlImporter = io.mockk.mockk(relaxed = true),
             externalCatalogRepository = io.mockk.mockk(relaxed = true),
             applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            // TASK-675: real demoter over the same preferences.
+            silentModelDemoter = com.antivocale.app.transcription.SilentModelDemoter(fakePrefs),
         )
 
     }
@@ -263,10 +265,22 @@ class ModelViewModelExternalImportTest {
     }
 
     /** runExternalImport launches on Dispatchers.IO (a real dispatcher in JVM tests):
-     *  block until the fake was reached, then drain the Main dispatcher. */
+     *  block until the fake was reached, then drain the Main dispatcher.
+     *  The latch fires at the END of the fake's importFromUrl, but the fold
+     *  that sets the terminal state (Idle, or Error) still runs on the IO
+     *  coroutine afterwards; under a loaded suite that fold can lose the race
+     *  with the assertion (seen 3x in full-suite runs, green in isolation).
+     *  So also poll, bounded, for ANY terminal state; the specific terminal
+     *  value stays each test's own assertion. */
     private fun kotlinx.coroutines.test.TestScope.awaitImporter() {
         fakeImporter.latch.await(5, TimeUnit.SECONDS)
         runCurrent()
+        val deadline = System.currentTimeMillis() + 5_000
+        while (viewModel.externalImportState.value is ModelViewModel.ExternalImportState.Importing &&
+            System.currentTimeMillis() < deadline) {
+            Thread.sleep(20)
+            runCurrent()
+        }
     }
 }
 

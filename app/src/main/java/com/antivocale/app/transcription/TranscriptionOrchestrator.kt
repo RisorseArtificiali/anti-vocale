@@ -65,6 +65,8 @@ class TranscriptionOrchestrator @Inject constructor(
     private val shareTargetManager: com.antivocale.app.data.ShareTargetManager,
     private val shareShortcutManager: com.antivocale.app.data.ShareShortcutManager,
     private val externalModelStore: ExternalModelStore,
+    // TASK-675: the silent-model demotion hook (two-signal discipline).
+    private val silentModelDemoter: SilentModelDemoter,
 ) {
     companion object {
         private const val TAG = "TranscriptionOrchestrator"
@@ -2377,6 +2379,9 @@ class TranscriptionOrchestrator @Inject constructor(
                         } else emptyList()
                         // Tokens are chunk-relative intermediates; the assembled result
                         // carries cues only, same convention as the other three paths.
+                        // Review F3/F5: delivered text rehabilitates (statement
+                        // before the block's result expression).
+                        silentModelDemoter.onSuccessfulDecode(backend.id)
                         Result.success(tr.copy(
                             text = trimmed, segments = segments, tokens = emptyList(),
                             // TASK-512: the single-decode fast path (the most
@@ -2390,13 +2395,36 @@ class TranscriptionOrchestrator @Inject constructor(
                                 availableRamBytes = availableRamBytes,
                             )))
                     } else {
+                        // TASK-675 signal 2 at this site: the post-preprocessing
+                        // duration. On VAD runs it is the VAD-KEPT speech length,
+                        // so > 0 means the VAD itself confirmed speech; on VAD-off
+                        // runs it is the raw clip length, the weaker
+                        // "audio content was present" signal (N=2 is the guard).
                         // TASK-622: whole-file blank (1 chunk); on the most
                         // common path silence and broken decode were
                         // indistinguishable on the ERROR row until this.
-                        Result.failure(TranscriptionException.NoTranscriptionProduced(blankChunks = 1))
+                        // Review F1: on VAD runs the kept duration IS the VAD's
+                        // speech confirmation; VAD-off duration proves samples
+                        // existed, not speech, so the weak signal never demotes.
+                        silentDecodeFailure(
+                            backend, 1,
+                            vadEnabled && preprocessingResult.totalDurationSeconds > 0.0)
                     }
                 }
-                else -> Result.failure(result.exceptionOrNull()!!)
+                else -> {
+                    // Review F2: a streaming-family external reports blank as a
+                    // NoTranscriptionProduced FAILURE, not a blank success; the
+                    // demotion aggregate must see that class too (same strong
+                    // VAD rule as the success-shaped blank).
+                    val failure = result.exceptionOrNull()!!
+                    if (failure is TranscriptionException.NoTranscriptionProduced) {
+                        silentDecodeFailure<TranscriptionResult>(
+                            backend, failure.blankChunks ?: 1,
+                            vadEnabled && preprocessingResult.totalDurationSeconds > 0.0)
+                    } else {
+                        Result.failure(failure)
+                    }
+                }
             }
         }
 
@@ -2552,6 +2580,38 @@ class TranscriptionOrchestrator @Inject constructor(
     private fun blankCause(silenceExpected: Boolean): String =
         "silence ${if (silenceExpected) "(expected on this path) " else ""}or swallowed decode failure"
 
+    /**
+     * TASK-675: the silent-model demotion hook. Signal 1 (the model decoded
+     * empty) is the caller's situation: the caller sits on the
+     * NoTranscriptionProduced / all-blank raise with blank chunks counted.
+     * [speechPresent] is signal 2, honestly derived per path by the caller
+     * (VAD-confirmed speech where the VAD ran, decoded-duration-only
+     * otherwise). The demoter owns the N=2-within-a-session threshold, the
+     * persisted set, and the remote/LLM exclusion; it never raises.
+     */
+    /**
+     * Simplify F2: the three whole-clip-empty failure sites share this one
+     * helper, making the invariant structural: a decode path cannot raise
+     * NoTranscriptionProduced without the demotion having been considered.
+     * The progressive site stays separate (its failure family is
+     * BlankSegmentsException behind a three-way when).
+     */
+    private suspend fun <T> silentDecodeFailure(
+        backend: TranscriptionBackend,
+        blankChunks: Int,
+        speechPresent: Boolean,
+    ): Result<T> {
+        if (blankChunks > 0) recordSilentDecodeForDemotion(backend, speechPresent)
+        return Result.failure(TranscriptionException.NoTranscriptionProduced(blankChunks = blankChunks))
+    }
+
+    private suspend fun recordSilentDecodeForDemotion(
+        backend: TranscriptionBackend,
+        speechPresent: Boolean,
+    ) {
+        silentModelDemoter.recordSilentDecode(backend.id, speechPresent)
+    }
+
     private fun cuesForChunk(
         tokens: List<TimedToken>,
         trimmedChunkText: String,
@@ -2650,6 +2710,17 @@ class TranscriptionOrchestrator @Inject constructor(
             Log.i(TAG, "Progressive: $blankSegments/$chunkCount segments decoded blank (${blankCause(false)})")
         }
         return if (accumulatedText.isEmpty()) {
+            // TASK-675: zero text across the whole clip while the VAD heard
+            // speech is the model-level aggregate (the TASK-664 chunk ladder
+            // exhausted). Signal 2 here is the post-VAD speech total: these
+            // chunks ARE the VAD-selected speech segments, so > 0 is the
+            // VAD's own confirmation. The all-FAILED shape below is a decode
+            // error, not a silent decode, and never counts.
+            if (failedSegments < chunkCount) {
+                // Review F1: the strong signal only; a VAD-off run's
+                // duration proves samples, not speech.
+                recordSilentDecodeForDemotion(backend, vadRequested && audioDurationSeconds > 0)
+            }
             // TASK-622: the old message said "failed" even when every segment
             // SUCCEEDED empty, misdirecting the first debugging pass.
             Result.failure(when {
@@ -2668,6 +2739,9 @@ class TranscriptionOrchestrator @Inject constructor(
             if (failedSegments > 0) {
                 Log.w(TAG, "Completed with $failedSegments/$chunkCount failed segments")
             }
+            // Review F3/F5: a successful decode is the rehabilitation
+            // signal (counter reset + persisted demotion cleared).
+            silentModelDemoter.onSuccessfulDecode(backend.id)
             Result.success(TranscriptionResult(
                 text = accumulatedText.toString(),
                 confidence = minConfidence,
@@ -2906,10 +2980,19 @@ class TranscriptionOrchestrator @Inject constructor(
 
         recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
 
+        // TASK-675: the aggregate is "the WHOLE clip decoded empty": a run
+        // that delivered text anywhere is a working model and never counts,
+        // and blankChunks > 0 keeps the all-FAILED aggregate out too (a
+        // decode error is not a silent decode). Signal 2 at this site is
+        // audioDurationSeconds: the post-VAD speech total when the chunks
+        // were VAD-selected (the VAD confirmed speech), else the raw clip
+        // length (the weaker duration-only signal).
+        // TASK-622: all-blank IS the swallowed-decode signature; the count
+        // rides to the ERROR row's FailureContext (and demotion is
+        // considered before the raise, per the shared helper).
         return if (combinedResult.isBlank()) {
-            // TASK-622: all-blank IS the swallowed-decode signature; the
-            // count rides to the ERROR row's FailureContext.
-            Result.failure(TranscriptionException.NoTranscriptionProduced(blankChunks = blankChunks))
+            silentDecodeFailure(backend, blankChunks,
+                vadSegmented && audioDurationSeconds > 0)
         } else {
             if (failedChunks > 0) {
                 Log.w(TAG, "Parallel completed with $failedChunks/$chunkCount failed chunks")
@@ -3176,14 +3259,23 @@ class TranscriptionOrchestrator @Inject constructor(
         if (blankChunks > 0) {
             Log.i(TAG, "Pipeline: $blankChunks/$processedChunks chunks decoded blank (${blankCause(true)})")
         }
+        // TASK-675: same whole-clip-empty aggregate as the parallel path
+        // (text anywhere means a working model), and this path never runs VAD
+        // (decode overlaps inference), so the only honest signal-2 here is
+        // decodedSeconds > 0: PCM actually reached the model (the header's
+        // metadata duration can lie, the decoded sample count cannot).
+        // TASK-622: all-blank IS the swallowed-decode signature; the count
+        // rides to the ERROR row's FailureContext.
         return if (combinedResult.isBlank()) {
-            // TASK-622: all-blank IS the swallowed-decode signature; the
-            // count rides to the ERROR row's FailureContext.
-            Result.failure(TranscriptionException.NoTranscriptionProduced(blankChunks = blankChunks))
+            // Review F1: this path never runs VAD; decodedSeconds proves PCM
+            // reached the model, not that speech was in it. The design note's
+            // confirm-gate rule wins over coverage: no demotion here.
+            silentDecodeFailure(backend, blankChunks, false)
         } else {
             if (failedChunks > 0) {
                 Log.w(TAG, "Pipeline completed with $failedChunks/$processedChunks failed chunks")
             }
+            silentModelDemoter.onSuccessfulDecode(backend.id)
             Result.success(TranscriptionResult(
                 text = combinedResult,
                 confidence = minConfidence,

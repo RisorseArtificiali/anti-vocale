@@ -296,6 +296,7 @@
     <string name="active_badge">Actif</string>
     <string name="model_selected_message">%1$s sélectionné</string>
     <string name="model_use_missing_files">Les fichiers du modèle %1$s sont manquants ou incomplets. Re-téléchargez la variante depuis l\'onglet Modèle.</string>
+    <string name="model_demoted_notice">Non choisi automatiquement : ce modèle n\'a produit aucun texte alors que de la voix était présente. Sélectionne-le à nouveau pour lui donner une autre chance.</string>
     <string name="delete">Supprimer</string>
     <string name="download">Télécharger</string>
     <string name="model_update_button">Mettre à jour</string>

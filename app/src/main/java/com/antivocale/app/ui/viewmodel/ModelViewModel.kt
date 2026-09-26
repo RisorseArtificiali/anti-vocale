@@ -30,6 +30,7 @@ import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.ModelFamilyDetector
 import com.antivocale.app.transcription.SherpaModelDownloader
 import com.antivocale.app.transcription.SherpaModelManager
+import com.antivocale.app.transcription.SilentModelDemoter
 import com.antivocale.app.transcription.cleanOrphanedModelDirs
 import com.antivocale.app.R
 import com.antivocale.app.data.catalog.BundledCatalog
@@ -81,6 +82,9 @@ class ModelViewModel @Inject constructor(
     private val externalModelImporter: ExternalModelImportOperations,
     private val litertLmUrlImporter: LitertLmUrlImporter,
     private val externalCatalogRepository: ExternalCatalogRepository,
+    // TASK-675: the silent-model demotion seam (auto-selection skip, clear on
+    // manual selection, the demoted set for the Model tab's honest line).
+    private val silentModelDemoter: SilentModelDemoter,
     // Process-lifetime scope for share-alias sync work (code review 2026-09-03):
     // on viewModelScope, a ViewModel clear mid-sync (DataStore reads + PackageManager
     // IPCs) killed the enablement and the affected model stayed MISSING from
@@ -426,7 +430,10 @@ class ModelViewModel @Inject constructor(
                     viewModelScope.launch {
                         preferencesManager.saveSherpaModelPath(entryId, file.absolutePath)
                     }
-                    if (_uiState.value.modelName.isBlank()) useModel(entryId, variantName)
+                    // TASK-675: the first-run auto-selection skips demoted models.
+                    if (_uiState.value.modelName.isBlank()) {
+                        autoSelectIfNotDemoted(entryId) { useModel(entryId, variantName) }
+                    }
                     val displayName = ctx.getString(CatalogVariantUi.of(entryId, variantName).titleResId)
                     viewModelScope.launch { _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.catalog_model_downloaded, displayName))) }
                 }
@@ -1367,6 +1374,9 @@ class ModelViewModel @Inject constructor(
             if (modelPath != null) {
                 preferencesManager.saveSherpaModelPath(entryId, modelPath)
                 preferencesManager.saveTranscriptionBackend(entryId)
+                // TASK-675: the explicit pick is the give-it-another-chance
+                // path: any demotion for silent decodes clears here.
+                silentModelDemoter.onManualSelection(entryId)
 
                 val displayName = context.getString(CatalogVariantUi.of(entryId, variantName).titleResId)
                 val message = context.getString(R.string.model_selected_message, displayName)
@@ -1515,6 +1525,29 @@ class ModelViewModel @Inject constructor(
                 PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
 
     /**
+     * TASK-675: the demoted set (backend ids that decoded empty while speech
+     * was present). The Model tab renders the honest one-line reason on these
+     * cards and the curated recommendations skip them; it never gates manual
+     * selection.
+     */
+    val demotedBackendIds: StateFlow<Set<String>> =
+        silentModelDemoter.demotedBackends
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptySet())
+
+    /**
+     * TASK-675: the first-run auto-selection arm (a download or import that
+     * lands while nothing is active) must skip demoted models; the user's
+     * explicit pick is the only thing that re-enables one. One internal seam
+     * so the skip rule is pinned by a unit test (the service progress flow
+     * itself is not emittable from tests).
+     */
+    internal fun autoSelectIfNotDemoted(backendId: String, select: suspend () -> Unit) {
+        viewModelScope.launch {
+            if (!silentModelDemoter.isDemoted(backendId)) select()
+        }
+    }
+
+    /**
      * TASK-681: the LAN-offload service card's state, collected from the
      * registry descriptor's path flow (the ONE owner of the
      * enabled-and-configured rule; null while off, so no card, no selection
@@ -1640,8 +1673,9 @@ class ModelViewModel @Inject constructor(
         // Called from a non-suspend fold callback; the manager is suspend since TASK-264.
         applicationScope.launch { shareTargetManager.onModelDownloaded() }
         // First-run behavior: auto-select when nothing is active.
+        // TASK-675: a demoted external model is skipped by that auto-selection.
         if (_uiState.value.modelName.isBlank()) {
-            viewModelScope.launch { activateExternalModel(record) }
+            autoSelectIfNotDemoted(record.backendId) { activateExternalModel(record) }
         }
     }
 
@@ -1652,6 +1686,8 @@ class ModelViewModel @Inject constructor(
 
     private suspend fun activateExternalModel(record: ExternalModelRecord) {
         preferencesManager.saveTranscriptionBackend(record.backendId)
+        // TASK-675: the explicit pick clears any silent-decode demotion.
+        silentModelDemoter.onManualSelection(record.backendId)
         // TASK-408: canary decodes empty on chunks cut mid-speech, so VAD-aligned
         // segmentation is part of the deal: flip the preference on at selection
         // time (visible in Settings) rather than overriding it silently. The

@@ -340,6 +340,7 @@
     <string name="active_badge">Активна</string>
     <string name="model_selected_message">Выбрано: %1$s</string>
     <string name="model_use_missing_files">Файлы модели %1$s отсутствуют или неполные. Скачайте этот вариант заново на вкладке «Модель».</string>
+    <string name="model_demoted_notice">Не выбирается автоматически: эта модель не выдала текст при наличии речи. Выберите её снова, чтобы дать ей ещё один шанс.</string>
     <string name="delete">Удалить</string>
     <string name="download">Скачать</string>
     <string name="model_update_button">Обновить</string>

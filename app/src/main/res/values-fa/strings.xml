@@ -346,6 +346,7 @@
     <string name="active_badge">فعال</string>
     <string name="model_selected_message">%1$s انتخاب شد</string>
     <string name="model_use_missing_files">فایل‌های مدل %1$s مفقود یا ناقص‌اند. این نسخه را از زبانه مدل دوباره دانلود کنید.</string>
+    <string name="model_demoted_notice">به‌طور خودکار انتخاب نمی‌شود: این مدل با وجود گفتار متن تولید نکرد. دوباره انتخابش کنید تا فرصت دیگری به آن بدهید.</string>
     <string name="delete">حذف</string>
     <string name="download">دانلود</string>
     <string name="model_update_button">به‌روزرسانی</string>

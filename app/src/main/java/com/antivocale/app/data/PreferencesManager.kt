@@ -126,6 +126,21 @@ interface PreferencesManager {
     val externalModelsJson: Flow<String?>
     suspend fun saveExternalModelsJson(json: String)
 
+    /**
+     * TASK-675: backend ids demoted for silent decodes (a model that loaded
+     * but produced no text while speech was present, twice in one app
+     * process). Auto-selection and the curated recommendation cards skip
+     * these; a manual selection clears the entry. Plain set semantics: add
+     * and remove are idempotent and never raise.
+     */
+    val demotedBackends: Flow<Set<String>>
+
+    /** TASK-675: adds [backendId] to the demoted set (no-op when already present). */
+    suspend fun markBackendDemoted(backendId: String)
+
+    /** TASK-675: removes [backendId] from the demoted set (no-op when absent). */
+    suspend fun clearDemotedBackend(backendId: String)
+
     suspend fun saveModelPath(path: String)
     suspend fun clearModelPath()
     suspend fun saveKeepAliveTimeout(minutes: Int)

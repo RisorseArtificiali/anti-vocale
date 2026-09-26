@@ -358,6 +358,8 @@
     <string name="active_badge">Active</string>
     <string name="model_selected_message">%1$s selected</string>
     <string name="model_use_missing_files">The model files for %1$s are missing or incomplete. Re-download the variant from the Model tab.</string>
+    <!-- TASK-675: honest one-line reason on a demoted model card. -->
+    <string name="model_demoted_notice">Not chosen automatically: this model produced no text while speech was present. Pick it again to give it another chance.</string>
     <string name="delete">Delete</string>
     <string name="download">Download</string>
     <string name="model_update_button">Update</string>

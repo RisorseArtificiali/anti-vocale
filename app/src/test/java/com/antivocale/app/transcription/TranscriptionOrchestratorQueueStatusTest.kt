@@ -29,6 +29,9 @@ class TranscriptionOrchestratorQueueStatusTest {
             shareTargetManager = mockk(relaxed = true),
             shareShortcutManager = mockk(relaxed = true),
             externalModelStore = mockk(relaxed = true),
+            // TASK-675: never reached here (logQueued only), real instance
+            // keeps the construction honest anyway.
+            silentModelDemoter = SilentModelDemoter(com.antivocale.app.data.FakePreferencesManager()),
         )
 
     @Test
