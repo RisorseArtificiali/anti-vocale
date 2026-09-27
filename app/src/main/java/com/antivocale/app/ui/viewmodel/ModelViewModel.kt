@@ -57,6 +57,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -699,6 +700,33 @@ class ModelViewModel @Inject constructor(
     fun savedModelPath(entryId: String): StateFlow<String?> =
         preferencesManager.sherpaModelPath(entryId)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    /**
+     * TASK-685 (GH #112): the Models-tab language filter's persisted
+     * selection (the first-run favorite-seed target). The stored "" (an
+     * explicit clear) maps to null here: the UI speaks "no filter", the
+     * preference keeps the cleared-vs-untouched distinction the seed guards
+     * on. Starts null; the first DataStore emission carries the seed or the
+     * saved choice.
+     */
+    val modelFilterLanguage: StateFlow<String?> = preferencesManager.modelFilterLanguage
+        .map { it?.takeIf(String::isNotEmpty) }
+        // Review R1: the synchronous cache read seeds the initial value, so
+        // a re-entered Models tab never flashes "All languages" over the
+        // persisted favorite (the in-repo pattern at currentSummaryPrompt).
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            kotlinx.coroutines.runBlocking {
+                preferencesManager.modelFilterLanguage.first()
+                    ?.takeIf(String::isNotEmpty)
+            },
+        )
+
+    /** TASK-685: a null selection records the explicit clear (""), never the untouched state. */
+    fun setModelFilterLanguage(code: String?) {
+        viewModelScope.launch { preferencesManager.saveModelFilterLanguage(code ?: "") }
+    }
 
     private fun loadSavedModelPath() {
         viewModelScope.launch {

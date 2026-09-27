@@ -239,8 +239,11 @@ fun ModelTab(
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
 
-    // Language filter state
-    var filterLanguageCode by remember { mutableStateOf<String?>(null) }
+    // Language filter state. TASK-685 (GH #112): the selection is persisted
+    // (it is the first-run favorite-seed target), so a first-run seed or a
+    // user choice survives tab switches and restarts; "All languages" clears
+    // it by writing the explicit-clear value (""), never the untouched one.
+    val filterLanguageCode by viewModel.modelFilterLanguage.collectAsState()
 
     val visibleGemmaVariants = remember(filterLanguageCode) {
         filterVariants(ModelDownloader.ModelVariant.entries, filterLanguageCode) { it.supportedLanguageCodes }
@@ -527,7 +530,7 @@ fun ModelTab(
         // Language filter
         LanguageFilterBar(
             selectedLanguageCode = filterLanguageCode,
-            onLanguageSelected = { filterLanguageCode = it }
+            onLanguageSelected = { viewModel.setModelFilterLanguage(it) }
         )
 
         // GH #70: curated "For your language" elevation. The language comes
@@ -537,8 +540,9 @@ fun ModelTab(
         // section. Two rules keep the mechanisms from stacking: an explicit
         // language-filter choice always beats the automatic curation (the
         // filter stays the primary tool), and one "Browse all languages" tap
-        // returns to the universal tab for the rest of this tab visit (no
-        // persisted preference; a tab re-entry shows the curation again).
+        // returns to the universal tab for the rest of this tab visit (the
+        // filter preference itself IS persisted since TASK-685, but clearing
+        // it returns to the curation on the next tab entry).
         val curatedAppLanguage = LocalConfiguration.current.locales[0]?.language
         val curatedProfile =
             if (filterLanguageCode == null) CuratedProfiles.forLanguage(curatedAppLanguage) else null

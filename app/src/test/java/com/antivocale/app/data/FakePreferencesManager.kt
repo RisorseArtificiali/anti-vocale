@@ -50,6 +50,8 @@ internal class FakePreferencesManager : PreferencesManager {
     val _threadCount = MutableStateFlow(PreferencesManager.DEFAULT_THREAD_COUNT)
     val _inferenceProvider = MutableStateFlow("auto")
     val _transcriptionLanguage = MutableStateFlow("auto")
+    // TASK-685: null mirrors the untouched default (key absent in the impl).
+    val _modelFilterLanguage = MutableStateFlow<String?>(null)
     val _swipeActionMode = MutableStateFlow("REVEAL")
     val _groupLogsByConversation = MutableStateFlow(true)
     val _showTechnicalDetails = MutableStateFlow(PreferencesManager.DEFAULT_SHOW_TECHNICAL_DETAILS)
@@ -108,6 +110,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val threadCount: Flow<Int> get() = _threadCount
     override val inferenceProvider: Flow<String> get() = _inferenceProvider
     override val transcriptionLanguage: Flow<String> get() = _transcriptionLanguage
+    override val modelFilterLanguage: Flow<String?> get() = _modelFilterLanguage
     override val swipeActionMode: Flow<String> get() = _swipeActionMode
     override val groupLogsByConversation: Flow<Boolean> get() = _groupLogsByConversation
     override val showTechnicalDetails: Flow<Boolean> get() = _showTechnicalDetails
@@ -171,6 +174,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveThreadCount(threads: Int) { _threadCount.value = threads }
     override suspend fun saveInferenceProvider(provider: String) { _inferenceProvider.value = provider }
     override suspend fun saveTranscriptionLanguage(language: String) { _transcriptionLanguage.value = language }
+    override suspend fun saveModelFilterLanguage(code: String) { _modelFilterLanguage.value = code }
     override suspend fun saveSwipeActionMode(mode: String) { _swipeActionMode.value = mode }
     override suspend fun saveGroupLogsByConversation(enabled: Boolean) { _groupLogsByConversation.value = enabled }
     override suspend fun saveShowTechnicalDetails(enabled: Boolean) { _showTechnicalDetails.value = enabled }

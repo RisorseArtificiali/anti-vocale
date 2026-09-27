@@ -56,6 +56,34 @@ class LanguageFilterTest {
         }
     }
 
+    // ==================== TASK-685: first-run favorite seed ====================
+
+    @Test
+    fun `onboarding seed returns an offered interface language`() {
+        assertEquals("it", Language.onboardingFavoriteSeed("it"))
+        assertEquals("en", Language.onboardingFavoriteSeed("en"))
+    }
+
+    @Test
+    fun `onboarding seed is null for a language the filter does not offer`() {
+        assertNull(Language.onboardingFavoriteSeed("tl")) // Filipino: no filter entry
+        // A custom offered set drives the same guard.
+        assertNull(Language.onboardingFavoriteSeed("it", offered = setOf("de", "fr")))
+        assertEquals("de", Language.onboardingFavoriteSeed("de", offered = setOf("de", "fr")))
+    }
+
+    @Test
+    fun `onboarding seed is null for a null or blank interface language`() {
+        assertNull(Language.onboardingFavoriteSeed(null))
+        assertNull(Language.onboardingFavoriteSeed(""))
+        assertNull(Language.onboardingFavoriteSeed("  "))
+    }
+
+    @Test
+    fun `onboarding seed trims a padded interface language`() {
+        assertEquals("it", Language.onboardingFavoriteSeed(" it "))
+    }
+
     // ==================== Whisper variants ====================
 
     @Test

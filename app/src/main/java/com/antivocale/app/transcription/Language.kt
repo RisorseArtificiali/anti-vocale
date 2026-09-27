@@ -20,6 +20,22 @@ object Language {
         "uz", "vi", "zh",
     )
 
+    /**
+     * TASK-685 (GH #112): the first-run favorite seed. The interface
+     * language becomes the initial Models-filter favorite when the filter
+     * itself offers it: [FILTER_ENTRIES] is the exact set the dropdown
+     * renders, and every entry is covered by at least one bundled catalog
+     * model (pinned by LanguageFilterTest), so a seeded filter never renders
+     * an empty tab. Null = no seed. Interface language ONLY for v1: on a
+     * true first run no received-note languages exist yet (design decision
+     * recorded in TASK-685). This fills the favorites suggestion only; the
+     * decode-language preference is never written by it (TASK-457 no-pin).
+     */
+    fun onboardingFavoriteSeed(
+        interfaceLanguage: String?,
+        offered: Collection<String> = FILTER_ENTRIES,
+    ): String? = interfaceLanguage?.trim()?.takeIf { it.isNotEmpty() && it in offered }
+
     // ==================== Per-backend language sets ====================
 
     /** Whisper Small/Turbo/Medium: 99 languages (OpenAI Whisper model card). */

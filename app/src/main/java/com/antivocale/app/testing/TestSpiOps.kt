@@ -120,6 +120,9 @@ internal class TestSpiOps(
             .put("showTechnicalDetails", preferences.showTechnicalDetails.first())
             .put("vadAdvisoryDismissed", preferences.vadAdvisoryDismissed.first())
             .put("onboardingCompleted", preferences.onboardingCompleted.first())
+            // TASK-685: the seeded Models-filter favorite (null = untouched,
+            // "" = cleared; device trials read the seed without UI scraping).
+            .put("modelFilterLanguage", preferences.modelFilterLanguage.first() ?: JSONObject.NULL)
             .put("swipeActionMode", preferences.swipeActionMode.first())
             .put("themePreference", preferences.themePreference.first())
             .put("textScalePreference", preferences.textScalePreference.first())
@@ -188,6 +191,12 @@ internal class TestSpiOps(
      * like a real one.
      */
     private val choiceKeys: Map<String, Pair<List<String>, suspend (String) -> Unit>> = mapOf(
+        // TASK-685 review R4: validated against the filter's offered entries
+        // (a typo'd code would render an empty Models tab); blank is the
+        // explicit clear and stays accepted.
+        "model_filter_language" to Pair(
+            com.antivocale.app.transcription.Language.FILTER_ENTRIES + "",
+            preferences::saveModelFilterLanguage),
         "punctuation" to Pair(PUNCTUATION_MODES, preferences::savePunctuationMode),
         "provider" to Pair(InferenceProvider.options, preferences::saveInferenceProvider),
         "swipe_action" to Pair(PreferencesManager.SWIPE_ACTION_MODES, preferences::saveSwipeActionMode),

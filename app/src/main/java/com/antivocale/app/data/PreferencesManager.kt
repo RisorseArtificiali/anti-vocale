@@ -93,6 +93,17 @@ interface PreferencesManager {
     val threadCount: Flow<Int>
     val inferenceProvider: Flow<String>
     val transcriptionLanguage: Flow<String>
+
+    /**
+     * TASK-685 (GH #112): the Models-tab language filter's persisted
+     * selection, and the first-run favorite-seed target. Tri-state: null =
+     * untouched default (the onboarding seed may fire); "" = the user
+     * explicitly cleared the filter (a replayed tour must NOT re-seed); a
+     * language code = the current favorite. The seed only ever fills this
+     * suggestion; the decode-language preference ([transcriptionLanguage])
+     * is a different key the seed never touches (TASK-457 no-pin).
+     */
+    val modelFilterLanguage: Flow<String?>
     val swipeActionMode: Flow<String>
     val groupLogsByConversation: Flow<Boolean>
     /** TASK-616: render the technical processing-context line on expanded entries. */
@@ -189,6 +200,9 @@ interface PreferencesManager {
     suspend fun saveThreadCount(threads: Int)
     suspend fun saveInferenceProvider(provider: String)
     suspend fun saveTranscriptionLanguage(language: String)
+
+    /** TASK-685: see [modelFilterLanguage]. */
+    suspend fun saveModelFilterLanguage(code: String)
     suspend fun saveSwipeActionMode(mode: String)
     suspend fun saveGroupLogsByConversation(enabled: Boolean)
     /** TASK-616: see [showTechnicalDetails]. */

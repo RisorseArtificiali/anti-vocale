@@ -107,6 +107,8 @@ class PreferencesManagerImpl(
         private val EXTERNAL_MODELS_JSON = stringPreferencesKey("external_models_json")
         // TASK-675: silent-model demotion set (backend ids).
         private val DEMOTED_BACKENDS = stringSetPreferencesKey("demoted_backends")
+        // TASK-685: the Models-filter favorite; key absence = untouched.
+        private val MODEL_FILTER_LANGUAGE = stringPreferencesKey("model_filter_language")
     }
 
     private val cache = AtomicReference(CachedPreferences())
@@ -141,6 +143,9 @@ class PreferencesManagerImpl(
         val threadCount: Int = PreferencesManager.DEFAULT_THREAD_COUNT,
         val inferenceProvider: String = PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         val transcriptionLanguage: String = PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
+        // TASK-685: null = untouched (the onboarding seed may fire), "" =
+        // explicitly cleared, a code = the Models-filter favorite.
+        val modelFilterLanguage: String? = null,
         val swipeActionMode: String = PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
         val vadAdvisoryDismissed: Boolean = false,
         val onboardingCompleted: Boolean = false,
@@ -195,6 +200,7 @@ class PreferencesManagerImpl(
         threadCount = this[THREAD_COUNT] ?: PreferencesManager.DEFAULT_THREAD_COUNT,
         inferenceProvider = this[INFERENCE_PROVIDER] ?: PreferencesManager.DEFAULT_INFERENCE_PROVIDER,
         transcriptionLanguage = this[TRANSCRIPTION_LANGUAGE] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_LANGUAGE,
+        modelFilterLanguage = this[MODEL_FILTER_LANGUAGE],
         swipeActionMode = this[SWIPE_ACTION_MODE] ?: PreferencesManager.DEFAULT_SWIPE_ACTION_MODE,
         vadAdvisoryDismissed = this[VAD_ADVISORY_DISMISSED] ?: false,
         onboardingCompleted = this[ONBOARDING_COMPLETED] ?: false,
@@ -586,6 +592,20 @@ class PreferencesManagerImpl(
             preferences[TRANSCRIPTION_LANGUAGE] = language
         }
         cache.updateAndGet { it.copy(transcriptionLanguage = language) }
+    }
+
+    // TASK-685: key absence (null) is load-bearing, so the clear writes ""
+    // instead of removing the key: it distinguishes "user cleared the
+    // suggestion" from "never touched", which is the seed's guard.
+    override val modelFilterLanguage: Flow<String?> =
+        dataStore.data.map { it[MODEL_FILTER_LANGUAGE] }
+            .onStart { emit(cache.get().modelFilterLanguage) }
+
+    override suspend fun saveModelFilterLanguage(code: String) {
+        dataStore.edit { preferences ->
+            preferences[MODEL_FILTER_LANGUAGE] = code
+        }
+        cache.updateAndGet { it.copy(modelFilterLanguage = code) }
     }
 
     override val swipeActionMode: Flow<String> = dataStore.data.map { it[SWIPE_ACTION_MODE] ?: PreferencesManager.DEFAULT_SWIPE_ACTION_MODE }

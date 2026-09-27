@@ -29,6 +29,7 @@ import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
+import com.antivocale.app.transcription.Language
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.manager.LlmManager
@@ -314,8 +315,33 @@ class SettingsViewModel @Inject constructor(
             initialValue = true // fail-closed: never flash the tour on a warm start
         )
 
-    fun setOnboardingCompleted() {
-        viewModelScope.launch { preferencesManager.saveOnboardingCompleted(true) }
+    /**
+     * TASK-491's tour-completion moment, now also the TASK-685 (GH #112)
+     * first-run favorite seed. The interface language becomes the initial
+     * Models-filter favorite when the filter offers it, and only when that
+     * preference is still untouched (null): a replayed tour (Settings row)
+     * and a user-cleared suggestion ("") are both non-null and stay
+     * untouched. The seed writes BEFORE the completion flag: a crash between
+     * the two re-arms the tour, and the re-completion's guard sees the
+     * already-seeded value and skips, so the write is one-shot per install.
+     * The decode-language preference is never written here (TASK-457
+     * no-pin: the untouched path keeps model-side detection).
+     */
+    fun setOnboardingCompleted(
+        interfaceLanguage: String? = LocaleManager.effectiveLocale().language,
+    ) {
+        viewModelScope.launch {
+            // Review R2: the FIRST completion always writes the seed OUTCOME
+            // (the covered language, or "" when the filter offers none), so
+            // null means strictly "tour never completed". The replay hole
+            // closes (a replayed tour after a locale switch cannot silently
+            // filter) and the guard becomes immune to default-value drift.
+            if (preferencesManager.modelFilterLanguage.first() == null) {
+                preferencesManager.saveModelFilterLanguage(
+                    Language.onboardingFavoriteSeed(interfaceLanguage) ?: "")
+            }
+            preferencesManager.saveOnboardingCompleted(true)
+        }
     }
 
     fun replayOnboardingTour() {
