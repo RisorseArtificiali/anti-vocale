@@ -79,8 +79,8 @@ sleep 2
 
 # ── stage the audio in the app sandbox (no storage permissions) ────────────
 "$ADB" -s "$serial" push "$AUDIO" "/data/local/tmp/$BASENAME" >/dev/null
-"$ADB" -s "$serial" shell "run-as $PKG cp /data/local/tmp/$BASENAME files/$BASENAME"
-SANDBOX="/data/user/0/$PKG/files/$BASENAME"
+"$ADB" -s "$serial" shell "run-as $PKG sh -c 'mkdir -p files/shared_audio && cp /data/local/tmp/$BASENAME files/shared_audio/'"
+SANDBOX="/data/user/0/$PKG/files/shared_audio/$BASENAME"
 echo "== audio staged: $SANDBOX ($(du -h "$AUDIO" | cut -f1))"
 
 mkdir -p "$OUT_DIR"
