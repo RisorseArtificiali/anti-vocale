@@ -1092,6 +1092,22 @@
     <string name="speaker_labels_status">Определение говорящих…</string>
     <string name="speaker_labels_title">Определять говорящих</string>
     <string name="speaker_labels_description">Добавляет метку говорящего к каждому предложению. При первом использовании загружает около~47 МБ моделей; увеличивает время обработки.</string>
+    <string name="speaker_id_title">Профили говорящих</string>
+    <string name="speaker_id_description">Зарегистрируйте голос, чтобы подписывать его метки в расшифровках именем. Голосовые отпечатки и образцы остаются только на этом телефоне и никогда не покидают его.</string>
+    <string name="speaker_id_empty">Пока никто не зарегистрирован.</string>
+    <string name="speaker_id_add">Добавить голос</string>
+    <string name="speaker_id_sample_seconds">образец %1$d с</string>
+    <string name="speaker_id_replay">Воспроизвести образец</string>
+    <string name="speaker_id_delete">Удалить голос</string>
+    <string name="speaker_id_name_title">Имя для этого голоса</string>
+    <string name="speaker_id_name_label">Имя</string>
+    <string name="speaker_id_name_confirm">Сохранить</string>
+    <string name="speaker_id_name_cancel">Отмена</string>
+    <string name="speaker_id_error_too_short">Клип слишком короткий: выберите не менее 3 с голоса этого человека.</string>
+    <string name="speaker_id_error_too_long">Клип слишком длинный: держите короче 30 с.</string>
+    <string name="speaker_id_error_decode">Не удалось прочитать этот аудиоклип.</string>
+    <string name="speaker_id_error_extract">Не удалось извлечь голосовой отпечаток из этого клипа.</string>
+    <string name="speaker_id_error_model">Не удалось скачать модель говорящих. Проверьте соединение и попробуйте снова.</string>
     <string name="transcription_not_refined">Не уточнено (мгновенный предпросмотр)</string>
     <string name="transcription_refined_from">Уточнено с %1$s</string>
     <string name="refinement_title">Двухпроходная расшифровка</string>
@@ -1110,7 +1126,9 @@
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Требует файлы model + tokens; многоязычная (база zh/en)</string>
   <plurals name="subtitle_import_skipped_cues">
-    <item quantity="one">строка пропущена</item>
-    <item quantity="other">строк пропущено</item>
+    <item quantity="one">%1$d строка пропущена</item>
+    <item quantity="few">%1$d строки пропущено</item>
+    <item quantity="many">%1$d строк пропущено</item>
+    <item quantity="other">%1$d строк пропущено</item>
   </plurals>
 </resources>

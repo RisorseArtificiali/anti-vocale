@@ -1078,6 +1078,22 @@
     <string name="speaker_labels_status">در حال شناسایی گویندگان…</string>
     <string name="speaker_labels_title">شناسایی گویندگان</string>
     <string name="speaker_labels_description">به هر جمله یک برچسب گوینده اضافه می‌کند. در اولین استفاده حدود ۴۷ مگابایت مدل دانلود می‌شود؛ زمان پردازش بیشتر می‌شود.</string>
+    <string name="speaker_id_title">هویت‌های گوینده</string>
+    <string name="speaker_id_description">با ثبت یک صدا، برچسب‌های آن در رونویس‌ها نام‌گذاری می‌شود. اثر صدا و نمونه‌ها فقط روی همین گوشی می‌مانند و هرگز از آن خارج نمی‌شوند.</string>
+    <string name="speaker_id_empty">هنوز کسی ثبت نشده است.</string>
+    <string name="speaker_id_add">افزودن صدا</string>
+    <string name="speaker_id_sample_seconds">نمونه %1$d ثانیه‌ای</string>
+    <string name="speaker_id_replay">پخش نمونه</string>
+    <string name="speaker_id_delete">حذف صدا</string>
+    <string name="speaker_id_name_title">نام‌گذاری این صدا</string>
+    <string name="speaker_id_name_label">نام</string>
+    <string name="speaker_id_name_confirm">ذخیره</string>
+    <string name="speaker_id_name_cancel">لغو</string>
+    <string name="speaker_id_error_too_short">کلیپ خیلی کوتاه است: دست‌کم ۳ ثانیه از صدای آن شخص را انتخاب کنید.</string>
+    <string name="speaker_id_error_too_long">کلیپ خیلی بلند است: کمتر از ۳۰ ثانیه باشد.</string>
+    <string name="speaker_id_error_decode">آن کلیپ صوتی خوانده نشد.</string>
+    <string name="speaker_id_error_extract">از آن کلیپ اثر صدا استخراج نشد.</string>
+    <string name="speaker_id_error_model">دانلود مدل گوینده ناموفق بود. اتصال را بررسی کنید و دوباره تلاش کنید.</string>
     <string name="transcription_not_refined">پالایش نشده (پیش‌نمایش فوری)</string>
     <string name="transcription_refined_from">پالایش‌شده از %1$s</string>
     <string name="refinement_title">رونویسی دومرحله‌ای</string>
@@ -1096,7 +1112,7 @@
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">نیازمند فایل‌های model + tokens؛ چندزبانه (پایه zh/en)</string>
   <plurals name="subtitle_import_skipped_cues">
-    <item quantity="one">خط نادیده گرفته شد</item>
-    <item quantity="other">خط نادیده گرفته شد</item>
+    <item quantity="one">%1$d خط نادیده گرفته شد</item>
+    <item quantity="other">%1$d خط نادیده گرفته شد</item>
   </plurals>
 </resources>

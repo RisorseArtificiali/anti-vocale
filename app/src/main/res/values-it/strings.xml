@@ -1084,6 +1084,22 @@
     <string name="speaker_labels_status">Identificazione degli interlocutori…</string>
     <string name="speaker_labels_title">Identifica gli interlocutori</string>
     <string name="speaker_labels_description">Aggiunge la label del parlante a ogni frase. Al primo uso scarica circa~47 MB di modelli; aumenta il tempo di elaborazione.</string>
+    <string name="speaker_id_title">Identità dei parlanti</string>
+    <string name="speaker_id_description">Registra una voce per mettere il suo nome sulle label della trascrizione. Le impronte vocali e i campioni restano solo su questo telefono e non lo lasciano mai.</string>
+    <string name="speaker_id_empty">Nessuna voce registrata.</string>
+    <string name="speaker_id_add">Aggiungi una voce</string>
+    <string name="speaker_id_sample_seconds">campione di %1$d s</string>
+    <string name="speaker_id_replay">Riproduci campione</string>
+    <string name="speaker_id_delete">Elimina voce</string>
+    <string name="speaker_id_name_title">Dai un nome a questa voce</string>
+    <string name="speaker_id_name_label">Nome</string>
+    <string name="speaker_id_name_confirm">Salva</string>
+    <string name="speaker_id_name_cancel">Annulla</string>
+    <string name="speaker_id_error_too_short">Clip troppo corta: servono almeno 3 s di voce della persona.</string>
+    <string name="speaker_id_error_too_long">Clip troppo lunga: tienila sotto i 30 s.</string>
+    <string name="speaker_id_error_decode">Impossibile leggere quella clip audio.</string>
+    <string name="speaker_id_error_extract">Impossibile estrarre un\'impronta vocale da quella clip.</string>
+    <string name="speaker_id_error_model">Download del modello parlanti non riuscito. Controlla la connessione e riprova.</string>
     <string name="transcription_not_refined">Non rifinito (anteprima immediata)</string>
     <string name="transcription_refined_from">Rifinito da %1$s</string>
     <string name="refinement_title">Trascrizione in due passate</string>
@@ -1096,7 +1112,7 @@
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Richiede i file model + token; multilingua (base zh/en)</string>
   <plurals name="subtitle_import_skipped_cues">
-    <item quantity="one">cue saltata</item>
-    <item quantity="other">cue saltate</item>
+    <item quantity="one">%1$d cue saltata</item>
+    <item quantity="other">%1$d cue saltate</item>
   </plurals>
 </resources>

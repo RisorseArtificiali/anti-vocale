@@ -941,6 +941,22 @@
     <string name="speaker_labels_status">Identificando falantes…</string>
     <string name="speaker_labels_title">Identificar falantes</string>
     <string name="speaker_labels_description">Adiciona um rótulo de falante a cada frase. Baixa cerca de~47 MB de modelos no primeiro uso; adiciona tempo de processamento.</string>
+    <string name="speaker_id_title">Identidades de falantes</string>
+    <string name="speaker_id_description">Cadastre uma voz para nomear os rótulos dela nas transcrições. As impressões de voz e as amostras ficam somente neste telefone e nunca saem dele.</string>
+    <string name="speaker_id_empty">Ninguém cadastrado ainda.</string>
+    <string name="speaker_id_add">Adicionar uma voz</string>
+    <string name="speaker_id_sample_seconds">amostra de %1$d s</string>
+    <string name="speaker_id_replay">Reproduzir amostra</string>
+    <string name="speaker_id_delete">Excluir voz</string>
+    <string name="speaker_id_name_title">Nomear esta voz</string>
+    <string name="speaker_id_name_label">Nome</string>
+    <string name="speaker_id_name_confirm">Salvar</string>
+    <string name="speaker_id_name_cancel">Cancelar</string>
+    <string name="speaker_id_error_too_short">Clipe curto demais: escolha pelo menos 3 s da voz dessa pessoa.</string>
+    <string name="speaker_id_error_too_long">Clipe longo demais: mantenha abaixo de 30 s.</string>
+    <string name="speaker_id_error_decode">Não foi possível ler esse clipe de áudio.</string>
+    <string name="speaker_id_error_extract">Não foi possível extrair uma impressão de voz desse clipe.</string>
+    <string name="speaker_id_error_model">Falha no download do modelo de falantes. Verifique a conexão e tente novamente.</string>
     <string name="transcription_not_refined">Não refinado (prévia instantânea)</string>
     <string name="transcription_refined_from">Refinado de %1$s</string>
     <string name="refinement_title">Transcrição em duas passagens</string>
@@ -959,7 +975,7 @@
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Espera arquivos model + tokens; multilíngue (base zh/en)</string>
   <plurals name="subtitle_import_skipped_cues">
-    <item quantity="one">linha ignorada</item>
-    <item quantity="other">linhas ignoradas</item>
+    <item quantity="one">%1$d linha ignorada</item>
+    <item quantity="other">%1$d linhas ignoradas</item>
   </plurals>
 </resources>

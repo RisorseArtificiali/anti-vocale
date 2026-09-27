@@ -1073,6 +1073,22 @@
     <string name="speaker_labels_status">Konuşmacılar tanımlanıyor…</string>
     <string name="speaker_labels_title">Konuşmacıları tanımla</string>
     <string name="speaker_labels_description">Her cümleye bir konuşmacı etiketi ekler. İlk kullanımda yaklaşık~47 MB model indirir; işlem süresini artırır.</string>
+    <string name="speaker_id_title">Konuşmacı kimlikleri</string>
+    <string name="speaker_id_description">Bir ses kaydedin, transkriptlerdeki etiketleri onun adıyla görünsün. Ses parmak izleri ve örnekler yalnızca bu telefonda kalır ve asla telefonden çıkmaz.</string>
+    <string name="speaker_id_empty">Henüz kimse kaydedilmedi.</string>
+    <string name="speaker_id_add">Ses ekle</string>
+    <string name="speaker_id_sample_seconds">%1$d sn örnek</string>
+    <string name="speaker_id_replay">Örneği oynat</string>
+    <string name="speaker_id_delete">Sesi sil</string>
+    <string name="speaker_id_name_title">Bu sese ad ver</string>
+    <string name="speaker_id_name_label">Ad</string>
+    <string name="speaker_id_name_confirm">Kaydet</string>
+    <string name="speaker_id_name_cancel">İptal</string>
+    <string name="speaker_id_error_too_short">Klip çok kısa: o kişinin sesinden en az 3 sn seçin.</string>
+    <string name="speaker_id_error_too_long">Klip çok uzun: 30 sn altında tutun.</string>
+    <string name="speaker_id_error_decode">Bu ses klibi okunamadı.</string>
+    <string name="speaker_id_error_extract">Bu klipten ses parmak izi çıkarılamadı.</string>
+    <string name="speaker_id_error_model">Konuşmacı modeli indirilemedi. Bağlantıyı kontrol edip tekrar deneyin.</string>
     <string name="transcription_not_refined">Rafine edilmedi (anında önizleme)</string>
     <string name="transcription_refined_from">%1$s ile rafine edildi</string>
     <string name="refinement_title">İki aşamalı transkripsiyon</string>
@@ -1091,7 +1107,7 @@
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">model + tokens dosyalarını bekler; çok dilli (zh/en tabanı)</string>
   <plurals name="subtitle_import_skipped_cues">
-    <item quantity="one">satır atlandı</item>
-    <item quantity="other">satır atlandı</item>
+    <item quantity="one">%1$d satır atlandı</item>
+    <item quantity="other">%1$d satır atlandı</item>
   </plurals>
 </resources>

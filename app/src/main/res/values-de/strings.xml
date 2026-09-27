@@ -1073,6 +1073,22 @@
     <string name="speaker_labels_status">Sprecher werden identifiziert…</string>
     <string name="speaker_labels_title">Sprecher erkennen</string>
     <string name="speaker_labels_description">Versieht jeden Satz mit einer Sprecherkennung. Lädt beim ersten Einsatz ca.~47 MB an Modellen herunter; erhöht die Verarbeitungszeit.</string>
+    <string name="speaker_id_title">Sprecher-Identitäten</string>
+    <string name="speaker_id_description">Hinterlege eine Stimme, um deren Sprecher-Schilder mit Namen zu versehen. Stimmabdrücke und Proben bleiben ausschließlich auf diesem Telefon und verlassen es nie.</string>
+    <string name="speaker_id_empty">Noch niemand hinterlegt.</string>
+    <string name="speaker_id_add">Stimme hinzufügen</string>
+    <string name="speaker_id_sample_seconds">%1$d s Probe</string>
+    <string name="speaker_id_replay">Probe abspielen</string>
+    <string name="speaker_id_delete">Stimme löschen</string>
+    <string name="speaker_id_name_title">Diese Stimme benennen</string>
+    <string name="speaker_id_name_label">Name</string>
+    <string name="speaker_id_name_confirm">Speichern</string>
+    <string name="speaker_id_name_cancel">Abbrechen</string>
+    <string name="speaker_id_error_too_short">Clip zu kurz: wähle mindestens 3 s der Stimme dieser Person.</string>
+    <string name="speaker_id_error_too_long">Clip zu lang: halte ihn unter 30 s.</string>
+    <string name="speaker_id_error_decode">Dieser Audioclip ließ sich nicht lesen.</string>
+    <string name="speaker_id_error_extract">Aus diesem Clip ließ sich kein Stimmabdruck erstellen.</string>
+    <string name="speaker_id_error_model">Download des Sprechermodells fehlgeschlagen. Prüfe die Verbindung und versuche es erneut.</string>
     <string name="transcription_not_refined">Nicht verfeinert (Sofortvorschau)</string>
     <string name="transcription_refined_from">Verfeinert von %1$s</string>
     <string name="refinement_title">Zweistufige Transkription</string>
@@ -1091,7 +1107,7 @@
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Erwartet model + tokens Dateien; mehrsprachig (zh/en base)</string>
   <plurals name="subtitle_import_skipped_cues">
-    <item quantity="one">Zeile übersprungen</item>
-    <item quantity="other">Zeilen übersprungen</item>
+    <item quantity="one">%1$d Zeile übersprungen</item>
+    <item quantity="other">%1$d Zeilen übersprungen</item>
   </plurals>
 </resources>

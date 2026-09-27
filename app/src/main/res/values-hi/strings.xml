@@ -1072,6 +1072,22 @@
     <string name="speaker_labels_status">वक्ताओं की पहचान हो रही है…</string>
     <string name="speaker_labels_title">वक्ताओं की पहचान करें</string>
     <string name="speaker_labels_description">प्रत्येक वाक्य में वक्ता का लेबल जोड़ता है। पहले उपयोग पर लगभग~47 MB मॉडल डाउनलोड होते हैं; प्रोसेसिंग समय बढ़ता है।</string>
+    <string name="speaker_id_title">वक्ता पहचान</string>
+    <string name="speaker_id_description">एक आवाज़ नामांकित करें ताकि ट्रांसक्रिप्ट में उसके लेबल नाम से दिखें। वॉयसप्रिंट और नमूने केवल इसी फ़ोन पर रहते हैं और कभी बाहर नहीं जाते।</string>
+    <string name="speaker_id_empty">अभी कोई नामांकित नहीं है।</string>
+    <string name="speaker_id_add">आवाज़ जोड़ें</string>
+    <string name="speaker_id_sample_seconds">%1$d s नमूना</string>
+    <string name="speaker_id_replay">नमूना चलाएँ</string>
+    <string name="speaker_id_delete">आवाज़ मिटाएँ</string>
+    <string name="speaker_id_name_title">इस आवाज़ को नाम दें</string>
+    <string name="speaker_id_name_label">नाम</string>
+    <string name="speaker_id_name_confirm">सहेजें</string>
+    <string name="speaker_id_name_cancel">रद्द करें</string>
+    <string name="speaker_id_error_too_short">क्लिप बहुत छोटा है: उस व्यक्ति की आवाज़ के कम से कम 3 सेकंड चुनें।</string>
+    <string name="speaker_id_error_too_long">क्लिप बहुत लंबा है: इसे 30 सेकंड से कम रखें।</string>
+    <string name="speaker_id_error_decode">वह ऑडियो क्लिप नहीं पढ़ा जा सका।</string>
+    <string name="speaker_id_error_extract">उस क्लिप से वॉयसप्रिंट नहीं निकाला जा सका।</string>
+    <string name="speaker_id_error_model">वक्ता मॉडल डाउनलोड विफल। कनेक्शन जाँचें और फिर से कोशिश करें।</string>
     <string name="transcription_not_refined">परिशोधित नहीं (तुरंत पूर्वावलोकन)</string>
     <string name="transcription_refined_from">%1$s से परिशोधित</string>
     <string name="refinement_title">दो-चरण ट्रांसक्रिप्शन</string>
@@ -1090,7 +1106,7 @@
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">model + tokens फ़ाइलें चाहिए; बहुभाषी (zh/en बेस)</string>
   <plurals name="subtitle_import_skipped_cues">
-    <item quantity="one">पंक्ति छोड़ी गई</item>
-    <item quantity="other">पंक्तियाँ छोड़ी गईं</item>
+    <item quantity="one">%1$d पंक्ति छोड़ी गई</item>
+    <item quantity="other">%1$d पंक्तियाँ छोड़ी गईं</item>
   </plurals>
 </resources>

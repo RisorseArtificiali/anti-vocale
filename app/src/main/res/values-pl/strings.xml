@@ -1091,6 +1091,22 @@
     <string name="speaker_labels_status">Identyfikowanie mówców…</string>
     <string name="speaker_labels_title">Identyfikuj mówców</string>
     <string name="speaker_labels_description">Dodaje etykietę mówcy do każdego zdania. Przy pierwszym użyciu pobiera ok.~47 MB modeli; wydłuża czas przetwarzania.</string>
+    <string name="speaker_id_title">Tożsamości mówców</string>
+    <string name="speaker_id_description">Zarejestruj głos, aby jego etykiety w transkrypcji miały imię. Odciski głosu i próbki zostają wyłącznie na tym telefonie i nigdy go nie opuszczają.</string>
+    <string name="speaker_id_empty">Nikt jeszcze nie został zarejestrowany.</string>
+    <string name="speaker_id_add">Dodaj głos</string>
+    <string name="speaker_id_sample_seconds">próbka %1$d s</string>
+    <string name="speaker_id_replay">Odtwórz próbkę</string>
+    <string name="speaker_id_delete">Usuń głos</string>
+    <string name="speaker_id_name_title">Nazwij ten głos</string>
+    <string name="speaker_id_name_label">Imię</string>
+    <string name="speaker_id_name_confirm">Zapisz</string>
+    <string name="speaker_id_name_cancel">Anuluj</string>
+    <string name="speaker_id_error_too_short">Klip za krótki: wybierz co najmniej 3 s głosu tej osoby.</string>
+    <string name="speaker_id_error_too_long">Klip za długi: niech będzie krótszy niż 30 s.</string>
+    <string name="speaker_id_error_decode">Nie udało się odczytać tego klipu audio.</string>
+    <string name="speaker_id_error_extract">Nie udało się wyodrębnić odcisku głosu z tego klipu.</string>
+    <string name="speaker_id_error_model">Pobieranie modelu mówców nie powiodło się. Sprawdź połączenie i spróbuj ponownie.</string>
     <string name="transcription_not_refined">Nie ulepszone (natychmiastowy podgląd)</string>
     <string name="transcription_refined_from">Ulepszone z %1$s</string>
     <string name="refinement_title">Transkrypcja dwuetapowa</string>
@@ -1109,7 +1125,9 @@
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Wymaga plików model + tokens; wielojęzyczny (baza zh/en)</string>
   <plurals name="subtitle_import_skipped_cues">
-    <item quantity="one">linia pominięta</item>
-    <item quantity="other">linie pominięte</item>
+    <item quantity="one">%1$d linia pominięta</item>
+    <item quantity="few">%1$d linie pominięte</item>
+    <item quantity="many">%1$d linii pominiętych</item>
+    <item quantity="other">%1$d linii pominiętych</item>
   </plurals>
 </resources>

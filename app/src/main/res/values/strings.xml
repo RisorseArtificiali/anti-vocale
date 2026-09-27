@@ -1084,6 +1084,24 @@
     <string name="speaker_labels_status">Identifying speakers…</string>
     <string name="speaker_labels_title">Identify speakers</string>
     <string name="speaker_labels_description">Adds a speaker label to each sentence. Downloads ~47 MB of speaker models on first use; adds processing time.</string>
+    <!-- TASK-670 (GH #83): speaker identities. Voiceprints are biometric-adjacent:
+         the wording states plainly that they never leave the phone. -->
+    <string name="speaker_id_title">Speaker identities</string>
+    <string name="speaker_id_description">Enroll a voice to name its labels on transcripts. Voiceprints and samples stay on this phone only and never leave it.</string>
+    <string name="speaker_id_empty">No one enrolled yet.</string>
+    <string name="speaker_id_add">Add a voice</string>
+    <string name="speaker_id_sample_seconds">%1$d s sample</string>
+    <string name="speaker_id_replay">Play sample</string>
+    <string name="speaker_id_delete">Delete voice</string>
+    <string name="speaker_id_name_title">Name this voice</string>
+    <string name="speaker_id_name_label">Name</string>
+    <string name="speaker_id_name_confirm">Save</string>
+    <string name="speaker_id_name_cancel">Cancel</string>
+    <string name="speaker_id_error_too_short">Clip too short: pick at least 3 s of that person\'s voice.</string>
+    <string name="speaker_id_error_too_long">Clip too long: keep it under 30 s.</string>
+    <string name="speaker_id_error_decode">Could not read that audio clip.</string>
+    <string name="speaker_id_error_extract">Could not extract a voiceprint from that clip.</string>
+    <string name="speaker_id_error_model">Speaker model download failed. Check the connection and try again.</string>
     <string name="transcription_not_refined">Not refined (instant preview)</string>
     <string name="transcription_refined_from">Refined from %1$s</string>
     <string name="refinement_title">Two-pass transcription</string>
@@ -1096,7 +1114,7 @@
     <string name="external_family_dolphin">Dolphin</string>
     <string name="external_family_dolphin_help">Expects model + tokens files; multi-language (zh/en base)</string>
   <plurals name="subtitle_import_skipped_cues">
-    <item quantity="one">cue skipped</item>
-    <item quantity="other">cues skipped</item>
+    <item quantity="one">%1$d cue skipped</item>
+    <item quantity="other">%1$d cues skipped</item>
   </plurals>
 </resources>
