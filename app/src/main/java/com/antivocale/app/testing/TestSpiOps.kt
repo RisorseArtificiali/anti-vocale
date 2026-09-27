@@ -61,6 +61,7 @@ internal class TestSpiOps(
             OP_RECORDS -> records()
             OP_IMPORT -> importModel(url, family, modelType)
             OP_NOTIFY_MEMORY_ERROR -> notifyMemoryError()
+            OP_CLIPBOARD -> clipboard()
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -482,14 +483,50 @@ internal class TestSpiOps(
             .toString()
     }
 
+    /**
+     * TASK-275/688 trial tool: reads the primary clip (label + text) so a
+     * device trial verifies a copy EXACTLY, with no paste-into-a-field
+     * proxy. Android 10+ lets only the focused app read the clipboard, so
+     * the app must be foreground AND window-focused when the broadcast
+     * lands (after a notification-action copy, am start the app first and
+     * allow a beat); a read without focus is DENIED SILENTLY and answers
+     * null clip text plus a note saying so, so a trial distinguishes
+     * "retry after focusing" from an empty clipboard only by the note:
+     * treat a nulled text with the note as NOT VERIFIED, never as a
+     * failed copy. The text is capped (a repetition-loop clip would blow
+     * the binder result channel, the TASK-506 class) with a truncated
+     * flag. Debug receiver only; appContext is null under the shared unit
+     * fakes.
+     */
+    private fun clipboard(): String {
+        val ctx = appContext ?: error("clipboard requires a Context (debug receiver only)")
+        val clip = ctx.getSystemService(android.content.ClipboardManager::class.java).primaryClip
+        val text = clip?.getItemAt(0)?.coerceToText(ctx)?.toString()
+        return JSONObject()
+            .put("op", OP_CLIPBOARD)
+            .put("label", clip?.description?.label?.toString() ?: JSONObject.NULL)
+            .put(
+                "text",
+                if (text == null) JSONObject.NULL else text.take(CLIPBOARD_TEXT_CAP))
+            .put("textTruncated", text != null && text.length > CLIPBOARD_TEXT_CAP)
+            .put(
+                "note",
+                if (clip == null) "no clip visible: either the clipboard is empty or the read was denied (app not focused)" else JSONObject.NULL)
+            .toString()
+    }
+
     private fun help(error: String? = null): String = JSONObject()
         .apply { error?.let { put("error", it) } }
         .put("op", OP_HELP)
-        .put("ops", JSONArray(listOf(OP_GET, OP_SET, OP_RECORDS, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_HELP)))
+        // OPS single-sources the enumeration: the array and the usage line
+        // below both read it, so a new op cannot dispatch fine yet stay
+        // unlisted in one of them (the drift TASK-469 deleted for set keys).
+        .put("ops", JSONArray(OPS))
         .put("setKeys", JSONArray(SET_KEYS))
         .put(
             "usage",
-            "am broadcast -a com.antivocale.app.TEST_SPI --es op=<$OP_GET|$OP_SET|$OP_RECORDS|$OP_IMPORT|$OP_HELP> " +
+            "am broadcast -n com.antivocale.app.debug/com.antivocale.app.receiver.TestSpiReceiver " +
+                "-a com.antivocale.app.TEST_SPI --es op=<${OPS.joinToString("|")}> " +
                 "[--es key=<setKey> --es value=<newValue>] [--es entry=<catalogId> (sherpa_path only)] " +
                 "[--es url=<entry-or-repo url> (import only)] [--es family=<ModelFamily> (import only, optional override)] "
             + "[--es model_type=<subtype> (import only, CTC: nemo_ctc/zipformer_ctc/omnilingual_ctc)]")
@@ -508,7 +545,19 @@ internal class TestSpiOps(
         const val OP_RECORDS = "records"
         const val OP_IMPORT = "import"
         const val OP_NOTIFY_MEMORY_ERROR = "notify_memory_error"
+        const val OP_CLIPBOARD = "clipboard"
         const val OP_HELP = "help"
+
+        /**
+         * Every op handle() dispatches; help() renders the array and the
+         * usage line from this one list. The receiver's op=nav (TASK-486)
+         * is deliberately absent: it is intercepted receiver-side before
+         * handle() runs, so it lives in the receiver's own table.
+         */
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_HELP)
+
+        /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
+        const val CLIPBOARD_TEXT_CAP = 64 * 1024
 
         /** TASK-276: the single source is PunctuationPolicy.MODE_PREFS; the SPI only adds write-time strictness. */
         val PUNCTUATION_MODES = PunctuationPolicy.MODE_PREFS
