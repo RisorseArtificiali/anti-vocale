@@ -123,6 +123,23 @@ object SentenceCueBuilder {
     }
 
     /**
+     * TASK-664: the text of one inclusive token range of a chunk, cut verbatim
+     * from [chunkText] when the full token sequence aligns to it, else the
+     * normalized token join. The same two shapes [build] uses for cue texts,
+     * exposed for the empty-chunk ladder's overlap trimming (a subword
+     * tokenizer without the word-start marker must not space-join into
+     * fragments there either).
+     */
+    fun sliceText(tokens: List<TimedToken>, chunkText: String, fromIndex: Int, toIndex: Int): String {
+        val spans = alignToText(tokens, chunkText)
+        return if (spans != null) {
+            chunkText.substring(spans[fromIndex].first, spans[toIndex].second).trim()
+        } else {
+            joinText(tokens, fromIndex, toIndex)
+        }
+    }
+
+    /**
      * Character alignment of the token sequence onto [text]: walks both with
      * whitespace (and word-start markers) ignored, requiring an exact match:
      * real trailing characters the tokens do not cover abort the alignment

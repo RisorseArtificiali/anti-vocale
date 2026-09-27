@@ -179,8 +179,17 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
     fun `pipeline with progressive ON skips blank chunks in interim results`() = runTest {
         stubMultiChunkStream(chunkCount = 3)
 
-        val chunkTexts = listOf("first", "   ", "third")
-        stubChunkTexts(chunkTexts)
+        // TASK-664: content-keyed, because the blank chunk's ladder adds
+        // re-feed calls (answered blank here; overlap feeds are not
+        // chunk-sized).
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            val feed = firstArg<FloatArray>()
+            when {
+                feed.size == 1000 && feed[0] == 1.0f -> Result.success(TranscriptionResult(text = "first"))
+                feed.size == 1000 && feed[0] == 3.0f -> Result.success(TranscriptionResult(text = "third"))
+                else -> Result.success(TranscriptionResult(text = "   "))
+            }
+        }
         // logSuccess reads the row before its update write (the final
         // processing-context land requires it).
         coEvery { logDao.getByTaskId("test-pipeline") } returns com.antivocale.app.data.local.LogEntity(

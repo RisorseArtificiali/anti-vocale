@@ -191,6 +191,14 @@ class TranscriptionOrchestrator @Inject constructor(
     private val chunkSemaphore by lazy { Semaphore(maxConcurrentChunks) }
 
     /**
+     * TASK-664 (GH #119): whether a chunk that decodes EMPTY gets the bounded
+     * recovery ladder before it lands in the blank accounting. Always on in
+     * production; the test seam pins the ladder-off contract (a blank stays a
+     * blank at zero extra decodes) the same way maxConcurrentChunks does.
+     */
+    internal var emptyChunkRecoveryEnabled: Boolean = true
+
+    /**
      * Processes a single transcription request.
      * All Android-specific side effects are delegated to [listener].
      *
@@ -2463,9 +2471,32 @@ class TranscriptionOrchestrator @Inject constructor(
             val inferMs = System.currentTimeMillis() - t0
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
             fireCollector()
+            // TASK-664 (GH #119): the single-chunk arm. A one-chunk clip has
+            // no neighbors, so the ladder re-feeds with silence padding; a
+            // blank that survives it stays the honest total loss it was
+            // (the maintainer's scope note: a single-chunk voice note that
+            // decodes empty loses everything today).
+            var recoveredResult: TranscriptionResult? = null
+            if (result.isSuccess && result.getOrNull()!!.text.isBlank() && emptyChunkRecoveryEnabled) {
+                when (val outcome = EmptyChunkRecovery.recover(
+                    chunk = preprocessingResult.chunks.first(),
+                    sampleRate = preprocessingResult.sampleRate,
+                    previousTail = null,
+                    nextHead = null,
+                ) { feed ->
+                    backend.transcribeAudioStreaming(
+                        prompt = resolvedPrompt,
+                        samples = feed,
+                        sampleRate = preprocessingResult.sampleRate) {}
+                }) {
+                    is EmptyChunkRecovery.Outcome.Recovered -> recoveredResult = outcome.result
+                    is EmptyChunkRecovery.Outcome.EngineWedged -> return Result.failure(outcome.error)
+                    EmptyChunkRecovery.Outcome.StillEmpty -> Unit
+                }
+            }
             return when {
                 result.isSuccess -> {
-                    val tr = result.getOrNull()!!
+                    val tr = recoveredResult ?: result.getOrNull()!!
                     if (tr.text.isNotBlank()) {
                         recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
                         val trimmed = tr.text.trim()
@@ -2490,6 +2521,10 @@ class TranscriptionOrchestrator @Inject constructor(
                                 backendId = backend.id,
                                 decodePath = "whole_file",
                                 vadRequested = vadRequested,
+                                // TASK-664: 1 exactly when the recovery
+                                // ladder saved this note (a blank that
+                                // stayed blank never reaches this context).
+                                retriedChunks = if (recoveredResult != null) 1 else null,
                                 transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
                                 chunkCapSeconds = maxChunkDuration,
                                 availableRamBytes = availableRamBytes,
@@ -2753,6 +2788,8 @@ class TranscriptionOrchestrator @Inject constructor(
         val accumulatedText = StringBuilder()
         var failedSegments = 0
         var blankSegments = 0
+        // TASK-664: segments that entered the empty-chunk ladder.
+        var retriedSegments = 0
         var minConfidence: Float? = null
         var detectedLang: String? = null
         val segments = mutableListOf<TimedSegment>()
@@ -2763,7 +2800,21 @@ class TranscriptionOrchestrator @Inject constructor(
                 if (emitInterim) listener.onStatusUpdate("Transcribing segment 1…")
             }
 
-            val segResult = backend.transcribeAudio(samples = chunks[i], sampleRate = sampleRate, prompt = prompt)
+            val firstPass = backend.transcribeAudio(samples = chunks[i], sampleRate = sampleRate, prompt = prompt)
+            // TASK-664: an empty segment is re-fed with bounded neighbor
+            // overlap before it counts as blank; non-empty passes (and
+            // failures, which keep their own arms) take zero extra work.
+            val segResult = if (firstPass.getOrNull()?.text?.isBlank() == true && emptyChunkRecoveryEnabled) {
+                retriedSegments++
+                recoverEmptyChunk(
+                    backend = backend,
+                    chunk = chunks[i],
+                    sampleRate = sampleRate,
+                    prompt = prompt,
+                    previousTail = chunks.getOrNull(i - 1)?.let { EmptyChunkRecovery.tail(it, sampleRate) },
+                    nextHead = chunks.getOrNull(i + 1)?.let { EmptyChunkRecovery.head(it, sampleRate) },
+                ) ?: firstPass
+            } else firstPass
             segResult.fold(
                 onSuccess = { tr ->
                     if (tr.text.isNotBlank()) {
@@ -2867,6 +2918,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     totalChunks = chunkCount,
                     failedChunks = failedSegments,
                     blankChunks = blankSegments.takeIf { it > 0 },
+                    retriedChunks = retriedSegments.takeIf { it > 0 },
                     transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
                     chunkCapSeconds = chunkCapSeconds,
                     availableRamBytes = availableRamBytes,
@@ -2941,6 +2993,9 @@ class TranscriptionOrchestrator @Inject constructor(
 
         var failedChunks = 0
         var blankChunks = 0
+        // TASK-664: chunks that entered the empty-chunk ladder (incremented
+        // inside the concurrent decodes, so atomic like completedChunks).
+        val retriedChunks = AtomicInteger(0)
 
         // TASK-606 F1: the timer is cancelled in a FINALLY: a WedgeAbort (or
         // any throw) out of the scope below used to orphan the infinite
@@ -2956,7 +3011,21 @@ class TranscriptionOrchestrator @Inject constructor(
                 async {
                     chunkSemaphore.acquire()
                     try {
-                        val chunkResult = backend.transcribeAudio(samples = chunk, sampleRate = sampleRate, prompt = prompt)
+                        val firstPass = backend.transcribeAudio(samples = chunk, sampleRate = sampleRate, prompt = prompt)
+                        // TASK-664: an empty chunk is re-fed with bounded
+                        // neighbor overlap before it lands in the blank
+                        // count; non-empty passes take zero extra work.
+                        val chunkResult = if (firstPass.getOrNull()?.text?.isBlank() == true && emptyChunkRecoveryEnabled) {
+                            retriedChunks.incrementAndGet()
+                            recoverEmptyChunk(
+                                backend = backend,
+                                chunk = chunk,
+                                sampleRate = sampleRate,
+                                prompt = prompt,
+                                previousTail = chunks.getOrNull(index - 1)?.let { EmptyChunkRecovery.tail(it, sampleRate) },
+                                nextHead = chunks.getOrNull(index + 1)?.let { EmptyChunkRecovery.head(it, sampleRate) },
+                            ) ?: firstPass
+                        } else firstPass
                         completedChunks.incrementAndGet()
                         chunkResult
                     } finally {
@@ -3128,6 +3197,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     totalChunks = chunkCount,
                     failedChunks = failedChunks,
                     blankChunks = blankChunks.takeIf { it > 0 },
+                    retriedChunks = retriedChunks.get().takeIf { it > 0 },
                     transcribedSeconds = audioDurationSeconds.toDouble().takeIf { it > 0.0 },
                     chunkCapSeconds = chunkCapSeconds,
                     availableRamBytes = availableRamBytes,
@@ -3210,6 +3280,50 @@ class TranscriptionOrchestrator @Inject constructor(
         // durations lie; the accumulated sample counts are the ground truth).
         val segments = mutableListOf<TimedSegment>()
 
+        // TASK-664 (GH #119): the pipeline's empty-chunk ladder. The stream
+        // hands chunks over one at a time, so the PREVIOUS chunk's samples
+        // are retained for one-sided overlap and an empty first decode is
+        // HELD until the next chunk arrives (its head completes the ladder's
+        // neighbor overlap); a non-empty chunk is decoded and emitted with
+        // zero delay and zero extra work.
+        var previousSamples: FloatArray? = null
+        var heldEmpty: HeldEmptyChunk? = null
+        var retriedChunks = 0
+
+        suspend fun resolveHeldEmpty(held: HeldEmptyChunk, nextHead: FloatArray?) {
+            if (emptyChunkRecoveryEnabled) {
+                retriedChunks++
+                when (val outcome = EmptyChunkRecovery.recover(
+                    chunk = held.samples,
+                    sampleRate = held.sampleRate,
+                    previousTail = held.previousSamples
+                        ?.let { EmptyChunkRecovery.tail(it, held.sampleRate) },
+                    nextHead = nextHead,
+                ) { feed ->
+                    backend.transcribeAudio(samples = feed, sampleRate = held.sampleRate, prompt = resolvedPrompt)
+                }) {
+                    is EmptyChunkRecovery.Outcome.Recovered -> {
+                        val tr = outcome.result
+                        val trimmed = tr.text.trim()
+                        if (accumulatedText.isNotEmpty()) accumulatedText.append(' ')
+                        accumulatedText.append(trimmed)
+                        segments.addAll(cuesForChunk(tr.tokens, trimmed, held.startMs, held.endMs))
+                        // The held chunk's text lands one stream event late by
+                        // construction; same interim contract as the arm above.
+                        updateInterimResult(taskId, accumulatedText.toString(), writeRow = emitInterim)
+                        minConfidence = aggregateConfidence(minConfidence, tr.confidence)
+                        if (detectedLang == null) detectedLang = tr.detectedLanguage
+                        Log.i(TAG, "Pipeline chunk ${held.index + 1} recovered by the empty-chunk ladder (${trimmed.length} chars)")
+                        return
+                    }
+                    is EmptyChunkRecovery.Outcome.EngineWedged -> throw WedgeAbortException(outcome.error)
+                    EmptyChunkRecovery.Outcome.StillEmpty -> Unit
+                }
+            }
+            blankChunks++
+            Log.i(TAG, "Pipeline chunk ${held.index + 1} stayed empty after the recovery ladder")
+        }
+
         // TASK-512: RAM at REQUEST time (a completion-time read would report
         // the post-run state, not the constraint the path ran under).
         val availableRamBytes = runCatching {
@@ -3256,6 +3370,15 @@ class TranscriptionOrchestrator @Inject constructor(
                         // passes the metadata-derived estimate (TASK-449).
                         val chunkLabel = "Chunk ${chunk.chunkIndex + 1}${AudioPreprocessor.chunkTotalSuffix(expectedChunkCount, chunk.chunkIndex)}"
 
+                        // TASK-664: resolve the held chunk now that this
+                        // chunk's head can serve as its next-neighbor overlap,
+                        // BEFORE this chunk decodes so transcript order
+                        // survives.
+                        heldEmpty?.let { held ->
+                            heldEmpty = null
+                            resolveHeldEmpty(held, nextHead = EmptyChunkRecovery.head(chunk.samples, chunk.sampleRate))
+                        }
+
                         val chunkResult = backend.transcribeAudio(
                             samples = chunk.samples,
                             sampleRate = chunk.sampleRate,
@@ -3282,6 +3405,21 @@ class TranscriptionOrchestrator @Inject constructor(
                                             totalChunks = expectedChunkCount
                                         )
                                     }
+                                } else if (emptyChunkRecoveryEnabled && chunk.samples.isNotEmpty()) {
+                                    // TASK-664: hold the empty chunk one
+                                    // stream event; its ladder runs once the
+                                    // next chunk's head exists. The previous
+                                    // neighbor is captured NOW: by resolution
+                                    // time previousSamples has moved on (and
+                                    // for a single-chunk stream it would be
+                                    // the held chunk itself).
+                                    heldEmpty = HeldEmptyChunk(
+                                        previousSamples = previousSamples,
+                                        samples = chunk.samples,
+                                        sampleRate = chunk.sampleRate,
+                                        startMs = chunkStartMs,
+                                        endMs = chunkEndMs,
+                                        index = chunk.chunkIndex)
                                 } else {
                                     blankChunks++
                                 }
@@ -3340,12 +3478,28 @@ class TranscriptionOrchestrator @Inject constructor(
                                 if (emitInterim) listener.onStatusUpdate("Transcribing…")
                             }
                         }
+
+                        // TASK-664: this chunk is now the next one's previous
+                        // neighbor.
+                        previousSamples = chunk.samples
                     }
                 }
             }
+
+            // TASK-664: the stream's last empty chunk has no next neighbor;
+            // its ladder runs with the previous tail alone (inside the try so
+            // a wedge abort keeps the pipelineFailed shape below).
+            heldEmpty?.let { held ->
+                heldEmpty = null
+                resolveHeldEmpty(held, nextHead = null)
+            }
         } catch (e: PreprocessingError) {
+            // TASK-664: a stream cut short leaves a held chunk that ran no
+            // ladder; it counts as the blank it is.
+            if (heldEmpty != null) blankChunks++
             return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds, processedChunks, failedChunks, blankChunks, context, backend.id)
         } catch (e: Exception) {
+            if (heldEmpty != null) blankChunks++
             return pipelineFailed(taskId, e, accumulatedText.toString(), decodedSeconds, totalDurationSeconds, processedChunks, failedChunks, blankChunks, context, backend.id)
         }
 
@@ -3411,6 +3565,7 @@ class TranscriptionOrchestrator @Inject constructor(
                     totalChunks = processedChunks,
                     failedChunks = failedChunks,
                     blankChunks = blankChunks.takeIf { it > 0 },
+                    retriedChunks = retriedChunks.takeIf { it > 0 },
                     transcribedSeconds = totalDurationSeconds.takeIf { it > 0.0 },
                     chunkCapSeconds = maxChunkDurationSeconds,
                     availableRamBytes = availableRamBytes,
@@ -3871,6 +4026,21 @@ class TranscriptionOrchestrator @Inject constructor(
             cause)
 
     /**
+     * TASK-664: a pipeline chunk whose first decode was EMPTY, held until the
+     * next stream event so the ladder can borrow its head as neighbor overlap
+     * (the stream hands chunks over one at a time). [previousSamples] is the
+     * chunk's actual previous neighbor, captured at hold time.
+     */
+    private data class HeldEmptyChunk(
+        val previousSamples: FloatArray?,
+        val samples: FloatArray,
+        val sampleRate: Int,
+        val startMs: Long,
+        val endMs: Long,
+        val index: Int,
+    )
+
+    /**
      * TASK-622: the progressive path's no-text terminal state (all segments
      * blank, or a fail+blank mix). Carries the blank count to the ERROR row
      * the same way [TranscriptionException.NoTranscriptionProduced] does.
@@ -3916,6 +4086,34 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     // ---- Chunk Retry ----
+
+    /**
+     * TASK-664 (GH #119): the empty-chunk ladder at the per-chunk decode
+     * sites, after their first decode returned a blank SUCCESS (blank
+     * FAILURES keep the existing retryChunkWithGc arms). Null means the
+     * chunk stays an honestly-empty blank and the caller's blank accounting
+     * is unchanged; only a wedge escapes as a failure so the arm's existing
+     * abort owns the run. Counting the ladder entry is the caller's job (it
+     * owns the retriedChunks observable).
+     */
+    private suspend fun recoverEmptyChunk(
+        backend: TranscriptionBackend,
+        chunk: FloatArray,
+        sampleRate: Int,
+        prompt: String,
+        previousTail: FloatArray?,
+        nextHead: FloatArray?,
+    ): Result<TranscriptionResult>? {
+        if (!emptyChunkRecoveryEnabled) return null
+        val outcome = EmptyChunkRecovery.recover(chunk, sampleRate, previousTail, nextHead) { feed ->
+            backend.transcribeAudio(samples = feed, sampleRate = sampleRate, prompt = prompt)
+        }
+        return when (outcome) {
+            is EmptyChunkRecovery.Outcome.Recovered -> Result.success(outcome.result)
+            is EmptyChunkRecovery.Outcome.EngineWedged -> Result.failure(outcome.error)
+            EmptyChunkRecovery.Outcome.StillEmpty -> null
+        }
+    }
 
     /** Retries after GC to reclaim ONNX tensor memory on low-RAM devices. */
     private suspend fun retryChunkWithGc(

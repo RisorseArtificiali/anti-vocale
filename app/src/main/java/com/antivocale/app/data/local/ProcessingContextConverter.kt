@@ -17,6 +17,7 @@ object ProcessingContextConverter {
             c.totalChunks?.let { put("totalChunks", it) }
             c.failedChunks?.let { put("failedChunks", it) }
             c.blankChunks?.let { put("blankChunks", it) }
+            c.retriedChunks?.let { put("retriedChunks", it) }
             c.transcribedSeconds?.let { put("transcribedSeconds", it) }
             c.chunkCapSeconds?.let { put("chunkCapSeconds", it) }
             c.availableRamBytes?.let { put("availableRamBytes", it) }
@@ -39,6 +40,7 @@ object ProcessingContextConverter {
                     totalChunks = o.optIntOrNull("totalChunks"),
                     failedChunks = o.optIntOrNull("failedChunks"),
                     blankChunks = o.optIntOrNull("blankChunks"),
+                    retriedChunks = o.optIntOrNull("retriedChunks"),
                     transcribedSeconds = o.optDoubleOrNull("transcribedSeconds"),
                     chunkCapSeconds = o.optIntOrNull("chunkCapSeconds"),
                     availableRamBytes = o.optLongOrNull("availableRamBytes"),
@@ -71,6 +73,9 @@ object ProcessingContextConverter {
                 c.failedChunks?.takeIf { it > 0 }?.let { add("(failed $it)") }
                 c.blankChunks?.takeIf { it > 0 }?.let { add("(blank $it)") }
             }
+            // TASK-664: outside the chunks block so the single-decode path
+            // (whole_file) reports its recovery re-feed too.
+            c.retriedChunks?.takeIf { it > 0 }?.let { add("retried=$it") }
             c.transcribedSeconds?.takeIf { it > 0.0 }?.let { add("decoded=${it}s") }
             c.chunkCapSeconds?.let { add("cap=${it}s") }
             // Integer MB, the app-wide RAM unit (the low-memory toasts): no

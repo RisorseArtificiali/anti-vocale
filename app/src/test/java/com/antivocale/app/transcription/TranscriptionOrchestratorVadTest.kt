@@ -213,9 +213,16 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             Result.success(TranscriptionResult(text = "   ")),
             Result.success(TranscriptionResult(text = "seg3")),
         )
-        var callIndex = 0
+        // TASK-664: keyed by chunk content, not call order, because the
+        // empty segment's recovery ladder adds re-feed calls (all answered
+        // blank here: overlap feeds are never chunk-sized).
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            results[callIndex++]
+            val feed = firstArg<FloatArray>()
+            when {
+                feed.size == 100 && feed[0] == 1.0f -> results[0]
+                feed.size == 100 && feed[0] == 3.0f -> results[2]
+                else -> results[1]
+            }
         }
 
         val result = runProcessRequest(scope = this)
@@ -242,9 +249,11 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             Result.failure(RuntimeException("backend error")),
             Result.success(TranscriptionResult(text = "  ")),
         )
-        var callIndex = 0
+        // TASK-664: content-keyed (the blank segment's ladder re-feeds answer
+        // blank; only the failing chunk errors, on every call).
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            results[callIndex++]
+            val feed = firstArg<FloatArray>()
+            if (feed.size == 100 && feed[0] == 1.0f) results[0] else results[1]
         }
 
         val result = runProcessRequest(scope = this)
@@ -268,10 +277,9 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             Result.success(TranscriptionResult(text = "")),
             Result.success(TranscriptionResult(text = "\t\n"))
         )
-        var callIndex = 0
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            results[callIndex++]
-        }
+        // TASK-664: every decode (first passes and ladder re-feeds alike)
+        // succeeds blank; the call order no longer identifies the segment.
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers { results[0] }
 
         val result = runProcessRequest(scope = this)
 

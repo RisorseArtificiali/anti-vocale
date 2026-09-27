@@ -43,8 +43,13 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
 
     // ---- Helpers ----
 
-    private fun stubPreprocessing(chunkCount: Int, durationSeconds: Double = 120.0): List<FloatArray> {
-        val chunks = (1..chunkCount).map { FloatArray(1000) { 0.5f } }
+    private fun stubPreprocessing(
+        chunkCount: Int,
+        durationSeconds: Double = 120.0,
+        /** Optional per-index fill value so tests can tell chunks apart by content. */
+        chunkValues: Map<Int, Float> = emptyMap(),
+    ): List<FloatArray> {
+        val chunks = (0 until chunkCount).map { i -> FloatArray(1000) { chunkValues[i] ?: 0.5f } }
         every {
             audioPreprocessor.prepareAudioForMediaPipe(
                 inputPath = any(),
@@ -145,12 +150,19 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
 
     @Test
     fun `parallel chunks with blank results - blank chunks are filtered out`() = runTest {
-        val chunkTexts = listOf("chunk1", "", "chunk3", "chunk4")
-        stubPreprocessing(chunkCount = 4)
+        // TASK-664: content-keyed, because the blank chunk's ladder adds
+        // re-feed calls (answered blank here; overlap feeds are not
+        // chunk-sized).
+        stubPreprocessing(chunkCount = 4, chunkValues = mapOf(0 to 1f, 1 to 2f, 2 to 3f, 3 to 4f))
 
-        var callIndex = 0
         coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            Result.success(TranscriptionResult(text = chunkTexts[callIndex++]))
+            val feed = firstArg<FloatArray>()
+            when {
+                feed.size == 1000 && feed[0] == 1.0f -> Result.success(TranscriptionResult(text = "chunk1"))
+                feed.size == 1000 && feed[0] == 3.0f -> Result.success(TranscriptionResult(text = "chunk3"))
+                feed.size == 1000 && feed[0] == 4.0f -> Result.success(TranscriptionResult(text = "chunk4"))
+                else -> Result.success(TranscriptionResult(text = ""))
+            }
         }
 
         val result = runParallelAudioRequest()

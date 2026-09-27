@@ -39,6 +39,28 @@ class ProcessingContextConverterTest {
     }
 
     @Test
+    fun `retried chunks round-trip and render beside the blank count`() {
+        // TASK-664: the ladder's observable. It renders outside the chunks
+        // block so the single-decode path (whole_file) reports its recovery
+        // re-feed too; blank/failed already reflect the ladder's outcome.
+        val retried = ProcessingContext(
+            decodePath = "vad_chunked",
+            totalChunks = 9,
+            failedChunks = 0,
+            blankChunks = 1,
+            retriedChunks = 2,
+        )
+        assertEquals(retried, ProcessingContextConverter.fromJson(ProcessingContextConverter.toJson(retried)))
+        assertEquals(
+            "vad_chunked chunks=9 (blank 1) retried=2",
+            ProcessingContextConverter.render(retried))
+        assertEquals(
+            "whole_file retried=1",
+            ProcessingContextConverter.render(
+                ProcessingContext(decodePath = "whole_file", retriedChunks = 1)))
+    }
+
+    @Test
     fun `dual-model fields round-trip and render on the metadata line`() {
         // GH #43 slice 1: the row's context is phase 2's; the fast pass
         // nests with its own backend id; the skip token rides along.

@@ -30,6 +30,12 @@ data class ProcessingContext(
      *  Null on old rows and on zero-blank runs (written only when at least
      *  one chunk was blank). */
     val blankChunks: Int? = null,
+    /** TASK-664: chunks that needed at least one recovery re-feed after a
+     *  first-pass empty decode (the ladder is bounded; failedChunks and
+     *  blankChunks already reflect its outcome, so the recovered count is
+     *  this minus the post-ladder empties). Written only when at least one
+     *  chunk entered the ladder. */
+    val retriedChunks: Int? = null,
     /** Audio seconds actually covered by inference (decoded seconds). */
     val transcribedSeconds: Double? = null,
     /** The chunk ceiling in force, after any RAM-driven tightening. */
