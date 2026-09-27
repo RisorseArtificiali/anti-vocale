@@ -190,6 +190,8 @@ internal fun variantAwareDisplayName(
  *    (via ActiveModelRepository's activeModelFlow)
  *  - [com.antivocale.app.ui.viewmodel.ModelViewModel] (generic catalog layer)
  *  - [com.antivocale.app.service.ExtractionService] (downloads keyed by entry id)
+ *  - [OomBreadcrumbRecorder] (TASK-679: display-name derivation for the
+ *    resident engines the breadcrumb and the memory panel name)
  */
 @Singleton
 class BackendRegistry @Inject constructor(

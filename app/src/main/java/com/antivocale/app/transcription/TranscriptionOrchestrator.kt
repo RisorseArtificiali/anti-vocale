@@ -67,6 +67,8 @@ class TranscriptionOrchestrator @Inject constructor(
     private val externalModelStore: ExternalModelStore,
     // TASK-675: the silent-model demotion hook (two-signal discipline).
     private val silentModelDemoter: SilentModelDemoter,
+    // TASK-679: the post-OOM breadcrumb (residents + the tipping request).
+    private val oomBreadcrumbRecorder: OomBreadcrumbRecorder,
 ) {
     companion object {
         private const val TAG = "TranscriptionOrchestrator"
@@ -328,6 +330,15 @@ class TranscriptionOrchestrator @Inject constructor(
                 val duration = System.currentTimeMillis() - startTime
                 val isNoModel = isNoModelConfiguredError(error)
                 persistFailureContext(taskId, error, context)
+                // TASK-679: a memory-class load refusal (the opt-in pre-flight)
+                // leaves the breadcrumb naming who was resident and which load
+                // was refused; harmless no-op for every other load error.
+                if (isMemoryClassFailure(error)) {
+                    recordMemoryBreadcrumb(
+                        context, error, filePath,
+                        requestBackendId = backendOverride
+                            ?: preferencesManager.transcriptionBackend.first())
+                }
                 logError(taskId, logMsg, duration)
                 listener.onError(taskId, "BACKEND_LOAD_FAILED", userMsg, isShareRequest, isNoModel, duration,
                     isMemoryFailure = isMemoryClassFailure(error))
@@ -544,6 +555,14 @@ class TranscriptionOrchestrator @Inject constructor(
                     if (error !is PipelineFailure) {
                         persistFailureContext(taskId, error, context)
                     }
+                    // TASK-679: the decode-side memory refusal rides the result
+                    // (not a throw); it reaches this fold as InsufficientMemory.
+                    if (isMemoryClassFailure(error)) {
+                        recordMemoryBreadcrumb(
+                            context, error, filePath,
+                            requestBackendId = backendOverride
+                                ?: backendManager.activeBackendId.value)
+                    }
                     logError(taskId, logMsg)
                     var userMsg = userFacingErrorMessage(context, error)
                     if (error is PipelineFailure) {
@@ -569,6 +588,12 @@ class TranscriptionOrchestrator @Inject constructor(
             // reuse the existing logError/listener paths, map to the dedicated
             // string, and bail.
             Log.e(TAG, "Out of memory during transcription", e)
+            // TASK-679: the breadcrumb FIRST (a synchronous write; every later
+            // line in this handler could itself die on the exhausted heap and
+            // the process may not survive the request at all).
+            recordMemoryBreadcrumb(
+                context, e, filePath,
+                requestBackendId = backendOverride ?: backendManager.activeBackendId.value)
             val duration = System.currentTimeMillis() - startTime
             persistFailureContext(taskId, e, context)
             logError(taskId, "OutOfMemoryError")
@@ -3660,6 +3685,35 @@ class TranscriptionOrchestrator @Inject constructor(
         }
         if (decodedSeconds > 0.0) {
             logDao.updateFailureDecodedMs(taskId, (decodedSeconds * 1000).toLong())
+        }
+    }
+
+    /**
+     * TASK-679: one guarded breadcrumb write shared by the memory-class
+     * failure arms (the OOM catch, the pre-flight load refusal, the decode
+     * refusal fold). Request shape only: backend id, metadata duration, the
+     * effective-VAD approximation (preference OR the active backend's forced
+     * flag); the recorder itself owns the scrub contract. The outer runCatching
+     * is belt-and-braces (the recorder never throws by contract).
+     */
+    private suspend fun recordMemoryBreadcrumb(
+        context: Context,
+        error: Throwable,
+        filePath: String?,
+        requestBackendId: String?,
+    ) {
+        runCatching {
+            oomBreadcrumbRecorder.record(
+                context = context,
+                error = error,
+                requestBackendId = requestBackendId,
+                audioDurationSeconds = filePath?.let {
+                    runCatching { audioPreprocessor.getAudioDuration(it) }.getOrNull()
+                },
+                vadEnabled = runCatching { preferencesManager.vadEnabled.first() }
+                    .getOrDefault(false) ||
+                    backendManager.getActiveBackend()?.requiresVadAlignedChunking == true,
+            )
         }
     }
 
