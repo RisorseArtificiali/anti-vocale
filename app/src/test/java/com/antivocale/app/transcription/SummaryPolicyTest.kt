@@ -98,4 +98,15 @@ class SummaryPolicyTest {
         assertFalse(SummaryPolicy.isPrefillOverflow(
             IllegalStateException("wrapped", IllegalStateException("generation died"))))
     }
+
+    @Test
+    fun `the typed PrefillOverflow verdict matches directly and through causes`() {
+        // DRAFT-11: the LlmManager boundary wrap; the class check is the
+        // primary path, the string walk only the legacy fallback.
+        val typed = TranscriptionException.PrefillOverflow(IllegalStateException("jni"))
+        assertTrue(SummaryPolicy.isPrefillOverflow(typed))
+        assertTrue(SummaryPolicy.isPrefillOverflow(
+            IllegalStateException("wrapper", typed)))
+    }
+
 }

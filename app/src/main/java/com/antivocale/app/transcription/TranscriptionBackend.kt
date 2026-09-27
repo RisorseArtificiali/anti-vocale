@@ -214,6 +214,16 @@ sealed class BackendConfig {
  */
 sealed class TranscriptionException(message: String, cause: Throwable? = null) :
     Exception(message, cause) {
+    /**
+     * DRAFT-11 (TASK-659): the LLM engine rejected a generation because its
+     * fresh conversation's state entries cannot hold the prefill. Typed at
+     * the LlmManager boundary (the one place the JNI message exists before
+     * any wrapping) so consumers match the CLASS, with the string walk kept
+     * only as the legacy-cause fallback.
+     */
+    class PrefillOverflow(cause: Throwable? = null) :
+        TranscriptionException("Prefill input length exceeds available state entries", cause)
+
     /** The model file is missing, corrupt, truncated, or the wrong format for this backend. */
     open class ModelLoadError(detail: String, cause: Throwable? = null) :
         TranscriptionException("Model load failed: $detail", cause)

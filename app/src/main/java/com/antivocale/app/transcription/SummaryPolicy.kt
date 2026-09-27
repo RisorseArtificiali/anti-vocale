@@ -68,6 +68,10 @@ object SummaryPolicy {
      * sherpa-onnx/LiteRT ever exposes a typed error, switch there.
      */
     fun isPrefillOverflow(failure: Throwable?): Boolean {
+        // DRAFT-11: the typed verdict first (LlmManager wraps the JNI signal
+        // at the boundary); the string walk stays for legacy causes and any
+        // path the boundary wrap has not reached.
+        if (failure is TranscriptionException.PrefillOverflow) return true
         // Cause chain AND suppressed exceptions (a wrapping layer may attach
         // the real JNI failure as suppressed, the LlmManager cancellation
         // path already uses addSuppressed), with a depth cap against cyclic
@@ -75,6 +79,7 @@ object SummaryPolicy {
         // never hang on a pathological chain.
         fun match(t: Throwable?, depth: Int): Boolean {
             if (t == null || depth > 8) return false
+            if (t is TranscriptionException.PrefillOverflow) return true
             if (t.message?.contains(PREFILL_OVERFLOW_SIGNAL) == true) return true
             if (match(t.cause, depth + 1)) return true
             return t.suppressed.any { match(it, depth + 1) }

@@ -595,7 +595,17 @@ open class LlmManager @Inject constructor(
         }
     } catch (e: Exception) {
         Log.e(TAG, "LiteRT $label generation failed", e)
-        Result.failure(e)
+        // DRAFT-11: the ONE place the JNI overflow message exists unwrapped.
+        // The typed verdict replaces the consumers' string matching; the
+        // anchored phrase is the only signal the JNI gives.
+        if (e.message?.contains(
+                com.antivocale.app.transcription.SummaryPolicy.PREFILL_OVERFLOW_SIGNAL) == true
+        ) {
+            Result.failure(
+                com.antivocale.app.transcription.TranscriptionException.PrefillOverflow(e))
+        } else {
+            Result.failure(e)
+        }
     }
 
     /**
