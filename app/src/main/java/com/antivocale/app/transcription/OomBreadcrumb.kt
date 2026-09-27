@@ -163,10 +163,29 @@ class OomBreadcrumbRecorder @Inject constructor(
         audioDurationSeconds: Double?,
         vadEnabled: Boolean?,
     ) {
+        // Review F1 (the task's core scenario): the heap is EXHAUSTED at this
+        // catch; every allocation below (the residents' DataStore reads, the
+        // binder RAM calls, the string building) can itself throw a SECOND
+        // OutOfMemoryError, and the old all-or-nothing shape persisted
+        // nothing exactly when it mattered. Minimal line FIRST: it needs no
+        // IO and no flow reads, so it survives the tightest heap; the
+        // enrichment then REPLACES it only if the fuller snapshot survives.
+        val errorClass = error::class.simpleName ?: "unknown"
+        val minimal = OomBreadcrumb.build(
+            OomBreadcrumb.Snapshot(
+                errorClass = errorClass,
+                residentEngines = emptyList(),
+                freeRamBytes = null,
+                totalRamBytes = null,
+                requestBackendId = requestBackendId,
+                audioDurationSeconds = audioDurationSeconds,
+                vadEnabled = vadEnabled,
+            ))
+        persist(context, minimal)
         val line = runCatching {
             OomBreadcrumb.build(
                 OomBreadcrumb.Snapshot(
-                    errorClass = error::class.simpleName ?: "unknown",
+                    errorClass = errorClass,
                     residentEngines = residentEngines(context),
                     freeRamBytes = MemoryReadings.availableRamBytes(context),
                     totalRamBytes = MemoryReadings.totalRamBytes(context),
@@ -175,7 +194,8 @@ class OomBreadcrumbRecorder @Inject constructor(
                     vadEnabled = vadEnabled,
                 ))
         }.getOrElse {
-            Log.w(TAG, "Breadcrumb snapshot failed; nothing persisted", it)
+            Log.w(TAG, "Breadcrumb enrichment failed; the minimal line is already persisted", it)
+            CrashReporter.report(OomBreadcrumbReport(minimal), "Post-OOM breadcrumb (minimal)")
             return
         }
         persist(context, line)
