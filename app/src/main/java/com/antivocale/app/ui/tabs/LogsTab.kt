@@ -27,7 +27,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
 import kotlinx.coroutines.launch
-import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -55,6 +54,7 @@ import com.antivocale.app.data.local.FailureContextJson
 import com.antivocale.app.data.local.ProcessingContextConverter
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.AudioDurationFormat
+import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.DecodedOfTotalFormat
 import com.antivocale.app.util.SharedAudioHandler
 import com.antivocale.app.util.formatProcessingTime
@@ -153,14 +153,14 @@ private fun copyTranscriptionToClipboard(
     text: String,
     labelRes: Int = R.string.clipboard_label_transcription,
 ) {
-    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
-            as android.content.ClipboardManager
     // TASK-650 F5: the clipboard is an exit surface here too.
     val sig = com.antivocale.app.util.TranscriptSignature.lastResolved
-    val clip = ClipData.newPlainText(
+    // TASK-688: the write itself is the shared ClipboardWriter; the
+    // signature above stays here (its single owner).
+    ClipboardWriter.copy(
+        context,
         context.getString(labelRes),
         com.antivocale.app.util.TranscriptSignature.apply(text, sig.text, sig.position))
-    clipboard.setPrimaryClip(clip)
     ToastCompat.show(context, context.getString(R.string.copied_to_clipboard))
 }
 

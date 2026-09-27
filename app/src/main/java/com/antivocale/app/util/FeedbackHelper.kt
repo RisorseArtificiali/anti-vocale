@@ -1,8 +1,6 @@
 package com.antivocale.app.util
 
 import android.content.ActivityNotFoundException
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -208,14 +206,16 @@ object FeedbackHelper {
     }
 
     private fun copyAddressToClipboard(context: Context) {
-        val clipboard =
-            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        clipboard.setPrimaryClip(ClipData.newPlainText("email", FEEDBACK_ADDRESS))
-        Toast.makeText(
+        // TASK-688: shared write; the "email" label is this site's own. The
+        // toast moves to ToastCompat (review F5: the raw makeText preserved
+        // the gesture-bar overlap ToastCompat exists to fix, not a feature;
+        // same string, same LENGTH_LONG, plus the offset).
+        ClipboardWriter.copy(context, "email", FEEDBACK_ADDRESS)
+        ToastCompat.show(
             context,
             context.getString(R.string.settings_feedback_address_copied, FEEDBACK_ADDRESS),
             Toast.LENGTH_LONG
-        ).show()
+        )
     }
 
     /** Gathers the diagnostics from the running app; the model fields come from the ViewModel.

@@ -5,8 +5,6 @@ import android.app.NotificationManager
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.TranscriptSignature
 import android.app.Service
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -30,6 +28,7 @@ import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.util.CrashReporter
+import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.ProgressThrottler
 import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.util.TranscriptFileSaver
@@ -724,14 +723,17 @@ class InferenceService : Service(), TranscriptionListener {
         } ?: false
 
         if (globalAutoCopy || perAppAutoCopy) {
-            val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             // TASK-647: the clipboard is an exit surface; the AI-disclaimer
             // signature (when enabled) rides exactly here.
             val sig = TranscriptSignature.effectiveSpec(
                 preferencesManager, getString(R.string.signature_default_text))
             val signedText = TranscriptSignature.apply(transcriptionText, sig.text, sig.position)
-            val clip = ClipData.newPlainText(getString(R.string.clipboard_label_transcription), signedText)
-            clipboardManager.setPrimaryClip(clip)
+            // TASK-688: the write itself is the shared ClipboardWriter; the
+            // signature above stays here (its single owner).
+            ClipboardWriter.copy(
+                this@InferenceService,
+                getString(R.string.clipboard_label_transcription),
+                signedText)
             Log.i(TAG, "Auto-copied transcription to clipboard (${transcriptionText.length} chars), source=$sourcePackage, global=$globalAutoCopy, perApp=$perAppAutoCopy")
 
             Handler(Looper.getMainLooper()).post {

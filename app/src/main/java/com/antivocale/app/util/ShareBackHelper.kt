@@ -1,7 +1,5 @@
 package com.antivocale.app.util
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -169,9 +167,9 @@ object ShareBackHelper {
         onComplete: () -> Unit
     ) {
         try {
-            val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Transcription", text)
-            clipboardManager.setPrimaryClip(clip)
+            // TASK-688: shared write; the "Transcription" label and this
+            // wrapper's toast/try-catch are this site's own behavior.
+            ClipboardWriter.copy(context, "Transcription", text)
 
             android.os.Handler(android.os.Looper.getMainLooper()).post {
                 com.antivocale.app.util.ToastCompat.show(

@@ -2,7 +2,6 @@ package com.antivocale.app.ui.tabs
 
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
@@ -92,6 +91,7 @@ import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.AutomationBroadcastSnippet
+import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.util.SubtitleFormatter
@@ -2229,9 +2229,8 @@ private fun MemoryDiagnosticsCard(viewModel: SettingsViewModel) {
                 enabled = state != null,
                 onClick = {
                     val bundle = state?.exportBundle() ?: return@TextButton
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    clipboard.setPrimaryClip(ClipData.newPlainText(
-                        context.getString(R.string.memory_diagnostics_title), bundle))
+                    ClipboardWriter.copy(
+                        context, context.getString(R.string.memory_diagnostics_title), bundle)
                     com.antivocale.app.util.ToastCompat.show(
                         context, context.getString(R.string.copied_to_clipboard))
                 }
@@ -2995,9 +2994,9 @@ private class SettingsRowFocus {
  * the shipped full-auto path; this card is its only in-app surface: the
  * consent state with a deep-link to the TASK-274 toggle row, the staging
  * constraint in one line, a copyable adb command with the runtime package
- * filled in, and the full guide link. The copy idiom follows LogsTab
- * (ClipData + ToastCompat); the command carries no transcript, so the
- * TASK-650 signature does not apply to it.
+ * filled in, and the full guide link. The copy follows LogsTab
+ * (ClipboardWriter + ToastCompat, TASK-688); the command carries no
+ * transcript, so the TASK-650 signature does not apply to it.
  */
 @Composable
 private fun AutomationGuideCard(
@@ -3036,12 +3035,10 @@ private fun AutomationGuideCard(
         ) {
             OutlinedButton(
                 onClick = {
-                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
-                        as ClipboardManager
-                    clipboard.setPrimaryClip(
-                        ClipData.newPlainText(
-                            context.getString(R.string.automation_guide_title),
-                            AutomationBroadcastSnippet.adbTextRequest(context.packageName)))
+                    ClipboardWriter.copy(
+                        context,
+                        context.getString(R.string.automation_guide_title),
+                        AutomationBroadcastSnippet.adbTextRequest(context.packageName))
                     ToastCompat.show(context, context.getString(R.string.copied_to_clipboard))
                 },
                 modifier = Modifier.weight(1f),

@@ -1,8 +1,6 @@
 package com.antivocale.app.receiver
 
 import android.content.BroadcastReceiver
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.util.Log
@@ -10,6 +8,7 @@ import android.widget.Toast
 import androidx.work.WorkManager
 import com.antivocale.app.R
 import com.antivocale.app.service.InferenceService
+import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.ShareBackHelper
 import kotlinx.coroutines.CoroutineScope
@@ -230,9 +229,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
             return
         }
 
-        val clipboardManager = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-        val clip = ClipData.newPlainText(context.getString(R.string.clipboard_label_transcription), text)
-        clipboardManager.setPrimaryClip(clip)
+        ClipboardWriter.copy(
+            context, context.getString(R.string.clipboard_label_transcription), text)
 
         Log.i(TAG, "Copied transcription to clipboard (${text.length} chars)")
         com.antivocale.app.util.ToastCompat.show(context, R.string.copied_to_clipboard)

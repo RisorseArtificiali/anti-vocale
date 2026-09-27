@@ -2,8 +2,6 @@ package com.antivocale.app.service
 
 import android.app.NotificationManager
 import android.app.PendingIntent
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
@@ -19,6 +17,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.util.AppNotificationChannel
+import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.SubtitleFormatter
 import com.antivocale.app.util.TranscriptSignature
 import com.antivocale.app.util.TranscriptFileSaver
@@ -153,17 +152,18 @@ class TranscriptionNotificationListener(
         } ?: false
 
         if (globalAutoCopy || perAppAutoCopy) {
-            val clipboardManager = appContext.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             // TASK-647: the clipboard is an exit surface on this route too
             // (code review F2: this twin of InferenceService.autoCopyIfEnabled
             // must stay in sync with it, signature included).
             val sig = TranscriptSignature.effectiveSpec(
                 preferencesManager, appContext.getString(R.string.signature_default_text))
-            val clip = ClipData.newPlainText(
+            // TASK-688: the write itself is the shared ClipboardWriter; the
+            // signature above stays here (its single owner).
+            ClipboardWriter.copy(
+                appContext,
                 appContext.getString(R.string.clipboard_label_transcription),
                 TranscriptSignature.apply(transcriptionText, sig.text, sig.position)
             )
-            clipboardManager.setPrimaryClip(clip)
             Log.i(TAG, "Auto-copied transcription (${transcriptionText.length} chars), source=$sourcePackage, global=$globalAutoCopy, perApp=$perAppAutoCopy")
             Handler(Looper.getMainLooper()).post {
                 com.antivocale.app.util.ToastCompat.show(appContext, R.string.copied_to_clipboard)
