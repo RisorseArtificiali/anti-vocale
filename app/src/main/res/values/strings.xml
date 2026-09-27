@@ -1018,6 +1018,9 @@
     <string name="battery_exemption_title">Allow Background Operation</string>
     <string name="battery_exemption_description">The system stopped recognition while the app was in the background. Allow Anti-Vocale to run in the background so recognition is not interrupted.</string>
     <string name="battery_exemption_action">Open setting</string>
+    <!-- TASK-684 (GH #109): OEM-freezer suspension outcome -->
+    <string name="suspension_notification_title">Transcription suspended</string>
+    <string name="suspension_notification_text">The system suspended the app for %1$s while it was transcribing, so it did not finish.</string>
     <!-- TASK-373: litert-lm HF url import -->
     <string name="litertlm_import_from_url">Import from Hugging Face URL</string>
     <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>

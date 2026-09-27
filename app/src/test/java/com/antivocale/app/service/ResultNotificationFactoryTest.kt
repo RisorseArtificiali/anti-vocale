@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.receiver.NotificationActionReceiver
+import com.antivocale.app.receiver.TaskerRequestReceiver
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -246,5 +247,29 @@ class ResultNotificationFactoryTest {
         assertEquals(
             "ciao",
             saved.getStringExtra(com.antivocale.app.receiver.NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT))
+    }
+
+    /**
+     * TASK-684 (GH #109): the suspension outcome notification. Retry and the
+     * battery deep link, inside the three-button shade cap; the re-run
+     * broadcast carries the full re-enqueue payload.
+     */
+    @Test
+    fun `suspension notification carries retry and battery actions with the rerun payload`() {
+        val n = factory.suspensionNotification(
+            text = "The system suspended the app for 5m 0s while it was transcribing, so it did not finish.",
+            rerunTaskId = "task-9",
+            filePath = "/shared_audio/long.wav",
+            prompt = "",
+            sourcePackage = "org.telegram.messenger")
+
+        assertEquals(listOf("Retry", "Open setting"), n.titles())
+        val rerun = Shadows.shadowOf(n.actions!!.first { it.title == "Retry" }.actionIntent).savedIntent
+        assertEquals(NotificationActionReceiver.ACTION_RERUN_SUSPENDED, rerun.action)
+        assertEquals("/shared_audio/long.wav", rerun.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH))
+        assertEquals("task-9", rerun.getStringExtra(NotificationActionReceiver.EXTRA_TASK_ID))
+        // The battery action is the same system dialog the Settings card opens.
+        val battery = Shadows.shadowOf(n.actions!!.first { it.title == "Open setting" }.actionIntent).savedIntent
+        assertEquals(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, battery.action)
     }
 }

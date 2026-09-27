@@ -1026,6 +1026,9 @@
     <string name="battery_exemption_title">Дозволити розшифровку у фоні</string>
     <string name="battery_exemption_description">Ваш пристрій зупинив розшифровку, поки додаток був у фоні (часто на деяких телефонах з Android). Дозвольте Anti-Vocale працювати у фоні, щоб завершувати розшифровки.</string>
     <string name="battery_exemption_action">Відкрити налаштування</string>
+    <!-- TASK-684 (GH #109): OEM-freezer suspension outcome -->
+    <string name="suspension_notification_title">Транскрипцію призупинено</string>
+    <string name="suspension_notification_text">Система призупинила застосунок на %1$s під час транскрипції, тому вона не завершилася.</string>
     <!-- TASK-373: litert-lm HF url import -->
     <string name="litertlm_import_from_url">Імпортувати з URL Hugging Face</string>
     <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>

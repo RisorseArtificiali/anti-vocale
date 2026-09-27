@@ -9,6 +9,7 @@ import com.antivocale.app.MainActivity
 import com.antivocale.app.R
 import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.receiver.NotificationActionReceiver
+import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.TranscriptSignature
 import com.antivocale.app.util.AppNotificationChannel
@@ -119,6 +120,71 @@ class ResultNotificationFactory(private val context: Context) {
             .setContentIntent(plainLaunchPendingIntent())
             .setAutoCancel(true)
             .build()
+
+    /**
+     * TASK-684 (GH #109): the OEM-freezer suspension outcome. The honest
+     * message (already localized, duration included) plus the two one-tap
+     * remedies: re-run the same audio (a broadcast the
+     * [NotificationActionReceiver] re-enqueues through [InferenceEnqueue])
+     * and the battery-exemption deep link (the 1.11-prep guidance, the same
+     * system dialog the Settings card opens). Two actions, inside the
+     * three-button shade cap.
+     */
+    fun suspensionNotification(
+        text: String,
+        rerunTaskId: String,
+        filePath: String?,
+        prompt: String?,
+        sourcePackage: String?,
+        retryFileAlive: Boolean = true,
+    ): Notification {
+        val rerunIntent = Intent(context, NotificationActionReceiver::class.java).apply {
+            action = NotificationActionReceiver.ACTION_RERUN_SUSPENDED
+            putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
+            putExtra(TaskerRequestReceiver.EXTRA_PROMPT, prompt ?: "")
+            sourcePackage?.let { putExtra(NotificationActionReceiver.EXTRA_SOURCE_PACKAGE, it) }
+            // Diagnostic only: the re-run mints its own task id.
+            putExtra(NotificationActionReceiver.EXTRA_TASK_ID, rerunTaskId)
+        }
+        val rerun = PendingIntent.getBroadcast(
+            context, RC_SUSPENSION_RERUN, rerunIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        val battery = PendingIntent.getActivity(
+            context, RC_SUSPENSION_BATTERY,
+            Intent(
+                android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS,
+                android.net.Uri.parse("package:" + context.packageName)
+            ),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(context, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
+            .setContentTitle(context.getString(R.string.suspension_notification_title))
+            .setContentText(text)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+            .setSmallIcon(android.R.drawable.ic_dialog_alert)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(plainLaunchPendingIntent())
+            .setAutoCancel(true)
+            // TASK-684 review: the Retry action only when the source file
+            // survived (shared_audio's 24h cleanup runs before this sweep;
+            // a doomed Retry would toast "file not found" on every tap).
+            .apply {
+                if (retryFileAlive) {
+                    addAction(
+                        android.R.drawable.ic_media_play,
+                        context.getString(R.string.retranscribe),
+                        rerun
+                    )
+                }
+            }
+            .addAction(
+                android.R.drawable.ic_menu_manage,
+                context.getString(R.string.battery_exemption_action),
+                battery
+            )
+            .build()
+    }
 
     /** The plain app launch both error surfaces default to. */
     private fun plainLaunchPendingIntent(): PendingIntent = PendingIntent.getActivity(
@@ -365,6 +431,12 @@ class ResultNotificationFactory(private val context: Context) {
         private const val RC_ERROR_LAUNCH_DEFAULT = 0
         private const val RC_ERROR_LAUNCH_SETTINGS_ROW = 2
 
+        // TASK-684: the suspension notification's action band. Fixed codes:
+        // one live suspension notification at a time (fixed id), and
+        // FLAG_UPDATE_CURRENT replaces its intents on re-post.
+        private const val RC_SUSPENSION_RERUN = 3
+        private const val RC_SUSPENSION_BATTERY = 4
+
         /** Preview truncation for the non-pageable oversized path, unchanged from the previous implementations. */
         const val CHAR_PREVIEW_LIMIT = 100
 
@@ -385,7 +457,11 @@ class ResultNotificationFactory(private val context: Context) {
          * - 2201..2300: TaskerRequestReceiver fallback band (sequential slots)
          * - 2401..2500: ShareReceiverActivity choice + share-error band
          *   (per-taskId / per-message hash, TASK-440)
-         * New fixed ids or bands go under the base; 2301..2400 and 2501..2999
+         * - 2501: LogsViewModel.HISTORY_ERROR_NOTIFICATION_ID (F1 History
+         *   error surface, TASK-500 F-batch)
+         * - 2502: SuspendedRunRecovery.NOTIFICATION_ID (TASK-684 freezer
+         *   suspension outcome)
+         * New fixed ids or bands go under the base; 2301..2400 and 2503..2999
          * are free headroom.
          */
         const val RESULT_NOTIFICATION_ID_BASE = 3000

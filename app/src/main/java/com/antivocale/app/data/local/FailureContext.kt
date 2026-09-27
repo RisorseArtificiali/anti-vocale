@@ -32,6 +32,10 @@ data class FailureContext(
     val metadataSeconds: Double? = null,
     /** Audio decoded before the failure in seconds. */
     val decodedSeconds: Double? = null,
+    /** TASK-684: lower bound on how long the OEM freezer had suspended the
+     *  run before the process died; null on old rows and every
+     *  non-suspension failure. */
+    val suspendedMs: Long? = null,
 )
 
 object FailureContextJson {
@@ -47,6 +51,7 @@ object FailureContextJson {
             c.blankChunks?.let { put("blankChunks", it) }
             c.metadataSeconds?.let { put("metadataSeconds", it) }
             c.decodedSeconds?.let { put("decodedSeconds", it) }
+            c.suspendedMs?.let { put("suspendedMs", it) }
         }.toString()
     }
 
@@ -65,6 +70,7 @@ object FailureContextJson {
                     blankChunks = o.optIntOrNull("blankChunks"),
                     metadataSeconds = o.optDoubleOrNull("metadataSeconds"),
                     decodedSeconds = o.optDoubleOrNull("decodedSeconds"),
+                    suspendedMs = o.optLongOrNull("suspendedMs"),
                 )
             }.getOrNull()
         }
@@ -83,6 +89,7 @@ object FailureContextJson {
             }
             c.metadataSeconds?.takeIf { it > 0.0 }?.let { add("total=${it}s") }
             c.decodedSeconds?.takeIf { it > 0.0 }?.let { add("decoded=${it}s") }
+            c.suspendedMs?.let { add("suspended>=${it / 1000}s") }
         }.joinToString(" ")
     }
 }
@@ -92,3 +99,6 @@ private fun org.json.JSONObject.optIntOrNull(key: String): Int? =
 
 private fun org.json.JSONObject.optDoubleOrNull(key: String): Double? =
     if (has(key) && !isNull(key)) getDouble(key) else null
+
+private fun org.json.JSONObject.optLongOrNull(key: String): Long? =
+    if (has(key) && !isNull(key)) getLong(key) else null

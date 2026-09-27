@@ -37,6 +37,8 @@ class NotificationActionReceiver : BroadcastReceiver() {
         const val ACTION_TRANSCRIBE_AUDIO = "com.antivocale.app.TRANSCRIBE_AUDIO"
         /** Swipe-dismiss of the subtitle-choice prompt: cancel the fallback, start nothing. */
         const val ACTION_DISMISS_CHOICE = "com.antivocale.app.DISMISS_CHOICE"
+        /** TASK-684 (GH #109): one-tap re-run from the suspension notification. */
+        const val ACTION_RERUN_SUSPENDED = "com.antivocale.app.RERUN_SUSPENDED"
         const val EXTRA_TRANSCRIPTION_TEXT = "transcription_text"
         /** TASK-647: carried across nav taps so rebuilt actions keep signing. */
         const val EXTRA_SIGNATURE_TEXT = "signature_text"
@@ -61,6 +63,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             ACTION_SHARE_BACK -> handleShareBackAction(context, intent)
             ACTION_USE_SUBTITLES -> handleSubtitleChoice(context, intent, requestType = TaskerRequestReceiver.REQUEST_TYPE_SUBTITLES)
             ACTION_DISMISS_CHOICE -> handleDismissChoice(context, intent)
+            ACTION_RERUN_SUSPENDED -> handleRerunSuspended(context, intent)
             ACTION_TRANSCRIBE_AUDIO -> handleSubtitleChoice(context, intent, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
             ACTION_PAGE_PREV, ACTION_PAGE_NEXT -> handlePageAction(context, intent)
             else -> Log.d(TAG, "Unknown action: ${intent.action}")
@@ -129,6 +132,47 @@ class NotificationActionReceiver : BroadcastReceiver() {
                 // would drop the request exactly as silently as the failure
                 // mode the Outcome gate exists to expose.
                 Log.e(TAG, "Subtitle choice '$requestType' enqueue FAILED (taskId=$taskId): request lost")
+                Toast.makeText(context, context.getString(R.string.transcription_failed), Toast.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    /**
+     * TASK-684 (GH #109): the suspension notification's one-tap re-run.
+     * Re-enqueues the suspended run's audio through [InferenceEnqueue] with a
+     * FRESH task id under the ACTIVE backend (the Logs-tab retranscribe
+     * scaffold's dispatch shape; the row pins no backend). The notification
+     * tap is user-initiated, so the FGS start rides the same exemption the
+     * subtitle choice above relies on, and a still-restricted start survives
+     * on the trampoline notification.
+     */
+    private fun handleRerunSuspended(context: Context, intent: Intent) {
+        val filePath = intent.getStringExtra(TaskerRequestReceiver.EXTRA_FILE_PATH)
+        if (filePath.isNullOrBlank()) {
+            Log.w(TAG, "Suspension re-run without a file path; nothing to do")
+            return
+        }
+        if (!java.io.File(filePath).exists()) {
+            Log.w(TAG, "Suspension re-run file is gone: $filePath")
+            Toast.makeText(context, context.getString(R.string.retranscribe_file_not_found), Toast.LENGTH_SHORT).show()
+            return
+        }
+        val serviceIntent = Intent(context, InferenceService::class.java).apply {
+            putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, java.util.UUID.randomUUID().toString())
+            putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
+            putExtra(TaskerRequestReceiver.EXTRA_PROMPT, intent.getStringExtra(TaskerRequestReceiver.EXTRA_PROMPT) ?: "")
+            putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
+            putExtra(InferenceService.EXTRA_SOURCE, "retranscribe")
+            intent.getStringExtra(EXTRA_SOURCE_PACKAGE)?.let {
+                putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, it)
+            }
+        }
+        when (com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
+            com.antivocale.app.service.InferenceEnqueue.Outcome.Started,
+            com.antivocale.app.service.InferenceEnqueue.Outcome.FallbackNotificationPosted ->
+                Log.i(TAG, "Suspension re-run enqueued (file=$filePath)")
+            is com.antivocale.app.service.InferenceEnqueue.Outcome.Failed -> {
+                Log.e(TAG, "Suspension re-run enqueue FAILED: request lost")
                 Toast.makeText(context, context.getString(R.string.transcription_failed), Toast.LENGTH_LONG).show()
             }
         }

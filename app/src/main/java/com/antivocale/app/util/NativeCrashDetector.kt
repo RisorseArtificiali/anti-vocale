@@ -112,6 +112,51 @@ object NativeCrashDetector {
     data class ExitRecord(val reason: Int, val timestamp: Long, val description: String?)
 
     /**
+     * TASK-684: the raw most-recent process death, read WITHOUT touching this
+     * object's banner-dedup prefs. [checkForRecentCrash] (the UI banner) and
+     * [reportUnreportedDeaths] (telemetry) each consume their own marks; a
+     * sibling read is cleaner than overloading either: the freezer classifier
+     * needs the unfiltered record (reason AND death timestamp) and manages
+     * its own evidence lifecycle via [com.antivocale.app.service.RunHeartbeat].
+     * Side-effect free, null below API 30, on error, or with no history.
+     */
+    fun mostRecentExit(context: Context): ExitRecord? {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return null
+        return try {
+            val am = context.getSystemService(ActivityManager::class.java) ?: return null
+            am.getHistoricalProcessExitReasons(context.packageName, 0, 1)
+                .firstOrNull()
+                ?.let { ExitRecord(it.reason, it.timestamp, it.description) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read most recent exit", e)
+            null
+        }
+    }
+
+    /**
+     * TASK-684 review: the EARLIEST exit at or after [afterMs], or null.
+     * The freezer recovery's classifier needs the death that owns the
+     * orphaned run: between the freeze and the sweep, an intervening
+     * process can start and die again, and the MOST RECENT record would
+     * then fold that second lifetime into the measured gap. Walking the
+     * history picks the first death after the heartbeat; records are
+     * returned newest-first, so the list is scanned to the last one that
+     * still satisfies the bound.
+     */
+    fun earliestExitAtOrAfter(context: Context, afterMs: Long): ExitRecord? {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return null
+        return try {
+            val am = context.getSystemService(ActivityManager::class.java) ?: return null
+            am.getHistoricalProcessExitReasons(context.packageName, 0, 5)
+                .map { ExitRecord(it.reason, it.timestamp, it.description) }
+                .lastOrNull { it.timestamp >= afterMs }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read exit history", e)
+            null
+        }
+    }
+
+    /**
      * TASK-472b cold-start telemetry: report every silent death since the
      * last report as a Crashlytics non-fatal (the fdroid flavor's
      * [CrashReporter] is a logcat no-op by design). Unlike the banner's

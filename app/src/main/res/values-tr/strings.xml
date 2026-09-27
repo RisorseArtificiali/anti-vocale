@@ -1008,6 +1008,9 @@
     <string name="battery_exemption_title">Arka planda çalışmaya izin ver</string>
     <string name="battery_exemption_description">Sistem, arka planda tanımayı durdurdu. Tanıma yarıda kesilmesin diye uygulamanın arka planda çalışmasına izin verin.</string>
     <string name="battery_exemption_action">Ayarı aç</string>
+    <!-- TASK-684 (GH #109): OEM-freezer suspension outcome -->
+    <string name="suspension_notification_title">Transkripsiyon askıya alındı</string>
+    <string name="suspension_notification_text">Sistem, transkripsiyon sırasında uygulamayı %1$s boyunca askıya aldı, bu yüzden tamamlanmadı.</string>
     <!-- TASK-373: litert-lm HF url import -->
     <string name="litertlm_import_from_url">Hugging Face URL’sinden içe aktar</string>
     <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>

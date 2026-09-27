@@ -1025,6 +1025,9 @@
     <string name="battery_exemption_title">Разрешить работу в фоне</string>
     <string name="battery_exemption_description">Система прервала распознавание в фоновом режиме. Разрешите приложению работать в фоне, чтобы распознавание не прерывалось</string>
     <string name="battery_exemption_action">Открыть настройку</string>
+    <!-- TASK-684 (GH #109): OEM-freezer suspension outcome -->
+    <string name="suspension_notification_title">Транскрипция приостановлена</string>
+    <string name="suspension_notification_text">Система приостановила приложение на %1$s во время транскрипции, поэтому она не завершилась.</string>
     <!-- TASK-373: litert-lm HF url import -->
     <string name="litertlm_import_from_url">Импорт по ссылке Hugging Face</string>
     <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>

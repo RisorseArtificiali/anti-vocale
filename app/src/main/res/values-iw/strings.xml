@@ -1013,6 +1013,9 @@
     <string name="battery_exemption_title">אפשר פעולה ברקע</string>
     <string name="battery_exemption_description">המערכת עצרה את הזיהוי בזמן שהאפליקציה הייתה ברקע. אפשר ל-Anti-Vocale לפעול ברקע כדי שהזיהוי לא יופרע.</string>
     <string name="battery_exemption_action">פתיחת ההגדרה</string>
+    <!-- TASK-684 (GH #109): OEM-freezer suspension outcome -->
+    <string name="suspension_notification_title">התעתוק הושהה</string>
+    <string name="suspension_notification_text">המערכת השהתה את האפליקציה למשך %1$s במהלך התעתוק, ולכן הוא לא הסתיים.</string>
     <!-- TASK-373: litert-lm HF url import -->
     <string name="litertlm_import_from_url">ייבוא מכתובת URL של Hugging Face</string>
     <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>

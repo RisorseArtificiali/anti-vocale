@@ -1007,6 +1007,9 @@
     <string name="battery_exemption_title">बैकग्राउंड में चलने की अनुमति दें</string>
     <string name="battery_exemption_description">सिस्टम ने बैकग्राउंड में रिकग्निशन रोक दी। ट्रांसक्रिप्शन न रुके, इसके लिए ऐप को बैकग्राउंड में चलने की अनुमति दें।</string>
     <string name="battery_exemption_action">सेटिंग खोलें</string>
+    <!-- TASK-684 (GH #109): OEM-freezer suspension outcome -->
+    <string name="suspension_notification_title">ट्रांस्क्रिप्शन निलंबित</string>
+    <string name="suspension_notification_text">सिस्टम ने ट्रांस्क्रिप्शन के दौरान ऐप को %1$s के लिए निलंबित कर दिया, इसलिए वह पूरी नहीं हुई।</string>
     <!-- TASK-373: litert-lm HF url import -->
     <string name="litertlm_import_from_url">Hugging Face URL से आयात करें</string>
     <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>

@@ -9,6 +9,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.RuntimeEnvironment
 import org.robolectric.annotation.Config
 import com.antivocale.app.util.NativeCrashDetector.CrashCheckResult
+import org.junit.Assert.assertNull
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [31])
@@ -49,6 +50,19 @@ class NativeCrashDetectorTest {
         val mark = context.getSharedPreferences("native_crash_detection", android.content.Context.MODE_PRIVATE)
             .getLong("last_reported_death_ts", -1L)
         assertEquals("no deaths to report means no mark advanced", -1L, mark)
+    }
+
+    /**
+     * TASK-684: the sibling raw read the freezer classifier consumes. It must
+     * touch no prefs (the banner and telemetry marks stay untouched) and
+     * degrade to null with no history.
+     */
+    @Test
+    fun `mostRecentExit is null with no exit history and consumes no dedup marks`() {
+        assertNull(NativeCrashDetector.mostRecentExit(context))
+        val prefs = context.getSharedPreferences("native_crash_detection", android.content.Context.MODE_PRIVATE)
+        assertEquals("raw read advanced no dedup mark", -1L, prefs.getLong("last_native_crash_ts", -1L))
+        assertEquals("raw read advanced no report mark", -1L, prefs.getLong("last_reported_death_ts", -1L))
     }
 
     @Test

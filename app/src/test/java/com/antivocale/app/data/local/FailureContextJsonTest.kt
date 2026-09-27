@@ -53,4 +53,19 @@ class FailureContextJsonTest {
         // Absent optionals do not appear in the rendering.
         assertEquals("OutOfMemoryError backend=whisper", FailureContextJson.render(back))
     }
+
+    @Test
+    fun `suspension context round trips and renders the lower bound`() {
+        // TASK-684: the freezer-suspension row's typed marker.
+        val ctx = FailureContext(errorClass = "SystemSuspended", suspendedMs = 300_000L)
+        val back = FailureContextJson.fromJson(FailureContextJson.toJson(ctx))!!
+        assertEquals(ctx, back)
+        assertEquals("SystemSuspended suspended>=300s", FailureContextJson.render(back))
+    }
+
+    @Test
+    fun `old rows without suspendedMs read as null`() {
+        val json = """{"errorClass":"PipelineFailure"}"""
+        assertNull(FailureContextJson.fromJson(json)!!.suspendedMs)
+    }
 }

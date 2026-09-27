@@ -876,6 +876,9 @@
     <string name="battery_exemption_title">Autoriser le fonctionnement en arrière-plan</string>
     <string name="battery_exemption_description">Le système a interrompu la reconnaissance en arrière-plan. Autorisez l\'application à fonctionner en arrière-plan pour que la transcription ne soit pas interrompue.</string>
     <string name="battery_exemption_action">Ouvrir le paramètre</string>
+    <!-- TASK-684 (GH #109): OEM-freezer suspension outcome -->
+    <string name="suspension_notification_title">Transcription suspendue</string>
+    <string name="suspension_notification_text">Le système a suspendu l\'application pendant %1$s pendant la transcription, elle ne s\'est donc pas terminée.</string>
     <!-- TASK-373: litert-lm HF url import -->
     <string name="litertlm_import_from_url">Importer depuis une URL Hugging Face</string>
     <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>

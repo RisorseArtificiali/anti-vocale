@@ -310,6 +310,20 @@ class InferenceService : Service(), TranscriptionListener {
                         // ACTION_CANCEL instead cancels the drain job itself, and join()
                         // rethrows, reaching the batch catch below.
                         val taskJob = launch {
+                            // TASK-684 (GH #109): the phase-blind liveness heartbeat.
+                            // Seeds immediately and ticks for the whole task lifetime
+                            // (decode, summary, diarization alike), so the cold-start
+                            // classifier can tell an OEM-freezer suspension (ticks
+                            // stopped while the row lived on) from a run that was
+                            // alive when killed (fresh tick at death). Cleared in the
+                            // finally, AFTER processRequest closed the row, so a
+                            // normally-ended run never leaves suspension evidence.
+                            val heartbeat = launch {
+                                while (isActive) {
+                                    RunHeartbeat.touch(applicationContext, request.taskId)
+                                    delay(RunHeartbeat.TICK_MS)
+                                }
+                            }
                             try {
                                 orchestrator.processRequest(
                                     taskId = request.taskId,
@@ -329,6 +343,8 @@ class InferenceService : Service(), TranscriptionListener {
                                     coroutineScope = this
                                 )
                             } finally {
+                                heartbeat.cancel()
+                                RunHeartbeat.clear(applicationContext, request.taskId)
                                 // Always release the taskId so a future request with the
                                 // same id is accepted. Runs on success, error, cancel.
                                 inFlightTaskIds.remove(request.taskId)

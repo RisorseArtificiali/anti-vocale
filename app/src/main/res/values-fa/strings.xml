@@ -1012,6 +1012,9 @@
     <string name="battery_exemption_title">اجازه کار در پس‌زمینه</string>
     <string name="battery_exemption_description">سیستم تشخیص گفتار را هنگام پس‌زمینه بودن برنامه متوقف کرد. به Anti-Vocale اجازه دهید در پس‌زمینه اجرا شود تا رونویسی قطع نشود.</string>
     <string name="battery_exemption_action">باز کردن تنظیم</string>
+    <!-- TASK-684 (GH #109): OEM-freezer suspension outcome -->
+    <string name="suspension_notification_title">رونویسی متوقف شد</string>
+    <string name="suspension_notification_text">سیستم هنگام رونویسی برنامه را به مدت %1$s متوقف کرد، بنابراین کامل نشد.</string>
     <!-- TASK-373: litert-lm HF url import -->
     <string name="litertlm_import_from_url">وارد کردن از نشانی Hugging Face</string>
     <string name="litertlm_url_hint">https://huggingface.co/owner/repo</string>

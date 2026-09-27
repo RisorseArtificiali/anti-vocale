@@ -122,4 +122,56 @@ class LogDaoStatusTransitionTest {
         assertEquals("partial text", row.result)
         assertEquals(12.5, row.audioDurationSeconds, 0.001)
     }
+
+    @Test
+    fun `getNonTerminal returns the same set the sweep closes`() = runBlocking {
+        insert("queued", "QUEUED")
+        insert("proc", "PROCESSING")
+        insert("legacy", "PENDING")
+        insert("done", "SUCCESS")
+        insert("failed", "ERROR")
+
+        val ids = dao.getNonTerminal().map { it.taskId }.toSet()
+        assertEquals(setOf("queued", "proc", "legacy"), ids)
+    }
+
+    @Test
+    fun `markSuspendedBySystem closes a non-terminal row with the typed marker`() = runBlocking {
+        insert("suspended", "PROCESSING")
+        insert("done", "SUCCESS")
+
+        dao.markSuspendedBySystem(
+            taskId = "suspended",
+            errorMessage = "localized suspension message",
+            failureContext = """{"errorClass":"SystemSuspended","suspendedMs":300000}""")
+
+        val row = dao.getByTaskId("suspended")!!
+        assertEquals("ERROR", row.status)
+        assertEquals("localized suspension message", row.errorMessage)
+        assertEquals("""{"errorClass":"SystemSuspended","suspendedMs":300000}""", row.failureContext)
+        // Terminal rows are untouchable, like every other close.
+        assertEquals("SUCCESS", dao.getByTaskId("done")?.status)
+    }
+
+    @Test
+    fun `suspended rows count as interruptions for the battery-exemption card`() = runBlocking {
+        // TASK-684: the localized errorMessage cannot be SQL-matched; the
+        // failureContext marker is what the count sees. Fresh per-test DB, so
+        // the since filter is degenerate (0) and cannot see other rows.
+        insert("suspended", "PROCESSING")
+        dao.markSuspendedBySystem(
+            taskId = "suspended",
+            errorMessage = "messaggio localizzato",
+            failureContext = """{"errorClass":"SystemSuspended","suspendedMs":300000}""")
+
+        assertEquals(1, dao.countInterruptedSince(since = 0L))
+    }
+
+    @Test
+    fun `generic interrupted rows still count for the card`() = runBlocking {
+        insert("killed", "PROCESSING")
+        dao.failNonTerminal("killed", "Interrupted by app restart", 0L)
+
+        assertEquals(1, dao.countInterruptedSince(since = 0L))
+    }
 }

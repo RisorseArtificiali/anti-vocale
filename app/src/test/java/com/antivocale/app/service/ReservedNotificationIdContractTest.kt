@@ -43,6 +43,7 @@ class ReservedNotificationIdContractTest {
         val base = ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE
         assertTrue(InferenceService.NOTIFICATION_ID < base)
         assertTrue(CrashQuarantineCheck.NOTIFICATION_ID < base)
+        assertTrue(SuspendedRunRecovery.NOTIFICATION_ID < base)
         assertTrue(TranscriptionOrchestrator.MEMORY_MARGIN_WARNING_ID < base)
         assertTrue(SubtitleChoiceTimeoutWorker.NOTIFICATION_ID < base)
         assertTrue(ExtractionService.NOTIFICATION_ID_BASE + ExtractionService.NOTIFICATION_ID_RANGE - 1 < base)
@@ -77,6 +78,10 @@ class ReservedNotificationIdContractTest {
             // future band allocation from colliding while the test passes.
             "history-error" to (com.antivocale.app.ui.viewmodel.LogsViewModel.HISTORY_ERROR_NOTIFICATION_ID..
                 com.antivocale.app.ui.viewmodel.LogsViewModel.HISTORY_ERROR_NOTIFICATION_ID),
+            // TASK-684: the freezer-suspension outcome notification, same
+            // documented-headroom rule.
+            "suspension-recovery-fixed" to (SuspendedRunRecovery.NOTIFICATION_ID..
+                SuspendedRunRecovery.NOTIFICATION_ID),
         )
         for (i in intervals.indices) for (j in i + 1 until intervals.size) {
             val (nameA, a) = intervals[i]
