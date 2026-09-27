@@ -607,7 +607,9 @@ class InferenceService : Service(), TranscriptionListener {
         segments: List<TimedSegment>,
         refinementOutcome: String?
     ) {
-        sendSuccessReply(taskId, resultText)
+        // DRAFT-12 (TASK-598 boundary): the Tasker reply carries the same
+        // annotated form every other surface delivers on diarized runs.
+        sendSuccessReply(taskId, SubtitleFormatter.annotatedOrStored(resultText, segments))
         forgetRequester(taskId)
         // Every completed task moves the model-recency source: re-derive the
         // launcher's dynamic share shortcuts. Metadata-only side effect on the
