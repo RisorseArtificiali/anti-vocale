@@ -99,6 +99,12 @@ class SettingsViewModelActiveModelTest {
                 },
                 staticRegistry(),
             ),
+            // TASK-670: the enrollment pipeline deps; these tests never
+            // enroll, a relaxed preprocessor and an empty real store keep
+            // the construction honest.
+            audioPreprocessor = mockk(relaxed = true),
+            speakerIdentityStore = com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
+                java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
         )
     }
 

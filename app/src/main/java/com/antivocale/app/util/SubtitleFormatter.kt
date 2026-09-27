@@ -99,12 +99,19 @@ object SubtitleFormatter {
         toString()
     }
 
-    /** "SPEAKER k: " when this cue starts a labeled turn, else null. */
+    /**
+     * "SPEAKER k: " when this cue starts a labeled turn, else null.
+     * TASK-670 (GH #83): a cue carrying a matched [TimedSegment.speakerName]
+     * renders the name instead; turn detection stays on the numeric id (a
+     * named person is still one cluster), so this remains the ONE prefix
+     * derivation every surface shares.
+     */
     private fun speakerPrefix(segments: List<TimedSegment>, index: Int): String? {
         val speaker = segments[index].speaker ?: return null
         val previous = segments.getOrNull(index - 1)?.speaker
         if (speaker == previous) return null
-        return "SPEAKER ${speaker + 1}: "
+        val label = segments[index].speakerName ?: "SPEAKER ${speaker + 1}"
+        return "$label: "
     }
 
     /**

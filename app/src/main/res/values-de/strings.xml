@@ -1088,6 +1088,7 @@
     <string name="speaker_id_error_too_long">Clip zu lang: halte ihn unter 30 s.</string>
     <string name="speaker_id_error_decode">Dieser Audioclip ließ sich nicht lesen.</string>
     <string name="speaker_id_error_extract">Aus diesem Clip ließ sich kein Stimmabdruck erstellen.</string>
+    <string name="speaker_id_error_save">Identität konnte nicht gespeichert werden. Prüfe den freien Speicher und versuche es erneut.</string>
     <string name="speaker_id_error_model">Download des Sprechermodells fehlgeschlagen. Prüfe die Verbindung und versuche es erneut.</string>
     <string name="transcription_not_refined">Nicht verfeinert (Sofortvorschau)</string>
     <string name="transcription_refined_from">Verfeinert von %1$s</string>

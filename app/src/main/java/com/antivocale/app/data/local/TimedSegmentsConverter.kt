@@ -23,6 +23,9 @@ object TimedSegmentsConverter {
             // GH #83: speaker rides only when labeled; JSONObject.put with
             // null REMOVES the key, so the guard is load-bearing.
             segment.speaker?.let { cue.put("speaker", it) }
+            // TASK-670: the matched person's name rides only when present
+            // (same null-removes-key trap as the speaker id).
+            segment.speakerName?.let { cue.put("speakerName", it) }
             array.put(cue)
         }
         return array.toString()
@@ -43,6 +46,9 @@ object TimedSegmentsConverter {
                             // optInt default -1: rows written before GH #83
                             // carry no key and read back unlabeled.
                             speaker = item.optInt("speaker", -1).takeIf { it >= 0 },
+                            // TASK-670: blank-safe; rows before the named
+                            // labels carry no key and stay generic.
+                            speakerName = item.optString("speakerName").takeIf { it.isNotBlank() },
                         )
                     )
                 }

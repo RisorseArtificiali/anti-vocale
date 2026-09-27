@@ -92,6 +92,13 @@ abstract class TranscriptionOrchestratorTestBase {
             // TASK-679: the real recorder over the same mocks, so the
             // breadcrumb tests drive the shipped capture path.
             OomBreadcrumbRecorder(preferencesManager, backendManager, llmManager, staticRegistry()),
+            // TASK-670 (GH #83): the real voiceprint store over a throwaway
+            // dir; the naming pass never runs in these tests (the flag stays
+            // off on the relaxed mock), an empty store is the floor.
+            com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
+                java.io.File.createTempFile("speaker-ids", null).let { file ->
+                    file.delete(); file.mkdirs(); file
+                }),
         )
 
         // Default the opt-in memory protection to off in tests so it does not interfere with

@@ -37,6 +37,8 @@ class PreferencesManagerImpl(
         private val TEXT_SCALE = stringPreferencesKey("text_scale")
         private val REFINEMENT_ENABLED = booleanPreferencesKey("refinement_enabled")
         private val SPEAKER_LABELS_ENABLED = booleanPreferencesKey("speaker_labels_enabled")
+        // TASK-670 (GH #83): the named-labels privacy gate, default off.
+        private val SPEAKER_ID_ENABLED = booleanPreferencesKey("speaker_id_enabled")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val TRANSCRIPTION_BACKEND = stringPreferencesKey("transcription_backend")
         private val SHERPA_MODEL_PATH_PREFIX = "sherpa_model_path_"
@@ -293,6 +295,15 @@ class PreferencesManagerImpl(
     override suspend fun saveSpeakerLabelsEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[SPEAKER_LABELS_ENABLED] = enabled
+        }
+    }
+
+    override val speakerIdEnabled: Flow<Boolean> =
+        dataStore.data.map { it[SPEAKER_ID_ENABLED] ?: PreferencesManager.DEFAULT_SPEAKER_ID_ENABLED }
+
+    override suspend fun saveSpeakerIdEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SPEAKER_ID_ENABLED] = enabled
         }
     }
 

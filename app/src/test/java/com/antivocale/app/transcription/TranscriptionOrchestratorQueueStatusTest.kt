@@ -36,6 +36,9 @@ class TranscriptionOrchestratorQueueStatusTest {
             oomBreadcrumbRecorder = OomBreadcrumbRecorder(
                 mockk(relaxed = true), mockk(relaxed = true),
                 mockk(relaxed = true), staticRegistry()),
+            // TASK-670: never reached here (logQueued only), same rule.
+            speakerIdentityStore = com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
+                java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
         )
 
     @Test

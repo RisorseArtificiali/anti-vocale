@@ -1088,6 +1088,7 @@
     <string name="speaker_id_error_too_long">Klip çok uzun: 30 sn altında tutun.</string>
     <string name="speaker_id_error_decode">Bu ses klibi okunamadı.</string>
     <string name="speaker_id_error_extract">Bu klipten ses parmak izi çıkarılamadı.</string>
+    <string name="speaker_id_error_save">Kimlik kaydedilemedi. Boş depolama alanını kontrol edip tekrar deneyin.</string>
     <string name="speaker_id_error_model">Konuşmacı modeli indirilemedi. Bağlantıyı kontrol edip tekrar deneyin.</string>
     <string name="transcription_not_refined">Rafine edilmedi (anında önizleme)</string>
     <string name="transcription_refined_from">%1$s ile rafine edildi</string>

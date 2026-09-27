@@ -14,7 +14,10 @@ import com.antivocale.app.audio.AudioPreprocessor.PreprocessingError
 import com.antivocale.app.audio.AudioPreprocessor.StreamEvent
 import com.antivocale.app.transcription.diarization.DiarizationModels
 import com.antivocale.app.transcription.diarization.SpeakerDiarizer
+import com.antivocale.app.transcription.diarization.SpeakerEmbeddings
+import com.antivocale.app.transcription.diarization.SpeakerIdentityStore
 import com.antivocale.app.transcription.diarization.SpeakerLabeler
+import com.antivocale.app.transcription.diarization.SpeakerNamer
 import com.antivocale.app.audio.MemoryReadings
 import com.antivocale.app.audio.PreprocessingErrorMessages
 import com.antivocale.app.data.ExternalModelRecord
@@ -69,6 +72,9 @@ class TranscriptionOrchestrator @Inject constructor(
     private val silentModelDemoter: SilentModelDemoter,
     // TASK-679: the post-OOM breadcrumb (residents + the tipping request).
     private val oomBreadcrumbRecorder: OomBreadcrumbRecorder,
+    // TASK-670 (GH #83): the enrolled-voiceprint store read at diarization
+    // time, only when the speakerIdEnabled privacy gate is on.
+    private val speakerIdentityStore: SpeakerIdentityStore,
 ) {
     companion object {
         private const val TAG = "TranscriptionOrchestrator"
@@ -1686,9 +1692,17 @@ class TranscriptionOrchestrator @Inject constructor(
                 embeddingModel = DiarizationModels.embeddingFile(context),
                 numThreads = threads,
             ).getOrThrow()
+            var segmentsOut: List<com.antivocale.app.transcription.diarization.DiarizedSegment>? = null
+            var labelsOut: List<Int?>? = null
             try {
                 val segments = diarizer.diarize(samples, sampleRate)
                 val labels = SpeakerLabeler.label(transcription.segments, segments)
+                segmentsOut = segments
+                labelsOut = labels
+                // Labels only here: naming waits until the diarizer session
+                // is RELEASED (review R2: the extractor loads its own titanet;
+                // running both native sessions at once doubled the ~40MB
+                // footprint at exactly the moment TASK-679's OOM class hits).
                 result.map { unlabeled ->
                     unlabeled.copy(
                         segments = unlabeled.segments.mapIndexed { index, cue ->
@@ -1698,10 +1712,71 @@ class TranscriptionOrchestrator @Inject constructor(
             } finally {
                 diarizer.release()
             }
+            // TASK-670 (GH #83): the optional naming pass above the labels,
+            // AFTER the diarizer's release; every failure inside degrades to
+            // the generic SPEAKER N labels, never a dropped or misnamed result.
+            val segments = segmentsOut ?: return@runCatching result
+            val labels = labelsOut ?: return@runCatching result
+            val names = speakerClusterNames(context, segments, samples, sampleRate, threads)
+            result.map { unlabeled ->
+                unlabeled.copy(
+                    segments = unlabeled.segments.mapIndexed { index, cue ->
+                        cue.copy(
+                            speaker = labels[index],
+                            speakerName = labels[index]?.let(names::get),
+                        )
+                    })
+            }
         }.fold(
             onSuccess = { it },
             onFailure = { failure ->
                 Result.success(degradeTo(transcription, "Speaker labels", failure))
+            },
+        )
+    }
+
+    /**
+     * TASK-670 (GH #83): the cluster -> enrolled-name map, or empty. Runs
+     * only when the speakerIdEnabled privacy gate is on AND at least one
+     * identity is enrolled; anything else (flag off, empty store, extractor
+     * load failure) yields empty and the labels stay generic, the honest
+     * fallback. Re-extracts each cluster's embedding through the SAME
+     * titanet model the diarizer used (the diarizer exposes cluster ids
+     * only, not its embeddings).
+     */
+    private suspend fun speakerClusterNames(
+        context: Context,
+        segments: List<com.antivocale.app.transcription.diarization.DiarizedSegment>,
+        samples: FloatArray,
+        sampleRate: Int,
+        numThreads: Int,
+    ): Map<Int, String> {
+        if (!preferencesManager.speakerIdEnabled.first()) return emptyMap()
+        val identities = speakerIdentityStore.list()
+        if (identities.isEmpty()) return emptyMap()
+        // The models are already on disk: applySpeakerLabels downloaded them
+        // (or the pass degraded before reaching here).
+        if (!DiarizationModels.isDownloaded(context)) return emptyMap()
+        return SpeakerEmbeddings.create(
+            embeddingModel = DiarizationModels.embeddingFile(context),
+            numThreads = numThreads,
+        ).mapCatching { embeddings ->
+            try {
+                SpeakerNamer.nameClusters(
+                    segments = segments,
+                    samples = samples,
+                    sampleRate = sampleRate,
+                    identities = identities,
+                    embed = embeddings::compute,
+                )
+            } finally {
+                embeddings.release()
+            }
+        }.fold(
+            onSuccess = { it },
+            onFailure = { failure ->
+                Log.w(TAG, "Speaker naming skipped: ${failure.message}")
+                emptyMap()
             },
         )
     }

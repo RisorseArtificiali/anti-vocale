@@ -124,6 +124,15 @@ object AppModule {
     fun provideExternalModelStore(preferencesManager: PreferencesManager): ExternalModelStore =
         ExternalModelStore(preferencesManager)
 
+    // TASK-670 (GH #83): the voiceprint store, app-private files only.
+    @Provides
+    @Singleton
+    fun provideSpeakerIdentityStore(
+        @ApplicationContext context: Context
+    ): com.antivocale.app.transcription.diarization.SpeakerIdentityStore =
+        com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
+            com.antivocale.app.transcription.diarization.SpeakerIdentityStore.dir(context))
+
     @Provides
     @Singleton
     fun provideExternalModelImporter(

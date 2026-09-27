@@ -60,6 +60,10 @@ class MemoryMarginWarningTest {
             // catch arm, and the Robolectric context absorbs the reads.
             OomBreadcrumbRecorder(
                 preferences, mockk(relaxed = true), mockk(relaxed = true), staticRegistry()),
+            // TASK-670: real store over a throwaway dir; these tests never
+            // reach the naming pass.
+            com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
+                java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
         )
     }
 

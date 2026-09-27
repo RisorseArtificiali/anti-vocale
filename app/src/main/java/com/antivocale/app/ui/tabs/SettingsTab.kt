@@ -91,6 +91,7 @@ import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.util.SubtitleFormatter
+import java.io.File
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.components.LanguageOption
 import com.antivocale.app.ui.components.EditablePromptCard
@@ -836,6 +837,21 @@ fun SettingsTab(
                         viewModel.saveSpeakerLabelsEnabled(enabled)
                     }
                 )
+            }
+
+            // TASK-670 (GH #83): named speaker identities. The card exists
+            // only while the default-off speakerIdEnabled privacy gate is
+            // on: the maintainer's one-switch flip.
+            val speakerIdEnabled by viewModel.speakerIdEnabled.collectAsState()
+            if (speakerIdEnabled) {
+                val speakerIdTitle = stringResource(R.string.speaker_id_title)
+                SearchFilterRow(
+                    searchQuery,
+                    speakerIdTitle,
+                    stringResource(R.string.speaker_id_description),
+                ) {
+                    SpeakerIdentitiesCard(viewModel)
+                }
             }
 
             // VAD Silence Stripping Setting
@@ -2564,6 +2580,177 @@ private fun SearchFilterRow(query: String, vararg matchTexts: String?, content: 
     if (matchesQuery(query, matchTexts.toList())) {
         content()
     }
+}
+
+/**
+ * TASK-670 (GH #83): the Speaker identities card. Enrollment is a file
+ * pick of a short clip of the person's voice (the app has no in-app
+ * microphone capture by design); the clip is decoded, bounded, and
+ * embedded BEFORE the name dialog appears, and nothing touches the store
+ * until the user confirms the name. Replay plays the stored sample;
+ * delete removes the voiceprint and the sample together.
+ */
+@Composable
+private fun SpeakerIdentitiesCard(viewModel: SettingsViewModel) {
+    val identities by viewModel.speakerIdentities.collectAsState()
+    val pending by viewModel.speakerEnrollPending.collectAsState()
+    val error by viewModel.speakerEnrollError.collectAsState()
+    val busy by viewModel.speakerEnrollBusy.collectAsState()
+
+    val picker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) viewModel.enrollSpeakerSample(uri)
+    }
+
+    // One replay player: a new play stops the previous one; released on
+    // leaving the composition (TASK-670).
+    var replayPlayer by remember { mutableStateOf<android.media.MediaPlayer?>(null) }
+    DisposableEffect(Unit) {
+        onDispose {
+            replayPlayer?.release()
+            replayPlayer = null
+        }
+    }
+    val replaySample: (File) -> Unit = { sample ->
+        replayPlayer?.release()
+        replayPlayer = runCatching {
+            android.media.MediaPlayer().apply {
+                setDataSource(sample.absolutePath)
+                setOnPreparedListener { it.start() }
+                // Review R8: a failed async prepare must release the player
+                // (not linger in the error state holding its fd), and a
+                // COMPLETED player releases too (previously it sat until
+                // the next replay tap or leaving the composition).
+                setOnErrorListener { mp, _, _ -> mp.release(); true }
+                setOnCompletionListener { it.release() }
+                prepareAsync()
+            }
+        }.getOrNull()
+    }
+
+    SectionCard(
+        icon = Icons.Default.RecordVoiceOver,
+        title = stringResource(R.string.speaker_id_title),
+        description = stringResource(R.string.speaker_id_description),
+    ) {
+        if (identities.isEmpty()) {
+            Text(
+                text = stringResource(R.string.speaker_id_empty),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        for (identity in identities) {
+            SpeakerIdentityRow(
+                identity = identity,
+                onReplay = { viewModel.speakerSampleFile(identity.id)?.let(replaySample) },
+                onDelete = { viewModel.deleteSpeakerIdentity(identity.id) },
+            )
+        }
+        error?.let { enrollmentError ->
+            Text(
+                text = stringResource(enrollmentError.labelRes()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
+            )
+        }
+        OutlinedButton(
+            onClick = { picker.launch(arrayOf("audio/*")) },
+            enabled = !busy,
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.speaker_id_add))
+        }
+        if (busy) {
+            LinearProgressIndicator(Modifier.fillMaxWidth())
+        }
+    }
+
+    pending?.let { sample ->
+        SpeakerNameDialog(
+            sampleSeconds = sample.sampleSeconds,
+            onConfirm = { name -> viewModel.confirmSpeakerEnrollment(name) },
+            onDismiss = { viewModel.cancelSpeakerEnrollment() },
+        )
+    }
+}
+
+@Composable
+private fun SpeakerIdentityRow(
+    identity: com.antivocale.app.transcription.diarization.SpeakerIdentity,
+    onReplay: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(identity.name, style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = stringResource(
+                    R.string.speaker_id_sample_seconds, identity.sampleSeconds.toInt()),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        IconButton(onClick = onReplay) {
+            Icon(Icons.Default.PlayArrow, contentDescription = stringResource(R.string.speaker_id_replay))
+        }
+        IconButton(onClick = onDelete) {
+            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.speaker_id_delete))
+        }
+    }
+}
+
+@Composable
+private fun SpeakerNameDialog(
+    sampleSeconds: Float,
+    onConfirm: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var name by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.speaker_id_name_title)) },
+        text = {
+            Column {
+                Text(
+                    text = stringResource(R.string.speaker_id_sample_seconds, sampleSeconds.toInt()),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text(stringResource(R.string.speaker_id_name_label)) },
+                    singleLine = true,
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(name) },
+                enabled = name.isNotBlank(),
+            ) { Text(stringResource(R.string.speaker_id_name_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.speaker_id_name_cancel)) }
+        },
+    )
+}
+
+/** TASK-670: the enrollment failure -> its localized message. */
+@androidx.annotation.StringRes
+private fun SettingsViewModel.SpeakerEnrollError.labelRes(): Int = when (this) {
+    SettingsViewModel.SpeakerEnrollError.TOO_SHORT -> R.string.speaker_id_error_too_short
+    SettingsViewModel.SpeakerEnrollError.TOO_LONG -> R.string.speaker_id_error_too_long
+    SettingsViewModel.SpeakerEnrollError.DECODE -> R.string.speaker_id_error_decode
+    SettingsViewModel.SpeakerEnrollError.EXTRACT -> R.string.speaker_id_error_extract
+    SettingsViewModel.SpeakerEnrollError.SAVE -> R.string.speaker_id_error_save
+    SettingsViewModel.SpeakerEnrollError.MODEL_DOWNLOAD -> R.string.speaker_id_error_model
 }
 
 /**

@@ -15,6 +15,11 @@ data class TimedSegment(
     /** GH #83: dense speaker id from the diarization pass, null on unlabeled
      *  cues and on every row written before the feature existed. */
     val speaker: Int? = null,
+    /** TASK-670 (GH #83): the enrolled person's name when the cluster above
+     *  matched an enrolled voiceprint at or above the similarity threshold;
+     *  null keeps the generic SPEAKER N prefix. Rides the same cue, so every
+     *  rendering surface picks it up without forking. */
+    val speakerName: String? = null,
 )
 
 /**

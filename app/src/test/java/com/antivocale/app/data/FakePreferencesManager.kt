@@ -217,6 +217,13 @@ internal class FakePreferencesManager : PreferencesManager {
         _speakerLabelsEnabled.value = enabled
     }
 
+    // TASK-670 (GH #83): the named-labels gate, default off like the real impl.
+    val _speakerIdEnabled = MutableStateFlow(PreferencesManager.DEFAULT_SPEAKER_ID_ENABLED)
+    override val speakerIdEnabled: Flow<Boolean> = _speakerIdEnabled
+    override suspend fun saveSpeakerIdEnabled(enabled: Boolean) {
+        _speakerIdEnabled.value = enabled
+    }
+
     // TASK-576
     val _textScale = MutableStateFlow(PreferencesManager.DEFAULT_TEXT_SCALE)
     override val textScalePreference: Flow<String> = _textScale

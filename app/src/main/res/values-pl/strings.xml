@@ -1106,6 +1106,7 @@
     <string name="speaker_id_error_too_long">Klip za długi: niech będzie krótszy niż 30 s.</string>
     <string name="speaker_id_error_decode">Nie udało się odczytać tego klipu audio.</string>
     <string name="speaker_id_error_extract">Nie udało się wyodrębnić odcisku głosu z tego klipu.</string>
+    <string name="speaker_id_error_save">Nie udało się zapisać tożsamości. Sprawdź wolne miejsce i spróbuj ponownie.</string>
     <string name="speaker_id_error_model">Pobieranie modelu mówców nie powiodło się. Sprawdź połączenie i spróbuj ponownie.</string>
     <string name="transcription_not_refined">Nie ulepszone (natychmiastowy podgląd)</string>
     <string name="transcription_refined_from">Ulepszone z %1$s</string>

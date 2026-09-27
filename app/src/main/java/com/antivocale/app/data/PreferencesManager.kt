@@ -26,6 +26,18 @@ interface PreferencesManager {
 
     /** GH #83. */
     suspend fun saveSpeakerLabelsEnabled(enabled: Boolean)
+
+    /**
+     * TASK-670 (GH #83): named speaker labels gate. Voiceprints are
+     * biometric-adjacent data, so the whole feature (enrollment UI, the
+     * identity store, the matching pass) is OFF until the maintainer signs
+     * the privacy wording; while off no surface exists and nothing reads
+     * the store. Flipping this one preference is the entire switch.
+     */
+    val speakerIdEnabled: Flow<Boolean>
+
+    /** TASK-670 (GH #83). */
+    suspend fun saveSpeakerIdEnabled(enabled: Boolean)
     val themeMode: Flow<String>
     val transcriptionBackend: Flow<String>
     /**
@@ -296,6 +308,9 @@ interface PreferencesManager {
         const val DEFAULT_EXTERNAL_AUTOMATION_ENABLED = false
         /** TASK-681: LAN offload is opt-in; off, no audio ever leaves the device. */
         const val DEFAULT_REMOTE_OMNIVOICE_ENABLED = false
+        /** TASK-670: speaker identities are off until the maintainer signs the
+         *  privacy wording; the flag is the whole switch. */
+        const val DEFAULT_SPEAKER_ID_ENABLED = false
         const val DEFAULT_REMOTE_OMNIVOICE_ENDPOINT = ""
         const val DEFAULT_REMOTE_OMNIVOICE_API_KEY = ""
         /** One source with the backend's own default (the field the server resolves). */

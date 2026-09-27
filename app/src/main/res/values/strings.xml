@@ -1101,6 +1101,7 @@
     <string name="speaker_id_error_too_long">Clip too long: keep it under 30 s.</string>
     <string name="speaker_id_error_decode">Could not read that audio clip.</string>
     <string name="speaker_id_error_extract">Could not extract a voiceprint from that clip.</string>
+    <string name="speaker_id_error_save">Could not save the identity. Check free storage and try again.</string>
     <string name="speaker_id_error_model">Speaker model download failed. Check the connection and try again.</string>
     <string name="transcription_not_refined">Not refined (instant preview)</string>
     <string name="transcription_refined_from">Refined from %1$s</string>

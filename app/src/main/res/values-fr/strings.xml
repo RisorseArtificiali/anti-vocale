@@ -956,6 +956,7 @@
     <string name="speaker_id_error_too_long">Clip trop long : gardez-le sous 30 s.</string>
     <string name="speaker_id_error_decode">Impossible de lire ce clip audio.</string>
     <string name="speaker_id_error_extract">Impossible d\'extraire une empreinte vocale de ce clip.</string>
+    <string name="speaker_id_error_save">Impossible d’enregistrer l’identité. Vérifiez l’espace libre et réessayez.</string>
     <string name="speaker_id_error_model">Échec du téléchargement du modèle de locuteurs. Vérifiez la connexion et réessayez.</string>
     <string name="transcription_not_refined">Non affiné (aperçu instantané)</string>
     <string name="transcription_refined_from">Affiné depuis %1$s</string>

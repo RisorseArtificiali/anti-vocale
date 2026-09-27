@@ -125,6 +125,9 @@ internal class TestSpiOps(
             .put("textScalePreference", preferences.textScalePreference.first())
             .put("refinementEnabled", preferences.refinementEnabled.first())
             .put("speakerLabelsEnabled", preferences.speakerLabelsEnabled.first())
+            // TASK-670 (GH #83): the named-labels privacy gate, readable and
+            // settable over the SPI so device trials can flip it.
+            .put("speakerIdEnabled", preferences.speakerIdEnabled.first())
             .put("themeMode", preferences.themeMode.first())
             .put("defaultPrompt", preferences.defaultPrompt.first())
             .put("summaryPrompt", preferences.summaryPrompt.first())
@@ -158,6 +161,8 @@ internal class TestSpiOps(
         "summarize" to preferences::saveSummarizeEnabled,
         "refinement_enabled" to preferences::saveRefinementEnabled,
         "speaker_labels_enabled" to preferences::saveSpeakerLabelsEnabled,
+        // TASK-670: the named-labels privacy gate.
+        "speaker_id_enabled" to preferences::saveSpeakerIdEnabled,
         "auto_copy" to preferences::saveAutoCopyEnabled,
         "vad_advisory" to preferences::saveVadAdvisoryDismissed,
         "onboarding" to preferences::saveOnboardingCompleted,

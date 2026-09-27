@@ -1107,6 +1107,7 @@
     <string name="speaker_id_error_too_long">Клип слишком длинный: держите короче 30 с.</string>
     <string name="speaker_id_error_decode">Не удалось прочитать этот аудиоклип.</string>
     <string name="speaker_id_error_extract">Не удалось извлечь голосовой отпечаток из этого клипа.</string>
+    <string name="speaker_id_error_save">Не удалось сохранить идентичность. Проверьте свободное место и повторите.</string>
     <string name="speaker_id_error_model">Не удалось скачать модель говорящих. Проверьте соединение и попробуйте снова.</string>
     <string name="transcription_not_refined">Не уточнено (мгновенный предпросмотр)</string>
     <string name="transcription_refined_from">Уточнено с %1$s</string>

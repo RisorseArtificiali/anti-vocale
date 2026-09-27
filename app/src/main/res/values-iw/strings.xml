@@ -1095,6 +1095,7 @@
     <string name="speaker_id_error_too_long">הקליפ ארוך מדי: קצר מ־30 שנ׳.</string>
     <string name="speaker_id_error_decode">לא ניתן היה לקרוא את קטע השמע.</string>
     <string name="speaker_id_error_extract">לא ניתן היה לחלץ טביעת קול מהקליפ.</string>
+    <string name="speaker_id_error_save">לא ניתן היה לשמור את הזהות. בדוק את האחסון הפנוי ונסה שוב.</string>
     <string name="speaker_id_error_model">הורדת מודל הדוברים נכשלה. בדקו את החיבור ונסו שוב.</string>
     <string name="transcription_not_refined">לא מחודד (תצוגה מיידית)</string>
     <string name="transcription_refined_from">חודד מ-%1$s</string>

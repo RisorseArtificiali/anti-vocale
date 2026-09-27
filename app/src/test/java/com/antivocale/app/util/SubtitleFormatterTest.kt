@@ -3,6 +3,7 @@ package com.antivocale.app.util
 import com.antivocale.app.transcription.TimedSegment
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SubtitleFormatterTest {
@@ -92,9 +93,8 @@ class SubtitleFormatterTest {
     }
 
     // GH #83: the in-app display text uses the export turn convention.
-
-    private fun labeledCue(start: Long, speaker: Int?, text: String) =
-        TimedSegment(startMs = start, endMs = start + 3_000, text = text, speaker = speaker)
+    // TASK-670: labeledCue (defined at the bottom) grew the optional
+    // speakerName; every pre-existing call site compiles unchanged.
 
     @Test
     fun speakerAnnotated_prefixesTurnStartsAndSkipsContinuations() {
@@ -271,4 +271,59 @@ class SubtitleFormatterTest {
         assertEquals(SubtitleFormatter.Format.TXT, decision.format)
         assertEquals("SPEAKER 1: ciao come va\n[2 chunks failed; timestamps omitted]", decision.content)
     }
+
+    // TASK-670 (GH #83): a matched cluster renders the enrolled name; an
+    // unmatched one keeps the generic SPEAKER N prefix. Both ride the SAME
+    // prefix derivation, so these tests go through the shared entry points.
+
+    @Test
+    fun speakerAnnotated_matchedClusterRendersTheNameAtTurnStarts() {
+        val annotated = SubtitleFormatter.speakerAnnotated(
+            listOf(
+                labeledCue(0, 0, "Ciao.", speakerName = "Alice"),
+                labeledCue(4_000, 0, "Come va?", speakerName = "Alice"),
+                labeledCue(9_000, 1, "Bene."),
+            ))
+        assertEquals("Alice: Ciao.\nCome va?\nSPEAKER 2: Bene.", annotated)
+    }
+
+    @Test
+    fun srt_namedAndGenericSpeakersShareOnePrefixPath() {
+        val srt = SubtitleFormatter.srt(
+            listOf(
+                labeledCue(0, 0, "uno", speakerName = "Alice"),
+                labeledCue(4_000, 1, "due"),
+            ))
+        assertTrue(srt.contains("Alice: uno"))
+        assertTrue(srt.contains("SPEAKER 2: due"))
+        assertTrue(!srt.contains("SPEAKER 1"))
+    }
+
+    @Test
+    fun timedTxt_namedSpeakerRidesTheTimedForm() {
+        val timed = SubtitleFormatter.timedTxt(
+            listOf(labeledCue(0, 0, "pronto", speakerName = "Alice")))
+        assertTrue(timed.contains("Alice: pronto"))
+    }
+
+    @Test
+    fun speakerAnnotated_turnDetectionStaysOnTheNumericId() {
+        // A named cluster is still ONE cluster: continuations of the same
+        // speaker carry no repeated prefix, named or not.
+        val annotated = SubtitleFormatter.speakerAnnotated(
+            listOf(
+                labeledCue(0, 0, "prima", speakerName = "Alice"),
+                labeledCue(4_000, 0, "seconda", speakerName = "Alice"),
+            ))
+        assertEquals("Alice: prima\nseconda", annotated)
+    }
+
+    private fun labeledCue(start: Long, speaker: Int?, text: String, speakerName: String? = null) =
+        TimedSegment(
+            startMs = start,
+            endMs = start + 3_000,
+            text = text,
+            speaker = speaker,
+            speakerName = speakerName,
+        )
 }

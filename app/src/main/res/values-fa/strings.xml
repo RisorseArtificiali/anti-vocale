@@ -1093,6 +1093,7 @@
     <string name="speaker_id_error_too_long">کلیپ خیلی بلند است: کمتر از ۳۰ ثانیه باشد.</string>
     <string name="speaker_id_error_decode">آن کلیپ صوتی خوانده نشد.</string>
     <string name="speaker_id_error_extract">از آن کلیپ اثر صدا استخراج نشد.</string>
+    <string name="speaker_id_error_save">نیمی‌توان هویت را ذخیره کرد. فضای آزاد را بررسی کرده و دوباره تلاش کنید.</string>
     <string name="speaker_id_error_model">دانلود مدل گوینده ناموفق بود. اتصال را بررسی کنید و دوباره تلاش کنید.</string>
     <string name="transcription_not_refined">پالایش نشده (پیش‌نمایش فوری)</string>
     <string name="transcription_refined_from">پالایش‌شده از %1$s</string>

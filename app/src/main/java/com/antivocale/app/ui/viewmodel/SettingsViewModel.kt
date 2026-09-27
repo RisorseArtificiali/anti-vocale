@@ -2,6 +2,7 @@ package com.antivocale.app.ui.viewmodel
 
 import android.app.Application
 import android.content.Intent
+import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -25,12 +26,17 @@ import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.catalog.BundledCatalog
+import com.antivocale.app.audio.AudioPreprocessor
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.manager.LlmManager
 import com.antivocale.app.transcription.TranscriptionBackendManager
+import com.antivocale.app.transcription.diarization.DiarizationModels
+import com.antivocale.app.transcription.diarization.SpeakerEmbeddings
+import com.antivocale.app.transcription.diarization.SpeakerIdentity
+import com.antivocale.app.transcription.diarization.SpeakerIdentityStore
 import com.antivocale.app.ui.appearance.LauncherIconManager
 import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.ui.theme.ThemeMode
@@ -86,7 +92,11 @@ class SettingsViewModel @Inject constructor(
     private val remoteOmnivoiceBackend: com.antivocale.app.transcription.RemoteOmnivoiceBackend,
     // TASK-679: the resident-models memory panel reads through the same
     // recorder that writes the post-OOM breadcrumb.
-    private val oomBreadcrumbRecorder: com.antivocale.app.transcription.OomBreadcrumbRecorder
+    private val oomBreadcrumbRecorder: com.antivocale.app.transcription.OomBreadcrumbRecorder,
+    // TASK-670 (GH #83): the speaker-identity enrollment pipeline (decode
+    // via the shared preprocessor, embed via the diarization titanet).
+    private val audioPreprocessor: AudioPreprocessor,
+    private val speakerIdentityStore: SpeakerIdentityStore,
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -330,6 +340,34 @@ class SettingsViewModel @Inject constructor(
     // GH #83: speaker labeling after transcription.
     private val _speakerLabelsEnabled = MutableStateFlow(false)
     val speakerLabelsEnabled: StateFlow<Boolean> = _speakerLabelsEnabled.asStateFlow()
+
+    // TASK-670 (GH #83): named speaker identities. The whole feature is
+    // behind the default-off speakerIdEnabled privacy gate; while it is off
+    // the card and this state have no surface.
+    private val _speakerIdEnabled = MutableStateFlow(PreferencesManager.DEFAULT_SPEAKER_ID_ENABLED)
+    val speakerIdEnabled: StateFlow<Boolean> = _speakerIdEnabled.asStateFlow()
+
+    private val _speakerIdentities = MutableStateFlow<List<SpeakerIdentity>>(emptyList())
+    val speakerIdentities: StateFlow<List<SpeakerIdentity>> = _speakerIdentities.asStateFlow()
+
+    /** One validated sample waiting for its name in the enrollment dialog. */
+    data class PendingSpeakerEnrollment(
+        val sampleSeconds: Float,
+        val embedding: FloatArray,
+        val samples: FloatArray,
+        val sampleRate: Int,
+    )
+
+    private val _speakerEnrollPending = MutableStateFlow<PendingSpeakerEnrollment?>(null)
+    val speakerEnrollPending: StateFlow<PendingSpeakerEnrollment?> = _speakerEnrollPending.asStateFlow()
+
+    enum class SpeakerEnrollError { TOO_SHORT, TOO_LONG, DECODE, EXTRACT, SAVE, MODEL_DOWNLOAD }
+
+    private val _speakerEnrollError = MutableStateFlow<SpeakerEnrollError?>(null)
+    val speakerEnrollError: StateFlow<SpeakerEnrollError?> = _speakerEnrollError.asStateFlow()
+
+    private val _speakerEnrollBusy = MutableStateFlow(false)
+    val speakerEnrollBusy: StateFlow<Boolean> = _speakerEnrollBusy.asStateFlow()
 
     // TASK-336: background-kill detection (cold-start sweep marker rows) for the
     // battery-exemption card. Only re-offered after a NEW interruption.
@@ -635,6 +673,16 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.speakerLabelsEnabled.collect { _speakerLabelsEnabled.value = it }
         }
+        // TASK-670: the named-labels privacy gate + the enrolled list.
+        // Review R5: the store is read ONLY when the gate turns true (the
+        // invariant "flag off means nothing touches the voiceprint data"
+        // must hold in code, not just in the card's visibility).
+        viewModelScope.launch {
+            preferencesManager.speakerIdEnabled.collect {
+                _speakerIdEnabled.value = it
+                if (it) refreshSpeakerIdentities()
+            }
+        }
         // TASK-603 F6: availability has TWO inputs, and both are collected:
         // the backend selection (a switch) and the streaming entry's saved
         // path (a bare install writes no backend value, and the backend flow
@@ -859,6 +907,154 @@ class SettingsViewModel @Inject constructor(
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to save speaker-labels toggle", e)
             }
+        }
+    }
+
+    /**
+     * TASK-670 (GH #83): the enrollment pipeline behind the file pick.
+     * Copies the picked clip to the cache, decodes it through the standard
+     * preprocessor (16 kHz mono, no VAD: the sample IS the voice), bounds
+     * its length, then embeds it with the diarization titanet model so the
+     * stored voiceprint and the transcription-time clusters share one
+     * embedding space. A validated sample parks in [speakerEnrollPending]
+     * until the user names it; every failure lands in [speakerEnrollError]
+     * and stores nothing.
+     */
+    fun enrollSpeakerSample(uri: Uri) {
+        _speakerEnrollError.value = null
+        _speakerEnrollBusy.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val app = getApplication<Application>()
+                // SAF copy to a real path (the decode path is path-based).
+                val suffix = app.contentResolver.getType(uri)
+                    ?.substringAfterLast('/')
+                    ?.take(8)?.let { ".$it" } ?: ""
+                val cached = File(app.cacheDir, "speaker-enroll$suffix")
+                app.contentResolver.openInputStream(uri)?.use { input ->
+                    cached.outputStream().use { output -> input.copyTo(output) }
+                } ?: throw IllegalStateException("unreadable enrollment clip")
+                try {
+                    // Review R4: reject out-of-bounds clips from the
+                    // CONTAINER metadata BEFORE the full decode (a 90-minute
+                    // pick decoded ~345MB of PCM only to fail the bound).
+                    val metadataSeconds = android.media.MediaMetadataRetriever().use { r ->
+                        r.setDataSource(cached.absolutePath)
+                        r.extractMetadata(
+                            android.media.MediaMetadataRetriever.METADATA_KEY_DURATION
+                        )?.toLongOrNull()?.div(1000.0)
+                    }
+                    if (metadataSeconds != null && metadataSeconds > SpeakerIdentityStore.MAX_ENROLL_SECONDS + 1.0) {
+                        throw IllegalArgumentException("clip too long")
+                    }
+                    val decoded = audioPreprocessor.prepareAudioForMediaPipe(
+                        inputPath = cached.absolutePath,
+                        cacheDir = app.cacheDir,
+                        maxChunkDurationSeconds = null,
+                    )
+                    val (samples, sampleRate) = audioPreprocessor.mergeAndResample(
+                        decoded.chunks.toMutableList(), decoded.sampleRate)
+                    val seconds = samples.size.toFloat() / sampleRate
+                    when {
+                        seconds < SpeakerIdentityStore.MIN_ENROLL_SECONDS ->
+                            _speakerEnrollError.value = SpeakerEnrollError.TOO_SHORT
+                        seconds > SpeakerIdentityStore.MAX_ENROLL_SECONDS ->
+                            _speakerEnrollError.value = SpeakerEnrollError.TOO_LONG
+                        else -> {
+                            val download = DiarizationModels.ensureDownloaded(app)
+                            if (download.isFailure) {
+                                _speakerEnrollError.value = SpeakerEnrollError.MODEL_DOWNLOAD
+                                return@launch
+                            }
+                            val embedded = SpeakerEmbeddings.create(
+                                embeddingModel = DiarizationModels.embeddingFile(app),
+                                numThreads = preferencesManager.threadCount.first(),
+                            ).mapCatching { session ->
+                                try {
+                                    session.compute(samples, sampleRate)
+                                } finally {
+                                    session.release()
+                                }
+                            }
+                            embedded.fold(
+                                onSuccess = { embedding ->
+                                    _speakerEnrollPending.value = PendingSpeakerEnrollment(
+                                        sampleSeconds = seconds,
+                                        embedding = embedding,
+                                        samples = samples,
+                                        sampleRate = sampleRate,
+                                    )
+                                },
+                                onFailure = { failure ->
+                                    Log.e(TAG, "Speaker enrollment embedding failed", failure)
+                                    _speakerEnrollError.value = SpeakerEnrollError.EXTRACT
+                                },
+                            )
+                        }
+                    }
+                } finally {
+                    cached.delete()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Speaker enrollment failed", e)
+                _speakerEnrollError.value = SpeakerEnrollError.DECODE
+            } finally {
+                _speakerEnrollBusy.value = false
+            }
+        }
+    }
+
+    /** TASK-670: names and persists the parked sample (voiceprint + WAV). */
+    fun confirmSpeakerEnrollment(name: String) {
+        val pending = _speakerEnrollPending.value ?: return
+        val trimmed = name.trim()
+        if (trimmed.isEmpty()) return
+        viewModelScope.launch(Dispatchers.IO) {
+            val saved = runCatching {
+                speakerIdentityStore.save(
+                    name = trimmed,
+                    embedding = pending.embedding,
+                    sampleSeconds = pending.sampleSeconds,
+                    samples = pending.samples,
+                    sampleRate = pending.sampleRate,
+                )
+            }
+            _speakerEnrollPending.value = null
+            saved.fold(
+                onSuccess = { refreshSpeakerIdentities() },
+                onFailure = { failure ->
+                    Log.e(TAG, "Speaker identity save failed", failure)
+                    // Review R9: extraction SUCCEEDED here; a disk-full save
+                    // must not send the user to re-pick a clip.
+                    _speakerEnrollError.value = SpeakerEnrollError.SAVE
+                },
+            )
+        }
+    }
+
+    /** TASK-670: discards the parked sample; nothing was stored yet. */
+    fun cancelSpeakerEnrollment() {
+        _speakerEnrollPending.value = null
+    }
+
+    /** TASK-670: per-person removal (the privacy decision's delete path). */
+    fun deleteSpeakerIdentity(id: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            speakerIdentityStore.delete(id)
+            refreshSpeakerIdentities()
+        }
+    }
+
+    fun clearSpeakerEnrollError() {
+        _speakerEnrollError.value = null
+    }
+
+    /** TASK-670: the enrollment clip for the row's replay button. */
+    fun speakerSampleFile(id: String): File? = speakerIdentityStore.sampleFile(id)
+
+    private fun refreshSpeakerIdentities() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _speakerIdentities.value = speakerIdentityStore.list()
         }
     }
 

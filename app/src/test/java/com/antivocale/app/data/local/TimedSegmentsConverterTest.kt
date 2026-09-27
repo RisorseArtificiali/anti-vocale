@@ -45,4 +45,20 @@ class TimedSegmentsConverterTest {
         val legacy = """[{"startMs":0,"endMs":10,"text":"vecchia"}]"""
         assertNull(TimedSegmentsConverter.fromJson(legacy).single().speaker)
     }
+
+    @Test
+    fun `speaker names round-trip and old rows stay generic`() {
+        // TASK-670 (GH #83): the matched person's name persists beside the
+        // cluster id and survives the read; pre-existing rows (with or
+        // without a speaker id) read back with no name.
+        val named = listOf(
+            TimedSegment(0, 1000, "prima", speaker = 0, speakerName = "Alice"),
+            TimedSegment(1000, 2000, "seconda", speaker = 1),
+        )
+        assertEquals(named, TimedSegmentsConverter.fromJson(TimedSegmentsConverter.toJson(named)))
+        val legacyNamedId = """[{"startMs":0,"endMs":10,"text":"vecchia","speaker":0}]"""
+        assertNull(TimedSegmentsConverter.fromJson(legacyNamedId).single().speakerName)
+        val blankName = """[{"startMs":0,"endMs":10,"text":"x","speakerName":""}]"""
+        assertNull(TimedSegmentsConverter.fromJson(blankName).single().speakerName)
+    }
 }

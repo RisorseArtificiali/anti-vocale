@@ -1087,6 +1087,7 @@
     <string name="speaker_id_error_too_long">क्लिप बहुत लंबा है: इसे 30 सेकंड से कम रखें।</string>
     <string name="speaker_id_error_decode">वह ऑडियो क्लिप नहीं पढ़ा जा सका।</string>
     <string name="speaker_id_error_extract">उस क्लिप से वॉयसप्रिंट नहीं निकाला जा सका।</string>
+    <string name="speaker_id_error_save">पहचान सहेजा नहीं जा सकी। फ्री स्टोरेज जाँचें और फिर कोशिश करें।</string>
     <string name="speaker_id_error_model">वक्ता मॉडल डाउनलोड विफल। कनेक्शन जाँचें और फिर से कोशिश करें।</string>
     <string name="transcription_not_refined">परिशोधित नहीं (तुरंत पूर्वावलोकन)</string>
     <string name="transcription_refined_from">%1$s से परिशोधित</string>

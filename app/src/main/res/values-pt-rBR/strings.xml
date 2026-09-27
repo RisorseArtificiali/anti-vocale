@@ -956,6 +956,7 @@
     <string name="speaker_id_error_too_long">Clipe longo demais: mantenha abaixo de 30 s.</string>
     <string name="speaker_id_error_decode">Não foi possível ler esse clipe de áudio.</string>
     <string name="speaker_id_error_extract">Não foi possível extrair uma impressão de voz desse clipe.</string>
+    <string name="speaker_id_error_save">Não foi possível salvar a identidade. Verifique o espaço livre e tente novamente.</string>
     <string name="speaker_id_error_model">Falha no download do modelo de falantes. Verifique a conexão e tente novamente.</string>
     <string name="transcription_not_refined">Não refinado (prévia instantânea)</string>
     <string name="transcription_refined_from">Refinado de %1$s</string>
