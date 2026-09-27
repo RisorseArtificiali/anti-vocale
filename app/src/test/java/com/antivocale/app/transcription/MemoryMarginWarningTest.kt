@@ -56,6 +56,10 @@ class MemoryMarginWarningTest {
             ExternalModelStore(preferences, dirExists = { true }),
             // TASK-675: real demoter over the same fake preferences.
             SilentModelDemoter(preferences),
+            // TASK-679: real recorder; these tests never hit a memory-class
+            // catch arm, and the Robolectric context absorbs the reads.
+            OomBreadcrumbRecorder(
+                preferences, mockk(relaxed = true), mockk(relaxed = true), staticRegistry()),
         )
     }
 

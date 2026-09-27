@@ -289,6 +289,20 @@
     <string name="error_remote_unreachable">Ihr OmniVoice-Server ist nicht erreichbar. Prüfen Sie, ob er läuft und ob die Adresse in den Einstellungen stimmt.</string>
     <string name="error_remote_server">Der OmniVoice-Server hat die Anfrage abgelehnt (HTTP %1$d).</string>
     <string name="remote_offload_status">Transkribiere auf Ihrem OmniVoice-Server…</string>
+    <!-- TASK-679: Panel der residenten Modelle (Einstellungen > Erweitert) und der Post-OOM-Breadcrumb. -->
+    <string name="memory_diagnostics_title">Arbeitsspeicher auf dem Gerät</string>
+    <string name="memory_diagnostics_subtitle">Derzeit geladene Modelle, freier RAM und der letzte Eintrag zu Speichermangel.</string>
+    <string name="memory_diagnostics_resident_label">Geladene Modelle</string>
+    <string name="memory_diagnostics_resident_none">Momentan ist kein Modell geladen</string>
+    <string name="memory_diagnostics_ram_label">Freier RAM</string>
+    <string name="memory_diagnostics_ram_value">%1$s frei von %2$s</string>
+    <string name="memory_diagnostics_ram_unknown">Auf diesem Gerät nicht abrufbar</string>
+    <string name="memory_diagnostics_heap_label">Speicherlimit der App</string>
+    <string name="memory_diagnostics_breadcrumb_label">Letztes Speicherproblem</string>
+    <string name="memory_diagnostics_breadcrumb_none">Nichts aufgezeichnet</string>
+    <string name="memory_diagnostics_breadcrumb_hint">Wenn eine Transkription an Speichermangel scheitert, zeichnet eine Zeile auf, welche Modelle geladen waren und was die Anfrage gerade tat.</string>
+    <string name="memory_diagnostics_scrub_note">Diagnosedaten enthalten nur Modellnamen und Speicherwerte: niemals Transkripttext oder Dateipfade.</string>
+    <string name="memory_diagnostics_copy">Diagnosedaten kopieren</string>
     <string name="copy">Kopieren</string>
     <string name="share">Teilen</string>
     <string name="char_counter">%1$d von %2$d Zeichen</string>

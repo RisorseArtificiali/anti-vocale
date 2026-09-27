@@ -23,6 +23,7 @@ abstract class TranscriptionOrchestratorTestBase {
     protected lateinit var backendManager: TranscriptionBackendManager
     protected lateinit var audioPreprocessor: AudioPreprocessor
     protected lateinit var listener: TranscriptionListener
+    protected lateinit var llmManager: com.antivocale.app.manager.LlmManager
     protected lateinit var orchestrator: TranscriptionOrchestrator
 
     /** Fake store backed by FakePreferencesManager so add()/byId() work in tests. */
@@ -78,6 +79,7 @@ abstract class TranscriptionOrchestratorTestBase {
         backendManager = mockk(relaxed = true)
         audioPreprocessor = mockk(relaxed = true)
         listener = mockk(relaxed = true)
+        llmManager = mockk(relaxed = true)
 
         orchestrator = TranscriptionOrchestrator(
             preferencesManager, logDao, transcriptionCalibrator, backendManager, audioPreprocessor,
@@ -87,6 +89,9 @@ abstract class TranscriptionOrchestratorTestBase {
             mockk(relaxed = true),
             fakeStore,
             silentModelDemoter,
+            // TASK-679: the real recorder over the same mocks, so the
+            // breadcrumb tests drive the shipped capture path.
+            OomBreadcrumbRecorder(preferencesManager, backendManager, llmManager, staticRegistry()),
         )
 
         // Default the opt-in memory protection to off in tests so it does not interfere with

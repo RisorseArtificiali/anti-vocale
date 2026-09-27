@@ -310,6 +310,20 @@
     <string name="error_remote_unreachable">OmniVoice sunucunuza erişilemiyor. Çalıştığını ve Ayarlar\'daki adresin doğru olduğunu kontrol edin.</string>
     <string name="error_remote_server">OmniVoice sunucusu isteği reddetti (HTTP %1$d).</string>
     <string name="remote_offload_status">OmniVoice sunucunuzda transkribe ediliyor…</string>
+    <!-- TASK-679: yerleşik modeller paneli (Ayarlar > Gelişmiş) ve OOM sonrası iz kaydı. -->
+    <string name="memory_diagnostics_title">Cihaz belleği</string>
+    <string name="memory_diagnostics_subtitle">Şu anda yüklü modeller, boş RAM ve son bellek yetersizliği kaydı.</string>
+    <string name="memory_diagnostics_resident_label">Yerleşik modeller</string>
+    <string name="memory_diagnostics_resident_none">Şu anda yüklü model yok</string>
+    <string name="memory_diagnostics_ram_label">Boş RAM</string>
+    <string name="memory_diagnostics_ram_value">%2$s içinden %1$s boş</string>
+    <string name="memory_diagnostics_ram_unknown">Bu cihazda okunamıyor</string>
+    <string name="memory_diagnostics_heap_label">Uygulama bellek sınırı</string>
+    <string name="memory_diagnostics_breadcrumb_label">Son bellek yetersizliği olayı</string>
+    <string name="memory_diagnostics_breadcrumb_none">Kayıt yok</string>
+    <string name="memory_diagnostics_breadcrumb_hint">Bir transkripsiyon bellek nedeniyle başarısız olduğunda, hangi modellerin yüklü olduğunu ve isteğin ne yaptığını tek bir satır kaydeder.</string>
+    <string name="memory_diagnostics_scrub_note">Tanılama verileri yalnızca model adları ve bellek sayıları içerir: asla transkript metni veya dosya yolları içermez.</string>
+    <string name="memory_diagnostics_copy">Tanılamayı kopyala</string>
     <string name="copy">Kopyala</string>
     <string name="share">Paylaş</string>
     <string name="char_counter">%2$d karakterden %1$d</string>

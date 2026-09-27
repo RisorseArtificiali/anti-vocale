@@ -90,12 +90,17 @@ class TranscriptionOrchestratorSilentDemotionTest : TranscriptionOrchestratorTes
     // ---- Pipeline path (VAD never runs; signal 2 = decoded seconds) ----
 
     @Test
-    fun `pipeline blank decode with decoded audio demotes only on the second run`() = runTest {
+    fun `pipeline blank decode never demotes even with decoded audio`() = runTest {
+        // Review F1 (TASK-675): the pipeline path never runs VAD, so decoded
+        // seconds prove PCM reached the model, not that speech was in it;
+        // the strong-signal rule wins over coverage: NO demotion here, on
+        // any run count. This test pins the NEW contract (the old
+        // demotes-on-second-run expectation was the pre-F1 behavior).
         stubPipelineStream(FloatArray(16000) { 0.5f })
         runBlankRequest("silent-1").let { assertTrue(it.isFailure) }
-        assertFalse(silentModelDemoter.isDemoted("whisper"))
         runBlankRequest("silent-2").let { assertTrue(it.isFailure) }
-        assertTrue(silentModelDemoter.isDemoted("whisper"))
+        runBlankRequest("silent-3").let { assertTrue(it.isFailure) }
+        assertFalse(silentModelDemoter.isDemoted("whisper"))
     }
 
     @Test

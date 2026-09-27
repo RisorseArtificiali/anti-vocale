@@ -25,15 +25,15 @@ class SilentModelDemoterTest {
     @Test
     fun `first silent decode with speech does not demote`() = runTest {
         val (demoter, _) = newDemoter()
-        demoter.recordSilentDecode("whisper", speechPresent = true)
+        demoter.recordSilentDecode("whisper", speechConfirmed = true)
         assertFalse(demoter.isDemoted("whisper"))
     }
 
     @Test
     fun `second silent decode with speech in the same session demotes`() = runTest {
         val (demoter, prefs) = newDemoter()
-        demoter.recordSilentDecode("whisper", speechPresent = true)
-        demoter.recordSilentDecode("whisper", speechPresent = true)
+        demoter.recordSilentDecode("whisper", speechConfirmed = true)
+        demoter.recordSilentDecode("whisper", speechConfirmed = true)
         assertTrue(demoter.isDemoted("whisper"))
         assertEquals(setOf("whisper"), prefs.demotedBackends.first())
     }
@@ -41,7 +41,7 @@ class SilentModelDemoterTest {
     @Test
     fun `silent decodes without speech never demote`() = runTest {
         val (demoter, _) = newDemoter()
-        repeat(5) { demoter.recordSilentDecode("whisper", speechPresent = false) }
+        repeat(5) { demoter.recordSilentDecode("whisper", speechConfirmed = false) }
         assertFalse(demoter.isDemoted("whisper"))
     }
 
@@ -52,8 +52,8 @@ class SilentModelDemoterTest {
         assertFalse(SilentModelDemoter.isDemotable(RemoteOmnivoiceBackend.BACKEND_ID))
         // Even hammered with qualifying observations, nothing lands.
         repeat(5) {
-            demoter.recordSilentDecode(LlmTranscriptionBackend.BACKEND_ID, speechPresent = true)
-            demoter.recordSilentDecode(RemoteOmnivoiceBackend.BACKEND_ID, speechPresent = true)
+            demoter.recordSilentDecode(LlmTranscriptionBackend.BACKEND_ID, speechConfirmed = true)
+            demoter.recordSilentDecode(RemoteOmnivoiceBackend.BACKEND_ID, speechConfirmed = true)
         }
         assertFalse(demoter.isDemoted(LlmTranscriptionBackend.BACKEND_ID))
         assertFalse(demoter.isDemoted(RemoteOmnivoiceBackend.BACKEND_ID))
@@ -69,15 +69,15 @@ class SilentModelDemoterTest {
     @Test
     fun `demotion is idempotent - extra silent decodes keep the single entry`() = runTest {
         val (demoter, prefs) = newDemoter()
-        repeat(4) { demoter.recordSilentDecode("whisper", speechPresent = true) }
+        repeat(4) { demoter.recordSilentDecode("whisper", speechConfirmed = true) }
         assertEquals(setOf("whisper"), prefs.demotedBackends.first())
     }
 
     @Test
     fun `manual selection clears the demotion and restarts the counter`() = runTest {
         val (demoter, prefs) = newDemoter()
-        demoter.recordSilentDecode("whisper", speechPresent = true)
-        demoter.recordSilentDecode("whisper", speechPresent = true)
+        demoter.recordSilentDecode("whisper", speechConfirmed = true)
+        demoter.recordSilentDecode("whisper", speechConfirmed = true)
         assertTrue(demoter.isDemoted("whisper"))
 
         demoter.onManualSelection("whisper")
@@ -85,18 +85,18 @@ class SilentModelDemoterTest {
         assertTrue(prefs.demotedBackends.first().isEmpty())
 
         // The counter restarted: one more silent decode must not re-demote.
-        demoter.recordSilentDecode("whisper", speechPresent = true)
+        demoter.recordSilentDecode("whisper", speechConfirmed = true)
         assertFalse(demoter.isDemoted("whisper"))
         // A second one does (fresh N=2 after the clear).
-        demoter.recordSilentDecode("whisper", speechPresent = true)
+        demoter.recordSilentDecode("whisper", speechConfirmed = true)
         assertTrue(demoter.isDemoted("whisper"))
     }
 
     @Test
     fun `counters are per backend - one model's silence never demotes another`() = runTest {
         val (demoter, _) = newDemoter()
-        demoter.recordSilentDecode("whisper", speechPresent = true)
-        demoter.recordSilentDecode("qwen3-asr", speechPresent = true)
+        demoter.recordSilentDecode("whisper", speechConfirmed = true)
+        demoter.recordSilentDecode("qwen3-asr", speechConfirmed = true)
         assertFalse(demoter.isDemoted("whisper"))
         assertFalse(demoter.isDemoted("qwen3-asr"))
     }

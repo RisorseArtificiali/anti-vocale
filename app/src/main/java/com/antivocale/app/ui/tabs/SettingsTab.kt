@@ -2,6 +2,7 @@ package com.antivocale.app.ui.tabs
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
@@ -517,6 +518,9 @@ fun SettingsTab(
                 ),
                 listOf(R.string.per_app_settings_title, R.string.per_app_settings_description),
                 listOf(R.string.performance_stats_title, R.string.performance_stats_subtitle),
+                // TASK-679: the memory diagnostics card rides the same search
+                // groups so "memory" finds it like every other Advanced card.
+                listOf(R.string.memory_diagnostics_title, R.string.memory_diagnostics_subtitle),
             ).map { group -> group.map { context.getString(it) } }
         }
         @SuppressLint("RememberReturnType")
@@ -2042,6 +2046,16 @@ fun SettingsTab(
                     }
                 }
             }
+
+            // TASK-679: read-only memory diagnostics. Same section as memory
+            // protection and the perf stats: the diagnostics grouping.
+            SearchFilterRow(
+                searchQuery,
+                stringResource(R.string.memory_diagnostics_title),
+                stringResource(R.string.memory_diagnostics_subtitle)
+            ) {
+                MemoryDiagnosticsCard(viewModel)
+            }
         }
 
         // Feedback & About section (issue #34 / TASK-341)
@@ -2074,6 +2088,136 @@ fun SettingsTab(
         }
     }
     } // End of if-else for showPerAppSettings
+}
+
+/**
+ * TASK-679: the read-only memory diagnostics card (Settings > Advanced).
+ * Resident engines, free RAM, the app heap ceiling and the last post-OOM
+ * breadcrumb, exactly as the recorder wrote them. The Copy action puts the
+ * scrubbed bundle on the clipboard (model identities and memory numbers
+ * only; no transcript, no paths), which is the v1 export: no share intent.
+ */
+@Composable
+private fun MemoryDiagnosticsCard(viewModel: SettingsViewModel) {
+    val context = LocalContext.current
+    // Live exactly while the card is composed (the collapsed-by-default
+    // Advanced section keeps this collector from ever running unseen).
+    LaunchedEffect(viewModel) {
+        viewModel.memoryDiagnosticsTriggers.collect { viewModel.refreshMemoryDiagnostics() }
+    }
+    val diagnostics by viewModel.memoryDiagnostics.collectAsState()
+    val state = diagnostics
+
+    // Simplify F1: the shared section-card scaffold (TASK-510), matching
+    // every neighbor in the Advanced section and inheriting the compact-
+    // search description suppression (TASK-628).
+    com.antivocale.app.ui.components.SectionCard(
+        icon = Icons.Default.Memory,
+        title = stringResource(R.string.memory_diagnostics_title),
+        description = stringResource(R.string.memory_diagnostics_subtitle),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+
+            Text(
+                text = stringResource(R.string.memory_diagnostics_resident_label),
+                style = MaterialTheme.typography.labelLarge
+            )
+            val residentLines = state?.residentLines().orEmpty()
+            if (residentLines.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.memory_diagnostics_resident_none),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                residentLines.forEach { line ->
+                    Text(text = line, style = MaterialTheme.typography.bodyMedium)
+                }
+            }
+
+            Text(
+                text = stringResource(R.string.memory_diagnostics_ram_label),
+                style = MaterialTheme.typography.labelLarge
+            )
+            Text(
+                text = state?.freeRamMb()?.let { free ->
+                    stringResource(
+                        R.string.memory_diagnostics_ram_value,
+                        free, state.totalRamMb() ?: "")
+                } ?: stringResource(R.string.memory_diagnostics_ram_unknown),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = stringResource(R.string.memory_diagnostics_heap_label),
+                style = MaterialTheme.typography.labelLarge
+            )
+            Text(
+                text = state?.heapLimitLine() ?: "",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+            Text(
+                text = stringResource(R.string.memory_diagnostics_breadcrumb_label),
+                style = MaterialTheme.typography.labelLarge
+            )
+            val crumb = state?.lastBreadcrumb
+            if (crumb == null) {
+                Text(
+                    text = stringResource(R.string.memory_diagnostics_breadcrumb_none),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                state.lastBreadcrumbAtMs?.let { atMs ->
+                    Text(
+                        text = android.text.format.DateUtils.getRelativeTimeSpanString(atMs).toString(),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                Text(
+                    text = crumb,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace
+                )
+            }
+            Text(
+                text = stringResource(R.string.memory_diagnostics_breadcrumb_hint),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            TextButton(
+                enabled = state != null,
+                onClick = {
+                    val bundle = state?.exportBundle() ?: return@TextButton
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                    clipboard.setPrimaryClip(ClipData.newPlainText(
+                        context.getString(R.string.memory_diagnostics_title), bundle))
+                    com.antivocale.app.util.ToastCompat.show(
+                        context, context.getString(R.string.copied_to_clipboard))
+                }
+            ) {
+                Icon(
+                    Icons.Default.ContentCopy,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(stringResource(R.string.memory_diagnostics_copy))
+            }
+            Text(
+                text = stringResource(R.string.memory_diagnostics_scrub_note),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 /**

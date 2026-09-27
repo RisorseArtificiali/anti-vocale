@@ -307,6 +307,20 @@
     <string name="error_remote_unreachable">به سرور OmniVoice شما نمی‌توان دسترسی پیدا کرد. بررسی کنید که اجرا باشد و نشانی در تنظیمات درست باشد.</string>
     <string name="error_remote_server">سرور OmniVoice درخواست را رد کرد (HTTP %1$d).</string>
     <string name="remote_offload_status">در حال رونویسی روی سرور OmniVoice شما…</string>
+    <!-- TASK-679: پنل مدل‌های مقیم (تنظیمات > پیشرفته) و breadcrumb پس از اتمام حافظه. -->
+    <string name="memory_diagnostics_title">حافظهٔ دستگاه</string>
+    <string name="memory_diagnostics_subtitle">مدل‌های بارگذاری‌شده در همین لحظه، رم آزاد و آخرین رکورد کمبود حافظه.</string>
+    <string name="memory_diagnostics_resident_label">مدل‌های مقیم</string>
+    <string name="memory_diagnostics_resident_none">در حال حاضر هیچ مدلی بارگذاری نشده است</string>
+    <string name="memory_diagnostics_ram_label">رم آزاد</string>
+    <string name="memory_diagnostics_ram_value">%1$s آزاد از %2$s</string>
+    <string name="memory_diagnostics_ram_unknown">روی این دستگاه قابل خواندن نیست</string>
+    <string name="memory_diagnostics_heap_label">سقف حافظهٔ برنامه</string>
+    <string name="memory_diagnostics_breadcrumb_label">آخرین رویداد کمبود حافظه</string>
+    <string name="memory_diagnostics_breadcrumb_none">چیزی ثبت نشده است</string>
+    <string name="memory_diagnostics_breadcrumb_hint">وقتی یک رونویسی به دلیل حافظه شکست می‌خورد، یک خط ثبت می‌کند که چه مدل‌هایی بارگذاری بودند و درخواست چه می‌کرد.</string>
+    <string name="memory_diagnostics_scrub_note">داده‌های تشخیصی فقط شامل نام مدل‌ها و اعداد حافظه است: هرگز متن رونویسی یا مسیر فایل.</string>
+    <string name="memory_diagnostics_copy">کپی داده‌های تشخیصی</string>
     <string name="copy">کپی</string>
     <string name="share">هم‌رسانی</string>
     <string name="char_counter">%1$d از %2$d نویسه</string>

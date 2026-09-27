@@ -83,7 +83,10 @@ class SettingsViewModel @Inject constructor(
     private val launcherIconManager: LauncherIconManager,
     // TASK-681: the LAN-offload connection probe runs through the real
     // backend (its OkHttp timeouts are the fail-fast contract).
-    private val remoteOmnivoiceBackend: com.antivocale.app.transcription.RemoteOmnivoiceBackend
+    private val remoteOmnivoiceBackend: com.antivocale.app.transcription.RemoteOmnivoiceBackend,
+    // TASK-679: the resident-models memory panel reads through the same
+    // recorder that writes the post-OOM breadcrumb.
+    private val oomBreadcrumbRecorder: com.antivocale.app.transcription.OomBreadcrumbRecorder
 ) : AndroidViewModel(application) {
 
     companion object {
@@ -478,6 +481,39 @@ class SettingsViewModel @Inject constructor(
                 remoteApiKeyInput.value,
                 remoteModelInput.value)
             remoteConnectionTesting.value = false
+        }
+    }
+
+    // ---- TASK-679: resident-models memory panel ----
+
+    /** The panel's state; null until the first [refreshMemoryDiagnostics] lands. */
+    private val _memoryDiagnostics = MutableStateFlow<com.antivocale.app.transcription.MemoryDiagnosticsState?>(null)
+    val memoryDiagnostics: StateFlow<com.antivocale.app.transcription.MemoryDiagnosticsState?> = _memoryDiagnostics.asStateFlow()
+
+    /**
+     * Emits when residency could have changed (backend swap, LLM load or
+     * idle unload). The panel collects this while it is composed, so it
+     * refreshes exactly for as long as the user can see it.
+     */
+    val memoryDiagnosticsTriggers: kotlinx.coroutines.flow.Flow<Unit> = combine(
+        backendManager.activeBackendId,
+        llmManager.isReadyFlow,
+    ) { activeBackendId, llmReady -> activeBackendId to llmReady }
+        .distinctUntilChanged()
+        .map { }
+
+    /** One read of the panel state: residents, RAM, heap, last breadcrumb. */
+    /** Simplify F7: only one refresh in flight; two rapid triggers cannot
+     *  complete out of order and let a stale snapshot overwrite the newer. */
+    private var memoryDiagnosticsJob: kotlinx.coroutines.Job? = null
+
+    fun refreshMemoryDiagnostics() {
+        // Simplify F2: panelState reads the breadcrumb prefs file and makes
+        // two binder calls; off the main thread (the in-file precedent at
+        // the model listing already launches on Default).
+        memoryDiagnosticsJob?.cancel()
+        memoryDiagnosticsJob = viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            _memoryDiagnostics.value = oomBreadcrumbRecorder.panelState(getApplication())
         }
     }
 

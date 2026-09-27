@@ -258,6 +258,20 @@
     <string name="error_remote_unreachable">Votre serveur OmniVoice est inaccessible. Vérifiez qu\'il est en cours d\'exécution et que l\'adresse dans les Paramètres est correcte.</string>
     <string name="error_remote_server">Le serveur OmniVoice a refusé la requête (HTTP %1$d).</string>
     <string name="remote_offload_status">Transcription sur votre serveur OmniVoice…</string>
+    <!-- TASK-679 : panneau des modèles résidents (Paramètres > Avancé) et le fil d'Ariane post-OOM. -->
+    <string name="memory_diagnostics_title">Mémoire de l\'appareil</string>
+    <string name="memory_diagnostics_subtitle">Modèles chargés en ce moment, RAM libre et dernier incident de mémoire.</string>
+    <string name="memory_diagnostics_resident_label">Modèles résidents</string>
+    <string name="memory_diagnostics_resident_none">Aucun modèle chargé en ce moment</string>
+    <string name="memory_diagnostics_ram_label">RAM libre</string>
+    <string name="memory_diagnostics_ram_value">%1$s libres sur %2$s</string>
+    <string name="memory_diagnostics_ram_unknown">Non lisible sur cet appareil</string>
+    <string name="memory_diagnostics_heap_label">Limite de mémoire de l\'app</string>
+    <string name="memory_diagnostics_breadcrumb_label">Dernier incident de mémoire</string>
+    <string name="memory_diagnostics_breadcrumb_none">Rien d\'enregistré</string>
+    <string name="memory_diagnostics_breadcrumb_hint">Quand une transcription échoue par manque de mémoire, une ligne enregistre quels modèles étaient chargés et ce que faisait la requête.</string>
+    <string name="memory_diagnostics_scrub_note">Les données de diagnostic ne contiennent que des noms de modèles et des chiffres de mémoire : jamais de texte de transcription ni de chemins de fichiers.</string>
+    <string name="memory_diagnostics_copy">Copier les données de diagnostic</string>
     <string name="copy">Copier</string>
     <string name="share">Partager</string>
     <string name="char_counter">%1$d sur %2$d caractères</string>

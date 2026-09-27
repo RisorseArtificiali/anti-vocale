@@ -316,6 +316,20 @@
     <string name="error_remote_unreachable">Ваш сервер OmniVoice недоступний. Перевірте, що він запущений і що адреса в налаштуваннях вказана правильно.</string>
     <string name="error_remote_server">Сервер OmniVoice відхилив запит (HTTP %1$d).</string>
     <string name="remote_offload_status">Розшифровка на вашому сервері OmniVoice…</string>
+    <!-- TASK-679: панель резидентних моделей (Налаштування > Додатково) та запис після OOM. -->
+    <string name="memory_diagnostics_title">Пам\'ять пристрою</string>
+    <string name="memory_diagnostics_subtitle">Моделі, завантажені зараз, вільна RAM і останній запис про нестачу пам\'яти.</string>
+    <string name="memory_diagnostics_resident_label">Резидентні моделі</string>
+    <string name="memory_diagnostics_resident_none">Зараз не завантажено жодної моделі</string>
+    <string name="memory_diagnostics_ram_label">Вільна RAM</string>
+    <string name="memory_diagnostics_ram_value">%1$s вільно з %2$s</string>
+    <string name="memory_diagnostics_ram_unknown">На цьому пристрої не читається</string>
+    <string name="memory_diagnostics_heap_label">Ліміт пам\'яти застосунку</string>
+    <string name="memory_diagnostics_breadcrumb_label">Остання подія нестачі пам\'яти</string>
+    <string name="memory_diagnostics_breadcrumb_none">Нічого не записано</string>
+    <string name="memory_diagnostics_breadcrumb_hint">Коли транскрипція завершується помилкою через пам\'ять, один рядок записує, які моделі були завантажені та що робив запит.</string>
+    <string name="memory_diagnostics_scrub_note">Діагностичні дані містять лише назви моделей і числа пам\'яти: ніколи текст транскрипції чи шляхи файлів.</string>
+    <string name="memory_diagnostics_copy">Копіювати діагностику</string>
     <string name="copy">Копіювати</string>
     <string name="share">Поділитися</string>
     <string name="char_counter">%1$d з %2$d символів</string>

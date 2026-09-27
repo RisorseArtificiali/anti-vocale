@@ -82,6 +82,14 @@ class SettingsViewModelActiveModelTest {
             // TASK-681: the LAN-offload probe backend; relaxed mock, these
             // tests never trigger a connection test.
             remoteOmnivoiceBackend = mockk(relaxed = true),
+            // TASK-679: real recorder over relaxed mocks; these tests never
+            // open the memory panel.
+            oomBreadcrumbRecorder = com.antivocale.app.transcription.OomBreadcrumbRecorder(
+                fakePrefs,
+                backendManager = mockk(relaxed = true),
+                llmManager = mockk(relaxed = true),
+                backendRegistry = staticRegistry(),
+            ),
             // getString is stubbed so the fixed catalog display name (whisper_title)
             // resolves to a distinguishable value instead of a relaxed-mock empty string.
             activeModelRepository = ActiveModelRepository(

@@ -258,6 +258,20 @@
     <string name="error_remote_unreachable">Não foi possível acessar o seu servidor OmniVoice. Verifique se ele está em execução e se o endereço nas Configurações está correto.</string>
     <string name="error_remote_server">O servidor OmniVoice recusou a solicitação (HTTP %1$d).</string>
     <string name="remote_offload_status">Transcrevendo no seu servidor OmniVoice…</string>
+    <!-- TASK-679: painel de modelos residentes (Configurações > Avançado) e o rastro pós-OOM. -->
+    <string name="memory_diagnostics_title">Memória do dispositivo</string>
+    <string name="memory_diagnostics_subtitle">Modelos carregados agora, RAM livre e o último registro de falta de memória.</string>
+    <string name="memory_diagnostics_resident_label">Modelos residentes</string>
+    <string name="memory_diagnostics_resident_none">Nenhum modelo carregado agora</string>
+    <string name="memory_diagnostics_ram_label">RAM livre</string>
+    <string name="memory_diagnostics_ram_value">%1$s livres de %2$s</string>
+    <string name="memory_diagnostics_ram_unknown">Não legível neste dispositivo</string>
+    <string name="memory_diagnostics_heap_label">Limite de memória do app</string>
+    <string name="memory_diagnostics_breadcrumb_label">Último evento de falta de memória</string>
+    <string name="memory_diagnostics_breadcrumb_none">Nada registrado</string>
+    <string name="memory_diagnostics_breadcrumb_hint">Quando uma transcrição falha por memória, uma linha registra quais modelos estavam carregados e o que a solicitação estava fazendo.</string>
+    <string name="memory_diagnostics_scrub_note">Os dados de diagnóstico contêm apenas nomes de modelos e números de memória: nunca texto de transcrição nem caminhos de arquivos.</string>
+    <string name="memory_diagnostics_copy">Copiar diagnóstico</string>
     <string name="copy">Copiar</string>
     <string name="share">Compartilhar</string>
     <string name="char_counter">%1$d de %2$d caracteres</string>

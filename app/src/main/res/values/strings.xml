@@ -316,6 +316,23 @@
     <string name="error_remote_unreachable">Your OmniVoice server cannot be reached. Check that it is running and that the address in Settings is correct.</string>
     <string name="error_remote_server">The OmniVoice server refused the request (HTTP %1$d).</string>
     <string name="remote_offload_status">Transcribing on your OmniVoice server…</string>
+    <!-- TASK-679: the resident-models memory panel (Settings > Advanced) and
+         the post-OOM breadcrumb it shows. The scrub note is the privacy
+         contract of the Copy action: model identities and memory numbers
+         only, never transcript text or file paths. -->
+    <string name="memory_diagnostics_title">On-device memory</string>
+    <string name="memory_diagnostics_subtitle">Models loaded right now, free RAM and the last out-of-memory record.</string>
+    <string name="memory_diagnostics_resident_label">Resident models</string>
+    <string name="memory_diagnostics_resident_none">No model loaded right now</string>
+    <string name="memory_diagnostics_ram_label">Free RAM</string>
+    <string name="memory_diagnostics_ram_value">%1$s free of %2$s</string>
+    <string name="memory_diagnostics_ram_unknown">Not readable on this device</string>
+    <string name="memory_diagnostics_heap_label">App memory limit</string>
+    <string name="memory_diagnostics_breadcrumb_label">Last out-of-memory event</string>
+    <string name="memory_diagnostics_breadcrumb_none">Nothing recorded</string>
+    <string name="memory_diagnostics_breadcrumb_hint">When a transcription fails for memory, one line records which models were loaded and what the request was doing.</string>
+    <string name="memory_diagnostics_scrub_note">Diagnostics contain model names and memory numbers only: never transcript text or file paths.</string>
+    <string name="memory_diagnostics_copy">Copy diagnostics</string>
     <string name="copy">Copy</string>
     <string name="share">Share</string>
     <string name="char_counter">%1$d of %2$d chars</string>

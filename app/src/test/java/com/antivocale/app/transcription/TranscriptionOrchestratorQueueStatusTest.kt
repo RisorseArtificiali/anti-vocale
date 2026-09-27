@@ -32,6 +32,10 @@ class TranscriptionOrchestratorQueueStatusTest {
             // TASK-675: never reached here (logQueued only), real instance
             // keeps the construction honest anyway.
             silentModelDemoter = SilentModelDemoter(com.antivocale.app.data.FakePreferencesManager()),
+            // TASK-679: never reached here either, same honesty rule.
+            oomBreadcrumbRecorder = OomBreadcrumbRecorder(
+                mockk(relaxed = true), mockk(relaxed = true),
+                mockk(relaxed = true), staticRegistry()),
         )
 
     @Test

@@ -288,6 +288,20 @@
     <string name="error_remote_unreachable">आपके OmniVoice सर्वर तक नहीं पहुँचा जा सकता। जाँचें कि वह चल रहा है और Settings में पता सही है।</string>
     <string name="error_remote_server">OmniVoice सर्वर ने अनुरोध अस्वीकार कर दिया (HTTP %1$d)।</string>
     <string name="remote_offload_status">आपके OmniVoice सर्वर पर ट्रांसक्रिप्ट किया जा रहा है…</string>
+    <!-- TASK-679: रेज़िडेंट-मॉडल पैनल (सेटिंग्स > उन्नत) और पोस्ट-OOM ब्रेडक्रंब। -->
+    <string name="memory_diagnostics_title">डिवाइस की मेमोरी</string>
+    <string name="memory_diagnostics_subtitle">अभी लोड किए गए मॉडल, खाली RAM और मेमोरी की कमी का अंतिम रिकॉर्ड।</string>
+    <string name="memory_diagnostics_resident_label">रेज़िडेंट मॉडल</string>
+    <string name="memory_diagnostics_resident_none">इस समय कोई मॉडल लोड नहीं है</string>
+    <string name="memory_diagnostics_ram_label">खाली RAM</string>
+    <string name="memory_diagnostics_ram_value">%2$s में से %1$s खाली</string>
+    <string name="memory_diagnostics_ram_unknown">इस डिवाइस पर पढ़ा नहीं जा सकता</string>
+    <string name="memory_diagnostics_heap_label">ऐप की मेमोरी सीमा</string>
+    <string name="memory_diagnostics_breadcrumb_label">मेमोरी की कमी की अंतिम घटना</string>
+    <string name="memory_diagnostics_breadcrumb_none">कुछ भी रिकॉर्ड नहीं हुआ</string>
+    <string name="memory_diagnostics_breadcrumb_hint">जब कोई ट्रांस्क्रिप्शन मेमोरी की कमी से विफल होता है, तो एक पंक्ति रिकॉर्ड करती है कि कौन से मॉडल लोड थे और अनुरोध क्या कर रहा था।</string>
+    <string name="memory_diagnostics_scrub_note">डायग्नोस्टिक्स में केवल मॉडल नाम और मेमोरी संख्याएँ होती हैं: कभी भी ट्रांस्क्रिप्ट टेक्स्ट या फ़ाइल पाथ नहीं।</string>
+    <string name="memory_diagnostics_copy">डायग्नोस्टिक्स कॉपी करें</string>
     <string name="copy">कॉपी करें</string>
     <string name="share">शेयर करें</string>
     <string name="char_counter">%2$d में से %1$d अक्षर</string>

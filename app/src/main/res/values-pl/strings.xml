@@ -314,6 +314,20 @@
     <string name="error_remote_unreachable">Nie można połączyć się z Twoim serwerem OmniVoice. Sprawdź, czy działa i czy adres w ustawieniach jest poprawny.</string>
     <string name="error_remote_server">Serwer OmniVoice odrzucił żądanie (HTTP %1$d).</string>
     <string name="remote_offload_status">Transkrybowanie na Twoim serwerze OmniVoice…</string>
+    <!-- TASK-679: panel modeli rezydentnych (Ustawienia > Zaawansowane) i okruch po OOM. -->
+    <string name="memory_diagnostics_title">Pamięć urządzenia</string>
+    <string name="memory_diagnostics_subtitle">Modele wczytane teraz, wolny RAM i ostatni zapis braku pamięci.</string>
+    <string name="memory_diagnostics_resident_label">Modele rezydentne</string>
+    <string name="memory_diagnostics_resident_none">Obecnie żaden model nie jest wczytany</string>
+    <string name="memory_diagnostics_ram_label">Wolny RAM</string>
+    <string name="memory_diagnostics_ram_value">%1$s wolne z %2$s</string>
+    <string name="memory_diagnostics_ram_unknown">Nieodczytywalne na tym urządzeniu</string>
+    <string name="memory_diagnostics_heap_label">Limit pamięci aplikacji</string>
+    <string name="memory_diagnostics_breadcrumb_label">Ostatnie zdarzenie braku pamięci</string>
+    <string name="memory_diagnostics_breadcrumb_none">Nic nie zarejestrowano</string>
+    <string name="memory_diagnostics_breadcrumb_hint">Gdy transkrypcja nie powiedzie się z powodu pamięci, jeden wiersz zapisuje, które modele były wczytane i co robiło żądanie.</string>
+    <string name="memory_diagnostics_scrub_note">Dane diagnostyczne zawierają tylko nazwy modeli i liczby pamięci: nigdy tekst transkrypcji ani ścieżki plików.</string>
+    <string name="memory_diagnostics_copy">Kopiuj dane diagnostyczne</string>
     <string name="copy">Kopiuj</string>
     <string name="share">Udostępnij</string>
     <string name="char_counter">%1$d z %2$d znaków</string>

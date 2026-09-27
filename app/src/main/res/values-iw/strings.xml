@@ -309,6 +309,20 @@
     <string name="error_remote_unreachable">אין אפשרות להגיע לשרת ה-OmniVoice. בדקו שהוא פועל ושהכתובת בהגדרות נכונה.</string>
     <string name="error_remote_server">שרת ה-OmniVoice דחה את הבקשה (HTTP %1$d).</string>
     <string name="remote_offload_status">מתמלל בשרת ה-OmniVoice שלכם…</string>
+    <!-- TASK-679: לוח המודלים הטעונים (הגדרות > מתקדם) ונתיב האיתור לאחר אזילת זיכרון. -->
+    <string name="memory_diagnostics_title">זיכרון המכשיר</string>
+    <string name="memory_diagnostics_subtitle">מודלים שנטענו כרגע, זיכרון RAM פנוי והרישום האחרון של אזילת זיכרון.</string>
+    <string name="memory_diagnostics_resident_label">מודלים טעונים</string>
+    <string name="memory_diagnostics_resident_none">כרגע לא נטען אף מודל</string>
+    <string name="memory_diagnostics_ram_label">RAM פנוי</string>
+    <string name="memory_diagnostics_ram_value">%1$s פנויים מתוך %2$s</string>
+    <string name="memory_diagnostics_ram_unknown">לא ניתן לקריאה במכשיר זה</string>
+    <string name="memory_diagnostics_heap_label">מגבלת הזיכרון של האפליקציה</string>
+    <string name="memory_diagnostics_breadcrumb_label">אירוע אזילת הזיכרון האחרון</string>
+    <string name="memory_diagnostics_breadcrumb_none">שום דבר לא נרשם</string>
+    <string name="memory_diagnostics_breadcrumb_hint">כאשר תמלול נכשל בגלל זיכרון, שורה אחת רושמת אילו מודלים היו טעונים ומה הבקשה עשתה.</string>
+    <string name="memory_diagnostics_scrub_note">נתוני האבחון מכילים רק שמות מודלים ומספרי זיכרון: לעולם לא טקסט מתומלל או נתיבי קבצים.</string>
+    <string name="memory_diagnostics_copy">העתקת נתוני אבחון</string>
     <string name="copy">העתקה</string>
     <string name="share">שיתוף</string>
     <string name="char_counter">%1$d מתוך %2$d תווים</string>
