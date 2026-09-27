@@ -67,6 +67,7 @@ import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.PunctuationPolicy
 import com.antivocale.app.transcription.RemoteOmnivoiceBackend
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
+import com.antivocale.app.transcription.diarization.SpeakerEnrollError
 import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
@@ -2742,15 +2743,16 @@ private fun SpeakerNameDialog(
     )
 }
 
-/** TASK-670: the enrollment failure -> its localized message. */
+/** TASK-670: the enrollment failure -> its localized message (the enum
+ *  moved to the diarization package with the pipeline, simplify F2). */
 @androidx.annotation.StringRes
-private fun SettingsViewModel.SpeakerEnrollError.labelRes(): Int = when (this) {
-    SettingsViewModel.SpeakerEnrollError.TOO_SHORT -> R.string.speaker_id_error_too_short
-    SettingsViewModel.SpeakerEnrollError.TOO_LONG -> R.string.speaker_id_error_too_long
-    SettingsViewModel.SpeakerEnrollError.DECODE -> R.string.speaker_id_error_decode
-    SettingsViewModel.SpeakerEnrollError.EXTRACT -> R.string.speaker_id_error_extract
-    SettingsViewModel.SpeakerEnrollError.SAVE -> R.string.speaker_id_error_save
-    SettingsViewModel.SpeakerEnrollError.MODEL_DOWNLOAD -> R.string.speaker_id_error_model
+private fun SpeakerEnrollError.labelRes(): Int = when (this) {
+    SpeakerEnrollError.TOO_SHORT -> R.string.speaker_id_error_too_short
+    SpeakerEnrollError.TOO_LONG -> R.string.speaker_id_error_too_long
+    SpeakerEnrollError.DECODE -> R.string.speaker_id_error_decode
+    SpeakerEnrollError.EXTRACT -> R.string.speaker_id_error_extract
+    SpeakerEnrollError.SAVE -> R.string.speaker_id_error_save
+    SpeakerEnrollError.MODEL_DOWNLOAD -> R.string.speaker_id_error_model
 }
 
 /**

@@ -99,10 +99,10 @@ class SettingsViewModelActiveModelTest {
                 },
                 staticRegistry(),
             ),
-            // TASK-670: the enrollment pipeline deps; these tests never
-            // enroll, a relaxed preprocessor and an empty real store keep
-            // the construction honest.
-            audioPreprocessor = mockk(relaxed = true),
+            // TASK-670 simplify F2: the enrollment pipeline seam; these
+            // tests never enroll, a mock enroller and an empty real store
+            // keep the construction honest.
+            speakerEnroller = mockk<com.antivocale.app.transcription.diarization.SpeakerEnroller>(),
             speakerIdentityStore = com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
                 java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
         )

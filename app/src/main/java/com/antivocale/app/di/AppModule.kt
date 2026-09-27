@@ -133,6 +133,24 @@ object AppModule {
         com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
             com.antivocale.app.transcription.diarization.SpeakerIdentityStore.dir(context))
 
+    // TASK-670 simplify F2: the enrollment pipeline behind the Settings
+    // file pick; the environment seams (SAF copy, metadata probe, model
+    // download, titanet session) close over the app context inside create.
+    @Provides
+    @Singleton
+    fun provideSpeakerEnroller(
+        @ApplicationContext context: Context,
+        preprocessor: com.antivocale.app.audio.AudioPreprocessor,
+        preferencesManager: PreferencesManager,
+        store: com.antivocale.app.transcription.diarization.SpeakerIdentityStore,
+    ): com.antivocale.app.transcription.diarization.SpeakerEnroller =
+        com.antivocale.app.transcription.diarization.SpeakerEnroller.create(
+            context = context,
+            preprocessor = preprocessor,
+            threadCount = { preferencesManager.threadCount.first() },
+            store = store,
+        )
+
     @Provides
     @Singleton
     fun provideExternalModelImporter(

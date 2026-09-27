@@ -82,7 +82,9 @@ class SettingsViewModelOnboardingSeedTest {
                 mockk<Context>(relaxed = true),
                 staticRegistry(),
             ),
-            audioPreprocessor = mockk(relaxed = true),
+            // TASK-670 simplify F2: the enrollment pipeline seam; these
+            // tests never enroll.
+            speakerEnroller = mockk(),
             speakerIdentityStore = com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
                 java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
         )
