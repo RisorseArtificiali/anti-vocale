@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -37,6 +38,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -89,9 +91,11 @@ import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
+import com.antivocale.app.util.AutomationBroadcastSnippet
 import com.antivocale.app.util.FeedbackHelper
 import com.antivocale.app.util.LanguageNames
 import com.antivocale.app.util.SubtitleFormatter
+import com.antivocale.app.util.ToastCompat
 import java.io.File
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.components.LanguageOption
@@ -211,8 +215,12 @@ fun SettingsTab(
     // any open sub-page, then scroll to the row's captured content-space Y
     // once layout has delivered it. The scroll and the highlight decay run in
     // navScope so they survive this effect's relaunch on consumption.
-    var memoryProtectionRowY by remember { mutableStateOf<Int?>(null) }
-    var memoryProtectionHighlighted by remember { mutableStateOf(false) }
+    // TASK-625/275: the focusable Advanced rows (memory protection via the
+    // notification action; the TASK-274 toggle via TASK-275's Automation
+    // card). One holder per row: captured Y, flash flag, and the flash
+    // itself (scroll, highlight, 2.5s decay) live in ONE definition.
+    val memoryProtectionFocus = remember { SettingsRowFocus() }
+    val externalAutomationFocus = remember { SettingsRowFocus() }
     LaunchedEffect(focusRow) {
         val row = focusRow ?: return@LaunchedEffect
         onFocusRowConsumed()
@@ -233,48 +241,7 @@ fun SettingsTab(
                 // Everything below awaits frames, and consuming the focus
                 // signal relaunches (read: cancels) this effect; the wait and
                 // the scroll must run in navScope to survive it.
-                navScope.launch {
-                    // Wait for the row to lay out (the expand bump above), then
-                    // converge on it. The expand and the async cards above the
-                    // row (battery, share targets) keep shifting its position,
-                    // so re-derive the target from the LIVE row position each
-                    // pass; rowY - contentRoot is invariant to scrolling and
-                    // tracks only real layout changes. Reaching a CLAMPED cap
-                    // is not convergence while the list can still grow: an
-                    // in-flight expand keeps maxValue small, so treat clamped
-                    // passes as settled only once maxValue has stopped moving.
-                    var attempts = 0
-                    var settled = false
-                    var lastMax = -1
-                    var stableMaxFrames = 0
-                    while (attempts < 48 && !settled) {
-                        val rowY = memoryProtectionRowY
-                        if (rowY == null) {
-                            withFrameNanos { }
-                        } else {
-                            val wanted = maxOf(0, rowY - scrollContentRootY - 32)
-                            val cap = minOf(wanted, scrollState.maxValue)
-                            val clamped = wanted > scrollState.maxValue
-                            if (clamped) {
-                                stableMaxFrames =
-                                    if (scrollState.maxValue == lastMax) stableMaxFrames + 1 else 0
-                                lastMax = scrollState.maxValue
-                                scrollState.animateScrollTo(cap)
-                                settled = stableMaxFrames >= 3
-                                if (!settled) withFrameNanos { }
-                            } else if (kotlin.math.abs(scrollState.value - cap) <= 4) {
-                                settled = true
-                            } else {
-                                scrollState.animateScrollTo(cap)
-                                withFrameNanos { }
-                            }
-                        }
-                        attempts++
-                    }
-                    memoryProtectionHighlighted = true
-                    delay(2_500)
-                    memoryProtectionHighlighted = false
-                }
+                memoryProtectionFocus.flashIn(navScope, scrollState) { scrollContentRootY }
             }
         }
     }
@@ -512,6 +479,14 @@ fun SettingsTab(
                 listOf(R.string.subtitle_timeout_title, R.string.subtitle_timeout_description),
                 listOf(R.string.memory_protection, R.string.memory_protection_desc),
                 listOf(R.string.external_automation_title, R.string.external_automation_description),
+                // TASK-275: the explainer card. Only its always-rendered
+                // strings ride the group (the status line is conditional and
+                // counting an unrendered match would report a ghost card);
+                // the SAME list also feeds the card's SearchFilterRow so the
+                // count and the gate cannot disagree (review F1: the body
+                // string must gate the row too, or a body-only query counts
+                // a match the tree never renders).
+                AUTOMATION_GUIDE_SEARCH_RES,
                 // TASK-681: the toggle card renders unconditionally; its
                 // fields ride the same group.
                 listOf(
@@ -1899,11 +1874,6 @@ fun SettingsTab(
                 // TASK-625: the memory-failure notification scrolls here and
                 // flashes the card border (selection border, LauncherIconScreen
                 // pattern); idle is a transparent border, invisible.
-                val highlightColor by animateColorAsState(
-                    if (memoryProtectionHighlighted) MaterialTheme.colorScheme.primary else Color.Transparent,
-                    tween(durationMillis = 400),
-                    label = "memory_protection_highlight"
-                )
                 ToggleSettingCard(
                     icon = Icons.Default.Memory,
                     title = memoryProtectionTitle,
@@ -1911,8 +1881,14 @@ fun SettingsTab(
                     checked = memoryProtection,
                     onCheckedChange = { viewModel.saveMemoryProtection(it) },
                     modifier = Modifier
-                        .onGloballyPositioned { memoryProtectionRowY = it.positionInRoot().y.toInt() }
-                        .border(2.dp, highlightColor, MaterialTheme.shapes.medium)
+                        .onGloballyPositioned {
+                            memoryProtectionFocus.capture(it.positionInRoot().y.toInt())
+                        }
+                        .border(
+                            2.dp,
+                            memoryProtectionFocus.highlightColor("memory_protection_highlight"),
+                            MaterialTheme.shapes.medium,
+                        )
                 )
             }
 
@@ -1922,6 +1898,9 @@ fun SettingsTab(
             val externalAutomationTitle = stringResource(R.string.external_automation_title)
             val externalAutomationDescription = stringResource(R.string.external_automation_description)
             SearchFilterRow(searchQuery, externalAutomationTitle, externalAutomationDescription) {
+                // TASK-275: the Automation card below deep-links here; the
+                // border flash is the memory-protection focus pattern
+                // (TASK-625). Idle is a transparent border, invisible.
                 ToggleSettingCard(
                     icon = Icons.Default.Build,
                     title = externalAutomationTitle,
@@ -1929,7 +1908,44 @@ fun SettingsTab(
                     checked = externalAutomationEnabled,
                     onCheckedChange = { enabled ->
                         viewModel.saveExternalAutomationEnabled(enabled)
-                    }
+                    },
+                    modifier = Modifier
+                        .onGloballyPositioned {
+                            externalAutomationFocus.capture(it.positionInRoot().y.toInt())
+                        }
+                        .border(
+                            2.dp,
+                            externalAutomationFocus.highlightColor("external_automation_highlight"),
+                            MaterialTheme.shapes.medium,
+                        )
+                )
+            }
+
+            // TASK-275: the Automation explainer card. The broadcast API has
+            // shipped since the Tasker receivers, but its documentation lived
+            // only in docs/TASKER_GUIDE.md; this is its in-app surface. No
+            // Tasker profile export ships with it (the recorded decision and
+            // its evidence live in AutomationBroadcastSnippet's KDoc).
+            val automationGuideTitle = stringResource(R.string.automation_guide_title)
+            val automationGuideDescription = stringResource(R.string.automation_guide_description)
+            val automationGuideBody = stringResource(R.string.automation_guide_body)
+            // Simplify edge F1: the gate consumes the SAME list the count
+            // group consumes (the KDoc's no-drift promise, now structural).
+            SearchFilterRow(
+                searchQuery,
+                *AUTOMATION_GUIDE_SEARCH_RES.map { stringResource(it) }.toTypedArray(),
+            ) {
+                AutomationGuideCard(
+                    title = automationGuideTitle,
+                    description = automationGuideDescription,
+                    enabled = externalAutomationEnabled,
+                    onShowToggle = {
+                        // Same contract as the memory-protection focus: a live
+                        // search query keeps the toggle row out of composition,
+                        // so clear it, then converge and flash (TASK-275).
+                        searchQuery = ""
+                        externalAutomationFocus.flashIn(navScope, scrollState) { scrollContentRootY }
+                    },
                 )
             }
 
@@ -2879,6 +2895,176 @@ private fun PunctuationPromptCard(
     descriptionRes = R.string.punctuation_prompt_description,
     placeholderRes = R.string.punctuation_prompt_placeholder,
 )
+
+/**
+ * TASK-275: the Automation guide card's search vocabulary, ONE list feeding
+ * both the Advanced search group and the card's SearchFilterRow matchTexts.
+ * The count line and the per-card gate must read the same string set or a
+ * query matching only one side reports a ghost card (review F1).
+ */
+private val AUTOMATION_GUIDE_SEARCH_RES = listOf(
+    R.string.automation_guide_title,
+    R.string.automation_guide_description,
+    R.string.automation_guide_body,
+)
+
+/**
+ * TASK-625/275: ONE focused Settings row: its captured layout position, its
+ * border-flash flag, and the flash itself (converge on the row, highlight,
+ * decay after 2.5s). Two instances exist (memory protection via the
+ * notification action; the TASK-274 toggle via TASK-275's Automation card);
+ * the timing and color contracts live here so they cannot drift between
+ * rows. The row captures its Y via [capture] from onGloballyPositioned and
+ * draws its border with [highlightColor]; a trigger site clears any live
+ * search query (it keeps rows out of composition) and calls [flashIn] on a
+ * scope that carries the composition's frame clock.
+ */
+private class SettingsRowFocus {
+    var rowY by mutableStateOf<Int?>(null)
+        private set
+    var highlighted by mutableStateOf(false)
+        private set
+
+    fun capture(y: Int) {
+        rowY = y
+    }
+
+    /** The row's border color: primary while flashing, transparent idle. */
+    @Composable
+    fun highlightColor(label: String): Color = animateColorAsState(
+        if (highlighted) MaterialTheme.colorScheme.primary else Color.Transparent,
+        tween(durationMillis = 400),
+        label = label,
+    ).value
+
+    /** Converge the scroll on the row, flash its border, decay after 2.5s. */
+    fun flashIn(
+        scope: CoroutineScope,
+        scrollState: ScrollState,
+        scrollContentRootY: () -> Int,
+    ) {
+        scope.launch {
+            // The row's captured position is re-derived from the LIVE rowY
+            // each pass (rowY - contentRoot is invariant to scrolling and
+            // tracks only real layout changes) because the expand and the
+            // async cards above the target row (battery, share targets) keep
+            // shifting it; the root Y is read live too, so an inset change
+            // mid-converge (gesture-nav hide, split-screen) cannot leave the
+            // flash settling on a stale offset (review F2). Reaching a
+            // CLAMPED cap is not convergence while the list can still grow:
+            // an in-flight expand keeps maxValue small, so clamped passes
+            // count as settled only once maxValue has stopped moving.
+            var attempts = 0
+            var settled = false
+            var lastMax = -1
+            var stableMaxFrames = 0
+            while (attempts < 48 && !settled) {
+                val target = rowY
+                if (target == null) {
+                    withFrameNanos { }
+                } else {
+                    val wanted = maxOf(0, target - scrollContentRootY() - 32)
+                    val cap = minOf(wanted, scrollState.maxValue)
+                    val clamped = wanted > scrollState.maxValue
+                    if (clamped) {
+                        stableMaxFrames =
+                            if (scrollState.maxValue == lastMax) stableMaxFrames + 1 else 0
+                        lastMax = scrollState.maxValue
+                        scrollState.animateScrollTo(cap)
+                        settled = stableMaxFrames >= 3
+                        if (!settled) withFrameNanos { }
+                    } else if (kotlin.math.abs(scrollState.value - cap) <= 4) {
+                        settled = true
+                    } else {
+                        scrollState.animateScrollTo(cap)
+                        withFrameNanos { }
+                    }
+                }
+                attempts++
+            }
+            highlighted = true
+            delay(2_500)
+            highlighted = false
+        }
+    }
+}
+
+/**
+ * TASK-275: the in-app automation wizard card (Settings > Advanced). The
+ * broadcast API (PROCESS_REQUEST + PRELOAD_MODEL, docs/TASKER_GUIDE.md) is
+ * the shipped full-auto path; this card is its only in-app surface: the
+ * consent state with a deep-link to the TASK-274 toggle row, the staging
+ * constraint in one line, a copyable adb command with the runtime package
+ * filled in, and the full guide link. The copy idiom follows LogsTab
+ * (ClipData + ToastCompat); the command carries no transcript, so the
+ * TASK-650 signature does not apply to it.
+ */
+@Composable
+private fun AutomationGuideCard(
+    title: String,
+    description: String,
+    enabled: Boolean,
+    onShowToggle: () -> Unit,
+) {
+    val context = LocalContext.current
+    SectionCard(
+        icon = Icons.Default.Bolt,
+        title = title,
+        description = description,
+    ) {
+        Text(
+            text = stringResource(
+                if (enabled) R.string.automation_guide_status_on
+                else R.string.automation_guide_status_off),
+            style = MaterialTheme.typography.bodySmall,
+            color = if (enabled) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        if (!enabled) {
+            TextButton(onClick = onShowToggle) {
+                Text(stringResource(R.string.automation_guide_show_toggle))
+            }
+        }
+        Text(
+            text = stringResource(R.string.automation_guide_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            OutlinedButton(
+                onClick = {
+                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE)
+                        as ClipboardManager
+                    clipboard.setPrimaryClip(
+                        ClipData.newPlainText(
+                            context.getString(R.string.automation_guide_title),
+                            AutomationBroadcastSnippet.adbTextRequest(context.packageName)))
+                    ToastCompat.show(context, context.getString(R.string.copied_to_clipboard))
+                },
+                modifier = Modifier.weight(1f),
+            ) {
+                Icon(Icons.Default.ContentCopy, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.automation_guide_copy))
+            }
+            OutlinedButton(
+                onClick = {
+                    runCatching {
+                        context.startActivity(
+                            Intent(Intent.ACTION_VIEW, Uri.parse(AutomationBroadcastSnippet.TASKER_GUIDE_URL)))
+                    }
+                },
+            ) {
+                Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.automation_guide_open))
+            }
+        }
+    }
+}
 
 /**
  * TASK-681: the LAN-offload config card: endpoint, API key (password

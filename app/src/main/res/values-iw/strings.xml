@@ -288,6 +288,15 @@
     <string name="external_automation_title">אוטומציה חיצונית (Tasker)</string>
     <string name="external_automation_description">מאפשר לאפליקציות אחרות להתחיל תמלול דרך API האוטומציה (למשל Tasker). כבוי כברירת מחדל.</string>
     <string name="external_automation_disabled">אוטומציה חיצונית כבויה. הפעל אותה בהגדרות > מתקדם > אוטומציה חיצונית.</string>
+    <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
+    <string name="automation_guide_title">מדריך אוטומציה</string>
+    <string name="automation_guide_description">התחילו תמלול מ-Tasker או מ-adb בשליחת broadcast לאפליקציה. הכול נשאר במכשיר.</string>
+    <string name="automation_guide_status_on">האוטומציה פעילה: האפליקציה עונה ל-broadcast של בקשה ושל טעינה מוקדמת.</string>
+    <string name="automation_guide_status_off">האוטומציה כבויה: כל broadcast נדחה עד שתפעילו את מתג האוטומציה החיצונית שלמעלה.</string>
+    <string name="automation_guide_show_toggle">הצגת המתג</string>
+    <string name="automation_guide_body">שני broadcast: PROCESS_REQUEST מתמלל פקודת טקסט או קובץ שמע שהוכן מראש בתיקייה הפרטית של האפליקציה (נתיבי sdcard נדחים כבלתי קריאים), ו-PRELOAD_MODEL טוען את המודל מראש.</string>
+    <string name="automation_guide_copy">העתקת פקודת בדיקה</string>
+    <string name="automation_guide_open">המדריך המלא</string>
     <string name="remote_omnivoice_name">העברה לשרת LAN (OmniVoice)</string>
     <string name="remote_offload_title">העברה לשרת LAN (ניסיוני)</string>
     <string name="remote_offload_description">מעביר תמלולים ארוכים או כבדים לשרת ה-OmniVoice שלכם ברשת ה-Wi-Fi. לאחר ההפעלה בחרו אותו בלשונית המודלים.</string>

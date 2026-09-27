@@ -286,6 +286,15 @@
     <string name="external_automation_title">اتوماسیون خارجی (Tasker)</string>
     <string name="external_automation_description">به دیگر برنامه‌ها اجازه می‌دهد از طریق API اتوماسیون (مثلاً Tasker) رونویسی را شروع کنند. به طور پیش‌فرض خاموش است.</string>
     <string name="external_automation_disabled">اتوماسیون خارجی خاموش است. آن را در تنظیمات > پیشرفته > اتوماسیون خارجی روشن کنید.</string>
+    <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
+    <string name="automation_guide_title">راهنمای اتوماسیون</string>
+    <string name="automation_guide_description">با فرستادن یک broadcast به برنامه، از Tasker یا adb رونویسی را آغاز کنید. همه چیز روی دستگاه می‌ماند.</string>
+    <string name="automation_guide_status_on">اتوماسیون روشن است: برنامه به broadcastهای درخواست و پیش‌بارگذاری پاسخ می‌دهد.</string>
+    <string name="automation_guide_status_off">اتوماسیون خاموش است: تا زمانی که کلید «اتوماسیون خارجی» بالا را روشن نکنید، هر broadcast رد می‌شود.</string>
+    <string name="automation_guide_show_toggle">نمایش کلید</string>
+    <string name="automation_guide_body">دو broadcast: PROCESS_REQUEST یک اعلان متنی یا پرونده صدایی آماده‌شده در پوشه خصوصی برنامه را رونویسی می‌کند (مسیرهای sdcard چون خوانا نیستند رد می‌شوند) و PRELOAD_MODEL مدل را از پیش بار می‌کند.</string>
+    <string name="automation_guide_copy">کپی فرمان آزمایشی</string>
+    <string name="automation_guide_open">راهنمای کامل</string>
     <string name="remote_omnivoice_name">واگذاری به LAN (OmniVoice)</string>
     <string name="remote_offload_title">واگذاری به LAN (آزمایشی)</string>
     <string name="remote_offload_description">رونویسی‌های طولانی یا سنگین را به سرور OmniVoice خودتان در شبکه Wi-Fi می‌سپارد. پس از فعال شدن، آن را در برگه Model انتخاب کنید.</string>

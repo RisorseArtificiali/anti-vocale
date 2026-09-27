@@ -295,6 +295,15 @@
     <string name="external_automation_title">Зовнішня автоматизація (Tasker)</string>
     <string name="external_automation_description">Дозволяє іншим додаткам запускати транскрипцію через API автоматизації (наприклад, Tasker). Типово вимкнено.</string>
     <string name="external_automation_disabled">Зовнішня автоматизація вимкнена. Увімкніть її в розділі Налаштування > Розширені > Зовнішня автоматизація.</string>
+    <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
+    <string name="automation_guide_title">Посібник з автоматизації</string>
+    <string name="automation_guide_description">Запускайте розшифровку з Tasker або adb, надсилаючи broadcast програмі. Усе лишається на пристрої.</string>
+    <string name="automation_guide_status_on">Автоматизацію увімкнено: програма відповідає на broadcast-запити й попереднє завантаження.</string>
+    <string name="automation_guide_status_off">Автоматизацію вимкнено: кожен broadcast відхиляється, доки ви не ввімкнете перемикач зовнішньої автоматизації вище.</string>
+    <string name="automation_guide_show_toggle">Показати перемикач</string>
+    <string name="automation_guide_body">Два broadcast: PROCESS_REQUEST розшифровує текстовий запит або аудіофайл, підготовлений у приватній теці програми (шляхи sdcard відхиляються як нечитані), а PRELOAD_MODEL завчасно завантажує модель.</string>
+    <string name="automation_guide_copy">Копіювати тестову команду</string>
+    <string name="automation_guide_open">Повний посібник</string>
     <string name="remote_omnivoice_name">Перенесення на сервер LAN (OmniVoice)</string>
     <string name="remote_offload_title">Перенесення на сервер LAN (експериментально)</string>
     <string name="remote_offload_description">Передача довгих або важких розшифровок вашому власному серверу OmniVoice у вашій мережі Wi-Fi. Після ввімкнення виберіть його на вкладці «Моделі».</string>

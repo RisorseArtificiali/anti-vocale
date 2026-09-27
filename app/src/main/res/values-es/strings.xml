@@ -237,6 +237,15 @@
     <string name="external_automation_title">Automatización externa (Tasker)</string>
     <string name="external_automation_description">Permite que otras apps inicien transcripciones mediante la API de automatización (p. ej., Tasker). Desactivada por defecto.</string>
     <string name="external_automation_disabled">La automatización externa está desactivada. Actívala en Ajustes > Avanzado > Automatización externa.</string>
+    <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
+    <string name="automation_guide_title">Guía de automatización</string>
+    <string name="automation_guide_description">Inicia transcripciones desde Tasker o adb enviando un broadcast a la app. Todo permanece en el dispositivo.</string>
+    <string name="automation_guide_status_on">La automatización está activada: la app responde a los broadcasts de solicitud y de precarga.</string>
+    <string name="automation_guide_status_off">La automatización está desactivada: todos los broadcasts se rechazan hasta que actives el interruptor de automatización externa de arriba.</string>
+    <string name="automation_guide_show_toggle">Mostrar el interruptor</string>
+    <string name="automation_guide_body">Dos broadcasts: PROCESS_REQUEST transcribe un mensaje de texto o un archivo de audio preparado en la carpeta privada de la app (las rutas de la sdcard se rechazan por ilegibles), y PRELOAD_MODEL precarga el modelo.</string>
+    <string name="automation_guide_copy">Copiar comando de prueba</string>
+    <string name="automation_guide_open">Guía completa</string>
     <string name="remote_omnivoice_name">Delegación LAN (OmniVoice)</string>
     <string name="remote_offload_title">Delegación LAN (experimental)</string>
     <string name="remote_offload_description">Delega las transcripciones largas o pesadas en tu propio servidor OmniVoice de tu red Wi-Fi. Cuando esté activado, selecciónalo en la pestaña Modelos.</string>

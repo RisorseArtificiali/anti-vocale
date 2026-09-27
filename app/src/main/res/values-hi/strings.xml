@@ -267,6 +267,15 @@
     <string name="external_automation_title">बाहरी ऑटोमेशन (Tasker)</string>
     <string name="external_automation_description">दूसरे ऐप्स को ऑटोमेशन API (जैसे Tasker) से ट्रांसक्रिप्शन शुरू करने देता है। डिफ़ॉल्ट रूप से बंद है।</string>
     <string name="external_automation_disabled">बाहरी ऑटोमेशन बंद है। इसे सेटिंग > अतिरिक्त सेटिंग > बाहरी ऑटोमेशन में चालू करें।</string>
+    <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
+    <string name="automation_guide_title">ऑटोमेशन गाइड</string>
+    <string name="automation_guide_description">ऐप को ब्रॉडकास्ट भेजकर Tasker या adb से ट्रांस्क्रिप्शन शुरू करें। सब कुछ डिवाइस पर ही रहता है।</string>
+    <string name="automation_guide_status_on">ऑटोमेशन चालू है: ऐप अनुरोध और प्रीलोड ब्रॉडकास्ट का जवाब देती है।</string>
+    <string name="automation_guide_status_off">ऑटोमेशन बंद है: ऊपर दिए गए बाहरी ऑटोमेशन स्विच को चालू करने तक हर ब्रॉडकास्ट अस्वीकार कर दिया जाता है।</string>
+    <string name="automation_guide_show_toggle">स्विच दिखाएँ</string>
+    <string name="automation_guide_body">दो ब्रॉडकास्ट: PROCESS_REQUEST टेक्स्ट प्रॉम्प्ट या ऐप के निजी फ़ोल्डर में तैयार ऑडियो फ़ाइल को ट्रांस्क्राइब करता है (sdcard पाथ पढ़े नहीं जा सकने की वजह से अस्वीकार होते हैं), और PRELOAD_MODEL मॉडल पहले से लोड कर देता है।</string>
+    <string name="automation_guide_copy">टेस्ट कमांड कॉपी करें</string>
+    <string name="automation_guide_open">पूरी गाइड</string>
     <string name="remote_omnivoice_name">LAN ऑफ़लोड (OmniVoice)</string>
     <string name="remote_offload_title">LAN ऑफ़लोड (प्रायोगिक)</string>
     <string name="remote_offload_description">लंबी या भारी ट्रांसक्रिप्शन को अपने Wi-Fi नेटवर्क पर चलने वाले अपने OmniVoice सर्वर को भेजता है। सक्षम होने पर इसे Model टैब में चुनें।</string>

@@ -289,6 +289,15 @@
     <string name="external_automation_title">Harici otomasyon (Tasker)</string>
     <string name="external_automation_description">Diğer uygulamaların otomasyon API\'si (örnek: Tasker) aracılığıyla transkripsiyon başlatmasına izin verir. Varsayılan olarak kapalıdır.</string>
     <string name="external_automation_disabled">Harici otomasyon devre dışı. Ayarlar > Gelişmiş > Harici otomasyon bölümünden etkinleştirin.</string>
+    <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
+    <string name="automation_guide_title">Otomasyon kılavuzu</string>
+    <string name="automation_guide_description">Uygulamaya bir broadcast göndererek Tasker veya adb\'den transkripsiyon başlatın. Her şey cihazda kalır.</string>
+    <string name="automation_guide_status_on">Otomasyon açık: uygulama istek ve ön yükleme broadcast\'lerine yanıt veriyor.</string>
+    <string name="automation_guide_status_off">Otomasyon kapalı: yukarıdaki harici otomasyon anahtarını açana kadar her broadcast reddedilir.</string>
+    <string name="automation_guide_show_toggle">Anahtarı göster</string>
+    <string name="automation_guide_body">İki broadcast: PROCESS_REQUEST bir metin istemini veya uygulamanın özel klasörüne hazırlanmış bir ses dosyasını transkribe eder (sdcard yolları okunamadığı için reddedilir), PRELOAD_MODEL ise modeli önceden yükler.</string>
+    <string name="automation_guide_copy">Test komutunu kopyala</string>
+    <string name="automation_guide_open">Tam kılavuz</string>
     <string name="remote_omnivoice_name">LAN devri (OmniVoice)</string>
     <string name="remote_offload_title">LAN devri (deneysel)</string>
     <string name="remote_offload_description">Uzun veya ağır transkripsiyonları Wi-Fi ağınızdaki kendi OmniVoice sunucunuza devreder. Etkinleştirildiğinde Model sekmesinden seçin.</string>
