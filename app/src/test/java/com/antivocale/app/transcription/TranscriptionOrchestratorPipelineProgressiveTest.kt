@@ -182,11 +182,10 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         // TASK-664: content-keyed, because the blank chunk's ladder adds
         // re-feed calls (answered blank here; overlap feeds are not
         // chunk-sized).
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            val feed = firstArg<FloatArray>()
+        backend.stubContentKeyedDecodes { size, first ->
             when {
-                feed.size == 1000 && feed[0] == 1.0f -> Result.success(TranscriptionResult(text = "first"))
-                feed.size == 1000 && feed[0] == 3.0f -> Result.success(TranscriptionResult(text = "third"))
+                size == 1000 && first == 1.0f -> Result.success(TranscriptionResult(text = "first"))
+                size == 1000 && first == 3.0f -> Result.success(TranscriptionResult(text = "third"))
                 else -> Result.success(TranscriptionResult(text = "   "))
             }
         }

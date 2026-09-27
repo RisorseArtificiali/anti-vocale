@@ -155,12 +155,11 @@ class TranscriptionOrchestratorParallelTest : TranscriptionOrchestratorTestBase(
         // chunk-sized).
         stubPreprocessing(chunkCount = 4, chunkValues = mapOf(0 to 1f, 1 to 2f, 2 to 3f, 3 to 4f))
 
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            val feed = firstArg<FloatArray>()
+        backend.stubContentKeyedDecodes { size, first ->
             when {
-                feed.size == 1000 && feed[0] == 1.0f -> Result.success(TranscriptionResult(text = "chunk1"))
-                feed.size == 1000 && feed[0] == 3.0f -> Result.success(TranscriptionResult(text = "chunk3"))
-                feed.size == 1000 && feed[0] == 4.0f -> Result.success(TranscriptionResult(text = "chunk4"))
+                size == 1000 && first == 1.0f -> Result.success(TranscriptionResult(text = "chunk1"))
+                size == 1000 && first == 3.0f -> Result.success(TranscriptionResult(text = "chunk3"))
+                size == 1000 && first == 4.0f -> Result.success(TranscriptionResult(text = "chunk4"))
                 else -> Result.success(TranscriptionResult(text = ""))
             }
         }

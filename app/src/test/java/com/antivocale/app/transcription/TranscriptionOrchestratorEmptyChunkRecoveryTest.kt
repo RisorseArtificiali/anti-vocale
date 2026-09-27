@@ -91,16 +91,11 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
         text = s,
         tokens = s.split(" ").mapIndexed { i, word -> TimedToken("▁$word", 1200L + 200L * i, 1400L + 200L * i) }))
 
-    private fun stubFeeds(answer: (feedSize: Int, feed: FloatArray) -> Result<TranscriptionResult>) {
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            val feed = firstArg<FloatArray>()
-            feedSizes.add(feed.size)
-            answer(feed.size, feed)
-        }
-        coEvery { backend.transcribeAudioStreaming(any(), any(), any(), any()) } answers {
-            val feed = firstArg<FloatArray>()
-            feedSizes.add(feed.size)
-            answer(feed.size, feed)
+    /** Content-keyed stub (the base helper) that also records every feed size. */
+    private fun stubFeeds(answer: (feedSize: Int, firstSample: Float) -> Result<TranscriptionResult>) {
+        backend.stubContentKeyedDecodes { size, first ->
+            feedSizes.add(size)
+            answer(size, first)
         }
     }
 
@@ -113,21 +108,28 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
         return { captured.lastOrNull { it.status == "SUCCESS" }?.processingContext }
     }
 
+    /** Captures the failure-context writes; call the getter after the run for the ERROR row's JSON. */
+    private fun stubFailureContextCapture(): () -> String? {
+        val captured = mutableListOf<String>()
+        coEvery { logDao.updateFailureContext(any(), capture(captured)) } returns Unit
+        return { captured.lastOrNull() }
+    }
+
     // ---- Parallel path ----
 
     @Test
     fun `parallel empty chunk recovers on the overlap re-feed and no longer counts as blank`() = runTest {
         val successContext = stubRowCapture()
         stubParallel(oneSecondChunk(1f), oneSecondChunk(2f), oneSecondChunk(3f))
-        stubFeeds { size, feed ->
+        stubFeeds { size, first ->
             when {
                 // Chunks 0 and 2 decode once, non-empty: zero extra work.
-                size == 16_000 && feed[0] == 1f -> text("alpha")
-                size == 16_000 && feed[0] == 3f -> text("gamma")
+                size == 16_000 && first == 1f -> text("alpha")
+                size == 16_000 && first == 3f -> text("gamma")
                 // Chunk 1: blank first pass, blank retry rung, overlap recovers.
-                size == 16_000 && feed[0] == 2f -> text("")
+                size == 16_000 && first == 2f -> text("")
                 size == 48_000 -> overlapText("beta from overlap")
-                else -> text("unexpected feed $size ${feed[0]}")
+                else -> text("unexpected feed $size $first")
             }
         }
 
@@ -152,10 +154,10 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
     fun `parallel chunk still empty after the ladder is one honest blank`() = runTest {
         val successContext = stubRowCapture()
         stubParallel(oneSecondChunk(1f), oneSecondChunk(2f), oneSecondChunk(3f))
-        stubFeeds { size, feed ->
+        stubFeeds { size, first ->
             when {
-                size == 16_000 && feed[0] == 1f -> text("alpha")
-                size == 16_000 && feed[0] == 3f -> text("gamma")
+                size == 16_000 && first == 1f -> text("alpha")
+                size == 16_000 && first == 3f -> text("gamma")
                 else -> text("")
             }
         }
@@ -182,7 +184,7 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
     fun `parallel ladder disabled keeps the blank at zero extra decodes`() = runTest {
         orchestrator.emptyChunkRecoveryEnabled = false
         stubParallel(oneSecondChunk(1f), oneSecondChunk(2f))
-        stubFeeds { _, feed -> if (feed[0] == 2f) text("") else text("alpha") }
+        stubFeeds { _, first -> if (first == 2f) text("") else text("alpha") }
 
         val result = runRequest("off")
 
@@ -197,15 +199,15 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
     @Test
     fun `pipeline empty chunk is held and recovered once the next head exists`() = runTest {
         stubPipeline(oneSecondChunk(1f), oneSecondChunk(2f), oneSecondChunk(3f))
-        stubFeeds { size, feed ->
+        stubFeeds { size, first ->
             when {
-                size == 16_000 && feed[0] == 1f -> text("alpha")
-                size == 16_000 && feed[0] == 3f -> text("gamma")
+                size == 16_000 && first == 1f -> text("alpha")
+                size == 16_000 && first == 3f -> text("gamma")
                 // The held chunk: blank retry rung, then the overlap re-feed
                 // (previous tail plus the head of the chunk that just arrived).
-                size == 16_000 && feed[0] == 2f -> text("")
+                size == 16_000 && first == 2f -> text("")
                 size == 48_000 -> overlapText("beta from overlap")
-                else -> text("unexpected feed $size ${feed[0]}")
+                else -> text("unexpected feed $size $first")
             }
         }
 
@@ -219,9 +221,9 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
     @Test
     fun `pipeline trailing empty chunk stays one honest blank at stream end`() = runTest {
         stubPipeline(oneSecondChunk(1f), oneSecondChunk(2f))
-        stubFeeds { size, feed ->
+        stubFeeds { size, first ->
             when {
-                size == 16_000 && feed[0] == 1f -> text("alpha")
+                size == 16_000 && first == 1f -> text("alpha")
                 // The last chunk: blank everywhere, resolved after the stream
                 // with the previous tail only.
                 else -> text("")
@@ -240,6 +242,7 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
 
     @Test
     fun `single chunk note that decodes empty is recovered by the padding re-feed`() = runTest {
+        val successContext = stubRowCapture()
         every { preferencesManager.vadEnabled } returns flowOf(true)
         stubPreprocessing(chunks = listOf(oneSecondChunk(1f)), totalDurationSeconds = 1.0)
         stubFeeds { size, _ ->
@@ -254,10 +257,16 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
         assertEquals("rescued note", result.getOrNull())
         // First pass, retry rung, padding rung: bounded at two extras.
         assertEquals(3, feedSizes.size)
+        // The ladder ENTRY lands on the success context (TASK-664: whole_file
+        // records entry like every other arm, recovered or not).
+        val context = successContext()
+        assertTrue("retriedChunks missing from the persisted context: $context",
+            context != null && context.contains("\"retriedChunks\":1"))
     }
 
     @Test
     fun `single chunk note still empty after the ladder fails honestly`() = runTest {
+        val failureContext = stubFailureContextCapture()
         every { preferencesManager.vadEnabled } returns flowOf(true)
         stubPreprocessing(chunks = listOf(oneSecondChunk(1f)), totalDurationSeconds = 1.0)
         stubFeeds { _, _ -> text("") }
@@ -266,5 +275,10 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
 
         assertTrue(result.isFailure)
         assertEquals(3, feedSizes.size)
+        // TASK-664: the all-blank ERROR row says the ladder already ran (the
+        // count rides NoTranscriptionProduced to the failure context).
+        val context = failureContext()
+        assertTrue("retriedChunks missing from the failure context: $context",
+            context != null && context.contains("\"retriedChunks\":1"))
     }
 }

@@ -73,17 +73,18 @@ internal object EmptyChunkRecovery {
     }
 
     /**
-     * Runs the ladder for one first-pass-empty [chunk]. [previousTail] and
-     * [nextHead] are already bounded to the overlap seconds; either may be
-     * null or empty (a boundary chunk, the pipeline's held tail, a
-     * single-chunk clip). Blank-when-recovered is impossible: a rung counts
-     * only when its text is non-blank.
+     * Runs the ladder for one first-pass-empty [chunk]. [previousChunk] and
+     * [nextChunk] are the RAW adjacent chunks; the ladder bounds them to the
+     * overlap seconds itself, so no caller can feed unbounded audio past the
+     * family chunk cap. Either may be null or empty (a boundary chunk, the
+     * pipeline's held tail, a single-chunk clip). Blank-when-recovered is
+     * impossible: a rung counts only when its text is non-blank.
      */
     suspend fun recover(
         chunk: FloatArray,
         sampleRate: Int,
-        previousTail: FloatArray?,
-        nextHead: FloatArray?,
+        previousChunk: FloatArray?,
+        nextChunk: FloatArray?,
         decode: suspend (FloatArray) -> Result<TranscriptionResult>,
     ): Outcome {
         if (chunk.isEmpty()) return Outcome.StillEmpty
@@ -116,17 +117,16 @@ internal object EmptyChunkRecovery {
         rung(chunk)?.let { return Outcome.Recovered(it) }
         wedge?.let { return Outcome.EngineWedged(it) }
 
-        val prev = previousTail ?: EMPTY_SAMPLES
-        val next = nextHead ?: EMPTY_SAMPLES
-        return if (prev.isNotEmpty() || next.isNotEmpty()) {
+        val prev = previousChunk?.let { tail(it, sampleRate) } ?: EMPTY_SAMPLES
+        val next = nextChunk?.let { head(it, sampleRate) } ?: EMPTY_SAMPLES
+        val contextRung = if (prev.isNotEmpty() || next.isNotEmpty()) {
             overlapRung(chunk, prev, next, sampleRate) { rung(it) }
-                ?: wedge?.let { Outcome.EngineWedged(it) }
-                ?: Outcome.StillEmpty
         } else {
             padRung(chunk, sampleRate) { rung(it) }
-                ?: wedge?.let { Outcome.EngineWedged(it) }
-                ?: Outcome.StillEmpty
         }
+        return contextRung
+            ?: wedge?.let { Outcome.EngineWedged(it) }
+            ?: Outcome.StillEmpty
     }
 
     /**
@@ -142,11 +142,7 @@ internal object EmptyChunkRecovery {
         sampleRate: Int,
         decodeRung: (FloatArray) -> TranscriptionResult?,
     ): Outcome? {
-        val feed = FloatArray(prev.size + chunk.size + next.size)
-        System.arraycopy(prev, 0, feed, 0, prev.size)
-        System.arraycopy(chunk, 0, feed, prev.size, chunk.size)
-        System.arraycopy(next, 0, feed, prev.size + chunk.size, next.size)
-        val combined = decodeRung(feed) ?: return null
+        val combined = decodeRung(concatSamples(prev, chunk, next)) ?: return null
         if (combined.tokens.isEmpty()) {
             // The words cannot be attributed to this chunk; adopting the text
             // would duplicate neighbor words already transcribed elsewhere.
@@ -167,12 +163,8 @@ internal object EmptyChunkRecovery {
         if (text.isBlank()) return null
         return Outcome.Recovered(combined.copy(
             text = text,
-            tokens = combined.tokens.subList(first, last + 1).map {
-                it.copy(
-                    startMs = it.startMs - windowStartMs,
-                    endMs = (it.endMs - windowStartMs).coerceAtLeast(0L),
-                )
-            }))
+            tokens = shiftTokens(
+                combined.tokens.subList(first, last + 1), windowStartMs, clampStart = false)))
     }
 
     /**
@@ -187,18 +179,40 @@ internal object EmptyChunkRecovery {
         decodeRung: (FloatArray) -> TranscriptionResult?,
     ): Outcome? {
         val pad = FloatArray((sampleRate * PAD_SECONDS).toInt())
-        val feed = FloatArray(pad.size + chunk.size + pad.size)
-        System.arraycopy(pad, 0, feed, 0, pad.size)
-        System.arraycopy(chunk, 0, feed, pad.size, chunk.size)
-        val padded = decodeRung(feed) ?: return null
+        val padded = decodeRung(concatSamples(pad, chunk, pad)) ?: return null
         val padMs = pad.size * 1000L / sampleRate
         return Outcome.Recovered(padded.copy(
-            tokens = padded.tokens.map {
-                it.copy(
-                    startMs = (it.startMs - padMs).coerceAtLeast(0L),
-                    endMs = (it.endMs - padMs).coerceAtLeast(0L),
-                )
-            }))
+            tokens = shiftTokens(padded.tokens, padMs, clampStart = true)))
+    }
+
+    /** One rung-2 feed: the parts concatenated in order, no size math at the rungs. */
+    private fun concatSamples(vararg parts: FloatArray): FloatArray {
+        val feed = FloatArray(parts.sumOf { it.size })
+        var offset = 0
+        for (part in parts) {
+            System.arraycopy(part, 0, feed, offset, part.size)
+            offset += part.size
+        }
+        return feed
+    }
+
+    /**
+     * Rebases token times by [byMs]. [clampStart] is the rungs' one
+     * deliberate asymmetry: the overlap rung keeps only window-selected
+     * tokens, whose shifted starts are non-negative by construction, while
+     * the pad rung keeps every token and clamps one that starts inside the
+     * leading pad to the chunk's own start.
+     */
+    private fun shiftTokens(
+        tokens: List<TimedToken>,
+        byMs: Long,
+        clampStart: Boolean,
+    ): List<TimedToken> = tokens.map {
+        val shiftedStart = it.startMs - byMs
+        it.copy(
+            startMs = if (clampStart) shiftedStart.coerceAtLeast(0L) else shiftedStart,
+            endMs = (it.endMs - byMs).coerceAtLeast(0L),
+        )
     }
 
     private val EMPTY_SAMPLES = FloatArray(0)

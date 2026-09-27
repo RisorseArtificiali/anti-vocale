@@ -216,11 +216,10 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         // TASK-664: keyed by chunk content, not call order, because the
         // empty segment's recovery ladder adds re-feed calls (all answered
         // blank here: overlap feeds are never chunk-sized).
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            val feed = firstArg<FloatArray>()
+        backend.stubContentKeyedDecodes { size, first ->
             when {
-                feed.size == 100 && feed[0] == 1.0f -> results[0]
-                feed.size == 100 && feed[0] == 3.0f -> results[2]
+                size == 100 && first == 1.0f -> results[0]
+                size == 100 && first == 3.0f -> results[2]
                 else -> results[1]
             }
         }
@@ -251,9 +250,8 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
         )
         // TASK-664: content-keyed (the blank segment's ladder re-feeds answer
         // blank; only the failing chunk errors, on every call).
-        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
-            val feed = firstArg<FloatArray>()
-            if (feed.size == 100 && feed[0] == 1.0f) results[0] else results[1]
+        backend.stubContentKeyedDecodes { size, first ->
+            if (size == 100 && first == 1.0f) results[0] else results[1]
         }
 
         val result = runProcessRequest(scope = this)

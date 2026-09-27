@@ -256,9 +256,14 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
      * TASK-622: [blankChunks] counts chunks that decoded successfully but
      * blank (1 on the whole-file path); it rides the exception to the ERROR
      * row's FailureContext without changing the user-facing message.
+     * TASK-664: [retriedChunks] counts chunks that entered the recovery
+     * ladder (null when it never ran), so an all-blank ERROR row can say
+     * the ladder already did.
      */
-    class NoTranscriptionProduced(val blankChunks: Int? = null) :
-        TranscriptionException("No transcription produced")
+    class NoTranscriptionProduced(
+        val blankChunks: Int? = null,
+        val retriedChunks: Int? = null,
+    ) : TranscriptionException("No transcription produced")
 
     /** The device had too little free memory to load the model (pre-flight block). */
     class InsufficientMemory(detail: String) :

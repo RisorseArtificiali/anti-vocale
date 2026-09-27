@@ -174,4 +174,24 @@ abstract class TranscriptionOrchestratorTestBase {
             isVadSegmented = isVadSegmented
         )
     }
+
+    /**
+     * TASK-664: the content-keyed decode stub. The answer is keyed on the
+     * FEED's size and first sample (the chunk's content), never on call
+     * order, because the empty-chunk ladder adds re-feed calls whose feeds
+     * are never chunk-shaped; an order-keyed stub misroutes once it runs.
+     * Covers the streaming variant too (the single-chunk whole-file arm).
+     */
+    protected fun TranscriptionBackend.stubContentKeyedDecodes(
+        answer: (feedSize: Int, firstSample: Float) -> Result<TranscriptionResult>,
+    ) {
+        coEvery { transcribeAudio(any(), any(), any()) } answers {
+            val feed = firstArg<FloatArray>()
+            answer(feed.size, feed[0])
+        }
+        coEvery { transcribeAudioStreaming(any(), any(), any(), any()) } answers {
+            val feed = firstArg<FloatArray>()
+            answer(feed.size, feed[0])
+        }
+    }
 }

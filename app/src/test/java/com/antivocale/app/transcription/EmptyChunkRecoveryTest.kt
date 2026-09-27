@@ -41,8 +41,8 @@ class EmptyChunkRecoveryTest {
         var calls = 0
         val outcome = EmptyChunkRecovery.recover(
             chunk(1f), rate,
-            previousTail = chunk(2f),
-            nextHead = chunk(3f)) { _ ->
+            previousChunk = chunk(2f),
+            nextChunk = chunk(3f)) { _ ->
             calls++
             Result.success(TranscriptionResult(text = ""))
         }
@@ -58,8 +58,8 @@ class EmptyChunkRecoveryTest {
         var calls = 0
         val outcome = EmptyChunkRecovery.recover(
             chunk(1f), rate,
-            previousTail = chunk(2f),
-            nextHead = chunk(3f)) { feed ->
+            previousChunk = chunk(2f),
+            nextChunk = chunk(3f)) { feed ->
             feeds.add(feed.size)
             if (++calls == 1) return@recover Result.success(TranscriptionResult(text = ""))
             Result.success(TranscriptionResult(
@@ -86,8 +86,8 @@ class EmptyChunkRecoveryTest {
         val feeds = mutableListOf<Int>()
         val outcome = EmptyChunkRecovery.recover(
             chunk(1f), rate,
-            previousTail = null,
-            nextHead = chunk(3f)) { feed ->
+            previousChunk = null,
+            nextChunk = chunk(3f)) { feed ->
             feeds.add(feed.size)
             if (feed.size == rate) return@recover Result.success(TranscriptionResult(text = ""))
             Result.success(TranscriptionResult(
@@ -105,8 +105,8 @@ class EmptyChunkRecoveryTest {
         val feeds = mutableListOf<Int>()
         val outcome = EmptyChunkRecovery.recover(
             chunk(1f), rate,
-            previousTail = chunk(2f),
-            nextHead = null) { feed ->
+            previousChunk = chunk(2f),
+            nextChunk = null) { feed ->
             feeds.add(feed.size)
             if (feed.size == rate) return@recover Result.success(TranscriptionResult(text = ""))
             Result.success(TranscriptionResult(
@@ -125,8 +125,8 @@ class EmptyChunkRecoveryTest {
         // Unattributable words would duplicate the neighbors' transcripts.
         val outcome = EmptyChunkRecovery.recover(
             chunk(1f), rate,
-            previousTail = chunk(2f),
-            nextHead = chunk(3f)) { feed ->
+            previousChunk = chunk(2f),
+            nextChunk = chunk(3f)) { feed ->
             if (feed.size == rate) return@recover Result.success(TranscriptionResult(text = ""))
             Result.success(TranscriptionResult(text = "neighbor words"))
         }
