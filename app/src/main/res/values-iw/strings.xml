@@ -297,6 +297,7 @@
     <string name="automation_guide_body">שני broadcast: PROCESS_REQUEST מתמלל פקודת טקסט או קובץ שמע שהוכן מראש בתיקייה הפרטית של האפליקציה (נתיבי sdcard נדחים כבלתי קריאים), ו-PRELOAD_MODEL טוען את המודל מראש.</string>
     <string name="automation_guide_copy">העתקת פקודת בדיקה</string>
     <string name="automation_guide_open">המדריך המלא</string>
+    <string name="automation_guide_no_browser">לא נמצאה אפליקציה לפתיחת המדריך</string>
     <string name="remote_omnivoice_name">העברה לשרת LAN (OmniVoice)</string>
     <string name="remote_offload_title">העברה לשרת LAN (ניסיוני)</string>
     <string name="remote_offload_description">מעביר תמלולים ארוכים או כבדים לשרת ה-OmniVoice שלכם ברשת ה-Wi-Fi. לאחר ההפעלה בחרו אותו בלשונית המודלים.</string>

@@ -305,6 +305,7 @@
     <string name="automation_guide_body">Two broadcasts: PROCESS_REQUEST transcribes a text prompt or an audio file staged in the app\'s private folder (sdcard paths are rejected as unreadable), and PRELOAD_MODEL warms the model in advance.</string>
     <string name="automation_guide_copy">Copy test command</string>
     <string name="automation_guide_open">Full guide</string>
+    <string name="automation_guide_no_browser">No app found to open the guide</string>
     <!-- TASK-681: LAN offload (the user's own OmniVoice server). The
          disclosure string is the privacy contract: it must keep saying
          exactly where audio goes and that the feature is off by default. -->

@@ -3207,10 +3207,12 @@ private fun AutomationGuideCard(
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
+        // Long localized labels do not fit side-by-side halves: stacked
+        // full-width buttons keep every locale on one line (device trial
+        // 2026-09-27, TASK-275: equal halves wrapped the it/de labels into
+        // 2-3 stacked lines, and a single weight collapsed the other button
+        // to a sliver).
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(
                 onClick = {
                     ClipboardWriter.copy(
@@ -3219,7 +3221,7 @@ private fun AutomationGuideCard(
                         AutomationBroadcastSnippet.adbTextRequest(context.packageName))
                     ToastCompat.show(context, context.getString(R.string.copied_to_clipboard))
                 },
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(Icons.Default.ContentCopy, contentDescription = null)
                 Spacer(Modifier.width(8.dp))
@@ -3230,8 +3232,14 @@ private fun AutomationGuideCard(
                     runCatching {
                         context.startActivity(
                             Intent(Intent.ACTION_VIEW, Uri.parse(AutomationBroadcastSnippet.TASKER_GUIDE_URL)))
+                    }.onFailure {
+                        // A de-Googled fdroid install can have no https
+                        // viewer: the tap must not be a silent no-op.
+                        ToastCompat.show(
+                            context, context.getString(R.string.automation_guide_no_browser))
                     }
                 },
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(Icons.AutoMirrored.Filled.OpenInNew, contentDescription = null)
                 Spacer(Modifier.width(8.dp))

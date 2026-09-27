@@ -298,6 +298,7 @@
     <string name="automation_guide_body">İki broadcast: PROCESS_REQUEST bir metin istemini veya uygulamanın özel klasörüne hazırlanmış bir ses dosyasını transkribe eder (sdcard yolları okunamadığı için reddedilir), PRELOAD_MODEL ise modeli önceden yükler.</string>
     <string name="automation_guide_copy">Test komutunu kopyala</string>
     <string name="automation_guide_open">Tam kılavuz</string>
+    <string name="automation_guide_no_browser">Kılavuzu açmak için uygulama bulunamadı</string>
     <string name="remote_omnivoice_name">LAN devri (OmniVoice)</string>
     <string name="remote_offload_title">LAN devri (deneysel)</string>
     <string name="remote_offload_description">Uzun veya ağır transkripsiyonları Wi-Fi ağınızdaki kendi OmniVoice sunucunuza devreder. Etkinleştirildiğinde Model sekmesinden seçin.</string>

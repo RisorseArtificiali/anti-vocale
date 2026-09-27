@@ -295,6 +295,7 @@
     <string name="automation_guide_body">دو broadcast: PROCESS_REQUEST یک اعلان متنی یا پرونده صدایی آماده‌شده در پوشه خصوصی برنامه را رونویسی می‌کند (مسیرهای sdcard چون خوانا نیستند رد می‌شوند) و PRELOAD_MODEL مدل را از پیش بار می‌کند.</string>
     <string name="automation_guide_copy">کپی فرمان آزمایشی</string>
     <string name="automation_guide_open">راهنمای کامل</string>
+    <string name="automation_guide_no_browser">برای باز کردن راهنما برنامه‌ای یافت نشد</string>
     <string name="remote_omnivoice_name">واگذاری به LAN (OmniVoice)</string>
     <string name="remote_offload_title">واگذاری به LAN (آزمایشی)</string>
     <string name="remote_offload_description">رونویسی‌های طولانی یا سنگین را به سرور OmniVoice خودتان در شبکه Wi-Fi می‌سپارد. پس از فعال شدن، آن را در برگه Model انتخاب کنید.</string>

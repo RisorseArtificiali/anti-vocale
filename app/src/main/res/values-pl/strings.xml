@@ -302,6 +302,7 @@
     <string name="automation_guide_body">Dwa broadcasty: PROCESS_REQUEST transkrybuje zachętę tekstową albo plik audio przygotowany w prywatnym folderze aplikacji (ścieżki na karcie sd są odrzucane jako nieczytelne), a PRELOAD_MODEL wcześniej ładuje model.</string>
     <string name="automation_guide_copy">Skopiuj polecenie testowe</string>
     <string name="automation_guide_open">Pełny przewodnik</string>
+    <string name="automation_guide_no_browser">Nie znaleziono aplikacji do otwarcia przewodnika</string>
     <string name="remote_omnivoice_name">Odciążenie LAN (OmniVoice)</string>
     <string name="remote_offload_title">Odciążenie LAN (eksperymentalne)</string>
     <string name="remote_offload_description">Przekazuje długie lub wymagające transkrypcje własnemu serwerowi OmniVoice w Twojej sieci Wi-Fi. Po włączeniu wybierz go w zakładce Modele.</string>

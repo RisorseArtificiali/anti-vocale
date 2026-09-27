@@ -276,6 +276,7 @@
     <string name="automation_guide_body">दो ब्रॉडकास्ट: PROCESS_REQUEST टेक्स्ट प्रॉम्प्ट या ऐप के निजी फ़ोल्डर में तैयार ऑडियो फ़ाइल को ट्रांस्क्राइब करता है (sdcard पाथ पढ़े नहीं जा सकने की वजह से अस्वीकार होते हैं), और PRELOAD_MODEL मॉडल पहले से लोड कर देता है।</string>
     <string name="automation_guide_copy">टेस्ट कमांड कॉपी करें</string>
     <string name="automation_guide_open">पूरी गाइड</string>
+    <string name="automation_guide_no_browser">गाइड खोलने के लिए कोई ऐप नहीं मिली</string>
     <string name="remote_omnivoice_name">LAN ऑफ़लोड (OmniVoice)</string>
     <string name="remote_offload_title">LAN ऑफ़लोड (प्रायोगिक)</string>
     <string name="remote_offload_description">लंबी या भारी ट्रांसक्रिप्शन को अपने Wi-Fi नेटवर्क पर चलने वाले अपने OmniVoice सर्वर को भेजता है। सक्षम होने पर इसे Model टैब में चुनें।</string>

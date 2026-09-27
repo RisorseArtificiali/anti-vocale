@@ -277,6 +277,7 @@
     <string name="automation_guide_body">Zwei Broadcasts: PROCESS_REQUEST transkribiert einen Textprompt oder eine Audiodatei, die im privaten Ordner der App bereitliegt (sdcard-Pfade werden als unlesbar abgelehnt), und PRELOAD_MODEL lädt das Modell vorab.</string>
     <string name="automation_guide_copy">Testbefehl kopieren</string>
     <string name="automation_guide_open">Vollständige Anleitung</string>
+    <string name="automation_guide_no_browser">Keine App zum Öffnen der Anleitung gefunden</string>
     <string name="remote_omnivoice_name">LAN-Auslagerung (OmniVoice)</string>
     <string name="remote_offload_title">LAN-Auslagerung (experimentell)</string>
     <string name="remote_offload_description">Lagert lange oder schwere Transkriptionen an Ihren eigenen OmniVoice-Server in Ihrem WLAN aus. Wenn aktiviert, wählen Sie ihn im Modell-Tab aus.</string>

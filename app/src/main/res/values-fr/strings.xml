@@ -246,6 +246,7 @@
     <string name="automation_guide_body">Deux broadcasts : PROCESS_REQUEST transcrit une invite texte ou un fichier audio placé dans le dossier privé de l\'app (les chemins de la sdcard sont refusés car illisibles), et PRELOAD_MODEL précharge le modèle.</string>
     <string name="automation_guide_copy">Copier la commande de test</string>
     <string name="automation_guide_open">Guide complet</string>
+    <string name="automation_guide_no_browser">Aucune application trouvée pour ouvrir le guide</string>
     <string name="remote_omnivoice_name">Délestage LAN (OmniVoice)</string>
     <string name="remote_offload_title">Délestage LAN (expérimental)</string>
     <string name="remote_offload_description">Délègue les transcriptions longues ou lourdes à votre propre serveur OmniVoice sur votre réseau Wi-Fi. Une fois activé, sélectionnez-le dans l\'onglet Modèles.</string>

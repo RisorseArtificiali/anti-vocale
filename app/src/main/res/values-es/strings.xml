@@ -246,6 +246,7 @@
     <string name="automation_guide_body">Dos broadcasts: PROCESS_REQUEST transcribe un mensaje de texto o un archivo de audio preparado en la carpeta privada de la app (las rutas de la sdcard se rechazan por ilegibles), y PRELOAD_MODEL precarga el modelo.</string>
     <string name="automation_guide_copy">Copiar comando de prueba</string>
     <string name="automation_guide_open">Guía completa</string>
+    <string name="automation_guide_no_browser">No se encontró ninguna app para abrir la guía</string>
     <string name="remote_omnivoice_name">Delegación LAN (OmniVoice)</string>
     <string name="remote_offload_title">Delegación LAN (experimental)</string>
     <string name="remote_offload_description">Delega las transcripciones largas o pesadas en tu propio servidor OmniVoice de tu red Wi-Fi. Cuando esté activado, selecciónalo en la pestaña Modelos.</string>

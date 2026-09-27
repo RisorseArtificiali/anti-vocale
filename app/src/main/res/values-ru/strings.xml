@@ -286,6 +286,7 @@
     <string name="automation_guide_body">Два broadcast: PROCESS_REQUEST расшифровывает текстовую подсказку или аудиофайл, подготовленный в приватной папке приложения (пути sdcard отклоняются как нечитаемые), а PRELOAD_MODEL заранее загружает модель.</string>
     <string name="automation_guide_copy">Скопировать тестовую команду</string>
     <string name="automation_guide_open">Полное руководство</string>
+    <string name="automation_guide_no_browser">Не найдено приложение для открытия руководства</string>
     <string name="remote_omnivoice_name">Перенос на сервер LAN (OmniVoice)</string>
     <string name="remote_offload_title">Перенос на сервер LAN (экспериментально)</string>
     <string name="remote_offload_description">Передача длинных или тяжёлых расшифровок вашему собственному серверу OmniVoice в вашей сети Wi-Fi. После включения выберите его на вкладке «Модели».</string>
