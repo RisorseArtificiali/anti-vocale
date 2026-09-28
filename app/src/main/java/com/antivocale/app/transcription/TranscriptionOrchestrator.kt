@@ -42,7 +42,9 @@ import com.antivocale.app.ui.viewmodel.LogEntry
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.util.concurrent.atomic.AtomicInteger
 import javax.inject.Inject
@@ -2432,28 +2434,15 @@ class TranscriptionOrchestrator @Inject constructor(
         // the callback via the default implementation in TranscriptionBackend.
         if (chunkCount == 1) {
             val t0 = System.currentTimeMillis()
-            // TASK-602 F1: a single non-streaming decode (the common
-            // voice-message shape) has no callbacks; without a heartbeat the
-            // phase-2 boundary seed ages past the 15s staleness gate while
-            // the accurate model loads and decodes, and reopening mid-run
-            // offers recovery for a LIVE run. Re-saving the same text only
-            // refreshes the timestamp.
-            val seedHeartbeat = if (!emitInterim) coroutineScope.launch {
-                while (isActive) {
-                    delay(PARTIAL_SAVE_INTERVAL_MS)
-                    val seed = preferencesManager.partialTranscriptionText.first()
-                    if (!seed.isNullOrBlank()) {
-                        preferencesManager.savePartialTranscriptionState(seed)
-                    }
-                }
-            } else null
-            // TASK-692: the try spans the ladder too. The rung decodes are
-            // silent whole-chunk generations that can outlast the staleness
-            // gate, so a heartbeat cancelled after the first decode let a
-            // reopen mid-run offer crash recovery for a live run (TASK-602 F1
-            // class); one heartbeat now covers both decode stretches.
-            val (result, ladderResult, ladderRetried) = try {
-                val first = backend.transcribeAudioStreaming(
+            // TASK-602 F1: without a heartbeat the phase-2 boundary seed ages
+            // past the staleness gate while the accurate model loads and
+            // decodes, and reopening mid-run offers recovery for a LIVE run
+            // (see launchSeedHeartbeat). TASK-696: the span covers the FIRST
+            // decode only; the ladder rungs carry their own heartbeat inside
+            // recoverEmptyChunk.
+            val seedHeartbeat = if (!emitInterim) coroutineScope.launchSeedHeartbeat() else null
+            val result = try {
+                backend.transcribeAudioStreaming(
                     prompt = resolvedPrompt,
                     samples = preprocessingResult.chunks.first(),
                     sampleRate = preprocessingResult.sampleRate
@@ -2470,31 +2459,6 @@ class TranscriptionOrchestrator @Inject constructor(
                 )
                     }
                 }
-                val inferMs = System.currentTimeMillis() - t0
-                Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
-                fireCollector()
-                // TASK-664 (GH #119): the single-chunk arm. A one-chunk clip has
-                // no neighbors, so the ladder re-feeds with silence padding; a
-                // blank that survives it stays the honest total loss it was
-                // (the maintainer's scope note: a single-chunk voice note that
-                // decodes empty loses everything today). The rung decodes use the
-                // streaming variant, the one call streaming-family backends
-                // implement and the same call as the first pass; the rung's
-                // partial callback stays empty, so no interim is emitted for it.
-                val ladderRan = needsEmptyChunkRecovery(first)
-                val retried = if (ladderRan) 1 else null
-                val ladder = if (ladderRan) recoverEmptyChunk(
-                    chunk = preprocessingResult.chunks.first(),
-                    sampleRate = preprocessingResult.sampleRate,
-                    previousChunk = null,
-                    nextChunk = null,
-                ) { feed ->
-                    backend.transcribeAudioStreaming(
-                        prompt = resolvedPrompt,
-                        samples = feed,
-                        sampleRate = preprocessingResult.sampleRate) {}
-                } else null
-                Triple(first, ladder, retried)
             } finally {
                 // cancelAndJoin under NonCancellable: an in-flight seed write
                 // must settle before the run's outcome clears or replaces the
@@ -2502,6 +2466,30 @@ class TranscriptionOrchestrator @Inject constructor(
                 // (recovery offered for a finished run; TASK-692 review).
                 withContext(NonCancellable) { seedHeartbeat?.cancelAndJoin() }
             }
+            val inferMs = System.currentTimeMillis() - t0
+            Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
+            fireCollector()
+            // TASK-664 (GH #119): the single-chunk arm. A one-chunk clip has
+            // no neighbors, so the ladder re-feeds with silence padding; a
+            // blank that survives it stays the honest total loss it was
+            // (the maintainer's scope note: a single-chunk voice note that
+            // decodes empty loses everything today). The rung decodes use the
+            // streaming variant, the one call streaming-family backends
+            // implement and the same call as the first pass; the rung's
+            // partial callback stays empty, so no interim is emitted for it.
+            val ladderRan = needsEmptyChunkRecovery(result)
+            val ladderRetried = if (ladderRan) 1 else null
+            val ladderResult = if (ladderRan) recoverEmptyChunk(
+                chunk = preprocessingResult.chunks.first(),
+                sampleRate = preprocessingResult.sampleRate,
+                previousChunk = null,
+                nextChunk = null,
+            ) { feed ->
+                backend.transcribeAudioStreaming(
+                    prompt = resolvedPrompt,
+                    samples = feed,
+                    sampleRate = preprocessingResult.sampleRate) {}
+            } else null
             // Only a wedge escapes the ladder as a failure; a still-empty
             // chunk (null) falls through to the honest blank accounting.
             ladderResult?.exceptionOrNull()?.let { return Result.failure(it) }
@@ -3345,25 +3333,27 @@ class TranscriptionOrchestrator @Inject constructor(
             val held = heldEmpty ?: return
             heldEmpty = null
             retriedChunks++
-            when (val outcome = EmptyChunkRecovery.recover(
+            // TASK-696: routed through recoverEmptyChunk so this ladder runs
+            // under the seed heartbeat like every other arm (the direct
+            // EmptyChunkRecovery.recover call here was the fourth ladder site
+            // the wrapper-only grep missed).
+            val outcome = recoverEmptyChunk(
                 chunk = held.samples,
                 sampleRate = held.sampleRate,
                 previousChunk = held.previousSamples,
                 nextChunk = nextChunk,
             ) { feed ->
                 backend.transcribeAudio(samples = feed, sampleRate = held.sampleRate, prompt = resolvedPrompt)
-            }) {
-                is EmptyChunkRecovery.Outcome.Recovered -> {
-                    val tr = outcome.result
-                    deliverDecodedChunk(tr, held.index, held.startMs, held.endMs, interimSubText = null)
-                    minConfidence = aggregateConfidence(minConfidence, tr.confidence)
-                    if (detectedLang == null) detectedLang = tr.detectedLanguage
-                    Log.i(TAG, "Pipeline chunk ${held.index + 1} recovered by the empty-chunk ladder (${tr.text.trim().length} chars)")
-                    return
-                }
-                is EmptyChunkRecovery.Outcome.EngineWedged -> throw WedgeAbortException(outcome.error)
-                EmptyChunkRecovery.Outcome.StillEmpty -> Unit
             }
+            val tr = outcome?.getOrNull()
+            if (tr != null) {
+                deliverDecodedChunk(tr, held.index, held.startMs, held.endMs, interimSubText = null)
+                minConfidence = aggregateConfidence(minConfidence, tr.confidence)
+                if (detectedLang == null) detectedLang = tr.detectedLanguage
+                Log.i(TAG, "Pipeline chunk ${held.index + 1} recovered by the empty-chunk ladder (${tr.text.trim().length} chars)")
+                return
+            }
+            outcome?.exceptionOrNull()?.let { throw WedgeAbortException(it) }
             blankChunks++
             Log.i(TAG, "Pipeline chunk ${held.index + 1} stayed empty after the recovery ladder")
         }
@@ -3877,7 +3867,9 @@ class TranscriptionOrchestrator @Inject constructor(
         if (now - lastPartialSaveMs >= PARTIAL_SAVE_INTERVAL_MS) {
             lastPartialSaveMs = now
             try {
-                preferencesManager.savePartialTranscriptionState(accumulatedText)
+                seedSaveMutex.withLock {
+                    preferencesManager.savePartialTranscriptionState(accumulatedText)
+                }
             } catch (e: Exception) {
                 Log.w(TAG, "Failed to save partial transcription state", e)
             }
@@ -4102,6 +4094,54 @@ class TranscriptionOrchestrator @Inject constructor(
     // ---- Chunk Retry ----
 
     /**
+     * TASK-692/696: the seed heartbeat re-saves the partial-transcription seed
+     * every [PARTIAL_SAVE_INTERVAL_MS] so the recovery staleness gate sees a
+     * live run: re-saving the same text only refreshes the timestamp, and a
+     * silent decode stretch that outlasts the gate would otherwise let a
+     * reopen mid-run offer crash recovery for a LIVE run (TASK-602 F1 class).
+     * The isNullOrBlank guard makes it a no-op when nothing was seeded.
+     * Callers whose stretch emits its own partials skip it (the single-chunk
+     * first decode with emitInterim); the ladder rungs never emit, so they
+     * always run one. The read-then-save is not atomic against concurrent
+     * seed writes (the parallel arm's completion saves): an interleaved tick
+     * can momentarily re-save older text, timestamp-fresh; the next completion
+     * write self-heals it and the staleness gate is unaffected either way.
+     */
+    /**
+     * Serializes every crash-recovery seed write (the heartbeat's re-save and
+     * updateInterimResult's partial save): the heartbeat's read-then-save must
+     * be atomic against a concurrent completion save, or a tick that read
+     * older text could land after it and regress the seed with a fresh
+     * timestamp (code-review: crash before the end-of-run clear would then
+     * resume from the older text).
+     */
+    private val seedSaveMutex = Mutex()
+
+    private fun CoroutineScope.launchSeedHeartbeat(): Job = launch {
+        while (isActive) {
+            delay(PARTIAL_SAVE_INTERVAL_MS)
+            // A tick failure must never fail the covered stretch: the read
+            // and write are DataStore IO, and a throwing child of the ladder's
+            // plain builder scope would cancel the in-flight rung decode with
+            // it (the first-decode site runs on the injected supervisor scope,
+            // which contains the same failure; a skipped tick is harmless).
+            try {
+                seedSaveMutex.withLock {
+                    val seed = preferencesManager.partialTranscriptionText.first()
+                    if (!seed.isNullOrBlank()) {
+                        preferencesManager.savePartialTranscriptionState(seed)
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Throwable) {
+                // skip this tick, including Errors: the invariant is that a
+                // tick failure never fails the covered stretch
+            }
+        }
+    }
+
+    /**
      * TASK-664 (GH #119): the empty-chunk ladder at the per-chunk decode
      * sites, after their first decode returned a blank SUCCESS (blank
      * FAILURES keep the existing retryChunkWithGc arms). Null means the
@@ -4119,11 +4159,22 @@ class TranscriptionOrchestrator @Inject constructor(
         nextChunk: FloatArray?,
         decode: suspend (FloatArray) -> Result<TranscriptionResult>,
     ): Result<TranscriptionResult>? {
-        val outcome = EmptyChunkRecovery.recover(chunk, sampleRate, previousChunk, nextChunk, decode)
-        return when (outcome) {
-            is EmptyChunkRecovery.Outcome.Recovered -> Result.success(outcome.result)
-            is EmptyChunkRecovery.Outcome.EngineWedged -> Result.failure(outcome.error)
-            EmptyChunkRecovery.Outcome.StillEmpty -> null
+        // TASK-696: the rungs never emit partials, so every ladder runs under
+        // the seed heartbeat (see launchSeedHeartbeat). The builder scope dies
+        // with the ladder (structured cancellation); cancelAndJoin lets an
+        // in-flight seed write settle before the outcome clears the state.
+        return coroutineScope {
+            val rungHeartbeat = launchSeedHeartbeat()
+            try {
+                val outcome = EmptyChunkRecovery.recover(chunk, sampleRate, previousChunk, nextChunk, decode)
+                when (outcome) {
+                    is EmptyChunkRecovery.Outcome.Recovered -> Result.success(outcome.result)
+                    is EmptyChunkRecovery.Outcome.EngineWedged -> Result.failure(outcome.error)
+                    EmptyChunkRecovery.Outcome.StillEmpty -> null
+                }
+            } finally {
+                withContext(NonCancellable) { rungHeartbeat.cancelAndJoin() }
+            }
         }
     }
 

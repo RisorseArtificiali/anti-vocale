@@ -71,10 +71,10 @@ vname=$(grep -m1 'versionName = ' "$gradle" | grep -oE '"[^"]+"' | tr -d '"')
 [ -n "$base" ] && [ -n "$vname" ] || { fail "could not read versionName/versionCode from app/build.gradle.kts"; exit 1; }
 ok "version $vname (base code $base)"
 # A fallback literal is a second source of the base code (44-vs-46 drift, TASK-683.2);
-# the greps run against CODE lines only, so a comment quoting the old idiom neither
-# trips the ban nor satisfies the guard; the guard grep pins the derivation's shape:
-# rename either and update these WITH it.
-gradle_code=$(grep -v '^[[:space:]]*//' "$gradle")
+# the greps run against CODE lines only (line and block comments stripped), so a
+# comment quoting the old idiom neither trips the ban nor satisfies the guard; the
+# guard grep pins the derivation's shape: rename either and update these WITH it.
+gradle_code=$(sed -e 's://.*$::' -e 's:/\*.*\*/::' "$gradle" | grep -v -E '^[[:space:]]*(/\*|\*/|\*)')
 if grep -q 'defaultConfig.versionCode ?:' <<<"$gradle_code"; then
   fail "per-ABI versionCode carries a '?: N' fallback literal: remove it so the derivation cannot guess a stale base (TASK-683.2)"
 elif ! grep -q 'requireNotNull(defaultConfig.versionCode' <<<"$gradle_code" || ! grep -q 'baseVersionCode \* 10' <<<"$gradle_code"; then

@@ -1,6 +1,5 @@
 package com.antivocale.app.util
 
-import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
