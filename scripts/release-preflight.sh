@@ -71,10 +71,13 @@ vname=$(grep -m1 'versionName = ' "$gradle" | grep -oE '"[^"]+"' | tr -d '"')
 [ -n "$base" ] && [ -n "$vname" ] || { fail "could not read versionName/versionCode from app/build.gradle.kts"; exit 1; }
 ok "version $vname (base code $base)"
 # A fallback literal is a second source of the base code (44-vs-46 drift, TASK-683.2);
-# the guard grep pins the derivation's shape: rename either and update these WITH it.
-if grep -q 'defaultConfig.versionCode ?:' "$gradle"; then
+# the greps run against CODE lines only, so a comment quoting the old idiom neither
+# trips the ban nor satisfies the guard; the guard grep pins the derivation's shape:
+# rename either and update these WITH it.
+gradle_code=$(grep -v '^[[:space:]]*//' "$gradle")
+if grep -q 'defaultConfig.versionCode ?:' <<<"$gradle_code"; then
   fail "per-ABI versionCode carries a '?: N' fallback literal: remove it so the derivation cannot guess a stale base (TASK-683.2)"
-elif ! grep -q 'requireNotNull(defaultConfig.versionCode' "$gradle" || ! grep -q 'baseVersionCode \* 10' "$gradle"; then
+elif ! grep -q 'requireNotNull(defaultConfig.versionCode' <<<"$gradle_code" || ! grep -q 'baseVersionCode \* 10' <<<"$gradle_code"; then
   fail "per-ABI derivation lost the requireNotNull(defaultConfig.versionCode) guard or its use (baseVersionCode * 10): a null base would fail opaquely or a stale literal could return (TASK-683.2)"
 else
   ok "per-ABI codes derive from defaultConfig.versionCode (guard present, no fallback literal)"
@@ -105,7 +108,6 @@ done
 
 # --- 4. AAR version matches the fetch script ---------------------------------
 aar_ver=$(grep -m1 -oE 'SHERPA_ONNX_VERSION="[0-9.]+"' "$REPO_DIR/scripts/fetch-sherpa-aar.sh" | grep -oE '[0-9.]+')
-aar_actual=$(unzip -p "$REPO_DIR/app/libs/sherpa-onnx.aar classes.jar 2>/dev/null | true; echo")
 # The AAR does not carry a version string; check size-vs-known-jar is unreliable, so
 # verify the sha against the upstream release asset when online, else trust the fetch script.
 if [ "$OFFLINE" -eq 0 ] && [ -n "$aar_ver" ]; then
