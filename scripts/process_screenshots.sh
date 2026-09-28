@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Screenshot Processing Script for Play Store
 # Removes status bar (top) and navigation bar (bottom) from screenshots
 

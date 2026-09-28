@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # F-Droid build with optimistic artifact guard
 #

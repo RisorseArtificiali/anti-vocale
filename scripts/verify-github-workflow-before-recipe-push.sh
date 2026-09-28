@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 #
 # Pre-flight: Verify GitHub workflow completed before pushing recipe
 #
