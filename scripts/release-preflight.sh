@@ -110,7 +110,8 @@ aar_actual=$(unzip -p "$REPO_DIR/app/libs/sherpa-onnx.aar classes.jar 2>/dev/nul
 # verify the sha against the upstream release asset when online, else trust the fetch script.
 if [ "$OFFLINE" -eq 0 ] && [ -n "$aar_ver" ]; then
   expected_size=$(curl -sIL "https://github.com/k2-fsa/sherpa-onnx/releases/download/v$aar_ver/sherpa-onnx-$aar_ver.aar" | grep -i '^content-length' | tail -1 | tr -dc '0-9')
-  local_size=$(stat -c%s "$REPO_DIR/app/libs/sherpa-onnx.aar" 2>/dev/null || echo 0)
+  # GNU stat first, BSD (macOS) fallback: b75a583e's portability pair (TASK-694).
+  local_size=$(stat -c%s "$REPO_DIR/app/libs/sherpa-onnx.aar" 2>/dev/null || stat -f%z "$REPO_DIR/app/libs/sherpa-onnx.aar" 2>/dev/null || echo 0)
   [ -n "$expected_size" ] && [ "$expected_size" = "$local_size" ] \
     && ok "sherpa AAR on disk matches upstream v$aar_ver (size $local_size)" \
     || fail "app/libs/sherpa-onnx.aar (size $local_size) differs from upstream v$aar_ver (size ${expected_size:-unknown}): re-run scripts/fetch-sherpa-aar.sh"
