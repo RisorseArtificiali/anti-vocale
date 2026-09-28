@@ -43,6 +43,9 @@ fi
 # Product flavors + ABI splits produce per-flavor, per-ABI APKs:
 #   app/build/outputs/apk/<flavor>/debug/app-<flavor>-<abi>-debug.apk
 FLAVOR="${FLAVOR:-playStore}"
+# The gradle task name needs the flavor's first letter uppercased; ${FLAVOR^}
+# is bash-4-only and Apple's /bin/bash 3.2 chokes on it (TASK-697).
+FLAVOR_CAP="$(echo "${FLAVOR:0:1}" | tr 'a-z' 'A-Z')${FLAVOR:1}"
 APK_ABI="${APK_ABI:-arm64-v8a}"
 APK="$PROJECT_DIR/app/build/outputs/apk/$FLAVOR/debug/app-$FLAVOR-$APK_ABI-debug.apk"
 
@@ -51,7 +54,7 @@ PAIRING_CODE="${2:-${DEVICE_PAIRING_CODE:-}}"
 
 if [[ ! -f "$APK" ]]; then
     echo "APK not found at $APK"
-    echo "Run ./gradlew assemble${FLAVOR^}Debug first (or set FLAVOR/APK_ABI)"
+    echo "Run ./gradlew assemble${FLAVOR_CAP}Debug first (or set FLAVOR/APK_ABI)"
     exit 1
 fi
 
@@ -61,7 +64,7 @@ APK_AGE_SEC=$(( $(date +%s) - APK_MTIME ))
 if (( APK_AGE_SEC > 60 )); then
     AGE_MIN=$(( APK_AGE_SEC / 60 ))
     echo "APK is ${AGE_MIN}m old - rebuild first:"
-    echo "  ./gradlew assemble${FLAVOR^}Debug"
+    echo "  ./gradlew assemble${FLAVOR_CAP}Debug"
     exit 1
 fi
 
