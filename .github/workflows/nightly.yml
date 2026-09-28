@@ -198,7 +198,8 @@ jobs:
       # build, commit SHA, the untested-snapshot warning, the signature caveat,
       # and the explicit not-for-F-Droid note.
       - name: Publish nightly pre-release
-        uses: softprops/action-gh-release@v2
+        # TASK-683.9: v3 is the node24 runtime line (runtime move only).
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: nightly
           name: Nightly (${{ steps.date.outputs.date }})

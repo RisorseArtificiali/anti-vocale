@@ -215,7 +215,8 @@ jobs:
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
-        uses: actions/upload-artifact@v4
+        # TASK-683.9: node24-native major (see the test-job comment).
+        uses: actions/upload-artifact@v6
         with:
           name: app-release-aab
           path: app/build/outputs/bundle/playStoreRelease/app-playStore-release.aab
@@ -225,7 +226,7 @@ jobs:
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: release-notes
           path: whats-new/
@@ -289,7 +290,8 @@ jobs:
 
       - name: Attach APKs to GitHub Release
         if: env.TAG_ANCHORED == 'true'
-        uses: softprops/action-gh-release@v2
+        # TASK-683.9: v3 is the node24 runtime line; v3.0.0 is a runtime move only, no input changes.
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag || '' }}
           files: |
@@ -303,7 +305,7 @@ jobs:
       # workflow artifacts). Same trigger conditions as the attach step above.
       - name: Attach tester APKs to GitHub Release
         if: env.TAG_ANCHORED == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag || '' }}
           files: |
@@ -357,6 +359,8 @@ jobs:
           path: whats-new
 
       - name: Upload AAB to Play Store
+        # TASK-683.9: the v1 line is node24-native since v1.1.4 (action.yml
+        # runs.using at the v1 tag, checked 2026-09-28); nothing to defer here.
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
@@ -798,7 +802,7 @@ jobs:
       # nonsense "main" tag. Build-first uploads artifacts below instead.
       - name: Attach signed per-ABI reference APKs to GitHub Release
         if: env.TAG_ANCHORED == 'true'
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           files: |
