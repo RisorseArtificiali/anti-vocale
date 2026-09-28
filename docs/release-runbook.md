@@ -470,9 +470,11 @@ MANDATORY, not advisory (2026-09-26 lesson): both of that day's release
 failures were preflight-detectable, and preflight had not been run (the
 fallback-literal check was failing on the tree through two shipped releases).
 A FAIL blocks the dispatch or the publish, no exceptions; the script's exit
-code is the verdict. Until the entrypoints chain it themselves (TASK-683.1),
-running it is a manual hard step: no dispatch without a green preflight in
-the same sitting. Note the notes-extraction check legitimately fails on
+code is the verdict. The entrypoints chain it (TASK-683.1, commit f6c232ed):
+release-create.sh runs it as guard 0 and release-fdroid-references.sh prepare
+as phase 0, both refusing on a nonzero exit; a manual run in the same sitting
+remains the hard step only for dispatches issued outside those two scripts.
+Note the notes-extraction check legitimately fails on
 post-release main (the tree is at the next-version SNAPSHOT with no notes
 section yet); at bump time it must be green.
 
@@ -542,12 +544,13 @@ literal and on a missing requireNotNull guard on the base code (TASK-683.2).
   release-event run executed sanity with needs [test, build] and went green
   at 17:14 while the ~3h signing job was still running; until the cut
   procedure cherry-picks workflow-gate commits onto the release branch
-  (TASK-683.5), assume a side-branch cut runs the OLD gates. KNOWN LIMITATION
-  until TASK-683.3 lands: sanity does NOT assert the Build or Publish job
-  results; on 2026-09-26 it showed green beside a failed Publish
-  (run 36262228446) and beside a failed Build with Publish skipped
-  (run 36257611232). Green sanity means "the checks sanity runs passed",
-  never "every job passed": read the run's job list before promoting.
+  (TASK-683.5), assume a side-branch cut runs the OLD gates. The Build and
+  Publish result assertions shipped on main (TASK-683.3, commit f6c232ed):
+  a workflow containing that commit fails loudly beside a failed Build or
+  Publish, and workflows frozen before it (the side-branch caveat above)
+  still lack them. Green sanity always means "the checks sanity runs
+  passed", never "every job passed": read the run's job list before
+  promoting.
 
 ## Play Console manual checklist (per release)
 
