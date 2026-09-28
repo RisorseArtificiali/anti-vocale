@@ -58,6 +58,20 @@ class TestSpiConformanceTest {
         )
     }
 
+    /** The doc's op enum line must name every op in OPS plus the
+     *  receiver-side nav: an op that dispatches fine but falls out of the
+     *  doc fails here, the same drift class the set-keys test deletes. */
+    @Test
+    fun `doc op enum line names every op and nav`() {
+        val docFile = File(repoRoot(), "docs/testing-spi.md")
+        val docLine = docFile.readLines().firstOrNull { it.trimStart().startsWith("op ") }
+            ?: error("op enum line not found in " + docFile.absolutePath)
+        val missing = (TestSpiOps.OPS + "nav").filter { !docLine.contains(it) }
+        assertTrue(
+            "docs/testing-spi.md op enum line is missing ops: $missing",
+            missing.isEmpty())
+    }
+
     /** Every Flow getter on [PreferencesManager] must surface in op=get
      *  (top-level or via an explicit exclusion), and every get key must map
      *  back: the same drift class that motivated the set-side tables. */

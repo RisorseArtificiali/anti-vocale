@@ -62,6 +62,7 @@ internal class TestSpiOps(
             OP_IMPORT -> importModel(url, family, modelType)
             OP_NOTIFY_MEMORY_ERROR -> notifyMemoryError()
             OP_CLIPBOARD -> clipboard()
+            OP_NOTIFICATIONS -> notifications()
             OP_HELP -> help()
             else -> help(error = if (op == null) null else "unknown op '$op'")
         }
@@ -470,7 +471,7 @@ internal class TestSpiOps(
      * without engineering a real out-of-memory failure. Debug receiver only.
      */
     private fun notifyMemoryError(): String {
-        val ctx = appContext ?: error("notify_memory_error requires a Context (debug receiver only)")
+        val ctx = requireContext("notify_memory_error")
         val factory = com.antivocale.app.service.ResultNotificationFactory(ctx)
         val message = ctx.getString(
             com.antivocale.app.R.string.model_load_low_memory, "1.2GB", "4.8GB")
@@ -499,7 +500,7 @@ internal class TestSpiOps(
      * fakes.
      */
     private fun clipboard(): String {
-        val ctx = appContext ?: error("clipboard requires a Context (debug receiver only)")
+        val ctx = requireContext("clipboard")
         val clip = ctx.getSystemService(android.content.ClipboardManager::class.java).primaryClip
         val text = clip?.getItemAt(0)?.coerceToText(ctx)?.toString()
         return JSONObject()
@@ -514,6 +515,52 @@ internal class TestSpiOps(
                 if (clip == null) "no clip visible: either the clipboard is empty or the read was denied (app not focused)" else JSONObject.NULL)
             .toString()
     }
+
+    /**
+     * TASK-684/688 trial tool: lists THIS app's active notifications (id,
+     * channel, title, text, bigText, action TITLES). Reading them from
+     * the shade is a UI-driving trap (DND intercepts, heads-ups reorder,
+     * the tree renders inconsistently); NotificationManager
+     * .getActiveNotifications returns our own package's records with no
+     * permission, so trials read notification CONTENT here and reserve
+     * the shade for real visual checks. The Realme 3-button cap makes
+     * action COMPOSITION the load-bearing fact, hence titles not a
+     * count; text and bigText are capped per item (the receiver ships
+     * the JSON over binder, the TASK-506 wall) and the collapsed
+     * EXTRA_TEXT of a paged result notification is only one page, so the
+     * full form rides alongside from EXTRA_BIG_TEXT.
+     */
+    private fun notifications(): String {
+        val ctx = requireContext("notifications")
+        val array = JSONArray()
+        ctx.getSystemService(android.app.NotificationManager::class.java)
+            .activeNotifications
+            .sortedBy { it.id }
+            .forEach { status ->
+                val extras = status.notification.extras
+                fun capped(key: String, value: CharSequence?): Any {
+                    val s = value?.toString() ?: return JSONObject.NULL
+                    return if (s.length <= NOTIFICATION_TEXT_CAP) s
+                    else JSONObject().put("truncated", true).put(key, s.take(NOTIFICATION_TEXT_CAP))
+                }
+                array.put(
+                    JSONObject()
+                        .put("id", status.id)
+                        .put("channel", status.notification.channelId ?: JSONObject.NULL)
+                        .put(
+                            "actions",
+                            JSONArray(
+                                status.notification.actions.orEmpty().map { it.title?.toString() ?: "" }))
+                        .put("title", extras.getCharSequence(android.app.Notification.EXTRA_TITLE)?.toString() ?: JSONObject.NULL)
+                        .put("text", capped("text", extras.getCharSequence(android.app.Notification.EXTRA_TEXT)))
+                        .put("bigText", capped("bigText", extras.getCharSequence(android.app.Notification.EXTRA_BIG_TEXT))))
+            }
+        return JSONObject().put("op", OP_NOTIFICATIONS).put("count", array.length()).put("items", array).toString()
+    }
+
+    /** One guard for the context-requiring ops (message and rationale live here once). */
+    private fun requireContext(op: String): android.content.Context =
+        appContext ?: error("$op requires a Context (debug receiver only)")
 
     private fun help(error: String? = null): String = JSONObject()
         .apply { error?.let { put("error", it) } }
@@ -546,6 +593,7 @@ internal class TestSpiOps(
         const val OP_IMPORT = "import"
         const val OP_NOTIFY_MEMORY_ERROR = "notify_memory_error"
         const val OP_CLIPBOARD = "clipboard"
+        const val OP_NOTIFICATIONS = "notifications"
         const val OP_HELP = "help"
 
         /**
@@ -554,10 +602,13 @@ internal class TestSpiOps(
          * is deliberately absent: it is intercepted receiver-side before
          * handle() runs, so it lives in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
+
+        /** notifications op per-item cap, same binder rationale; generous for a paged transcript. */
+        const val NOTIFICATION_TEXT_CAP = 64 * 1024
 
         /** TASK-276: the single source is PunctuationPolicy.MODE_PREFS; the SPI only adds write-time strictness. */
         val PUNCTUATION_MODES = PunctuationPolicy.MODE_PREFS

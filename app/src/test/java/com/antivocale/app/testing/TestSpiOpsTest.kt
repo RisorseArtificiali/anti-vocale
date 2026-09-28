@@ -429,10 +429,20 @@ class TestSpiOpsTest {
         // help is a known op: it must NOT carry the unknown-op error (device
         // verification 2026-09-03 caught the dispatch bug this pins).
         assertFalse(json.has("error"))
-        assertEquals(listOf("get", "set", "records", "import", "notify_memory_error", "clipboard", "help"), json.getJSONArray("ops").optStringList())
+        assertEquals(listOf("get", "set", "records", "import", "notify_memory_error", "clipboard", "notifications", "help"), json.getJSONArray("ops").optStringList())
         assertEquals(ops.SET_KEYS, json.getJSONArray("setKeys").optStringList())
         assertTrue(json.getString("usage").contains("com.antivocale.app.TEST_SPI"))
         assertTrue(json.getString("transcription").contains("com.antivocale.app.PROCESS_REQUEST"))
+    }
+
+    @Test
+    fun `notifications op answers with the context-required error under the unit fakes`() = runTest {
+        // Same rationale as the clipboard op: the happy path needs a live
+        // NotificationManager, so it stays a device-trial concern; this
+        // pins dispatch and loud failure.
+        val json = JSONObject(ops.handle(TestSpiOps.OP_NOTIFICATIONS))
+        assertEquals("notifications", json.getString("op"))
+        assertTrue(json.getString("error").contains("Context"))
     }
 
     @Test

@@ -18,7 +18,7 @@ This SPI is deliberately separate from the production exported receivers (`PROCE
 
 ```text
 Action: com.antivocale.app.TEST_SPI   (string extras, one op per broadcast)
-  op     nav | get | set | records | import | notify_memory_error | clipboard | help   (missing or unknown op answers with help; nav is receiver-side, TASK-486)
+  op     nav | get | set | records | import | notify_memory_error | clipboard | notifications | help   (missing or unknown op answers with help; nav is receiver-side, TASK-486)
   key    one of the set keys below    (op=set)
   value  the new value                (op=set)
   entry  catalog entry id             (op=set, only for key=sherpa_path)
@@ -47,6 +47,7 @@ capped at 64K chars (`textTruncated: true`).
 | `records` | none | JSON array of the imported external models; each element is the record's persisted JSON plus the derived `backendId`. All records are listed, including dangling ones whose directory no longer exists, because dangling state is precisely what a debugging session needs to see |
 | `notify_memory_error` | none | JSON `{"op":"notify_memory_error","posted":<notificationId>}`; posts the production memory-failure notification (TASK-625 trial tool, see the paragraph above) |
 | `clipboard` | none | JSON `{"op":"clipboard","label":<string or null>,"text":<string or null>}` reading the primary clip (see the paragraph above) |
+| `notifications` | none | JSON `{"op":"notifications","count":N,"items":[{id,channel,actions,title,text}]}` listing THIS app's active notifications (read content here, reserve the shade for visual checks) |
 | `help` | none | the op list, the set keys, the usage line, and the `PROCESS_REQUEST` pointer |
 
 Set keys and value formats:
