@@ -1811,10 +1811,6 @@ fun SettingsTab(
             // its evidence live in AutomationBroadcastSnippet's KDoc).
             val automationGuideTitle = stringResource(R.string.automation_guide_title)
             val automationGuideDescription = stringResource(R.string.automation_guide_description)
-            val automationGuideBody = stringResource(R.string.automation_guide_body)
-            // Simplify edge F1 (TASK-275): the gate consumes the SAME list
-            // the count consumes. TASK-689 generalized the pattern to every
-            // card; this entry's vocabulary is still AUTOMATION_GUIDE_SEARCH_RES.
             SearchFilterRow(searchQuery, SettingsSearchId.AUTOMATION_GUIDE, searchState) {
                 AutomationGuideCard(
                     title = automationGuideTitle,
@@ -2779,11 +2775,6 @@ private fun PunctuationPromptCard(
  * The count line and the per-card gate must read the same string set or a
  * query matching only one side reports a ghost card (review F1).
  */
-private val AUTOMATION_GUIDE_SEARCH_RES = listOf(
-    R.string.automation_guide_title,
-    R.string.automation_guide_description,
-    R.string.automation_guide_body,
-)
 
 /**
  * TASK-689: the sections of the Settings tab the live search filters. The
@@ -3046,7 +3037,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     // both the count and this card's gate structurally.
     SettingsSearchCard(
         SettingsSearchId.AUTOMATION_GUIDE, SettingsSearchSection.ADVANCED,
-        AUTOMATION_GUIDE_SEARCH_RES,
+        listOf(
+            R.string.automation_guide_title,
+            R.string.automation_guide_description,
+            R.string.automation_guide_body,
+        ),
     ),
     // TASK-681: the toggle card renders unconditionally; its fields ride
     // the same entry.
