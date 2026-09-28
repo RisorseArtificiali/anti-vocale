@@ -532,6 +532,9 @@
     <string name="vad_description">Entfernt stille Abschnitte aus Sprachnachrichten vor der Transkription. Reduziert die Verarbeitungszeit und verbessert die Genauigkeit.</string>
     <string name="progressive_title">Progressive Anzeige</string>
     <string name="progressive_description">Zeigt den Text schon während der Transkription an, statt auf das Ende der Aufnahme zu warten.</string>
+    <string name="early_preview_title">Frühe Vorschau</string>
+    <string name="early_preview_description">Zeigt schon einen ersten groben Text, während eine lange Aufnahme noch dekodiert wird. Er wird ersetzt, sobald das erste vollständige Segment fertig ist.</string>
+    <string name="early_preview_badge">Vorschau</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Standard-Prompt</string>

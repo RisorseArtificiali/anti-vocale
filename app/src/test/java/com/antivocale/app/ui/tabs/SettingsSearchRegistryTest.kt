@@ -77,7 +77,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.REFINEMENT,
                 SettingsSearchId.SPEAKER_LABELS,
                 SettingsSearchId.VAD,
-                SettingsSearchId.PROGRESSIVE,
+                SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.PUNCTUATION_MODE,
                 SettingsSearchId.SUMMARIZE,
                 SettingsSearchId.SIGNATURE,
@@ -98,7 +98,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.REFINEMENT,
                 SettingsSearchId.SPEAKER_LABELS,
                 SettingsSearchId.VAD,
-                SettingsSearchId.PROGRESSIVE,
+                SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.SIGNATURE,
                 SettingsSearchId.KEEP_ALIVE_TIMEOUT,
             ),
@@ -123,7 +123,7 @@ class SettingsSearchRegistryTest {
                 // SPEAKER_IDENTITIES is absent: speakerIdEnabled defaults
                 // false in this state (its own flip test covers it).
                 SettingsSearchId.VAD,
-                SettingsSearchId.PROGRESSIVE,
+                SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.SUMMARIZE,
                 SettingsSearchId.SIGNATURE,
                 // SUMMARY_PROMPT is absent too: summarizeOn defaults false

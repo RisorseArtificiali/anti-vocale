@@ -553,6 +553,9 @@
     <string name="vad_description">Удалять беззвучные участки из голосовых сообщений перед распознаванием. Сокращает время обработки и повышает точность.</string>
     <string name="progressive_title">Прогрессивный показ</string>
     <string name="progressive_description">Показывать текст по мере распознавания, не дожидаясь окончания записи</string>
+    <string name="early_preview_title">Ранний предпросмотр</string>
+    <string name="early_preview_description">Показывает первый черновой текст, пока остальная часть длинной записи ещё расшифровывается. Он заменяется, когда завершится первый полный сегмент.</string>
+    <string name="early_preview_badge">Предпросмотр</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Запрос по умолчанию</string>

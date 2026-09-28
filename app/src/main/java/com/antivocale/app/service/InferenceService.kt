@@ -494,6 +494,23 @@ class InferenceService : Service(), TranscriptionListener {
         }
     }
 
+    /**
+     * TASK-186: the early-preview interim. Renders the run's EXISTING
+     * in-progress notification (the same surface the interim path updates)
+     * with the preview badge, in the legacy non-chunk-nav shape: the preview
+     * is not a completed chunk, so ChunkNavState stays untouched and no new
+     * notification id is allocated (the reserved-range contract). The real
+     * chunk 0 delivery replaces this render moments later.
+     */
+    override fun onPreviewResult(chunkText: String) {
+        updateNotification(
+            contentText = chunkText,
+            bigText = chunkText,
+            subText = getString(R.string.early_preview_badge),
+            startTimeMillis = transcriptionStartTime
+        )
+    }
+
     private fun handleChunkNavAction(action: String) {
         val state = chunkNavState ?: return
         when (action) {

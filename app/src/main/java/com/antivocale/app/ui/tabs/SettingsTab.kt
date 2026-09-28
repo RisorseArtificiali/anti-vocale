@@ -128,6 +128,7 @@ fun SettingsTab(
     val transcriptExportFormat by viewModel.transcriptExportFormat.collectAsState()
     val vadEnabled by viewModel.vadEnabled.collectAsState()
     val progressiveEnabled by viewModel.progressiveTranscription.collectAsState()
+    val earlyPreviewEnabled by viewModel.earlyPreviewEnabled.collectAsState()
     val threadCount by viewModel.threadCount.collectAsState()
     val inferenceProvider by viewModel.inferenceProvider.collectAsState()
     val autoDetectedThreads = viewModel.autoDetectedThreadCount
@@ -787,6 +788,22 @@ fun SettingsTab(
                     checked = progressiveEnabled,
                     onCheckedChange = { enabled ->
                         viewModel.saveProgressiveTranscription(enabled)
+                    }
+                )
+            }
+
+            // TASK-186: early preview of the pipeline's first chunk. Default
+            // off (the extra head decode costs battery on every long clip).
+            val earlyPreviewTitle = stringResource(R.string.early_preview_title)
+            val earlyPreviewDescription = stringResource(R.string.early_preview_description)
+            SearchFilterRow(searchQuery, SettingsSearchId.EARLY_PREVIEW, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Preview,
+                    title = earlyPreviewTitle,
+                    description = earlyPreviewDescription,
+                    checked = earlyPreviewEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveEarlyPreviewEnabled(enabled)
                     }
                 )
             }
@@ -2867,7 +2884,7 @@ internal enum class SettingsSearchSection { TRANSCRIPTION, APPEARANCE, ADVANCED,
 internal enum class SettingsSearchId {
     // Transcription
     MODEL_STATUS, ACTIVE_MODEL, TRANSCRIPTION_LANGUAGE, AUTO_COPY, EXPORT_SETTINGS,
-    REFINEMENT, SPEAKER_LABELS, SPEAKER_IDENTITIES, VAD, PROGRESSIVE,
+    REFINEMENT, SPEAKER_LABELS, SPEAKER_IDENTITIES, VAD, PROGRESSIVE, EARLY_PREVIEW,
     PUNCTUATION_MODE, PUNCTUATION_PROMPT, SUMMARIZE, SUMMARY_PROMPT, SIGNATURE,
     DEFAULT_PROMPT, KEEP_ALIVE_TIMEOUT,
     // Appearance
@@ -2990,6 +3007,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.PROGRESSIVE, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.progressive_title, R.string.progressive_description),
+    ),
+    // TASK-186: the early-preview toggle, right after its sibling.
+    SettingsSearchCard(
+        SettingsSearchId.EARLY_PREVIEW, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.early_preview_title, R.string.early_preview_description),
     ),
     SettingsSearchCard(
         SettingsSearchId.PUNCTUATION_MODE, SettingsSearchSection.TRANSCRIPTION,

@@ -573,6 +573,9 @@
     <string name="vad_description">Видаляє тихі частини з голосових повідомлень перед розшифровкою. Зменшує час обробки та покращує точність.</string>
     <string name="progressive_title">Поступове відображення</string>
     <string name="progressive_description">Показує текст розшифровки після завершення кожного сегмента мовлення, замість очікування повного результату.</string>
+    <string name="early_preview_title">Ранній перегляд</string>
+    <string name="early_preview_description">Показує перший чернетковий текст, поки решта довгого кліпу ще розшифровується. Його буде замінено, коли завершиться перший повний сегмент.</string>
+    <string name="early_preview_badge">Попередній перегляд</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Типовий запит розшифровки</string>

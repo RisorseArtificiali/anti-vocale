@@ -577,6 +577,9 @@
     <string name="vad_description">Remove silent portions from voice messages before transcription. Reduces processing time and improves accuracy.</string>
     <string name="progressive_title">Progressive Display</string>
     <string name="progressive_description">Show text as transcription progresses instead of waiting for the recording to finish.</string>
+    <string name="early_preview_title">Early Preview</string>
+    <string name="early_preview_description">Show a rough first text while a long clip is still decoding. It is replaced when the full first segment finishes.</string>
+    <string name="early_preview_badge">Preview</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Default Prompt</string>

@@ -563,6 +563,9 @@
     <string name="vad_description">Metin çıkarmadan önce sesli mesajlardaki sessiz kısımları kaldırır. İşleme süresini azaltır ve doğruluğu artırır.</string>
     <string name="progressive_title">Aşamalı Görüntüleme</string>
     <string name="progressive_description">Kaydın bitmesini beklemeden, metin çıkarma ilerledikçe metni gösterir.</string>
+    <string name="early_preview_title">Erken Önizleme</string>
+    <string name="early_preview_description">Uzun bir kayıt çözümlenirken ilk kaba metni gösterir. İlk tam segment bittiğinde yerini kesin metne bırakır.</string>
+    <string name="early_preview_badge">Önizleme</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Varsayılan Komut</string>

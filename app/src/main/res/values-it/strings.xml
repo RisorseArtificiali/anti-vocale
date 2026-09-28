@@ -748,6 +748,9 @@
     <!-- Progressive Display -->
     <string name="progressive_title">Visualizzazione Progressiva</string>
     <string name="progressive_description">Mostra il testo mentre la trascrizione procede, senza attendere la fine della registrazione.</string>
+    <string name="early_preview_title">Anteprima Anticipata</string>
+    <string name="early_preview_description">Mostra un primo testo approssimativo mentre il resto di una clip lunga viene ancora decodificato. Viene sostituito quando termina il primo segmento completo.</string>
+    <string name="early_preview_badge">Anteprima</string>
     <string name="progressive_initial">Preparazione del testo; risultato finale al completamento</string>
     <string name="processing_segment_progress">Segmento %1$d di %2$d…</string>
 

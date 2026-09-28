@@ -479,6 +479,9 @@
     <string name="vad_description">Remove trechos de silêncio das mensagens de voz antes da transcrição. Reduz o tempo de processamento e melhora a precisão.</string>
     <string name="progressive_title">Exibição progressiva</string>
     <string name="progressive_description">Mostra o texto conforme a transcrição avança, sem esperar o fim da gravação.</string>
+    <string name="early_preview_title">Prévia antecipada</string>
+    <string name="early_preview_description">Mostra um primeiro texto aproximado enquanto o resto de um clipe longo ainda está sendo decodificado. Ele é substituído quando o primeiro segmento completo termina.</string>
+    <string name="early_preview_badge">Prévia</string>
     <string name="default_prompt_title">Prompt padrão</string>
     <string name="default_prompt_description">Instrução dada ao modelo durante a transcrição. Vazio usa o prompt integrado.</string>
     <string name="default_prompt_placeholder">ex. Transcreva este discurso:</string>

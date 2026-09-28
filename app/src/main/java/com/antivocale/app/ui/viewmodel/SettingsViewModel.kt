@@ -246,6 +246,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION
         )
 
+    // TASK-186: early preview of the pipeline's first chunk (default off).
+    val earlyPreviewEnabled: StateFlow<Boolean> = preferencesManager.earlyPreviewEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_EARLY_PREVIEW
+        )
+
     // Inference thread count
     val threadCount: StateFlow<Int> = preferencesManager.threadCount
         .stateIn(
@@ -891,6 +899,15 @@ class SettingsViewModel @Inject constructor(
     fun saveProgressiveTranscription(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveProgressiveTranscription(enabled)
+        }
+    }
+
+    /**
+     * TASK-186: saves the early-preview preference.
+     */
+    fun saveEarlyPreviewEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveEarlyPreviewEnabled(enabled)
         }
     }
 

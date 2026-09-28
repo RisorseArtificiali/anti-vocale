@@ -748,6 +748,9 @@
     <!-- Progressive Display -->
     <string name="progressive_title">نمایش تدریجی</string>
     <string name="progressive_description">متن را همزمان با پیشرفت رونویسی نشان می‌دهد، بدون انتظار برای پایان ضبط.</string>
+    <string name="early_preview_title">پیش‌نمایش زودهنگام</string>
+    <string name="early_preview_description">اولین متن تقریبی را همزمان با رمزگشایی کلیپ طولانی نشان می‌دهد؛ با پایان بخش اول کامل، جای خود را به نسخه دقیق می‌دهد.</string>
+    <string name="early_preview_badge">پیش‌نمایش</string>
     <string name="progressive_initial">در حال آماده‌سازی متن؛ نتیجه نهایی در پایان</string>
     <string name="processing_segment_progress">قطعه %1$d از %2$d…</string>
 

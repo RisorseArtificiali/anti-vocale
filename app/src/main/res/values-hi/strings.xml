@@ -531,6 +531,9 @@
     <string name="vad_description">ट्रांसक्रिप्शन से पहले वॉइस मैसेज के ख़ामोश हिस्से हटाएं। प्रोसेसिंग समय घटता है और सटीकता बेहतर होती है।</string>
     <string name="progressive_title">प्रगतिशील डिस्प्ले</string>
     <string name="progressive_description">रिकॉर्डिंग खत्म होने का इंतज़ार किए बिना, ट्रांसक्रिप्शन के साथ-साथ टेक्स्ट दिखाएं।</string>
+    <string name="early_preview_title">शीघ्र पूर्वावलोकन</string>
+    <string name="early_preview_description">लंबी क्लिप डिकोड होते समय पहला अस्थायी टेक्स्ट दिखाता है। पहला पूरा सेगमेंट खत्म होने पर यह बदल दिया जाता है।</string>
+    <string name="early_preview_badge">पूर्वावलोकन</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">डिफ़ॉल्ट प्रॉम्प्ट</string>

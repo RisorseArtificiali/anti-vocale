@@ -564,6 +564,9 @@
     <string name="vad_description">מסיר קטעי שקט מהודעות קוליות לפני התמלול. מקצר את זמן העיבוד ומשפר את הדיוק.</string>
     <string name="progressive_title">הצגה מדורגת</string>
     <string name="progressive_description">מציג טקסט בזמן שהתמלול מתקדם, במקום לחכות שההקלטה תסתיים.</string>
+    <string name="early_preview_title">תצוגה מקדימה מוקדמת</string>
+    <string name="early_preview_description">מציג טקסט ראשוני גס בזמן שקליפ ארוך עדיין מפוענח. הוא מוחלף כשמסתיים המקטע הראשון המלא.</string>
+    <string name="early_preview_badge">תצוגה מקדימה</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">פרומפט ברירת מחדל</string>
