@@ -2265,9 +2265,11 @@ class TranscriptionOrchestrator @Inject constructor(
         val providerPref = preferencesManager.inferenceProvider.first()
         val resolvedProvider = InferenceProvider.resolve(providerPref)
         val progressiveEnabled = preferencesManager.progressiveTranscription.first()
-        // TASK-186: early preview rides the pipelined path only (the read
-        // sits with the sibling one-shot reads; the pipeline consumes it).
-        val earlyPreviewEnabled = preferencesManager.earlyPreviewEnabled.first()
+        // TASK-186: early preview rides the pipelined path only, and only
+        // when this run shows interims at all; one conjunction decided here,
+        // the collector re-checks just the chunk-0 geometry.
+        val earlyPreviewActive =
+            preferencesManager.earlyPreviewEnabled.first() && emitInterim && progressiveEnabled
 
         // Resolve prompt: request → settings → fallback. TASK-370: multi-chunk
         // routing lives in ChunkPromptPolicy (plain instruction per chunk,
@@ -2385,7 +2387,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 listener = listener,
                 prompt = promptPlan.perChunk,
                 progressiveEnabled = progressiveEnabled,
-                earlyPreviewEnabled = earlyPreviewEnabled,
+                earlyPreviewActive = earlyPreviewActive,
                 emitInterim = emitInterim,
                 // GH #83: the pipeline is the DEFAULT contiguous path
                 // (Parakeet); without this the collector only reached
@@ -3269,8 +3271,9 @@ class TranscriptionOrchestrator @Inject constructor(
         listener: TranscriptionListener,
         prompt: String = "",
         progressiveEnabled: Boolean = false,
-        /** TASK-186: surface an early preview of chunk 0's head before the full chunk decodes. */
-        earlyPreviewEnabled: Boolean = false,
+        /** TASK-186: the conjoined preview gate (flag plus interim emission);
+         *  the collector re-checks only the chunk-0 geometry. */
+        earlyPreviewActive: Boolean = false,
         emitInterim: Boolean = true,
         /** GH #83: when non-null, invoked after the stream completes with the
          *  decoded chunk list. The pipeline's stream never strips silence
@@ -3469,35 +3472,37 @@ class TranscriptionOrchestrator @Inject constructor(
                         // a chunk and nothing below renumbers. The real
                         // chunk 0 delivery replaces every surface the
                         // preview touches.
-                        if (chunk.chunkIndex == 0 && emitInterim && progressiveEnabled) {
-                            val previewSeconds = EarlyPreviewPolicy.previewSeconds(
-                                enabled = earlyPreviewEnabled,
+                        if (chunk.chunkIndex == 0) {
+                            EarlyPreviewPolicy.previewSeconds(
+                                enabled = earlyPreviewActive,
                                 pipelineChunkSeconds = maxChunkDurationSeconds,
                                 expectedChunkCount = expectedChunkCount,
                                 chunk0Samples = chunk.samples.size,
                                 chunk0SampleRate = chunk.sampleRate,
-                            )
-                            if (previewSeconds != null) {
+                            )?.let { previewSeconds ->
                                 val headSamples = chunk.sampleRate * previewSeconds
-                                runCatching {
-                                    withSeedHeartbeat {
-                                        backend.transcribeAudio(
-                                            samples = chunk.samples.copyOf(headSamples),
-                                            sampleRate = chunk.sampleRate,
-                                            prompt = resolvedPrompt
-                                        )
-                                    }
-                                }.onFailure {
+                                withSeedHeartbeat {
+                                    backend.transcribeAudio(
+                                        samples = chunk.samples.copyOf(headSamples),
+                                        sampleRate = chunk.sampleRate,
+                                        prompt = resolvedPrompt
+                                    )
+                                }.fold(
+                                    onSuccess = { tr ->
+                                        tr.text.trim().takeIf { text -> text.isNotEmpty() }
+                                    },
                                     // Cancellation must propagate (the house
                                     // contract); anything else just skips the
-                                    // preview, never the run.
-                                    if (it is kotlinx.coroutines.CancellationException) throw it
-                                }.getOrNull()?.getOrNull()
-                                    ?.text?.trim()?.takeIf { it.isNotEmpty() }
-                                    ?.let { previewText ->
-                                        updateInterimResult(taskId, previewText, writeRow = emitInterim)
-                                        listener.onPreviewResult(previewText)
-                                    }
+                                    // preview, never the run, matching the
+                                    // unguarded main decode beside it.
+                                    onFailure = {
+                                        if (it is kotlinx.coroutines.CancellationException) throw it
+                                        null
+                                    },
+                                )?.let { previewText ->
+                                    updateInterimResult(taskId, previewText)
+                                    listener.onPreviewResult(previewText)
+                                }
                             }
                         }
 
