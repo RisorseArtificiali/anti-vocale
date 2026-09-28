@@ -1671,7 +1671,7 @@ private fun LogEntryWithSwipe(
         }
 
         val colorScheme = MaterialTheme.colorScheme
-        val actions = remember(log.id, log.status, log.result, colorScheme) {
+        val actions = remember(log.id, log.status, log.result, speakerAnnotated, colorScheme) {
             buildSwipeActions(
                 log = log,
                 context = context,

@@ -531,6 +531,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         taskId,
                         transcriptionResult.text,
                         duration,
+                        source = source,
                         transcriptionResult.isPartial,
                         transcriptionResult.failedChunkCount,
                         rawTranscript = transcriptionResult.rawTranscript,
@@ -3819,6 +3820,8 @@ class TranscriptionOrchestrator @Inject constructor(
         taskId: String,
         result: String,
         durationMs: Long,
+        /** TASK-713: the request source (share-origin gates the filter seed). */
+        source: String? = null,
         isPartial: Boolean = false,
         failedChunkCount: Int = 0,
         /** TASK-276 AC3: the pre-punctuation original, kept when the pass changed the text. */
@@ -3858,15 +3861,16 @@ class TranscriptionOrchestrator @Inject constructor(
         lastPartialSaveMs = 0L
         lastInterimRoomWriteMs.remove(taskId)
         // TASK-713 (GH #112 second half): seed a received-note language into
-        // the Models filter favorites on the first qualifying arrival. The
-        // guard chain: a detected language covered by the filter's offered
-        // set, and the preference still EMPTY ("" = the tour completed, no
-        // covered interface seed, the user has picked nothing: 685's
-        // convention). One write, never after a user choice or an existing
-        // seed; favorites never force a decode language (TASK-457).
-        if (detectedLanguage != null) {
+        // the Models filter favorites on the first qualifying arrival. Guard
+        // chain: a SHARE-ORIGIN run (the feature's population: received
+        // notes, not the user's own recordings), a detected language covered
+        // by the filter's offered set, and the preference still NULL (the
+        // untouched tri-state: "" is an explicit user clear or an uncovered
+        // tour seed, never re-seeded; review F2). One write; favorites never
+        // force a decode language (TASK-457).
+        if (detectedLanguage != null && source != null) {
             val seed = Language.onboardingFavoriteSeed(detectedLanguage)
-            if (seed != null && preferencesManager.modelFilterLanguage.first() == "") {
+            if (seed != null && preferencesManager.modelFilterLanguage.first() == null) {
                 preferencesManager.saveModelFilterLanguage(seed)
                 Log.i(TAG, "Seeded Models filter favorite from first received note: $seed (TASK-713)")
             }
