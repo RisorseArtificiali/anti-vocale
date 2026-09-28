@@ -64,8 +64,15 @@ In `app/build.gradle.kts`:
 - `versionName = "X.Y.Z"`.
 - The per-ABI mapping in `androidComponents.onVariants` derives `base*10 + abiCode`
   (1=armeabi-v7a, 2=arm64-v8a, 4=x86_64). No hardcoding; a version bump does not
-  require editing the mapping. But update the `?: N` fallback literal so a fresh
-  sync still resolves the base code.
+  require editing the mapping: the derivation reads `defaultConfig.versionCode`
+  itself and fails the build when it is unset (TASK-683.2 removed the `?: N`
+  fallback literal, which sat at 44 from the v1.13.0 bump while the base moved
+  to 45 then 46: it kept the preflight check red through two shipped releases,
+  and any consumer resolving the base from it would have emitted the live
+  v1.13.0 codes).
+- The `versionCode = N` literal form is load-bearing: scripts/new-fdroid-version.py,
+  scripts/check-fdroid-release.sh, scripts/release-preflight.sh, and
+  scripts/check-release-version.py all parse it from this file.
 
 Proof: `./gradlew :app:assembleFdroidDebug` succeeds; the per-ABI APKs report the
 expected versionCodes in their filenames.
@@ -482,7 +489,7 @@ scripts/device-model-matrix.sh --audio <short real speech clip>
 ```
 
 The preflight encodes every failure mode of the v1.10.0 release day:
-version-code derivation and the `?: N` fallback literal; Play release notes
+version-code derivation; Play release notes
 within the 500-char limit (the extractor fails the build on over-length since
 74aa4f2); fastlane changelogs present and within 500 chars (F-Droid limit);
 the sherpa AAR on disk matching the fetch-script version and upstream size;
@@ -494,6 +501,8 @@ F-Droid APK with a different native stack than every other artifact). Since
 in the reference workflow's NDK preinstall map (that day the 1.11.0 blocks
 moved to r28c while the workflow preinstalled only r27c: fdroidserver cannot
 download NDKs in that container, and the reference build died ~40 min in).
+Since 2026-09-28 it also fails on a reintroduced per-ABI `?: N` fallback
+literal and on a missing requireNotNull guard on the base code (TASK-683.2).
 
 ## Dispatch semantics and hard rules (v1.10.0 + 1.10.0-final lessons)
 

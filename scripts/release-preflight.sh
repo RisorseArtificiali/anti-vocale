@@ -14,7 +14,8 @@
 # Checks (each prints OK or FAIL; any FAIL exits non-zero at the end):
 #  1. versionName/versionCode consistent; per-ABI codes = base*10+{the ABI
 #     set from the gradle abiCode when-map, the single owner};
-#     the `?: N` fallback literal matches the base code.
+#     the per-ABI derivation carries NO `?: N` fallback literal (TASK-683.2:
+#     it reads defaultConfig.versionCode and fails the build on null).
 #  2. Latest release-notes section per locale is within the Play 500-char limit
 #     (the extractor fails loudly on over-length, so this also fails the build).
 #  3. fastlane changelogs/<base>.txt exist for en-US and it-IT, within 500 chars.
@@ -67,11 +68,17 @@ done
 gradle="$REPO_DIR/app/build.gradle.kts"
 base=$(grep -m1 'versionCode = ' "$gradle" | grep -oE '[0-9]+')
 vname=$(grep -m1 'versionName = ' "$gradle" | grep -oE '"[^"]+"' | tr -d '"')
-fallback=$(grep -m1 'defaultConfig.versionCode ?:' "$gradle" | grep -oE '\?: [0-9]+' | grep -oE '[0-9]+')
 [ -n "$base" ] && [ -n "$vname" ] || { fail "could not read versionName/versionCode from app/build.gradle.kts"; exit 1; }
 ok "version $vname (base code $base)"
-[ "$base" = "$fallback" ] && ok "per-ABI fallback literal matches base ($fallback)" \
-  || fail "per-ABI fallback literal is $fallback, base is $base: a fresh sync resolves wrong codes"
+# A fallback literal is a second source of the base code (44-vs-46 drift, TASK-683.2);
+# the guard grep pins the derivation's shape: rename either and update these WITH it.
+if grep -q 'defaultConfig.versionCode ?:' "$gradle"; then
+  fail "per-ABI versionCode carries a '?: N' fallback literal: remove it so the derivation cannot guess a stale base (TASK-683.2)"
+elif ! grep -q 'requireNotNull(defaultConfig.versionCode' "$gradle" || ! grep -q 'baseVersionCode \* 10' "$gradle"; then
+  fail "per-ABI derivation lost the requireNotNull(defaultConfig.versionCode) guard or its use (baseVersionCode * 10): a null base would fail opaquely or a stale literal could return (TASK-683.2)"
+else
+  ok "per-ABI codes derive from defaultConfig.versionCode (guard present, no fallback literal)"
+fi
 
 # --- 2. Play release notes within the extractor cap (fail-loud, 490) ----------
 if python3 "$REPO_DIR/scripts/extract-release-notes.py" --output-dir /tmp/preflight-whatsnew >/dev/null 2>/tmp/preflight-notes.err; then

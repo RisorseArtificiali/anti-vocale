@@ -143,9 +143,12 @@ android {
                 else -> 0
             }
             if (abiCode > 0) {
-                // Interim: keep this fallback in sync with the base versionCode (TASK-683.2 removes the literal).
+                // No ?: N fallback: the literal sat at 44 from the v1.13.0 bump while the base reached 46 (TASK-683.2).
+                val baseVersionCode = requireNotNull(defaultConfig.versionCode) {
+                    "Per-ABI versionCode derivation needs defaultConfig.versionCode set"
+                }
                 (output as com.android.build.api.variant.impl.VariantOutputImpl).versionCode
-                    .set((defaultConfig.versionCode ?: 46) * 10 + abiCode)
+                    .set(baseVersionCode * 10 + abiCode)
             }
         }
     }
