@@ -7,13 +7,12 @@ import org.junit.Test
  * TASK-186: the early-preview gate is pure data in, seconds out. Every
  * null-returning guard fires BEFORE the window is derived, so no guard can
  * accidentally ship a preview the design excludes: a disabled preference
- * never previews; a single-chunk file never previews (the full result is
- * imminent anyway); a chunk 0 that is not full cap-sized never previews
- * (this one guard excludes VAD-sized chunks, whole-file runs, and short
- * files, which all arrive as a chunk 0 shorter than the cap); everything
- * else previews min(10, cap/2) seconds, even when the header reported an
- * UNKNOWN count (0), because a full cap-sized chunk 0 proves more audio
- * follows.
+ * never previews; a header that does not promise a second chunk never
+ * previews (single-chunk files and unknown counts alike: only the header
+ * can prove more audio follows); a chunk 0 that is not full cap-sized
+ * never previews (this guard excludes VAD-sized chunks, whole-file runs,
+ * and short files, which all arrive as a chunk 0 shorter than the cap);
+ * everything else previews min(10, cap/2) seconds.
  */
 class EarlyPreviewPolicyTest {
 
@@ -76,7 +75,16 @@ class EarlyPreviewPolicyTest {
     }
 
     @Test
-    fun `unknown chunk count with a full-cap chunk still previews`() {
-        assertEquals(10, preview(expectedChunkCount = 0))
+    fun `unknown chunk count never previews (the header is the only proof more audio follows)`() {
+        // The code-review F1 class: a metadata-less or over-reporting file
+        // within the cap boundary emits one exactly-cap chunk 0 whose full
+        // result is one decode away; the empty tail is never sent, so the
+        // chunk itself proves nothing.
+        assertEquals(null, preview(expectedChunkCount = 0))
+    }
+
+    @Test
+    fun `the smallest multi-chunk header previews`() {
+        assertEquals(10, preview(expectedChunkCount = 2))
     }
 }

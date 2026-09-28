@@ -580,6 +580,7 @@
     <string name="early_preview_title">Early Preview</string>
     <string name="early_preview_description">Show a rough first text while a long clip is still decoding. It is replaced when the full first segment finishes.</string>
     <string name="early_preview_badge">Preview</string>
+    <string name="early_preview_requires_progressive">Requires Progressive Display</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Default Prompt</string>

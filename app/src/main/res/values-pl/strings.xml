@@ -574,6 +574,7 @@
     <string name="early_preview_title">Wczesny podgląd</string>
     <string name="early_preview_description">Pokazuje wstępny tekst, podczas gdy reszta długiego nagrania jest nadal dekodowana. Jest zastępowany po zakończeniu pierwszego pełnego segmentu.</string>
     <string name="early_preview_badge">Podgląd</string>
+    <string name="early_preview_requires_progressive">Wymaga wyświetlania progresywnego</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Domyślny prompt</string>

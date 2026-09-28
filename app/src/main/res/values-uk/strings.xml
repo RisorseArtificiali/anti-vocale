@@ -576,6 +576,7 @@
     <string name="early_preview_title">Ранній перегляд</string>
     <string name="early_preview_description">Показує перший чернетковий текст, поки решта довгого кліпу ще розшифровується. Його буде замінено, коли завершиться перший повний сегмент.</string>
     <string name="early_preview_badge">Попередній перегляд</string>
+    <string name="early_preview_requires_progressive">Потрібен прогресивний показ</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Типовий запит розшифровки</string>

@@ -96,6 +96,12 @@ class TranscriptionNotificationListener(
         // No-op: interim progressive results are not surfaced by the fallback worker.
     }
 
+    override fun onPreviewResult(chunkText: String) {
+        // No-op: like the interim results above, the fallback worker does
+        // not surface preview text on its own notification; the interim row
+        // (updateInterimResult) is this path's preview surface.
+    }
+
     override fun onSuccess(
         taskId: String,
         resultText: String,

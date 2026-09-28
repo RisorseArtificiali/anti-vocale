@@ -794,8 +794,12 @@ fun SettingsTab(
 
             // TASK-186: early preview of the pipeline's first chunk. Default
             // off (the extra head decode costs battery on every long clip).
+            // Review F2: the preview rides the progressive pipeline, so the
+            // card is greyed with a reason until its sibling is on.
             val earlyPreviewTitle = stringResource(R.string.early_preview_title)
             val earlyPreviewDescription = stringResource(R.string.early_preview_description)
+            val earlyPreviewRequiresProgressive =
+                stringResource(R.string.early_preview_requires_progressive)
             SearchFilterRow(searchQuery, SettingsSearchId.EARLY_PREVIEW, searchState) {
                 ToggleSettingCard(
                     icon = Icons.Default.Preview,
@@ -804,7 +808,9 @@ fun SettingsTab(
                     checked = earlyPreviewEnabled,
                     onCheckedChange = { enabled ->
                         viewModel.saveEarlyPreviewEnabled(enabled)
-                    }
+                    },
+                    enabled = progressiveEnabled,
+                    supportingText = if (progressiveEnabled) null else earlyPreviewRequiresProgressive,
                 )
             }
 

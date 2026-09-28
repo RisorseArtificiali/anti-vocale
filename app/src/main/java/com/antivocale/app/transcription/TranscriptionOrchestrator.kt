@@ -3500,7 +3500,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                         null
                                     },
                                 )?.let { previewText ->
-                                    updateInterimResult(taskId, previewText)
+                                    updateInterimResult(taskId, previewText, advanceThrottle = false)
                                     listener.onPreviewResult(previewText)
                                 }
                             }
@@ -3962,6 +3962,11 @@ class TranscriptionOrchestrator @Inject constructor(
          *  state must keep refreshing or the 15s staleness gate misfires a
          *  false interruption dialog on a live refinement. */
         writeRow: Boolean = true,
+        /** TASK-186 review F4: the early preview passes false. Its pass
+         *  must not advance the throttle key, or the real chunk 0's row
+         *  write lands inside the 5s window and History keeps showing the
+         *  rough preview text after the notification has moved on. */
+        advanceThrottle: Boolean = true,
     ) {
         // Throttle interim Room writes to the same 5s cadence as the partial-state save
         // (TASK-340 Fix 2b): every interim partial used to write Room, and each write
@@ -3975,8 +3980,10 @@ class TranscriptionOrchestrator @Inject constructor(
         // writeRow=false ones, so it means "last updateInterimResult pass", not
         // "last Room write"; a writeRow=true caller within 5s of a suppressed
         // pass still skips its row write (acceptable: the final logSuccess is
-        // unconditional).
-        lastInterimRoomWriteMs[taskId] = now
+        // unconditional). The TASK-186 preview is the one caller exempted
+        // (advanceThrottle=false): it writes but must not suppress the real
+        // chunk 0 that follows it.
+        if (advanceThrottle) lastInterimRoomWriteMs[taskId] = now
 
         // TASK-390: column-scoped update (no read): a whole-row write-back could
         // resurrect a row that a concurrent close (cancel/sweep) had just terminalized.

@@ -566,6 +566,7 @@
     <string name="early_preview_title">Erken Önizleme</string>
     <string name="early_preview_description">Uzun bir kayıt çözümlenirken ilk kaba metni gösterir. İlk tam segment bittiğinde yerini kesin metne bırakır.</string>
     <string name="early_preview_badge">Önizleme</string>
+    <string name="early_preview_requires_progressive">Aşamalı görüntüleme gerektirir</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Varsayılan Komut</string>

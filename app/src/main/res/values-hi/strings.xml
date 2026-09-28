@@ -534,6 +534,7 @@
     <string name="early_preview_title">शीघ्र पूर्वावलोकन</string>
     <string name="early_preview_description">लंबी क्लिप डिकोड होते समय पहला अस्थायी टेक्स्ट दिखाता है। पहला पूरा सेगमेंट खत्म होने पर यह बदल दिया जाता है।</string>
     <string name="early_preview_badge">पूर्वावलोकन</string>
+    <string name="early_preview_requires_progressive">प्रगतिशील डिस्प्ले आवश्यक है</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">डिफ़ॉल्ट प्रॉम्प्ट</string>

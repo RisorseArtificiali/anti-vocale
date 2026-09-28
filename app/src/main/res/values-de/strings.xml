@@ -535,6 +535,7 @@
     <string name="early_preview_title">Frühe Vorschau</string>
     <string name="early_preview_description">Zeigt schon einen ersten groben Text, während eine lange Aufnahme noch dekodiert wird. Er wird ersetzt, sobald das erste vollständige Segment fertig ist.</string>
     <string name="early_preview_badge">Vorschau</string>
+    <string name="early_preview_requires_progressive">Benötigt die progressive Anzeige</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Standard-Prompt</string>

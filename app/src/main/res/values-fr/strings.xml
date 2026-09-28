@@ -482,6 +482,7 @@
     <string name="early_preview_title">Aperçu anticipé</string>
     <string name="early_preview_description">Affiche un premier texte provisoire pendant le décodage des clips longs. Il est remplacé une fois le premier segment complet terminé.</string>
     <string name="early_preview_badge">Aperçu</string>
+    <string name="early_preview_requires_progressive">Requiert un affichage progressif</string>
     <string name="default_prompt_title">Invite par défaut</string>
     <string name="default_prompt_description">Consigne donnée au modèle pendant la transcription. Laisser vide pour utiliser l\'invite intégrée.</string>
     <string name="default_prompt_placeholder">ex. Transcris ce discours :</string>

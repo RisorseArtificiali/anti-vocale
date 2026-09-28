@@ -11,11 +11,15 @@ package com.antivocale.app.transcription
  * records nothing anywhere, and the real chunk 0 result replaces it on every
  * surface.
  *
- * The single full-cap-sized guard on chunk 0 does all the exclusion work: a
- * VAD-sized first chunk, a whole-file run, and a file shorter than the cap
- * all arrive as a chunk 0 shorter than the cap, where previewing would
- * either duplicate the imminent full result (single-chunk files, excluded
- * by their own rule) or preview most of the clip at full accuracy anyway.
+ * Two guards do the exclusion work. The header's chunk count must say the
+ * run is multi-chunk (>= 2): only the header can prove more audio follows,
+ * and a metadata-less or over-reporting file within the cap boundary emits
+ * one exactly-cap chunk 0 whose full result is one decode away (the empty
+ * tail is never sent, so the chunk itself cannot prove anything). The
+ * full-cap-sized guard on chunk 0 excludes everything else: a VAD-sized
+ * first chunk, a whole-file run, and a short file all arrive as a chunk 0
+ * shorter than the cap, where previewing would preview most of the clip at
+ * full accuracy anyway.
  */
 object EarlyPreviewPolicy {
 
@@ -23,17 +27,18 @@ object EarlyPreviewPolicy {
     private const val MAX_PREVIEW_SECONDS = 10
 
     /**
-     * Slack on the full-cap check: a cap-sized chunk can come up a few
-     * samples short of the exact cap × rate product (resampler rounding).
-     * 100ms is far below any non-cap chunk shape the stream produces.
+     * Slack on the full-cap check. The chunker emits full chunks at exactly
+     * the cap × rate product, so this is a drift guard, not rounding
+     * correction; with the count guard requiring >= 2 a near-cap chunk 0
+     * previews legitimately anyway.
      */
     private const val EPSILON_MS = 100L
 
     /**
      * The preview window in seconds, or null when this run gets no preview:
-     * disabled, a known single-chunk file, or a chunk 0 that is not full
-     * cap-sized. [expectedChunkCount] 0 means unknown; a full cap-sized
-     * chunk 0 still previews (more audio provably follows).
+     * disabled, a header that does not promise at least one more chunk
+     * (count < 2, including unknown 0), or a chunk 0 that is not full
+     * cap-sized.
      */
     fun previewSeconds(
         enabled: Boolean,
@@ -43,7 +48,7 @@ object EarlyPreviewPolicy {
         chunk0SampleRate: Int,
     ): Int? {
         if (!enabled) return null
-        if (expectedChunkCount == 1) return null
+        if (expectedChunkCount < 2) return null
         val fullCapSamples = chunk0SampleRate.toLong() * pipelineChunkSeconds
         val minSamples = fullCapSamples - chunk0SampleRate * EPSILON_MS / 1000
         if (chunk0Samples < minSamples) return null

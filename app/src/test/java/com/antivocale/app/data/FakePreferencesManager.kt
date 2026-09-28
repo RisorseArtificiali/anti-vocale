@@ -102,7 +102,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val onboardingCompleted = _onboardingCompleted
     override val progressiveTranscription: Flow<Boolean> get() = _progressiveTranscription
     // TASK-186: early preview, default off like the real impl.
-    val _earlyPreviewEnabled = MutableStateFlow(PreferencesManager.DEFAULT_EARLY_PREVIEW)
+    private val _earlyPreviewEnabled = MutableStateFlow(PreferencesManager.DEFAULT_EARLY_PREVIEW)
     override val earlyPreviewEnabled: Flow<Boolean> get() = _earlyPreviewEnabled
     override val punctuationMode: Flow<String> get() = _punctuationMode
     override val punctuationPrompt: Flow<String> get() = _punctuationPrompt

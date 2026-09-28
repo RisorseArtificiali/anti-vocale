@@ -482,6 +482,7 @@
     <string name="early_preview_title">Vista previa temprana</string>
     <string name="early_preview_description">Muestra un primer texto aproximado mientras el resto de un clip largo sigue decodificándose. Se sustituye cuando termina el primer segmento completo.</string>
     <string name="early_preview_badge">Vista previa</string>
+    <string name="early_preview_requires_progressive">Requiere la visualización progresiva</string>
     <string name="default_prompt_title">Prompt predeterminado</string>
     <string name="default_prompt_description">Instrucción para el modelo durante la transcripción. Si se deja vacío, se usa el prompt integrado.</string>
     <string name="default_prompt_placeholder">ej. Transcribe este discurso:</string>
