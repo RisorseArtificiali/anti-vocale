@@ -106,9 +106,22 @@ data class LogEntry(
 
     enum class Status { QUEUED, PROCESSING, SUCCESS, ERROR }
 
-    /** A final, copyable transcript (mirrors the swipe/menu action gating). */
+    /** A final transcript (the collapsed preview and Share gate on it). */
     val hasCompletedResult: Boolean
         get() = status == Status.SUCCESS && result.isNotEmpty()
+
+    /**
+     * TASK-711 (GH #123): a transcript exists and Copy delivers it, final or
+     * interim (PROCESSING with text: mid-ASR progressive saves, or the
+     * post-ASR summary tail). Interim copy matches exactly what the row
+     * displays, which may be partial; the PROCESSING icon keeps the state
+     * marked. Share and the collapsed preview stay on [hasCompletedResult].
+     * ERROR rows are excluded by design even when they carry salvaged
+     * text (TASK-568: the expanded card gives that text its own copy
+     * affordance; the menu/swipe gates key on delivery, not salvage).
+     */
+    val hasCopyableResult: Boolean
+        get() = result.isNotEmpty() && (status == Status.SUCCESS || status == Status.PROCESSING)
 }
 
 /**

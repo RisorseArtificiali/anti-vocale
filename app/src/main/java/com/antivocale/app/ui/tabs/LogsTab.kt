@@ -258,8 +258,10 @@ fun buildContextMenuActions(log: LogEntry, canRetranscribe: Boolean): List<Conte
         actions.add(ContextMenuAction.CANCEL)
     }
     if (canRetranscribe) actions.add(ContextMenuAction.RETRANSCRIBE)
-    // Mirrors buildSwipeActions: Copy needs a completed result, not interim text.
-    if (log.hasCompletedResult) actions.add(ContextMenuAction.COPY)
+    // TASK-711 (GH #123): Copy also unlocks on the interim state (PROCESSING
+    // with text: mid-ASR progressive saves or the post-ASR summary tail; it
+    // copies exactly what the row displays, which may be partial).
+    if (log.hasCopyableResult) actions.add(ContextMenuAction.COPY)
     // TASK-374: report entry available on EVERY entry (errors are the most
     // valuable reports and have no completed result).
     actions.add(ContextMenuAction.REPORT)
@@ -269,13 +271,17 @@ fun buildContextMenuActions(log: LogEntry, canRetranscribe: Boolean): List<Conte
 
 /**
  * Builds the list of swipe actions for a log entry.
- * Copy and Share only appear for successful transcriptions with non-empty results.
- * Delete always appears.
+ * Copy appears whenever a transcript exists, final or interim (TASK-711,
+ * GH #123); Share only on completed results. Delete always appears.
  */
 private fun buildSwipeActions(
     log: LogEntry,
     context: Context,
     viewModel: LogsViewModel,
+    /** TASK-598 F3 (review TASK-711): the collected annotated text, like the
+     * menu path: reading the flow's .value at click time races a just-finished
+     * diarized row (the combine needs a DAO round-trip before it emits). */
+    speakerAnnotated: String?,
     onDeleted: (LogEntry) -> Unit,
     copyLabel: String,
     shareLabel: String,
@@ -284,7 +290,7 @@ private fun buildSwipeActions(
 ): List<SwipeAction> {
     val actions = mutableListOf<SwipeAction>()
 
-    if (log.hasCompletedResult) {
+    if (log.hasCopyableResult) {
         actions.add(
             SwipeAction(
                 icon = Icons.Default.ContentCopy,
@@ -295,10 +301,12 @@ private fun buildSwipeActions(
                     // GH #107/TASK-598 F3: the swipe copy hands off the
                     // speaker-annotated text when the row carries labels.
                     copyTranscriptionToClipboard(
-                        context, viewModel.speakerAnnotatedFlow(log.id).value ?: log.result)
+                        context, speakerAnnotated ?: log.result)
                 }
             )
         )
+    }
+    if (log.hasCompletedResult) {
         actions.add(
             SwipeAction(
                 icon = Icons.Default.Share,
@@ -307,7 +315,7 @@ private fun buildSwipeActions(
                 background = colors.secondaryContainer,
                 onClick = {
                     shareTranscription(
-                        context, viewModel.speakerAnnotatedFlow(log.id).value ?: log.result)
+                        context, speakerAnnotated ?: log.result)
                 }
             )
         )
@@ -963,7 +971,7 @@ fun LogEntryItem(
 ) {
     val context = LocalContext.current
     var contextMenuExpanded by remember { mutableStateOf(false) }
-    val menuActions = remember(log.id, log.result, onRetranscribe) {
+    val menuActions = remember(log.id, log.status, log.result, onRetranscribe) {
         buildContextMenuActions(log, canRetranscribe = onRetranscribe != null)
     }
 
@@ -1668,6 +1676,7 @@ private fun LogEntryWithSwipe(
                 log = log,
                 context = context,
                 viewModel = viewModel,
+                speakerAnnotated = speakerAnnotated,
                 onDeleted = onDeleted,
                 copyLabel = context.getString(R.string.swipe_action_copy_description),
                 shareLabel = context.getString(R.string.swipe_action_share_description),

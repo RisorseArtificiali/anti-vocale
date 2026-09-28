@@ -6,7 +6,8 @@ import org.junit.Test
 
 /**
  * Long-press context menu (GH #52): which actions a log entry offers.
- * Mirrors the swipe-action gating: Copy/Re-transcribe need content, Delete always.
+ * Mirrors the swipe-action gating: Copy needs text (final or interim,
+ * TASK-711), Re-transcribe needs content, Delete always.
  */
 class ContextMenuActionsTest {
 
@@ -44,14 +45,16 @@ class ContextMenuActionsTest {
     }
 
     @Test
-    fun `processing entry with interim text omits copy`() {
-        // Mirrors the swipe-action gating: interim text is not a final result
+    fun `processing entry with interim text offers copy (TASK-711, GH #123)`() {
+        // The interim transcript is deliverable text (mid-ASR saves or the
+        // summary tail), so Copy unlocks early; the PROCESSING icon keeps
+        // the state marked (TASK-711, GH #123).
         val actions = buildContextMenuActions(
             entry(status = LogEntry.Status.PROCESSING, result = "partial..."),
             canRetranscribe = true,
         )
 
-        assertEquals(listOf(ContextMenuAction.CANCEL, ContextMenuAction.RETRANSCRIBE, ContextMenuAction.REPORT, ContextMenuAction.DELETE), actions)
+        assertEquals(listOf(ContextMenuAction.CANCEL, ContextMenuAction.RETRANSCRIBE, ContextMenuAction.COPY, ContextMenuAction.REPORT, ContextMenuAction.DELETE), actions)
     }
 
     @Test
@@ -72,9 +75,11 @@ class ContextMenuActionsTest {
     }
 
     @Test
-    fun `processing entry offers cancel`() {
+    fun `processing entry without text offers cancel but no copy`() {
+        // TASK-711: the menu-level false arm (the property is covered in
+        // LogEntryCopyGateTest): no text, no Copy, interim or not.
         val actions = buildContextMenuActions(
-            entry(status = LogEntry.Status.PROCESSING, result = "partial"),
+            entry(status = LogEntry.Status.PROCESSING, result = ""),
             canRetranscribe = true,
         )
 
