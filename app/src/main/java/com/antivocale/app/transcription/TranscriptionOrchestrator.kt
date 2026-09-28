@@ -3857,6 +3857,20 @@ class TranscriptionOrchestrator @Inject constructor(
         preferencesManager.clearPartialTranscriptionState()
         lastPartialSaveMs = 0L
         lastInterimRoomWriteMs.remove(taskId)
+        // TASK-713 (GH #112 second half): seed a received-note language into
+        // the Models filter favorites on the first qualifying arrival. The
+        // guard chain: a detected language covered by the filter's offered
+        // set, and the preference still EMPTY ("" = the tour completed, no
+        // covered interface seed, the user has picked nothing: 685's
+        // convention). One write, never after a user choice or an existing
+        // seed; favorites never force a decode language (TASK-457).
+        if (detectedLanguage != null) {
+            val seed = Language.onboardingFavoriteSeed(detectedLanguage)
+            if (seed != null && preferencesManager.modelFilterLanguage.first() == "") {
+                preferencesManager.saveModelFilterLanguage(seed)
+                Log.i(TAG, "Seeded Models filter favorite from first received note: $seed (TASK-713)")
+            }
+        }
     }
 
     private suspend fun logError(taskId: String, errorMessage: String, durationMs: Long = 0) {
