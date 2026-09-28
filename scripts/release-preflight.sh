@@ -74,7 +74,9 @@ ok "version $vname (base code $base)"
 # the greps run against CODE lines only (line and block comments stripped), so a
 # comment quoting the old idiom neither trips the ban nor satisfies the guard; the
 # guard grep pins the derivation's shape: rename either and update these WITH it.
-gradle_code=$(sed -e 's://.*$::' -e 's:/\*.*\*/::' "$gradle" | grep -v -E '^[[:space:]]*(/\*|\*/|\*)')
+gradle_code=$(awk '
+  { sub(/(^|[^:])\/\/.*$/, ""); gsub(/\/\*.*\*\//, "") }
+  !/^[[:space:]]*(\/\*|\*|\*\/)/' "$gradle")
 if grep -q 'defaultConfig.versionCode ?:' <<<"$gradle_code"; then
   fail "per-ABI versionCode carries a '?: N' fallback literal: remove it so the derivation cannot guess a stale base (TASK-683.2)"
 elif ! grep -q 'requireNotNull(defaultConfig.versionCode' <<<"$gradle_code" || ! grep -q 'baseVersionCode \* 10' <<<"$gradle_code"; then

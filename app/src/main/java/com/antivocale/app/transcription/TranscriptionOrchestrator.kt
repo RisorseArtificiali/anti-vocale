@@ -442,7 +442,10 @@ class TranscriptionOrchestrator @Inject constructor(
             // left (or the raw transcript when it skipped).
             // TASK-672: the repetition-loop collapse sits between the two, so
             // the summary judges the collapsed text, not the loop.
-            val delivered: Result<TranscriptionResult> =
+            // TASK-698: the post-pass chain (collapse, punctuation, summary) is
+            // one silent stretch (SUMMARY_BUDGET_MS alone is 8x the staleness
+            // gate): one heartbeat span covers the whole chain.
+            val delivered: Result<TranscriptionResult> = withSeedHeartbeat {
                 if (requestType == "audio" && result.isSuccess) {
                     // Captured once here (not re-read inside the pass): the
                     // backend that produced this result. The queue is serial,
@@ -466,6 +469,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         .map { applyPunctuationPass(context, asrBackendId, it, listener) }
                         .map { applySummaryPass(context, it, listener) }
                 } else result
+            }
 
             // GH #83: the optional speaker-labeling pass. Runs on the same
             // timeline the cues were assembled on (the concatenated
@@ -484,9 +488,14 @@ class TranscriptionOrchestrator @Inject constructor(
             }
             val speakerLabeled: Result<TranscriptionResult> =
                 if (delivered.isSuccess && diarizationChunks != null) {
-                    applySpeakerLabels(
-                        context, delivered, diarizationChunks!!, diarizationSampleRate, listener)
-                    // The concatenated copy must not outlive the pass.
+                    // TASK-698: whole-clip diarization (plus the first-use
+                    // model download) is a silent stretch; the heartbeat
+                    // covers it like the post-pass chain above.
+                    withSeedHeartbeat {
+                        applySpeakerLabels(
+                            context, delivered, diarizationChunks!!, diarizationSampleRate, listener)
+                    }
+                        // The concatenated copy must not outlive the pass.
                         .also { diarizationChunks = null }
                 } else {
                     delivered
@@ -841,6 +850,8 @@ class TranscriptionOrchestrator @Inject constructor(
             // TASK-674: the cleanup pass runs under the shared wall clock; a
             // timeout degrades to the raw transcript exactly like any other
             // generation failure (typed + breadcrumb inside the owner).
+            // TASK-698: the seed-heartbeat span lives at the funnel (the
+            // post-pass chain runs inside withSeedHeartbeat).
             val polished = LlmBudget.generateWithBudget(
                 llm, prompt, LlmBudget.CLEANUP_BUDGET_MS, pass = "Punctuation",
             ).getOrThrow().trim()
@@ -2437,11 +2448,11 @@ class TranscriptionOrchestrator @Inject constructor(
             // TASK-602 F1: without a heartbeat the phase-2 boundary seed ages
             // past the staleness gate while the accurate model loads and
             // decodes, and reopening mid-run offers recovery for a LIVE run
-            // (see launchSeedHeartbeat). TASK-696: the span covers the FIRST
-            // decode only; the ladder rungs carry their own heartbeat inside
+            // (see launchSeedHeartbeat). The streaming decode with emitInterim
+            // self-refreshes (partials): the one documented exception to
+            // withSeedHeartbeat; the ladder rungs carry their own inside
             // recoverEmptyChunk.
-            val seedHeartbeat = if (!emitInterim) coroutineScope.launchSeedHeartbeat() else null
-            val result = try {
+            val decodeOnce: suspend () -> Result<TranscriptionResult> = {
                 backend.transcribeAudioStreaming(
                     prompt = resolvedPrompt,
                     samples = preprocessingResult.chunks.first(),
@@ -2459,13 +2470,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 )
                     }
                 }
-            } finally {
-                // cancelAndJoin under NonCancellable: an in-flight seed write
-                // must settle before the run's outcome clears or replaces the
-                // state, or a post-cancel write re-materializes a stale seed
-                // (recovery offered for a finished run; TASK-692 review).
-                withContext(NonCancellable) { seedHeartbeat?.cancelAndJoin() }
             }
+            val result = if (emitInterim) decodeOnce() else withSeedHeartbeat { decodeOnce() }
             val inferMs = System.currentTimeMillis() - t0
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
             fireCollector()
@@ -2686,9 +2692,12 @@ class TranscriptionOrchestrator @Inject constructor(
         // under the SAME wall-clock owner (the custom-prompt final pass is
         // a single generation over the transcript, so the cleanup budget
         // shape fits).
-        return LlmBudget.generateWithBudget(
-            backend, ChunkPromptPolicy.finalPrompt(generativePrompt, transcript),
-            LlmBudget.CLEANUP_BUDGET_MS, "final-generative")
+        // TASK-698: same silent-stretch cover as the punctuation pass.
+        return withSeedHeartbeat {
+            LlmBudget.generateWithBudget(
+                backend, ChunkPromptPolicy.finalPrompt(generativePrompt, transcript),
+                LlmBudget.CLEANUP_BUDGET_MS, "final-generative")
+        }
             .fold(
                 onSuccess = { processed ->
                     if (processed.isNotBlank()) result.map { it.copy(text = processed.trim()) }
@@ -2805,7 +2814,11 @@ class TranscriptionOrchestrator @Inject constructor(
                 if (emitInterim) listener.onStatusUpdate("Transcribing segment 1…")
             }
 
-            val firstPass = backend.transcribeAudio(samples = chunks[i], sampleRate = sampleRate, prompt = prompt)
+            // TASK-698: the chunk decode is a silent stretch (interims fire at
+            // completion); run it under the seed heartbeat like every other.
+            val firstPass = withSeedHeartbeat {
+                backend.transcribeAudio(samples = chunks[i], sampleRate = sampleRate, prompt = prompt)
+            }
             val segResult = decodeWithEmptyChunkRecovery(
                 backend = backend,
                 firstPass = firstPass,
@@ -3013,7 +3026,10 @@ class TranscriptionOrchestrator @Inject constructor(
                 async {
                     chunkSemaphore.acquire()
                     try {
-                        val firstPass = backend.transcribeAudio(samples = chunk, sampleRate = sampleRate, prompt = prompt)
+                        // TASK-698: silent stretch, same as the progressive arm.
+                        val firstPass = withSeedHeartbeat {
+                            backend.transcribeAudio(samples = chunk, sampleRate = sampleRate, prompt = prompt)
+                        }
                         val chunkResult = decodeWithEmptyChunkRecovery(
                             backend = backend,
                             firstPass = firstPass,
@@ -3410,11 +3426,15 @@ class TranscriptionOrchestrator @Inject constructor(
                         // survives.
                         popHeldEmpty(nextChunk = chunk.samples)
 
-                        val chunkResult = backend.transcribeAudio(
-                            samples = chunk.samples,
-                            sampleRate = chunk.sampleRate,
-                            prompt = resolvedPrompt
-                        )
+                        // TASK-698: silent stretch like the other arms' chunk
+                        // decodes (partials fire between chunks, not within).
+                        val chunkResult = withSeedHeartbeat {
+                            backend.transcribeAudio(
+                                samples = chunk.samples,
+                                sampleRate = chunk.sampleRate,
+                                prompt = resolvedPrompt
+                            )
+                        }
                         chunkResult.fold(
                             onSuccess = { tr ->
                                 if (tr.text.isNotBlank()) {
@@ -4094,20 +4114,6 @@ class TranscriptionOrchestrator @Inject constructor(
     // ---- Chunk Retry ----
 
     /**
-     * TASK-692/696: the seed heartbeat re-saves the partial-transcription seed
-     * every [PARTIAL_SAVE_INTERVAL_MS] so the recovery staleness gate sees a
-     * live run: re-saving the same text only refreshes the timestamp, and a
-     * silent decode stretch that outlasts the gate would otherwise let a
-     * reopen mid-run offer crash recovery for a LIVE run (TASK-602 F1 class).
-     * The isNullOrBlank guard makes it a no-op when nothing was seeded.
-     * Callers whose stretch emits its own partials skip it (the single-chunk
-     * first decode with emitInterim); the ladder rungs never emit, so they
-     * always run one. The read-then-save is not atomic against concurrent
-     * seed writes (the parallel arm's completion saves): an interleaved tick
-     * can momentarily re-save older text, timestamp-fresh; the next completion
-     * write self-heals it and the staleness gate is unaffected either way.
-     */
-    /**
      * Serializes every crash-recovery seed write (the heartbeat's re-save and
      * updateInterimResult's partial save): the heartbeat's read-then-save must
      * be atomic against a concurrent completion save, or a tick that read
@@ -4117,6 +4123,17 @@ class TranscriptionOrchestrator @Inject constructor(
      */
     private val seedSaveMutex = Mutex()
 
+    /**
+     * TASK-692/696: the seed heartbeat re-saves the partial-transcription seed
+     * every [PARTIAL_SAVE_INTERVAL_MS] so the recovery staleness gate sees a
+     * live run: re-saving the same text only refreshes the timestamp, and a
+     * silent decode stretch that outlasts the gate would otherwise let a
+     * reopen mid-run offer crash recovery for a LIVE run (TASK-602 F1 class).
+     * The isNullOrBlank guard makes it a no-op when nothing was seeded, and
+     * every write goes through [seedSaveMutex]. Callers whose stretch emits
+     * its own partials skip it (the single-chunk first decode with
+     * emitInterim); the ladder rungs never emit, so they always run one.
+     */
     private fun CoroutineScope.launchSeedHeartbeat(): Job = launch {
         while (isActive) {
             delay(PARTIAL_SAVE_INTERVAL_MS)
@@ -4142,6 +4159,25 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     /**
+     * TASK-698: runs one silent stretch (a chunk decode, or a budgeted LLM
+     * generation) under the seed heartbeat: any stretch longer than the
+     * staleness gate would otherwise age the phase-2 seed and let a reopen
+     * mid-run offer crash recovery for a live run (TASK-602 F1 class). The
+     * builder scope dies with the stretch; the join lets an in-flight seed
+     * write settle. The single-chunk FIRST decode keeps its conditional
+     * launch instead: with emitInterim it streams partials, self-refreshing.
+     */
+    private suspend fun <T> withSeedHeartbeat(block: suspend () -> T): T =
+        coroutineScope {
+            val heartbeat = launchSeedHeartbeat()
+            try {
+                block()
+            } finally {
+                withContext(NonCancellable) { heartbeat.cancelAndJoin() }
+            }
+        }
+
+    /**
      * TASK-664 (GH #119): the empty-chunk ladder at the per-chunk decode
      * sites, after their first decode returned a blank SUCCESS (blank
      * FAILURES keep the existing retryChunkWithGc arms). Null means the
@@ -4159,21 +4195,14 @@ class TranscriptionOrchestrator @Inject constructor(
         nextChunk: FloatArray?,
         decode: suspend (FloatArray) -> Result<TranscriptionResult>,
     ): Result<TranscriptionResult>? {
-        // TASK-696: the rungs never emit partials, so every ladder runs under
-        // the seed heartbeat (see launchSeedHeartbeat). The builder scope dies
-        // with the ladder (structured cancellation); cancelAndJoin lets an
-        // in-flight seed write settle before the outcome clears the state.
-        return coroutineScope {
-            val rungHeartbeat = launchSeedHeartbeat()
-            try {
-                val outcome = EmptyChunkRecovery.recover(chunk, sampleRate, previousChunk, nextChunk, decode)
-                when (outcome) {
-                    is EmptyChunkRecovery.Outcome.Recovered -> Result.success(outcome.result)
-                    is EmptyChunkRecovery.Outcome.EngineWedged -> Result.failure(outcome.error)
-                    EmptyChunkRecovery.Outcome.StillEmpty -> null
-                }
-            } finally {
-                withContext(NonCancellable) { rungHeartbeat.cancelAndJoin() }
+        // TASK-696: the rungs never emit partials, so every ladder runs
+        // under the seed heartbeat (see withSeedHeartbeat).
+        return withSeedHeartbeat {
+            val outcome = EmptyChunkRecovery.recover(chunk, sampleRate, previousChunk, nextChunk, decode)
+            when (outcome) {
+                is EmptyChunkRecovery.Outcome.Recovered -> Result.success(outcome.result)
+                is EmptyChunkRecovery.Outcome.EngineWedged -> Result.failure(outcome.error)
+                EmptyChunkRecovery.Outcome.StillEmpty -> null
             }
         }
     }
@@ -4226,7 +4255,11 @@ class TranscriptionOrchestrator @Inject constructor(
     ): Result<TranscriptionResult> {
         System.gc()
         delay(100)
-        return backend.transcribeAudio(samples = samples, sampleRate = sampleRate, prompt = prompt)
+        // TASK-698: the retry re-decodes the same chunk the wrapped first
+        // pass just failed: same silent-stretch cover.
+        return withSeedHeartbeat {
+            backend.transcribeAudio(samples = samples, sampleRate = sampleRate, prompt = prompt)
+        }
     }
 
     // ---- Utilities ----
