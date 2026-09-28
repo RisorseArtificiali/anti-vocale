@@ -1,1 +1,1 @@
-Offline transcription of voice messages and recorded calls, on-device
+Transcribe voice notes and calls on-device

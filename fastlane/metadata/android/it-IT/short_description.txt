@@ -1,1 +1,1 @@
-Trascrizione offline di vocali e chiamate registrate, on-device
+Trascrizione on-device di vocal e chiamate
