@@ -263,7 +263,14 @@ run.
 set, and creates the tag, the release, and every asset with ONE `gh release
 create`. That single command is the moment the version becomes public; from it
 on, the recipe's `binary:` URLs all resolve, so the checkupdates bot cannot hit
-a partial release whatever its schedule.
+a partial release whatever its schedule. (Window that remains: GitHub
+publishes the release before the asset uploads finish, and the 2026-09-23
+v1.13.1 bot MR proved fdroid CAN build inside that window: its verifier got a
+404 on `app-fdroid-armeabi-v7a-release.apk` and the MR went red with the
+binary still landing minutes later. If a bot MR comes red with
+"Downloading Binaries ... failed", HEAD-check the three `binary:` URLs first:
+they resolve once uploads settle, and the fix is asking fdroid for a re-run,
+not touching the recipe.)
 
 ```
 scripts/release-create.sh vX.Y.Z --run-id <id> --commit $SHA --notes-file <github-body.md>
