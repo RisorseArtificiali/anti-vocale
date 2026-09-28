@@ -2447,8 +2447,13 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                 }
             } else null
-            val result = try {
-                backend.transcribeAudioStreaming(
+            // TASK-692: the try spans the ladder too. The rung decodes are
+            // silent whole-chunk generations that can outlast the staleness
+            // gate, so a heartbeat cancelled after the first decode let a
+            // reopen mid-run offer crash recovery for a live run (TASK-602 F1
+            // class); one heartbeat now covers both decode stretches.
+            val (result, ladderResult, ladderRetried) = try {
+                val first = backend.transcribeAudioStreaming(
                     prompt = resolvedPrompt,
                     samples = preprocessingResult.chunks.first(),
                     sampleRate = preprocessingResult.sampleRate
@@ -2465,33 +2470,38 @@ class TranscriptionOrchestrator @Inject constructor(
                 )
                     }
                 }
+                val inferMs = System.currentTimeMillis() - t0
+                Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
+                fireCollector()
+                // TASK-664 (GH #119): the single-chunk arm. A one-chunk clip has
+                // no neighbors, so the ladder re-feeds with silence padding; a
+                // blank that survives it stays the honest total loss it was
+                // (the maintainer's scope note: a single-chunk voice note that
+                // decodes empty loses everything today). The rung decodes use the
+                // streaming variant, the one call streaming-family backends
+                // implement and the same call as the first pass; the rung's
+                // partial callback stays empty, so no interim is emitted for it.
+                val ladderRan = needsEmptyChunkRecovery(first)
+                val retried = if (ladderRan) 1 else null
+                val ladder = if (ladderRan) recoverEmptyChunk(
+                    chunk = preprocessingResult.chunks.first(),
+                    sampleRate = preprocessingResult.sampleRate,
+                    previousChunk = null,
+                    nextChunk = null,
+                ) { feed ->
+                    backend.transcribeAudioStreaming(
+                        prompt = resolvedPrompt,
+                        samples = feed,
+                        sampleRate = preprocessingResult.sampleRate) {}
+                } else null
+                Triple(first, ladder, retried)
             } finally {
-                seedHeartbeat?.cancel()
+                // cancelAndJoin under NonCancellable: an in-flight seed write
+                // must settle before the run's outcome clears or replaces the
+                // state, or a post-cancel write re-materializes a stale seed
+                // (recovery offered for a finished run; TASK-692 review).
+                withContext(NonCancellable) { seedHeartbeat?.cancelAndJoin() }
             }
-            val inferMs = System.currentTimeMillis() - t0
-            Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
-            fireCollector()
-            // TASK-664 (GH #119): the single-chunk arm. A one-chunk clip has
-            // no neighbors, so the ladder re-feeds with silence padding; a
-            // blank that survives it stays the honest total loss it was
-            // (the maintainer's scope note: a single-chunk voice note that
-            // decodes empty loses everything today). The rung decodes use the
-            // streaming variant, the one call streaming-family backends
-            // implement and the same call as the first pass; the rung's
-            // partial callback stays empty, so no interim is emitted for it.
-            val ladderRan = needsEmptyChunkRecovery(result)
-            val ladderRetried = if (ladderRan) 1 else null
-            val ladderResult = if (ladderRan) recoverEmptyChunk(
-                chunk = preprocessingResult.chunks.first(),
-                sampleRate = preprocessingResult.sampleRate,
-                previousChunk = null,
-                nextChunk = null,
-            ) { feed ->
-                backend.transcribeAudioStreaming(
-                    prompt = resolvedPrompt,
-                    samples = feed,
-                    sampleRate = preprocessingResult.sampleRate) {}
-            } else null
             // Only a wedge escapes the ladder as a failure; a still-empty
             // chunk (null) falls through to the honest blank accounting.
             ladderResult?.exceptionOrNull()?.let { return Result.failure(it) }
