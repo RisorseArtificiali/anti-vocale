@@ -79,7 +79,15 @@ connected_ipport() {
 # Wireless ip:port via mDNS discovery (for when nothing is connected yet). Best-effort:
 # mDNS can be slow/flaky, so this is a fallback rather than the primary path.
 mdns_address() {
-    timeout 10 "$ADB" mdns services 2>/dev/null | awk '
+    # GNU timeout guards a hung adb; stock macOS ships no timeout binary
+    # (TASK-697 review: the stat pair got fixed, this was left GNU-only).
+    local out
+    if command -v timeout >/dev/null 2>&1; then
+        out=$(timeout 10 "$ADB" mdns services 2>/dev/null)
+    else
+        out=$("$ADB" mdns services 2>/dev/null)
+    fi
+    printf '%s' "$out" | awk '
         /_adb-tls-connect\._tcp/ {
             for (i = 1; i <= NF; i++) {
                 if ($i ~ /^([0-9]{1,3}\.){3}[0-9]{1,3}:[0-9]+$/) { print $i; exit }

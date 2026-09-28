@@ -2448,10 +2448,8 @@ class TranscriptionOrchestrator @Inject constructor(
             // TASK-602 F1: without a heartbeat the phase-2 boundary seed ages
             // past the staleness gate while the accurate model loads and
             // decodes, and reopening mid-run offers recovery for a LIVE run
-            // (see launchSeedHeartbeat). The streaming decode with emitInterim
-            // self-refreshes (partials): the one documented exception to
-            // withSeedHeartbeat; the ladder rungs carry their own inside
-            // recoverEmptyChunk.
+            // (see withSeedHeartbeat). The ladder rungs carry their own
+            // heartbeat inside recoverEmptyChunk.
             val decodeOnce: suspend () -> Result<TranscriptionResult> = {
                 backend.transcribeAudioStreaming(
                     prompt = resolvedPrompt,
@@ -2471,7 +2469,12 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                 }
             }
-            val result = if (emitInterim) decodeOnce() else withSeedHeartbeat { decodeOnce() }
+            // The span is unconditional (review of the earlier conditional):
+            // with emitInterim an OFFLINE backend emits no partials either,
+            // so the conditional left a silent stretch whenever a seed
+            // lingered from a cancelled prior run; the no-seed guard makes
+            // the heartbeat a no-op when nothing needs refreshing.
+            val result = withSeedHeartbeat { decodeOnce() }
             val inferMs = System.currentTimeMillis() - t0
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
             fireCollector()
@@ -2498,7 +2501,11 @@ class TranscriptionOrchestrator @Inject constructor(
             } else null
             // Only a wedge escapes the ladder as a failure; a still-empty
             // chunk (null) falls through to the honest blank accounting.
-            ladderResult?.exceptionOrNull()?.let { return Result.failure(it) }
+            // TASK-691: wrap for the abort transport so retriedChunks rides
+            // it like the other arms (persistFailureContext reads it there).
+            ladderResult?.exceptionOrNull()?.let {
+                return Result.failure(WedgeAbortException(it, ladderRetried))
+            }
             return when {
                 result.isSuccess -> {
                     val tr = ladderResult?.getOrNull() ?: result.getOrThrow()
@@ -2866,7 +2873,8 @@ class TranscriptionOrchestrator @Inject constructor(
                         // TASK-606 F2: wedged engine; each remaining segment
                         // would burn a full generation ceiling for nothing.
                         Log.e(TAG, "Segment $segNumber/$chunkCount timed out; engine wedged, aborting the run")
-                        return Result.failure(WedgeAbortException(error))
+                        return Result.failure(
+                            WedgeAbortException(error, retriedSegments.takeIf { it > 0 }))
                     }
                     failedSegments++
                     Log.e(TAG, "Segment $segNumber/$chunkCount failed", error)
@@ -3132,8 +3140,15 @@ class TranscriptionOrchestrator @Inject constructor(
                 // burns another ceiling; the failure is RETURNED after the
                 // scope (a non-local return is not allowed in this lambda).
                 deferredResults.forEach { it.cancel() }
-                wedgeResult = Result.failure(WedgeAbortException(w))
             }
+            }
+            // Built AFTER the scope: siblings are joined by then, so the
+            // retried counter cannot move under the read (review: an
+            // in-flight sibling between its ladder check and increment
+            // could otherwise land after a read taken inside the scope).
+            wedge?.let { w ->
+                wedgeResult = Result.failure(
+                    WedgeAbortException(w, retriedChunks.get().takeIf { it > 0 }))
             }
         } finally {
             progressTimerJob.cancel()
@@ -3369,7 +3384,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 Log.i(TAG, "Pipeline chunk ${held.index + 1} recovered by the empty-chunk ladder (${tr.text.trim().length} chars)")
                 return
             }
-            outcome?.exceptionOrNull()?.let { throw WedgeAbortException(it) }
+            outcome?.exceptionOrNull()?.let { throw WedgeAbortException(it, retriedChunks) }
             blankChunks++
             Log.i(TAG, "Pipeline chunk ${held.index + 1} stayed empty after the recovery ladder")
         }
@@ -3465,7 +3480,7 @@ class TranscriptionOrchestrator @Inject constructor(
                                     // TASK-606 F2: wedged engine; abort the
                                     // stream instead of a second ceiling.
                                     Log.e(TAG, "Pipeline chunk ${chunk.chunkIndex} timed out; engine wedged, aborting the run")
-                                    throw WedgeAbortException(error)
+                                    throw WedgeAbortException(error, retriedChunks)
                                 }
                                 Log.w(TAG, "Pipeline chunk ${chunk.chunkIndex} failed, retrying with memory cleanup", error)
                                 val retried = retryChunkWithGc(backend, chunk.samples, chunk.sampleRate, resolvedPrompt)
@@ -4011,7 +4026,10 @@ class TranscriptionOrchestrator @Inject constructor(
                             ?: (error as? BlankSegmentsException)?.blankChunks,
                         retriedChunks = retriedChunks
                             ?: (error as? TranscriptionException.NoTranscriptionProduced)?.retriedChunks
-                            ?: (error as? BlankSegmentsException)?.retriedChunks,
+                            ?: (error as? BlankSegmentsException)?.retriedChunks
+                            // TASK-691: a wedge INSIDE the ladder loses the
+                            // retried count unless it rides the abort transport.
+                            ?: (error as? WedgeAbortException)?.retriedChunks,
                         metadataSeconds = metadataSeconds,
                         decodedSeconds = decodedSeconds,
                     )))
@@ -4041,7 +4059,7 @@ class TranscriptionOrchestrator @Inject constructor(
      * instead; LlmManager's engineWedged flag makes the surviving
      * generations fail fast.
      */
-    class WedgeAbortException(cause: Throwable) :
+    class WedgeAbortException(cause: Throwable, val retriedChunks: Int? = null) :
         IllegalStateException(
             "LLM engine wedged (chunk generation timeout); run aborted to spare the remaining chunks",
             cause)
@@ -4138,10 +4156,9 @@ class TranscriptionOrchestrator @Inject constructor(
         while (isActive) {
             delay(PARTIAL_SAVE_INTERVAL_MS)
             // A tick failure must never fail the covered stretch: the read
-            // and write are DataStore IO, and a throwing child of the ladder's
-            // plain builder scope would cancel the in-flight rung decode with
-            // it (the first-decode site runs on the injected supervisor scope,
-            // which contains the same failure; a skipped tick is harmless).
+            // and write are DataStore IO, and a throwing child of the plain
+            // builder scope would cancel the covered decode with it (every
+            // span runs on one); a skipped tick is harmless.
             try {
                 seedSaveMutex.withLock {
                     val seed = preferencesManager.partialTranscriptionText.first()

@@ -281,4 +281,32 @@ class TranscriptionOrchestratorEmptyChunkRecoveryTest : TranscriptionOrchestrato
         assertTrue("retriedChunks missing from the failure context: $context",
             context != null && context.contains("\"retriedChunks\":1"))
     }
+
+    @Test
+    fun `single chunk wedge inside the ladder persists retriedChunks on the abort transport`() = runTest {
+        val failureContext = stubFailureContextCapture()
+        every { preferencesManager.vadEnabled } returns flowOf(true)
+        stubPreprocessing(chunks = listOf(oneSecondChunk(1f)), totalDurationSeconds = 1.0)
+        stubFeeds { size, _ ->
+            // Blank first pass enters the ladder; the PADDING rung (the
+            // second: the same-samples retry stays blank at 16_000) wedges.
+            if (size > 16_000) Result.failure(
+                com.antivocale.app.manager.EngineWedgeTimeoutException("LiteRT audio generation timed out after 300s"))
+            else text("")
+        }
+
+        val result = runRequest("single-wedge")
+
+        // TASK-691: this arm wraps the wedge for the abort transport (like
+        // the segment and parallel arms), and the ladder entry rides it.
+        val wedge = result.exceptionOrNull() as? TranscriptionOrchestrator.WedgeAbortException
+        assertTrue("expected WedgeAbortException, got ${result.exceptionOrNull()}",
+            wedge != null)
+        assertEquals("the ladder entry rides the abort transport", 1, wedge?.retriedChunks)
+        // The same wedge-in-ladder scenario now records retried=1 on the
+        // ERROR row like the pipeline arm always did (GH #96/#2 reads it).
+        val context = failureContext()
+        assertTrue("retriedChunks missing from the failure context: $context",
+            context != null && context.contains("\"retriedChunks\":1"))
+    }
 }

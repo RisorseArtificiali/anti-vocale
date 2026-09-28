@@ -75,8 +75,20 @@ ok "version $vname (base code $base)"
 # comment quoting the old idiom neither trips the ban nor satisfies the guard; the
 # guard grep pins the derivation's shape: rename either and update these WITH it.
 gradle_code=$(awk '
-  { sub(/(^|[^:])\/\/.*$/, ""); gsub(/\/\*.*\*\//, "") }
-  !/^[[:space:]]*(\/\*|\*|\*\/)/' "$gradle")
+  {
+    line = $0
+    # inline block comments, one span at a time (no greedy over-strip)
+    while (match(line, /\/\*[^*]*\*\//)) {
+      line = substr(line, 1, RSTART - 1) substr(line, RSTART + RLENGTH)
+    }
+    if (match(line, /^[[:space:]]*\/\*/)) { inblock = 1; next }
+    if (inblock) {
+      if (match(line, /\*\//)) { inblock = 0; line = substr(line, RSTART + RLENGTH) }
+      else next
+    }
+    sub(/(^|[^:])\/\/.*$/, "", line)
+  }
+  line !~ /^[[:space:]]*(\/\*|\*|\*\/)/ && line != ""' "$gradle")
 if grep -q 'defaultConfig.versionCode ?:' <<<"$gradle_code"; then
   fail "per-ABI versionCode carries a '?: N' fallback literal: remove it so the derivation cannot guess a stale base (TASK-683.2)"
 elif ! grep -q 'requireNotNull(defaultConfig.versionCode' <<<"$gradle_code" || ! grep -q 'baseVersionCode \* 10' <<<"$gradle_code"; then
