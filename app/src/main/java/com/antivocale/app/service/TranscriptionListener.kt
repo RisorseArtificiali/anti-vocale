@@ -67,6 +67,9 @@ interface TranscriptionListener {
          *  name), or the DualRefinementPolicy.NOT_REFINED token when the first pass was
          *  delivered unrefined. Null on single-model runs. */
         refinementOutcome: String? = null,
+        /** TASK-583 (GH #110): the delivered single-model transcript matched
+         *  the repetition-loop detector; the result notification warns. */
+        repetitionSuspected: Boolean = false,
     )
 
     /** Transcription or backend loading failed */

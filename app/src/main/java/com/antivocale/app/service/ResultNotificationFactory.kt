@@ -43,6 +43,9 @@ data class ResultNotificationSpec(
     val refinedFrom: String? = null,
     /** GH #43 sentinel for [refinedFrom]: delivered unrefined (F4/F5). */
     val notRefined: Boolean = false,
+    /** TASK-583 (GH #110): the delivered single-model transcript matched the
+     *  repetition-loop detector; said in subText, leading it. */
+    val repetitionSuspected: Boolean = false,
     val firstPostedAt: Long = System.currentTimeMillis(),
     /** True when rebuilding after a prev/next tap: suppresses re-alerting. */
     val repost: Boolean = false
@@ -278,6 +281,9 @@ class ResultNotificationFactory(private val context: Context) {
             oversized -> subTextParts.add(
                 context.getString(R.string.char_counter, CHAR_PREVIEW_LIMIT, text.length)
             )
+        }
+        if (spec.repetitionSuspected) {
+            subTextParts.add(context.getString(R.string.warning_repetition_suspected))
         }
         val langLabel = spec.detectedLanguage?.let { lang ->
             LanguageNames.nativeLanguageName(lang)

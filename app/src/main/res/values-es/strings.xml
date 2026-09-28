@@ -191,6 +191,7 @@
     <string name="copy_transcription">Copiar al portapapeles</string>
     <string name="copied_to_clipboard">Copiado al portapapeles</string>
     <string name="transcription_streamed_without_vad">Sin eliminar silencios</string>
+    <string name="warning_repetition_suspected">Posible bucle de repetición en esta transcripción; revisa el texto</string>
     <string name="audio_received_for_transcription">Audio recibido para transcripción</string>
     <string name="transcription_complete">Transcripción completa</string>
     <plurals name="transcription_partial">

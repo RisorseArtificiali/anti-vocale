@@ -604,7 +604,8 @@ class InferenceService : Service(), TranscriptionListener {
         failedChunkCount: Int,
         streamedWithoutVad: Boolean,
         segments: List<TimedSegment>,
-        refinementOutcome: String?
+        refinementOutcome: String?,
+        repetitionSuspected: Boolean,
     ) {
         // DRAFT-12 (TASK-598 boundary): the Tasker reply carries the same
         // annotated form every other surface delivers on diarized runs.
@@ -630,7 +631,7 @@ class InferenceService : Service(), TranscriptionListener {
                     val copied = autoCopyIfEnabled(annotatedText, sourcePackage)
                     saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
                     val refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }
-                    showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED, segments = segments)
+                    showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED, repetitionSuspected = repetitionSuspected, segments = segments)
                 } finally {
                     pendingResultNotifications.remove(coroutineContext[Job])
                 }
@@ -917,6 +918,7 @@ class InferenceService : Service(), TranscriptionListener {
         streamedWithoutVad: Boolean = false,
         refinedFrom: String? = null,
         notRefined: Boolean = false,
+        repetitionSuspected: Boolean = false,
         segments: List<TimedSegment>,
     ) {
         // TASK-598 F5: the notification's whole text (body, copy, share,
@@ -953,6 +955,7 @@ class InferenceService : Service(), TranscriptionListener {
             streamedWithoutVad = streamedWithoutVad,
             refinedFrom = refinedFrom,
             notRefined = notRefined,
+            repetitionSuspected = repetitionSuspected,
             firstPostedAt = System.currentTimeMillis()
         )
         val notification = resultNotificationFactory.build(spec, prefs)

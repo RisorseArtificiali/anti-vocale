@@ -1354,6 +1354,17 @@ fun LogEntryItem(
                                     )
                                 }
                             }
+                            // TASK-583 (GH #110): error color: the text needs
+                            // a human look even though delivery stands.
+                            if (remember(log.processingContext) {
+                                    ProcessingContextConverter.isRepetitionSuspected(log.processingContext)
+                                }) {
+                                Text(
+                                    text = stringResource(R.string.warning_repetition_suspected),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
                             if (showLanguageChip) {
                                 LanguageChip(
                                     detected = log.detectedLanguage,

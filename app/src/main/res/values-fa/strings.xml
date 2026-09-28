@@ -240,6 +240,7 @@
     <string name="copy_transcription">کپی در کلیپ‌بورد</string>
     <string name="copied_to_clipboard">در کلیپ‌بورد کپی شد</string>
     <string name="transcription_streamed_without_vad">بدون حذف سکوت</string>
+    <string name="warning_repetition_suspected">احتمال حلقهٔ تکرار در این رونوشت؛ متن را بررسی کنید</string>
     <string name="audio_received_for_transcription">صدا برای رونویسی دریافت شد</string>
     <string name="transcription_complete">رونویسی کامل شد</string>
     <plurals name="transcription_partial">

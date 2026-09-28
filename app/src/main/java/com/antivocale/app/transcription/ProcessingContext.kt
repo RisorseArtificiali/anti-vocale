@@ -36,6 +36,11 @@ data class ProcessingContext(
      *  this minus the post-ladder empties). Written only when at least one
      *  chunk entered the ladder. */
     val retriedChunks: Int? = null,
+    /** TASK-583 (GH #110): the delivered single-model transcript matched the
+     *  repetition-loop detector (the dual arms already skip on it); the row
+     *  and the result notification carry a visible warning, never a collapse
+     *  or re-run (v1). Written only on single-model runs where it fired. */
+    val repetitionSuspected: Boolean? = null,
     /** Audio seconds actually covered by inference (decoded seconds). */
     val transcribedSeconds: Double? = null,
     /** The chunk ceiling in force, after any RAM-driven tightening. */

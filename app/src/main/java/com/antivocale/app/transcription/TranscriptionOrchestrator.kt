@@ -518,6 +518,15 @@ class TranscriptionOrchestrator @Inject constructor(
                             runCatching { logDao.setModelName(taskId, name) }
                         }
                     }
+                    // TASK-583 (GH #110): the dual arms skip on loops; a
+                    // single-model run delivered loop text as a clean SUCCESS.
+                    // Evaluate the delivered text here (policy: see the
+                    // repetitionSuspected field).
+                    val loopSuspected = transcriptionResult.firstPass == null &&
+                        RepetitionLoopDetector.detect(transcriptionResult.text) != null
+                    if (loopSuspected) {
+                        Log.w(TAG, "Single-model repetition loop suspected on the delivered transcript (TASK-583)")
+                    }
                     logSuccess(
                         taskId,
                         transcriptionResult.text,
@@ -528,15 +537,17 @@ class TranscriptionOrchestrator @Inject constructor(
                         summary = transcriptionResult.summary,
                         summarySkipReason = transcriptionResult.summarySkipReason,
                         segments = transcriptionResult.segments,
-                        processing = transcriptionResult.processing?.withRefinement(
-                            refinedFrom = fastFirstPass?.processing?.takeIf {
-                                transcriptionResult.firstPass?.refinementFailedToken == null
-                            },
-                            skipReason = transcriptionResult.firstPass?.refinementFailedToken
-                                ?: dualSkipToken,
-                            loopMetrics = transcriptionResult.firstPass?.refinementLoopMetrics
-                                ?: dualSkipLoopMetrics,
-                        ),
+                        processing = transcriptionResult.processing
+                            ?.withRefinement(
+                                refinedFrom = fastFirstPass?.processing?.takeIf {
+                                    transcriptionResult.firstPass?.refinementFailedToken == null
+                                },
+                                skipReason = transcriptionResult.firstPass?.refinementFailedToken
+                                    ?: dualSkipToken,
+                                loopMetrics = transcriptionResult.firstPass?.refinementLoopMetrics
+                                    ?: dualSkipLoopMetrics,
+                            )
+                            ?.let { if (loopSuspected) it.copy(repetitionSuspected = true) else it },
                         detectedLanguage = transcriptionResult.detectedLanguage,
                         languagePin = runLanguagePin,
                         firstPassTranscript = when {
@@ -553,6 +564,7 @@ class TranscriptionOrchestrator @Inject constructor(
                         failedChunkCount = transcriptionResult.failedChunkCount,
                         streamedWithoutVad = transcriptionResult.streamedWithoutVad,
                         segments = transcriptionResult.segments,
+                        repetitionSuspected = loopSuspected,
                         // GH #43: which fast model the text refined from, or
                         // the not-refined sentinel (F4/F5 delivery).
                         refinementOutcome = when {

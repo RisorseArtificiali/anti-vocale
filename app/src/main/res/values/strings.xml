@@ -246,6 +246,7 @@
     <string name="copy_transcription">Copy to Clipboard</string>
     <string name="copied_to_clipboard">Copied to clipboard</string>
     <string name="transcription_streamed_without_vad">Without silence stripping</string>
+    <string name="warning_repetition_suspected">Possible repetition loop in this transcript; check the text</string>
     <string name="audio_received_for_transcription">Audio received for transcription</string>
     <string name="transcription_complete">Transcription complete</string>
     <plurals name="transcription_partial">

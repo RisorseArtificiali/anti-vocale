@@ -240,6 +240,7 @@
     <string name="copy_transcription">Copia negli Appunti</string>
     <string name="copied_to_clipboard">Copiato negli appunti</string>
     <string name="transcription_streamed_without_vad">Senza rimozione del silenzio</string>
+    <string name="warning_repetition_suspected">Possibile loop di ripetizione in questa trascrizione; controlla il testo</string>
     <string name="audio_received_for_transcription">Audio ricevuto per la trascrizione</string>
     <string name="transcription_complete">Trascrizione completata</string>
     <plurals name="transcription_partial">

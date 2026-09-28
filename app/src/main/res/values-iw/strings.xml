@@ -241,6 +241,7 @@
     <string name="copy_transcription">העתקה ללוח</string>
     <string name="copied_to_clipboard">הועתק ללוח</string>
     <string name="transcription_streamed_without_vad">בלי הסרת שקט</string>
+    <string name="warning_repetition_suspected">ייתכן לולאת חזרה בתמליל זה; בדוק את הטקסט</string>
     <string name="audio_received_for_transcription">התקבל אודיו לתמלול</string>
     <string name="transcription_complete">התמלול הושלם</string>
     <plurals name="transcription_partial">

@@ -108,7 +108,8 @@ class TranscriptionNotificationListener(
         failedChunkCount: Int,
         streamedWithoutVad: Boolean,
         segments: List<TimedSegment>,
-        refinementOutcome: String?
+        refinementOutcome: String?,
+        repetitionSuspected: Boolean
     ) {
         // The worker has no Tasker reply channel; only the service sends ACTION_TASKER_REPLY.
         // For share requests, mirror the service: auto-copy (if enabled) + post the result.
@@ -118,7 +119,7 @@ class TranscriptionNotificationListener(
                 val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
                 autoCopyIfEnabled(annotatedText, sourcePackage)
                 saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
-                showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad, segments = segments)
+                showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad, repetitionSuspected = repetitionSuspected, segments = segments)
             }
         }
     }
@@ -211,6 +212,7 @@ class TranscriptionNotificationListener(
         isPartial: Boolean = false,
         failedChunkCount: Int = 0,
         streamedWithoutVad: Boolean = false,
+        repetitionSuspected: Boolean = false,
         segments: List<TimedSegment>,
     ) {
         // TASK-598 F5: mirrors InferenceService.showResultNotification (keep
@@ -243,6 +245,7 @@ class TranscriptionNotificationListener(
             failedChunkCount = failedChunkCount,
             notificationId = id,
             streamedWithoutVad = streamedWithoutVad,
+            repetitionSuspected = repetitionSuspected,
             firstPostedAt = System.currentTimeMillis()
         )
         val notification = resultNotificationFactory.build(spec, prefs)

@@ -142,8 +142,12 @@ class TranscriptionOrchestratorSummaryPassTest : TranscriptionOrchestratorTestBa
                 it.result == longTranscript && it.summary == summary && it.rawTranscript == null
             })
         }
-        // the notification/reply value is the transcript (onSuccess carries text, not summary)
-        coVerify { listener.onSuccess(eq("summ-1"), eq(longTranscript), any(), any(), any()) }
+        // the notification/reply value is the transcript (onSuccess carries text, not summary).
+        // TASK-583 (GH #110): the repeated-sentence transcript trips the loop
+        // detector on this single-model path, so the warning flag is asserted,
+        // not just tolerated.
+        coVerify { listener.onSuccess(eq("summ-1"), eq(longTranscript), any(), any(), any(),
+            repetitionSuspected = true) }
     }
 
     @Test

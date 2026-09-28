@@ -247,6 +247,7 @@
     <string name="copy_transcription">Копіювати в буфер обміну</string>
     <string name="copied_to_clipboard">Скопійовано в буфер обміну</string>
     <string name="transcription_streamed_without_vad">Без прибрання тиші</string>
+    <string name="warning_repetition_suspected">Можлива петля повторів у цьому транскрипті; перевірте текст</string>
     <string name="audio_received_for_transcription">Аудіо отримано для розшифровки</string>
     <string name="transcription_complete">Розшифровку завершено</string>
     <plurals name="transcription_partial">

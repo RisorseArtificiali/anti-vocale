@@ -22,6 +22,20 @@ class ProcessingContextConverterTest {
     )
 
     @Test
+    fun `repetition suspected round-trips and pins the badge substring`() {
+        // TASK-583 (GH #110): the History badge greps the raw JSON for the
+        // exact "repetitionSuspected":true fragment (the isSubtitleSourced
+        // pinning pattern): a serializer change must not silently kill it.
+        val json = requireNotNull(ProcessingContextConverter.toJson(full.copy(repetitionSuspected = true)))
+        assertTrue(json.contains("\"repetitionSuspected\":true"))
+        assertEquals(
+            true,
+            ProcessingContextConverter.fromJson(json)?.repetitionSuspected)
+        // Absent stays null (old rows): the optBooleanOrNull guard.
+        assertNull(ProcessingContextConverter.fromJson(ProcessingContextConverter.toJson(full))?.repetitionSuspected)
+    }
+
+    @Test
     fun `round trip preserves every field`() {
         assertEquals(full, ProcessingContextConverter.fromJson(ProcessingContextConverter.toJson(full)))
     }

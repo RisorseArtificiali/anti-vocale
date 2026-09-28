@@ -18,6 +18,7 @@ object ProcessingContextConverter {
             c.failedChunks?.let { put("failedChunks", it) }
             c.blankChunks?.let { put("blankChunks", it) }
             c.retriedChunks?.let { put("retriedChunks", it) }
+            c.repetitionSuspected?.let { put("repetitionSuspected", it) }
             c.transcribedSeconds?.let { put("transcribedSeconds", it) }
             c.chunkCapSeconds?.let { put("chunkCapSeconds", it) }
             c.availableRamBytes?.let { put("availableRamBytes", it) }
@@ -41,10 +42,11 @@ object ProcessingContextConverter {
                     failedChunks = o.optIntOrNull("failedChunks"),
                     blankChunks = o.optIntOrNull("blankChunks"),
                     retriedChunks = o.optIntOrNull("retriedChunks"),
+                    repetitionSuspected = o.optBooleanOrNull("repetitionSuspected"),
                     transcribedSeconds = o.optDoubleOrNull("transcribedSeconds"),
                     chunkCapSeconds = o.optIntOrNull("chunkCapSeconds"),
                     availableRamBytes = o.optLongOrNull("availableRamBytes"),
-                    vadRequested = if (o.has("vadRequested") && !o.isNull("vadRequested")) o.getBoolean("vadRequested") else null,
+                    vadRequested = o.optBooleanOrNull("vadRequested"),
                     backendId = o.optStringOrNull("backendId"),
                     refinementPhase = fromJson(o.optStringOrNull("refinementPhase")),
                     refinementSkipReason = o.optStringOrNull("refinementSkipReason"),
@@ -64,6 +66,11 @@ object ProcessingContextConverter {
         raw.contains("\"decodePath\":\"${ProcessingContext.DECODE_PATH_SUBTITLE_IMPORT}\"") ||
             raw.contains("\"decodePath\":\"${ProcessingContext.DECODE_PATH_SUBTITLE_TRACK}\""))
 
+    /** TASK-583 (GH #110): true when the row's context flags the delivered
+     *  transcript as a suspected repetition loop (single-model runs). */
+    fun isRepetitionSuspected(raw: String?): Boolean =
+        raw?.contains("\"repetitionSuspected\":true") == true
+
     /** One-line human rendering ("pipeline chunks=157 (failed 3) decoded=4620s cap=60s ram=5531MB"). */
     fun render(context: ProcessingContext?): String? = context?.let { c ->
         buildList {
@@ -76,6 +83,7 @@ object ProcessingContextConverter {
             // TASK-664: outside the chunks block so the single-decode path
             // (whole_file) reports its recovery re-feed too.
             c.retriedChunks?.takeIf { it > 0 }?.let { add("retried=$it") }
+            c.repetitionSuspected?.takeIf { it }?.let { add("loop-suspected") }
             c.transcribedSeconds?.takeIf { it > 0.0 }?.let { add("decoded=${it}s") }
             c.chunkCapSeconds?.let { add("cap=${it}s") }
             // Integer MB, the app-wide RAM unit (the low-memory toasts): no
@@ -90,6 +98,9 @@ object ProcessingContextConverter {
         }.joinToString(" ")
     }
 }
+
+private fun org.json.JSONObject.optBooleanOrNull(key: String): Boolean? =
+    if (has(key) && !isNull(key)) getBoolean(key) else null
 
 private fun org.json.JSONObject.optIntOrNull(key: String): Int? =
     if (has(key) && !isNull(key)) getInt(key) else null
