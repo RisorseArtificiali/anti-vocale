@@ -23,7 +23,16 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-ADB="${ADB:-$HOME/Android/Sdk/platform-tools/adb}"
+# adb lives in different homes per host (bird: ~/Android/Sdk, mac: ~/Library/Android/sdk).
+if [[ -z "${ADB:-}" ]]; then
+    if [[ -x "$HOME/Android/Sdk/platform-tools/adb" ]]; then
+        ADB="$HOME/Android/Sdk/platform-tools/adb"
+    elif [[ -x "$HOME/Library/Android/sdk/platform-tools/adb" ]]; then
+        ADB="$HOME/Library/Android/sdk/platform-tools/adb"
+    else
+        ADB="$(command -v adb)"
+    fi
+fi
 
 # Load config from env file if present
 ENV_FILE="${DEVICE_ENV_FILE:-$HOME/.config/anti-vocale/device.env}"
@@ -46,7 +55,9 @@ if [[ ! -f "$APK" ]]; then
     exit 1
 fi
 
-APK_AGE_SEC=$(( $(date +%s) - $(date +%s -r "$APK") ))
+# date -r FILE is GNU-only (BSD date -r means epoch-seconds); stat differs too.
+APK_MTIME=$(stat -c%Y "$APK" 2>/dev/null || stat -f%m "$APK")
+APK_AGE_SEC=$(( $(date +%s) - APK_MTIME ))
 if (( APK_AGE_SEC > 60 )); then
     AGE_MIN=$(( APK_AGE_SEC / 60 ))
     echo "APK is ${AGE_MIN}m old - rebuild first:"

@@ -37,9 +37,9 @@ if ! head -c 4 "$TMP" | grep -q "PK"; then
 fi
 
 if [ -f "$TARGET" ] && cmp -s "$TMP" "$TARGET"; then
-    echo "app/libs/sherpa-onnx.aar already up to date ($(stat -c%s "$TARGET") bytes)"
+    echo "app/libs/sherpa-onnx.aar already up to date ($(wc -c < "$TARGET" | tr -d " ") bytes)"
     rm -f "$TMP"
 else
     mv "$TMP" "$TARGET"
-    echo "Installed app/libs/sherpa-onnx.aar ($(stat -c%s "$TARGET") bytes)"
+    echo "Installed app/libs/sherpa-onnx.aar ($(wc -c < "$TARGET" | tr -d " ") bytes)"
 fi
