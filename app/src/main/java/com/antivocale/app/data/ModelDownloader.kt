@@ -152,7 +152,8 @@ object ModelDownloader {
     internal fun readInstalledVersion(modelsDir: File, variant: ModelVariant): Int {
         val marker = versionMarkerFile(modelsDir, variant)
         if (!marker.exists()) return VERSION_UNKNOWN
-        return marker.readText().trim().toIntOrNull() ?: VERSION_UNKNOWN
+        // TASK-701 family: the marker can vanish between the two calls.
+        return runCatching { marker.readText().trim().toIntOrNull() }.getOrNull() ?: VERSION_UNKNOWN
     }
 
     internal fun writeVersionMarker(modelsDir: File, variant: ModelVariant) {

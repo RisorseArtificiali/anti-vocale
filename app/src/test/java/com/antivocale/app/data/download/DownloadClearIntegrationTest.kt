@@ -95,6 +95,25 @@ class DownloadClearIntegrationTest {
         } finally { dir.deleteRecursively() }
     }
 
+    @Test
+    fun `isFileComplete assumes complete when the sidecar read throws (TOCTOU)`() {
+        // TASK-701: the Play crash class. Between sidecar.exists() and
+        // readText() a concurrent cleanup deletes the file; readText() then
+        // throws FileNotFoundException and killed the Model-tab coroutine.
+        // A sidecar PATH that cannot be read (a directory) reproduces the
+        // throw deterministically: the verdict must be assume-complete.
+        val dir = tempDir()
+        try {
+            val file = File(dir, "encoder.int8.onnx")
+            file.writeText("x".repeat(100))
+            ResumeDownloadHelper.sizeSidecar(file).mkdirs()
+
+            assertTrue(
+                "an unreadable sidecar must assume complete, not throw",
+                ResumeDownloadHelper.isFileComplete(file))
+        } finally { dir.deleteRecursively() }
+    }
+
     // ==================== The core bug ====================
 
     @Test
@@ -228,11 +247,13 @@ class DownloadClearIntegrationTest {
             val filesToDownload = mutableListOf<String>()
             var completedFiles = 0
 
-            // This is the exact Phase 1 logic from SherpaOnnxModelDownloader
+            // Phase 1 logic from SherpaOnnxModelDownloader (TASK-701: the raw
+            // sidecar read became ResumeDownloadHelper.sidecarBytes there;
+            // this mirror rides the same helper so it cannot drift back to
+            // the crash pattern).
             for (fileName in files) {
                 val targetFile = File(dir, fileName)
-                val sidecar = ResumeDownloadHelper.sizeSidecar(targetFile)
-                val storedTotal = sidecar.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull()
+                val storedTotal = ResumeDownloadHelper.sidecarBytes(targetFile)
                 if (targetFile.exists() && storedTotal != null && targetFile.length() >= storedTotal) {
                     completedFiles++
                 } else {

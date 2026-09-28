@@ -42,8 +42,7 @@ class SherpaOnnxModelDownloader<V>(
 
         for (fileName in files) {
             val file = File(modelDir, fileName)
-            val fileSidecar = ResumeDownloadHelper.sizeSidecar(file)
-            val storedSize = fileSidecar.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull()
+            val storedSize = ResumeDownloadHelper.sidecarBytes(file)
 
             if (file.exists() && file.length() > 0) {
                 hasPartialFiles = true
@@ -125,8 +124,7 @@ class SherpaOnnxModelDownloader<V>(
         val filesToDownload = mutableListOf<String>()
         for (fileName in files) {
             val targetFile = File(modelDir, fileName)
-            val sidecar = ResumeDownloadHelper.sizeSidecar(targetFile)
-            val storedTotal = sidecar.takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull()
+            val storedTotal = ResumeDownloadHelper.sidecarBytes(targetFile)
             if (targetFile.exists() && storedTotal != null && targetFile.length() >= storedTotal) {
                 Log.i(config.tag, "File already complete, skipping: $fileName")
                 perFileBytes[fileName] = targetFile.length()

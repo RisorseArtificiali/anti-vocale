@@ -49,16 +49,19 @@ object ResumeDownloadHelper {
     fun sizeSidecar(tarFile: File): File = File("${tarFile.path}$SIZE_SIDECAR_SUFFIX")
 
     /**
-     * Reads the actual total file size from the `.size` sidecar written during download.
-     * Falls back to [estimatedBytes] if the sidecar is missing or unreadable.
+     * TASK-701: the ONE safe .size-sidecar read. A sidecar can vanish between
+     * exists() and readText() (clearTarDownload, the download lifecycle, the
+     * orphan sweep): every caller folds missing/unreadable/unparseable into
+     * its own fallback instead of throwing out of the Model-tab coroutines.
+     * Errors (OOM/SOE) still propagate: only Exceptions fold.
      */
-    fun readStoredTotalBytes(tarFile: File, estimatedBytes: Long): Long {
-        return try {
-            sizeSidecar(tarFile).readText().trim().toLongOrNull() ?: estimatedBytes
-        } catch (e: Exception) {
-            estimatedBytes
-        }
-    }
+    fun sidecarBytes(file: File): Long? =
+        runCatching { sizeSidecar(file).takeIf { it.exists() }?.readText()?.trim()?.toLongOrNull() }
+            .onFailure {
+                if (it is Error) throw it
+                Log.w(TAG, "Unreadable .size sidecar for ${file.name} (${it.javaClass.simpleName}); falling back")
+            }
+            .getOrNull()
 
     /**
      * Checks whether a downloaded file is complete by comparing against
@@ -66,13 +69,14 @@ object ResumeDownloadHelper {
      *
      * - Sidecar exists + file >= expected size → complete
      * - Sidecar exists + file < expected size → partial download
-     * - No sidecar + file exists with content → assume complete (tar.bz2 / sideload)
+     * - No sidecar + file exists with content → assume complete (tar.bz2 /
+     *   sideload); an UNREADABLE sidecar (vanished mid-scan, TASK-701) folds
+     *   into this arm too, via [sidecarBytes].
      */
     fun isFileComplete(file: File): Boolean {
         if (!file.exists() || file.length() == 0L) return false
-        val sidecar = sizeSidecar(file)
-        if (sidecar.exists()) {
-            val expected = sidecar.readText().trim().toLongOrNull() ?: return true
+        val expected = sidecarBytes(file)
+        if (expected != null) {
             return file.length() >= expected
         }
         return true
