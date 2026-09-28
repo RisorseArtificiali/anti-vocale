@@ -63,6 +63,7 @@ Set keys and value formats:
 | `keep_alive` | `saveKeepAliveTimeout` | positive integer (minutes); 0/negative rejected (would silently fall back to the default) |
 | `subtitle_timeout` | `saveSubtitleChoiceTimeoutMinutes` | positive integer (minutes); TASK-515: the subtitles-or-transcribe choice timeout |
 | `progressive` | `saveProgressiveTranscription` | `true` or `false` (strict); gates the interim chunk notifications and the chunk nav (added after the 2026-09-04 session burned six UI taps on this toggle) |
+| `early_preview` | `saveEarlyPreviewEnabled` | `true` or `false` (strict); TASK-186 early preview of the first pipeline chunk's head (default off) |
 | `threads` | `saveThreadCount` | integer (for example `4`) |
 | `provider` | `saveInferenceProvider` | `auto`, `nnapi`, `cpu` (the settings dropdown's exact set; anything else is rejected because the app would silently run it as CPU) |
 | `backend` | `saveTranscriptionBackend` | a catalog id (`sherpa-onnx`, `whisper`, `qwen3-asr`, `nemotron-streaming`, `gigaam`), `llm`, or `external:<record id>`; unknown ids are rejected without writing |

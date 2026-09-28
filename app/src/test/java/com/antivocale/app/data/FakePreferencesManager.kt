@@ -101,6 +101,9 @@ internal class FakePreferencesManager : PreferencesManager {
     private val _onboardingCompleted = MutableStateFlow(false)
     override val onboardingCompleted = _onboardingCompleted
     override val progressiveTranscription: Flow<Boolean> get() = _progressiveTranscription
+    // TASK-186: early preview, default off like the real impl.
+    val _earlyPreviewEnabled = MutableStateFlow(PreferencesManager.DEFAULT_EARLY_PREVIEW)
+    override val earlyPreviewEnabled: Flow<Boolean> get() = _earlyPreviewEnabled
     override val punctuationMode: Flow<String> get() = _punctuationMode
     override val punctuationPrompt: Flow<String> get() = _punctuationPrompt
     override val summarizeEnabled: Flow<Boolean> get() = _summarizeEnabled
@@ -167,6 +170,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveVadAdvisoryDismissed(dismissed: Boolean) { _vadAdvisoryDismissed.value = dismissed }
     override suspend fun saveOnboardingCompleted(completed: Boolean) { _onboardingCompleted.value = completed }
     override suspend fun saveProgressiveTranscription(enabled: Boolean) { _progressiveTranscription.value = enabled }
+    override suspend fun saveEarlyPreviewEnabled(enabled: Boolean) { _earlyPreviewEnabled.value = enabled }
     override suspend fun savePunctuationMode(mode: String) { _punctuationMode.value = mode }
     override suspend fun savePunctuationPrompt(prompt: String) { _punctuationPrompt.value = prompt.take(PreferencesManager.PROMPT_CAP) }
     override suspend fun saveSummarizeEnabled(enabled: Boolean) { _summarizeEnabled.value = enabled }

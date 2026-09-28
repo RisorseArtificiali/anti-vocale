@@ -85,6 +85,7 @@ internal class TestSpiOps(
             .put("op", OP_GET)
             .put("vadEnabled", preferences.vadEnabled.first())
             .put("progressiveEnabled", preferences.progressiveTranscription.first())
+            .put("earlyPreviewEnabled", preferences.earlyPreviewEnabled.first())
             .put("punctuationMode", preferences.punctuationMode.first())
             .put("punctuationPrompt", preferences.punctuationPrompt.first())
             .put("threadCount", preferences.threadCount.first())
@@ -163,6 +164,8 @@ internal class TestSpiOps(
     private val booleanKeys: Map<String, suspend (Boolean) -> Unit> = mapOf(
         "vad" to preferences::saveVadEnabled,
         "progressive" to preferences::saveProgressiveTranscription,
+        // TASK-186: the early-preview gate (device trials flip it per clip).
+        "early_preview" to preferences::saveEarlyPreviewEnabled,
         "summarize" to preferences::saveSummarizeEnabled,
         "refinement_enabled" to preferences::saveRefinementEnabled,
         "speaker_labels_enabled" to preferences::saveSpeakerLabelsEnabled,

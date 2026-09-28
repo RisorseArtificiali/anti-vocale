@@ -53,20 +53,20 @@ class LadderRoutingContractTest {
      * withSeedHeartbeat; a new call site added outside it compiles clean and
      * silently reopens the TASK-602 F1 class (the speaker-pass miss this
      * count pins shut). When you add or remove a site, update the count WITH
-     * it and say why in the commit. The ninth span is the single-chunk
-     * conditional (streaming partials self-refresh, so only the silent
-     * branch wraps).
+     * it and say why in the commit. The tenth span is TASK-186's
+     * early-preview head decode (a 10s decode before the full chunk 0).
      */
     @Test
     fun `every silent stretch runs under withSeedHeartbeat`() {
         val source = orchestratorSource().readText()
         val wrapped = Regex("withSeedHeartbeat\\s*\\{").findAll(source).count()
         assertEquals(
-            "expected the 9 known withSeedHeartbeat spans (post-pass funnel, speaker labels, " +
-                "single-chunk conditional, progressive decode, parallel decode, pipeline " +
-                "decode, GC retry, final-generative pass, recoverEmptyChunk); a new decode " +
-                "or post-pass site must join them or say why not (TASK-698)",
-            9,
+            "expected the 10 known withSeedHeartbeat spans (the nine TASK-698 sites: " +
+                "post-pass funnel, speaker labels, single-chunk conditional, progressive " +
+                "decode, parallel decode, pipeline decode, GC retry, final-generative " +
+                "pass, recoverEmptyChunk; plus the TASK-186 early-preview head decode); " +
+                "a new decode or post-pass site must join them or say why not (TASK-698)",
+            10,
             wrapped,
         )
     }

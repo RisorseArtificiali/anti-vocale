@@ -480,4 +480,131 @@ class TranscriptionOrchestratorPipelineProgressiveTest : TranscriptionOrchestrat
         coVerify(exactly = 0) { logDao.updateInterimResult(any(), any(), any()) }
         coVerify(exactly = 0) { logDao.updateFailureDecodedMs(any(), any()) }
     }
+
+    // ---- TASK-186: early preview on the pipeline's first chunk ----
+
+    /**
+     * A stream whose chunk 0 is FULL cap-sized (30s at 16kHz; the cap the
+     * whisper stub declares and the memory policy fails open to in tests).
+     * Later chunks keep the suite's 1000-sample shape.
+     */
+    private fun stubPreviewCapableStream(chunkCount: Int = 3): List<FloatArray> {
+        val chunks = buildList {
+            add(FloatArray(30 * 16_000) { 1.0f })
+            repeat(chunkCount - 1) { idx -> add(FloatArray(1000) { (idx + 2).toFloat() }) }
+        }
+        val streamEvents = buildList {
+            add(AudioPreprocessor.StreamEvent.Header(
+                AudioPreprocessor.StreamHeader(
+                    sampleRate = 16000,
+                    totalDurationSeconds = 120.0,
+                    expectedChunkCount = chunkCount)))
+            chunks.forEachIndexed { index, samples ->
+                add(AudioPreprocessor.StreamEvent.Chunk(
+                    AudioPreprocessor.StreamChunk(
+                        samples = samples,
+                        sampleRate = 16000,
+                        chunkIndex = index,
+                        isLast = index == chunks.lastIndex)))
+            }
+        }
+        every {
+            audioPreprocessor.prepareAudioStream(
+                inputPath = any(),
+                maxChunkDurationSeconds = any(),
+                context = any(),
+                enableVad = any(),
+                availableRamBytes = any(),
+                maxHeapBytes = any())
+        } returns flow { streamEvents.forEach { emit(it) } }
+        return chunks
+    }
+
+    /**
+     * Content-keyed decode stub for preview runs: the 10s head (160k samples
+     * of chunk 0's fill value) answers the rough preview text, every other
+     * feed answers by its own content. Also records the feed sizes so the
+     * call ORDER is observable.
+     */
+    private fun stubPreviewDecodes(feedSizes: MutableList<Int>) {
+        coEvery { backend.transcribeAudio(any(), any(), any()) } answers {
+            val feed = firstArg<FloatArray>()
+            feedSizes.add(feed.size)
+            val text = when {
+                feed.size == 160_000 -> "rough head"
+                feed.size == 30 * 16_000 -> "first"
+                feed.size == 1000 && feed[0] == 2.0f -> "second"
+                else -> "third"
+            }
+            Result.success(TranscriptionResult(text = text))
+        }
+    }
+
+    @Test
+    fun `early preview ON decodes the head of chunk 0 before the full chunk`() = runTest {
+        every { preferencesManager.earlyPreviewEnabled } returns flowOf(true)
+        stubPreviewCapableStream(chunkCount = 3)
+        coEvery { logDao.getByTaskId("test-pipeline") } returns com.antivocale.app.data.local.LogEntity(
+            id = "1", timestamp = 0L, taskId = "test-pipeline",
+            type = "AUDIO", status = "PROCESSING", prompt = "")
+        val feedSizes = mutableListOf<Int>()
+        stubPreviewDecodes(feedSizes)
+
+        val result = runPipelineRequest()
+
+        assertTrue("Expected success but got: ${result.exceptionOrNull()}", result.isSuccess)
+        // The head decode precedes the full chunk 0 decode; no other call shape exists.
+        assertEquals(listOf(160_000, 30 * 16_000, 1000, 1000), feedSizes)
+        // The preview surfaced, and BEFORE the real chunk 0's interim (the
+        // chunk-nav path only ever starts at the real chunk's onInterimResult).
+        verify(ordering = io.mockk.Ordering.ORDERED) {
+            listener.onPreviewResult("rough head")
+            listener.onInterimResult(
+                contentText = "first",
+                bigText = "first",
+                subText = "Chunk 1/3",
+                chunkIndex = 0,
+                chunkText = "first",
+                totalChunks = 3)
+        }
+        verify(exactly = 1) { listener.onPreviewResult("rough head") }
+        // The preview text landed on the replaceable interim row exactly once.
+        coVerify(exactly = 1) { logDao.updateInterimResult("test-pipeline", "rough head", true) }
+        // The final text and the final row carry ONLY the real chunk texts.
+        assertEquals("first second third", result.getOrNull())
+        coVerify(atLeast = 1) { logDao.update(match { e -> e.result == "first second third" }) }
+    }
+
+    @Test
+    fun `early preview OFF keeps the identity call shape and never previews`() = runTest {
+        // The base fixture already stubs the flag false; make that explicit.
+        every { preferencesManager.earlyPreviewEnabled } returns flowOf(false)
+        stubPreviewCapableStream(chunkCount = 3)
+        val feedSizes = mutableListOf<Int>()
+        stubPreviewDecodes(feedSizes)
+
+        val result = runPipelineRequest()
+
+        assertTrue(result.isSuccess)
+        // Exactly one decode per chunk; no head call ever fired.
+        assertEquals(listOf(30 * 16_000, 1000, 1000), feedSizes)
+        verify(exactly = 0) { listener.onPreviewResult(any()) }
+        assertEquals("first second third", result.getOrNull())
+    }
+
+    @Test
+    fun `early preview ON with a non-cap first chunk never previews`() = runTest {
+        every { preferencesManager.earlyPreviewEnabled } returns flowOf(true)
+        stubMultiChunkStream(chunkCount = 3)
+        val feedSizes = mutableListOf<Int>()
+        stubPreviewDecodes(feedSizes)
+
+        val result = runPipelineRequest()
+
+        assertTrue(result.isSuccess)
+        // The suite's 1000-sample chunks are far below the 30s cap: the
+        // policy must not fire, so the identity call shape holds.
+        assertEquals(listOf(1000, 1000, 1000), feedSizes)
+        verify(exactly = 0) { listener.onPreviewResult(any()) }
+    }
 }

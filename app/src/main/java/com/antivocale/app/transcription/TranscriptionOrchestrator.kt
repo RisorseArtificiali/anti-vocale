@@ -2265,6 +2265,9 @@ class TranscriptionOrchestrator @Inject constructor(
         val providerPref = preferencesManager.inferenceProvider.first()
         val resolvedProvider = InferenceProvider.resolve(providerPref)
         val progressiveEnabled = preferencesManager.progressiveTranscription.first()
+        // TASK-186: early preview rides the pipelined path only (the read
+        // sits with the sibling one-shot reads; the pipeline consumes it).
+        val earlyPreviewEnabled = preferencesManager.earlyPreviewEnabled.first()
 
         // Resolve prompt: request → settings → fallback. TASK-370: multi-chunk
         // routing lives in ChunkPromptPolicy (plain instruction per chunk,
@@ -2382,6 +2385,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 listener = listener,
                 prompt = promptPlan.perChunk,
                 progressiveEnabled = progressiveEnabled,
+                earlyPreviewEnabled = earlyPreviewEnabled,
                 emitInterim = emitInterim,
                 // GH #83: the pipeline is the DEFAULT contiguous path
                 // (Parakeet); without this the collector only reached
@@ -3265,6 +3269,8 @@ class TranscriptionOrchestrator @Inject constructor(
         listener: TranscriptionListener,
         prompt: String = "",
         progressiveEnabled: Boolean = false,
+        /** TASK-186: surface an early preview of chunk 0's head before the full chunk decodes. */
+        earlyPreviewEnabled: Boolean = false,
         emitInterim: Boolean = true,
         /** GH #83: when non-null, invoked after the stream completes with the
          *  decoded chunk list. The pipeline's stream never strips silence
@@ -3453,6 +3459,47 @@ class TranscriptionOrchestrator @Inject constructor(
                         // BEFORE this chunk decodes so transcript order
                         // survives.
                         popHeldEmpty(nextChunk = chunk.samples)
+
+                        // TASK-186: early preview. Before the full chunk 0
+                        // decodes (the slowest single decode of the run),
+                        // transcribe a short head of it and surface the text
+                        // as a labeled interim. Strictly read-only for the
+                        // run: no accumulatedText, no cues, no chunk
+                        // accounting, no chunk-nav state; the preview is not
+                        // a chunk and nothing below renumbers. The real
+                        // chunk 0 delivery replaces every surface the
+                        // preview touches.
+                        if (chunk.chunkIndex == 0 && emitInterim && progressiveEnabled) {
+                            val previewSeconds = EarlyPreviewPolicy.previewSeconds(
+                                enabled = earlyPreviewEnabled,
+                                pipelineChunkSeconds = maxChunkDurationSeconds,
+                                expectedChunkCount = expectedChunkCount,
+                                chunk0Samples = chunk.samples.size,
+                                chunk0SampleRate = chunk.sampleRate,
+                            )
+                            if (previewSeconds != null) {
+                                val headSamples = chunk.sampleRate * previewSeconds
+                                runCatching {
+                                    withSeedHeartbeat {
+                                        backend.transcribeAudio(
+                                            samples = chunk.samples.copyOf(headSamples),
+                                            sampleRate = chunk.sampleRate,
+                                            prompt = resolvedPrompt
+                                        )
+                                    }
+                                }.onFailure {
+                                    // Cancellation must propagate (the house
+                                    // contract); anything else just skips the
+                                    // preview, never the run.
+                                    if (it is kotlinx.coroutines.CancellationException) throw it
+                                }.getOrNull()?.getOrNull()
+                                    ?.text?.trim()?.takeIf { it.isNotEmpty() }
+                                    ?.let { previewText ->
+                                        updateInterimResult(taskId, previewText, writeRow = emitInterim)
+                                        listener.onPreviewResult(previewText)
+                                    }
+                            }
+                        }
 
                         // TASK-698: silent stretch like the other arms' chunk
                         // decodes (partials fire between chunks, not within).

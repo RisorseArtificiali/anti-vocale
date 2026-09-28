@@ -72,6 +72,8 @@ class PreferencesManagerImpl(
         private val TRANSCRIPT_EXPORT_FORMAT = stringPreferencesKey("transcript_export_format")
         private val VAD_ENABLED = booleanPreferencesKey("vad_enabled")
         private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
+        // TASK-186: the early-preview gate on pipelined runs.
+        private val EARLY_PREVIEW_ENABLED = booleanPreferencesKey("early_preview_enabled")
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
         private val PUNCTUATION_MODE = stringPreferencesKey("punctuation_mode")
         private val PUNCTUATION_PROMPT = stringPreferencesKey("punctuation_prompt")
@@ -135,6 +137,7 @@ class PreferencesManagerImpl(
         val transcriptExportFormat: String = PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
         val vadEnabled: Boolean = PreferencesManager.DEFAULT_VAD_ENABLED,
         val progressiveTranscription: Boolean = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
+        val earlyPreviewEnabled: Boolean = PreferencesManager.DEFAULT_EARLY_PREVIEW,
         val defaultPrompt: String = PreferencesManager.DEFAULT_PROMPT_VALUE,
         val punctuationMode: String = PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         val punctuationPrompt: String = "",
@@ -192,6 +195,7 @@ class PreferencesManagerImpl(
         transcriptExportFormat = this[TRANSCRIPT_EXPORT_FORMAT] ?: PreferencesManager.DEFAULT_TRANSCRIPT_EXPORT_FORMAT,
         vadEnabled = this[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED,
         progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
+        earlyPreviewEnabled = this[EARLY_PREVIEW_ENABLED] ?: PreferencesManager.DEFAULT_EARLY_PREVIEW,
         defaultPrompt = this[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE,
         punctuationMode = this[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         punctuationPrompt = this[PUNCTUATION_PROMPT] ?: "",
@@ -507,6 +511,16 @@ class PreferencesManagerImpl(
             preferences[PROGRESSIVE_TRANSCRIPTION] = enabled
         }
         cache.updateAndGet { it.copy(progressiveTranscription = enabled) }
+    }
+
+    override val earlyPreviewEnabled: Flow<Boolean> = dataStore.data.map { it[EARLY_PREVIEW_ENABLED] ?: PreferencesManager.DEFAULT_EARLY_PREVIEW }
+        .onStart { emit(cache.get().earlyPreviewEnabled) }
+
+    override suspend fun saveEarlyPreviewEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[EARLY_PREVIEW_ENABLED] = enabled
+        }
+        cache.updateAndGet { it.copy(earlyPreviewEnabled = enabled) }
     }
 
     override val defaultPrompt: Flow<String> = dataStore.data.map { it[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE }

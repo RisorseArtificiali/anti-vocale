@@ -80,6 +80,15 @@ interface PreferencesManager {
      */
     val onboardingCompleted: Flow<Boolean>
     val progressiveTranscription: Flow<Boolean>
+
+    /**
+     * TASK-186: early preview on pipelined runs. While on, the head of the
+     * first full cap-sized chunk is transcribed first and surfaced as a
+     * labeled interim that the real chunk 0 result then replaces. Opt-in:
+     * the extra decode costs battery on every long clip.
+     */
+    val earlyPreviewEnabled: Flow<Boolean>
+
     val defaultPrompt: Flow<String>
     /** TASK-276 punctuation pass mode: "off" | "auto" | "always"; default "auto". */
     val punctuationMode: Flow<String>
@@ -192,6 +201,10 @@ interface PreferencesManager {
     /** TASK-491: marks the welcome tour done; false re-arms it. */
     suspend fun saveOnboardingCompleted(completed: Boolean)
     suspend fun saveProgressiveTranscription(enabled: Boolean)
+
+    /** TASK-186: see [earlyPreviewEnabled]. */
+    suspend fun saveEarlyPreviewEnabled(enabled: Boolean)
+
     suspend fun saveDefaultPrompt(prompt: String)
     suspend fun savePunctuationMode(mode: String)
     suspend fun savePunctuationPrompt(prompt: String)
@@ -276,6 +289,9 @@ interface PreferencesManager {
         const val DEFAULT_TRANSCRIPT_EXPORT_FORMAT = "TXT"
         const val DEFAULT_VAD_ENABLED = false
         const val DEFAULT_PROGRESSIVE_TRANSCRIPTION = true
+        /** TASK-186: the extra head decode is opt-in. */
+        const val DEFAULT_EARLY_PREVIEW = false
+
         const val DEFAULT_PROMPT_VALUE = ""
 
         /**

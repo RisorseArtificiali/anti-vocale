@@ -121,6 +121,11 @@ abstract class TranscriptionOrchestratorTestBase {
         // preference, which resolvedLanguagePin reports as "auto". Tests that pin
         // a language re-stub this after baseSetUp and win.
         every { preferencesManager.transcriptionLanguage } returns flowOf("")
+        // TASK-186: the early-preview read sits on the audio path next to
+        // progressiveTranscription; default OFF keeps every existing test on
+        // the identity behavior (an unstubbed relaxed-mock Flow explodes on
+        // first(), the modelPath trap above).
+        every { preferencesManager.earlyPreviewEnabled } returns flowOf(false)
     }
 
     protected fun stubWhisperBackend(): TranscriptionBackend =

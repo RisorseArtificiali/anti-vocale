@@ -46,6 +46,15 @@ interface TranscriptionListener {
         totalChunks: Int = 0
     )
 
+    /**
+     * TASK-186: early-preview text from the head of chunk 0 on a multi-chunk
+     * pipeline run. Interim-only by contract: it lands on no final state and
+     * the real chunk 0 result (delivered through [onInterimResult] moments
+     * later) replaces it on every surface. Deliberately carries NO chunk
+     * metadata so an implementation cannot record it as a completed chunk.
+     */
+    fun onPreviewResult(chunkText: String) {}
+
     /** Transcription completed successfully */
     fun onSuccess(
         taskId: String,
