@@ -5,6 +5,7 @@ import android.media.MediaCodec
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.util.Log
+import com.antivocale.app.util.concatFloatArrays
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
@@ -274,13 +275,7 @@ class AudioPreprocessor @Inject constructor() {
                 }
 
                 // Single segment: merge and use existing chunk logic
-                val totalSize = segments.sumOf { it.size }
-                val merged = FloatArray(totalSize)
-                var offset = 0
-                for (seg in segments) {
-                    System.arraycopy(seg, 0, merged, offset, seg.size)
-                    offset += seg.size
-                }
+                val merged = concatFloatArrays(segments)
                 segments.clear()
 
                 val strippedDuration = merged.size.toDouble() / audioData.sampleRate
@@ -722,25 +717,17 @@ class AudioPreprocessor @Inject constructor() {
     }
 
     /**
-     * Merges the decoded input-rate chunks and resamples to 16kHz. Local references to
-     * the chunk list and the merged input-rate buffer are dropped (clear + reassign to an
-     * empty array) before returning, so they are collectable while the caller proceeds
-     * to chunk processing (TASK-340 Fix 1a).
+     * Merges the decoded input-rate chunks and resamples to 16kHz. The chunk
+     * list is cleared before returning and the merged input-rate buffer
+     * reference is dropped in the resample branch, so both are collectable
+     * while the caller proceeds to chunk processing (TASK-340 Fix 1a).
      *
      * Since TASK-416 the production caller feeds already-resampled 16kHz chunks, so the
      * resampling branch below is exercised only by its pinning tests.
      */
     internal fun mergeAndResample(chunks: MutableList<FloatArray>, inputSampleRate: Int): Pair<FloatArray, Int> {
-        var list = chunks
-        val totalSamples = list.sumOf { it.size }
-        var merged = FloatArray(totalSamples)
-        var offset = 0
-        for (chunk in list) {
-            System.arraycopy(chunk, 0, merged, offset, chunk.size)
-            offset += chunk.size
-        }
-        list.clear()
-        list = mutableListOf()
+        var merged = concatFloatArrays(chunks)
+        chunks.clear()
 
         return if (inputSampleRate != TARGET_SAMPLE_RATE) {
             val resampled = resampleFloat(merged, inputSampleRate.toDouble() / TARGET_SAMPLE_RATE)
@@ -812,12 +799,7 @@ class AudioPreprocessor @Inject constructor() {
                 val segRange = rs.getOrNull(start)
                 if (segRange != null) mergedRanges.add(segRange)
             } else {
-                val combined = FloatArray(groupSize)
-                var offset = 0
-                for (i in start..end) {
-                    System.arraycopy(segments[i], 0, combined, offset, segments[i].size)
-                    offset += segments[i].size
-                }
+                val combined = concatFloatArrays(segments.subList(start, end + 1))
                 merged.add(combined)
                 // Range-free callers pass an empty list: the ranges pair with
                 // the input segments, so index them only when provided.

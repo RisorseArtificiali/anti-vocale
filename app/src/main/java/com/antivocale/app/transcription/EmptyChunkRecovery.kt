@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import android.util.Log
 import com.antivocale.app.manager.EngineWedgeTimeoutException
+import com.antivocale.app.util.concatFloatArrays
 import kotlinx.coroutines.CancellationException
 
 /**
@@ -142,7 +143,7 @@ internal object EmptyChunkRecovery {
         sampleRate: Int,
         decodeRung: (FloatArray) -> TranscriptionResult?,
     ): Outcome? {
-        val combined = decodeRung(concatSamples(prev, chunk, next)) ?: return null
+        val combined = decodeRung(concatFloatArrays(prev, chunk, next)) ?: return null
         if (combined.tokens.isEmpty()) {
             // The words cannot be attributed to this chunk; adopting the text
             // would duplicate neighbor words already transcribed elsewhere.
@@ -179,21 +180,10 @@ internal object EmptyChunkRecovery {
         decodeRung: (FloatArray) -> TranscriptionResult?,
     ): Outcome? {
         val pad = FloatArray((sampleRate * PAD_SECONDS).toInt())
-        val padded = decodeRung(concatSamples(pad, chunk, pad)) ?: return null
+        val padded = decodeRung(concatFloatArrays(pad, chunk, pad)) ?: return null
         val padMs = pad.size * 1000L / sampleRate
         return Outcome.Recovered(padded.copy(
             tokens = shiftTokens(padded.tokens, padMs, clampStart = true)))
-    }
-
-    /** One rung-2 feed: the parts concatenated in order, no size math at the rungs. */
-    private fun concatSamples(vararg parts: FloatArray): FloatArray {
-        val feed = FloatArray(parts.sumOf { it.size })
-        var offset = 0
-        for (part in parts) {
-            System.arraycopy(part, 0, feed, offset, part.size)
-            offset += part.size
-        }
-        return feed
     }
 
     /**
