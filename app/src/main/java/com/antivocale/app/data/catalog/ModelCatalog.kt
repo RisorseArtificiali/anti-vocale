@@ -241,7 +241,12 @@ object ModelCatalogJson {
             tailPadSeconds = o.optDouble("tailPadSeconds", 0.0),
             languageOption = o.optBoolean("languageOption", false),
             passLanguage = o.optBoolean("passLanguage", false),
-            metaKeys = optStringList(o, "metaKeys"),
+            // TASK-412: null = not declared (falls back to the modelType
+            // default); an EXPLICIT empty array = require nothing (the GH #68
+            // channel the hotfix could not express).
+            metaKeys = o.optJSONArray("metaKeys")?.let { arr ->
+                buildList { for (i in 0 until arr.length()) add(arr.getString(i)) }
+            },
             skipMetadataCheck = o.optBoolean("skipMetadataCheck", false),
             whisperTailPaddings = o.optInt("whisperTailPaddings", 0),
             blankPenalty = o.optDouble("blankPenalty", 0.0),
@@ -352,7 +357,7 @@ data class CatalogFlags(
      */
     val passLanguage: Boolean = false,
     /** ONNX metadata keys required on the encoder; default = vocab_size (+ nemo keys for nemo_transducer). */
-    val metaKeys: List<String> = emptyList(),
+    val metaKeys: List<String>? = null,
     /** Skip the pre-native ONNX metadata scan (Whisper models carry no vocab_size metadata). */
     val skipMetadataCheck: Boolean = false,
     /** Whisper's native tailPaddings decode param, in 10ms units (e.g. 1000 = 10s). */

@@ -49,7 +49,7 @@ class BundledCatalogMetadataPolicyTest {
     )
 
     /** Where an entry's metadata policy comes from. */
-    private enum class Policy { EXPLICIT_META_KEYS, EXPLICIT_MODEL_TYPE, SKIPPED }
+    private enum class Policy { EXPLICIT_META_KEYS, EXPLICIT_MODEL_TYPE, EXPLICIT_EMPTY, SKIPPED }
 
     @Test
     fun `every bundled entry the load path checks declares an explicit metadata policy`() {
@@ -138,7 +138,10 @@ class BundledCatalogMetadataPolicyTest {
             when {
                 entry.flags.skipMetadataCheck ->
                     if (entry.id in documentedSkips) Policy.SKIPPED else null
-                entry.flags.metaKeys.isNotEmpty() -> Policy.EXPLICIT_META_KEYS
+                // TASK-412: null = not declared (modelType default path);
+                // an explicit empty list = require nothing (its own policy).
+                entry.flags.metaKeys?.isNotEmpty() == true -> Policy.EXPLICIT_META_KEYS
+                entry.flags.metaKeys != null -> Policy.EXPLICIT_EMPTY
                 entry.modelType in explicitModelTypes -> Policy.EXPLICIT_MODEL_TYPE
                 else -> null
             }

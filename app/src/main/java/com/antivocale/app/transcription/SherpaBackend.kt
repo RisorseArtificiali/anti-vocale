@@ -100,7 +100,10 @@ class SherpaBackend(
          * Catalog-driven so a tuned key list lives in the catalog, not in each backend.
          */
         fun requiredMetadataKeys(entry: CatalogEntry): List<String> =
-            entry.flags.metaKeys.ifEmpty { requiredTransducerMetadataKeys(entry.modelType) }
+            // TASK-412: null = not declared (modelType default); an explicit
+            // empty list = require nothing (the catalog channel, replacing the
+            // qwen3 code branch's reason to exist).
+            entry.flags.metaKeys ?: requiredTransducerMetadataKeys(entry.modelType)
 
         // TASK-413: internal (not private) so MetadataFixturesContractTest can
         // assert the fixtures' recorded scan window against the production
