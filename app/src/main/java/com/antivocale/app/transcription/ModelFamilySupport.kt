@@ -8,6 +8,7 @@ import com.k2fsa.sherpa.onnx.OfflineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineMoonshineModelConfig
 import com.k2fsa.sherpa.onnx.OfflineNemoEncDecCtcModelConfig
 import com.k2fsa.sherpa.onnx.OfflineOmnilingualAsrCtcModelConfig
+import com.k2fsa.sherpa.onnx.OfflineParaformerModelConfig
 import com.k2fsa.sherpa.onnx.OfflineSenseVoiceModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTransducerModelConfig
 import com.k2fsa.sherpa.onnx.OfflineWhisperModelConfig
@@ -217,11 +218,14 @@ sealed interface ModelFamilySupport {
                 "original vocab_size/subsampling_factor metadata (Parakeet, GigaAM, k2-fsa " +
                 "offline zipformers); exports with 'streaming' in the name are not supported"
 
-        /** Error raised when CTC is imported without an explicit modelType (single definition). */
-        const val CTC_MODEL_TYPE_REQUIRED =
-            "CTC family requires an explicit modelType: nemo_ctc, zipformer_ctc or omnilingual_ctc"
+        /** Error raised when CTC is imported without an explicit modelType (single
+         *  definition, DERIVED from [validModelTypes] so the list can never drift
+         *  from the validation it names). */
+        val CTC_MODEL_TYPE_REQUIRED =
+            "CTC family requires an explicit modelType: " +
+                validModelTypes(ModelFamily.CTC).joinToString(", ")
 
-        /** The two sherpa CTC config subtypes (single definition for the
+        /** The sherpa CTC config subtypes (single definition for the
          *  engine mapping above, the import UI defaults, and the family
          *  chooser; a mismatched pair dies at native load, so every site
          *  must spell these identically). */
@@ -230,6 +234,10 @@ sealed interface ModelFamilySupport {
 
         /** TASK-635: Meta omnilingual CTC (sherpa OfflineOmnilingualAsrCtcModelConfig). */
         const val CTC_TYPE_OMNILINGUAL = "omnilingual_ctc"
+
+        /** TASK-667: FunASR Paraformer (sherpa OfflineParaformerModelConfig; the
+         *  file shape is CTC's model+tokens, so the CTC family routes it). */
+        const val CTC_TYPE_PARAFORMER = "paraformer"
 
         /** Record option keys, single definition for the supports and the import UI. */
         const val OPTION_WHISPER_LANGUAGE = "whisper.language"
@@ -254,7 +262,7 @@ sealed interface ModelFamilySupport {
          *  ONE table both [isValidModelType] and error messages derive from. */
         fun validModelTypes(family: ModelFamily): List<String> = when (family) {
             ModelFamily.TRANSDUCER -> listOf("", "nemo_transducer", "conformer_transducer")
-            ModelFamily.CTC -> listOf("nemo_ctc", "zipformer_ctc", CTC_TYPE_OMNILINGUAL)
+            ModelFamily.CTC -> listOf(CTC_TYPE_NEMO, CTC_TYPE_ZIPFORMER, CTC_TYPE_OMNILINGUAL, CTC_TYPE_PARAFORMER)
             ModelFamily.WHISPER, ModelFamily.SENSE_VOICE, ModelFamily.CANARY,
             ModelFamily.MOONSHINE, ModelFamily.DOLPHIN -> listOf("")
         }
@@ -467,7 +475,11 @@ object WhisperSupport : ModelFamilySupport {
  * Record modelType selects the sherpa config subtype:
  * - "nemo_ctc" -> [OfflineNemoEncDecCtcModelConfig] (NeMo encoder-decoder CTC)
  * - "zipformer_ctc" -> [OfflineZipformerCtcModelConfig] (Zipformer CTC)
- * - any other value -> [IllegalArgumentException] naming valid values.
+ * - "omnilingual_ctc" -> [OfflineOmnilingualAsrCtcModelConfig] (TASK-635)
+ * - "paraformer" -> [OfflineParaformerModelConfig] (TASK-667, FunASR export
+ *   with CTC's model+tokens shape)
+ * - any other value -> [IllegalArgumentException] naming valid values
+ *   (derived from [validModelTypes], the ONE table).
  *
  * Metadata: empty (GigaAM CTC exports carry only "onnx.infer" per desktop
  * validation; no family-identifying metadata to check).
@@ -531,13 +543,13 @@ object CtcSupport : ModelFamilySupport {
     override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig {
         val encoderPath = "${record.dir}/${SherpaBackend.CANONICAL_ENCODER}"
         return when (record.modelType) {
-            "nemo_ctc" -> OfflineModelConfig(
+            ModelFamilySupport.CTC_TYPE_NEMO -> OfflineModelConfig(
                 nemo = OfflineNemoEncDecCtcModelConfig(model = encoderPath),
-                modelType = "nemo_ctc",
+                modelType = ModelFamilySupport.CTC_TYPE_NEMO,
             ).withCommonTail(record, numThreads, provider)
-            "zipformer_ctc" -> OfflineModelConfig(
+            ModelFamilySupport.CTC_TYPE_ZIPFORMER -> OfflineModelConfig(
                 zipformerCtc = OfflineZipformerCtcModelConfig(model = encoderPath),
-                modelType = "zipformer_ctc",
+                modelType = ModelFamilySupport.CTC_TYPE_ZIPFORMER,
             ).withCommonTail(record, numThreads, provider)
             ModelFamilySupport.CTC_TYPE_OMNILINGUAL -> OfflineModelConfig(
                 // Mirrors sherpa's from_omnilingual_asr_ctc: the dedicated
@@ -545,8 +557,18 @@ object CtcSupport : ModelFamilySupport {
                 omnilingual = OfflineOmnilingualAsrCtcModelConfig(model = encoderPath),
                 modelType = "",
             ).withCommonTail(record, numThreads, provider)
+            ModelFamilySupport.CTC_TYPE_PARAFORMER -> OfflineModelConfig(
+                // TASK-667: dedicated config field like the omnilingual route;
+                // desktop-verified on the paraformer-zh-small export (decodes
+                // clean zh through from_paraformer's identical config shape).
+                // modelType "paraformer" mirrors sherpa's own Kotlin factory
+                // (OfflineRecognizer.kt type-0 preset at v1.13.8).
+                paraformer = OfflineParaformerModelConfig(model = encoderPath),
+                modelType = ModelFamilySupport.CTC_TYPE_PARAFORMER,
+            ).withCommonTail(record, numThreads, provider)
             else -> throw IllegalArgumentException(
-                "unknown CTC modelType \"${record.modelType}\"; valid values: nemo_ctc, zipformer_ctc, omnilingual_ctc")
+                "unknown CTC modelType \"${record.modelType}\"; valid values: " +
+                    ModelFamilySupport.validModelTypes(ModelFamily.CTC).joinToString(", "))
         }
     }
 }

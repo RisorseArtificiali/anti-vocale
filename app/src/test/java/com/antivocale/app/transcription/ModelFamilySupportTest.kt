@@ -73,6 +73,8 @@ class ModelFamilySupportTest {
         assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.CTC, "zipformer_ctc"))
         // TASK-635: Meta omnilingual CTC (dedicated sherpa config field).
         assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.CTC, "omnilingual_ctc"))
+        // TASK-667: FunASR paraformer joins the CTC family's modelType set.
+        assertTrue(ModelFamilySupport.isValidModelType(ModelFamily.CTC, "paraformer"))
         assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.CTC, ""))
         assertFalse(ModelFamilySupport.isValidModelType(ModelFamily.CTC, "nemo_transducer"))
 
@@ -546,6 +548,18 @@ class ModelFamilySupportTest {
             .buildModelConfig(record(ModelFamily.CTC, modelType = "omnilingual_ctc"), numThreads = 2, provider = "cpu")
         assertEquals("/models/external/test-abc123/encoder.int8.onnx", config.omnilingual.model)
         assertEquals("", config.modelType)
+    }
+
+    @Test
+    fun `ctc paraformer model config builds OfflineParaformerModelConfig`() {
+        // TASK-667: the vocaphone paraformer-zh-small export (model+tokens,
+        // CTC file shape) routes through the dedicated sherpa config field;
+        // desktop-decoded clean zh through the identical from_paraformer
+        // config shape on the pinned 1.13.8.
+        val config = ModelFamilySupport.forFamily(ModelFamily.CTC)
+            .buildModelConfig(record(ModelFamily.CTC, modelType = "paraformer"), numThreads = 2, provider = "cpu")
+        assertEquals("/models/external/test-abc123/encoder.int8.onnx", config.paraformer.model)
+        assertEquals("paraformer", config.modelType)
     }
 
     @Test(expected = IllegalArgumentException::class)

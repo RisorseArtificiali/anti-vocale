@@ -24,6 +24,7 @@ import com.antivocale.app.data.LitertLmFile
 import com.antivocale.app.data.LitertLmUrlImporter
 import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.transcription.BackendRegistry
+import com.antivocale.app.transcription.ModelFamilySupport
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.CatalogVariantUi
 import com.antivocale.app.transcription.LlmTranscriptionBackend
@@ -1625,7 +1626,7 @@ class ModelViewModel @Inject constructor(
         context: Context,
         treeUri: Uri,
         family: ModelFamily,
-        ctcModelType: String = "nemo_ctc",
+        ctcModelType: String = ModelFamilySupport.CTC_TYPE_NEMO,
         options: Map<String, String> = emptyMap(),
         languages: List<String> = emptyList(),
     ) = runExternalImport("External folder", onProgress = null) {
@@ -1639,7 +1640,7 @@ class ModelViewModel @Inject constructor(
     fun importExternalFromUrl(
         url: String,
         family: ModelFamily,
-        ctcModelType: String = "nemo_ctc",
+        ctcModelType: String = ModelFamilySupport.CTC_TYPE_NEMO,
         options: Map<String, String> = emptyMap(),
         languages: List<String> = emptyList(),
     ) = runExternalImport("External URL",

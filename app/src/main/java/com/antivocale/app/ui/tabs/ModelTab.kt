@@ -89,6 +89,20 @@ import com.antivocale.app.ui.viewmodel.BenchmarkViewModel
 import com.antivocale.app.ui.viewmodel.ModelViewModel
 import com.antivocale.app.util.FeedbackHelper
 
+/**
+ * The ONE CTC-subtype to label mapping for this screen: the ambiguous-pick
+ * dialog, the read-only field text, and the dropdown menu items all iterate
+ * it, so a subtype added to [ModelFamilySupport.validModelTypes] surfaces
+ * everywhere the moment it lands here (TASK-667 review: the previous three
+ * hand copies missed omnilingual and paraformer between them).
+ */
+private val CTC_SUBTYPE_LABELS = listOf(
+    ModelFamilySupport.CTC_TYPE_NEMO to R.string.external_ctc_subtype_nemo,
+    ModelFamilySupport.CTC_TYPE_ZIPFORMER to R.string.external_ctc_subtype_zipformer,
+    ModelFamilySupport.CTC_TYPE_OMNILINGUAL to R.string.external_ctc_subtype_omnilingual,
+    ModelFamilySupport.CTC_TYPE_PARAFORMER to R.string.external_ctc_subtype_paraformer,
+)
+
 private fun <T> filterVariants(
     entries: List<T>,
     languageCode: String?,
@@ -751,7 +765,7 @@ fun ModelTab(
                     // family and the folder name did not resolve it; the
                     // user picks, the import runs with the choice. A CTC
                     // pick (offered here for detected-CTC sets and
-                    // CTC-bearing ambiguous sets) splits into its two
+                    // CTC-bearing ambiguous sets) splits into its
                     // sherpa subtypes: the subtype decides the config and a
                     // wrong guess dies at native load, so it is never taken
                     // from a default.
@@ -762,16 +776,17 @@ fun ModelTab(
                             Column {
                                 ambiguousPick?.candidates?.forEach { family ->
                                     if (family == ModelFamily.CTC) {
-                                        TextButton(onClick = {
-                                            val picked = ambiguousPick?.uri
-                                            ambiguousPick = null
-                                            picked?.let { importFolder(it, family, ModelFamilySupport.CTC_TYPE_NEMO) }
-                                        }) { Text(stringResource(R.string.external_ctc_subtype_nemo)) }
-                                        TextButton(onClick = {
-                                            val picked = ambiguousPick?.uri
-                                            ambiguousPick = null
-                                            picked?.let { importFolder(it, family, ModelFamilySupport.CTC_TYPE_ZIPFORMER) }
-                                        }) { Text(stringResource(R.string.external_ctc_subtype_zipformer)) }
+                                        // Every subtype, from the screen's ONE
+                                        // mapping: the subtype decides the config and
+                                        // a wrong guess dies at native load, so every
+                                        // valid one is offered.
+                                        CTC_SUBTYPE_LABELS.forEach { (subtype, labelRes) ->
+                                            TextButton(onClick = {
+                                                val picked = ambiguousPick?.uri
+                                                ambiguousPick = null
+                                                picked?.let { importFolder(it, family, subtype) }
+                                            }) { Text(stringResource(labelRes)) }
+                                        }
                                     } else {
                                         TextButton(onClick = {
                                             val picked = ambiguousPick?.uri
@@ -1826,13 +1841,9 @@ private fun ExternalModelsSection(
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
                     OutlinedTextField(
-                        value = when (selection.ctcModelType) {
-                            ModelFamilySupport.CTC_TYPE_ZIPFORMER ->
-                                stringResource(R.string.external_ctc_subtype_zipformer)
-                            ModelFamilySupport.CTC_TYPE_OMNILINGUAL ->
-                                stringResource(R.string.external_ctc_subtype_omnilingual)
-                            else -> stringResource(R.string.external_ctc_subtype_nemo)
-                        },
+                        value = stringResource(
+                            CTC_SUBTYPE_LABELS.firstOrNull { it.first == selection.ctcModelType }
+                                ?.second ?: R.string.external_ctc_subtype_nemo),
                         onValueChange = {},
                         readOnly = true,
                         label = { Text(stringResource(R.string.external_ctc_subtype)) },
@@ -1840,27 +1851,15 @@ private fun ExternalModelsSection(
                         modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
                     ExposedDropdownMenu(expanded = ctcExpanded, onDismissRequest = { ctcExpanded = false }) {
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.external_ctc_subtype_nemo)) },
-                            onClick = {
-                                onSelectionChange(selection.copy(ctcModelType = ModelFamilySupport.CTC_TYPE_NEMO))
-                                ctcExpanded = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.external_ctc_subtype_zipformer)) },
-                            onClick = {
-                                onSelectionChange(selection.copy(ctcModelType = ModelFamilySupport.CTC_TYPE_ZIPFORMER))
-                                ctcExpanded = false
-                            }
-                        )
-                        DropdownMenuItem(
-                            text = { Text(stringResource(R.string.external_ctc_subtype_omnilingual)) },
-                            onClick = {
-                                onSelectionChange(selection.copy(ctcModelType = ModelFamilySupport.CTC_TYPE_OMNILINGUAL))
-                                ctcExpanded = false
-                            }
-                        )
+                        CTC_SUBTYPE_LABELS.forEach { (subtype, labelRes) ->
+                            DropdownMenuItem(
+                                text = { Text(stringResource(labelRes)) },
+                                onClick = {
+                                    onSelectionChange(selection.copy(ctcModelType = subtype))
+                                    ctcExpanded = false
+                                }
+                            )
+                        }
                     }
                 }
                 else -> {}
