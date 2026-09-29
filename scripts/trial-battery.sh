@@ -64,28 +64,28 @@ wait_row() {  # wait_row <taskId> <seconds>
 # ---- TASK-674: LLM post-pass timing (Gemma budget calibration) ----
 echo "== 674: enabling punctuation (Gemma post-pass) and timing one decode"
 A am broadcast -n $PKG/com.antivocale.app.receiver.TestSpiReceiver \
-  -a com.antivocale.app.TEST_SPI --es op set --es key punctuation --es value on >/dev/null 2>&1
+  -a com.antivocale.app.TEST_SPI --es op set --es key punctuation --es value always >/dev/null 2>&1
 T0=$(date +%s)
-request tb674 llm 2>/dev/null || request tb674
+request tb674 external:0f87a13aa5454a039d70489968757144
 wait_row tb674 36
 T1=$(date +%s)
 echo "  674 wall: $((T1-T0))s (LLM post-pass budget calibration input)"
 A am broadcast -n $PKG/com.antivocale.app.receiver.TestSpiReceiver \
-  -a com.antivocale.app.TEST_SPI --es op set --es key punctuation --es value auto >/dev/null 2>&1
+  -a com.antivocale.app.TEST_SPI --es op set --es key punctuation --es value off >/dev/null 2>&1
 
 # ---- TASK-605: landscape-with-cutout observation (manual: the reviewer
 # reads the screen; adb cannot certify a visual cutout) ----
 echo "== 605: rotate to landscape for the cutout observation (read the screen)"
-A settings put system accelerometer_rotation 1 2>/dev/null
-A wm rotation landscape 2>/dev/null || true
+# wm rotation is unsupported on Android 16: force via the rotation lock
+A settings put system accelerometer_rotation 0 2>/dev/null
+A settings put system user_rotation 1 2>/dev/null
 sleep 3
 A uiautomator dump /sdcard/tb605.xml >/dev/null 2>&1
 "$ADB" -s "$D" exec-out cat /sdcard/tb605.xml > /tmp/tb605.xml 2>/dev/null
 grep -c "android.widget" /tmp/tb605.xml 2>/dev/null && echo "  (dump at /tmp/tb605.xml; screencap next)"
 A screencap -p /sdcard/tb605.png 2>/dev/null
 "$ADB" -s "$D" exec-out cat /sdcard/tb605.png > /tmp/tb605.png 2>/dev/null
-A wm rotation portrait 2>/dev/null || true
-A settings put system accelerometer_rotation 0 2>/dev/null
+A settings put system user_rotation 0 2>/dev/null
 echo "  (screenshot at /tmp/tb605.png; OCR before describing)"
 
 echo "== battery done; screen_off_timeout restored on exit"
