@@ -33,6 +33,32 @@
             "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/canary-spanish.json"
         },
         {
+            "name": "Dolphin Small (19 Asian languages)",
+            "languages": [
+                "zh",
+                "en",
+                "ja",
+                "ko",
+                "yue",
+                "hi",
+                "bn",
+                "ta",
+                "te",
+                "gu",
+                "pa",
+                "mr",
+                "as",
+                "ne",
+                "ur",
+                "th",
+                "vi",
+                "id",
+                "ms"
+            ],
+            "family": "DOLPHIN",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/dolphin-small.json"
+        },
+        {
             "name": "IndicConformer Bengali int8 (2.4% CER)",
             "languages": [
                 "bn"
@@ -138,6 +164,14 @@
             "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/orukeet.json"
         },
         {
+            "name": "Parakeet TDT-CTC 110M (English)",
+            "languages": [
+                "en"
+            ],
+            "family": "CTC",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/parakeet-110m-english.json"
+        },
+        {
             "name": "SenseVoice Small multilingual int8 (zh/en/yue/ja/ko)",
             "languages": [
                 "zh",
@@ -189,6 +223,14 @@
             ],
             "family": "WHISPER",
             "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/swiss-german.json"
+        },
+        {
+            "name": "Zipformer Korean",
+            "languages": [
+                "ko"
+            ],
+            "family": "TRANSDUCER",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/zipformer-korean.json"
         },
         {
             "name": "Zipformer Russian int8 (Vosk-based, sherpa)",

@@ -1,0 +1,40 @@
+{
+    "name": "Dolphin Small int8 (19 Asian languages, Apache-2.0)",
+    "family": "DOLPHIN",
+    "modelType": "",
+    "languages": [
+        "zh",
+        "en",
+        "ja",
+        "ko",
+        "yue",
+        "hi",
+        "bn",
+        "ta",
+        "te",
+        "gu",
+        "pa",
+        "mr",
+        "as",
+        "ne",
+        "ur",
+        "th",
+        "vi",
+        "id",
+        "ms"
+    ],
+    "files": [
+        {
+            "name": "model.int8.onnx",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-dolphin-small-ctc-multi-lang-int8-2025-04-02/resolve/c8b6689509acfcd744c04e5e169164f9ac4cae32/model.int8.onnx",
+            "sha256": "c1afcb9265de0ebd853eb8f570b371f399a6f9b2b9af9a3cb17c2e509171e697",
+            "size": 249658954
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-dolphin-small-ctc-multi-lang-int8-2025-04-02/resolve/c8b6689509acfcd744c04e5e169164f9ac4cae32/tokens.txt",
+            "sha256": "c3788261a51df1899ea4b210b552cd42139204de72c0ad60f6cebb199078872e",
+            "size": 504662
+        }
+    ]
+}

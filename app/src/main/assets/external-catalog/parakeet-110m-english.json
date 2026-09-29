@@ -1,0 +1,22 @@
+{
+    "name": "Parakeet TDT-CTC 110M English int8 (small English model, CC-BY-4.0)",
+    "family": "CTC",
+    "modelType": "nemo_ctc",
+    "languages": [
+        "en"
+    ],
+    "files": [
+        {
+            "name": "model.int8.onnx",
+            "url": "https://huggingface.co/VocaHQ/sherpa-onnx-nemo-parakeet-tdt-ctc-110m-en-int8/resolve/548291ccad79f80d9fb75b2de04cc8f6e4f45342/model.int8.onnx",
+            "sha256": "9177a9146cf32ee0cc8152276ef95116f312018d316be37ccf57f7efea81fc1a",
+            "size": 131652171
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/VocaHQ/sherpa-onnx-nemo-parakeet-tdt-ctc-110m-en-int8/resolve/548291ccad79f80d9fb75b2de04cc8f6e4f45342/tokens.txt",
+            "sha256": "450e56bd2f036fe5b6aa821865838cc5aa9d8b0106134ce9a9ba0664abe6cd10",
+            "size": 9953
+        }
+    ]
+}
