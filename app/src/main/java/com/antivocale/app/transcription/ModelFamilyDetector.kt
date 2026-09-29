@@ -124,12 +124,18 @@ object ModelFamilyDetector {
         // A terminal name carrying tokens of MULTIPLE candidates stays a tie
         // the hint cannot break: the chooser decides, not enum order (round 3:
         // firstOrNull picked CTC for exactly that name, importing with the
-        // wrong config). KNOWN LIMITATION (GH #89 review): every published
-        // dolphin repo name also carries 'ctc', so a dolphin set opens the
-        // chooser where a CTC pick imports structurally and dies at native
-        // load; splitting "ctc as architecture qualifier" from "genuinely
-        // mixed repo" needs the file shape or a chooser preselect, tracked
-        // on TASK-623.
+        // wrong config). TASK-623 preselect: the ONE published family whose
+        // name always drags an architecture qualifier along is dolphin (every
+        // repo carries 'ctc' as the architecture marker, never as a competing
+        // family claim): when both tokens match and 'dolphin' is one of the
+        // candidates, the dolphin token is the family and 'ctc' the qualifier.
+        // A genuine mixed-set tie (any other pair) still opens the chooser.
+        if (matchedWords.size == 2) {
+            val families = matchedWords.map { it.first }
+            if (ModelFamily.DOLPHIN in families && ModelFamily.CTC in families) {
+                return ModelFamily.DOLPHIN
+            }
+        }
         return if (matchedWords.size == 1) matchedWords[0].first else null
     }
 }

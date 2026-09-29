@@ -203,12 +203,14 @@ class ModelFamilyDetectorTest {
     }
 
     @Test
-    fun `dolphin-ctc naming stays a chooser decision (known limitation)`() {
-        // GH #89 review: dolphin-base-CTC carries both tokens and the hint
-        // alone cannot split "ctc as qualifier" from a genuinely mixed repo;
-        // the chooser opens. Tracked on TASK-618 for a shape-aware fix.
+    fun `dolphin-ctc naming preselects dolphin (TASK-623, ctc is the qualifier)`() {
+        // Every published dolphin repo carries 'ctc' as the architecture
+        // marker: the dolphin token is the family, 'ctc' the qualifier. A
+        // CTC pick here imported structurally and died at native load.
         val cs = listOf(ModelFamily.CTC, ModelFamily.SENSE_VOICE, ModelFamily.DOLPHIN)
-        assertNull(ModelFamilyDetector.narrow(cs, "sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02"))
+        assertEquals(
+            ModelFamily.DOLPHIN,
+            ModelFamilyDetector.narrow(cs, "sherpa-onnx-dolphin-base-ctc-multi-lang-int8-2025-04-02"))
     }
 
     @Test
