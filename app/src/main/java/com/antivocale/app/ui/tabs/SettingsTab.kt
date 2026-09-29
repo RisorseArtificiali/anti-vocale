@@ -446,6 +446,17 @@ fun SettingsTab(
         else 0
 
         if (searchActive) {
+            // TASK-628: matched cards can sit below tall merged cards (the
+            // "forza" diagnosis: the ~1420px Tema card pushed the force row to
+            // y=2580 of a 2780px screen and read as "no result"). The count
+            // line is the match navigator: each tap scrolls to the NEXT
+            // matched section, cycling.
+            val matchedSections = listOfNotNull(
+                "transcription".takeIf { transcriptionVisible },
+                "appearance".takeIf { appearanceVisible },
+                "advanced".takeIf { advancedVisible },
+                "feedback".takeIf { feedbackVisible })
+            var matchHop by remember { mutableStateOf(0) }
             Text(
                 text = if (searchMatchCount > 0)
                     pluralStringResource(
@@ -454,6 +465,12 @@ fun SettingsTab(
                     stringResource(R.string.settings_search_no_results),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = if (matchedSections.isNotEmpty()) Modifier.clickable {
+                    val key = matchedSections[matchHop % matchedSections.size]
+                    matchHop++
+                    val target = sectionOffsets[key] ?: return@clickable
+                    navScope.launch { scrollState.animateScrollTo(maxOf(0, target - 32)) }
+                } else Modifier
             )
         }
 
