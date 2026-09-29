@@ -87,6 +87,7 @@ import com.antivocale.app.ui.components.ModelInfoOverlay
 import com.antivocale.app.benchmark.BenchmarkState
 import com.antivocale.app.ui.viewmodel.BenchmarkViewModel
 import com.antivocale.app.ui.viewmodel.ModelViewModel
+import com.antivocale.app.util.FeedbackHelper
 
 private fun <T> filterVariants(
     entries: List<T>,
@@ -951,12 +952,8 @@ private fun CuratedLanguageSection(
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier
                 .clickable(role = Role.Button) {
-                    context.startActivity(
-                        android.content.Intent(
-                            android.content.Intent.ACTION_VIEW,
-                            Uri.parse(CuratedProfiles.SUGGESTION_ISSUE_URL),
-                        )
-                    )
+                    FeedbackHelper.openUrlOrToast(
+                        context, CuratedProfiles.SUGGESTION_ISSUE_URL)
                 }
                 .padding(vertical = 4.dp),
         )

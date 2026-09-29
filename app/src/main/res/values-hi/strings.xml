@@ -277,6 +277,7 @@
     <string name="automation_guide_copy">टेस्ट कमांड कॉपी करें</string>
     <string name="automation_guide_open">पूरी गाइड</string>
     <string name="automation_guide_no_browser">गाइड खोलने के लिए कोई ऐप नहीं मिली</string>
+    <string name="no_app_to_open_link">लिंक खोलने के लिए कोई ऐप नहीं मिला</string>
     <string name="remote_omnivoice_name">LAN ऑफ़लोड (OmniVoice)</string>
     <string name="remote_offload_title">LAN ऑफ़लोड (प्रायोगिक)</string>
     <string name="remote_offload_description">लंबी या भारी ट्रांसक्रिप्शन को अपने Wi-Fi नेटवर्क पर चलने वाले अपने OmniVoice सर्वर को भेजता है। सक्षम होने पर इसे Model टैब में चुनें।</string>

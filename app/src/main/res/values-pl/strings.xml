@@ -303,6 +303,7 @@
     <string name="automation_guide_copy">Skopiuj polecenie testowe</string>
     <string name="automation_guide_open">Pełny przewodnik</string>
     <string name="automation_guide_no_browser">Nie znaleziono aplikacji do otwarcia przewodnika</string>
+    <string name="no_app_to_open_link">Nie znaleziono aplikacji do otwarcia linku</string>
     <string name="remote_omnivoice_name">Odciążenie LAN (OmniVoice)</string>
     <string name="remote_offload_title">Odciążenie LAN (eksperymentalne)</string>
     <string name="remote_offload_description">Przekazuje długie lub wymagające transkrypcje własnemu serwerowi OmniVoice w Twojej sieci Wi-Fi. Po włączeniu wybierz go w zakładce Modele.</string>

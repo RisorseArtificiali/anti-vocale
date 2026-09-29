@@ -190,6 +190,25 @@ object FeedbackHelper {
      * Launches the mail app, or falls back to copying the address to the
      * clipboard with a toast. Returns true when the mail intent was started.
      */
+    /**
+     * TASK-693: the ONE open-URL posture. Every ACTION_VIEW site rides this
+     * (the 275 altitude pass counted three failure postures for the identical
+     * launch): no activity resolves the intent = one localized toast, never a
+     * crash and never a silent dead tap.
+     */
+    fun openUrlOrToast(context: Context, url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        if (intent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(intent)
+        } else {
+            android.widget.Toast.makeText(
+                context,
+                context.getString(com.antivocale.app.R.string.no_app_to_open_link),
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
     fun sendOrCopy(context: Context, subject: String, body: String): Boolean {
         val intent = createEmailIntent(subject, body)
         if (!isCallable(context, intent)) {

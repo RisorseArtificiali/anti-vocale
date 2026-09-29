@@ -305,6 +305,7 @@
     <string name="automation_guide_copy">Копіювати тестову команду</string>
     <string name="automation_guide_open">Повний посібник</string>
     <string name="automation_guide_no_browser">Не знайдено застосунка для відкриття посібника</string>
+    <string name="no_app_to_open_link">Не знайдено застосунка для відкриття посилання</string>
     <string name="remote_omnivoice_name">Перенесення на сервер LAN (OmniVoice)</string>
     <string name="remote_offload_title">Перенесення на сервер LAN (експериментально)</string>
     <string name="remote_offload_description">Передача довгих або важких розшифровок вашому власному серверу OmniVoice у вашій мережі Wi-Fi. Після ввімкнення виберіть його на вкладці «Моделі».</string>

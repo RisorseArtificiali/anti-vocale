@@ -247,6 +247,7 @@
     <string name="automation_guide_copy">Copiar comando de prueba</string>
     <string name="automation_guide_open">Guía completa</string>
     <string name="automation_guide_no_browser">No se encontró ninguna app para abrir la guía</string>
+    <string name="no_app_to_open_link">No hay ninguna app para abrir el enlace</string>
     <string name="remote_omnivoice_name">Delegación LAN (OmniVoice)</string>
     <string name="remote_offload_title">Delegación LAN (experimental)</string>
     <string name="remote_offload_description">Delega las transcripciones largas o pesadas en tu propio servidor OmniVoice de tu red Wi-Fi. Cuando esté activado, selecciónalo en la pestaña Modelos.</string>

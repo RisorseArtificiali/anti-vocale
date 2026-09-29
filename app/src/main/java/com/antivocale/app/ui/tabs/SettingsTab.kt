@@ -1504,11 +1504,8 @@ fun SettingsTab(
                                                 // longer labels share the row (TASK-345)
                                                 FilledTonalButton(
                                                     onClick = {
-                                                        val intent = android.content.Intent(
-                                                            android.content.Intent.ACTION_VIEW,
-                                                            android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
-                                                        )
-                                                        context.startActivity(intent)
+                                                        FeedbackHelper.openUrlOrToast(
+                                                            context, HF_TOKEN_SETTINGS_URL)
                                                     },
                                                     modifier = Modifier.weight(1f)
                                                 ) {
@@ -1599,11 +1596,8 @@ fun SettingsTab(
                                                 // Link to token creation page
                                                 TextButton(
                                                     onClick = {
-                                                        val intent = android.content.Intent(
-                                                            android.content.Intent.ACTION_VIEW,
-                                                            android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
-                                                        )
-                                                        context.startActivity(intent)
+                                                        FeedbackHelper.openUrlOrToast(
+                                                            context, HF_TOKEN_SETTINGS_URL)
                                                     },
                                                     modifier = Modifier.weight(1f)
                                                 ) {
@@ -2261,11 +2255,8 @@ private fun FeedbackSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .clickable(role = Role.Button) {
-                            runCatching {
-                                context.startActivity(
-                                    Intent(Intent.ACTION_VIEW, Uri.parse(FeedbackHelper.SOURCE_CODE_URL))
-                                )
-                            }
+                            FeedbackHelper.openUrlOrToast(
+                                context, FeedbackHelper.SOURCE_CODE_URL)
                         },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically

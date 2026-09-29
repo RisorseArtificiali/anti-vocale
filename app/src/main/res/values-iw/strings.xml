@@ -298,6 +298,7 @@
     <string name="automation_guide_copy">העתקת פקודת בדיקה</string>
     <string name="automation_guide_open">המדריך המלא</string>
     <string name="automation_guide_no_browser">לא נמצאה אפליקציה לפתיחת המדריך</string>
+    <string name="no_app_to_open_link">לא נמצאה אפליקציה לפתיחת הקישור</string>
     <string name="remote_omnivoice_name">העברה לשרת LAN (OmniVoice)</string>
     <string name="remote_offload_title">העברה לשרת LAN (ניסיוני)</string>
     <string name="remote_offload_description">מעביר תמלולים ארוכים או כבדים לשרת ה-OmniVoice שלכם ברשת ה-Wi-Fi. לאחר ההפעלה בחרו אותו בלשונית המודלים.</string>

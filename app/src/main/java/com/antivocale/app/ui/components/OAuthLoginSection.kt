@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
+import com.antivocale.app.util.FeedbackHelper
 
 internal const val HF_TOKEN_SETTINGS_URL = "https://huggingface.co/settings/tokens"
 
@@ -162,11 +163,8 @@ fun OAuthLoginSection(
                     )
                     TextButton(
                         onClick = {
-                            val intent = android.content.Intent(
-                                android.content.Intent.ACTION_VIEW,
-                                android.net.Uri.parse(HF_TOKEN_SETTINGS_URL)
-                            )
-                            context.startActivity(intent)
+                            FeedbackHelper.openUrlOrToast(
+                                context, HF_TOKEN_SETTINGS_URL)
                         }
                     ) {
                         Icon(

@@ -296,6 +296,7 @@
     <string name="automation_guide_copy">Copia comando di prova</string>
     <string name="automation_guide_open">Guida completa</string>
     <string name="automation_guide_no_browser">Nessuna app trovata per aprire la guida</string>
+    <string name="no_app_to_open_link">Nessuna app trovata per aprire il link</string>
     <string name="remote_omnivoice_name">Offload LAN (OmniVoice)</string>
     <string name="remote_offload_title">Offload LAN (sperimentale)</string>
     <string name="remote_offload_description">Delega le trascrizioni lunghe o pesanti al tuo server OmniVoice sulla tua rete Wi-Fi. Una volta attivo, selezionalo nella scheda Modelli.</string>
