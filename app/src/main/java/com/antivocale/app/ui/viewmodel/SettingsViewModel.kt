@@ -114,6 +114,28 @@ class SettingsViewModel @Inject constructor(
      * never run without a Gemma hide behind this flag instead of silently
      * no-oping (TASK-507).
      */
+
+    // TASK-509: ONE warmed preference read at construction (was three
+    // independent runBlocking first() seeds: each a main-thread DataStore read
+    // at ViewModel construction, normally instant via the AppModule cache but
+    // N mutex waits pre-warm-up). A single read serves every seed below.
+    private val warmedPrefs: WarmedPrefs by lazy {
+        runBlocking {
+            WarmedPrefs(
+                modelConfigured = !preferencesManager.modelPath.first().isNullOrBlank(),
+                punctuationPrompt = preferencesManager.punctuationPrompt.first(),
+                summaryPrompt = preferencesManager.summaryPrompt.first(),
+            )
+        }
+    }
+
+    private data class WarmedPrefs(
+        val modelConfigured: Boolean,
+        val punctuationPrompt: String,
+        val summaryPrompt: String,
+    )
+
+
     val gemmaConfigured: StateFlow<Boolean> = preferencesManager.modelPath
         .map { !it.isNullOrBlank() }
         .stateIn(
@@ -122,7 +144,7 @@ class SettingsViewModel @Inject constructor(
             // Seeded synchronously from the preference cache (the TASK-485
             // idiom, see currentPunctuationPrompt): a plain false would flash
             // the Gemma rows out for a frame on first Settings open.
-            initialValue = runBlocking { !preferencesManager.modelPath.first().isNullOrBlank() }
+            initialValue = warmedPrefs.modelConfigured
         )
 
     // Keep-alive timeout options in minutes
@@ -295,7 +317,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = runBlocking { preferencesManager.punctuationPrompt.first() }
+            initialValue = warmedPrefs.punctuationPrompt
         )
 
     /** TASK-483: the summary-pass prompt override; blank = the built-in. */
@@ -303,7 +325,7 @@ class SettingsViewModel @Inject constructor(
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),
-            initialValue = runBlocking { preferencesManager.summaryPrompt.first() }
+            initialValue = warmedPrefs.summaryPrompt
         )
 
     // TASK-491: welcome-tour state; NOT version-keyed (an update never
