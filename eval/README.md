@@ -64,6 +64,16 @@ Target **30–50 clips**. Quality of the set matters more than size.
 - Name clips with a stable `clip_id`: `vm001.opus`, `vm002.m4a`, …
 - Place in `eval/clips/`.
 
+**Input-chain label (TASK-721/723, load-bearing):** desktop numbers and
+device numbers are NOT interchangeable for tie-sensitive models (measured:
+near-lossless int8 parakeet scores 0.0065-0.0313 through the harness ffmpeg
+decode+resample chain but 0.0558 through the app's MediaCodec+app-kernel
+chain on the same files and device class). Every eval table you publish or
+paste into a task must state its chain: `ffmpeg-chain` (this harness's
+default) or `app-chain` (device-decoded, or the app's kernel simulated on
+desktop). Numbers without a chain label are ambiguous, and cross-chain
+comparisons have flipped real decisions (the TASK-717 variant episode).
+
 ## Transcript schema (one `.txt` per clip)
 
 For each `clips/<clip_id>.<ext>`, create `transcripts/<clip_id>.txt` containing the
