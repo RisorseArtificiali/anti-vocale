@@ -77,25 +77,15 @@ class ResultNotificationFactory(private val context: Context) {
         AppNotificationChannel.TRANSCRIPTION_RESULT.create(context)
     }
 
-    /**
-     * TASK-625: the transcription-failure error notification, shared by both
-     * error surfaces (InferenceService and TranscriptionNotificationListener)
-     * and by the debug TEST_SPI simulate op. With [memoryAction] the content
-     * intent and an action button deep-link to the memory-protection settings
-     * row; the request codes mirror the services' launch band (same intent
-     * shapes must stay one PendingIntent).
-     */
-    /**
-     * TASK-328: the no-model notification, ONE builder (was a line-for-line
-     * pair in InferenceService and TranscriptionNotificationListener).
-     */
     fun noModelNotification(): Notification {
+        // TASK-328: the no-model notification, ONE builder (was a line-for-line
+        // pair in InferenceService and TranscriptionNotificationListener).
         val openIntent = Intent(context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
             putExtra(MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, true)
         }
         val openPendingIntent = PendingIntent.getActivity(
-            context, 1, openIntent,
+            context, RC_ERROR_LAUNCH_MODEL_TAB, openIntent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(context, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
@@ -113,6 +103,14 @@ class ResultNotificationFactory(private val context: Context) {
             .build()
     }
 
+    /**
+     * TASK-625: the transcription-failure error notification, shared by both
+     * error surfaces (InferenceService and TranscriptionNotificationListener)
+     * and by the debug TEST_SPI simulate op. With [memoryAction] the content
+     * intent and an action button deep-link to the memory-protection settings
+     * row; the request codes mirror the services' launch band (same intent
+     * shapes must stay one PendingIntent).
+     */
     fun errorNotification(errorMessage: String, memoryAction: Boolean): Notification {
         val launch = if (memoryAction) {
             settingsRowPendingIntent(SettingsFocusRow.MEMORY_PROTECTION)
@@ -463,6 +461,7 @@ class ResultNotificationFactory(private val context: Context) {
         // Mirror the services' launch-band constants so the same intent shape
         // stays a single PendingIntent whichever builder produced it.
         private const val RC_ERROR_LAUNCH_DEFAULT = 0
+        private const val RC_ERROR_LAUNCH_MODEL_TAB = 1
         private const val RC_ERROR_LAUNCH_SETTINGS_ROW = 2
 
         // TASK-684: the suspension notification's action band. Fixed codes:

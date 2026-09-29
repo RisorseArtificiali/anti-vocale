@@ -983,41 +983,6 @@ class InferenceService : Service(), TranscriptionListener {
 
     // ---- Notification Helpers ----
 
-    private fun buildLaunchPendingIntent(
-        navigateToModelTab: Boolean = false,
-        highlightTaskId: String? = null,
-        navigateToSettingsRow: SettingsFocusRow? = null
-    ): android.app.PendingIntent {
-        val requestCode = when {
-            highlightTaskId != null ->
-                RC_HASH_BASE + highlightTaskId.hashCode().let { if (it < 0) it.inv() else it }
-            navigateToSettingsRow != null -> RC_LAUNCH_SETTINGS_ROW
-            navigateToModelTab -> RC_LAUNCH_MODEL_TAB
-            else -> RC_LAUNCH_DEFAULT
-        }
-        val openIntent = Intent(this, MainActivity::class.java).apply {
-            // In-app deep links (highlight, settings row) hand the extra to the
-            // live activity (onNewIntent) instead of clearing its task.
-            if (highlightTaskId != null || navigateToSettingsRow != null) {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            } else {
-                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
-            }
-            when {
-                highlightTaskId != null ->
-                    putExtra(MainActivity.EXTRA_HIGHLIGHT_TASK_ID, highlightTaskId)
-                navigateToSettingsRow != null ->
-                    putExtra(MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW, navigateToSettingsRow.name)
-            }
-            if (navigateToModelTab) {
-                putExtra(MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, true)
-            }
-        }
-        return android.app.PendingIntent.getActivity(
-            this, requestCode, openIntent,
-            android.app.PendingIntent.FLAG_UPDATE_CURRENT or android.app.PendingIntent.FLAG_IMMUTABLE
-        )
-    }
 
     private val notificationManager by lazy { getSystemService(NotificationManager::class.java) }
 

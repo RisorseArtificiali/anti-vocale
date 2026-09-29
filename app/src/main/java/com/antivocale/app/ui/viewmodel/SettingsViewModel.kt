@@ -119,14 +119,12 @@ class SettingsViewModel @Inject constructor(
     // independent runBlocking first() seeds: each a main-thread DataStore read
     // at ViewModel construction, normally instant via the AppModule cache but
     // N mutex waits pre-warm-up). A single read serves every seed below.
-    private val warmedPrefs: WarmedPrefs by lazy {
-        runBlocking {
+    private val warmedPrefs: WarmedPrefs = runBlocking {
             WarmedPrefs(
                 modelConfigured = !preferencesManager.modelPath.first().isNullOrBlank(),
                 punctuationPrompt = preferencesManager.punctuationPrompt.first(),
                 summaryPrompt = preferencesManager.summaryPrompt.first(),
-            )
-        }
+        )
     }
 
     private data class WarmedPrefs(
@@ -134,7 +132,6 @@ class SettingsViewModel @Inject constructor(
         val punctuationPrompt: String,
         val summaryPrompt: String,
     )
-
 
     val gemmaConfigured: StateFlow<Boolean> = preferencesManager.modelPath
         .map { !it.isNullOrBlank() }

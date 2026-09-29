@@ -374,7 +374,7 @@ class SherpaBackend(
         // TASK-665: the adaptive idle window: a cold backend unloads after
         // 2 minutes, one that served in the previous window holds to the
         // preference (5 by default). The preference stays the ceiling.
-        it.setAdaptiveTimeouts(baseMinutes = 2, warmMinutes = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT)
+        it.setAdaptiveTimeouts(baseMinutes = 2, warmMinutes = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT)  // REVIEW CR3: the ceiling comes from timeoutMinutes at restart
     }
     private val onAutoUnloadCallback = java.util.concurrent.atomic.AtomicReference<(() -> Unit)?>(null)
 
@@ -829,7 +829,9 @@ class SherpaBackend(
     }
 
     override fun setKeepAliveTimeout(minutes: Int) {
-        keepAlive.setTimeout(minutes)
+        // TASK-665 review: the orchestrator preference sync must not arm the
+        // user-override flag (that would permanently disarm the adaptive pair).
+        keepAlive.setTimeoutSystemSync(minutes)
     }
 
     override fun setOnAutoUnloadCallback(callback: (() -> Unit)?) {

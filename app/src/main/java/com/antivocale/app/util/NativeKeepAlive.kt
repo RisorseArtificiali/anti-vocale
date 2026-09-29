@@ -38,7 +38,7 @@ class NativeKeepAlive(
      * adaptive pair is OPT-IN via [setAdaptiveTimeouts]. */
     private val baseTimeoutMinutes = AtomicInteger(defaultTimeoutMinutes)
     /** TASK-665: warm window after a served request. */
-    private val warmTimeoutMinutes = AtomicInteger(5)
+    private val warmTimeoutMinutes = AtomicInteger(defaultTimeoutMinutes)
     /** TASK-665: the backend served within the current window. */
     private val warm = AtomicBoolean(false)
     private val workInFlight = AtomicInteger(0)
@@ -82,6 +82,23 @@ class NativeKeepAlive(
     fun setTimeout(minutes: Int) {
         timeoutMinutes.set(if (minutes > 0) minutes else defaultTimeoutMinutes)
         userOverride.set(true)
+        synchronized(lock) {
+            if (timerActive.get()) restartLocked()
+        }
+    }
+
+    /**
+     * TASK-665 review: the SYSTEM preference sync (orchestrator -> backend
+     * manager -> here on every load) must NOT arm the user-override flag,
+     * or the adaptive pair is permanently disarmed. Use this from system
+     * sync paths; [setTimeout] stays the explicit-user arm.
+     */
+    fun setTimeoutSystemSync(minutes: Int) {
+        timeoutMinutes.set(if (minutes > 0) minutes else defaultTimeoutMinutes)
+        // TASK-665 review CR3: warm tracks the preference (the ceiling IS
+        // timeoutMinutes; warm = "served in the previous window" restores the
+        // preference, whatever the user set it to).
+        warmTimeoutMinutes.set(timeoutMinutes.get())
         synchronized(lock) {
             if (timerActive.get()) restartLocked()
         }

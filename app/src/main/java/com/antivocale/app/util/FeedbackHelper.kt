@@ -186,6 +186,17 @@ object FeedbackHelper {
     fun isCallable(context: Context, intent: Intent): Boolean =
         intent.resolveActivity(context.packageManager) != null
 
+    fun openUrlOrToast(context: Context, url: String) {
+        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+        if (intent.resolveActivity(context.packageManager) != null) {
+            context.startActivity(intent)
+        } else {
+            // TASK-688: ToastCompat preserves the gesture-bar overlap a raw
+            // makeText toast draws over (the resId overload).
+            com.antivocale.app.util.ToastCompat.show(context, com.antivocale.app.R.string.no_app_to_open_link)
+        }
+    }
+
     /**
      * Launches the mail app, or falls back to copying the address to the
      * clipboard with a toast. Returns true when the mail intent was started.
@@ -196,19 +207,6 @@ object FeedbackHelper {
      * launch): no activity resolves the intent = one localized toast, never a
      * crash and never a silent dead tap.
      */
-    fun openUrlOrToast(context: Context, url: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-        if (intent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(intent)
-        } else {
-            android.widget.Toast.makeText(
-                context,
-                context.getString(com.antivocale.app.R.string.no_app_to_open_link),
-                android.widget.Toast.LENGTH_SHORT
-            ).show()
-        }
-    }
-
     fun sendOrCopy(context: Context, subject: String, body: String): Boolean {
         val intent = createEmailIntent(subject, body)
         if (!isCallable(context, intent)) {

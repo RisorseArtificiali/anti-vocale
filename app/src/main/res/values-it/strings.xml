@@ -299,7 +299,7 @@
     <string name="faq_section_title">Domande frequenti</string>
     <string name="faq_full_link">Leggi le domande complete su GitHub</string>
     <string name="faq_card_calls_title">Può trascrivere chiamate o riunioni?</string>
-    <string name="faq_card_calls_body">No. Android blocca la registrazione dell audio di chiamata di altre app, e anti-vocale riceve solo ciò che gli condividi. Per le riunioni registra l audio con un registratore qualsiasi, poi condividi il file.</string>
+    <string name="faq_card_calls_body">No. Android blocca la registrazione dell\'audio di chiamata di altre app, e anti-vocale riceve solo ciò che gli condividi. Per le riunioni registra l\'audio con un registratore qualsiasi, poi condividi il file.</string>
     <string name="faq_card_models_title">Quale modello dovrei usare?</string>
     <string name="faq_card_models_body">Parakeet è il predefinito: veloce e accurato sui vocal puliti. Per altre lingue scegli un modello che copra la tua dalla scheda Modelli; i modelli più grandi sono più lenti sui telefoni datati.</string>
     <string name="faq_card_queue_title">Come funziona la coda?</string>
@@ -307,7 +307,7 @@
     <string name="faq_card_results_title">Cosa significano i dettagli del risultato?</string>
     <string name="faq_card_results_body">Ogni voce conserva il modello usato, la durata e il tempo di elaborazione. Tieni premuta una voce per riprovare, copiare, eliminare o segnalare un risultato sbagliato via email.</string>
     <string name="faq_card_trouble_title">Qualcosa è andato storto</string>
-    <string name="faq_card_trouble_body">Se un risultato non arriva, il produttore del telefono potrebbe aver congelato l app in background: segui il consiglio nelle impostazioni batteria che trovi nella notifica di errore. Un risultato fallito conserva una voce di report con tutto il necessario per diagnosticarlo.</string>
+    <string name="faq_card_trouble_body">Se un risultato non arriva, il produttore del telefono potrebbe aver congelato l\'app in background: segui il consiglio nelle impostazioni batteria che trovi nella notifica di errore. Un risultato fallito conserva una voce di report con tutto il necessario per diagnosticarlo.</string>
     <string name="no_app_to_open_link">Nessuna app trovata per aprire il link</string>
     <string name="remote_omnivoice_name">Offload LAN (OmniVoice)</string>
     <string name="remote_offload_title">Offload LAN (sperimentale)</string>
