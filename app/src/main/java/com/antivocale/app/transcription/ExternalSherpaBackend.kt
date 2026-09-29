@@ -52,7 +52,10 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
          * path can never drift from the loaded engine's behavior.
          */
         fun familyChunkCapSeconds(family: ModelFamily): Int? = when (family) {
-            ModelFamily.WHISPER -> 30
+            // TASK-718: 29, under sherpa's whisper decode cap (2950 frames =
+            // 29.5s); a 30s window silently drops its final ~0.48s, and this
+            // path appends a 1s pad per chunk on top (the 31s case).
+            ModelFamily.WHISPER -> 29
             ModelFamily.CANARY -> 10
             // Moonshine (GH #89): the whisper-sized window guess was WRONG for
             // the 2026-02-27 v2 .ort exports. Measured on the eval harness

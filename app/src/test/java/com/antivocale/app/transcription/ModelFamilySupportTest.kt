@@ -657,7 +657,8 @@ class ModelFamilySupportTest {
         // 9.2s EMPTY boundary because the decode path pads every chunk with
         // 1s of silence (rationale on the cap site and RESULTS.md).
         assertEquals(8, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.MOONSHINE))
-        assertEquals(30, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.WHISPER))
+        // TASK-718: 29, under sherpa's 29.5s whisper decode cap (30 dropped ~0.48s/window).
+        assertEquals(29, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.WHISPER))
         assertEquals(10, ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.CANARY))
         assertNull(ExternalSherpaBackend.familyChunkCapSeconds(ModelFamily.TRANSDUCER))
     }

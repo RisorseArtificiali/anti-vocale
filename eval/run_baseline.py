@@ -69,11 +69,12 @@ BACKENDS = {
         "language": "it",
         "task": "transcribe",
         "tail_paddings": 1000,
-        # Catalog flags.chunkDurationSeconds: 30. The app windows Whisper at
-        # 30s; sherpa's OfflineRecognizer silently discards anything past 30s
-        # ("Only waves less than 30 seconds are supported"). TASK-714: chunk
-        # here too or every >30s clip is scored on truncated content.
-        "chunk_seconds": 30,
+        # Catalog flags.chunkDurationSeconds (overridden at import by
+        # _apply_catalog_mirrors; this literal is the vendored fallback and
+        # mirrors the shipped 29: sherpa's whisper decode cap is 2950 frames
+        # = 29.5s, so a 30s window silently dropped its final ~0.48s,
+        # TASK-718).
+        "chunk_seconds": 29,
     },
     # Parakeet TDT 0.6b v3 — our default multilingual model.
     # App config: SherpaOnnxBackend.kt:101-107 (nemo_transducer, greedy_search).

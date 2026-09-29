@@ -44,9 +44,11 @@ class ParakeetCatalogChunkingTest {
     }
 
     @Test
-    fun `whisper and qwen3 keep their 30s chunking`() {
+    fun `whisper chunks under the decode cap and qwen3 at its native cap`() {
         catalog()
-        assertEquals(30, BundledCatalog.byId(BuiltInBackendIds.WHISPER)!!.flags.chunkDurationSeconds)
+        // TASK-718: whisper 29 (under sherpa's 29.5s decode cap; 30 dropped
+        // ~0.48s per full window), qwen3 30 (its own native cap).
+        assertEquals(29, BundledCatalog.byId(BuiltInBackendIds.WHISPER)!!.flags.chunkDurationSeconds)
         assertEquals(30, BundledCatalog.byId(BuiltInBackendIds.QWEN3_ASR)!!.flags.chunkDurationSeconds)
     }
 }

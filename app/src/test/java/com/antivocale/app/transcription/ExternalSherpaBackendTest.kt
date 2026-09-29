@@ -104,7 +104,7 @@ class ExternalSherpaBackendTest {
 
 
     @Test
-    fun `whisper family reports 30s chunking others report single-pass (TASK-402)`() {
+    fun `whisper family reports 29s chunking others report single-pass (TASK-402, TASK-718)`() {
         // sherpa's whisper DecodeStream caps a single decode at 30s; the backend
         // must chunk external whisper imports exactly like the built-in one. The
         // getter derives from the family stored at initialize time; this test
@@ -120,7 +120,7 @@ class ExternalSherpaBackendTest {
 
         // whisper record configures the family -> 30
         backend.configureForTest(record(dir, ModelFamily.WHISPER, ""))
-        assertEquals(30, backend.maxChunkDurationSeconds)
+        assertEquals(29, backend.maxChunkDurationSeconds) // TASK-718: under the 29.5s decode cap
 
         // transducer -> null (any length in one pass)
         backend.configureForTest(record(dir, ModelFamily.TRANSDUCER, "nemo_transducer"))

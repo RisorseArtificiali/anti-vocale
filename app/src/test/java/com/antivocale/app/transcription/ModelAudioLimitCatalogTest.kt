@@ -24,8 +24,8 @@ class ModelAudioLimitCatalogTest {
      */
     private val expectedLabels = mapOf(
         "sherpa-onnx" to AudioLimit.ChunkedAnyLength, // 60s chunks (TASK-406)
-        "whisper" to AudioLimit.ChunkedAnyLength, // 30s cap + 30s chunks
-        "qwen3-asr" to AudioLimit.ChunkedAnyLength, // 30s cap + 30s chunks
+        "whisper" to AudioLimit.ChunkedAnyLength, // 30s cap + 29s chunks (TASK-718: under sherpa's 29.5s decode cap)
+        "qwen3-asr" to AudioLimit.ChunkedAnyLength, // 30s cap + 30s chunks (its own native cap)
         "nemotron-streaming" to AudioLimit.NoKnownLimit, // streaming, no cap
         "gigaam" to AudioLimit.ChunkedAnyLength, // 30s chunks (TASK-448: quality degrades from ~60s, collapses by ~90s per pass)
     )

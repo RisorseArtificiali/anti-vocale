@@ -17,7 +17,8 @@ class ModelAudioLimitTest {
 
     @Test
     fun `chunking wins over the per-segment cap`() {
-        // Whisper/Qwen3 declare BOTH maxAudioDuration=30 and 30s chunks: with
+        // Whisper/Qwen3 declare maxAudioDuration=30 with chunks at/below it
+        // (whisper 29 since TASK-718, qwen3 30): with
         // software chunking any length is accepted, so the cap is not user-facing
         assertEquals(AudioLimit.ChunkedAnyLength, audioLimit(maxAudioDuration = 30, chunkDurationSeconds = 30))
     }

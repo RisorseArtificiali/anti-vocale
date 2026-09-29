@@ -139,7 +139,7 @@
         "defaultVariant": "small",
         "skipMetadataCheck": true,
         "whisperTailPaddings": 1000,
-        "chunkDurationSeconds": 30,
+        "chunkDurationSeconds": 29,
         "maxAudioDurationSeconds": 30,
         "passLanguage": true
       },

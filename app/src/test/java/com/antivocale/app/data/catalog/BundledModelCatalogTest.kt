@@ -143,7 +143,9 @@ class BundledModelCatalogTest {
         assertEquals("small", whisper.flags.defaultVariant)
         assertTrue(whisper.flags.skipMetadataCheck)
         assertEquals(1000, whisper.flags.whisperTailPaddings)
-        assertEquals(30, whisper.flags.chunkDurationSeconds)
+        // TASK-718: 29, safely under sherpa's whisper decode cap (2950
+        // frames = 29.5s; a 30s window silently drops its final ~0.48s).
+        assertEquals(29, whisper.flags.chunkDurationSeconds)
         assertEquals(30, whisper.flags.maxAudioDurationSeconds)
         val byName = whisper.variants.associateBy { it.name }
         assertEquals("sherpa-onnx-whisper-small", byName.getValue("small").dirName)
