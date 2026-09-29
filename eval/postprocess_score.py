@@ -442,7 +442,7 @@ def transcribe_missing(samples_dir: Path, ref_dir: Path) -> int:
         # must not kill the whole --transcribe run (review finding, TASK-461)
         try:
             samples = audio_loader.load_audio(audio[cid], sample_rate=rb.SAMPLE_RATE)
-            text = rb.recognize_offline(rec, samples).strip()
+            text = rb.recognize_offline(rec, samples, rb.BACKENDS["parakeet"]).strip()
         except Exception as e:  # noqa: BLE001 (decode/recognize both fail soft here)
             print(f"  SKIP {cid}: {e}")
             continue
