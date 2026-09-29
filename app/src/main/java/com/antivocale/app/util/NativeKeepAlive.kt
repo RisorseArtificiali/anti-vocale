@@ -34,6 +34,13 @@ class NativeKeepAlive(
     private val clock: () -> Long = { android.os.SystemClock.elapsedRealtime() },
 ) {
     private val timeoutMinutes = AtomicInteger(defaultTimeoutMinutes)
+    /** TASK-665: base window (cold). Defaults to the flat window: the
+     * adaptive pair is OPT-IN via [setAdaptiveTimeouts]. */
+    private val baseTimeoutMinutes = AtomicInteger(defaultTimeoutMinutes)
+    /** TASK-665: warm window after a served request. */
+    private val warmTimeoutMinutes = AtomicInteger(5)
+    /** TASK-665: the backend served within the current window. */
+    private val warm = AtomicBoolean(false)
     private val workInFlight = AtomicInteger(0)
     private val timerActive = AtomicBoolean(false)
     private val lock = Any()
@@ -60,9 +67,21 @@ class NativeKeepAlive(
     @Volatile
     internal var idleUnloadWindowHook: (() -> Unit)? = null
 
-    /** Stores the timeout; a running timer restarts with the new value. */
+    /** TASK-665: the adaptive pair. Null restores the flat pre-665 window. */
+    fun setAdaptiveTimeouts(baseMinutes: Int?, warmMinutes: Int?) {
+        baseTimeoutMinutes.set(baseMinutes ?: defaultTimeoutMinutes)
+        warmTimeoutMinutes.set(warmMinutes ?: defaultTimeoutMinutes)
+        userOverride.set(false)
+    }
+
+    /** Stores the timeout; a running timer restarts with the new value.
+     *  TASK-665: an explicit setTimeout is the USER taking control: the flat
+     *  window wins and the adaptive pair stands down until re-armed. */
+    private val userOverride = AtomicBoolean(false)
+
     fun setTimeout(minutes: Int) {
         timeoutMinutes.set(if (minutes > 0) minutes else defaultTimeoutMinutes)
+        userOverride.set(true)
         synchronized(lock) {
             if (timerActive.get()) restartLocked()
         }
@@ -127,6 +146,15 @@ class NativeKeepAlive(
             // TASK-574: countdown pauses while work runs (endWork re-arms it).
             idleDeadline = null
             job?.cancel()
+            // TASK-665: the adaptive warm window. Base is 2 minutes; a
+            // backend that SERVED in the previous window is warm and gets 5
+            // (configurable via [warmTimeoutMinutes]). The heuristic is
+            // serve-again-within-one-window: every beginWork while the timer
+            // still counts marks the backend exercised, and endWork re-arms
+            // with the warm value. A cold gap (idle unload fired) resets to
+            // the base. The residency identity semantics (TASK-626) are
+            // untouched: only WHEN the idle unload fires changes.
+            warm.set(true)
         }
     }
 
@@ -139,9 +167,18 @@ class NativeKeepAlive(
 
     private fun restartLocked() {
         job?.cancel()
-        idleDeadline = clock() + timeoutMinutes.get() * 60_000L
+        // TASK-665: the effective window. The user preference (setTimeout)
+        // stays the ceiling: adaptive only SHORTENS a cold backend (base) or
+        // restores the preference for a warm one, never exceeds the user's
+        // choice.
+        val effective = when {
+            userOverride.get() -> timeoutMinutes.get()
+            warm.get() -> warmTimeoutMinutes.get().coerceAtMost(timeoutMinutes.get())
+            else -> baseTimeoutMinutes.get().coerceAtMost(timeoutMinutes.get())
+        }
+        idleDeadline = clock() + effective * 60_000L
         job = scope.launch {
-            val minutes = timeoutMinutes.get()
+            val minutes = effective
             delay(minutes * 60_000L)
             android.util.Log.i(tag, "Idle timeout (${minutes}m) reached, unloading native backend")
             // The unload runs UNDER the lock: a beginWork arriving meanwhile
@@ -159,9 +196,11 @@ class NativeKeepAlive(
                         restartLocked()
                     } else {
                         // Disarm: no no-op refires every timeout while idle.
-                        // The next initialize() re-arms via start().
+                        // The next initialize() re-arms via start(). TASK-665:
+                        // the idle unload fired: the next window is COLD.
                         timerActive.set(false)
                         idleDeadline = null
+                        warm.set(false)
                     }
                 }
             }

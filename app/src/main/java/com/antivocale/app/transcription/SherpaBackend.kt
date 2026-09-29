@@ -367,7 +367,12 @@ class SherpaBackend(
         tag = TAG,
         defaultTimeoutMinutes = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT,
         onIdleUnload = { runCatching { unload() } },
-    )
+    ).also {
+        // TASK-665: the adaptive idle window: a cold backend unloads after
+        // 2 minutes, one that served in the previous window holds to the
+        // preference (5 by default). The preference stays the ceiling.
+        it.setAdaptiveTimeouts(baseMinutes = 2, warmMinutes = PreferencesManager.DEFAULT_KEEP_ALIVE_TIMEOUT)
+    }
     private val onAutoUnloadCallback = java.util.concurrent.atomic.AtomicReference<(() -> Unit)?>(null)
 
     /**

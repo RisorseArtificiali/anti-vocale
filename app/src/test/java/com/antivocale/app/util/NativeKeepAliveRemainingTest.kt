@@ -70,4 +70,22 @@ class NativeKeepAliveRemainingTest {
         ka.stop()
         assertNull("no countdown after unload", ka.remainingSeconds())
     }
+
+    @Test
+    fun `adaptive window shortens cold and restores warm (TASK-665)`() {
+        val f = Fixture()
+        val ka = f.keepAlive(timeoutMinutes = 5)
+        ka.setAdaptiveTimeouts(baseMinutes = 2, warmMinutes = 5)
+        ka.start()
+        assertEquals("cold base window", 2 * 60L, ka.remainingSeconds())
+        // Work marks the backend warm: the next re-arm carries the warm window.
+        ka.beginWork()
+        f.now.set(60_000)
+        ka.endWork()
+        assertEquals("warm window after serving", 5 * 60L, ka.remainingSeconds())
+        // An explicit setTimeout is the user taking control: flat window.
+        ka.setTimeout(10)
+        assertEquals("user override wins flat", 10 * 60L, ka.remainingSeconds())
+        ka.stop()
+    }
 }
