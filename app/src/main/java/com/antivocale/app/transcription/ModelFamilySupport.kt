@@ -303,10 +303,12 @@ sealed interface ModelFamilySupport {
 object TransducerSupport : ModelFamilySupport {
 
     private const val EXPORT_GUIDANCE =
-        "Known-good manual transducer imports are NeMo-style OFFLINE exports carrying " +
-            "their original vocab_size and subsampling_factor metadata (Parakeet, GigaAM). " +
-            "k2-fsa zipformer releases do not carry that metadata, streaming or not, and " +
-            "streaming NeMo exports need the catalog's streaming entry, not the offline importer."
+        "NeMo-style OFFLINE exports (Parakeet, GigaAM) must carry their original " +
+            "vocab_size and subsampling_factor metadata. k2-fsa offline zipformers " +
+            "import without metadata through the catalog entries (modelType empty); " +
+            "a MANUAL import of one needs the NeMo subtype deselected and still cannot " +
+            "be pre-validated, so prefer the catalog entry. Anything 'streaming' in " +
+            "the name needs the catalog's streaming entry, never the offline importer."
 
     override val family: ModelFamily = ModelFamily.TRANSDUCER
 
@@ -348,13 +350,16 @@ object TransducerSupport : ModelFamilySupport {
     override fun valueMetadataKey(): String = "vocab_size"
 
     /**
-     * TASK-481 ground truth (encoder metadata dumps, eval/models): NeMo-style
-     * OFFLINE exports (Parakeet, GigaAM) carry vocab_size/subsampling_factor
-     * and import cleanly; k2-fsa zipformer releases carry NO vocab_size,
-     * streaming or not, so both their variants fail the metadata gate; and a
-     * streaming NeMo export carries full metadata but needs the catalog's
-     * streaming entry, not the offline importer. One text for all three
-     * outcomes, at import and at load.
+     * TASK-481 ground truth (encoder metadata dumps, eval/models), updated
+     * by the TASK-667 device finding: NeMo-style OFFLINE exports (Parakeet,
+     * GigaAM) carry vocab_size/subsampling_factor and import cleanly; k2-fsa
+     * OFFLINE zipformers carry no vocab_size and import via the catalog's
+     * modelType-empty entries (the metadata gate no longer rejects them);
+     * a streaming NeMo export carries full metadata but needs the catalog's
+     * streaming entry. One text for all three outcomes, at import and load.
+     * Residual known hole: a STREAMING zipformer authored as a non-streaming
+     * entry imports and dies at first transcription (tracked: pre-native
+     * streaming discriminator).
      */
     override fun metadataFailureGuidance(): String = EXPORT_GUIDANCE
 

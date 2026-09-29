@@ -30,14 +30,23 @@ class RequiredMetadataKeysTest {
     }
 
     @Test
-    fun `non-nemo modelType without flags defaults to vocab_size only`() {
+    fun `non-nemo modelType without flags defaults to the empty import gate`() {
         assertEquals(
-            listOf("vocab_size"),
+            emptyList<String>(),
             SherpaBackend.requiredMetadataKeys(entry(modelType = "whisper")),
         )
-        // Nemotron online uses an empty modelType.
+        // Nemotron online uses an empty modelType and pins its key list
+        // EXPLICITLY (metaKeys vocab_size); an unpinned "" entry (the plain
+        // zipformer import class) demands nothing: k2-fsa exports carry no
+        // encoder metadata (TASK-667, device-found on the catalog's own
+        // russian/vi zipformer entries).
         assertEquals(
             listOf("vocab_size"),
+            SherpaBackend.requiredMetadataKeys(
+                entry(modelType = "", flags = CatalogFlags(metaKeys = listOf("vocab_size")))),
+        )
+        assertEquals(
+            emptyList<String>(),
             SherpaBackend.requiredMetadataKeys(entry(modelType = "")),
         )
     }

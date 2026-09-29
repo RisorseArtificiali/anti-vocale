@@ -249,7 +249,9 @@ class ModelFamilySupportTest {
         val support = ModelFamilySupport.forFamily(ModelFamily.TRANSDUCER)
         assertEquals("encoder.int8.onnx", support.metadataFileRole())
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), support.metadataKeys("nemo_transducer"))
-        assertEquals(listOf("vocab_size"), support.metadataKeys(""))
+        // TASK-667 (device-found): plain zipformers carry no encoder metadata
+        // and their loader reads none; "" demands nothing.
+        assertEquals(emptyList<String>(), support.metadataKeys(""))
     }
 
     @Test

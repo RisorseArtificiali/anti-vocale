@@ -78,19 +78,24 @@ class SherpaBackend(
         /**
          * Metadata keys a transducer encoder must carry for [modelType], shared by the
          * external-model importer (import-time validation) and the external engine
-         * (load-time validation) so the two cannot drift: vocab_size for every family
-         * except qwen3_asr, whose loader and export carry no encoder metadata; the nemo
-         * loader's subsampling_factor + model_type only for the nemo family (a zipformer
-         * import with modelType "" does not carry them and must not be rejected for
-         * their absence).
+         * (load-time validation) so the two cannot drift: the nemo loader's
+         * vocab_size + subsampling_factor + model_type for nemo_transducer ONLY;
+         * every other modelType demands nothing (qwen3's vocab lives in the
+         * tokenizer dir; plain zipformers and qwen3 exports carry no encoder
+         * metadata their loaders would read, TASK-667 device-found).
          */
         fun requiredTransducerMetadataKeys(modelType: String): List<String> = when (modelType) {
             "nemo_transducer" -> listOf("vocab_size", "subsampling_factor", "model_type")
-            // GH #68: the qwen3 loader reads no encoder metadata (vocab lives in the
-            // tokenizer dir) and the published export carries none, so any required
-            // key would reject a loadable model.
-            "qwen3_asr" -> emptyList()
-            else -> listOf("vocab_size")
+            // GH #68 + TASK-667: every other loader (qwen3's vocab lives in the
+            // tokenizer dir; plain zipformers of every k2-fsa release carry no
+            // encoder metadata the plain-transducer loader would read;
+            // desktop-decoded clean on the pinned 1.13.8) demands nothing.
+            // Demanding vocab_size for "" rejected the catalog's OWN
+            // zipformer entries at import time. The wrong-family guard for
+            // "" is the file-shape plan (encoder/decoder/joiner roles), not
+            // metadata; the residual streaming-vs-offline hole is tracked
+            // (pre-native streaming discriminator task).
+            else -> emptyList()
         }
 
         /**
@@ -152,7 +157,11 @@ class SherpaBackend(
             // every initialize and every post-idle re-initialization for
             // bytes nothing consumed; the sibling missingOnnxMetadata
             // already short-circuits this way).
-            if (requiredKeys.isEmpty() && valueKey == null) return emptyList<String>() to null
+            if (requiredKeys.isEmpty()) return emptyList<String>() to null
+            // (an empty key list also voids the value read: the plausible-
+            // value check exists to sanity-check a REQUIRED key, and the
+            // metadata-free families paid a 2 MiB tail read per init for a
+            // value nothing consumed; review round, TASK-667.)
             val data = readTail(file, maxScanBytes) ?: return requiredKeys to null
             val value = valueKey?.let { onnxMetadataValueBytes(data, it) }
             return missingOnnxMetadataKeys(data, requiredKeys) to value

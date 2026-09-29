@@ -155,7 +155,7 @@ Per-family required keys (the app validates these at import time):
 | model_type / family | Required encoder metadata |
 |---|---|
 | `nemo_transducer` | `vocab_size`, `subsampling_factor`, `model_type` |
-| icefall transducer (`""` / zipformer) | `vocab_size` |
+| icefall transducer (`""` / zipformer) | none (k2-fsa exports carry no encoder metadata and the plain-transducer loader reads none; import via the catalog entries, TASK-667) |
 | `whisper` | `model_type` whose value starts with `whisper` (value-checked, not just key-present) |
 | `nemo_ctc` / `zipformer_ctc` / `omnilingual_ctc` / `paraformer` (CTC family) | none (structural discriminators only) |
 
@@ -248,12 +248,16 @@ Re-importing the same files (same hashes) updates the existing record instead of
 
 The TRANSDUCER family accepts **offline** (non-streaming) transducer exports that
 carry their **original** ONNX metadata (`vocab_size`, and for NeMo-style exports
-`subsampling_factor` + `model_type`): Parakeet TDT, GigaAM, and k2-fsa offline
-zipformers are the known-good sources. Exports with `streaming` in the name
-(sherpa-onnx streaming zipformers) target the online recognizer and are **not
-supported**: they do not carry the offline metadata this app validates, so the
-import fails with a metadata error naming them. A hand-patched encoder that fakes
-the metadata is rejected too (the vocab_size value must be a plausible positive
-integer). If an
-import fails on missing metadata, pick the non-streaming export from the same
-repository; every sherpa release page ships both.
+`subsampling_factor` + `model_type`): Parakeet TDT and GigaAM are the known-good
+NeMo-style sources. k2-fsa offline zipformers import through the catalog entries
+(modelType empty, no metadata demanded since TASK-667); a manual import of one
+needs the NeMo subtype deselected and cannot be pre-validated, so prefer the
+entry. Exports with `streaming` in the name (sherpa-onnx streaming zipformers)
+target the online recognizer and are **not supported**: for the manual NeMo path
+the import fails on the streaming graph's missing metadata; for entry imports
+declared non-streaming there is no pre-native discriminator yet, so such a
+mis-authored entry dies at first transcription (known hole, tracked). A
+hand-patched encoder that fakes the metadata is rejected too (the vocab_size
+value must be a plausible positive integer). If a manual import fails on
+missing metadata, pick the non-streaming export from the same repository;
+every sherpa release page ships both.
