@@ -63,11 +63,12 @@ class AudioPreprocessor @Inject constructor() {
 
         /**
          * Chunk-count estimate for the streaming header (progress subtext and
-         * PERF summary): CEIL of duration/cap, floor 1. The decode loop emits
-         * full cap-sized chunks while decoding and flushes the trailing
-         * remainder at end-of-stream only when samples are left over, so the
-         * emitted count is exactly CEIL: a floor under-counts by one for every
-         * non-exact multiple (TASK-444).
+         * PERF summary): CEIL of duration/cap, floor 1. Since TASK-410's
+         * silence-aware placement the emitted count can EXCEED the estimate
+         * (cuts only move backward, so chunks shrink below the cap); the
+         * suffix logic drops the total when the stream passes it, so the
+         * estimate stays an estimate, never a contract. A floor under-counts
+         * by one for every non-exact multiple (TASK-444).
          */
         internal fun expectedChunkCount(totalDurationSeconds: Double, chunkDurationSeconds: Int): Int =
             kotlin.math.ceil(totalDurationSeconds / chunkDurationSeconds).toInt().coerceAtLeast(1)
@@ -308,7 +309,11 @@ class AudioPreprocessor @Inject constructor() {
                 )
             )
         } else {
-            return chunkFloatAudio(samplesToProcess, audioData.sampleRate, processedDuration, maxChunkDurationSeconds, originMs)
+            // TASK-410 prototype A: place the fixed-window cuts on silence
+            // near each cap boundary (all audio kept; fixed cut when no
+            // silence sits within the placer's search window).
+            val cuts = SilenceAwareCutPlacer.cutOffsets(samplesToProcess, audioData.sampleRate, maxChunkDurationSeconds)
+            return chunkFloatAudio(samplesToProcess, audioData.sampleRate, processedDuration, maxChunkDurationSeconds, originMs, cuts)
         }
     }
 
@@ -431,6 +436,15 @@ class AudioPreprocessor @Inject constructor() {
                 val accumulator = mutableListOf<FloatArray>()
                 var accumulatedSamples = 0
                 var chunkIndex = 0
+                fun emitChunk(samples: FloatArray, isLast: Boolean) {
+                    channel.trySendBlocking(StreamEvent.Chunk(StreamChunk(
+                        samples = samples,
+                        sampleRate = outputSampleRate,
+                        chunkIndex = chunkIndex,
+                        isLast = isLast
+                    )))
+                    chunkIndex++
+                }
                 // Chunk size in OUTPUT samples; loop-invariant (both inputs are).
                 // Unreachable-large when the backend chunks nothing (null cap).
                 val resampledChunkSamples = outputSampleRate * (maxChunkDurationSeconds ?: Int.MAX_VALUE / outputSampleRate)
@@ -469,16 +483,21 @@ class AudioPreprocessor @Inject constructor() {
                                 accumulator.add(decoded)
                                 accumulatedSamples += decoded.size
 
-                                while (accumulatedSamples >= resampledChunkSamples && maxChunkDurationSeconds != null) {
-                                    val chunk = mergeAccumulated(accumulator, resampledChunkSamples)
-                                    channel.trySendBlocking(StreamEvent.Chunk(StreamChunk(
-                                        samples = chunk,
-                                        sampleRate = outputSampleRate,
-                                        chunkIndex = chunkIndex,
-                                        isLast = false
-                                    )))
-                                    chunkIndex++
-                                    accumulatedSamples = accumulator.sumOf { it.size }
+                                // TASK-410 prototype A: do not flush at the
+                                // exact cap. Hold the search window of
+                                // lookahead past it, then place the cut on
+                                // the nearest silence; all audio is kept.
+                                // The placer reads the accumulator's own
+                                // segments (no merge copy) and the emission
+                                // is ONE copy of the chunk, the old shape.
+                                val lookaheadSamples = SilenceAwareCutPlacer.SEARCH_WINDOW_SECONDS * outputSampleRate
+                                while (maxChunkDurationSeconds != null &&
+                                       accumulatedSamples >= resampledChunkSamples + lookaheadSamples) {
+                                    val cut = SilenceAwareCutPlacer.placeCut(
+                                        accumulator, outputSampleRate, resampledChunkSamples, accumulatedSamples)
+                                    val chunk = mergeAccumulated(accumulator, cut)
+                                    emitChunk(chunk, isLast = false)
+                                    accumulatedSamples -= chunk.size
                                 }
                             }
                             decoder.releaseOutputBuffer(outputBufferIndex, false)
@@ -503,23 +522,28 @@ class AudioPreprocessor @Inject constructor() {
                     decoder.release()
                 }
 
-                // Emit remaining samples as final chunk. The index is the NEXT
+                // Emit remaining samples as final chunk(s). The index is the NEXT
                 // sequential slot (not -1): the orchestrator renders 'Chunk i/N',
                 // the chunk-nav notification keys on chunkIndex >= 0, and the
                 // TTFT/PERF instrumentation keys on chunkIndex == 0, so a -1
                 // here mislabels the last chunk, drops it from the nav, and
                 // silences the instrumentation for single-chunk files
                 // (code review 2026-09-04, F2).
-                if (accumulator.isNotEmpty()) {
-                    val remaining = mergeAccumulated(accumulator, Int.MAX_VALUE)
-                    if (remaining.isNotEmpty()) {
-                        channel.trySendBlocking(StreamEvent.Chunk(StreamChunk(
-                            samples = remaining,
-                            sampleRate = outputSampleRate,
-                            chunkIndex = chunkIndex,
-                            isLast = true
-                        )))
+                // TASK-410: a tail larger than the cap is itself cut on
+                // silence here (the mid-stream flush only fires once the
+                // lookahead fills; a 30-32s file under a 30s cap would
+                // otherwise hand the model one over-cap chunk, which the
+                // fixed windower never did).
+                var remaining = mergeAccumulated(accumulator, Int.MAX_VALUE)
+                while (remaining.isNotEmpty()) {
+                    if (maxChunkDurationSeconds == null || remaining.size <= resampledChunkSamples) {
+                        emitChunk(remaining, isLast = true)
+                        break
                     }
+                    val cut = SilenceAwareCutPlacer.placeCut(
+                        listOf(remaining), outputSampleRate, resampledChunkSamples, remaining.size)
+                    emitChunk(remaining.copyOfRange(0, cut), isLast = false)
+                    remaining = remaining.copyOfRange(cut, remaining.size)
                 }
                 channel.close()
             } catch (e: PreprocessingError) {
@@ -997,30 +1021,39 @@ class AudioPreprocessor @Inject constructor() {
      * the slicing loop that already knows them, so the emitted chunk ranges are
      * exact including the shorter final window (GH #92).
      */
-    private fun chunkFloatAudio(
+    internal fun chunkFloatAudio(
         samples: FloatArray,
         sampleRate: Int,
         duration: Double,
         maxChunkDurationSeconds: Int,
-        originMs: Long = 0L
+        originMs: Long = 0L,
+        cutOffsets: LongArray,
     ): PreprocessingResult {
-        val samplesPerChunk = sampleRate * maxChunkDurationSeconds
         val chunks = mutableListOf<FloatArray>()
         val rangesMs = mutableListOf<Pair<Long, Long>>()
         var offset = 0
         var chunkIndex = 0
+        var nextCut = 0
 
         while (offset < samples.size) {
-            val chunkSize = minOf(samplesPerChunk, samples.size - offset)
-            chunks.add(samples.copyOfRange(offset, offset + chunkSize))
+            // The boundary is the next silence-placed cut, or the cap when
+            // none remains (the final chunk runs to the array end). The cut
+            // is CLAMPED monotonic-in-(offset, offset+cap]: a malformed cuts
+            // array must degrade to a fixed cut, never crash the decode.
+            val hardMax = minOf(offset + sampleRate * maxChunkDurationSeconds, samples.size)
+            val end = if (nextCut < cutOffsets.size)
+                cutOffsets[nextCut].toInt().coerceIn(offset + 1, hardMax)
+                else hardMax
+            chunks.add(samples.copyOfRange(offset, end))
             rangesMs.add(
                 (originMs + offset.toLong() * 1000L / sampleRate) to
-                    (originMs + (offset + chunkSize).toLong() * 1000L / sampleRate)
+                    (originMs + end.toLong() * 1000L / sampleRate)
             )
 
-            Log.d(TAG, "Created chunk $chunkIndex: $chunkSize samples")
+            Log.d(TAG, "Created chunk $chunkIndex: ${end - offset} samples (cut at ${end / sampleRate}s)")
 
-            offset += chunkSize
+            offset = end
+            nextCut++
             chunkIndex++
         }
 
