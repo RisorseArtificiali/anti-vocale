@@ -661,15 +661,18 @@ class SherpaBackend(
 
                 stream = rec.createStream()
                 stream.acceptWaveform(samples, sampleRate)
-                // Append `tailPadSeconds` (catalog flag) of silence. This OFFLINE
-                // site's only remaining consumer is gigaam (1s, unmeasured: its
-                // model dir is not on the eval host; inherits the parakeet
-                // suspicion, measured before any flip). Nemotron's 1.5s lives in
-                // the STREAMING path below (TASK-340 Fix 1b shape: a second
-                // acceptWaveform of one shared zero buffer, no per-chunk copy).
-                // Parakeet's former 1s pad was REMOVED here (TASK-715 A/B: it
-                // cost 2.5pp WER on the 11-clip eval set, 0.0065 -> 0.0313; the
-                // old "~2% improvement" claim did not reproduce; TASK-717).
+                // Append `tailPadSeconds` (catalog flag) of silence. The pad's
+                // WER effect on parakeet is VARIANT-DEPENDENT (TASK-715 + the
+                // 717 smoothquant arm): stock-int8 pays 2.5pp for it (0.0065
+                // without, 0.0313 with), smoothquant GAINS 0.9pp (0.0476 with,
+                // 0.0563 without). The flag is entry-level and the default
+                // variant is smoothquant, so the pad stays until the flag
+                // becomes per-variant. The old "~2% improvement on WhatsApp
+                // audio" claim remains unreproduced on either variant.
+                // Nemotron's 1.5s lives in the STREAMING path below (TASK-340
+                // Fix 1b shape: a second acceptWaveform of one shared zero
+                // buffer, no per-chunk copy). Gigaam's 1s is unmeasured (its
+                // model dir is not on the eval host).
                 val tailPad = entry.flags.tailPadSeconds
                 if (tailPad > 0) {
                     stream.acceptWaveform(tailSilence.get((sampleRate * tailPad).toInt()), sampleRate)

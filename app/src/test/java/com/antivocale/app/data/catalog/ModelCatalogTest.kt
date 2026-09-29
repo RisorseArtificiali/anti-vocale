@@ -71,8 +71,7 @@ class ModelCatalogTest {
         assertEquals(false, parakeet.isStreaming)
 
         assertEquals("smoothquant", parakeet.flags.defaultVariant)
-        // The fixture's own value (parse test; the real catalog's pad was
-        // removed by TASK-717, pinned in BundledModelCatalogTest).
+        // The fixture's own value (parse test).
         assertEquals(1.0, parakeet.flags.tailPadSeconds, 0.0)
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), parakeet.flags.metaKeys)
 

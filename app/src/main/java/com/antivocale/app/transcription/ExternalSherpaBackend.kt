@@ -324,13 +324,16 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
             // deterministically, not left to GC finalization (NemotronStreamingBackend pattern).
             var stream: OfflineStream? = null
             try {
-                // No offline tail pad: the pattern was measured COSTLY, not
-                // helpful (TASK-715 A/B: 2.5pp WER on the eval set; offline
-                // encoders are bidirectional, trailing silence shifts global
-                // context). External offline imports are the same encoder
-                // class. Streaming keeps its flush below (nemotron verdict).
+                // 1s tail pad, kept deliberately: the pad's effect is
+                // quantization-dependent (parakeet stock-int8 pays 2.5pp for
+                // it, smoothquant GAINS 0.9pp; TASK-715 + 717 A/B), so no
+                // class-wide law removes it for arbitrary external exports.
+                // Per-model measurement decides, when one exists.
+                val silencePad = FloatArray(sampleRate)
+                val padded = samples + silencePad
+
                 stream = rec.createStream()
-                stream.acceptWaveform(samples, sampleRate)
+                stream.acceptWaveform(padded, sampleRate)
                 rec.decode(stream)
 
                 val result = rec.getResult(stream)

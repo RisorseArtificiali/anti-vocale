@@ -17,7 +17,7 @@
       "storageDir": "parakeet-tdt",
       "flags": {
         "defaultVariant": "smoothquant",
-        "tailPadSeconds": 0,
+        "tailPadSeconds": 1,
         "chunkDurationSeconds": 60,
         "metaKeys": [
           "vocab_size",

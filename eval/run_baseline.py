@@ -89,10 +89,10 @@ BACKENDS = {
         # decoder init (no vocab_size metadata). Mirrors BackendConfig.SherpaOnnxConfig default.
         "model_type": "nemo_transducer",
         # Catalog flags.tailPadSeconds (vendored fallback; the catalog
-        # override at import is authoritative). 0 since TASK-717: the 1s pad
-        # COST 2.5pp WER on the eval set (TASK-715 A/B; the offline encoder
-        # is bidirectional, trailing silence shifts global context).
-        "tail_pad_seconds": 0.0,
+        # override at import is authoritative). 1: variant-dependent effect
+        # (stock-int8 pays 2.5pp, smoothquant gains 0.9pp; TASK-715/717),
+        # entry-level flag, smoothquant default.
+        "tail_pad_seconds": 1.0,
         # Catalog flags.chunkDurationSeconds: 60. Same windowing rule as
         # whisper below; the app caps parakeet chunks at 60s.
         "chunk_seconds": 60,
