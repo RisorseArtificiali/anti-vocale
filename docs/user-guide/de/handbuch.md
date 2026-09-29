@@ -55,6 +55,7 @@ Faustregeln:
 - Mit aktiviertem Automatischem Kopieren (Einstellungen) liegt der Text bereits in der Zwischenablage, wenn die Benachrichtigung ankommt; die Benachrichtigung weist darauf hin.
 - Jede Transkription landet im Tab **Verlauf**, mit verwendetem Modell, Dauer und Bearbeitungszeit. Halte einen Eintrag lange gedrückt, um erneut zu versuchen, zu kopieren, zu löschen oder ein schlechtes Ergebnis per E-Mail zu melden.
 - Mit einem **Whisper- oder SenseVoice-Modell** zeigt jede erweiterte Transkription einen Chip mit der erkannten Sprache: ein Tipp prüft oder pinnt sie, wenn das Modell danebenliegt (kleine Modelle tun das mitunter). Andere Familien erkennen keine Sprache, der Chip bleibt aus; der Schalter in den Einstellungen sagt es und bleibt deaktiviert.
+- Mit einem **Whisper- oder SenseVoice-**Modell trägt jede aufgeklappte Transkript einen Sprach-Chip: die Flagge der vom Modell erkannten Sprache, mit einem Tipp zum Prüfen oder Festlegen, wenn die Schätzung falsch liegt (kleine Modelle raten manchmal daneben). Andere Modellfamilien melden keine erkannte Sprache, deshalb bleibt der Chip dort aus; der Schalter in den Einstellungen sagt das und bleibt deaktiviert.
 - Mit Automatischem Speichern im Ordner (Einstellungen) wird jede Transkription zusätzlich als .txt-Datei in einen von dir gewählten Ordner geschrieben.
 
 ## Lange Audios, Warteschlange und erneute Versuche

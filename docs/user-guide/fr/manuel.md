@@ -55,6 +55,7 @@ Quelques repères :
 - Avec la Copie automatique activée (Paramètres), le texte est déjà dans le presse-papiers quand la notification arrive ; la notification vous l'indique.
 - Chaque transcription est conservée dans l'onglet **Historique**, avec le modèle utilisé, la durée et le temps de traitement. Un appui long sur une entrée permet de réessayer, de copier, de supprimer ou de signaler un mauvais résultat par e-mail.
 - Avec un modèle **Whisper ou SenseVoice**, chaque transcription ouverte porte une pastille de langue détectée : un appui pour vérifier ou épingler quand le modèle se trompe (les petits modèles se trompent parfois). Les autres familles ne détectent pas la langue, la pastille reste éteinte ; le réglage dans les paramètres le dit et reste désactivé.
+- Avec un modèle **Whisper ou SenseVoice**, chaque transcription dépliée porte une puce de langue : le drapeau de la langue détectée par le modèle, avec un appui pour vérifier ou épingler quand l'estimation est fausse (les petits modèles se trompent parfois). Les autres familles de modèles ne rapportent pas de langue détectée, la puce reste donc absente pour elles ; le réglage dans les Paramètres le dit et reste désactivé.
 - Avec l'Enregistrement automatique dans un dossier (Paramètres), chaque transcription est aussi écrite dans un fichier .txt, dans le dossier de votre choix.
 
 ## Audio long, file d'attente et nouvelles tentatives
