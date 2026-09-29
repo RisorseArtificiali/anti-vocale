@@ -12,17 +12,23 @@ set exists yet; see eval/README.md). It confirms:
      test_wavs that ship with the repo (en/es/fr/de — Western-language
      proxies; no Italian test wav is shipped).
 
-API note: run_baseline.py uses OnlineRecognizer.from_args, which does not exist
-in sherpa-onnx 1.13.3 (the Online*Config classes aren't exposed in Python
-either). The version-stable construction is the OnlineRecognizer.from_transducer
-classmethod used here. Stream methods (create_stream / accept_waveform /
-input_finished / decode_stream / set_option) and the pure metrics
-(tokenize / repetition_loops) are reused from run_baseline for parity.
+Single-decode-owner note (TASK-716): recognition runs through
+run_baseline.recognize_online, the one online drain loop among the eval
+scripts that import run_baseline (eval/smallclass/run_eval.py keeps its
+own standalone probe by design: it does not import the harness). Whole-
+clip feed, the 1.5s catalog tail pad, drain -> input_finished -> drain.
+The previous private loop fed 0.5s chunks with no pad, the shape
+run_baseline's own verification documents as garbling streaming output:
+every test wav recovered trailing words when the shared loop landed
+(en "co" to "cool", es/fr/de trailing phrases restored, recorded in
+TASK-716). In the same retirement the recognizer construction and audio
+loading became shared too (rb.build_recognizer; audio_loader.load_audio,
+the ONE loader per TASK-461).
 
 Each clip runs two ways:
-  - forced: stream.set_option("language", <lang>) — removes auto-detection as a
+  - forced: cfg language set to <lang>, removing auto-detection as a
     confound, isolating the att_context_size fix.
-  - auto  : no language hint — the app's default mode, what users actually get.
+  - auto  : the catalog's "auto", the app's default mode.
 
 Run:  eval/.venv/bin/python eval/smoke_nemotron.py
 """
@@ -31,10 +37,6 @@ from __future__ import annotations
 import sys
 import time
 from pathlib import Path
-
-import numpy as np
-import sherpa_onnx
-import soundfile as sf
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
@@ -51,54 +53,20 @@ LOOP_THRESHOLD = rb.LOOP_THRESHOLD
 SAMPLE_RATE = rb.SAMPLE_RATE  # 16000
 
 
-def build_recognizer():
-    """Construct the streaming transducer recognizer, mirroring the shipped
-    NemotronStreamingBackend.kt config (greedy_search, empty modelType is the
-    from_transducer default, cpu provider)."""
-    d = MODEL_DIR
-    return sherpa_onnx.OnlineRecognizer.from_transducer(
-        tokens=str(d / "tokens.txt"),
-        encoder=str(d / "encoder.int8.onnx"),
-        decoder=str(d / "decoder.int8.onnx"),
-        joiner=str(d / "joiner.int8.onnx"),
-        num_threads=rb.NUM_THREADS,
-        sample_rate=SAMPLE_RATE,
-        feature_dim=80,
-        decoding_method="greedy_search",
-        provider="cpu",
-    )
-
-
-def load_audio(path: Path) -> np.ndarray:
-    """Load any wav as 16 kHz mono float32. test_wavs are already 16k mono, but
-    guard against a different sample rate by linear-resampling if needed."""
-    data, sr = sf.read(str(path), dtype="float32", always_2d=False)
-    if data.ndim > 1:
-        data = data[:, 0]
-    if sr != SAMPLE_RATE:
-        # Simple linear resample — test_wavs are 16k so this rarely fires.
-        n = int(round(len(data) * SAMPLE_RATE / sr))
-        idx = np.linspace(0, len(data) - 1, n)
-        data = np.interp(idx, np.arange(len(data)), data).astype(np.float32)
-    return np.ascontiguousarray(data, dtype=np.float32)
+def load_audio(path: Path):
+    """The shared loader (TASK-461's ONE-loader rule): ffmpeg downmix plus
+    resample, the same path run_baseline feeds the same recognizer."""
+    from audio_loader import load_audio as shared_load
+    return shared_load(path, sample_rate=SAMPLE_RATE)
 
 
 def recognize(rec, samples, language=None):
-    """Batch-via-online. Optional language hint isolates the att_context_size
-    fix from auto-detection. Feeds 0.5s chunks, signals end-of-input, then runs
-    the is_ready→decode_stream loop to drain (a single decode_stream only
-    advances one step). Reads text via recognizer.get_result (1.13.3 API)."""
-    stream = rec.create_stream()
+    """The shared decode (TASK-716): run_baseline.recognize_online with the
+    catalog cfg, language overridden for the forced arm."""
+    cfg = dict(rb.BACKENDS["nemotron"])
     if language:
-        stream.set_option("language", language)
-    chunk = int(0.5 * SAMPLE_RATE)
-    for i in range(0, len(samples), chunk):
-        stream.accept_waveform(SAMPLE_RATE, samples[i:i + chunk])
-    stream.input_finished()
-    while rec.is_ready(stream):
-        rec.decode_stream(stream)
-    res = rec.get_result(stream)
-    return res if isinstance(res, str) else (getattr(res, "text", "") or "")
+        cfg["language"] = language
+    return rb.recognize_online(rec, samples, cfg)
 
 
 def main() -> None:
@@ -108,8 +76,8 @@ def main() -> None:
     if not TEST_WAVS.is_dir():
         sys.exit(f"No test_wavs dir at {TEST_WAVS}")
 
-    print("Loading OnlineRecognizer (from_transducer, mirrors NemotronStreamingBackend.kt) ...")
-    rec = build_recognizer()
+    print("Loading OnlineRecognizer (rb.build_recognizer, the shared config) ...")
+    rec, _ = rb.build_recognizer(rb.BACKENDS["nemotron"])
     print("  loaded OK\n")
 
     for lang in LANGS:
