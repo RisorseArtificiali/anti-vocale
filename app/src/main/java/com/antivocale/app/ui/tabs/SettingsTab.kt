@@ -3150,6 +3150,10 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.settings_feedback_license_title, R.string.settings_feedback_source_title,
             R.string.settings_feedback_translation_title,
             R.string.settings_replay_tour, R.string.settings_feedback_privacy_note,
+            R.string.faq_section_title, R.string.faq_card_calls_title,
+            R.string.faq_card_models_title, R.string.faq_card_queue_title,
+            R.string.faq_card_results_title, R.string.faq_card_trouble_title,
+            R.string.faq_full_link,
         ),
     ),
 )
