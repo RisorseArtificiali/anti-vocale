@@ -59,44 +59,19 @@ class TranscriptionOrchestratorRepetitionCollapseTest : TranscriptionOrchestrato
             every { isReady() } returns true
         }
         stubDefaultWhisperPreferences()
-        every { backendManager.hasActiveBackend() } returns true
-        every { backendManager.getActiveBackend() } returns gigaamBackend
-        every { preferencesManager.transcriptionBackend } returns flowOf("gigaam")
-        every { preferencesManager.vadEnabled } returns flowOf(false)
-        every { preferencesManager.sherpaModelPath("gigaam") } returns flowOf("/models/gigaam")
+        setUpGigaamWholeFileFixture(gigaamBackend, llmBackend)
     }
 
     private fun stubWholeFileRequestWithSegments(text: String, segments: List<com.antivocale.app.transcription.TimedSegment>) {
-        stubPreprocessing(listOf(FloatArray(3) { it.toFloat() }), totalDurationSeconds = 5.0)
-        coEvery { gigaamBackend.transcribeAudio(any(), any(), any()) } returns
-            Result.success(TranscriptionResult(text = text, segments = segments))
-        coEvery { gigaamBackend.transcribeAudioStreaming(any(), any(), any(), any()) } returns
-            Result.success(TranscriptionResult(text = text, segments = segments))
+        stubWholeFileDecode(gigaamBackend, text, segments)
     }
 
     private fun stubWholeFileRequest(transcript: String) {
-        stubPreprocessing(listOf(FloatArray(3) { it.toFloat() }), totalDurationSeconds = 5.0)
-        // The single-chunk whole-file path calls transcribeAudioStreaming (the
-        // interface default forwards to transcribeAudio, but on a mock the
-        // relaxed stub would fabricate Result<Object>: stub BOTH).
-        coEvery { gigaamBackend.transcribeAudio(any(), any(), any()) } returns
-            Result.success(TranscriptionResult(text = transcript))
-        coEvery { gigaamBackend.transcribeAudioStreaming(any(), any(), any(), any()) } returns
-            Result.success(TranscriptionResult(text = transcript))
+        stubWholeFileDecode(gigaamBackend, transcript)
     }
 
-    /** The backend swap flips which backend getActiveBackend answers with. */
     private fun stubSwapToLlm() {
-        val swapped = AtomicBoolean(false)
-        every { backendManager.getActiveBackend() } answers {
-            if (swapped.get()) llmBackend else gigaamBackend
-        }
-        coEvery {
-            backendManager.setActiveBackend(eq(LlmTranscriptionBackend.BACKEND_ID), any(), any())
-        } coAnswers {
-            swapped.set(true)
-            Result.success(Unit)
-        }
+        stubBackendSwapToLlm(gigaamBackend, llmBackend)
     }
 
     /** logSuccess needs an existing row to update (the base stubs null). */

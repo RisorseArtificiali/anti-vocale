@@ -14,6 +14,7 @@ import com.antivocale.app.service.TranscriptionListener
 import io.mockk.*
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Before
+import java.util.concurrent.atomic.AtomicBoolean
 
 abstract class TranscriptionOrchestratorTestBase {
 
@@ -134,6 +135,57 @@ abstract class TranscriptionOrchestratorTestBase {
             every { backendManager.hasActiveBackend() } returns true
             every { backendManager.getActiveBackend() } returns backend
         }
+
+    /**
+     * TASK-682: the shared gigaam whole-file funnel fixture (extracted from
+     * the near-verbatim pair in RepetitionCollapseTest + PunctuationPassTest:
+     * the stub-BOTH-transcribe-methods gotcha now lives in ONE place).
+     */
+    protected fun setUpGigaamWholeFileFixture(
+        gigaamBackend: TranscriptionBackend,
+        llmBackend: TranscriptionBackend,
+    ) {
+        every { backendManager.hasActiveBackend() } returns true
+        every { backendManager.getActiveBackend() } returns gigaamBackend
+        every { preferencesManager.transcriptionBackend } returns flowOf("gigaam")
+        every { preferencesManager.vadEnabled } returns flowOf(false)
+        every { preferencesManager.sherpaModelPath("gigaam") } returns flowOf("/models/gigaam")
+    }
+
+    /**
+     * The whole-file single-chunk stub: the path calls
+     * transcribeAudioStreaming (the interface default forwards to
+     * transcribeAudio, but on a mock the relaxed stub would fabricate
+     * Result<Object>: stub BOTH).
+     */
+    protected fun stubWholeFileDecode(
+        backend: TranscriptionBackend,
+        text: String,
+        segments: List<TimedSegment> = emptyList(),
+    ) {
+        stubPreprocessing(listOf(FloatArray(3) { it.toFloat() }), totalDurationSeconds = 5.0)
+        coEvery { backend.transcribeAudio(any(), any(), any()) } returns
+            Result.success(TranscriptionResult(text = text, segments = segments))
+        coEvery { backend.transcribeAudioStreaming(any(), any(), any(), any()) } returns
+            Result.success(TranscriptionResult(text = text, segments = segments))
+    }
+
+    /** The backend swap flips which backend getActiveBackend answers with. */
+    protected fun stubBackendSwapToLlm(
+        gigaamBackend: TranscriptionBackend,
+        llmBackend: TranscriptionBackend,
+    ) {
+        val swapped = AtomicBoolean(false)
+        every { backendManager.getActiveBackend() } answers {
+            if (swapped.get()) llmBackend else gigaamBackend
+        }
+        coEvery {
+            backendManager.setActiveBackend(eq(LlmTranscriptionBackend.BACKEND_ID), any(), any())
+        } coAnswers {
+            swapped.set(true)
+            Result.success(Unit)
+        }
+    }
 
     protected fun stubDefaultWhisperPreferences() {
         every { preferencesManager.transcriptionBackend } returns flowOf("whisper")

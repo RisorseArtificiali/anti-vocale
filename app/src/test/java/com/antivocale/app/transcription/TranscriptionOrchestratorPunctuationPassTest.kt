@@ -64,30 +64,13 @@ class TranscriptionOrchestratorPunctuationPassTest : TranscriptionOrchestratorTe
     }
 
     private fun stubWholeFileRequest(@Suppress("UNUSED_PARAMETER") audioFile: java.io.File) {
-        // Base fixture stub (any() inputPath, non-VAD): identical to the old
-        // 17-line local block.
-        stubPreprocessing(listOf(FloatArray(3) { it.toFloat() }), totalDurationSeconds = 5.0)
-        // The single-chunk whole-file path calls transcribeAudioStreaming (the
-        // interface default forwards to transcribeAudio, but on a mock the
-        // relaxed stub would fabricate Result<Object>: stub BOTH).
-        coEvery { gigaamBackend.transcribeAudio(any(), any(), any()) } returns
-            Result.success(TranscriptionResult(text = rawTranscript))
-        coEvery { gigaamBackend.transcribeAudioStreaming(any(), any(), any(), any()) } returns
-            Result.success(TranscriptionResult(text = rawTranscript))
+        // TASK-682: the shared whole-file stub (the stub-BOTH gotcha lives
+        // in the base now).
+        stubWholeFileDecode(gigaamBackend, rawTranscript)
     }
 
-    /** The backend swap flips which backend getActiveBackend answers with. */
     private fun stubSwapToLlm() {
-        val swapped = AtomicBoolean(false)
-        every { backendManager.getActiveBackend() } answers {
-            if (swapped.get()) llmBackend else gigaamBackend
-        }
-        coEvery {
-            backendManager.setActiveBackend(eq(LlmTranscriptionBackend.BACKEND_ID), any(), any())
-        } coAnswers {
-            swapped.set(true)
-            Result.success(Unit)
-        }
+        stubBackendSwapToLlm(gigaamBackend, llmBackend)
     }
 
     @Test
