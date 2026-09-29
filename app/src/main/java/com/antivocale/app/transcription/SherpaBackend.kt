@@ -93,8 +93,8 @@ class SherpaBackend(
             // Demanding vocab_size for "" rejected the catalog's OWN
             // zipformer entries at import time. The wrong-family guard for
             // "" is the file-shape plan (encoder/decoder/joiner roles), not
-            // metadata; the residual streaming-vs-offline hole is tracked
-            // (pre-native streaming discriminator task).
+            // metadata; the streaming-vs-offline flag mismatch is caught by
+            // [zipformerGraphIsStreaming] at import and load (TASK-720).
             else -> emptyList()
         }
 
@@ -216,6 +216,29 @@ class SherpaBackend(
         ): String? {
             val data = readTail(file, maxScanBytes) ?: return null
             return onnxMetadataValueBytes(data, key)
+        }
+
+        /**
+         * TASK-720: streaming-vs-offline discriminator for plain zipformers,
+         * verified on real exports both ways (eval host, 2026-09-29):
+         * streaming encoders carry `decode_chunk_len` (and friends like
+         * encoder_dims/T/num_encoder_layers) plus comment "streaming
+         * zipformer2"; offline ones carry neither key and comment
+         * "non-streaming zipformer2" (whose startsWith("streaming") is
+         * false, the trap a naive contains() would fall into). Null when
+         * neither marker is readable: undeterminable, callers fail open.
+         */
+        fun zipformerGraphIsStreaming(encoderFile: File, maxScanBytes: Long = ONNX_METADATA_SCAN_LIMIT): Boolean? {
+            val data = readTail(encoderFile, maxScanBytes) ?: return null
+            return zipformerGraphIsStreamingBytes(data)
+        }
+
+        /** Pure half of [zipformerGraphIsStreaming], unit-testable on raw bytes. */
+        @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+        internal fun zipformerGraphIsStreamingBytes(data: ByteArray): Boolean? {
+            if (onnxMetadataValueBytes(data, "decode_chunk_len") != null) return true
+            val comment = onnxMetadataValueBytes(data, "comment")?.trim() ?: return null
+            return comment.lowercase().startsWith("streaming")
         }
 
         /** Pure (no I/O) value parser behind [onnxMetadataValue], unit-testable directly. */

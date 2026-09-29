@@ -237,6 +237,12 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                     "integrity check failed: $detail. The model files may be corrupt; try re-importing them."))
             }
 
+            // TASK-720 load-time echo of the importer's streaming-flag check:
+            // records persisted before the check still get the mismatch named
+            // instead of the native abort.
+            ModelFamilySupport.forFamily(record.family)
+                .streamingFlagMismatch(File(record.dir, SherpaBackend.CANONICAL_ENCODER), record.streaming)
+                ?.let { return@withContext Result.failure(TranscriptionException.ModelLoadError(it)) }
             // TASK-368: streaming records build the OnlineRecognizer instead. The
             // family restriction was already enforced at import (entry-JSON choke
             // point); this is the defensive second gate before the native load.

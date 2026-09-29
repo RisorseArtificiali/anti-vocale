@@ -193,6 +193,16 @@ sealed interface ModelFamilySupport {
     fun valueMetadataKey(): String? = null
 
     /**
+     * TASK-720: family-routed streaming-flag validation, fired at the same
+     * two seams as [validateImportedModel] (import registration and the
+     * first native load). Returns the rejection message when the record's
+     * declared streaming flag contradicts the encoder graph, null when the
+     * family has no opinion (default) or the graph is undeterminable
+     * (fail open).
+     */
+    fun streamingFlagMismatch(encoderFile: java.io.File, declaredStreaming: Boolean): String? = null
+
+    /**
      * Family-specific value-aware validation of the [valueMetadataKey] value,
      * fired after import (registerImported) and before the first native load.
      * Default no-op: most families are covered by the key-presence metadata check
@@ -302,6 +312,15 @@ sealed interface ModelFamilySupport {
  */
 object TransducerSupport : ModelFamilySupport {
 
+    /** TASK-720: the streaming flag contradicted the encoder graph (the flag
+     *  routes to OnlineRecognizer, the graph is the other generation; the
+     *  mismatched load aborts the process at first decode). */
+    internal const val STREAMING_FLAG_MISMATCH =
+        "the entry's streaming flag contradicts the encoder graph " +
+            "(streaming exports carry decode_chunk_len metadata and comment 'streaming zipformer2'; " +
+            "offline ones say 'non-streaming zipformer2'): fix the flag or pick the matching export, " +
+            "the mismatched combination would crash at first transcription"
+
     private const val EXPORT_GUIDANCE =
         "NeMo-style OFFLINE exports (Parakeet, GigaAM) must carry their original " +
             "vocab_size and subsampling_factor metadata. k2-fsa offline zipformers " +
@@ -348,6 +367,14 @@ object TransducerSupport : ModelFamilySupport {
         SherpaBackend.requiredTransducerMetadataKeys(modelType)
 
     override fun valueMetadataKey(): String = "vocab_size"
+
+    override fun streamingFlagMismatch(encoderFile: java.io.File, declaredStreaming: Boolean): String? {
+        // Plain zipformers only (modelType ""); NeMo exports are covered by
+        // the metadata key gate, qwen3 by its own loader contract.
+        val graphStreaming = SherpaBackend.zipformerGraphIsStreaming(encoderFile) ?: return null
+        return if (graphStreaming != declaredStreaming) STREAMING_FLAG_MISMATCH else null
+    }
+
 
     /**
      * TASK-481 ground truth (encoder metadata dumps, eval/models), updated

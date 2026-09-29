@@ -517,6 +517,15 @@ class ExternalModelImporter(
         }
         support.validateImportedModel(metadataValue)
 
+        // TASK-720: streaming flag vs the actual encoder graph (family-routed;
+        // plain zipformers). The wrong combination aborts the process at first
+        // decode, so it dies HERE instead. No second tail read: this modelType
+        // maps to no required keys, so the metadata scan above short-circuited
+        // without reading; this probe is the only 2 MiB read of the file.
+        ModelFamilySupport.forFamily(family)
+            .streamingFlagMismatch(metadataFile, streaming)
+            ?.let { throw IllegalArgumentException(it) }
+
         // TASK-304: cheap header/magic integrity at registration, before the
         // record persists: a wrong or truncated file becomes an import-time
         // error in milliseconds (the same gate the catalog download path

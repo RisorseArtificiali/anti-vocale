@@ -2,6 +2,8 @@ package com.antivocale.app.data
 
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.fail
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -52,6 +54,42 @@ class ExternalModelImporterTest {
         File(dir, "some_joiner.onnx").writeBytes(ByteArray(maxOf(16, 2048)) { if (it == 0) 8 else 3 })
         File(dir, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
         return dir
+    }
+
+    @Test
+    fun `streaming graph under a non-streaming import is rejected at import time (TASK-720)`() = runTest {
+        // Plain zipformer shape (enc/dec/joiner + tokens, modelType "") with
+        // a STREAMING encoder graph (decode_chunk_len in the metadata tail):
+        // the flag/graph mismatch must die HERE, not as the native abort at
+        // first transcription.
+        val src = tmp.newFolder("zip-streaming-graph")
+        File(src, "some_encoder_int8.onnx").writeBytes(
+            ByteArray(2048) { if (it == 0) 8 else 1 } + metadataProp("decode_chunk_len", "32"))
+        File(src, "some_decoder.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
+        File(src, "some_joiner.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
+        File(src, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
+        try {
+            importer.importFromDirectory(src, modelType = "")
+            fail("expected the streaming mismatch rejection")
+        } catch (e: IllegalArgumentException) {
+            assertTrue("guidance names the crash, got: ${e.message}",
+                e.message!!.contains("contradicts the encoder graph"))
+        }
+    }
+
+    @Test
+    fun `offline graph imports clean under the non-streaming default (TASK-720)`() = runTest {
+        // The same shape with the OFFLINE comment: passes the discriminator
+        // (the staged ru/vi/ko class).
+        val src = tmp.newFolder("zip-offline-graph")
+        File(src, "some_encoder_int8.onnx").writeBytes(
+            ByteArray(2048) { if (it == 0) 8 else 1 } + metadataProp("comment", "non-streaming zipformer2"))
+        File(src, "some_decoder.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 2 })
+        File(src, "some_joiner.onnx").writeBytes(ByteArray(2048) { if (it == 0) 8 else 3 })
+        File(src, "tokens.txt").writeText((0..99).joinToString("\n") { "tok$it $it" })
+        val record = importer.importFromDirectory(src, modelType = "")
+        assertEquals(ModelFamily.TRANSDUCER, record.family)
+        assertFalse(record.streaming)
     }
 
     @Test
