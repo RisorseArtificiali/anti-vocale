@@ -505,6 +505,11 @@ moved to r28c while the workflow preinstalled only r27c: fdroidserver cannot
 download NDKs in that container, and the reference build died ~40 min in).
 Since 2026-09-28 it also fails on a reintroduced per-ABI `?: N` fallback
 literal and on a missing requireNotNull guard on the base code (TASK-683.2).
+The NDK pin's authoritative form is the recipe's `ndk:` fields
+(https://f-droid.org/docs/Build_Metadata_Reference/#build_ndk); the
+r-string to sdkmanager-revision lookup is the android/ndk wiki
+(https://github.com/android/ndk/wiki: r27c = 27.2.12479018, the exact
+pair the !46215 job logs printed). TASK-609.
 
 ## Dispatch semantics and hard rules (v1.10.0 + 1.10.0-final lessons)
 
