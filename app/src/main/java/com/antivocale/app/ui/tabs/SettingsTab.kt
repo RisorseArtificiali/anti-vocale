@@ -32,6 +32,11 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.QuestionAnswer
+import androidx.compose.material.icons.filled.Memory
+import androidx.compose.material.icons.filled.Queue
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.BugReport
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -2246,6 +2251,81 @@ private fun FeedbackSection(
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                // TASK-608: the in-app FAQ (the five cards design note):
+                // the questions users actually hit, localized; the long tail
+                // stays on the web FAQ (the link-out two rows below).
+                Text(
+                    text = stringResource(R.string.faq_section_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                val faqCards = listOf(
+                    Triple(R.string.faq_card_calls_title, R.string.faq_card_calls_body, Icons.Default.QuestionAnswer),
+                    Triple(R.string.faq_card_models_title, R.string.faq_card_models_body, Icons.Default.Memory),
+                    Triple(R.string.faq_card_queue_title, R.string.faq_card_queue_body, Icons.Default.Queue),
+                    Triple(R.string.faq_card_results_title, R.string.faq_card_results_body, Icons.Default.Description),
+                    Triple(R.string.faq_card_trouble_title, R.string.faq_card_trouble_body, Icons.Default.BugReport),
+                )
+                faqCards.forEach { (titleRes, bodyRes, icon) ->
+                    var expanded by remember { mutableStateOf(false) }
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable(role = Role.Button) { expanded = !expanded }
+                            .padding(vertical = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(titleRes),
+                                style = MaterialTheme.typography.bodyLarge
+                            )
+                            if (expanded) {
+                                Text(
+                                    text = stringResource(bodyRes),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                }
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                // Full FAQ link row (TASK-608: the long tail stays web).
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) {
+                            FeedbackHelper.openUrlOrToast(
+                                context, "https://github.com/RisorseArtificiali/anti-vocale/blob/main/FAQ.md")
+                        }
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.OpenInNew,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Column {
+                        Text(
+                            text = stringResource(R.string.faq_full_link),
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                    }
                 }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
