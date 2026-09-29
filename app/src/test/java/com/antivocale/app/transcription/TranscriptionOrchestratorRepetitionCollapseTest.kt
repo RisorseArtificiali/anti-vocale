@@ -59,7 +59,7 @@ class TranscriptionOrchestratorRepetitionCollapseTest : TranscriptionOrchestrato
             every { isReady() } returns true
         }
         stubDefaultWhisperPreferences()
-        setUpGigaamWholeFileFixture(gigaamBackend, llmBackend)
+        setUpGigaamWholeFileFixture(gigaamBackend)
     }
 
     private fun stubWholeFileRequestWithSegments(text: String, segments: List<com.antivocale.app.transcription.TimedSegment>) {

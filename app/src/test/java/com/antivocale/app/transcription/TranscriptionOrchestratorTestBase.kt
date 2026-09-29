@@ -141,10 +141,7 @@ abstract class TranscriptionOrchestratorTestBase {
      * the near-verbatim pair in RepetitionCollapseTest + PunctuationPassTest:
      * the stub-BOTH-transcribe-methods gotcha now lives in ONE place).
      */
-    protected fun setUpGigaamWholeFileFixture(
-        gigaamBackend: TranscriptionBackend,
-        llmBackend: TranscriptionBackend,
-    ) {
+    protected fun setUpGigaamWholeFileFixture(gigaamBackend: TranscriptionBackend) {
         every { backendManager.hasActiveBackend() } returns true
         every { backendManager.getActiveBackend() } returns gigaamBackend
         every { preferencesManager.transcriptionBackend } returns flowOf("gigaam")
