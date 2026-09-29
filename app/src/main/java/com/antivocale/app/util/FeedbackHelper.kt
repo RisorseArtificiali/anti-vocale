@@ -187,12 +187,12 @@ object FeedbackHelper {
         intent.resolveActivity(context.packageManager) != null
 
     fun openUrlOrToast(context: Context, url: String) {
-        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-        if (intent.resolveActivity(context.packageManager) != null) {
-            context.startActivity(intent)
-        } else {
-            // TASK-688: ToastCompat preserves the gesture-bar overlap a raw
-            // makeText toast draws over (the resId overload).
+        // TASK-693/CR5: startActivity + catch (no resolveActivity: it needs a
+        // <queries> entry for browsers we do not declare; the try/catch
+        // pattern works with whatever the platform resolves).
+        try {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (_: android.content.ActivityNotFoundException) {
             com.antivocale.app.util.ToastCompat.show(context, com.antivocale.app.R.string.no_app_to_open_link)
         }
     }
