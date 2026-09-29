@@ -578,7 +578,7 @@ fun LogsTab(
                     leadingIcon = {
                         Icon(Icons.Default.Search, contentDescription = null)
                     },
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                    shape = MaterialTheme.shapes.medium,
                     trailingIcon = {
                         // Search-clear when a query is active; history-clear
                         // otherwise, sharing the trailing slot.
@@ -800,9 +800,7 @@ private fun DateGroupHeader(label: String, count: Int) {
         shape = MaterialTheme.shapes.small
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(

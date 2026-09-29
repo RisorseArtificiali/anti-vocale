@@ -52,6 +52,11 @@ private val DefaultDarkColorScheme = darkColorScheme(
     onError = Color(0xFF450A0A),
     surfaceDim = Color(0xFF0B1222),
     surfaceBright = Color(0xFF374357),
+    // TASK-605 (d): every scheme's container ramp is hand-tuned between its
+    // own background and surfaceVariant (the anchors coincide with Lowest /
+    // Highest on some schemes, not all), NOT a linear lerp (verified: lerp
+    // 25/50/75 gives 182235/212c40/2a364a here, not 1E293B/263349/2A3A52):
+    // a computed helper would shift pixel-verified colors.
     surfaceContainerLowest = Color(0xFF0F172A),
     surfaceContainerLow = Color(0xFF1E293B),
     surfaceContainer = Color(0xFF263349),

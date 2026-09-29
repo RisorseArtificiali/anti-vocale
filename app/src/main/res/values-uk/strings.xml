@@ -65,7 +65,6 @@
     <string name="logs_empty">Запитів ще немає</string>
     <string name="request_text">Текстовий запит</string>
     <string name="request_audio">Аудіозапит</string>
-    <string name="logs_recent_requests">Останні записи (%1$d)</string>
     <string name="logs_clear">Очистити</string>
     <string name="logs_delete_entry">Видалити запис</string>
     <string name="logs_delete_confirmation">Видалити цей запис історії?</string>
@@ -1079,7 +1078,6 @@
         <item quantity="other">%1$d збіги</item>
     </plurals>
     <string name="settings_search_no_results">Немає відповідних налаштувань</string>
-    <string name="settings_search_clear">Очистити пошук</string>
         <string name="partial_transcript_label">Часткова розшифровка</string>
     
     <string name="decoded_of_total">Розпізнано %1$s з %2$s</string>

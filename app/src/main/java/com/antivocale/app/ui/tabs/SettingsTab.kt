@@ -73,6 +73,7 @@ import com.antivocale.app.data.DiscoveredModel
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.HuggingFaceOAuthConfig
 import com.antivocale.app.data.ModelSource
+import com.antivocale.app.ui.components.SearchField
 import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.languageOptionLabel
 import com.antivocale.app.ui.components.transcriptionSentinelLabels
@@ -356,26 +357,11 @@ fun SettingsTab(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // TASK-542 (GH #98): search field. Blank = normal tab.
-        OutlinedTextField(
+        // TASK-605 (c): the shared SearchField (icon drift unified).
+        SearchField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
-            modifier = Modifier.fillMaxWidth(),
-            placeholder = { Text(stringResource(R.string.settings_search_hint)) },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = null) },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(
-                            Icons.Default.Close,
-                            contentDescription = stringResource(R.string.settings_search_clear)
-                        )
-                    }
-                }
-            },
-            singleLine = true,
-            // TASK-564: matches the Models tab's language filter field
-            // (RoundedCornerShape(12.dp)), not the extraLarge pill.
-            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+            placeholderRes = R.string.settings_search_hint,
         )
 
         // TASK-457/TASK-542: the pin state and the one hint line that renders

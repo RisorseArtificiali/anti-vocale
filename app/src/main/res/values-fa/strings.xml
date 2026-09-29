@@ -60,7 +60,6 @@
     <string name="logs_empty">هنوز درخواستی نیست</string>
     <string name="request_text">درخواست متنی</string>
     <string name="request_audio">درخواست صوتی</string>
-    <string name="logs_recent_requests">ورودی‌های اخیر (%1$d)</string>
     <string name="logs_clear">پاک کردن</string>
     <string name="logs_delete_entry">حذف ورودی</string>
     <string name="logs_delete_confirmation">این ورودی حذف شود؟</string>
@@ -1063,7 +1062,6 @@
         <item quantity="other">%1$d نتیجه</item>
     </plurals>
     <string name="settings_search_no_results">تنظیماتی پیدا نشد</string>
-    <string name="settings_search_clear">پاک کردن جستجو</string>
     
     <string name="partial_transcript_label">رونویسی جزئی</string>
     

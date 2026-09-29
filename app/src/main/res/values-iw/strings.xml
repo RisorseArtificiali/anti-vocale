@@ -60,7 +60,6 @@
     <string name="logs_empty">עדיין אין בקשות</string>
     <string name="request_text">בקשת טקסט</string>
     <string name="request_audio">בקשת אודיו</string>
-    <string name="logs_recent_requests">רשומות אחרונות (%1$d)</string>
     <string name="logs_clear">ניקוי</string>
     <string name="logs_delete_entry">מחיקת רשומה</string>
     <string name="logs_delete_confirmation">למחוק את הרשומה הזו מההיסטוריה?</string>
@@ -1066,7 +1065,6 @@
         <item quantity="other">%1$d התאמות</item>
     </plurals>
     <string name="settings_search_no_results">אין הגדרות תואמות</string>
-    <string name="settings_search_clear">נקה חיפוש</string>
         <string name="partial_transcript_label">תמליל חלקי</string>
     
     <string name="decoded_of_total">פוענחו %1$s מתוך %2$s</string>

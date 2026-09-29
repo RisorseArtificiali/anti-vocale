@@ -46,7 +46,6 @@
     <string name="logs_empty">Aucune requête pour l\'instant</string>
     <string name="request_text">Requête texte</string>
     <string name="request_audio">Requête audio</string>
-    <string name="logs_recent_requests">Entrées récentes (%1$d)</string>
     <string name="logs_clear">Effacer</string>
     <string name="logs_delete_entry">Supprimer l\'entrée</string>
     <string name="logs_delete_confirmation">Supprimer cette entrée de l\'historique ?</string>
@@ -927,7 +926,6 @@
         <item quantity="other">%1$d correspondances</item>
     </plurals>
     <string name="settings_search_no_results">Aucun paramètre correspondant</string>
-    <string name="settings_search_clear">Effacer la recherche</string>
         <string name="partial_transcript_label">Transcription partielle</string>
     
     <string name="decoded_of_total">%1$s sur %2$s décodés</string>

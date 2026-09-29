@@ -60,7 +60,6 @@
     <string name="logs_empty">Nessuna richiesta</string>
     <string name="request_text">Richiesta Testo</string>
     <string name="request_audio">Richiesta Audio</string>
-    <string name="logs_recent_requests">Voci recenti (%1$d)</string>
     <string name="logs_clear">Cancella</string>
     <string name="logs_delete_entry">Elimina log</string>
     <string name="logs_delete_confirmation">Eliminare questa voce?</string>
@@ -1063,7 +1062,6 @@
         <item quantity="other">%1$d risultati</item>
     </plurals>
     <string name="settings_search_no_results">Nessuna impostazione trovata</string>
-    <string name="settings_search_clear">Cancella ricerca</string>
         <string name="partial_transcript_label">Trascrizione parziale</string>
     
     <string name="decoded_of_total">Decodificati %1$s di %2$s</string>

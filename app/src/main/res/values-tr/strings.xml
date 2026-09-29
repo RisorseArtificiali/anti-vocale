@@ -63,7 +63,6 @@
     <string name="logs_empty">Henüz istek yok</string>
     <string name="request_text">Metin İsteği</string>
     <string name="request_audio">Ses İsteği</string>
-    <string name="logs_recent_requests">Son Kayıtlar (%1$d)</string>
     <string name="logs_clear">Temizle</string>
     <string name="logs_delete_entry">Kaydı sil</string>
     <string name="logs_delete_confirmation">Bu kayıt silinsin mi?</string>
@@ -1059,7 +1058,6 @@
         <item quantity="other">%1$d eşleşme</item>
     </plurals>
     <string name="settings_search_no_results">Eşleşen ayar yok</string>
-    <string name="settings_search_clear">Aramayı temizle</string>
         <string name="partial_transcript_label">Kısmi transkript</string>
     
     <string name="decoded_of_total">%2$s içinden %1$s çözüldü</string>

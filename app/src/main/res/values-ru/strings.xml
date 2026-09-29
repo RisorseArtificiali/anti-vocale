@@ -62,7 +62,6 @@
     <string name="logs_empty">Пока нет запросов</string>
     <string name="request_text">Текстовый запрос</string>
     <string name="request_audio">Аудиозапрос</string>
-    <string name="logs_recent_requests">Недавние записи (%1$d)</string>
     <string name="logs_clear">Очистить</string>
     <string name="logs_delete_entry">Удалить запись</string>
     <string name="logs_delete_confirmation">Удалить эту запись истории?</string>
@@ -1078,7 +1077,6 @@
         <item quantity="other">%1$d совпадения</item>
     </plurals>
     <string name="settings_search_no_results">Подходящих настроек не найдено</string>
-    <string name="settings_search_clear">Очистить поиск</string>
         <string name="partial_transcript_label">Частичная расшифровка</string>
     
     <string name="decoded_of_total">Распознано %1$s из %2$s</string>

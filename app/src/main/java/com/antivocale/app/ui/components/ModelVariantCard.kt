@@ -109,7 +109,10 @@ fun ModelVariantCard(
         modifier = modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(
             containerColor = when {
-                state.isDownloading -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                // TASK-605 F9: the last secondaryContainer-at-50-percent chip
+                // (the idiom the TASK-566 unification claimed removed):
+                // surfaceVariant is the unified in-progress container.
+                state.isDownloading -> MaterialTheme.colorScheme.surfaceVariant
                 else -> MaterialTheme.colorScheme.surface
             }
         )

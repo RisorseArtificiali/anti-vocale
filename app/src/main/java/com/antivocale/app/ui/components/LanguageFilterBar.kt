@@ -2,7 +2,6 @@ package com.antivocale.app.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
@@ -21,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextRange
@@ -44,6 +44,8 @@ fun LanguageFilterBar(
     val selectedLabel = selectedLanguageCode
         ?.let { LanguageNames.nativeLanguageName(it) }
         ?: stringResource(R.string.lang_filter_all)
+
+    val filterNameForA11y = stringResource(R.string.lang_filter_label)
 
     val searchQuery = textFieldValue.text
 
@@ -105,12 +107,18 @@ fun LanguageFilterBar(
                 }
             } else null,
             singleLine = true,
-            shape = RoundedCornerShape(12.dp),
+            shape = MaterialTheme.shapes.medium,
             modifier = Modifier
                 .menuAnchor(MenuAnchorType.PrimaryEditable)
                 .fillMaxWidth()
                 // TASK-384: when collapsed the field is read-only; announce the selection
-                .semantics { if (!expanded) stateDescription = selectedLabel }
+                // TASK-605 F8 (GH #113): and always carry the control name
+                // (the value is never empty collapsed, so the placeholder
+                // never renders: the field itself must be named).
+                .semantics {
+                    contentDescription = filterNameForA11y
+                    if (!expanded) stateDescription = selectedLabel
+                }
         )
 
         ExposedDropdownMenu(

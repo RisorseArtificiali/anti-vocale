@@ -46,7 +46,6 @@
     <string name="logs_empty">Nenhuma solicitação ainda</string>
     <string name="request_text">Solicitação de texto</string>
     <string name="request_audio">Solicitação de áudio</string>
-    <string name="logs_recent_requests">Entradas recentes (%1$d)</string>
     <string name="logs_clear">Limpar</string>
     <string name="logs_delete_entry">Excluir entrada</string>
     <string name="logs_delete_confirmation">Excluir esta entrada do histórico?</string>
@@ -927,7 +926,6 @@
         <item quantity="other">%1$d correspondências</item>
     </plurals>
     <string name="settings_search_no_results">Nenhuma configuração encontrada</string>
-    <string name="settings_search_clear">Limpar pesquisa</string>
         <string name="partial_transcript_label">Transcrição parcial</string>
     
     <string name="decoded_of_total">Decodificados %1$s de %2$s</string>

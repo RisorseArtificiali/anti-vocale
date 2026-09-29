@@ -60,7 +60,6 @@
     <string name="logs_empty">Noch keine Anfragen</string>
     <string name="request_text">Textanfrage</string>
     <string name="request_audio">Audioanfrage</string>
-    <string name="logs_recent_requests">Letzte Einträge (%1$d)</string>
     <string name="logs_clear">Leeren</string>
     <string name="logs_delete_entry">Eintrag löschen</string>
     <string name="logs_delete_confirmation">Diesen Eintrag löschen?</string>
@@ -1059,7 +1058,6 @@
         <item quantity="other">%1$d Treffer</item>
     </plurals>
     <string name="settings_search_no_results">Keine passenden Einstellungen</string>
-    <string name="settings_search_clear">Suche löschen</string>
         <string name="partial_transcript_label">Teilweises Transkript</string>
     
     <string name="decoded_of_total">%1$s von %2$s dekodiert</string>

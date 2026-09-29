@@ -60,7 +60,6 @@
     <string name="logs_empty">अभी कोई अनुरोध नहीं</string>
     <string name="request_text">टेक्स्ट अनुरोध</string>
     <string name="request_audio">ऑडियो अनुरोध</string>
-    <string name="logs_recent_requests">हाल की एंट्री (%1$d)</string>
     <string name="logs_clear">साफ़ करें</string>
     <string name="logs_delete_entry">लॉग मिटाएं</string>
     <string name="logs_delete_confirmation">यह इतिहास एंट्री मिटाएं?</string>
@@ -1058,7 +1057,6 @@
         <item quantity="other">%1$d परिणाम</item>
     </plurals>
     <string name="settings_search_no_results">कोई मेल खाती सेटिंग्स नहीं</string>
-    <string name="settings_search_clear">खोज साफ़ करें</string>
         <string name="partial_transcript_label">आंशिक ट्रांसक्रिप्ट</string>
     
     <string name="decoded_of_total">%2$s में से %1$s डिकोड हुआ</string>

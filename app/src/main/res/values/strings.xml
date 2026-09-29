@@ -60,7 +60,6 @@
     <string name="logs_empty">No requests yet</string>
     <string name="request_text">Text Request</string>
     <string name="request_audio">Audio Request</string>
-    <string name="logs_recent_requests">Recent Entries (%1$d)</string>
     <string name="logs_clear">Clear</string>
     <string name="logs_delete_entry">Delete log</string>
     <string name="logs_delete_confirmation">Delete this history entry?</string>
@@ -110,7 +109,7 @@
         <item quantity="other">%1$d matches</item>
     </plurals>
     <string name="settings_search_no_results">No matching settings</string>
-    <string name="settings_search_clear">Clear search</string>    <string name="settings_replay_tour">Replay welcome tour</string>
+    <string name="settings_replay_tour">Replay welcome tour</string>
     <string name="tour_done">Got it</string>
     <string name="tour_skip">Skip</string>
     <string name="tour_next">Next</string>
