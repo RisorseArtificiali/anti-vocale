@@ -82,7 +82,8 @@ class BundledModelCatalogTest {
 
         val parakeet = byId.getValue("sherpa-onnx")
         assertEquals("smoothquant", parakeet.flags.defaultVariant)
-        assertEquals(1.0, parakeet.flags.tailPadSeconds, 0.0)
+        // TASK-717: removed (the 1s pad COST 2.5pp WER, TASK-715 A/B).
+        assertEquals(0.0, parakeet.flags.tailPadSeconds, 0.0)
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), parakeet.flags.metaKeys)
         assertEquals("parakeet-tdt-0.6b-v3-smoothquant", parakeet.defaultVariant.dirName)
         assertEquals(862L, parakeet.defaultVariant.estimatedSizeMB)

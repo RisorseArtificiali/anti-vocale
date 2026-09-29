@@ -427,7 +427,7 @@ def load_fleurs_samples(references_path: str) -> list[dict]:
 
 def run_benchmark_set(
     parakeet_dir: str, qwen3_dir: str, samples: list[dict],
-    num_threads: int, parakeet_padding: float = 1.0,
+    num_threads: int, parakeet_padding: float = 0.0,  # TASK-717: the app ships no parakeet pad (TASK-715: it cost 2.5pp WER)
 ) -> tuple[list[SampleResult], list[SampleResult]]:
     print(f"\nLoading Parakeet TDT from {parakeet_dir}...")
     parakeet_rec = create_parakeet_recognizer(parakeet_dir, num_threads)

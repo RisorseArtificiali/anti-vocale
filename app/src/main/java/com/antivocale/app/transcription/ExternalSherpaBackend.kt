@@ -324,12 +324,13 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
             // deterministically, not left to GC finalization (NemotronStreamingBackend pattern).
             var stream: OfflineStream? = null
             try {
-                // Append 1s of silence to improve final token accuracy (Parakeet pattern).
-                val silencePad = FloatArray(sampleRate)
-                val padded = samples + silencePad
-
+                // No offline tail pad: the pattern was measured COSTLY, not
+                // helpful (TASK-715 A/B: 2.5pp WER on the eval set; offline
+                // encoders are bidirectional, trailing silence shifts global
+                // context). External offline imports are the same encoder
+                // class. Streaming keeps its flush below (nemotron verdict).
                 stream = rec.createStream()
-                stream.acceptWaveform(padded, sampleRate)
+                stream.acceptWaveform(samples, sampleRate)
                 rec.decode(stream)
 
                 val result = rec.getResult(stream)
@@ -378,7 +379,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
         try {
             stream = rec.createStream()
             stream.acceptWaveform(samples, sampleRate)
-            stream.acceptWaveform(FloatArray(sampleRate), sampleRate) // tail pad, no per-chunk copy
+            stream.acceptWaveform(FloatArray(sampleRate), sampleRate) // streaming flush pad (TASK-715: the streaming verdict was the opposite; without it trailing words are lost)
             while (rec.isReady(stream)) rec.decode(stream)
             stream.inputFinished()
             while (rec.isReady(stream)) rec.decode(stream)

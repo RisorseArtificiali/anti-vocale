@@ -661,10 +661,15 @@ class SherpaBackend(
 
                 stream = rec.createStream()
                 stream.acceptWaveform(samples, sampleRate)
-                // Append `tailPadSeconds` (catalog flag) of silence so trailing tokens
-                // finalize correctly (benchmarked ~2% WER improvement on WhatsApp audio).
-                // Second acceptWaveform of one shared zero buffer: no per-chunk copy
-                // (TASK-340 Fix 1b). acceptWaveform appends, so this equals one padded array.
+                // Append `tailPadSeconds` (catalog flag) of silence. This OFFLINE
+                // site's only remaining consumer is gigaam (1s, unmeasured: its
+                // model dir is not on the eval host; inherits the parakeet
+                // suspicion, measured before any flip). Nemotron's 1.5s lives in
+                // the STREAMING path below (TASK-340 Fix 1b shape: a second
+                // acceptWaveform of one shared zero buffer, no per-chunk copy).
+                // Parakeet's former 1s pad was REMOVED here (TASK-715 A/B: it
+                // cost 2.5pp WER on the 11-clip eval set, 0.0065 -> 0.0313; the
+                // old "~2% improvement" claim did not reproduce; TASK-717).
                 val tailPad = entry.flags.tailPadSeconds
                 if (tailPad > 0) {
                     stream.acceptWaveform(tailSilence.get((sampleRate * tailPad).toInt()), sampleRate)
