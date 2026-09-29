@@ -246,6 +246,11 @@ sealed interface ModelFamilySupport {
         const val OPTION_SENSEVOICE_ITN = "sensevoice.itn"
         const val OPTION_CANARY_LANGUAGE = "canary.language"
 
+        /** TASK-719: result-boundary text case (uppercase-trained exports,
+         *  e.g. the Vietnamese zipformer). Consumed by the backend, not the
+         *  engine config: it transforms the decoded text, not the decode. */
+        const val OPTION_LOWERCASE_OUTPUT = "text.lowercase"
+
         /**
          * The family's default record modelType when the caller passes none: null means
          * "must be explicit" (CTC, where the value selects the sherpa config subtype).

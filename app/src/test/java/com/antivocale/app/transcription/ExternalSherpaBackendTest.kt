@@ -6,6 +6,7 @@ import com.antivocale.app.data.ModelFamily
 import io.mockk.mockk
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertSame
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -140,6 +141,42 @@ class ExternalSherpaBackendTest {
         // every other family keeps the plain-chunking contract
         backend.configureForTest(record(dir, ModelFamily.WHISPER, ""))
         assertFalse(backend.requiresVadAlignedChunking)
+    }
+
+
+    @Test
+    fun `text lowercase option transforms the result boundary only when enabled (TASK-719)`() {
+        val base = record(java.io.File("/models/external/test-abc123"), ModelFamily.TRANSDUCER, "")
+        // absent option: text untouched (the default every existing record hits)
+        assertFalse(ExternalSherpaBackend.isLowercaseOutput(base))
+        assertEquals("Roi Cung Ho Tro", ExternalSherpaBackend.applyTextCase("Roi Cung Ho Tro", false))
+        // enabled: lowered with Locale.ROOT (Turkish-locale safe)
+        val lowering = base.copy(options = mapOf(ModelFamilySupport.OPTION_LOWERCASE_OUTPUT to "true"))
+        assertTrue(ExternalSherpaBackend.isLowercaseOutput(lowering))
+        assertEquals("roi cung ho tro", ExternalSherpaBackend.applyTextCase("Roi Cung Ho Tro", true))
+        // "1" also enables (the sensevoice.itn boolean convention)
+        assertTrue(ExternalSherpaBackend.isLowercaseOutput(
+            base.copy(options = mapOf(ModelFamilySupport.OPTION_LOWERCASE_OUTPUT to "1"))))
+        // any other value: inert
+        assertFalse(ExternalSherpaBackend.isLowercaseOutput(
+            base.copy(options = mapOf(ModelFamilySupport.OPTION_LOWERCASE_OUTPUT to "yes"))))
+    }
+
+    @Test
+    fun `token channel shares the text case so cue alignment survives (TASK-719 review)`() {
+        // SentenceCueBuilder.alignToText demands exact char equality between
+        // the chunk text and the token join; a case split between the two
+        // channels silently degrades every cue and re-injects the original
+        // case through the recovery ladder. The transform must hit both.
+        val raw = arrayOf("ROI", "CUNG", "HO", "TRO")
+        val lowered = ExternalSherpaBackend.casedTokens(raw, true)
+        assertEquals("roi cung ho tro", lowered.joinToString(" "))
+        // text and token join share one case: the alignment precondition
+        assertEquals(
+            ExternalSherpaBackend.applyTextCase(raw.joinToString(" "), true),
+            lowered.joinToString(" "))
+        // flag off: the RAW array passes through untouched
+        assertSame(raw, ExternalSherpaBackend.casedTokens(raw, false))
     }
 
     private fun record(dir: java.io.File, family: ModelFamily, modelType: String) = ExternalModelRecord(

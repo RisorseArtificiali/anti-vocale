@@ -239,6 +239,14 @@
             ],
             "family": "TRANSDUCER",
             "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/russian-small.json"
+        },
+        {
+            "name": "Zipformer Vietnamese",
+            "languages": [
+                "vi"
+            ],
+            "family": "TRANSDUCER",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/zipformer-vietnamese.json"
         }
     ]
 }

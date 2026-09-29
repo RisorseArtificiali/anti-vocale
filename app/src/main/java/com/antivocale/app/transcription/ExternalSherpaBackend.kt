@@ -75,6 +75,27 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
             else -> null
         }
 
+        /** TASK-719: option consumed, "true"/"1" enable (the sensevoice.itn
+         *  convention for boolean options). */
+        fun isLowercaseOutput(record: ExternalModelRecord): Boolean =
+            record.options[ModelFamilySupport.OPTION_LOWERCASE_OUTPUT]
+                ?.let { it == "true" || it == "1" } == true
+
+        /**
+         * Locale.ROOT deliberately: lowercase() with the default locale is
+         * wrong under Turkish/Azerbaijani locales (dotless-i), and the flag
+         * describes MODEL output, never the user's locale.
+         */
+        fun applyTextCase(text: String, lowercase: Boolean): String =
+            if (lowercase) text.lowercase(java.util.Locale.ROOT) else text
+
+        /** The token channel of the SAME transform (review round: tokens are a
+         *  second output surface; the cue pipeline and empty-chunk recovery
+         *  rebuild text from them, and SentenceCueBuilder.alignToText demands
+         *  exact char equality, so text and tokens must share one case). */
+        fun casedTokens(tokens: Array<String>, lowercase: Boolean): Array<String> =
+            if (!lowercase) tokens else Array(tokens.size) { applyTextCase(tokens[it], true) }
+
         fun familyForcesVadAlignedChunking(family: ModelFamily): Boolean =
             family == ModelFamily.CANARY
     }
@@ -84,6 +105,14 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
 
     @Volatile private var configuredFamily: ModelFamily? = null
 
+    /** TASK-719: the record's text.lowercase option (models trained on
+     *  uppercase labels, e.g. the Vietnamese zipformer, otherwise ship
+     *  shouting-case transcripts). Read once at init; applied at the result
+     *  boundary so every downstream surface (History, exports,
+     *  notifications, auto-copy) sees the lowered text with no per-site
+     *  edits. */
+    @Volatile private var lowercaseOutput: Boolean = false
+
     /** The loaded external record's family, for memory-policy dispatch (TASK-475). */
     val memoryFamily: ModelFamily? get() = configuredFamily
 
@@ -91,6 +120,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     @androidx.annotation.VisibleForTesting
     fun configureForTest(record: ExternalModelRecord) {
         configuredFamily = record.family
+        lowercaseOutput = isLowercaseOutput(record)
     }
 
     override val displayName: String get() = "External model"
@@ -238,6 +268,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                     modelDir = record.dir
                     configuredId = record.backendId
                     configuredFamily = record.family
+                    lowercaseOutput = isLowercaseOutput(record)
                     isInitialized = true
                     keepAlive.start()
                     Log.i(TAG, "External backend initialized (streaming): $configuredId")
@@ -259,6 +290,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                 modelDir = record.dir
                 configuredId = record.backendId
                 configuredFamily = record.family
+                lowercaseOutput = isLowercaseOutput(record)
                 isInitialized = true
                 keepAlive.start()
 
@@ -301,7 +333,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                 rec.decode(stream)
 
                 val result = rec.getResult(stream)
-                val transcription = result.text
+                val transcription = applyTextCase(result.text, lowercaseOutput)
                 val detectedLang = TranscriptionResult.normalizedDetectedLanguage(result.lang)
 
                 if (transcription.isBlank()) {
@@ -314,7 +346,8 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                         text = transcription,
                         confidence = confidence,
                         detectedLanguage = detectedLang,
-                        tokens = TimedTokens.fromRecognizer(result.tokens, result.timestamps, result.durations),
+                        tokens = TimedTokens.fromRecognizer(
+                            casedTokens(result.tokens, lowercaseOutput), result.timestamps, result.durations),
                     ))
                 }
             } catch (e: Exception) {
@@ -350,14 +383,15 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
             stream.inputFinished()
             while (rec.isReady(stream)) rec.decode(stream)
             val result = rec.getResult(stream)
-            val transcription = result.text
+            val transcription = applyTextCase(result.text, lowercaseOutput)
             if (transcription.isBlank()) {
                 return Result.failure(TranscriptionException.NoTranscriptionProduced())
             }
             return Result.success(TranscriptionResult(
                 text = transcription,
                 confidence = TranscriptionResult.computeConfidence(transcription, samples.size, sampleRate),
-                tokens = TimedTokens.fromRecognizer(result.tokens, result.timestamps, FloatArray(0)),
+                tokens = TimedTokens.fromRecognizer(
+                    casedTokens(result.tokens, lowercaseOutput), result.timestamps, FloatArray(0)),
             ))
         } catch (e: Exception) {
             Log.e(TAG, "External streaming transcription failed", e)
@@ -387,6 +421,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
         isInitialized = false
         configuredId = PLACEHOLDER_ID
         configuredFamily = null
+        lowercaseOutput = false
         onAutoUnloadCallback.get()?.invoke()
     }
 

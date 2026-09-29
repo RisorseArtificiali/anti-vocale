@@ -162,7 +162,9 @@ class ExternalCatalogTest {
         // + dolphin 19 Asian languages, parakeet 110m English, zipformer ko
         //   (TASK-663: vocaphone gap entries, pins verified byte-for-byte
         //   against their catalog, desktop-decoded on sherpa 1.13.8)
-        assertEquals(24, entries.size)
+        // + zipformer vietnamese (TASK-719: the text.lowercase option,
+        // uppercase-trained model)
+        assertEquals(25, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -203,6 +205,7 @@ class ExternalCatalogTest {
             Triple("parakeet-110m-english.json", "CTC" to "nemo_ctc", 2),
             Triple("dolphin-small.json", "DOLPHIN" to "", 2),
             Triple("zipformer-korean.json", "TRANSDUCER" to "", 4),
+            Triple("zipformer-vietnamese.json", "TRANSDUCER" to "", 4),
         ).forEach { (file, pin, fileCount) ->
             val obj = org.json.JSONObject(
                 java.io.File("src/main/assets/external-catalog/$file").readText())
@@ -210,6 +213,12 @@ class ExternalCatalogTest {
             assertEquals("$file modelType", pin.second, obj.getString("modelType"))
             val files = obj.getJSONArray("files")
             assertEquals("$file files pinned", fileCount, files.length())
+            if (file == "zipformer-vietnamese.json") {
+                // TASK-719: the uppercase-trained model must ship with the
+                // lowering option or its transcripts arrive shouting-case.
+                assertEquals("true",
+                    obj.getJSONObject("options").getString("text.lowercase"))
+            }
             // sha/size pins: a flipped hex digit must fail HERE, not at
             // download verification on a user device (review round 2).
             for (i in 0 until files.length()) {

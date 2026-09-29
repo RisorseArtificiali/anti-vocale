@@ -1,0 +1,37 @@
+{
+    "name": "Zipformer Vietnamese int8 (VietASR 70k hours, Apache-2.0)",
+    "family": "TRANSDUCER",
+    "modelType": "",
+    "languages": [
+        "vi"
+    ],
+    "options": {
+        "text.lowercase": "true"
+    },
+    "files": [
+        {
+            "name": "encoder-epoch-12-avg-8.int8.onnx",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-zipformer-vi-int8-2025-04-20/resolve/b2745a435379992ad3f299635468db0c34918e1e/encoder-epoch-12-avg-8.int8.onnx",
+            "sha256": "b3abdef7a660fea7faf5e076b3c7613b0fc98406707103784d018189bb522124",
+            "size": 70876129
+        },
+        {
+            "name": "decoder-epoch-12-avg-8.onnx",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-zipformer-vi-int8-2025-04-20/resolve/b2745a435379992ad3f299635468db0c34918e1e/decoder-epoch-12-avg-8.onnx",
+            "sha256": "d1d27cca84c824a8acf5ce6edf0f2c0880cfe295d2e69b95134de1707e1d9998",
+            "size": 5165084
+        },
+        {
+            "name": "joiner-epoch-12-avg-8.int8.onnx",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-zipformer-vi-int8-2025-04-20/resolve/b2745a435379992ad3f299635468db0c34918e1e/joiner-epoch-12-avg-8.int8.onnx",
+            "sha256": "38ec49e1c18e4feb0cad4de13e25c83a866cf56f4a66f22e8ff579d591a69a46",
+            "size": 1033417
+        },
+        {
+            "name": "tokens.txt",
+            "url": "https://huggingface.co/csukuangfj/sherpa-onnx-zipformer-vi-int8-2025-04-20/resolve/b2745a435379992ad3f299635468db0c34918e1e/tokens.txt",
+            "sha256": "f536d03c2e95ebd2930cf0abec88e823bd17d3c1933da7ae6a82db3b80605e15",
+            "size": 25847
+        }
+    ]
+}

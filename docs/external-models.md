@@ -109,7 +109,7 @@ A single-model manifest with integrity pins. This is how third parties share a m
 | `family` | no (default `TRANSDUCER`) | one of `TRANSDUCER`, `WHISPER`, `CTC`, `SENSE_VOICE`, `CANARY`, `MOONSHINE`, `DOLPHIN`; unknown values are rejected |
 | `modelType` | no (family-aware default) | `nemo_transducer` for TRANSDUCER without the field, `""` for WHISPER/SENSE_VOICE/CANARY/MOONSHINE/DOLPHIN; CTC requires `nemo_ctc`, `zipformer_ctc`, `omnilingual_ctc` or `paraformer` |
 | `languages` | yes for new entries (`family` present) | normalized ISO codes (`["ar"]`); doubles as the Whisper default language |
-| `options` | no | flat map of family options (`{"whisper.language": "ar"}`) |
+| `options` | no | flat map of options (`{"whisper.language": "ar"}`). Family options condition the engine; one cross-family option transforms the result text: `text.lowercase` (`true`/`1`) lowercases the transcript (TASK-719; exports trained on uppercase labels, e.g. the Vietnamese zipformer) |
 | `streaming` | no (default `false`) | `true` for streaming zipformer transducers (decoded via the online recognizer, whole-clip batch); `TRANSDUCER` family only, rejected otherwise |
 | `files` | yes | Array, one entry per file |
 | `files[].name` | yes | Source file name (role-matched by keyword) |
