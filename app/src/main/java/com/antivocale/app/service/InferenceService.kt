@@ -974,22 +974,8 @@ class InferenceService : Service(), TranscriptionListener {
     }
 
     private fun showNoModelNotification() {
-        val openPendingIntent = buildLaunchPendingIntent(navigateToModelTab = true)
-
-        val notification = NotificationCompat.Builder(this, RESULT_CHANNEL_ID)
-            .setContentTitle(getString(R.string.notification_no_model_title))
-            .setContentText(getString(R.string.notification_no_model_message))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(openPendingIntent)
-            .setAutoCancel(true)
-            .addAction(
-                android.R.drawable.ic_menu_set_as,
-                getString(R.string.notification_no_model_action),
-                openPendingIntent
-            )
-            .build()
-
+        // TASK-328: composition lives in ResultNotificationFactory.
+        val notification = resultNotificationFactory.noModelNotification()
         val id = ResultNotificationFactory.nextNotificationId()
         notificationManager.notify(id, notification)
         Log.i(TAG, "Showed no-model notification (id=$id)")

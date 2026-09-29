@@ -85,6 +85,34 @@ class ResultNotificationFactory(private val context: Context) {
      * row; the request codes mirror the services' launch band (same intent
      * shapes must stay one PendingIntent).
      */
+    /**
+     * TASK-328: the no-model notification, ONE builder (was a line-for-line
+     * pair in InferenceService and TranscriptionNotificationListener).
+     */
+    fun noModelNotification(): Notification {
+        val openIntent = Intent(context, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
+            putExtra(MainActivity.EXTRA_NAVIGATE_TO_MODEL_TAB, true)
+        }
+        val openPendingIntent = PendingIntent.getActivity(
+            context, 1, openIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+        return NotificationCompat.Builder(context, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
+            .setContentTitle(context.getString(R.string.notification_no_model_title))
+            .setContentText(context.getString(R.string.notification_no_model_message))
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setContentIntent(openPendingIntent)
+            .setAutoCancel(true)
+            .addAction(
+                android.R.drawable.ic_menu_set_as,
+                context.getString(R.string.notification_no_model_action),
+                openPendingIntent
+            )
+            .build()
+    }
+
     fun errorNotification(errorMessage: String, memoryAction: Boolean): Notification {
         val launch = if (memoryAction) {
             settingsRowPendingIntent(SettingsFocusRow.MEMORY_PROTECTION)

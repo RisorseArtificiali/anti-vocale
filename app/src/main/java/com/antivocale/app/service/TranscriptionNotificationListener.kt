@@ -263,20 +263,8 @@ class TranscriptionNotificationListener(
     }
 
     private fun showNoModelNotification() {
-        val openPendingIntent = buildLaunchPendingIntent(navigateToModelTab = true)
-        val notification = NotificationCompat.Builder(appContext, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
-            .setContentTitle(appContext.getString(R.string.notification_no_model_title))
-            .setContentText(appContext.getString(R.string.notification_no_model_message))
-            .setSmallIcon(android.R.drawable.ic_dialog_info)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(openPendingIntent)
-            .setAutoCancel(true)
-            .addAction(
-                android.R.drawable.ic_menu_set_as,
-                appContext.getString(R.string.notification_no_model_action),
-                openPendingIntent
-            )
-            .build()
+        // TASK-328: composition lives in ResultNotificationFactory.
+        val notification = resultNotificationFactory.noModelNotification()
         val id = ResultNotificationFactory.nextNotificationId()
         notificationManager.notify(id, notification)
         Log.i(TAG, "Worker showed no-model notification (id=$id)")
