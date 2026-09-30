@@ -157,8 +157,8 @@ Long transcripts are split into pages you can read without leaving the notificat
 
 | Model | Size | Languages | Notes |
 |-------|------|-----------|-------|
-| **Parakeet TDT SmoothQuant** | ~862MB | 25 European | Best overall quality, recommended default (inputs over 1 minute are chunked and stitched, sized to free RAM; see [FAQ](FAQ.md)) |
-| **Parakeet TDT Stock int8** | ~640MB | 25 European | Lighter fallback, best speed/size ratio |
+| **Parakeet TDT (stock int8)** | ~640MB | 25 European | The default: best device-measured quality of the built-ins and the lightest full multilingual option (inputs over 1 minute are chunked and stitched, sized to free RAM; see [FAQ](FAQ.md)) |
+| **Parakeet TDT (SmoothQuant)** | ~862MB | 25 European | Alternative to the default (the default through 1.13.x) |
 | **GigaAM v3** | ~326MB | Russian | Best Russian accuracy, native punctuation |
 | **Qwen3-ASR 0.6B** | ~938MB | 30 + 22 zh | 30 languages + 22 Chinese dialects; poor Italian accuracy |
 

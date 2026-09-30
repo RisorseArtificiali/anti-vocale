@@ -126,9 +126,9 @@
     <string name="parakeet_download_confirm_title">Parakeet TDT डाउनलोड करें?</string>
     <string name="parakeet_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। ट्रांसक्रिप्शन के लिए Parakeet, Gemma से तेज़ लेकिन कम सटीक है।</string>
     <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
-    <string name="parakeet_smoothquant_description">~862MB • 25 भाषाएं • अनुशंसित</string>
+    <string name="parakeet_smoothquant_description">~862MB • 25 भाषाएं • डिफ़ॉल्ट का विकल्प</string>
     <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
-    <string name="parakeet_stock_description">~640MB • 25 भाषाएं • हल्का विकल्प</string>
+    <string name="parakeet_stock_description">~640MB • 25 भाषाएं • डिफ़ॉल्ट: डिवाइस पर मापी गई सर्वोत्तम गुणवत्ता</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>

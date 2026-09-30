@@ -10,7 +10,7 @@ Speed context for everything below: measured by us on an Italian voice-message t
 
 ### Parakeet TDT 0.6B v3 (default)
 
-Transducer (NVIDIA NeMo, TDT decoding). The app default: the best speed/accuracy balance we have measured, about 18x faster than the Distil-Italian model. On the internal desktop benchmark set Distil edged it 4.3% vs 5.4% WER; on the device itself (11 real voice clips through the app's own audio chain) the int8 variant leads everything at 4.48%, with SmoothQuant at 6.28% and Distil at 6.8%.
+Transducer (NVIDIA NeMo, TDT decoding). The app default since 1.14.0: the stock int8 variant, device-measured at 4.48% WER on our Italian clip set (the smoothquant variant, the default through 1.13.x, measures 6.28% through the same chain), 220MB lighter and about 25% faster. On the internal desktop benchmark set Distil edged it 4.3% vs 5.4% WER; on the device itself (11 real voice clips through the app's own audio chain) the int8 variant leads everything at 4.48%, with SmoothQuant at 6.28% and Distil at 6.8%.
 
 - Variants: int8 (640 MB), SmoothQuant (862 MB)
 - Languages: 25 European, including Italian, German, French, Spanish, English, Russian, and the Nordics, Baltics, and most of Central Europe

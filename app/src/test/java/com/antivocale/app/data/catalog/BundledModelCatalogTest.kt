@@ -81,14 +81,18 @@ class BundledModelCatalogTest {
         val byId = catalog().associateBy { it.id }
 
         val parakeet = byId.getValue("sherpa-onnx")
-        assertEquals("smoothquant", parakeet.flags.defaultVariant)
-        // Kept: the pad's effect is VARIANT-DEPENDENT (TASK-715+717 A/B:
-        // costs 2.5pp on stock-int8, SAVES 0.9pp on smoothquant, the shipped
-        // default), and the flag is entry-level, so the default variant wins.
+        // TASK-717 reopen (maintainer decision 2026-09-30): the DEVICE matrix
+        // through the upgraded kernel put stock-int8 at 4.48% WER vs
+        // smoothquant 6.28%, so the default flips. WARNING carried by this
+        // pin: tailPadSeconds is ENTRY-LEVEL and the old A/B said the pad
+        // COSTS 2.5pp on stock (desktop numbers, measured before the
+        // input-chain fix; the device A/B of pad-on-stock is the open
+        // follow-up, and a per-variant pad needs flags plumbing).
+        assertEquals("stock-int8", parakeet.flags.defaultVariant)
         assertEquals(1.0, parakeet.flags.tailPadSeconds, 0.0)
         assertEquals(listOf("vocab_size", "subsampling_factor", "model_type"), parakeet.flags.metaKeys)
-        assertEquals("parakeet-tdt-0.6b-v3-smoothquant", parakeet.defaultVariant.dirName)
-        assertEquals(862L, parakeet.defaultVariant.estimatedSizeMB)
+        assertEquals("parakeet-tdt-0.6b-v3-int8", parakeet.defaultVariant.dirName)
+        assertEquals(640L, parakeet.defaultVariant.estimatedSizeMB)
         // TASK-406: 380s single-pass peaked at 5.2GiB and 120s chunks still peaked at
         // 2.8GiB across sequential decodes; 60s chunks measured 1.8GiB end-to-end.
         // TranscriptionMemoryPolicy additionally tightens per device below this.

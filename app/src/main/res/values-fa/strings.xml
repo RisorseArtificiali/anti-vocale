@@ -145,9 +145,9 @@
     <string name="parakeet_download_confirm_title">Parakeet TDT دانلود شود؟</string>
     <string name="parakeet_download_confirm_message">حدود %1$dMB دانلود خواهد شد. Parakeet برای رونویسی از Gemma سریع‌تر اما کم‌دقت‌تر است.</string>
     <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
-    <string name="parakeet_smoothquant_description">~862MB • 25 زبان • پیشنهادی</string>
+    <string name="parakeet_smoothquant_description">~862MB • 25 زبان • جایگزین پیش‌فرض</string>
     <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
-    <string name="parakeet_stock_description">~640MB • 25 زبان • جایگزین سبک‌تر</string>
+    <string name="parakeet_stock_description">~640MB • 25 زبان • پیش‌فرض: بهترین کیفیت اندازه‌گیری‌شده روی دستگاه</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>

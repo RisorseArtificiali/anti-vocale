@@ -47,7 +47,7 @@ Top-level shape:
   "storageDir": "parakeet-tdt",
   "speedComparison": false,
   "flags": {
-    "defaultVariant": "smoothquant",
+    "defaultVariant": "stock-int8",
     "tailPadSeconds": 1,
     "metaKeys": ["vocab_size", "subsampling_factor", "model_type"]
   },

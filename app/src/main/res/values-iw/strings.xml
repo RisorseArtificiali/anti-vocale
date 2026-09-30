@@ -146,9 +146,9 @@
     <string name="parakeet_download_confirm_title">להוריד את Parakeet TDT?</string>
     <string name="parakeet_download_confirm_message">פעולה זו תוריד כ-%1$dMB. Parakeet מהיר יותר אך פחות מדויק מ-Gemma בתמלול.</string>
     <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
-    <string name="parakeet_smoothquant_description">~862MB • 25 שפות • מומלץ</string>
+    <string name="parakeet_smoothquant_description">~862MB • 25 שפות • חלופה לברירת המחדל</string>
     <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
-    <string name="parakeet_stock_description">~640MB • 25 שפות • חלופה קלה יותר</string>
+    <string name="parakeet_stock_description">~640MB • 25 שפות • ברירת המחדל: האיכות הטובה ביותר שנמדדה במכשיר</string>
 
     <!-- Whisper model -->
     <string name="whisper_title">Whisper</string>

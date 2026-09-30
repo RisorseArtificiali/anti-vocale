@@ -686,12 +686,15 @@ class SherpaBackend(
                 stream.acceptWaveform(samples, sampleRate)
                 // Append `tailPadSeconds` (catalog flag) of silence. The pad's
                 // WER effect on parakeet is VARIANT-DEPENDENT (TASK-715 + the
-                // 717 smoothquant arm): stock-int8 pays 2.5pp for it (0.0065
-                // without, 0.0313 with), smoothquant GAINS 0.9pp (0.0476 with,
-                // 0.0563 without). The flag is entry-level and the default
-                // variant is smoothquant, so the pad stays until the flag
-                // becomes per-variant. The old "~2% improvement on WhatsApp
-                // audio" claim remains unreproduced on either variant.
+                // 717 smoothquant arm, DESKTOP numbers): stock-int8 pays 2.5pp
+                // for it (0.0065 without, 0.0313 with), smoothquant GAINS
+                // 0.9pp (0.0476 with, 0.0563 without). The flag is entry-level
+                // and now applies to stock-int8, the default since 1.14.0:
+                // the device A/B of pad-on-stock is THE open follow-up (the
+                // desktop numbers were measured before the input-chain fix);
+                // if it confirms the 2.5pp cost, the flag must become
+                // per-variant. The old "~2% improvement on WhatsApp audio"
+                // claim remains unreproduced on either variant.
                 // Nemotron's 1.5s lives in the STREAMING path below (TASK-340
                 // Fix 1b shape: a second acceptWaveform of one shared zero
                 // buffer, no per-chunk copy). Gigaam's 1s is unmeasured (its
