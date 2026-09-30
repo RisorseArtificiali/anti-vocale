@@ -1679,6 +1679,7 @@ fun SettingsTab(
                     // Thread count dropdown
                     SettingsDropdown(
                         currentValue = threadCount,
+                        // The manual range deliberately exceeds the auto default's cap of 4
                         options = (1..8).toList(),
                         currentValueDisplay = if (threadCount == autoDetectedThreads)
                             stringResource(R.string.thread_count_auto, autoDetectedThreads)

@@ -108,13 +108,24 @@ class PreferencesManagerTest {
     }
 
     @Test
-    fun `DEFAULT_THREAD_COUNT respects available processors`() {
-        val expected = maxOf(2, Runtime.getRuntime().availableProcessors() - 2).coerceAtMost(8)
-        assertEquals(expected, PreferencesManager.DEFAULT_THREAD_COUNT)
+    fun `defaultThreadCount maps every core count exactly`() {
+        // TASK-102 (device-measured 2026-09-30): the cap at 4 IS the
+        // optimization (8 threads measured 19% SLOWER than 4 - contention);
+        // cores-2 stays below 6 cores (small devices reserve 2 cores).
+        // Host-independent input table, not a formula mirror.
+        listOf(
+            1 to 2, 2 to 2, 3 to 2, 4 to 2,
+            5 to 3,
+            6 to 4, 8 to 4, 12 to 4,
+        ).forEach { (processors, expected) ->
+            assertEquals("processors=$processors", expected, PreferencesManager.defaultThreadCount(processors))
+        }
     }
 
     @Test
-    fun `DEFAULT_THREAD_COUNT is capped at 8`() {
-        assertTrue(PreferencesManager.DEFAULT_THREAD_COUNT <= 8)
+    fun `DEFAULT_THREAD_COUNT is the defaultThreadCount of this host`() {
+        assertEquals(
+            PreferencesManager.defaultThreadCount(Runtime.getRuntime().availableProcessors()),
+            PreferencesManager.DEFAULT_THREAD_COUNT)
     }
 }

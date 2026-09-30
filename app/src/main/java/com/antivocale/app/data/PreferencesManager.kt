@@ -297,7 +297,20 @@ interface PreferencesManager {
         /** TASK-515: the stored default; the dropdown's offered set is
          *  presentation data and lives on SettingsViewModel. */
         const val DEFAULT_SUBTITLE_CHOICE_TIMEOUT_MINUTES = 5
-        val DEFAULT_THREAD_COUNT = maxOf(2, Runtime.getRuntime().availableProcessors() - 2).coerceAtMost(8)
+        // TASK-102 (device-measured 2026-09-30, RMX3853, parakeet
+        // smoothquant, 90s clip - ONE backend, ONE phone): 4 threads was
+        // fastest (164 ms/s audio) vs 6 (170, the old cores-2 default on
+        // this 8-core device) and 8 (196: contention makes 8 as slow as 2).
+        // The cap at 4 rests on that measurement plus the research consensus
+        // for sherpa-onnx mobile; the OTHER consumers of this preference
+        // (Whisper, streaming Nemotron, VAD, diarizer) were NOT measured -
+        // revisit per-backend if a backend ever shows different scaling.
+        // cores-2 below 6 cores stays: small devices keep 2 cores reserved
+        // for the system/UI on purpose.
+        val DEFAULT_THREAD_COUNT = defaultThreadCount(Runtime.getRuntime().availableProcessors())
+
+        /** cores-2 clamped to [2, 4]; internal for exact host-independent tests. */
+        internal fun defaultThreadCount(processors: Int): Int = (processors - 2).coerceIn(2, 4)
         const val DEFAULT_AUTO_COPY_ENABLED = false
         /** TASK-647: blank text = use the localized default at assembly time. */
         const val DEFAULT_SIGNATURE_ENABLED = false
