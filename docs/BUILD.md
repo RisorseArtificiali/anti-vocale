@@ -5,7 +5,7 @@ This document describes the verified steps to build the Anti-Vocale app with Lit
 ## Prerequisites
 
 - **Java**: 21+ (JDK 21 required, LiteRT-LM v0.10.0+ ships Java 21 bytecode)
-- **Gradle**: 8.11.1 (via wrapper `./gradlew`)
+- **Gradle**: 8.14.5 (via wrapper `./gradlew`)
 - **Android SDK**: API 36 (compileSdk = 36, targetSdk = 36)
 - **adb**: Must be in PATH
 - **Kotlin**: 2.2.0
@@ -38,7 +38,7 @@ export PATH="$HOME/Android/Sdk/platform-tools:$PATH"
 
 # Verify versions
 java -version      # Should show 21.x
-./gradlew --version   # Should show 8.11.1
+./gradlew --version   # Should show 8.14.5
 adb version        # Should not error
 ```
 
