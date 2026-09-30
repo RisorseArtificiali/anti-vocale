@@ -135,4 +135,28 @@ class AudioDurationPolicyTest {
         // the exact streaming valve is accepted (inclusive)
         assertTrue(AudioDurationPolicy.shouldFallBackToStreaming(7200.0, 660L))
     }
+
+    /** TASK-728: the runtime retention guard's budget, the crash device's shape. */
+    @Test
+    fun `retention budget is heap-bound on the 256MB crash device`() {
+        // Moto G55 shape: 256MB heap, plenty of RAM: RAW min(ram/4, heap/2)
+        // = 128MB; the guard divides by PCM_PEAK_COPIES at ITS site
+        // (42.7MB, ~11 min: the 1.13.2 crash died at ~77MB, so the
+        // undivided budget would trip too late).
+        assertEquals(
+            128L * 1024 * 1024,
+            AudioDurationPolicy.retentionBudgetBytes(2L * 1024 * 1024 * 1024, 256L * 1024 * 1024))
+    }
+
+    @Test
+    fun `retention budget fail-open is the 10-minute equivalent`() {
+        // Unreadable memory: the RAW 600s-equivalent seed (the guard then
+        // divides by PCM_PEAK_COPIES, landing conservative - right for an
+        // OOM guard under unknown memory).
+        val seed = AudioDurationPolicy.VAD_MIN_SECONDS * AudioDurationPolicy.PCM_BYTES_PER_SECOND
+        assertEquals(seed, AudioDurationPolicy.retentionBudgetBytes(null, null))
+        // The full fail-open matrix.
+        assertEquals(seed, AudioDurationPolicy.retentionBudgetBytes(0L, 256L * 1024 * 1024))
+        assertEquals(seed, AudioDurationPolicy.retentionBudgetBytes(2L * 1024 * 1024 * 1024, 0L))
+    }
 }

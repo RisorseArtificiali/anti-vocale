@@ -45,12 +45,30 @@ object AudioDurationPolicy {
      */
     fun ceilingSeconds(path: DecodePath, availableRamBytes: Long?, maxHeapBytes: Long?): Long {
         if (path == DecodePath.STREAMING) return STREAMING_MAX_SECONDS
-        val ram = availableRamBytes ?: return VAD_MIN_SECONDS
-        val heap = maxHeapBytes ?: return VAD_MIN_SECONDS
-        if (ram <= 0L || heap <= 0L) return VAD_MIN_SECONDS
-        val budgetBytes = minOf(ram / 4L, heap / 2L)
+        // The fail-open default (VAD_MIN_SECONDS of bytes / 3 copies = 200s,
+        // coerced back up to the 600s floor) converges to the old direct
+        // fail-open; the normal path is the same arithmetic.
+        val budgetBytes = retentionBudgetBytes(availableRamBytes, maxHeapBytes)
         return (budgetBytes / (PCM_PEAK_COPIES * PCM_BYTES_PER_SECOND))
             .coerceIn(VAD_MIN_SECONDS, VAD_MAX_SECONDS)
+    }
+
+    /**
+     * TASK-728: the RAW byte budget (min(ram/4, heap/2)) the whole-file
+     * arm budgets over; consumers apply their own divisor. The runtime
+     * retention guard divides by PCM_PEAK_COPIES like [ceilingSeconds]
+     * (the 1.13.2 crash device died at ~77MB retained; the undivided
+     * budget would trip too late to prevent it).
+     * The runtime guard compares ACTUAL retained bytes against it, so no
+     * metadata is needed and unreadable durations are covered. Fail-open
+     * to the 10-minute equivalent when either reading is missing (the
+     * policy's standing convention), still bounded.
+     */
+    fun retentionBudgetBytes(availableRamBytes: Long?, maxHeapBytes: Long?): Long {
+        val ram = availableRamBytes ?: return VAD_MIN_SECONDS * PCM_BYTES_PER_SECOND
+        val heap = maxHeapBytes ?: return (VAD_MIN_SECONDS * PCM_BYTES_PER_SECOND)
+        if (ram <= 0L || heap <= 0L) return VAD_MIN_SECONDS * PCM_BYTES_PER_SECOND
+        return minOf(ram / 4L, heap / 2L)
     }
 
     /** Advisory dialog threshold, above 30 minutes. */

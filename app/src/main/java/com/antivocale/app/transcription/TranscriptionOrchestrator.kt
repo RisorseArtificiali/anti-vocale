@@ -484,7 +484,7 @@ class TranscriptionOrchestrator @Inject constructor(
             if (collectSpeakers && diarizationChunks == null && requestType == "audio" &&
                 delivered.isSuccess && delivered.getOrNull()?.text?.isNotBlank() == true
             ) {
-                Log.i(TAG, "Speaker labels skipped: the decode path delivered no sample timeline (streaming, VAD-segmented or TASK-681 remote-offloaded)")
+                Log.i(TAG, "Speaker labels skipped: no sample timeline reached this pass (streaming, VAD-segmented, TASK-681 remote-offloaded, or TASK-728 memory-budget abandonment; the W-line above names which)")
             }
             val speakerLabeled: Result<TranscriptionResult> =
                 if (delivered.isSuccess && diarizationChunks != null) {
@@ -3293,10 +3293,13 @@ class TranscriptionOrchestrator @Inject constructor(
         // ceiling, disable collection (labels skipped, the reason logged
         // and reported like the whole-file arm's ceiling).
         val effectiveCollectSamples = if (collectSamples != null) {
+            // Both budgets derive from the same reads; taken INSIDE the
+            // branch so labels-off runs (the default) pay nothing.
+            val speakerRamBytes = availableMemoryBytes(context).takeIf { it > 0 }
+            val speakerHeapBytes = MemoryReadings.maxHeapBytes().takeIf { it > 0 }
             val speakerCeilingSec = AudioDurationPolicy.ceilingSeconds(
                 AudioDurationPolicy.DecodePath.WHOLE_FILE_PCM,
-                availableMemoryBytes(context).takeIf { it > 0 },
-                MemoryReadings.maxHeapBytes().takeIf { it > 0 })
+                speakerRamBytes, speakerHeapBytes)
             val sourceDurationSec = runCatching {
                 audioPreprocessor.getAudioDuration(filePath)
             }.getOrNull()
@@ -3308,7 +3311,22 @@ class TranscriptionOrchestrator @Inject constructor(
                 null
             } else collectSamples
         } else null
-        val speakerChunks = if (effectiveCollectSamples != null) mutableListOf<FloatArray>() else null
+        // TASK-728: the TASK-597 gate above is metadata-based and fail-opens
+        // when the container duration is unreadable; the 1.13.2 OOM crash
+        // class (Moto G55, 256MB heap) dies mid-stream at the per-chunk
+        // allocation. The runtime guard at the add site measures what is
+        // ACTUALLY retained and nulls the collection at the raw byte budget
+        // (note: the gate's ceiling divides by 3 PCM copies, so it trips
+        // earlier; both share retentionBudgetBytes as the one rule).
+        // /PCM_PEAK_COPIES: the same divisor the whole-file ceiling applies,
+        // so the guard trips at the same effective point as the metadata gate.
+        val speakerRetentionBudgetBytes = if (collectSamples != null)
+            AudioDurationPolicy.retentionBudgetBytes(
+                availableMemoryBytes(context).takeIf { it > 0 },
+                MemoryReadings.maxHeapBytes().takeIf { it > 0 }) / AudioDurationPolicy.PCM_PEAK_COPIES
+        else 0L
+        var speakerRetainedBytes = 0L
+        var speakerChunks = if (effectiveCollectSamples != null) mutableListOf<FloatArray>() else null
         var speakerSampleRate = 16000
 
         val pipelineStartMs = System.currentTimeMillis()
@@ -3437,9 +3455,23 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                     is AudioPreprocessor.StreamEvent.Chunk -> {
                         val chunk = event.chunk
-                        if (speakerChunks != null) {
-                            speakerChunks.add(chunk.samples)
-                            speakerSampleRate = chunk.sampleRate
+                        val collected = speakerChunks
+                        if (collected != null) {
+                            // TASK-728 runtime guard: null the collection at
+                            // the budget instead of OOM-ing mid-stream; labels
+                            // are skipped for this run (same UX as the
+                            // metadata gate, but measured, so unreadable
+                            // durations are covered too).
+                            val chunkBytes = chunk.samples.size * Float.SIZE_BYTES.toLong()
+                            if (speakerRetainedBytes + chunkBytes > speakerRetentionBudgetBytes) {
+                                speakerChunks = null
+                                Log.w(TAG, "Speaker labels abandoned at ${speakerRetainedBytes / MB}MB retained: " +
+                                    "over the ${speakerRetentionBudgetBytes / MB}MB memory budget (TASK-728 guard)")
+                            } else {
+                                collected.add(chunk.samples)
+                                speakerRetainedBytes += chunkBytes
+                                speakerSampleRate = chunk.sampleRate
+                            }
                         }
                         processedChunks++
                         val chunkStartMs = (decodedSeconds * 1000).toLong()
