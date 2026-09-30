@@ -29,7 +29,8 @@ object TranscriptFileSaver {
      * mirrored save sites call this so the never-write-bogus-timing invariant
      * has a single owner.
      *
-     * @return the written file's display name on success, or `null` on any failure.
+     * @return [SaveResult]: [SaveResult.Saved] with the display name on success, a
+     *  [SaveResult.Failed] naming the failing step otherwise.
      */
     fun saveAuto(
         context: Context,
@@ -42,10 +43,10 @@ object TranscriptFileSaver {
         /** TASK-647: the AI-disclaimer signature for the exported file; blank = off. */
         signature: String = "",
         signaturePosition: String = "append",
-    ): String? {
+    ): SaveResult {
         if (treeUriString.isNullOrBlank()) {
             android.util.Log.w(TAG, "Auto-save skipped: no output folder configured")
-            return null
+            return SaveResult.NotConfigured
         }
         val decision = SubtitleFormatter.resolveExport(
             SubtitleFormatter.Format.fromStored(storedFormat), transcript, segments, failedChunkCount,
@@ -55,6 +56,35 @@ object TranscriptFileSaver {
         // formatted payload opens with timestamps ("WEBVTT", "00:00:01")
         // and names the file after the clock instead of the words.
         return save(context, Uri.parse(treeUriString), decision.format, content, sourcePackage, transcript)
+    }
+
+    /**
+     * TASK-722: auto-save outcomes. Every failure is USER-VISIBLE now (the
+     * reporter of the Android 16/OnePlus report saw transcription + History
+     * and no file, with the reason buried in logcat): [failureReason] rides
+     * the result notification subtext.
+     */
+    sealed class SaveResult {
+        data class Saved(val name: String) : SaveResult()
+        data class Failed(val failureReason: String) : SaveResult()
+        data object NotConfigured : SaveResult()
+
+        companion object {
+            /** One token per failing step, single-named so tests and the
+             *  notification layer can key on them (TASK-722). */
+            const val FAIL_FOLDER_UNAVAILABLE = "folder_unavailable"
+            const val FAIL_NOT_WRITABLE = "not_writable"
+            const val FAIL_CREATE_REFUSED = "create_refused"
+            const val FAIL_OPEN_STREAM = "open_stream_failed"
+            /** The catch-all: the exception's class name stays in logcat (the
+             *  full stack is logged there); the user token is generic. */
+            const val FAIL_EXCEPTION = "write_failed"
+        }
+
+        /** The failure reason when this is a [Failed], null otherwise: the
+         *  one-line reduction both service save sites use (their duplicated
+         *  when-blocks collapse to this). */
+        fun failureOrNull(): String? = (this as? Failed)?.failureReason
     }
 
     /** TASK-647: the disclaimer header for timed formats (a comment block
@@ -104,7 +134,8 @@ object TranscriptFileSaver {
      * the fail-safe un-bypassable: a caller cannot smuggle a timed extension
      * past resolveExport.
      *
-     * @return the written file's display name on success, or `null` on any failure.
+     * @return [SaveResult]: [SaveResult.Saved] with the display name on success, a
+     *  [SaveResult.Failed] naming the failing step otherwise.
      */
     private fun save(
         context: Context,
@@ -113,15 +144,15 @@ object TranscriptFileSaver {
         text: String,
         sourcePackage: String?,
         namePreview: String,
-    ): String? {
+    ): SaveResult {
         return try {
             val tree = DocumentFile.fromTreeUri(context, treeUri) ?: run {
                 Log.w(TAG, "fromTreeUri returned null for $treeUri (revoked or virtual tree?)")
-                return null
+                return SaveResult.Failed(SaveResult.FAIL_FOLDER_UNAVAILABLE)
             }
             if (!tree.canWrite()) {
                 Log.w(TAG, "Tree uri not writable (permission revoked?): $treeUri")
-                return null
+                return SaveResult.Failed(SaveResult.FAIL_NOT_WRITABLE)
             }
             val timestamp = SimpleDateFormat("yyyy-MM-dd_HHmm", Locale.US).format(Date())
             val source = sourcePackage?.substringAfterLast('.')?.replace(".", "_") ?: "transcript"
@@ -131,19 +162,25 @@ object TranscriptFileSaver {
             val baseName = "${source}_${timestamp}_${preview}.${format.extension}"
             val name = uniqueName(tree, baseName)
             val file = tree.createFile(format.mime, name) ?: run {
+                // TASK-722: the prime Android-16/OnePlus suspect, a provider
+                // root (e.g. Downloads) that accepts the grant but refuses
+                // creation. The reason names WHICH step died.
                 Log.w(TAG, "createFile returned null for $name")
-                return null
+                return SaveResult.Failed(SaveResult.FAIL_CREATE_REFUSED)
             }
             context.contentResolver.openOutputStream(file.uri)?.use { out ->
                 out.write(text.toByteArray(Charsets.UTF_8))
             } ?: run {
                 Log.w(TAG, "openOutputStream returned null for ${file.uri}")
-                return null
+                return SaveResult.Failed(SaveResult.FAIL_OPEN_STREAM)
             }
-            file.name
+            // TASK-722 review: the affirmative success trace lives at the
+            // single owner (both service twins collapsed their copies).
+            Log.i(TAG, "Saved transcript to output folder: ${file.name ?: name}")
+            SaveResult.Saved(file.name ?: name)
         } catch (e: Exception) {
             Log.w(TAG, "Failed to save transcript to $treeUri", e)
-            null
+            SaveResult.Failed(SaveResult.FAIL_EXCEPTION)
         }
     }
 

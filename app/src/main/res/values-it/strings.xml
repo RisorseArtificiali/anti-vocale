@@ -752,6 +752,7 @@
     <string name="early_preview_description">Mostra un primo testo approssimativo mentre il resto di una clip lunga viene ancora decodificato. Viene sostituito quando termina il primo segmento completo.</string>
     <string name="early_preview_badge">Anteprima</string>
     <string name="early_preview_requires_progressive">Richiede la visualizzazione progressiva</string>
+    <string name="auto_save_failed">Salvataggio automatico non riuscito (%1$s)</string>
     <string name="progressive_initial">Preparazione del testo; risultato finale al completamento</string>
     <string name="processing_segment_progress">Segmento %1$d di %2$d…</string>
 

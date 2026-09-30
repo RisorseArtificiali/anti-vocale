@@ -163,6 +163,20 @@ class ResultNotificationFactoryTest {
     }
 
     @Test
+    fun `an auto-save failure rides the subText, after the repetition warning (TASK-722)`() {
+        val n = factory.build(
+            spec("ciao come stai").copy(saveFailureReason = "create_refused"), prefs)
+        assertEquals("Auto-save failed (create_refused)", n.subTextCompat())
+        // TASK-583 order contract: when both facts are present the repetition
+        // warning leads, the save failure follows.
+        val both = factory.build(
+            spec(longText(3), page = 1).copy(
+                repetitionSuspected = true, saveFailureReason = "not_writable"), prefs)
+        val sub = requireNotNull(both.subTextCompat())
+        assertTrue(sub.indexOf("Repetition") < sub.indexOf("Auto-save failed"))
+    }
+
+    @Test
     fun `paged subtext shows page counter`() {
         val n = factory.build(spec(longText(3), page = 1), prefs)
         assertEquals("Page 2 of 3", n.subTextCompat())

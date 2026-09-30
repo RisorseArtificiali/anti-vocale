@@ -135,6 +135,7 @@ class InferenceService : Service(), TranscriptionListener {
     private val pendingCount = AtomicInteger(0)
     private val resultNotificationFactory: ResultNotificationFactory by lazy { ResultNotificationFactory(this) }
 
+
     // ---- Chunk navigation state (TASK-242) ----
     // Null outside a multi-chunk progressive job; created on the first interim chunk result
     // and cleared when the next job starts. Single-chunk jobs never create one (nav is a no-op).
@@ -646,9 +647,9 @@ class InferenceService : Service(), TranscriptionListener {
                     // form on diarized runs), not the raw stored transcript.
                     val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
                     val copied = autoCopyIfEnabled(annotatedText, sourcePackage)
-                    saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
+                    val saveFailure = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
                     val refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }
-                    showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED, repetitionSuspected = repetitionSuspected, segments = segments)
+                    showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED, repetitionSuspected = repetitionSuspected, segments = segments, saveFailure = saveFailure)
                 } finally {
                     pendingResultNotifications.remove(coroutineContext[Job])
                 }
@@ -767,13 +768,15 @@ class InferenceService : Service(), TranscriptionListener {
 
     // ---- Auto-save to folder (issue #14) ----
 
+    /** @return the auto-save failure reason for the result notification
+     *  subtext, or null when saved/not configured (TASK-722: never silent). */
     private suspend fun saveTranscriptToFileIfEnabled(
         text: String,
         sourcePackage: String?,
         segments: List<TimedSegment>,
         failedChunkCount: Int
-    ) {
-        val name = withContext(Dispatchers.IO) {
+    ): String? {
+        val result = withContext(Dispatchers.IO) {
             TranscriptFileSaver.saveAuto(
                 this@InferenceService,
                 preferencesManager.outputFolderUri.first(),
@@ -783,12 +786,11 @@ class InferenceService : Service(), TranscriptionListener {
                     preferencesManager, getString(R.string.signature_default_text)).let { it.text },
                 signaturePosition = TranscriptSignature.effectiveSpec(
                     preferencesManager, getString(R.string.signature_default_text)).position,
-            
             )
         }
-        if (name != null) {
-            Log.i(TAG, "Saved transcript to output folder: $name")
-        }
+        // TASK-722: the failure reason rides the result notification; the
+        // saver already logged the concrete failing step.
+        return result.failureOrNull()
     }
 
     // ---- Notifications ----
@@ -937,6 +939,7 @@ class InferenceService : Service(), TranscriptionListener {
         notRefined: Boolean = false,
         repetitionSuspected: Boolean = false,
         segments: List<TimedSegment>,
+        saveFailure: String? = null,
     ) {
         // TASK-598 F5: the notification's whole text (body, copy, share,
         // page rebuilds) derives the speaker-annotated form when the run
@@ -973,6 +976,7 @@ class InferenceService : Service(), TranscriptionListener {
             refinedFrom = refinedFrom,
             notRefined = notRefined,
             repetitionSuspected = repetitionSuspected,
+            saveFailureReason = saveFailure,
             firstPostedAt = System.currentTimeMillis()
         )
         val notification = resultNotificationFactory.build(spec, prefs)

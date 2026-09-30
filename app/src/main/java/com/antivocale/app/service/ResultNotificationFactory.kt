@@ -46,6 +46,9 @@ data class ResultNotificationSpec(
     /** TASK-583 (GH #110): the delivered single-model transcript matched the
      *  repetition-loop detector; said in subText, leading it. */
     val repetitionSuspected: Boolean = false,
+    /** TASK-722: the auto-save failure reason when the export could not be
+     *  written; null when saved, not configured, or the run predates it. */
+    val saveFailureReason: String? = null,
     val firstPostedAt: Long = System.currentTimeMillis(),
     /** True when rebuilding after a prev/next tap: suppresses re-alerting. */
     val repost: Boolean = false
@@ -311,6 +314,14 @@ class ResultNotificationFactory(private val context: Context) {
         if (spec.repetitionSuspected) {
             subTextParts.add(context.getString(R.string.warning_repetition_suspected))
         }
+
+        if (spec.saveFailureReason != null) {
+            // TASK-722: a failed auto-save is never silent; the reason token
+            // rides the subtext AFTER the repetition warning (TASK-583: the
+            // warning that the text may be garbage leads the status facts).
+            subTextParts.add(
+                context.getString(R.string.auto_save_failed, spec.saveFailureReason))
+        }
         val langLabel = spec.detectedLanguage?.let { lang ->
             LanguageNames.nativeLanguageName(lang)
         }
@@ -424,6 +435,7 @@ class ResultNotificationFactory(private val context: Context) {
             putExtra(NotificationActionReceiver.EXTRA_PAGE_INDEX, pageIndex)
             putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, spec.notificationId)
             putExtra(NotificationActionReceiver.EXTRA_FIRST_POSTED_AT, spec.firstPostedAt)
+            putExtra(NotificationActionReceiver.EXTRA_SAVE_FAILURE, spec.saveFailureReason)
             putExtra(NotificationActionReceiver.EXTRA_IS_PARTIAL, spec.isPartial)
             putExtra(NotificationActionReceiver.EXTRA_FAILED_CHUNK_COUNT, spec.failedChunkCount)
             spec.taskId?.let { putExtra(NotificationActionReceiver.EXTRA_TASK_ID, it) }

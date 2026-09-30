@@ -752,6 +752,7 @@
     <string name="early_preview_description">اولین متن تقریبی را همزمان با رمزگشایی کلیپ طولانی نشان می‌دهد؛ با پایان بخش اول کامل، جای خود را به نسخه دقیق می‌دهد.</string>
     <string name="early_preview_badge">پیش‌نمایش</string>
     <string name="early_preview_requires_progressive">نیاز به نمایش پیش‌رونده دارد</string>
+    <string name="auto_save_failed">ذخیره خودکار ناموفق بود (%1$s)</string>
     <string name="progressive_initial">در حال آماده‌سازی متن؛ نتیجه نهایی در پایان</string>
     <string name="processing_segment_progress">قطعه %1$d از %2$d…</string>
 

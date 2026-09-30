@@ -568,6 +568,7 @@
     <string name="early_preview_description">מציג טקסט ראשוני גס בזמן שקליפ ארוך עדיין מפוענח. הוא מוחלף כשמסתיים המקטע הראשון המלא.</string>
     <string name="early_preview_badge">תצוגה מקדימה</string>
     <string name="early_preview_requires_progressive">דורש תצוגה מתקדמת</string>
+    <string name="auto_save_failed">השמירה האוטומטית נכשלה (%1$s)</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">פרומפט ברירת מחדל</string>

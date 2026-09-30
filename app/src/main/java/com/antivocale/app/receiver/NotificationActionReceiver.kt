@@ -53,6 +53,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
         const val EXTRA_DETECTED_LANGUAGE = "detected_language"
         const val EXTRA_IS_PARTIAL = "is_partial"
         const val EXTRA_FAILED_CHUNK_COUNT = "failed_chunk_count"
+        /** TASK-722: the auto-save failure reason baked into nav intents so
+         *  the page-tap repost keeps the failure banner (the refresher
+         *  rebuilds the spec from extras alone). */
+        const val EXTRA_SAVE_FAILURE = "save_failure"
     }
 
     override fun onReceive(context: Context, intent: Intent) {

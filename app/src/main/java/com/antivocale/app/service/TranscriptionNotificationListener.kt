@@ -59,6 +59,7 @@ class TranscriptionNotificationListener(
         appContext.getSystemService(NotificationManager::class.java)
     private val resultNotificationFactory = ResultNotificationFactory(appContext)
 
+
     init {
         // Ensure the result channel exists (idempotent). The service also creates it in
         // onCreate; the Worker may run before the service was ever started.
@@ -124,8 +125,8 @@ class TranscriptionNotificationListener(
                 // TASK-598 review F3: same derivation as the notification Copy action.
                 val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
                 autoCopyIfEnabled(annotatedText, sourcePackage)
-                saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
-                showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad, repetitionSuspected = repetitionSuspected, segments = segments)
+                val saveFailure = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
+                showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad, repetitionSuspected = repetitionSuspected, segments = segments, saveFailure = saveFailure)
             }
         }
     }
@@ -183,13 +184,15 @@ class TranscriptionNotificationListener(
     // in sync (the format resolution itself lives in TranscriptFileSaver.saveAuto,
     // the single owner of the export fail-safe).
 
+    /** @return the auto-save failure reason for the result notification
+     *  subtext, or null when saved/not configured (TASK-722, service twin). */
     private suspend fun saveTranscriptToFileIfEnabled(
         text: String,
         sourcePackage: String?,
         segments: List<TimedSegment>,
         failedChunkCount: Int
-    ) {
-        val name = withContext(Dispatchers.IO) {
+    ): String? {
+        val result = withContext(Dispatchers.IO) {
             TranscriptFileSaver.saveAuto(
                 appContext,
                 preferencesManager.outputFolderUri.first(),
@@ -199,12 +202,11 @@ class TranscriptionNotificationListener(
                     preferencesManager, appContext.getString(R.string.signature_default_text)).let { it.text },
                 signaturePosition = TranscriptSignature.effectiveSpec(
                     preferencesManager, appContext.getString(R.string.signature_default_text)).position,
-            
             )
         }
-        if (name != null) {
-            Log.i(TAG, "Saved transcript to output folder: $name")
-        }
+        // TASK-722: the failure reason rides the result notification; the
+        // saver already logged the concrete failing step.
+        return result.failureOrNull()
     }
 
     // ---- Notifications (ported from InferenceService) ----
@@ -220,6 +222,7 @@ class TranscriptionNotificationListener(
         streamedWithoutVad: Boolean = false,
         repetitionSuspected: Boolean = false,
         segments: List<TimedSegment>,
+        saveFailure: String? = null,
     ) {
         // TASK-598 F5: mirrors InferenceService.showResultNotification (keep
         // the two paths in sync): the notification's whole text derives the
@@ -252,6 +255,7 @@ class TranscriptionNotificationListener(
             notificationId = id,
             streamedWithoutVad = streamedWithoutVad,
             repetitionSuspected = repetitionSuspected,
+            saveFailureReason = saveFailure,
             firstPostedAt = System.currentTimeMillis()
         )
         val notification = resultNotificationFactory.build(spec, prefs)

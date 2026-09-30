@@ -557,6 +557,7 @@
     <string name="early_preview_description">Показывает первый черновой текст, пока остальная часть длинной записи ещё расшифровывается. Он заменяется, когда завершится первый полный сегмент.</string>
     <string name="early_preview_badge">Предпросмотр</string>
     <string name="early_preview_requires_progressive">Требуется прогрессивный показ</string>
+    <string name="auto_save_failed">Не удалось автосохранить (%1$s)</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Запрос по умолчанию</string>

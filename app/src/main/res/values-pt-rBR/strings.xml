@@ -483,6 +483,7 @@
     <string name="early_preview_description">Mostra um primeiro texto aproximado enquanto o resto de um clipe longo ainda está sendo decodificado. Ele é substituído quando o primeiro segmento completo termina.</string>
     <string name="early_preview_badge">Prévia</string>
     <string name="early_preview_requires_progressive">Requer exibição progressiva</string>
+    <string name="auto_save_failed">Falha ao salvar automaticamente (%1$s)</string>
     <string name="default_prompt_title">Prompt padrão</string>
     <string name="default_prompt_description">Instrução dada ao modelo durante a transcrição. Vazio usa o prompt integrado.</string>
     <string name="default_prompt_placeholder">ex. Transcreva este discurso:</string>
