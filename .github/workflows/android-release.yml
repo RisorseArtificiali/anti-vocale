@@ -183,6 +183,7 @@ jobs:
         run: ./gradlew assembleFdroidDebug
 
       - name: Build Release AAB
+        id: playstore-aab
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
@@ -220,6 +221,24 @@ jobs:
         with:
           name: app-release-aab
           path: app/build/outputs/bundle/playStoreRelease/app-playStore-release.aab
+          if-no-files-found: error
+
+      # TASK-729: the Crashlytics Gradle plugin already uploads this
+      # mapping during bundlePlayStoreRelease (uploadCrashlyticsMapping-
+      # FilePlayStoreRelease), but PLAY Vitals and local retrace have no
+      # copy: keep it as a workflow artifact (NOT a public release asset -
+      # publishing it would make the shipped build's obfuscation
+      # reversible by anyone) and hand it to Play with the AAB below
+      # (the mappingFile input on the publish step).
+      - name: Upload playStore R8 mapping artifact
+        # The mapping is a co-product of the AAB build: key on its outcome
+        # (the file's own idiom) instead of repeating the event matrix.
+        if: steps.playstore-aab.outcome == 'success' 
+        # TASK-683.9: node24-native major (see the test-job comment).
+        uses: actions/upload-artifact@v6
+        with:
+          name: app-playstore-mapping
+          path: app/build/outputs/mapping/playStoreRelease/mapping.txt
           if-no-files-found: error
 
       - name: Upload release notes artifact
@@ -358,6 +377,15 @@ jobs:
           name: release-notes
           path: whats-new
 
+      - name: Download playStore R8 mapping
+        # TASK-729: Play Vitals reads the deobfuscation file only if it
+        # ships WITH the AAB (the action's mappingFile input); the build
+        # job keeps the artifact from the same run as the AAB.
+        uses: actions/download-artifact@v7
+        with:
+          name: app-playstore-mapping
+          path: mapping
+
       - name: Upload AAB to Play Store
         # TASK-683.9: the v1 line is node24-native since v1.1.4 (action.yml
         # runs.using at the v1 tag, checked 2026-09-28); nothing to defer here.
@@ -366,6 +394,8 @@ jobs:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.antivocale.app
           releaseFiles: app-playStore-release.aab
+          # TASK-729: deobfuscation file for Play Vitals stack traces.
+          mappingFile: mapping/mapping.txt
           # TASK-683.9: the `track` input is deprecated upstream (job annotation,
           # 2026-09-26 run); `tracks` takes the same single value here.
           tracks: ${{ github.event.inputs.play-store-track || 'internal' }}
