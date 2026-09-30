@@ -1023,4 +1023,10 @@
     <item quantity="one">%1$d linha ignorada</item>
     <item quantity="other">%1$d linhas ignoradas</item>
   </plurals>
+    <string name="speaker_settings_title">Diarização</string>
+    <string name="speaker_settings_summary">Rótulos de falante e identidades nomeadas</string>
+    <string name="performance_settings_title">Desempenho e memória</string>
+    <string name="performance_settings_summary">Threads, provedor, proteção de memória e diagnóstico</string>
+    <string name="automation_settings_title">Automação e offload</string>
+    <string name="automation_settings_summary">Receptores Tasker, guia de broadcast e offload LAN</string>
 </resources>

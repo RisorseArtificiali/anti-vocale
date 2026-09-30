@@ -1160,4 +1160,10 @@
     <item quantity="one">%1$d خط نادیده گرفته شد</item>
     <item quantity="other">%1$d خط نادیده گرفته شد</item>
   </plurals>
+    <string name="speaker_settings_title">تفکیک گویندگان</string>
+    <string name="speaker_settings_summary">برچسب‌های گوینده و هویت‌های نام‌دار</string>
+    <string name="performance_settings_title">عملکرد و حافظه</string>
+    <string name="performance_settings_summary">رشته‌ها، ارائه‌دهنده، محافظت از حافظه و تشخیص خطا</string>
+    <string name="automation_settings_title">اتوماسیون و بارگذاری خارجی</string>
+    <string name="automation_settings_summary">گیرنده‌های تسکر، راهنمای broadcast و تخلیه LAN</string>
 </resources>

@@ -1180,4 +1180,10 @@
     <item quantity="many">%1$d строк пропущено</item>
     <item quantity="other">%1$d строк пропущено</item>
   </plurals>
+    <string name="speaker_settings_title">Диаризация</string>
+    <string name="speaker_settings_summary">Метки говорящих и именованные профили</string>
+    <string name="performance_settings_title">Производительность и память</string>
+    <string name="performance_settings_summary">Потоки, провайдер, защита памяти и диагностика</string>
+    <string name="automation_settings_title">Автоматизация и разгрузка</string>
+    <string name="automation_settings_summary">Приёмники Tasker, руководство по broadcast и LAN-разгрузка</string>
 </resources>

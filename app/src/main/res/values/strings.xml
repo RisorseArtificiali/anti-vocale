@@ -1167,4 +1167,10 @@
     <item quantity="one">%1$d cue skipped</item>
     <item quantity="other">%1$d cues skipped</item>
   </plurals>
+    <string name="speaker_settings_title">Diarization</string>
+    <string name="speaker_settings_summary">Speaker labels and named identities</string>
+    <string name="performance_settings_title">Performance and memory</string>
+    <string name="performance_settings_summary">Threads, provider, memory protection and diagnostics</string>
+    <string name="automation_settings_title">Automation and offload</string>
+    <string name="automation_settings_summary">Tasker receivers, the broadcast guide and LAN offload</string>
 </resources>

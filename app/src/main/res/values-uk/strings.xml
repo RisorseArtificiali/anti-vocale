@@ -1181,4 +1181,10 @@
     <item quantity="many">%1$d рядків пропущено</item>
     <item quantity="other">%1$d рядків пропущено</item>
   </plurals>
+    <string name="speaker_settings_title">Діаризація</string>
+    <string name="speaker_settings_summary">Мітки мовців та іменовані профілі</string>
+    <string name="performance_settings_title">Продуктивність і пам\'ять</string>
+    <string name="performance_settings_summary">Потоки, провайдер, захист пам\'яті та діагностика</string>
+    <string name="automation_settings_title">Автоматизація та розвантаження</string>
+    <string name="automation_settings_summary">Приймачі Tasker, підручник broadcast та LAN-розвантаження</string>
 </resources>

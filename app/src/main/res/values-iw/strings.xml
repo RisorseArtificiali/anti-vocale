@@ -1165,4 +1165,10 @@
     <item quantity="two">שתי שורות דילגו</item>
     <item quantity="other">%1$d שורות דילגו</item>
   </plurals>
+    <string name="speaker_settings_title">זיהוי דוברים</string>
+    <string name="speaker_settings_summary">תוויות דוברים וזהויות בשם</string>
+    <string name="performance_settings_title">ביצועים וזיכרון</string>
+    <string name="performance_settings_summary">תהליכונים, ספק, הגנת זיכרון ואבחון</string>
+    <string name="automation_settings_title">אוטומציה והאצה חוצה</string>
+    <string name="automation_settings_summary">מקלטי Tasker, מדריך broadcast והעברה ל-LAN</string>
 </resources>

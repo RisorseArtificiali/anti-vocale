@@ -1154,4 +1154,10 @@
     <item quantity="one">%1$d पंक्ति छोड़ी गई</item>
     <item quantity="other">%1$d पंक्तियाँ छोड़ी गईं</item>
   </plurals>
+    <string name="speaker_settings_title">वक्ता पहचान</string>
+    <string name="speaker_settings_summary">स्पीकर लेबल और नामित पहचान</string>
+    <string name="performance_settings_title">प्रदर्शन और मेमोरी</string>
+    <string name="performance_settings_summary">थ्रेड, प्रोवाइडर, मेमोरी सुरक्षा और डायग्नोस्टिक्स</string>
+    <string name="automation_settings_title">स्वचालन और ऑफलोड</string>
+    <string name="automation_settings_summary">टास्कर रिसीवर, ब्रॉडकास्ट गाइड और LAN ऑफलोड</string>
 </resources>

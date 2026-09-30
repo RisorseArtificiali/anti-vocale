@@ -1155,4 +1155,10 @@
     <item quantity="one">%1$d satır atlandı</item>
     <item quantity="other">%1$d satır atlandı</item>
   </plurals>
+    <string name="speaker_settings_title">Konuşmacı ayırma</string>
+    <string name="speaker_settings_summary">Konuşmacı etiketleri ve adlandırılmış kimlikler</string>
+    <string name="performance_settings_title">Performans ve bellek</string>
+    <string name="performance_settings_summary">İş parçacıkları, sağlayıcı, bellek koruması ve tanılama</string>
+    <string name="automation_settings_title">Otomasyon ve yük aktarma</string>
+    <string name="automation_settings_summary">Tasker alıcıları, broadcast kılavuzu ve LAN aktarımı</string>
 </resources>

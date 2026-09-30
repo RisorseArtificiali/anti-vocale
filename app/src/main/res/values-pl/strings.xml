@@ -1179,4 +1179,10 @@
     <item quantity="many">%1$d linii pominiętych</item>
     <item quantity="other">%1$d linii pominiętych</item>
   </plurals>
+    <string name="speaker_settings_title">Diatryzacja</string>
+    <string name="speaker_settings_summary">Etykiety mówców i tożsamości z imionami</string>
+    <string name="performance_settings_title">Wydajność i pamięć</string>
+    <string name="performance_settings_summary">Wątki, dostawca, ochrona pamięci i diagnostyka</string>
+    <string name="automation_settings_title">Automatyzacja i odciążenie</string>
+    <string name="automation_settings_summary">Odbiorniki Tasker, przewodnik broadcast i odciążenie LAN</string>
 </resources>

@@ -1023,4 +1023,10 @@
     <item quantity="one">%1$d línea omitida</item>
     <item quantity="other">%1$d líneas omitidas</item>
   </plurals>
+    <string name="speaker_settings_title">Diarización</string>
+    <string name="speaker_settings_summary">Etiquetas de hablante e identidades con nombre</string>
+    <string name="performance_settings_title">Rendimiento y memoria</string>
+    <string name="performance_settings_summary">Hilos, proveedor, protección de memoria y diagnóstico</string>
+    <string name="automation_settings_title">Automatización y descarga externa</string>
+    <string name="automation_settings_summary">Receptores Tasker, guía de broadcast y descarga a LAN</string>
 </resources>

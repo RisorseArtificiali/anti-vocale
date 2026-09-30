@@ -14,7 +14,6 @@ import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.documentfile.provider.DocumentFile
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
@@ -67,7 +66,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.antivocale.app.data.PreferencesManager
-import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import com.antivocale.app.transcription.BuiltInBackendIds
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.transcription.PunctuationPolicy
@@ -90,10 +88,13 @@ import com.antivocale.app.ui.components.SettingsDropdown
 import com.antivocale.app.ui.components.TokenInputField
 import com.antivocale.app.ui.components.ToggleSettingCard
 import com.antivocale.app.ui.components.UnloadModelButton
-import com.antivocale.app.ui.dialogs.PerformanceStatsDialog
 import com.antivocale.app.ui.screens.LauncherIconScreen
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.screens.PromptSettingsScreen
+import com.antivocale.app.ui.components.SettingsHubCard
+import com.antivocale.app.ui.screens.SpeakerSettingsScreen
+import com.antivocale.app.ui.screens.PerformanceSettingsScreen
+import com.antivocale.app.ui.screens.AutomationSettingsScreen
 import com.antivocale.app.ui.theme.TextScale
 import com.antivocale.app.ui.theme.ThemeType
 import com.antivocale.app.util.AutomationBroadcastSnippet
@@ -130,9 +131,6 @@ fun SettingsTab(
     val progressiveEnabled by viewModel.progressiveTranscription.collectAsState()
     val earlyPreviewEnabled by viewModel.earlyPreviewEnabled.collectAsState()
     val interruptedRunNotifications by viewModel.interruptedRunNotifications.collectAsState()
-    val threadCount by viewModel.threadCount.collectAsState()
-    val inferenceProvider by viewModel.inferenceProvider.collectAsState()
-    val autoDetectedThreads = viewModel.autoDetectedThreadCount
     val currentLanguage by viewModel.currentLanguage.collectAsState()
     val currentTranscriptionLanguage by viewModel.currentTranscriptionLanguage.collectAsState()
     val transcriptionPicker by viewModel.transcriptionLanguagePicker.collectAsState()
@@ -141,8 +139,6 @@ fun SettingsTab(
     val groupLogsByConversation by viewModel.groupLogsByConversation.collectAsState()
     val advancedSharingEnabled by viewModel.advancedSharingEnabled.collectAsState()
     val showRetranscribeButton by viewModel.showRetranscribeButton.collectAsState()
-    val memoryProtection by viewModel.memoryProtection.collectAsState()
-    val externalAutomationEnabled by viewModel.externalAutomationEnabled.collectAsState()
     val compactResultActions by viewModel.compactResultActions.collectAsState()
     val showTechnicalDetails by viewModel.showTechnicalDetails.collectAsState()
     // TASK-546: the chip flag (maintainer directive: the flag lives here).
@@ -155,12 +151,30 @@ fun SettingsTab(
     var tokenPasswordVisible by remember { mutableStateOf(false) }
     var showOAuthConfigDialog by remember { mutableStateOf(false) }
     var showPerAppSettings by remember { mutableStateOf(false) }
-    var showPerfStatsDialog by remember { mutableStateOf(false) }
-    var perfStatsProfiles by remember { mutableStateOf<List<CalibrationProfile>>(emptyList()) }
-    val perfStatsScope = rememberCoroutineScope()
     var showPromptSettings by remember { mutableStateOf(false) }
     var showIconSettings by remember { mutableStateOf(false) }
     var showExportSettings by remember { mutableStateOf(false) }
+    var showSpeakerSettings by remember { mutableStateOf(false) }
+    var showPerformanceSettings by remember { mutableStateOf(false) }
+    var showAutomationSettings by remember { mutableStateOf(false) }
+
+    // 2026-09-30 regroup: system back on ANY subpage must return to the
+    // main tree, not finish the activity (no other BackHandler covers
+    // these flags; without this, back from a subpage closes the app).
+    androidx.activity.compose.BackHandler(enabled = showIconSettings || showExportSettings ||
+        showPromptSettings || showPerAppSettings || showSpeakerSettings ||
+        showPerformanceSettings || showAutomationSettings) {
+        showIconSettings = false
+        showExportSettings = false
+        showPromptSettings = false
+        showPerAppSettings = false
+        showSpeakerSettings = false
+        showPerformanceSettings = false
+        showAutomationSettings = false
+    }
+    // TASK-625 deep-link carrier: the memory-failure notification action
+    // opens the performance page with focus on its card (2026-09-30 regroup).
+    var performanceFocusMemoryProtection by remember { mutableStateOf(false) }
 
     // TASK-542 (GH #98): live settings search. Blank = the normal tab.
     var searchQuery by remember { mutableStateOf("") }
@@ -192,6 +206,9 @@ fun SettingsTab(
                 showPromptSettings = dest.key == "prompt"
                 showPerAppSettings = dest.key == "per_app"
                 showExportSettings = dest.key == AppNavigation.SUBPAGE_KEY_EXPORT
+                showSpeakerSettings = dest.key == "speaker"
+                showPerformanceSettings = dest.key == "performance"
+                showAutomationSettings = dest.key == "automation"
             }
             is AppNavigation.Destination.SettingsSection -> {
                 // A section target needs the main Column composed: back out
@@ -201,6 +218,9 @@ fun SettingsTab(
                 showPromptSettings = false
                 showPerAppSettings = false
                 showExportSettings = false
+                showSpeakerSettings = false
+                showPerformanceSettings = false
+                showAutomationSettings = false
                 expandCounters[dest.key] = (expandCounters[dest.key] ?: 0) + 1
                 // First composition may run before layout delivers offsets:
                 // wait one frame, then scroll if the anchor appeared.
@@ -227,29 +247,26 @@ fun SettingsTab(
     // notification action; the TASK-274 toggle via TASK-275's Automation
     // card). One holder per row: captured Y, flash flag, and the flash
     // itself (scroll, highlight, 2.5s decay) live in ONE definition.
-    val memoryProtectionFocus = remember { SettingsRowFocus() }
-    val externalAutomationFocus = remember { SettingsRowFocus() }
     LaunchedEffect(focusRow) {
         val row = focusRow ?: return@LaunchedEffect
         onFocusRowConsumed()
         when (row) {
             SettingsFocusRow.MEMORY_PROTECTION -> {
+                // 2026-09-30 regroup: the card moved to the performance
+                // subpage; the notification action now OPENS the page with
+                // the focus flag, and the page runs its own capture/flash
+                // on its scroll state (the TASK-625 UX is unchanged: the
+                // user lands on a flashing memory-protection card). Every
+                // earlier sibling in the if/else-if chain must clear or
+                // this page never composes.
                 showIconSettings = false
                 showPromptSettings = false
                 showPerAppSettings = false
                 showExportSettings = false
-                // A live search query keeps non-matching rows out of
-                // composition, so the focus row would never lay out: clear it.
-                searchQuery = ""
-                // The row lives in the collapsed-by-default Advanced section:
-                // expand it (the TASK-543 counter pattern, same key as the
-                // section destination) or the row never lays out and there is
-                // nothing to scroll to.
-                expandCounters["advanced"] = (expandCounters["advanced"] ?: 0) + 1
-                // Everything below awaits frames, and consuming the focus
-                // signal relaunches (read: cancels) this effect; the wait and
-                // the scroll must run in navScope to survive it.
-                memoryProtectionFocus.flashIn(navScope, scrollState) { scrollContentRootY }
+                showSpeakerSettings = false
+                showAutomationSettings = false
+                showPerformanceSettings = true
+                performanceFocusMemoryProtection = true
             }
         }
     }
@@ -346,6 +363,24 @@ fun SettingsTab(
         PromptSettingsScreen(
             viewModel = viewModel,
             onBack = { showPromptSettings = false }
+        )
+    } else if (showSpeakerSettings) {
+        SpeakerSettingsScreen(
+            viewModel = viewModel,
+            speakerIdEnabled = speakerIdEnabled,
+            onBack = { showSpeakerSettings = false }
+        )
+    } else if (showPerformanceSettings) {
+        PerformanceSettingsScreen(
+            viewModel = viewModel,
+            focusMemoryProtection = performanceFocusMemoryProtection,
+            onFocusConsumed = { performanceFocusMemoryProtection = false },
+            onBack = { showPerformanceSettings = false },
+        )
+    } else if (showAutomationSettings) {
+        AutomationSettingsScreen(
+            viewModel = viewModel,
+            onBack = { showAutomationSettings = false },
         )
     } else {
     // TASK-628: compact rendering while search is active (descriptions
@@ -735,32 +770,14 @@ fun SettingsTab(
                 )
             }
 
-            // GH #83: speaker labels on transcript cues.
-            val speakerLabelsTitle = stringResource(R.string.speaker_labels_title)
-            val speakerLabelsSummary = stringResource(R.string.speaker_labels_description)
-            val speakerLabelsEnabled by viewModel.speakerLabelsEnabled.collectAsState()
-            // TASK-689: same drift class as refinement (GH #83 card).
-            SearchFilterRow(searchQuery, SettingsSearchId.SPEAKER_LABELS, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.RecordVoiceOver,
-                    title = speakerLabelsTitle,
-                    description = speakerLabelsSummary,
-                    checked = speakerLabelsEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveSpeakerLabelsEnabled(enabled)
-                    }
-                )
-            }
-
-            // TASK-670 (GH #83): named speaker identities. The card exists
-            // only while the default-off speakerIdEnabled privacy gate is
-            // on: the maintainer's one-switch flip. TASK-689: the flag is
-            // collected at the tab level and mirrored by the registry
-            // entry's visible(), so the count tracks this if exactly.
-            if (speakerIdEnabled) {
-                SearchFilterRow(searchQuery, SettingsSearchId.SPEAKER_IDENTITIES, searchState) {
-                    SpeakerIdentitiesCard(viewModel)
-                }
+            // Maintainer decision 2026-09-30: diarization settings moved
+            // to their own page; the hub below opens it. Search contract:
+            // the hub's registry vocabulary is the UNION of its own and
+            // both children's strings (state-gated to the identities
+            // card's privacy gate), so old queries still land one tap
+            // from the card they matched.
+            SearchFilterRow(searchQuery, SettingsSearchId.DIARIZATION_HUB, searchState) {
+                SettingsHubCard(R.string.speaker_settings_title, R.string.speaker_settings_summary) { showSpeakerSettings = true }
             }
 
             // VAD Silence Stripping Setting
@@ -1668,64 +1685,12 @@ fun SettingsTab(
                 }
             }
 
-            // Thread Count Setting
-            val threadCountTitle = stringResource(R.string.thread_count_title)
-            SearchFilterRow(searchQuery, SettingsSearchId.THREAD_COUNT, searchState) {
-                SectionCard(
-                    icon = Icons.Default.Memory,
-                    title = threadCountTitle,
-                    description = stringResource(R.string.thread_count_description)
-                ) {
-                    // Thread count dropdown
-                    SettingsDropdown(
-                        currentValue = threadCount,
-                        // The manual range deliberately exceeds the auto default's cap of 4
-                        options = (1..8).toList(),
-                        currentValueDisplay = if (threadCount == autoDetectedThreads)
-                            stringResource(R.string.thread_count_auto, autoDetectedThreads)
-                        else
-                            stringResource(R.string.thread_count_value, threadCount),
-                        optionDisplay = { threads ->
-                            if (threads == autoDetectedThreads)
-                                stringResource(R.string.thread_count_auto, threads)
-                            else
-                                stringResource(R.string.thread_count_value, threads)
-                        },
-                        onOptionSelected = { viewModel.saveThreadCount(it) },
-                        label = threadCountTitle
-                    )
-                }
-            }
-
-            // Inference Provider Setting
-            val providerTitle = stringResource(R.string.inference_provider_title)
-            SearchFilterRow(searchQuery, SettingsSearchId.INFERENCE_PROVIDER, searchState) {
-                SectionCard(
-                    icon = Icons.Default.Bolt,
-                    title = providerTitle,
-                    description = stringResource(R.string.inference_provider_description)
-                ) {
-                    SettingsDropdown(
-                        currentValue = inferenceProvider,
-                        options = InferenceProvider.options,
-                        currentValueDisplay = when (inferenceProvider) {
-                            InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
-                            InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
-                            InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                            else -> inferenceProvider
-                        },
-                        optionDisplay = { option ->
-                            when (option) {
-                                InferenceProvider.AUTO -> stringResource(R.string.inference_provider_auto)
-                                InferenceProvider.NNAPI -> stringResource(R.string.inference_provider_nnapi)
-                                InferenceProvider.CPU -> stringResource(R.string.inference_provider_cpu)
-                                else -> option
-                            }
-                        },
-                        onOptionSelected = { viewModel.saveInferenceProvider(it) },
-                        label = providerTitle
-                    )
-                }
+            // Maintainer decision 2026-09-30: performance and memory
+            // settings moved to their own page; the hub below opens it.
+            // Search contract: the hub's registry vocabulary is the union
+            // of its own and all five children's strings.
+            SearchFilterRow(searchQuery, SettingsSearchId.PERFORMANCE_HUB, searchState) {
+                SettingsHubCard(R.string.performance_settings_title, R.string.performance_settings_summary) { showPerformanceSettings = true }
             }
 
             // Advanced Sharing Card
@@ -1793,103 +1758,12 @@ fun SettingsTab(
                 )
             }
 
-            // Memory protection (opt-in low-memory pre-flight; off by default the app never blocks)
-            val memoryProtectionTitle = stringResource(R.string.memory_protection)
-            val memoryProtectionDescription = stringResource(R.string.memory_protection_desc)
-            SearchFilterRow(searchQuery, SettingsSearchId.MEMORY_PROTECTION, searchState) {
-                // TASK-625: the memory-failure notification scrolls here and
-                // flashes the card border (selection border, LauncherIconScreen
-                // pattern); idle is a transparent border, invisible.
-                ToggleSettingCard(
-                    icon = Icons.Default.Memory,
-                    title = memoryProtectionTitle,
-                    description = memoryProtectionDescription,
-                    checked = memoryProtection,
-                    onCheckedChange = { viewModel.saveMemoryProtection(it) },
-                    modifier = Modifier
-                        .onGloballyPositioned {
-                            memoryProtectionFocus.capture(it.positionInRoot().y.toInt())
-                        }
-                        .border(
-                            2.dp,
-                            memoryProtectionFocus.highlightColor("memory_protection_highlight"),
-                            MaterialTheme.shapes.medium,
-                        )
-                )
-            }
-
-            // TASK-274: consent gate for the exported automation receivers
-            // (Tasker surface); while off they answer with the error that
-            // names this toggle.
-            val externalAutomationTitle = stringResource(R.string.external_automation_title)
-            val externalAutomationDescription = stringResource(R.string.external_automation_description)
-            SearchFilterRow(searchQuery, SettingsSearchId.EXTERNAL_AUTOMATION, searchState) {
-                // TASK-275: the Automation card below deep-links here; the
-                // border flash is the memory-protection focus pattern
-                // (TASK-625). Idle is a transparent border, invisible.
-                ToggleSettingCard(
-                    icon = Icons.Default.Build,
-                    title = externalAutomationTitle,
-                    description = externalAutomationDescription,
-                    checked = externalAutomationEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveExternalAutomationEnabled(enabled)
-                    },
-                    modifier = Modifier
-                        .onGloballyPositioned {
-                            externalAutomationFocus.capture(it.positionInRoot().y.toInt())
-                        }
-                        .border(
-                            2.dp,
-                            externalAutomationFocus.highlightColor("external_automation_highlight"),
-                            MaterialTheme.shapes.medium,
-                        )
-                )
-            }
-
-            // TASK-275: the Automation explainer card. The broadcast API has
-            // shipped since the Tasker receivers, but its documentation lived
-            // only in docs/TASKER_GUIDE.md; this is its in-app surface. No
-            // Tasker profile export ships with it (the recorded decision and
-            // its evidence live in AutomationBroadcastSnippet's KDoc).
-            val automationGuideTitle = stringResource(R.string.automation_guide_title)
-            val automationGuideDescription = stringResource(R.string.automation_guide_description)
-            SearchFilterRow(searchQuery, SettingsSearchId.AUTOMATION_GUIDE, searchState) {
-                AutomationGuideCard(
-                    title = automationGuideTitle,
-                    description = automationGuideDescription,
-                    enabled = externalAutomationEnabled,
-                    onShowToggle = {
-                        // Same contract as the memory-protection focus: a live
-                        // search query keeps the toggle row out of composition,
-                        // so clear it, then converge and flash (TASK-275).
-                        searchQuery = ""
-                        externalAutomationFocus.flashIn(navScope, scrollState) { scrollContentRootY }
-                    },
-                )
-            }
-
-            // TASK-681: LAN offload (experimental). Opt-in delegation to the
-            // user's own OmniVoice box on their network; the supporting text
-            // IS the privacy contract and stays visible while off too.
-            val remoteOffloadTitle = stringResource(R.string.remote_offload_title)
-            val remoteOffloadDescription = stringResource(R.string.remote_offload_description)
-            val remoteOffloadDisclosure = stringResource(R.string.remote_offload_disclosure)
-            val remoteOffloadEnabled by viewModel.remoteOmnivoiceEnabled.collectAsState()
-            SearchFilterRow(searchQuery, SettingsSearchId.REMOTE_OFFLOAD, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.Lan,
-                    title = remoteOffloadTitle,
-                    description = remoteOffloadDescription,
-                    supportingText = remoteOffloadDisclosure,
-                    checked = remoteOffloadEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveRemoteOmnivoiceEnabled(enabled)
-                    }
-                )
-                if (remoteOffloadEnabled) {
-                    RemoteOmnivoiceConfigCard(viewModel)
-                }
+            // Maintainer decision 2026-09-30: automation and offload
+            // settings moved to their own page; the hub below opens it.
+            // Search contract: the hub's registry vocabulary is the static
+            // union of its own and all three children's strings.
+            SearchFilterRow(searchQuery, SettingsSearchId.AUTOMATION_HUB, searchState) {
+                SettingsHubCard(R.string.automation_settings_title, R.string.automation_settings_summary) { showAutomationSettings = true }
             }
 
             // Per-App Settings Navigation Card
@@ -1936,62 +1810,6 @@ fun SettingsTab(
                     }
                 }
             }
-
-            // Performance Stats Card
-            SearchFilterRow(searchQuery, SettingsSearchId.PERFORMANCE_STATS, searchState) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button) {
-                            perfStatsScope.launch {
-                                perfStatsProfiles = viewModel.transcriptionCalibrator.getAllProfiles()
-                                showPerfStatsDialog = true
-                            }
-                        },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Speed,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.performance_stats_title),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    text = stringResource(R.string.performance_stats_subtitle),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = stringResource(R.string.open_performance_stats),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // TASK-679: read-only memory diagnostics. Same section as memory
-            // protection and the perf stats: the diagnostics grouping.
-            SearchFilterRow(searchQuery, SettingsSearchId.MEMORY_DIAGNOSTICS, searchState) {
-                MemoryDiagnosticsCard(viewModel)
-            }
         }
 
         // Feedback & About section (issue #34 / TASK-341)
@@ -2003,21 +1821,6 @@ fun SettingsTab(
             currentLanguage = currentLanguage,
             onReplayTour = { viewModel.replayOnboardingTour() }
         )
-
-        // Performance Stats Dialog
-        if (showPerfStatsDialog) {
-            PerformanceStatsDialog(
-                profiles = perfStatsProfiles,
-                isTranscribing = isTranscribing,
-                onDismiss = { showPerfStatsDialog = false },
-                onReset = {
-                    perfStatsScope.launch {
-                        viewModel.transcriptionCalibrator.resetAll()
-                        perfStatsProfiles = emptyList()
-                    }
-                }
-            )
-        }
 
         // Spacer for scroll
         Spacer(modifier = Modifier.height(32.dp))
@@ -2034,7 +1837,7 @@ fun SettingsTab(
  * only; no transcript, no paths), which is the v1 export: no share intent.
  */
 @Composable
-private fun MemoryDiagnosticsCard(viewModel: SettingsViewModel) {
+internal fun MemoryDiagnosticsCard(viewModel: SettingsViewModel) {
     val context = LocalContext.current
     // Live exactly while the card is composed (the collapsed-by-default
     // Advanced section keeps this collector from ever running unseen).
@@ -2596,7 +2399,7 @@ private fun SearchFilterRow(
  * delete removes the voiceprint and the sample together.
  */
 @Composable
-private fun SpeakerIdentitiesCard(viewModel: SettingsViewModel) {
+internal fun SpeakerIdentitiesCard(viewModel: SettingsViewModel) {
     val identities by viewModel.speakerIdentities.collectAsState()
     val pending by viewModel.speakerEnrollPending.collectAsState()
     val error by viewModel.speakerEnrollError.collectAsState()
@@ -2908,7 +2711,7 @@ internal enum class SettingsSearchSection { TRANSCRIPTION, APPEARANCE, ADVANCED,
 internal enum class SettingsSearchId {
     // Transcription
     MODEL_STATUS, ACTIVE_MODEL, TRANSCRIPTION_LANGUAGE, AUTO_COPY, EXPORT_SETTINGS,
-    REFINEMENT, SPEAKER_LABELS, SPEAKER_IDENTITIES, VAD, PROGRESSIVE, EARLY_PREVIEW,
+    REFINEMENT, DIARIZATION_HUB, VAD, PROGRESSIVE, EARLY_PREVIEW,
     INTERRUPTED_RUN_NOTIFICATIONS,
     PUNCTUATION_MODE, PUNCTUATION_PROMPT, SUMMARIZE, SUMMARY_PROMPT, SIGNATURE,
     DEFAULT_PROMPT, KEEP_ALIVE_TIMEOUT,
@@ -2916,10 +2719,8 @@ internal enum class SettingsSearchId {
     THEME, APP_ICON, APP_LANGUAGE, SWIPE_ACTION, CONVERSATION_GROUPING,
     COMPACT_RESULT_ACTIONS, TECHNICAL_DETAILS, LANGUAGE_CHIP, RETRANSCRIBE,
     // Advanced
-    BATTERY_EXEMPTION, HUGGINGFACE_AUTH, THREAD_COUNT, INFERENCE_PROVIDER,
-    SHARE_TARGETS, SUBTITLE_TIMEOUT, MEMORY_PROTECTION, EXTERNAL_AUTOMATION,
-    AUTOMATION_GUIDE, REMOTE_OFFLOAD, PER_APP_SETTINGS, PERFORMANCE_STATS,
-    MEMORY_DIAGNOSTICS,
+    BATTERY_EXEMPTION, HUGGINGFACE_AUTH, PERFORMANCE_HUB,
+    SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, PER_APP_SETTINGS,
     // Feedback
     FEEDBACK,
 }
@@ -3015,16 +2816,23 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         listOf(R.string.refinement_title, R.string.refinement_description),
     ),
     // The GH #83 speaker-labels toggle.
+    // Maintainer decision 2026-09-30: the diarization hub. Union
+    // vocabulary (the search-compat contract): the hub's own strings plus
+    // both children's; the identities strings join only while the privacy
+    // gate would render that card, so the count stays honest.
     SettingsSearchCard(
-        SettingsSearchId.SPEAKER_LABELS, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.speaker_labels_title, R.string.speaker_labels_description),
+        SettingsSearchId.DIARIZATION_HUB, SettingsSearchSection.TRANSCRIPTION,
+        res = { s ->
+            if (s.speakerIdEnabled) listOf(
+                R.string.speaker_settings_title, R.string.speaker_settings_summary,
+                R.string.speaker_labels_title, R.string.speaker_labels_description,
+                R.string.speaker_id_title, R.string.speaker_id_description)
+            else listOf(
+                R.string.speaker_settings_title, R.string.speaker_settings_summary,
+                R.string.speaker_labels_title, R.string.speaker_labels_description)
+        },
     ),
     // The TASK-670 identities card, behind its default-off privacy gate.
-    SettingsSearchCard(
-        SettingsSearchId.SPEAKER_IDENTITIES, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.speaker_id_title, R.string.speaker_id_description),
-        visible = { s -> s.speakerIdEnabled },
-    ),
     SettingsSearchCard(
         SettingsSearchId.VAD, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.vad_title, R.string.vad_description),
@@ -3132,13 +2940,18 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         SettingsSearchId.HUGGINGFACE_AUTH, SettingsSearchSection.ADVANCED,
         listOf(R.string.huggingface_auth, R.string.huggingface_auth_description),
     ),
+    // Maintainer decision 2026-09-30: the performance-and-memory hub.
+    // Static union vocabulary: the hub's strings plus all five
+    // children's (none of the five is state-gated).
     SettingsSearchCard(
-        SettingsSearchId.THREAD_COUNT, SettingsSearchSection.ADVANCED,
-        listOf(R.string.thread_count_title, R.string.thread_count_description),
-    ),
-    SettingsSearchCard(
-        SettingsSearchId.INFERENCE_PROVIDER, SettingsSearchSection.ADVANCED,
-        listOf(R.string.inference_provider_title, R.string.inference_provider_description),
+        SettingsSearchId.PERFORMANCE_HUB, SettingsSearchSection.ADVANCED,
+        listOf(
+            R.string.performance_settings_title, R.string.performance_settings_summary,
+            R.string.thread_count_title, R.string.thread_count_description,
+            R.string.inference_provider_title, R.string.inference_provider_description,
+            R.string.memory_protection, R.string.memory_protection_desc,
+            R.string.performance_stats_title, R.string.performance_stats_subtitle,
+            R.string.memory_diagnostics_title, R.string.memory_diagnostics_subtitle),
     ),
     SettingsSearchCard(
         SettingsSearchId.SHARE_TARGETS, SettingsSearchSection.ADVANCED,
@@ -3148,46 +2961,23 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         SettingsSearchId.SUBTITLE_TIMEOUT, SettingsSearchSection.ADVANCED,
         listOf(R.string.subtitle_timeout_title, R.string.subtitle_timeout_description),
     ),
+    // Maintainer decision 2026-09-30: the automation-and-offload hub.
+    // Static union vocabulary: the hub's strings plus all three
+    // children's (the remote config card rides the offload child).
     SettingsSearchCard(
-        SettingsSearchId.MEMORY_PROTECTION, SettingsSearchSection.ADVANCED,
-        listOf(R.string.memory_protection, R.string.memory_protection_desc),
-    ),
-    SettingsSearchCard(
-        SettingsSearchId.EXTERNAL_AUTOMATION, SettingsSearchSection.ADVANCED,
-        listOf(R.string.external_automation_title, R.string.external_automation_description),
-    ),
-    // TASK-275: the explainer card. Only its always-rendered strings ride
-    // the entry (the status line is conditional and counting an unrendered
-    // match would report a ghost card); since TASK-689 the SAME list feeds
-    // both the count and this card's gate structurally.
-    SettingsSearchCard(
-        SettingsSearchId.AUTOMATION_GUIDE, SettingsSearchSection.ADVANCED,
+        SettingsSearchId.AUTOMATION_HUB, SettingsSearchSection.ADVANCED,
         listOf(
-            R.string.automation_guide_title,
-            R.string.automation_guide_description,
-            R.string.automation_guide_body,
-        ),
-    ),
-    // TASK-681: the toggle card renders unconditionally; its fields ride
-    // the same entry.
-    SettingsSearchCard(
-        SettingsSearchId.REMOTE_OFFLOAD, SettingsSearchSection.ADVANCED,
-        listOf(R.string.remote_offload_title, R.string.remote_offload_description, R.string.remote_offload_disclosure),
+            R.string.automation_settings_title, R.string.automation_settings_summary,
+            R.string.external_automation_title, R.string.external_automation_description,
+            R.string.automation_guide_title, R.string.automation_guide_description,
+            R.string.remote_offload_title, R.string.remote_offload_description),
     ),
     SettingsSearchCard(
         SettingsSearchId.PER_APP_SETTINGS, SettingsSearchSection.ADVANCED,
         listOf(R.string.per_app_settings_title, R.string.per_app_settings_description),
     ),
-    SettingsSearchCard(
-        SettingsSearchId.PERFORMANCE_STATS, SettingsSearchSection.ADVANCED,
-        listOf(R.string.performance_stats_title, R.string.performance_stats_subtitle),
-    ),
     // TASK-679: the memory diagnostics card rides the same registry so
     // "memory" finds it like every other Advanced card.
-    SettingsSearchCard(
-        SettingsSearchId.MEMORY_DIAGNOSTICS, SettingsSearchSection.ADVANCED,
-        listOf(R.string.memory_diagnostics_title, R.string.memory_diagnostics_subtitle),
-    ),
     // --- Feedback ---
     // One entry for one Card: the count reports cards, and the Feedback
     // rows do not filter individually (the section-level visibility check
@@ -3220,7 +3010,7 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
  * search query (it keeps rows out of composition) and calls [flashIn] on a
  * scope that carries the composition's frame clock.
  */
-private class SettingsRowFocus {
+internal class SettingsRowFocus {
     var rowY by mutableStateOf<Int?>(null)
         private set
     var highlighted by mutableStateOf(false)
@@ -3301,7 +3091,7 @@ private class SettingsRowFocus {
  * transcript, so the TASK-650 signature does not apply to it.
  */
 @Composable
-private fun AutomationGuideCard(
+internal fun AutomationGuideCard(
     title: String,
     description: String,
     enabled: Boolean,
@@ -3380,7 +3170,7 @@ private fun AutomationGuideCard(
  * before it is saved.
  */
 @Composable
-private fun RemoteOmnivoiceConfigCard(viewModel: SettingsViewModel) {
+internal fun RemoteOmnivoiceConfigCard(viewModel: SettingsViewModel) {
     val endpoint by viewModel.remoteEndpointInput.collectAsState()
     val apiKey by viewModel.remoteApiKeyInput.collectAsState()
     val model by viewModel.remoteModelInput.collectAsState()

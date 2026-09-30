@@ -1160,4 +1160,10 @@
     <item quantity="one">%1$d cue saltata</item>
     <item quantity="other">%1$d cue saltate</item>
   </plurals>
+    <string name="speaker_settings_title">Diarizzazione</string>
+    <string name="speaker_settings_summary">Etichette dei parlanti e identità nominali</string>
+    <string name="performance_settings_title">Prestazioni e memoria</string>
+    <string name="performance_settings_summary">Thread, provider, protezione memoria e diagnostica</string>
+    <string name="automation_settings_title">Automazione e offload</string>
+    <string name="automation_settings_summary">Ricevitori Tasker, guida broadcast e offload LAN</string>
 </resources>

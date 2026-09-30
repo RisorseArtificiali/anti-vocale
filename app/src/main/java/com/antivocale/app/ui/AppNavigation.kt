@@ -43,7 +43,7 @@ object AppNavigation {
     val SECTION_KEYS = setOf("transcription", "appearance", "advanced", "feedback")
 
     /** Settings sub-pages reachable by key. */
-    val SUBPAGE_KEYS = setOf("icon_picker", "prompt", "per_app", SUBPAGE_KEY_EXPORT)
+    val SUBPAGE_KEYS = setOf("icon_picker", "prompt", "per_app", SUBPAGE_KEY_EXPORT, "speaker", "performance", "automation")
 
     /** Models-tab targets reachable by key (single source for parser + UI). */
     val MODEL_KEYS = setOf("import")

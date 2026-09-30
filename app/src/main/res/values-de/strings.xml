@@ -1155,4 +1155,10 @@
     <item quantity="one">%1$d Zeile übersprungen</item>
     <item quantity="other">%1$d Zeilen übersprungen</item>
   </plurals>
+    <string name="speaker_settings_title">Diarisierung</string>
+    <string name="speaker_settings_summary">Sprecherlabels und benannte Identitäten</string>
+    <string name="performance_settings_title">Leistung und Speicher</string>
+    <string name="performance_settings_summary">Threads, Anbieter, Speicherschutz und Diagnose</string>
+    <string name="automation_settings_title">Automatisierung und Auslagerung</string>
+    <string name="automation_settings_summary">Tasker-Empfänger, Broadcast-Anleitung und LAN-Auslagerung</string>
 </resources>
