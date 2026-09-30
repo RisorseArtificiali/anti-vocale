@@ -2,6 +2,7 @@ package com.antivocale.app.ui.tabs
 
 import com.antivocale.app.R
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -75,7 +76,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.AUTO_COPY,
                 SettingsSearchId.EXPORT_SETTINGS,
                 SettingsSearchId.REFINEMENT,
-                SettingsSearchId.SPEAKER_LABELS,
+                SettingsSearchId.DIARIZATION_HUB,
                 SettingsSearchId.VAD,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS,
@@ -97,7 +98,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.AUTO_COPY,
                 SettingsSearchId.EXPORT_SETTINGS,
                 SettingsSearchId.REFINEMENT,
-                SettingsSearchId.SPEAKER_LABELS,
+                SettingsSearchId.DIARIZATION_HUB,
                 SettingsSearchId.VAD,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS,
@@ -121,9 +122,9 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.AUTO_COPY,
                 SettingsSearchId.EXPORT_SETTINGS,
                 SettingsSearchId.REFINEMENT,
-                SettingsSearchId.SPEAKER_LABELS,
-                // SPEAKER_IDENTITIES is absent: speakerIdEnabled defaults
-                // false in this state (its own flip test covers it).
+                SettingsSearchId.DIARIZATION_HUB,
+                // (the identities card lives on the subpage now; its
+                //  vocabulary rides the hub, state-gated.)
                 SettingsSearchId.VAD,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
                 SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS,
@@ -160,10 +161,9 @@ class SettingsSearchRegistryTest {
             visibleIds(SettingsSearchSection.TRANSCRIPTION, state(summarizeOn = true)),
             SettingsSearchId.SUMMARY_PROMPT, SettingsSearchId.SUMMARIZE,
         )
-        assertSingleAddition(
-            visibleIds(SettingsSearchSection.TRANSCRIPTION, state(speakerIdEnabled = true)),
-            SettingsSearchId.SPEAKER_IDENTITIES, SettingsSearchId.SPEAKER_LABELS,
-        )
+        // 2026-09-30 regroup: the identities card moved to the diarization
+        // subpage; the gate flip changes the hub's res() (the union test),
+        // not the card set, so no addition here anymore.
     }
 
     @Test
@@ -227,24 +227,49 @@ class SettingsSearchRegistryTest {
         assertEquals(
             listOf(
                 SettingsSearchId.HUGGINGFACE_AUTH,
-                SettingsSearchId.THREAD_COUNT,
-                SettingsSearchId.INFERENCE_PROVIDER,
-                SettingsSearchId.SHARE_TARGETS,
+                SettingsSearchId.PERFORMANCE_HUB,
+                                                SettingsSearchId.SHARE_TARGETS,
                 SettingsSearchId.SUBTITLE_TIMEOUT,
-                SettingsSearchId.MEMORY_PROTECTION,
-                SettingsSearchId.EXTERNAL_AUTOMATION,
-                SettingsSearchId.AUTOMATION_GUIDE,
-                SettingsSearchId.REMOTE_OFFLOAD,
-                SettingsSearchId.PER_APP_SETTINGS,
-                SettingsSearchId.PERFORMANCE_STATS,
-                SettingsSearchId.MEMORY_DIAGNOSTICS,
-            ),
+                SettingsSearchId.AUTOMATION_HUB,
+                                                                                SettingsSearchId.PER_APP_SETTINGS,
+                                            ),
             base,
         )
         assertEquals(
             listOf(SettingsSearchId.BATTERY_EXEMPTION) + base,
             visibleIds(SettingsSearchSection.ADVANCED, state(batteryExemptionOffered = true)),
         )
+    }
+
+    @Test
+    fun `the diarization hub carries the children's vocabulary, state-gated`() {
+        val hub = SETTINGS_SEARCH_CARDS.first { it.id == SettingsSearchId.DIARIZATION_HUB }
+        val base = hub.res(state())
+        assertTrue(base.contains(R.string.speaker_labels_title))
+        assertTrue(base.contains(R.string.speaker_settings_title))
+        val gated = hub.res(state(speakerIdEnabled = true))
+        assertTrue(gated.contains(R.string.speaker_id_title))
+        assertFalse("gate off must not carry the identities vocabulary", base.contains(R.string.speaker_id_title))
+    }
+
+    @Test
+    fun `the automation hub carries all three children's vocabulary`() {
+        val hub = SETTINGS_SEARCH_CARDS.first { it.id == SettingsSearchId.AUTOMATION_HUB }
+        val vocab = hub.res(state())
+        assertTrue(vocab.contains(R.string.external_automation_title))
+        assertTrue(vocab.contains(R.string.automation_guide_title))
+        assertTrue(vocab.contains(R.string.remote_offload_title))
+    }
+
+    @Test
+    fun `the performance hub carries all five children's vocabulary`() {
+        val hub = SETTINGS_SEARCH_CARDS.first { it.id == SettingsSearchId.PERFORMANCE_HUB }
+        val vocab = hub.res(state())
+        assertTrue(vocab.contains(R.string.thread_count_title))
+        assertTrue(vocab.contains(R.string.inference_provider_title))
+        assertTrue(vocab.contains(R.string.memory_protection))
+        assertTrue(vocab.contains(R.string.performance_stats_title))
+        assertTrue(vocab.contains(R.string.memory_diagnostics_title))
     }
 
     @Test
