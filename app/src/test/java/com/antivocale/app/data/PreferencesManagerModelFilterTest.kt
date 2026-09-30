@@ -3,21 +3,14 @@ package com.antivocale.app.data
 import android.app.Application
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.test.core.app.ApplicationProvider
-import java.io.File
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Before
+import com.antivocale.app.testing.TempDataStoreRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -36,25 +29,12 @@ class PreferencesManagerModelFilterTest {
 
     private val filterKey = stringPreferencesKey("model_filter_language")
 
-    private lateinit var context: Context
-    private lateinit var dataStore: DataStore<Preferences>
-    private lateinit var prefs: PreferencesManagerImpl
-    private lateinit var file: File
-    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    @Before
-    fun setUp() = runBlocking {
-        context = ApplicationProvider.getApplicationContext()
-        file = File.createTempFile("prefs-model-filter-${System.nanoTime()}", ".preferences_pb")
-        dataStore = PreferenceDataStoreFactory.create(scope = scope) { file }
-        prefs = PreferencesManagerImpl(context, dataStore).apply { initialize() }
-    }
-
-    @After
-    fun tearDown() {
-        scope.cancel()
-        file.delete()
-    }
+    @get:Rule
+    val ds = TempDataStoreRule("prefs-model-filter")
+    private val context: Context get() = ds.context
+    private val dataStore: DataStore<Preferences> get() = ds.dataStore
+    private val prefs: PreferencesManagerImpl get() = ds.prefs
 
     @Test
     fun `starts untouched with the key absent`() = runBlocking {

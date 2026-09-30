@@ -3,11 +3,9 @@ package com.antivocale.app.ui.viewmodel
 import android.app.Application
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.R
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.ExternalModelImporter
@@ -22,11 +20,8 @@ import java.io.File
 import java.nio.file.Files
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -36,6 +31,10 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import com.antivocale.app.testing.TempDataStoreRule
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.runBlocking
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -64,12 +63,12 @@ class ModelViewModelUseModelPersistenceTest {
     private val backendKey = stringPreferencesKey("transcription_backend")
     private val sherpaWhisperKey = stringPreferencesKey("sherpa_model_path_whisper")
 
-    private lateinit var context: Context
-    private lateinit var dataStore: DataStore<Preferences>
-    private lateinit var prefs: PreferencesManagerImpl
+    @get:Rule
+    val ds = TempDataStoreRule("prefs-use")
+    private val context: Context get() = ds.context
+    private val dataStore: DataStore<Preferences> get() = ds.dataStore
+    private val prefs: PreferencesManagerImpl get() = ds.prefs
     private lateinit var viewModel: ModelViewModel
-    private lateinit var file: File
-    private val scope = kotlinx.coroutines.CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private fun catalogJson(): String {
         val asset = File("src/main/assets/models_catalog.json")
@@ -80,10 +79,6 @@ class ModelViewModelUseModelPersistenceTest {
     @Before
     fun setUp() = runBlocking {
         Dispatchers.setMain(testDispatcher)
-        context = ApplicationProvider.getApplicationContext()
-        file = File.createTempFile("prefs-use-${System.nanoTime()}", ".preferences_pb")
-        dataStore = PreferenceDataStoreFactory.create(scope = scope) { file }
-        prefs = PreferencesManagerImpl(context, dataStore).apply { initialize() }
 
         val assetManager = mockk<android.content.res.AssetManager>(relaxed = true)
         every { assetManager.open(any()) } answers {
@@ -117,7 +112,7 @@ class ModelViewModelUseModelPersistenceTest {
             ),
             litertLmUrlImporter = io.mockk.mockk(relaxed = true),
             externalCatalogRepository = io.mockk.mockk(relaxed = true),
-            applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
+            applicationScope = kotlinx.coroutines.CoroutineScope(SupervisorJob()),
             // TASK-675: real demoter over the same preferences.
             silentModelDemoter = com.antivocale.app.transcription.SilentModelDemoter(prefs),
         )
@@ -127,8 +122,6 @@ class ModelViewModelUseModelPersistenceTest {
     @After
     fun tearDown() {
         Dispatchers.resetMain()
-        scope.cancel()
-        file.delete()
     }
 
     /** Files of the whisper "small" variant, non-empty so the sidecar check passes. */

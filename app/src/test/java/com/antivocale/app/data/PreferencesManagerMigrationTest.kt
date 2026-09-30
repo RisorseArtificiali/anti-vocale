@@ -3,22 +3,15 @@ package com.antivocale.app.data
 import android.app.Application
 import android.content.Context
 import androidx.datastore.core.DataStore
-import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
-import androidx.test.core.app.ApplicationProvider
-import java.io.File
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
-import org.junit.Before
+import com.antivocale.app.testing.TempDataStoreRule
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -45,23 +38,11 @@ class PreferencesManagerMigrationTest {
 
     private fun newKeyName(entryId: String) = "sherpa_model_path_$entryId"
 
-    private lateinit var context: Context
-    private lateinit var dataStore: DataStore<Preferences>
-    private lateinit var file: File
-    private val scope = kotlinx.coroutines.CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    @Before
-    fun setUp() = runBlocking {
-        context = ApplicationProvider.getApplicationContext()
-        file = File.createTempFile("prefs-migration-${System.nanoTime()}", ".preferences_pb")
-        dataStore = PreferenceDataStoreFactory.create(scope = scope) { file }
-    }
-
-    @After
-    fun tearDown() {
-        scope.cancel()
-        file.delete()
-    }
+    @get:Rule
+    val ds = TempDataStoreRule("prefs-migration", primeManager = false)
+    private val context: Context get() = ds.context
+    private val dataStore: DataStore<Preferences> get() = ds.dataStore
 
     @Test
     fun `legacy key read then new key written and legacy removed for each entry id`() = runTest {
