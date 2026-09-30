@@ -1,0 +1,28 @@
+{
+  "name": "Moonshine Base Vietnamese int8 (light model, Moonshine Community License, non-commercial)",
+  "family": "MOONSHINE",
+  "modelType": "",
+  "languages": [
+    "vi"
+  ],
+  "files": [
+    {
+      "name": "encoder_model.ort",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-vi-quantized-2026-02-27/resolve/main/encoder_model.ort",
+      "sha256": "5a63cf0e248ef463776fbad50784813b4185eb73136f1fb062c5722e667130dc",
+      "size": 31326816
+    },
+    {
+      "name": "decoder_model_merged.ort",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-vi-quantized-2026-02-27/resolve/main/decoder_model_merged.ort",
+      "sha256": "0a4f007e9d585348d94124d8de47f7aefbc3e2d3fa44152646af7b94c639770d",
+      "size": 109424520
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-vi-quantized-2026-02-27/resolve/main/tokens.txt",
+      "sha256": "2870d843e14c1e187bf1913a521562a63b53933814bd7f2145120468f494a049",
+      "size": 549350
+    }
+  ]
+}

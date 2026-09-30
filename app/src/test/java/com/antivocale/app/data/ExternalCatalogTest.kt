@@ -164,7 +164,10 @@ class ExternalCatalogTest {
         //   against their catalog, desktop-decoded on sherpa 1.13.8)
         // + zipformer vietnamese (TASK-719: the text.lowercase option,
         // uppercase-trained model)
-        assertEquals(25, entries.size)
+        // + moonshine base uk/es/vi (TASK-619, maintainer "tieni": the light
+        // NC-licensed tier accepted for the external catalog; pins hashed
+        // from the downloaded artifacts)
+        assertEquals(28, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -206,6 +209,12 @@ class ExternalCatalogTest {
             Triple("dolphin-small.json", "DOLPHIN" to "", 2),
             Triple("zipformer-korean.json", "TRANSDUCER" to "", 4),
             Triple("zipformer-vietnamese.json", "TRANSDUCER" to "", 4),
+            // TASK-619: the three moonshine entries share the v2 .ort shape
+            // (encoder_model.ort + decoder_model_merged.ort + tokens.txt);
+            // MOONSHINE takes no modelType.
+            Triple("moonshine-spanish.json", "MOONSHINE" to "", 3),
+            Triple("moonshine-ukrainian.json", "MOONSHINE" to "", 3),
+            Triple("moonshine-vietnamese.json", "MOONSHINE" to "", 3),
         ).forEach { (file, pin, fileCount) ->
             val obj = org.json.JSONObject(
                 java.io.File("src/main/assets/external-catalog/$file").readText())
@@ -227,6 +236,20 @@ class ExternalCatalogTest {
                     Regex("^[0-9a-f]{64}$").matches(f.getString("sha256")))
                 assertTrue("$file files[$i] size must be positive", f.getLong("size") > 0)
             }
+        }
+        // TASK-619 review: pin each moonshine entry file's OWN languages
+        // array (the coverage pins below read the INDEX, and the uk and vi
+        // files differ only by URL and hashes, so a copy-paste drift would
+        // ship wrong metadata with every test green; the indicconformer
+        // precedent pins languages in-file too).
+        listOf(
+            "moonshine-spanish.json" to "es",
+            "moonshine-ukrainian.json" to "uk",
+            "moonshine-vietnamese.json" to "vi",
+        ).forEach { (file, lang) ->
+            val obj = org.json.JSONObject(
+                java.io.File("src/main/assets/external-catalog/$file").readText())
+            assertEquals("$file language", lang, obj.getJSONArray("languages").getString(0))
         }
         val arabic = ExternalCatalog.filter(entries, "arabic")
         assertEquals(1, arabic.size)
@@ -256,6 +279,16 @@ class ExternalCatalogTest {
                 2, ExternalCatalog.filter(entries, code).size)
         }
         assertEquals(6, ExternalCatalog.filter(entries, "indicconformer").size)
+        // TASK-619: the moonshine light tier. By family name all three; by
+        // code: uk = omnilingual + orukeet + moonshine, vi = dolphin +
+        // zipformer + moonshine, es gains its very-light row alongside
+        // canary/kroko/orukeet.
+        val moonshine = ExternalCatalog.filter(entries, "moonshine")
+        assertEquals(3, moonshine.size)
+        assertEquals(setOf(ModelFamily.MOONSHINE), moonshine.map { it.family }.toSet())
+        assertEquals(3, ExternalCatalog.filter(entries, "uk").size)
+        assertEquals(3, ExternalCatalog.filter(entries, "vi").size)
+        assertEquals(4, ExternalCatalog.filter(entries, "es").size)
     }
 
     /** TASK-652 review: pin the six entry files like the omnilingual

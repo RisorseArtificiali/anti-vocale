@@ -1,0 +1,28 @@
+{
+  "name": "Moonshine Base Ukrainian int8 (light model, Moonshine Community License, non-commercial)",
+  "family": "MOONSHINE",
+  "modelType": "",
+  "languages": [
+    "uk"
+  ],
+  "files": [
+    {
+      "name": "encoder_model.ort",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-uk-quantized-2026-02-27/resolve/main/encoder_model.ort",
+      "sha256": "ea37ff7a2c308b566def1fd6e6860e23db4968590f192d5cc0fbc494666e30f9",
+      "size": 31326816
+    },
+    {
+      "name": "decoder_model_merged.ort",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-uk-quantized-2026-02-27/resolve/main/decoder_model_merged.ort",
+      "sha256": "2c0c1ebc20ba75a21ff5315fd039e53d2fc9ba77a9ca9ad3bc4c7c1c1de93cbc",
+      "size": 109424424
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-uk-quantized-2026-02-27/resolve/main/tokens.txt",
+      "sha256": "2870d843e14c1e187bf1913a521562a63b53933814bd7f2145120468f494a049",
+      "size": 549350
+    }
+  ]
+}

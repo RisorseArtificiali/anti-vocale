@@ -123,6 +123,30 @@
             "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/spanish-small.json"
         },
         {
+            "name": "Moonshine Base Spanish int8 (light model, Moonshine Community License, non-commercial)",
+            "languages": [
+                "es"
+            ],
+            "family": "MOONSHINE",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/moonshine-spanish.json"
+        },
+        {
+            "name": "Moonshine Base Ukrainian int8 (light model, Moonshine Community License, non-commercial)",
+            "languages": [
+                "uk"
+            ],
+            "family": "MOONSHINE",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/moonshine-ukrainian.json"
+        },
+        {
+            "name": "Moonshine Base Vietnamese int8 (light model, Moonshine Community License, non-commercial)",
+            "languages": [
+                "vi"
+            ],
+            "family": "MOONSHINE",
+            "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/moonshine-vietnamese.json"
+        },
+        {
             "name": "Omnilingual ASR 300M int8 (multilingual, experimental, Apache-2.0)",
             "languages": [
                 "uk",

@@ -1,0 +1,28 @@
+{
+  "name": "Moonshine Base Spanish int8 (light model, Moonshine Community License, non-commercial)",
+  "family": "MOONSHINE",
+  "modelType": "",
+  "languages": [
+    "es"
+  ],
+  "files": [
+    {
+      "name": "encoder_model.ort",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-es-quantized-2026-02-27/resolve/main/encoder_model.ort",
+      "sha256": "331aafa2fc7f7e55ba28376eef08eaf919ae105bb719cd64ba6875505dca72b3",
+      "size": 20964320
+    },
+    {
+      "name": "decoder_model_merged.ort",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-es-quantized-2026-02-27/resolve/main/decoder_model_merged.ort",
+      "sha256": "8e6513ad66a3a71ca86824746a09051eeb60468940eaf8201ce758e8919e2b5d",
+      "size": 43612200
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/csukuangfj2/sherpa-onnx-moonshine-base-es-quantized-2026-02-27/resolve/main/tokens.txt",
+      "sha256": "c6e35883ba038f70ceea8b4a21cf79742adbda7e6730cbff27460857e0667a02",
+      "size": 532090
+    }
+  ]
+}
