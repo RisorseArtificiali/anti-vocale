@@ -104,6 +104,8 @@ class BridgeApplication : Application(), Configuration.Provider {
                     preferencesManager.clearExternalCatalogUrl()
                 }
             }
+        }.onFailure { e ->
+            android.util.Log.e("BridgeApplication", "Legacy catalog-URL cleanup failed (phantom pin stays; retries next launch)", e)
         }
 
         // TASK-640: a leaked pendingBackendLoad marker means the previous
@@ -176,12 +178,11 @@ class BridgeApplication : Application(), Configuration.Provider {
                         this@BridgeApplication, logDao, wasOOMCrash,
                         // TASK-684: the user preference gates the generic
                         // class's summary notification (suspended always
-                        // notifies). The one-shot getter reads DataStore:
-                        // the flow's cache is cold at this point, so
-                        // first() on it would always answer the default.
-                        // Contained on its own: a DataStore failure must
-                        // not abort the row-close sweep this runCatching
-                        // guards (the GH #51 guarantee).
+                        // notifies). The one-shot getter reads DataStore
+                        // directly, so the sweep never depends on cache
+                        // coherence. Contained on its own: a DataStore
+                        // failure must not abort the row-close sweep this
+                        // runCatching guards (the GH #51 guarantee).
                         notifyGenericInterrupted =
                             runCatching { preferencesManager.getInterruptedRunNotifications() }
                                 .getOrDefault(PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS),

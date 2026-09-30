@@ -98,10 +98,11 @@ interface PreferencesManager {
 
     /**
      * TASK-684 one-shot read for the cold-start sweep, in the
-     * [getLegacyLanguagePreference] shape: the flow's onStart emits the
-     * process cache, which is cold at Application.onCreate (initialize()
-     * has no production callers), so first() on the flow would always
-     * answer the default. This reads DataStore directly.
+     * [getLegacyLanguagePreference] shape. The original bug this fixed was
+     * a GAP in toCached (the key was missing there, so the primed cache
+     * carried the default and the flow's onStart emission masked the
+     * persisted value); the mapping is restored, and this direct read
+     * keeps the sweep independent of cache coherence.
      */
     suspend fun getInterruptedRunNotifications(): Boolean
 

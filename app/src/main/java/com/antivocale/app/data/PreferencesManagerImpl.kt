@@ -198,6 +198,11 @@ class PreferencesManagerImpl(
         vadEnabled = this[VAD_ENABLED] ?: PreferencesManager.DEFAULT_VAD_ENABLED,
         progressiveTranscription = this[PROGRESSIVE_TRANSCRIPTION] ?: PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         earlyPreviewEnabled = this[EARLY_PREVIEW_ENABLED] ?: PreferencesManager.DEFAULT_EARLY_PREVIEW,
+        // TASK-684 follow-up (2026-09-30 review round): this key was MISSING
+        // from toCached, the actual bug behind the cold-start opt-out reading
+        // the default (the cache is warm in production, AppModule primes it;
+        // it just carried no value for this key until a save touched it).
+        interruptedRunNotifications = this[INTERRUPTED_RUN_NOTIFICATIONS] ?: PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS,
         defaultPrompt = this[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE,
         punctuationMode = this[PUNCTUATION_MODE] ?: PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         punctuationPrompt = this[PUNCTUATION_PROMPT] ?: "",
@@ -536,9 +541,10 @@ class PreferencesManagerImpl(
     }
 
     override suspend fun getInterruptedRunNotifications(): Boolean {
-        // Bypasses the cache-wrapped flow on purpose: at the cold-start sweep
-        // the cache is cold, so the flow's onStart emission would mask the
-        // persisted value (see the interface KDoc).
+        // Reads the store directly on purpose: the flow's onStart emits the
+        // process cache, and a key missing from toCached would mask the
+        // persisted value behind the default (the original TASK-684 bug;
+        // the mapping is restored, this read stays independent of it).
         return dataStore.data.map { preferences ->
             preferences[INTERRUPTED_RUN_NOTIFICATIONS] ?: PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS
         }.first()
