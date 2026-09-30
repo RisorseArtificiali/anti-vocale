@@ -18,6 +18,21 @@
             android:exported="false"
             tools:node="merge" />
 
+        <!-- Lint quirk workaround (TASK-726, proven in the TASK-269 round):
+             once a manifest declares ANY <service> (this flavor manifest
+             has always declared the Firebase discovery one), lint's
+             ForegroundServiceType check resolves startForeground call
+             sites against THIS file and reports false errors on main's
+             services. Re-asserting the two real declarations satisfies the
+             lookup. tools:replace makes this value WIN the merge (plain
+             merge would union it into a duplicated token in every shipped
+             manifest); that also means these values MUST mirror main's
+             declarations, a constraint pinned by FgsTypeMirrorTest rather
+             than prose alone. Re-probe lint after any AGP bump and delete
+             this block if the false errors are gone. -->
+        <service android:name=".service.InferenceService" android:foregroundServiceType="specialUse" tools:node="merge" tools:replace="android:foregroundServiceType" />
+        <service android:name=".service.ExtractionService" android:foregroundServiceType="specialUse" tools:node="merge" tools:replace="android:foregroundServiceType" />
+
     </application>
 
 </manifest>

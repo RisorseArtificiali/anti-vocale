@@ -30,12 +30,14 @@
              declares ANY <service>, lint resolves startForeground call
              sites against the overlay manifest and reports false
              ForegroundServiceType errors on the MAIN services. Re-asserting
-             the two real declarations satisfies the lookup; these values
-             MUST mirror main's declarations (tools:node=merge lets the
-             overlay win, so a main-side change needs this file updated in
-             the same commit). -->
-        <service android:name=".service.InferenceService" android:foregroundServiceType="specialUse" tools:node="merge" />
-        <service android:name=".service.ExtractionService" android:foregroundServiceType="specialUse" tools:node="merge" />
+             the two real declarations satisfies the lookup. tools:replace
+             makes this value WIN the merge (plain merge would union it into
+             a duplicated token); that also means these values MUST mirror
+             main's declarations, pinned by FgsTypeMirrorTest. Re-probe lint
+             after any AGP bump and delete this block if the false errors
+             are gone. -->
+        <service android:name=".service.InferenceService" android:foregroundServiceType="specialUse" tools:node="merge" tools:replace="android:foregroundServiceType" />
+        <service android:name=".service.ExtractionService" android:foregroundServiceType="specialUse" tools:node="merge" tools:replace="android:foregroundServiceType" />
 
         <!-- TASK-269 spike: debug-only observation listener (metadata only);
              enable command and design rationale in VoiceNoteListenerSpike's
