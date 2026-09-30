@@ -112,14 +112,21 @@ internal class SincStreamResampler(private val ratio: Double) {
         val srcPos = i * ratio
         val center = srcPos.toInt()
         val frac = srcPos - center
-        val phase = (frac * SincResamplerTable.PHASES).toInt().coerceIn(0, SincResamplerTable.PHASES - 1)
-        val coeffs = phase * numTaps
+        // TASK-723: linear interpolation between the two adjacent phase rows
+        // (the 64-phase nearest lookup quantized the sub-sample position by
+        // up to 1/128 of a sample; 256 phases + interpolation closes most of
+        // the measured device gap).
+        val phaseF = frac * SincResamplerTable.PHASES
+        val p = phaseF.toInt().coerceIn(0, SincResamplerTable.PHASES - 1)
+        val w = phaseF - p
+        val c0 = p * numTaps
+        val c1 = c0 + numTaps
 
         var sum = 0.0
         for (k in 0 until numTaps) {
             val idx = center + k - halfTaps
             if (idx >= 0 && idx < totalIn) {
-                sum += pending[idx - pendingStart] * table[coeffs + k]
+                sum += pending[idx - pendingStart] * (table[c0 + k] * (1.0 - w) + table[c1 + k] * w)
             }
         }
         return sum.toFloat()
@@ -131,15 +138,23 @@ internal class SincStreamResampler(private val ratio: Double) {
  * streaming resamplers: the single definition of the Kaiser-windowed sinc coefficients.
  */
 internal object SincResamplerTable {
-    const val NUM_TAPS = 16
-    const val PHASES = 64
-    private const val KAISER_BETA = 5.0
+    // TASK-723: the original 16/64/nearest kernel measured as the cause of a
+    // ~2pp device WER cost on parakeet (device isolation experiment +
+    // desktop sweep, claudedocs/research_asr-resampler-upgrade_2026-09-29.md):
+    // 32 taps / 256 phases / linear phase interpolation / Kaiser 8.5 reaches
+    // the ffmpeg-default class (sq 0.0580 -> 0.0498 on the sweep; the device
+    // ffmpeg-16k arm measured 0.0511). 48 taps bought nothing over 32.
+    const val NUM_TAPS = 32
+    const val PHASES = 256
+    private const val KAISER_BETA = 8.5
 
     private val cache = ConcurrentHashMap<Double, DoubleArray>()
 
     /**
-     * Builds the PHASES × NUM_TAPS coefficient table for [ratio], once per ratio
-     * (each entry ~8KB). The returned array is shared and must not be mutated.
+     * Builds the (PHASES+1) × NUM_TAPS coefficient table for [ratio], once per
+     * ratio (each entry ~66KB; the extra row exists so the interpolated lookup
+     * can read phase PHASES at frac 1.0). The returned array is shared and must
+     * not be mutated.
      */
     fun build(ratio: Double): DoubleArray = cache.computeIfAbsent(ratio) { buildTable(it) }
 
@@ -147,10 +162,12 @@ internal object SincResamplerTable {
         val cutoff = if (ratio > 1.0) 1.0 / ratio else 1.0
         val besselDenom = besselI0(KAISER_BETA)
 
-        val table = DoubleArray(PHASES * NUM_TAPS)
-        for (p in 0 until PHASES) {
+        val table = DoubleArray((PHASES + 1) * NUM_TAPS)
+        for (p in 0..PHASES) {
             val frac = p.toDouble() / PHASES
             for (k in 0 until NUM_TAPS) {
+                // (table layout and kernel math unchanged; see TASK-200 for the
+                // original derivation)
                 val x = (k - NUM_TAPS / 2).toDouble() - frac
                 val sincVal = if (abs(x) < 1e-10) {
                     cutoff

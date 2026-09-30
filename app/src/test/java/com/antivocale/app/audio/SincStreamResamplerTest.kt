@@ -116,8 +116,11 @@ class SincStreamResamplerTest {
     @Test
     fun `process emits nothing until the window is fully covered`() {
         val r = SincStreamResampler(3.0)
-        assertEquals(0, r.process(FloatArray(8)).size)      // window needs 16 samples
-        assertTrue(r.process(FloatArray(8)).isNotEmpty())  // now covered
+        // TASK-723: the 32-tap window (halfTaps 16) covers output 0 only
+        // once 17+ samples exist (windowEnd < totalIn is strict).
+        assertEquals(0, r.process(FloatArray(8)).size)
+        assertEquals(0, r.process(FloatArray(8)).size)     // 16: end 16 not < 16
+        assertTrue(r.process(FloatArray(8)).isNotEmpty())  // 24: outputs 0..2 covered
     }
 
     // ========== Heap invariant (the reason this class exists) ==========
@@ -138,7 +141,7 @@ class SincStreamResamplerTest {
         }
         r.flush()
         assertTrue(
-            "retained input peaked at $maxRetained samples; bound is chunk (4096) + taps (16) + slack",
+            "retained input peaked at $maxRetained samples; bound is chunk (4096) + taps (32) + slack",
             maxRetained <= 4096 + 16 + 8,
         )
     }
@@ -153,6 +156,7 @@ class SincStreamResamplerTest {
             maxRetained = maxOf(maxRetained, r.retainedInputSize())
         }
         r.flush()
-        assertTrue("retained input peaked at $maxRetained; bound is chunk (7) + taps (16) + slack", maxRetained <= 7 + 16 + 8)
+        assertTrue("retained input peaked at $maxRetained; bound is chunk (7) + taps (32) + slack",
+            maxRetained <= 7 + SincResamplerTable.NUM_TAPS + 8)
     }
 }

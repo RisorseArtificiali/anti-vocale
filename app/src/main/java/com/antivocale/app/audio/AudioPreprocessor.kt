@@ -986,19 +986,24 @@ class AudioPreprocessor @Inject constructor() {
         val halfTaps = numTaps / 2
         val table = SincResamplerTable.build(ratio)
 
-        // Inner loop: table lookup + multiply-accumulate only.
+        // Inner loop: table lookup + multiply-accumulate only. TASK-723:
+        // interpolated phase lookup, identical arithmetic to the streaming
+        // twin's emit() (the bit-exact equivalence contract pins the two).
         for (i in 0 until outputSize) {
             val srcPos = i * ratio
             val center = srcPos.toInt()
             val frac = srcPos - center
-            val phase = (frac * SincResamplerTable.PHASES).toInt().coerceIn(0, SincResamplerTable.PHASES - 1)
-            val coeffs = phase * numTaps
+            val phaseF = frac * SincResamplerTable.PHASES
+            val p = phaseF.toInt().coerceIn(0, SincResamplerTable.PHASES - 1)
+            val w = phaseF - p
+            val c0 = p * numTaps
+            val c1 = c0 + numTaps
 
             var sum = 0.0
             for (k in 0 until numTaps) {
                 val idx = center + k - halfTaps
                 if (idx >= 0 && idx < input.size) {
-                    sum += input[idx] * table[coeffs + k]
+                    sum += input[idx] * (table[c0 + k] * (1.0 - w) + table[c1 + k] * w)
                 }
             }
             output[i] = sum.toFloat()
