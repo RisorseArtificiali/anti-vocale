@@ -1,11 +1,12 @@
-model_id,variant,language,metric,value,corpus,date
-sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,it,WER,5.4,Italian benchmark set (internal),2026-08
-whisper,sherpa-onnx-whisper-distil-large-v3-it,it,WER,4.3,Italian benchmark set (internal),2026-08
-whisper,sherpa-onnx-whisper-turbo,it,WER,6.3,Italian benchmark set (internal),2026-08
-qwen3-asr,sherpa-onnx-qwen3-asr-0.6b-int8,it,WER,12.2,Italian benchmark set (internal),2026-08
-sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,pl,CER,3.0,FLEURS-10,2026-09
-sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,pl,WER,10.7,FLEURS-10,2026-09
-whisper,sherpa-onnx-whisper-small,tr,CER,6.9,FLEURS-10,2026-09
-external,Omnilingual-ASR-300M-int8-multilingual-experimental-Apache-2.0,tr,CER,6.5,FLEURS-10,2026-09
-external,Omnilingual-ASR-300M-int8-multilingual-experimental-Apache-2.0,he,CER,25.5,FLEURS-class (weak),2026-09
-external,IndicConformer-Hindi-int8-5.8-CER,hi,WER,7.65,community benchmark (RNNT 100 samples),2026-09
+model_id,variant,language,metric,value,corpus,chain,date
+sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,it,WER,6.28,11 real voice clips,app-chain,2026-09
+sherpa-onnx,parakeet-tdt-0.6b-v3-int8,it,WER,4.48,11 real voice clips,app-chain,2026-09
+whisper,sherpa-onnx-whisper-distil-large-v3-it,it,WER,6.8,11 real voice clips,app-chain,2026-09
+whisper,sherpa-onnx-whisper-turbo,it,WER,6.3,Italian benchmark set (internal),ffmpeg-chain,2026-08
+qwen3-asr,sherpa-onnx-qwen3-asr-0.6b-int8,it,WER,12.2,Italian benchmark set (internal),ffmpeg-chain,2026-08
+sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,pl,CER,3.0,FLEURS-10,ffmpeg-chain,2026-09
+sherpa-onnx,parakeet-tdt-0.6b-v3-smoothquant,pl,WER,10.7,FLEURS-10,ffmpeg-chain,2026-09
+whisper,sherpa-onnx-whisper-small,tr,CER,6.9,FLEURS-10,ffmpeg-chain,2026-09
+external,Omnilingual-ASR-300M-int8-multilingual-experimental-Apache-2.0,tr,CER,6.5,FLEURS-10,ffmpeg-chain,2026-09
+external,Omnilingual-ASR-300M-int8-multilingual-experimental-Apache-2.0,he,CER,25.5,FLEURS-class (weak),ffmpeg-chain,2026-09
+external,IndicConformer-Hindi-int8-5.8-CER,hi,WER,7.65,community benchmark (RNNT 100 samples),ffmpeg-chain,2026-09

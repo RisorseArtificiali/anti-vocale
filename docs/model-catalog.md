@@ -10,7 +10,7 @@ Speed context for everything below: measured by us on an Italian voice-message t
 
 ### Parakeet TDT 0.6B v3 (default)
 
-Transducer (NVIDIA NeMo, TDT decoding). The app default: the best speed/accuracy balance we have measured, about 18x faster than the Distil-Italian model at 5.4% vs 4.3% word error rate on our Italian set.
+Transducer (NVIDIA NeMo, TDT decoding). The app default: the best speed/accuracy balance we have measured, about 18x faster than the Distil-Italian model. On the internal desktop benchmark set Distil edged it 4.3% vs 5.4% WER; on the device itself (11 real voice clips through the app's own audio chain) the int8 variant leads everything at 4.48%, with SmoothQuant at 6.28% and Distil at 6.8%.
 
 - Variants: int8 (640 MB), SmoothQuant (862 MB)
 - Languages: 25 European, including Italian, German, French, Spanish, English, Russian, and the Nordics, Baltics, and most of Central Europe
@@ -30,7 +30,7 @@ Four sizes of the classic. Whisper Turbo is the strong multilingual all-rounder 
 | distil-large-v3-it | 938 MB | Italian | [bofenghuang/whisper-large-v3-distil-it-v0.2](https://huggingface.co/bofenghuang/whisper-large-v3-distil-it-v0.2) |
 
 - Audio limit: 30 s per segment, split automatically
-- Distil-large-v3-it scored the best Italian accuracy of everything we tested (4.3% WER), at roughly a seventeenth of Parakeet's speed
+- Distil-large-v3-it scored the best Italian accuracy on our internal desktop benchmark set (4.3% WER); on the device corpus (11 real clips, app chain) it lands at 6.8%, behind Parakeet int8 (4.48%), at roughly a seventeenth of Parakeet's speed
 - Downloads from our mirrors: [turbo](https://huggingface.co/pantinor/sherpa-onnx-whisper-turbo), [medium](https://huggingface.co/pantinor/sherpa-onnx-whisper-medium), [small](https://huggingface.co/pantinor/sherpa-onnx-whisper-small), [distil-it](https://huggingface.co/pantinor/sherpa-onnx-whisper-distil-large-v3-it)
 
 ### Qwen3-ASR 0.6B

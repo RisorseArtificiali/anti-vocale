@@ -168,7 +168,7 @@ Import any sherpa-onnx model (transducer, Whisper, CTC, SenseVoice, Canary, Moon
 
 ### Italian ASR Benchmark
 
-[Full 4-model comparison](scripts/benchmark/README.md) on 8 Italian FLEURS samples (101.6s audio):
+[Full 4-model comparison](scripts/benchmark/README.md) on 8 Italian FLEURS samples (101.6s audio, desktop ffmpeg-chain harness):
 
 | Model | WER | Speed | Size |
 |-------|-----|-------|------|

@@ -233,9 +233,12 @@ fun PerformanceStatsDialog(
                                             style = MaterialTheme.typography.bodySmall
                                         )
                                         Text(
-                                            // The date rides the corpus: after an engine or
-                                            // mirror update a stale number must read as stale.
-                                            text = "${m.corpus} (${m.date})",
+                                            // The date and the input chain (TASK-721) ride the
+                                            // corpus: after an engine or mirror update a stale
+                                            // number must read as stale, and a desktop-harness
+                                            // number must never masquerade as a device one.
+                                            text = if (m.chain.isBlank()) "${m.corpus} (${m.date})"
+                                            else "${m.corpus} (${m.date}; ${m.chain})",
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.weight(1f)

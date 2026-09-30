@@ -29,6 +29,7 @@ class ModelAccuracyTest {
               "metric": "WER",
               "value": 5.4,
               "corpus": "internal real-message set",
+              "chain": "ffmpeg-chain",
               "date": "2026-08"
             },
             {
@@ -38,6 +39,7 @@ class ModelAccuracyTest {
               "metric": "CER",
               "value": 6.5,
               "corpus": "FLEURS-10",
+              "chain": "ffmpeg-chain",
               "date": "2026-09"
             }
           ]
@@ -57,7 +59,19 @@ class ModelAccuracyTest {
         assertEquals("WER", first.metric)
         assertEquals(5.4, first.value, 0.0)
         assertEquals("internal real-message set", first.corpus)
+        assertEquals("ffmpeg-chain", first.chain)
         assertEquals("2026-08", first.date)
+    }
+
+    @Test
+    fun `decode reads a pre-chain asset row with an empty chain`() {
+        // TASK-721 backward compatibility: an asset row without the chain
+        // field (the pre-2026-09 shape) decodes with an empty chain rather
+        // than dropping the row; the dialog renders it without the marker.
+        val legacy = validAsset.lines().filterNot { it.contains("\"chain\"") }.joinToString("\n")
+        val rows = ModelAccuracy.decode(legacy)
+        assertEquals(2, rows.size)
+        assertEquals("", rows[0].chain)
     }
 
     @Test
@@ -109,6 +123,7 @@ class ModelAccuracyTest {
         variant: String = "parakeet-tdt-0.6b-v3-smoothquant",
         language: String = "it",
         value: Double = 5.4,
+        chain: String = "ffmpeg-chain",
     ) = ModelAccuracy.Measurement(
         modelId = modelId,
         variant = variant,
@@ -116,6 +131,7 @@ class ModelAccuracyTest {
         metric = "WER",
         value = value,
         corpus = "internal real-message set",
+        chain = chain,
         date = "2026-08",
     )
 
@@ -228,6 +244,11 @@ class ModelAccuracyTest {
             assertTrue("metric neither WER nor CER in $m", m.metric == "WER" || m.metric == "CER")
             assertTrue("value not finite non-negative in $m", m.value >= 0 && !m.value.isNaN() && !m.value.isInfinite())
             assertTrue("corpus blank in $m", m.corpus.isNotBlank())
+            // TASK-721: every SHIPPED row must state its input chain; a row
+            // without one renders an ambiguous number (the generator rejects
+            // the same drift at build time; this pins the asset itself).
+            assertTrue("chain not ffmpeg-chain/app-chain in $m",
+                m.chain == "ffmpeg-chain" || m.chain == "app-chain")
             assertTrue("date not YYYY-MM in $m", Regex("\\d{4}-\\d{2}").matches(m.date))
         }
     }

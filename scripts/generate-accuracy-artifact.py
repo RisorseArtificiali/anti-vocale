@@ -8,15 +8,18 @@ editable input; the asset is generated so the numbers can never drift
 between docs, code, and UI without this script regenerating them.
 
 Validation (exit 1 with every problem listed; nothing is written on failure):
-  1. exact header model_id,variant,language,metric,value,corpus,date
-  2. every row carries all seven fields; value parses as a number
-  3. language is a two-letter code, metric WER or CER, date YYYY-MM
+  1. exact header model_id,variant,language,metric,value,corpus,chain,date
+  2. every row carries all eight fields; value parses as a number
+  3. language is a two-letter code, metric WER or CER, date YYYY-MM,
+     chain ffmpeg-chain or app-chain (TASK-721's closed vocabulary)
   4. model_id is a built-in catalog id or "external" (a missing model or
      language on a row fails loudly, never silently)
   5. built-in variants must be real catalog dirNames; external variants
      must equal the importer-sanitized name of an external-catalog entry
      (the dialog joins external rows by that prefix)
-  6. no duplicate (model_id, variant, language, metric) row
+  6. no duplicate (model_id, variant, language, metric, chain) row: the
+     same model+language MAY carry one number per chain (the cross-chain
+     comparison TASK-721 exists to enable), never two per chain
 """
 
 import csv
@@ -32,9 +35,12 @@ ASSET = ROOT / "app/src/main/assets/model-accuracy.json"
 BUILTIN_CATALOG = ROOT / "app/src/main/assets/models_catalog.json"
 EXTERNAL_CATALOG_DIR = ROOT / "app/src/main/assets/external-catalog"
 
-HEADER = ["model_id", "variant", "language", "metric", "value", "corpus", "date"]
+HEADER = ["model_id", "variant", "language", "metric", "value", "corpus", "chain", "date"]
 EXTERNAL_MODEL_ID = "external"
 METRICS = {"WER", "CER"}
+# eval/README.md's TASK-721 rule: every published number states its input
+# chain; the vocabulary is closed (desktop harness vs the app's own decode).
+CHAINS = {"ffmpeg-chain", "app-chain"}
 
 
 def sanitize_dir_name(name: str) -> str:
@@ -88,7 +94,7 @@ def main() -> int:
             if len(row) != len(HEADER):
                 problems.append(f"{where}: expected {len(HEADER)} fields, got {len(row)}")
                 continue
-            model_id, variant, language, metric, value, corpus, date = row
+            model_id, variant, language, metric, value, corpus, chain, date = row
             if not model_id:
                 problems.append(f"{where}: missing model_id")
             if not variant:
@@ -110,6 +116,9 @@ def main() -> int:
                 problems.append(f"{where}: value must be a finite number >= 0, got {value!r}")
             if not corpus:
                 problems.append(f"{where}: missing corpus")
+            if chain not in CHAINS:
+                problems.append(
+                    f"{where}: chain must be one of {sorted(CHAINS)} (TASK-721), got {chain!r}")
             if not (re.fullmatch(r"\d{4}-\d{2}", date) and 1 <= int(date[5:7]) <= 12):
                 problems.append(f"{where}: date must be YYYY-MM, got {date!r}")
             if model_id and model_id != EXTERNAL_MODEL_ID:
@@ -123,7 +132,7 @@ def main() -> int:
                 problems.append(
                     f"{where}: external variant {variant!r} matches no "
                     "external-catalog entry name after sanitization")
-            key = (model_id, variant, language, metric)
+            key = (model_id, variant, language, metric, chain)
             if key in seen:
                 problems.append(f"{where}: duplicate row {key}")
             seen.add(key)
@@ -134,6 +143,7 @@ def main() -> int:
                 "metric": metric,
                 "value": numeric,
                 "corpus": corpus,
+                "chain": chain,
                 "date": date,
             })
 
@@ -146,7 +156,9 @@ def main() -> int:
         sys.exit(f"FAIL: no measurement rows in {SOURCES}")
 
     artifact = {
-        "schemaVersion": 1,
+        # v2: rows gained the chain field (TASK-721). Decode is
+        # unknown-field tolerant (optString), so v1 rows still decode.
+        "schemaVersion": 2,
         "generatedFrom": "scripts/generate-accuracy-artifact.py",
         "measurements": rows,
     }

@@ -41,6 +41,8 @@ object ModelAccuracy {
         val metric: String,
         val value: Double,
         val corpus: String,
+        /** TASK-721: the input chain the number was measured through ("app-chain" or "ffmpeg-chain"); empty in a pre-chain asset row. */
+        val chain: String,
         val date: String,
     ) {
         /**
@@ -102,6 +104,7 @@ object ModelAccuracy {
                         metric = metric,
                         value = value,
                         corpus = o.optString("corpus"),
+                        chain = o.optString("chain"),
                         date = o.optString("date"),
                     )
                 )
