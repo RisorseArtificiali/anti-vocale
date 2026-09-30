@@ -8,7 +8,8 @@
      is acceptable only because debug builds are never distributed. See
      docs/testing-spi.md; the production exported receivers are reviewed in
      docs/research/2026-09-03_tasker-receiver-security-analysis.md. -->
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <application android:usesCleartextTraffic="true">
 
@@ -24,6 +25,17 @@
                 <action android:name="com.antivocale.app.TEST_SPI" />
             </intent-filter>
         </receiver>
+
+        <!-- Lint quirk workaround (TASK-269 round): once an overlay
+             declares ANY <service>, lint resolves startForeground call
+             sites against the overlay manifest and reports false
+             ForegroundServiceType errors on the MAIN services. Re-asserting
+             the two real declarations satisfies the lookup; these values
+             MUST mirror main's declarations (tools:node=merge lets the
+             overlay win, so a main-side change needs this file updated in
+             the same commit). -->
+        <service android:name=".service.InferenceService" android:foregroundServiceType="specialUse" tools:node="merge" />
+        <service android:name=".service.ExtractionService" android:foregroundServiceType="specialUse" tools:node="merge" />
 
         <!-- TASK-269 spike: debug-only observation listener (metadata only);
              enable command and design rationale in VoiceNoteListenerSpike's
