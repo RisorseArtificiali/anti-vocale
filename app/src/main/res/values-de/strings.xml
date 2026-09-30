@@ -661,6 +661,8 @@
     <string name="notification_channel_inference_description">Audio-Transkription im Hintergrund</string>
     <string name="notification_channel_result">Transkriptionsergebnis</string>
     <string name="notification_channel_result_description">Fertiger Text und Aktionen</string>
+    <string name="notification_channel_interrupted_runs">Unterbrochene Transkriptionen</string>
+    <string name="notification_channel_interrupted_runs_description">Die Zusammenfassung beim nächsten Start, wenn durch einen Neustart unterbrochene Transkriptionen geschlossen werden.</string>
     <string name="notification_cancelling">Wird abgebrochen…</string>
 
     <!-- No-model notification -->
@@ -842,6 +844,17 @@
     <string name="benchmark_provider_label">Anbieter</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">Transkription wurde unterbrochen</string>
+    <string name="interrupted_runs_title">Unterbrochene Transkriptionen</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d Transkription wurde vor dem Abschluss unterbrochen. Details im Verlauf.</item>
+        <item quantity="other">%1$d Transkriptionen wurden vor dem Abschluss unterbrochen. Details im Verlauf.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d Transkription wurde vor dem Abschluss unterbrochen: der App ging der Speicher aus. Versuche es mit einer kürzeren Datei, einem kleineren Modell, oder schließe andere Apps. Details im Verlauf.</item>
+        <item quantity="other">%1$d Transkriptionen wurden vor dem Abschluss unterbrochen: der App ging der Speicher aus. Versuche es mit einer kürzeren Datei, einem kleineren Modell, oder schließe andere Apps. Details im Verlauf.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Benachrichtigungen für unterbrochene Transkriptionen</string>
+    <string name="interrupted_run_notifications_description">Zeigt eine Benachrichtigung, wenn durch einen App-Neustart unterbrochene Transkriptionen beim nächsten Start geschlossen werden.</string>
     <string name="action_dismiss">Ausblenden</string>
 
     <!-- Model Info Overlay -->

@@ -706,6 +706,8 @@
     <string name="notification_channel_inference_description">Background audio transcription processing</string>
     <string name="notification_channel_result">Transcription Result</string>
     <string name="notification_channel_result_description">Finished text and actions</string>
+    <string name="notification_channel_interrupted_runs">Interrupted transcriptions</string>
+    <string name="notification_channel_interrupted_runs_description">The summary posted when runs interrupted by a restart are closed at the next start.</string>
     <string name="notification_cancelling">Cancelling…</string>
 
     <!-- No-model notification -->
@@ -891,6 +893,17 @@
     <string name="benchmark_provider_label">Provider</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">Transcription was interrupted</string>
+    <string name="interrupted_runs_title">Interrupted transcriptions</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d transcription was interrupted before finishing. Check History for details.</item>
+        <item quantity="other">%1$d transcriptions were interrupted before finishing. Check History for details.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d transcription was interrupted before finishing: the app ran out of memory. Try a shorter file, a smaller model, or close other apps. Check History for details.</item>
+        <item quantity="other">%1$d transcriptions were interrupted before finishing: the app ran out of memory. Try a shorter file, a smaller model, or close other apps. Check History for details.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Interrupted run notifications</string>
+    <string name="interrupted_run_notifications_description">Show a notification when runs interrupted by an app restart are closed at the next start.</string>
     <string name="action_dismiss">Dismiss</string>
 
     <!-- Model Info Overlay -->

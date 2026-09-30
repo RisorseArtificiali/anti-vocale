@@ -172,7 +172,20 @@ class BridgeApplication : Application(), Configuration.Provider {
                 // battery-exemption link, instead of the bare "Interrupted by
                 // app restart" that blamed a restart that never happened.
                 com.antivocale.app.service.SuspendedRunRecovery
-                    .closeInterruptedRuns(this@BridgeApplication, logDao, wasOOMCrash)
+                    .closeInterruptedRuns(
+                        this@BridgeApplication, logDao, wasOOMCrash,
+                        // TASK-684: the user preference gates the generic
+                        // class's summary notification (suspended always
+                        // notifies). The one-shot getter reads DataStore:
+                        // the flow's cache is cold at this point, so
+                        // first() on it would always answer the default.
+                        // Contained on its own: a DataStore failure must
+                        // not abort the row-close sweep this runCatching
+                        // guards (the GH #51 guarantee).
+                        notifyGenericInterrupted =
+                            runCatching { preferencesManager.getInterruptedRunNotifications() }
+                                .getOrDefault(PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS),
+                    )
             }
         }.onFailure { e ->
             android.util.Log.e("BridgeApplication", "Non-terminal log sweep failed", e)

@@ -693,6 +693,8 @@
     <string name="notification_channel_inference_description">עיבוד תמלול אודיו ברקע</string>
     <string name="notification_channel_result">תוצאת תמלול</string>
     <string name="notification_channel_result_description">טקסט מוגמר ופעולות</string>
+    <string name="notification_channel_interrupted_runs">תמלולים שהופסקו</string>
+    <string name="notification_channel_interrupted_runs_description">התקציר שמופיע בהפעלה הבאה כשתמלולים שהופסקו בעקבות הפעלה מחדש נסגרים.</string>
     <string name="notification_cancelling">מבטל…</string>
 
     <!-- No-model notification -->
@@ -879,6 +881,19 @@
     <string name="benchmark_provider_label">מנוע</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">התמלול הופסק</string>
+    <string name="interrupted_runs_title">תמלולים שהופסקו</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d תמלול הופסק לפני שהסתיים. פרטים בהיסטוריה.</item>
+        <item quantity="two">%1$d תמלולים הופסקו לפני שהסתיימו. פרטים בהיסטוריה.</item>
+        <item quantity="other">%1$d תמלולים הופסקו לפני שהסתיימו. פרטים בהיסטוריה.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d תמלול הופסק לפני שהסתיים: הזיכרון של האפליקציה אזל. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. פרטים בהיסטוריה.</item>
+        <item quantity="two">%1$d תמלולים הופסקו לפני שהסתיימו: הזיכרון של האפליקציה אזל. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. פרטים בהיסטוריה.</item>
+        <item quantity="other">%1$d תמלולים הופסקו לפני שהסתיימו: הזיכרון של האפליקציה אזל. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. פרטים בהיסטוריה.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">התראות על תמלולים שהופסקו</string>
+    <string name="interrupted_run_notifications_description">מציג התראה כשתמלולים שהופסקו בעקבות הפעלה מחדש של האפליקציה נסגרים בהפעלה הבאה.</string>
     <string name="action_dismiss">סגירה</string>
 
     <!-- Model Info Overlay -->

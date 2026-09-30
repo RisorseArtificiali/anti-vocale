@@ -37,6 +37,21 @@ enum class AppNotificationChannel(
         importance = NotificationManager.IMPORTANCE_HIGH,
         showBadge = true
     ),
+    /**
+     * TASK-684: the generic interrupted-runs summary. IMPORTANCE_DEFAULT,
+     * a step down from [TRANSCRIPTION_RESULT] on purpose: the proven
+     * freezer suspension pops heads-up on the result channel, while this
+     * honest-but-unproven close lands as a normal status-bar entry. Its
+     * own channel also gives the user a system-level toggle (the in-app
+     * preference gates it too, default on).
+     */
+    INTERRUPTED_RUNS(
+        id = "interrupted_runs_channel",
+        nameResId = R.string.notification_channel_interrupted_runs,
+        descriptionResId = R.string.notification_channel_interrupted_runs_description,
+        importance = NotificationManager.IMPORTANCE_DEFAULT,
+        showBadge = true
+    ),
     EXTRACTION(
         id = "extraction_channel",
         nameResId = R.string.notification_channel_extraction,

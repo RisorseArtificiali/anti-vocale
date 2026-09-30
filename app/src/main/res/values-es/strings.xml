@@ -586,6 +586,8 @@
     <string name="notification_channel_inference_description">Procesamiento de transcripción de audio en segundo plano</string>
     <string name="notification_channel_result">Resultado de transcripción</string>
     <string name="notification_channel_result_description">Texto listo y acciones</string>
+    <string name="notification_channel_interrupted_runs">Transcripciones interrumpidas</string>
+    <string name="notification_channel_interrupted_runs_description">El resumen que se muestra al siguiente inicio cuando se cierran transcripciones interrumpidas por un reinicio.</string>
     <string name="notification_cancelling">Cancelando…</string>
     <string name="notification_no_model_title">Modelo no instalado</string>
     <string name="notification_no_model_message">Abre la app y descarga un modelo</string>
@@ -740,6 +742,17 @@
     <string name="benchmark_provider_label">Proveedor</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">La transcripción fue interrumpida</string>
+    <string name="interrupted_runs_title">Transcripciones interrumpidas</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">Se interrumpió %1$d transcripción antes de terminar. Consulta el Historial para más detalles.</item>
+        <item quantity="other">Se interrumpieron %1$d transcripciones antes de terminar. Consulta el Historial para más detalles.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">Se interrumpió %1$d transcripción antes de terminar: a la app se le agotó la memoria. Prueba con un archivo más corto, un modelo más ligero, o cierra otras apps. Consulta el Historial para más detalles.</item>
+        <item quantity="other">Se interrumpieron %1$d transcripciones antes de terminar: a la app se le agotó la memoria. Prueba con un archivo más corto, un modelo más ligero, o cierra otras apps. Consulta el Historial para más detalles.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Notificaciones de transcripciones interrumpidas</string>
+    <string name="interrupted_run_notifications_description">Muestra una notificación cuando al siguiente inicio se cierran transcripciones interrumpidas por un reinicio de la app.</string>
     <string name="action_dismiss">Descartar</string>
     <string name="model_info_title">Información del modelo</string>
     <string name="model_info_section_languages">Idiomas admitidos</string>

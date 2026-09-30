@@ -672,6 +672,8 @@
     <string name="notification_channel_inference_description">Elaborazione trascrizione audio in background</string>
     <string name="notification_channel_result">Risultato Trascrizione</string>
     <string name="notification_channel_result_description">Testo pronto e azioni</string>
+    <string name="notification_channel_interrupted_runs">Trascrizioni interrotte</string>
+    <string name="notification_channel_interrupted_runs_description">Il riepilogo mostrato al prossimo avvio quando vengono chiuse trascrizioni interrotte da un riavvio.</string>
     <string name="notification_cancelling">Annullamento…</string>
 
     <!-- Dismiss -->
@@ -1022,6 +1024,17 @@
     <string name="notification_channel_tasker_fallback_description">Tocca per avviare la trascrizione quando attivata in background</string>
     <string name="tasker_fallback_notification_text">Tocca per avviare la trascrizione</string>
     <string name="transcription_interrupted_title">Trascrizione interrotta</string>
+    <string name="interrupted_runs_title">Trascrizioni interrotte</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d trascrizione è stata interrotta prima di finire. Dettagli nella Cronologia.</item>
+        <item quantity="other">%1$d trascrizioni sono state interrotte prima di finire. Dettagli nella Cronologia.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d trascrizione è stata interrotta prima di finire: memoria esaurita. Prova un file piu\' corto, un modello piu\' piccolo, o chiudi altre app. Dettagli nella Cronologia.</item>
+        <item quantity="other">%1$d trascrizioni sono state interrotte prima di finire: memoria esaurita. Prova un file piu\' corto, un modello piu\' piccolo, o chiudi altre app. Dettagli nella Cronologia.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Notifiche per trascrizioni interrotte</string>
+    <string name="interrupted_run_notifications_description">Mostra una notifica quando trascrizioni interrotte da un riavvio dell\'app vengono chiuse al prossimo avvio.</string>
 
     <!-- Filtro lingua -->
     <string name="lang_filter_label">Filtra per lingua</string>

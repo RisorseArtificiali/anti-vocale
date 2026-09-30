@@ -254,6 +254,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_EARLY_PREVIEW
         )
 
+    /** TASK-684 (GH #109): the generic-interrupted summary notification toggle. */
+    val interruptedRunNotifications: StateFlow<Boolean> = preferencesManager.interruptedRunNotifications
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS
+        )
+
     // Inference thread count
     val threadCount: StateFlow<Int> = preferencesManager.threadCount
         .stateIn(
@@ -908,6 +916,15 @@ class SettingsViewModel @Inject constructor(
     fun saveEarlyPreviewEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveEarlyPreviewEnabled(enabled)
+        }
+    }
+
+    /**
+     * TASK-684: saves the interrupted-run notification preference.
+     */
+    fun saveInterruptedRunNotifications(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveInterruptedRunNotifications(enabled)
         }
     }
 

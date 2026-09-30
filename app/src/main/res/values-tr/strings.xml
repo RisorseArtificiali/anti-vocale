@@ -692,6 +692,8 @@
     <string name="notification_channel_inference_description">Arka plan sesli metin çıkarma işlemi</string>
     <string name="notification_channel_result">Metin Çıkarma Sonucu</string>
     <string name="notification_channel_result_description">Hazır metin ve işlemler</string>
+    <string name="notification_channel_interrupted_runs">Kesilen metin çıkarmaları</string>
+    <string name="notification_channel_interrupted_runs_description">Yeniden başlatma nedeniyle kesilen metin çıkarmaları sonraki açılışta kapatıldığında gösterilen özet.</string>
     <string name="notification_cancelling">İptal ediliyor…</string>
 
     <!-- No-model notification -->
@@ -877,6 +879,17 @@
     <string name="benchmark_provider_label">Sağlayıcı</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">Metin çıkarma kesintiye uğradı</string>
+    <string name="interrupted_runs_title">Kesilen metin çıkarmaları</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d metin çıkarma tamamlanmadan kesildi. Ayrıntılar için Kayıtlar\'a bakın.</item>
+        <item quantity="other">%1$d metin çıkarma tamamlanmadan kesildi. Ayrıntılar için Kayıtlar\'a bakın.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d metin çıkarma tamamlanmadan kesildi: uygulamanın belleği tükendi. Daha kısa bir dosya, daha küçük bir model deneyin veya diğer uygulamaları kapatın. Ayrıntılar için Kayıtlar\'a bakın.</item>
+        <item quantity="other">%1$d metin çıkarma tamamlanmadan kesildi: uygulamanın belleği tükendi. Daha kısa bir dosya, daha küçük bir model deneyin veya diğer uygulamaları kapatın. Ayrıntılar için Kayıtlar\'a bakın.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Kesilen metin çıkarma bildirimleri</string>
+    <string name="interrupted_run_notifications_description">Uygulamanın yeniden başlatılmasıyla kesilen metin çıkarmalarının sonraki açılışta kapatılması durumunda bildirim göster.</string>
     <string name="action_dismiss">Kapat</string>
 
     <!-- Model Info Overlay -->

@@ -700,6 +700,8 @@
     <string name="notification_channel_inference_description">Przetwarzanie transkrypcji audio w tle</string>
     <string name="notification_channel_result">Wynik transkrypcji</string>
     <string name="notification_channel_result_description">Gotowy tekst i działania</string>
+    <string name="notification_channel_interrupted_runs">Przerwane transkrypcje</string>
+    <string name="notification_channel_interrupted_runs_description">Podsumowanie pokazywane przy następnym uruchomieniu, gdy zamykane są transkrypcje przerwane przez ponowne uruchomienie.</string>
     <string name="notification_cancelling">Anulowanie…</string>
 
     <!-- No-model notification -->
@@ -887,6 +889,21 @@
     <string name="benchmark_provider_label">Dostawca</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">Transkrypcja została przerwana</string>
+    <string name="interrupted_runs_title">Przerwane transkrypcje</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">Przerwano %1$d transkrypcję przed zakończeniem. Szczegóły w Historii.</item>
+        <item quantity="few">Przerwano %1$d transkrypcje przed zakończeniem. Szczegóły w Historii.</item>
+        <item quantity="many">Przerwano %1$d transkrypcji przed zakończeniem. Szczegóły w Historii.</item>
+        <item quantity="other">Przerwano %1$d transkrypcji przed zakończeniem. Szczegóły w Historii.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">Przerwano %1$d transkrypcję przed zakończeniem: w aplikacji zabrakło pamięci. Spróbuj krótszego pliku, mniejszego modelu albo zamknij inne aplikacje. Szczegóły w Historii.</item>
+        <item quantity="few">Przerwano %1$d transkrypcje przed zakończeniem: w aplikacji zabrakło pamięci. Spróbuj krótszego pliku, mniejszego modelu albo zamknij inne aplikacje. Szczegóły w Historii.</item>
+        <item quantity="many">Przerwano %1$d transkrypcji przed zakończeniem: w aplikacji zabrakło pamięci. Spróbuj krótszego pliku, mniejszego modelu albo zamknij inne aplikacje. Szczegóły w Historii.</item>
+        <item quantity="other">Przerwano %1$d transkrypcji przed zakończeniem: w aplikacji zabrakło pamięci. Spróbuj krótszego pliku, mniejszego modelu albo zamknij inne aplikacje. Szczegóły w Historii.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Powiadomienia o przerwanych transkrypcjach</string>
+    <string name="interrupted_run_notifications_description">Pokazuje powiadomienie, gdy przerwane przez ponowne uruchomienie aplikacji transkrypcje są zamykane przy następnym uruchomieniu.</string>
     <string name="action_dismiss">Odrzuć</string>
 
     <!-- Model Info Overlay -->

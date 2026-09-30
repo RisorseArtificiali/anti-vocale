@@ -86,6 +86,7 @@ internal class TestSpiOps(
             .put("vadEnabled", preferences.vadEnabled.first())
             .put("progressiveEnabled", preferences.progressiveTranscription.first())
             .put("earlyPreviewEnabled", preferences.earlyPreviewEnabled.first())
+            .put("interruptedRunNotifications", preferences.interruptedRunNotifications.first())
             .put("punctuationMode", preferences.punctuationMode.first())
             .put("punctuationPrompt", preferences.punctuationPrompt.first())
             .put("threadCount", preferences.threadCount.first())
@@ -166,6 +167,7 @@ internal class TestSpiOps(
         "progressive" to preferences::saveProgressiveTranscription,
         // TASK-186: the early-preview gate (device trials flip it per clip).
         "early_preview" to preferences::saveEarlyPreviewEnabled,
+        "interrupted_run_notifications" to preferences::saveInterruptedRunNotifications,
         "summarize" to preferences::saveSummarizeEnabled,
         "refinement_enabled" to preferences::saveRefinementEnabled,
         "speaker_labels_enabled" to preferences::saveSpeakerLabelsEnabled,

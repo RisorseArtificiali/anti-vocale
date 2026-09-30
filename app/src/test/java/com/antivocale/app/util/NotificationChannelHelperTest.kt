@@ -53,6 +53,13 @@ class NotificationChannelHelperTest {
     }
 
     @Test
+    fun `INTERRUPTED_RUNS has correct id and properties`() {
+        assertEquals("interrupted_runs_channel", AppNotificationChannel.INTERRUPTED_RUNS.id)
+        assertEquals(NotificationManager.IMPORTANCE_DEFAULT, AppNotificationChannel.INTERRUPTED_RUNS.importance)
+        assertEquals(true, AppNotificationChannel.INTERRUPTED_RUNS.showBadge)
+    }
+
+    @Test
     fun `all channel IDs are unique`() {
         val ids = AppNotificationChannel.entries.map { it.id }
         assertEquals(
@@ -63,10 +70,10 @@ class NotificationChannelHelperTest {
     }
 
     @Test
-    fun `enum has exactly 4 entries`() {
+    fun `enum has exactly 5 entries`() {
         assertEquals(
-            "AppNotificationChannel should have exactly 4 entries",
-            4,
+            "AppNotificationChannel should have exactly 5 entries",
+            5,
             AppNotificationChannel.entries.size
         )
     }

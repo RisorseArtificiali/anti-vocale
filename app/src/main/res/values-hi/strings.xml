@@ -660,6 +660,8 @@
     <string name="notification_channel_inference_description">बैकग्राउंड में ऑडियो ट्रांसक्रिप्शन प्रोसेसिंग</string>
     <string name="notification_channel_result">ट्रांसक्रिप्शन का नतीजा</string>
     <string name="notification_channel_result_description">तैयार टेक्स्ट और एक्शन</string>
+    <string name="notification_channel_interrupted_runs">बाधित ट्रांसक्रिप्शन</string>
+    <string name="notification_channel_interrupted_runs_description">अगली बार शुरू होने पर रीस्टार्ट से बाधित ट्रांसक्रिप्शन बंद होने पर दिखने वाला सारांश।</string>
     <string name="notification_cancelling">रद्द हो रहा है…</string>
 
     <!-- No-model notification -->
@@ -841,6 +843,17 @@
     <string name="benchmark_provider_label">प्रोवाइडर</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">ट्रांसक्रिप्शन बाधित हुआ</string>
+    <string name="interrupted_runs_title">बाधित ट्रांसक्रिप्शन</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुआ। विवरण के लिए इतिहास देखें।</item>
+        <item quantity="other">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुए। विवरण के लिए इतिहास देखें।</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुआ: ऐप की मेमोरी खत्म हो गई। छोटी फ़ाइल, छोटा मॉडल आज़माएँ या दूसरे ऐप बंद करें। विवरण के लिए इतिहास देखें।</item>
+        <item quantity="other">%1$d ट्रांसक्रिप्शन पूरा होने से पहले बाधित हुए: ऐप की मेमोरी खत्म हो गई। छोटी फ़ाइल, छोटा मॉडल आज़माएँ या दूसरे ऐप बंद करें। विवरण के लिए इतिहास देखें।</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">बाधित ट्रांसक्रिप्शन की सूचनाएँ</string>
+    <string name="interrupted_run_notifications_description">जब ऐप के रीस्टार्ट से बाधित ट्रांसक्रिप्शन अगली बार शुरू होने पर बंद किए जाते हैं तो सूचना दिखाएँ।</string>
     <string name="action_dismiss">खारिज करें</string>
 
     <!-- Model Info Overlay -->

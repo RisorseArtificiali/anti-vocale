@@ -111,10 +111,11 @@ interface LogDao {
      * Fails every non-terminal row at once (cold-start sweep): rows left QUEUED or
      * PROCESSING (or the legacy "PENDING") by a process death can never complete.
      * Safe to run only at process start, before the transcription service can be
-     * running in this same process.
+     * running in this same process. Returns the closed-row count (Room
+     * rowcount): the caller reports it as the generic interrupted batch size.
      */
     @Query("UPDATE logs SET status = 'ERROR', errorMessage = :reason WHERE status IN ('QUEUED', 'PROCESSING', 'PENDING')")
-    suspend fun failAllNonTerminal(reason: String)
+    suspend fun failAllNonTerminal(reason: String): Int
 
     /**
      * TASK-684: the orphaned rows the cold-start pass classifies. Same

@@ -586,6 +586,8 @@
     <string name="notification_channel_inference_description">Processamento de transcrição de áudio em segundo plano</string>
     <string name="notification_channel_result">Resultado da transcrição</string>
     <string name="notification_channel_result_description">Texto pronto e ações</string>
+    <string name="notification_channel_interrupted_runs">Transcrições interrompidas</string>
+    <string name="notification_channel_interrupted_runs_description">O resumo mostrado no início seguinte quando transcrições interrompidas por um reinício são fechadas.</string>
     <string name="notification_cancelling">Cancelando…</string>
     <string name="notification_no_model_title">Modelo não instalado</string>
     <string name="notification_no_model_message">Abra o app e baixe um modelo</string>
@@ -740,6 +742,17 @@
     <string name="benchmark_provider_label">Provedor</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">A transcrição foi interrompida</string>
+    <string name="interrupted_runs_title">Transcrições interrompidas</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d transcrição foi interrompida antes de terminar. Detalhes no Histórico.</item>
+        <item quantity="other">%1$d transcrições foram interrompidas antes de terminar. Detalhes no Histórico.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d transcrição foi interrompida antes de terminar: a memória do app acabou. Tente um arquivo mais curto, um modelo menor, ou feche outros apps. Detalhes no Histórico.</item>
+        <item quantity="other">%1$d transcrições foram interrompidas antes de terminar: a memória do app acabou. Tente um arquivo mais curto, um modelo menor, ou feche outros apps. Detalhes no Histórico.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Notificações de transcrições interrompidas</string>
+    <string name="interrupted_run_notifications_description">Mostra uma notificação quando transcrições interrompidas por um reinício do app são fechadas no início seguinte.</string>
     <string name="action_dismiss">Dispensar</string>
     <string name="model_info_title">Informações do modelo</string>
     <string name="model_info_section_languages">Idiomas suportados</string>

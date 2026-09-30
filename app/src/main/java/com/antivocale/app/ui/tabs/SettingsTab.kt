@@ -129,6 +129,7 @@ fun SettingsTab(
     val vadEnabled by viewModel.vadEnabled.collectAsState()
     val progressiveEnabled by viewModel.progressiveTranscription.collectAsState()
     val earlyPreviewEnabled by viewModel.earlyPreviewEnabled.collectAsState()
+    val interruptedRunNotifications by viewModel.interruptedRunNotifications.collectAsState()
     val threadCount by viewModel.threadCount.collectAsState()
     val inferenceProvider by viewModel.inferenceProvider.collectAsState()
     val autoDetectedThreads = viewModel.autoDetectedThreadCount
@@ -811,6 +812,22 @@ fun SettingsTab(
                     },
                     enabled = progressiveEnabled,
                     supportingText = if (progressiveEnabled) null else earlyPreviewRequiresProgressive,
+                )
+            }
+
+            // TASK-684 (GH #109): the quiet summary notification for runs
+            // the process death closed without a proven cause. Default on;
+            // the user can silence it here (the suspended class always
+            // notifies, independent of this toggle).
+            SearchFilterRow(searchQuery, SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Notifications,
+                    title = stringResource(R.string.interrupted_run_notifications_title),
+                    description = stringResource(R.string.interrupted_run_notifications_description),
+                    checked = interruptedRunNotifications,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveInterruptedRunNotifications(enabled)
+                    },
                 )
             }
 
@@ -2891,6 +2908,7 @@ internal enum class SettingsSearchId {
     // Transcription
     MODEL_STATUS, ACTIVE_MODEL, TRANSCRIPTION_LANGUAGE, AUTO_COPY, EXPORT_SETTINGS,
     REFINEMENT, SPEAKER_LABELS, SPEAKER_IDENTITIES, VAD, PROGRESSIVE, EARLY_PREVIEW,
+    INTERRUPTED_RUN_NOTIFICATIONS,
     PUNCTUATION_MODE, PUNCTUATION_PROMPT, SUMMARIZE, SUMMARY_PROMPT, SIGNATURE,
     DEFAULT_PROMPT, KEEP_ALIVE_TIMEOUT,
     // Appearance
@@ -3018,6 +3036,10 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.EARLY_PREVIEW, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.early_preview_title, R.string.early_preview_description),
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.interrupted_run_notifications_title, R.string.interrupted_run_notifications_description),
     ),
     SettingsSearchCard(
         SettingsSearchId.PUNCTUATION_MODE, SettingsSearchSection.TRANSCRIPTION,

@@ -138,20 +138,50 @@ class ResultNotificationFactory(private val context: Context) {
     }
 
     /**
-     * TASK-640: a plain high-importance alert on the result channel (title,
-     * text, app-launch content intent). The quarantine notice and any future
+     * TASK-640: a plain alert on the result channel (title, text,
+     * app-launch content intent). The quarantine notice and any future
      * one-shot alerts compose here instead of hand-rolling builders outside
-     * the service layer.
+     * the service layer; [priority] and [channel] default to the
+     * high-importance result channel, the quiet-summary variants override
+     * both.
      */
-    fun alertNotification(title: String, text: String): Notification =
-        NotificationCompat.Builder(context, AppNotificationChannel.TRANSCRIPTION_RESULT.id)
+    fun alertNotification(
+        title: String,
+        text: String,
+        priority: Int = NotificationCompat.PRIORITY_HIGH,
+        channel: AppNotificationChannel = AppNotificationChannel.TRANSCRIPTION_RESULT,
+    ): Notification =
+        NotificationCompat.Builder(context, channel.id)
             .setContentTitle(title)
             .setContentText(text)
             .setSmallIcon(android.R.drawable.ic_dialog_alert)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setPriority(priority)
             .setContentIntent(plainLaunchPendingIntent())
             .setAutoCancel(true)
             .build()
+
+    /**
+     * TASK-684 (GH #109): the quiet summary for the GENERIC interrupted
+     * class (rows closed by the sweep that the classifier could not name a
+     * cause for). No retry action (unlike the suspended class there is no
+     * proven file to re-run), no battery link: this is the honest "your run
+     * did not finish" the reporter was missing, one notification for the
+     * whole batch, count and History pointer in BOTH arms. Its own
+     * IMPORTANCE_DEFAULT channel: a step quieter than the proven
+     * suspension's heads-up, and independently toggleable at the system
+     * level. Channel created here so every post site is covered (the
+     * lazy-create pattern the other channels use).
+     */
+    fun interruptedRunsNotification(count: Int, oom: Boolean): Notification {
+        AppNotificationChannel.INTERRUPTED_RUNS.create(context)
+        val textRes = if (oom) R.plurals.interrupted_runs_oom_text else R.plurals.interrupted_runs_text
+        return alertNotification(
+            title = context.getString(R.string.interrupted_runs_title),
+            text = context.resources.getQuantityString(textRes, count, count),
+            priority = NotificationCompat.PRIORITY_DEFAULT,
+            channel = AppNotificationChannel.INTERRUPTED_RUNS,
+        )
+    }
 
     /**
      * TASK-684 (GH #109): the OEM-freezer suspension outcome. The honest
@@ -506,7 +536,9 @@ class ResultNotificationFactory(private val context: Context) {
          *   error surface, TASK-500 F-batch)
          * - 2502: SuspendedRunRecovery.NOTIFICATION_ID (TASK-684 freezer
          *   suspension outcome)
-         * New fixed ids or bands go under the base; 2301..2400 and 2503..2999
+         * - 2503: SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID (TASK-684
+         *   generic interrupted-runs summary)
+         * New fixed ids or bands go under the base; 2301..2400 and 2504..2999
          * are free headroom.
          */
         const val RESULT_NOTIFICATION_ID_BASE = 3000

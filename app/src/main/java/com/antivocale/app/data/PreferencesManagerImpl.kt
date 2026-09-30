@@ -74,6 +74,7 @@ class PreferencesManagerImpl(
         private val PROGRESSIVE_TRANSCRIPTION = booleanPreferencesKey("progressive_transcription")
         // TASK-186: the early-preview gate on pipelined runs.
         private val EARLY_PREVIEW_ENABLED = booleanPreferencesKey("early_preview_enabled")
+        private val INTERRUPTED_RUN_NOTIFICATIONS = booleanPreferencesKey("interrupted_run_notifications")
         private val DEFAULT_PROMPT = stringPreferencesKey("default_prompt")
         private val PUNCTUATION_MODE = stringPreferencesKey("punctuation_mode")
         private val PUNCTUATION_PROMPT = stringPreferencesKey("punctuation_prompt")
@@ -138,6 +139,7 @@ class PreferencesManagerImpl(
         val vadEnabled: Boolean = PreferencesManager.DEFAULT_VAD_ENABLED,
         val progressiveTranscription: Boolean = PreferencesManager.DEFAULT_PROGRESSIVE_TRANSCRIPTION,
         val earlyPreviewEnabled: Boolean = PreferencesManager.DEFAULT_EARLY_PREVIEW,
+        val interruptedRunNotifications: Boolean = PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS,
         val defaultPrompt: String = PreferencesManager.DEFAULT_PROMPT_VALUE,
         val punctuationMode: String = PreferencesManager.DEFAULT_PUNCTUATION_MODE,
         val punctuationPrompt: String = "",
@@ -521,6 +523,25 @@ class PreferencesManagerImpl(
             preferences[EARLY_PREVIEW_ENABLED] = enabled
         }
         cache.updateAndGet { it.copy(earlyPreviewEnabled = enabled) }
+    }
+
+    override val interruptedRunNotifications: Flow<Boolean> = dataStore.data.map { it[INTERRUPTED_RUN_NOTIFICATIONS] ?: PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS }
+        .onStart { emit(cache.get().interruptedRunNotifications) }
+
+    override suspend fun saveInterruptedRunNotifications(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[INTERRUPTED_RUN_NOTIFICATIONS] = enabled
+        }
+        cache.updateAndGet { it.copy(interruptedRunNotifications = enabled) }
+    }
+
+    override suspend fun getInterruptedRunNotifications(): Boolean {
+        // Bypasses the cache-wrapped flow on purpose: at the cold-start sweep
+        // the cache is cold, so the flow's onStart emission would mask the
+        // persisted value (see the interface KDoc).
+        return dataStore.data.map { preferences ->
+            preferences[INTERRUPTED_RUN_NOTIFICATIONS] ?: PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS
+        }.first()
     }
 
     override val defaultPrompt: Flow<String> = dataStore.data.map { it[DEFAULT_PROMPT] ?: PreferencesManager.DEFAULT_PROMPT_VALUE }

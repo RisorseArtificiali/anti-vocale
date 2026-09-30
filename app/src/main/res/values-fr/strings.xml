@@ -586,6 +586,8 @@
     <string name="notification_channel_inference_description">Traitement audio de transcription en arrière-plan</string>
     <string name="notification_channel_result">Résultat de transcription</string>
     <string name="notification_channel_result_description">Texte final et actions</string>
+    <string name="notification_channel_interrupted_runs">Transcriptions interrompues</string>
+    <string name="notification_channel_interrupted_runs_description">Le résumé affiché au démarrage suivant quand des transcriptions interrompues par un redémarrage sont fermées.</string>
     <string name="notification_cancelling">Annulation…</string>
     <string name="notification_no_model_title">Modèle non installé</string>
     <string name="notification_no_model_message">Ouvrez l\'application et téléchargez un modèle</string>
@@ -740,6 +742,17 @@
     <string name="benchmark_provider_label">Fournisseur</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">La transcription a été interrompue</string>
+    <string name="interrupted_runs_title">Transcriptions interrompues</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d transcription a été interrompue avant de se terminer. Détails dans l\'Historique.</item>
+        <item quantity="other">%1$d transcriptions ont été interrompues avant de se terminer. Détails dans l\'Historique.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d transcription a été interrompue avant de se terminer : l\'application a manqué de mémoire. Essayez un fichier plus court, un modèle plus léger, ou fermez d\'autres applications. Détails dans l\'Historique.</item>
+        <item quantity="other">%1$d transcriptions ont été interrompues avant de se terminer : l\'application a manqué de mémoire. Essayez un fichier plus court, un modèle plus léger, ou fermez d\'autres applications. Détails dans l\'Historique.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Notifications des transcriptions interrompues</string>
+    <string name="interrupted_run_notifications_description">Affiche une notification quand des transcriptions interrompues par un redémarrage de l\'application sont fermées au démarrage suivant.</string>
     <string name="action_dismiss">Fermer</string>
     <string name="model_info_title">Informations du modèle</string>
     <string name="model_info_section_languages">Langues prises en charge</string>

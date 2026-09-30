@@ -2,6 +2,7 @@ package com.antivocale.app.service
 
 import android.app.Notification
 import android.content.Context
+import androidx.core.app.NotificationCompat
 import androidx.test.core.app.ApplicationProvider
 import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.receiver.NotificationActionReceiver
@@ -285,5 +286,30 @@ class ResultNotificationFactoryTest {
         // The battery action is the same system dialog the Settings card opens.
         val battery = Shadows.shadowOf(n.actions!!.first { it.title == "Open setting" }.actionIntent).savedIntent
         assertEquals(android.provider.Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS, battery.action)
+    }
+
+    /**
+     * TASK-684: the generic interrupted-runs summary. Quiet by design: its
+     * own IMPORTANCE_DEFAULT channel (the suspended class is HIGH on the
+     * result channel), no actions, the count in BOTH arms' bodies.
+     */
+    @Test
+    fun `interrupted runs summary is a quiet count notification without actions`() {
+        val n = factory.interruptedRunsNotification(count = 2, oom = false)
+        assertEquals("Interrupted transcriptions",
+            n.extras.getCharSequence(Notification.EXTRA_TITLE).toString())
+        assertTrue(n.extras.getCharSequence(Notification.EXTRA_TEXT).toString().contains("2"))
+        assertNull("no actions: nothing is proven re-runnable", n.actions)
+        // The compat builder copies setPriority into the (deprecated but
+        // populated) platform field; on O+ the channel carries importance.
+        assertEquals(NotificationCompat.PRIORITY_DEFAULT, n.priority)
+        assertEquals(com.antivocale.app.util.AppNotificationChannel.INTERRUPTED_RUNS.id, n.channelId)
+
+        // The OOM arm keeps the count and the History pointer, swapping in
+        // the memory advice.
+        val oom = factory.interruptedRunsNotification(count = 2, oom = true)
+        val oomText = oom.extras.getCharSequence(Notification.EXTRA_TEXT).toString()
+        assertTrue(oomText.contains("2"))
+        assertTrue(oomText.contains("out of memory"))
     }
 }

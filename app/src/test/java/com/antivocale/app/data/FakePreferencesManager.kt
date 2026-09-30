@@ -104,6 +104,9 @@ internal class FakePreferencesManager : PreferencesManager {
     // TASK-186: early preview, default off like the real impl.
     private val _earlyPreviewEnabled = MutableStateFlow(PreferencesManager.DEFAULT_EARLY_PREVIEW)
     override val earlyPreviewEnabled: Flow<Boolean> get() = _earlyPreviewEnabled
+
+    private val _interruptedRunNotifications = MutableStateFlow(PreferencesManager.DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS)
+    override val interruptedRunNotifications: Flow<Boolean> get() = _interruptedRunNotifications
     override val punctuationMode: Flow<String> get() = _punctuationMode
     override val punctuationPrompt: Flow<String> get() = _punctuationPrompt
     override val summarizeEnabled: Flow<Boolean> get() = _summarizeEnabled
@@ -171,6 +174,8 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveOnboardingCompleted(completed: Boolean) { _onboardingCompleted.value = completed }
     override suspend fun saveProgressiveTranscription(enabled: Boolean) { _progressiveTranscription.value = enabled }
     override suspend fun saveEarlyPreviewEnabled(enabled: Boolean) { _earlyPreviewEnabled.value = enabled }
+    override suspend fun saveInterruptedRunNotifications(enabled: Boolean) { _interruptedRunNotifications.value = enabled }
+    override suspend fun getInterruptedRunNotifications(): Boolean = _interruptedRunNotifications.value
     override suspend fun savePunctuationMode(mode: String) { _punctuationMode.value = mode }
     override suspend fun savePunctuationPrompt(prompt: String) { _punctuationPrompt.value = prompt.take(PreferencesManager.PROMPT_CAP) }
     override suspend fun saveSummarizeEnabled(enabled: Boolean) { _summarizeEnabled.value = enabled }

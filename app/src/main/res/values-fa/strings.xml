@@ -672,6 +672,8 @@
     <string name="notification_channel_inference_description">پردازش رونویسی صدا در پس‌زمینه</string>
     <string name="notification_channel_result">نتیجه رونویسی</string>
     <string name="notification_channel_result_description">متن آماده و اقدام‌ها</string>
+    <string name="notification_channel_interrupted_runs">رونویسی‌های متوقف‌شده</string>
+    <string name="notification_channel_interrupted_runs_description">خلاصه‌ای که در اجرای بعدی وقتی رونویسی‌های متوقف‌شده بسته می‌شوند نمایش داده می‌شود.</string>
     <string name="notification_cancelling">در حال لغو…</string>
 
     <!-- Dismiss -->
@@ -1022,6 +1024,17 @@
     <string name="notification_channel_tasker_fallback_description">وقتی از پس‌زمینه فعال شد، برای شروع رونویسی بزنید</string>
     <string name="tasker_fallback_notification_text">برای شروع رونویسی بزنید</string>
     <string name="transcription_interrupted_title">رونویسی قطع شد</string>
+    <string name="interrupted_runs_title">رونویسی‌های متوقف‌شده</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d رونویسی پیش از تمام شدن متوقف شد. جزئیات در تاریخچه.</item>
+        <item quantity="other">%1$d رونویسی پیش از تمام شدن متوقف شدند. جزئیات در تاریخچه.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d رونویسی پیش از تمام شدن متوقف شد: حافظه برنامه تمام شد. فایل کوتاه‌تر یا مدل کوچک‌تری امتحان کنید یا برنامه‌های دیگر را ببندید. جزئیات در تاریخچه.</item>
+        <item quantity="other">%1$d رونویسی پیش از تمام شدن متوقف شدند: حافظه برنامه تمام شد. فایل کوتاه‌تر یا مدل کوچک‌تری امتحان کنید یا برنامه‌های دیگر را ببندید. جزئیات در تاریخچه.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">اعلان‌های رونویسی متوقف‌شده</string>
+    <string name="interrupted_run_notifications_description">وقتی رونویسی‌های متوقف‌شده به دلیل بازراه‌اندازی برنامه در اجرای بعدی بسته می‌شوند، اعلان نشان بده.</string>
 
     <!-- Language filter -->
     <string name="lang_filter_label">پالایش بر پایه زبان</string>

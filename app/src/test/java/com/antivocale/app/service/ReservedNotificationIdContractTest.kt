@@ -44,6 +44,7 @@ class ReservedNotificationIdContractTest {
         assertTrue(InferenceService.NOTIFICATION_ID < base)
         assertTrue(CrashQuarantineCheck.NOTIFICATION_ID < base)
         assertTrue(SuspendedRunRecovery.NOTIFICATION_ID < base)
+        assertTrue(SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID < base)
         assertTrue(TranscriptionOrchestrator.MEMORY_MARGIN_WARNING_ID < base)
         assertTrue(SubtitleChoiceTimeoutWorker.NOTIFICATION_ID < base)
         assertTrue(ExtractionService.NOTIFICATION_ID_BASE + ExtractionService.NOTIFICATION_ID_RANGE - 1 < base)
@@ -82,6 +83,10 @@ class ReservedNotificationIdContractTest {
             // documented-headroom rule.
             "suspension-recovery-fixed" to (SuspendedRunRecovery.NOTIFICATION_ID..
                 SuspendedRunRecovery.NOTIFICATION_ID),
+            // TASK-684: the generic interrupted-runs summary, one above the
+            // suspension id, same documented-headroom rule.
+            "interrupted-runs-fixed" to (SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID..
+                SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID),
         )
         for (i in intervals.indices) for (j in i + 1 until intervals.size) {
             val (nameA, a) = intervals[i]

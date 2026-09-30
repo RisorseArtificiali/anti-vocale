@@ -702,6 +702,8 @@
     <string name="notification_channel_inference_description">Фонова обробка розшифровки аудіо</string>
     <string name="notification_channel_result">Результат розшифровки</string>
     <string name="notification_channel_result_description">Повідомлення після завершення розшифровки</string>
+    <string name="notification_channel_interrupted_runs">Перервані розшифровки</string>
+    <string name="notification_channel_interrupted_runs_description">Короткий підсумок, що показується під час наступного запуску, коли закриваються розшифровки, перервані перезапуском.</string>
     <string name="notification_cancelling">Скасування…</string>
 
     <!-- No-model notification -->
@@ -889,6 +891,21 @@
     <string name="benchmark_provider_label">Провайдер</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">Розшифровку було перервано</string>
+    <string name="interrupted_runs_title">Перервані розшифровки</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d розшифровку перервано до завершення. Подробиці в Історії.</item>
+        <item quantity="few">%1$d розшифровки перервано до завершення. Подробиці в Історії.</item>
+        <item quantity="many">%1$d розшифровок перервано до завершення. Подробиці в Історії.</item>
+        <item quantity="other">%1$d розшифровок перервано до завершення. Подробиці в Історії.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d розшифровку перервано до завершення: у додатку закінчилася пам\'ять. Спробуйте коротший файл, меншу модель або закрийте інші додатки. Подробиці в Історії.</item>
+        <item quantity="few">%1$d розшифровки перервано до завершення: у додатку закінчилася пам\'ять. Спробуйте коротший файл, меншу модель або закрийте інші додатки. Подробиці в Історії.</item>
+        <item quantity="many">%1$d розшифровок перервано до завершення: у додатку закінчилася пам\'ять. Спробуйте коротший файл, меншу модель або закрийте інші додатки. Подробиці в Історії.</item>
+        <item quantity="other">%1$d розшифровок перервано до завершення: у додатку закінчилася пам\'ять. Спробуйте коротший файл, меншу модель або закрийте інші додатки. Подробиці в Історії.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Сповіщення про перервані розшифровки</string>
+    <string name="interrupted_run_notifications_description">Показувати сповіщення, коли перервані перезапуском додатка розшифровки закриваються під час наступного запуску.</string>
     <string name="action_dismiss">Відхилити</string>
 
     <!-- Model Info Overlay -->

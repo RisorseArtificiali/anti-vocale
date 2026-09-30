@@ -101,6 +101,12 @@ class SuspendedRunRecoveryTest {
         val posted = shadowNotificationManager()
             .getNotification(SuspendedRunRecovery.NOTIFICATION_ID)
         assertNotNull("the suspension notification must be posted", posted)
+        // TASK-684: the queued row IS the generic batch (sweep rowcount 1);
+        // the quiet summary is up too, carrying the exact count.
+        val summary = shadowNotificationManager()
+            .getNotification(SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID)
+        assertNotNull("the interrupted-runs summary must be posted", summary)
+        assertTrue(summary.extras.getCharSequence(android.app.Notification.EXTRA_TEXT).toString().contains("1"))
     }
 
     @Test
@@ -113,13 +119,34 @@ class SuspendedRunRecoveryTest {
         SuspendedRunRecovery.closeInterruptedRuns(context, dao, wasOOMCrash = false)
 
         // Alive when killed: honest generic close, no suspension claim, no
-        // notification, no marker.
+        // suspension notification, no marker. The generic class DOES get its
+        // quiet summary: on by default (the preference gates it).
         val row = dao.getByTaskId("run-1")!!
         assertEquals("ERROR", row.status)
         assertEquals("Interrupted by app restart", row.errorMessage)
         assertNull(row.failureContext)
         assertNull("no suspension notification may be posted", shadowNotificationManager()
             .getNotification(SuspendedRunRecovery.NOTIFICATION_ID))
+        assertNotNull("the generic interrupted summary is on by default", shadowNotificationManager()
+            .getNotification(SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID))
+    }
+
+    @Test
+    fun `the generic summary respects the user opt-out without touching the close`() = runBlocking {
+        insert("run-1", "PROCESSING")
+        RunHeartbeat.touch(context, "run-1")
+        death(ApplicationExitInfo.REASON_SIGNALED,
+            System.currentTimeMillis() + RunHeartbeat.TICK_MS)
+
+        SuspendedRunRecovery.closeInterruptedRuns(
+            context, dao, wasOOMCrash = false, notifyGenericInterrupted = false)
+
+        // The opt-out silences only the summary: every row still closes.
+        val row = dao.getByTaskId("run-1")!!
+        assertEquals("ERROR", row.status)
+        assertEquals("Interrupted by app restart", row.errorMessage)
+        assertNull(shadowNotificationManager()
+            .getNotification(SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID))
     }
 
     @Test
@@ -157,5 +184,7 @@ class SuspendedRunRecoveryTest {
         assertEquals(0, dao.getNonTerminal().size)
         assertNull("no suspension notification may be posted", shadowNotificationManager()
             .getNotification(SuspendedRunRecovery.NOTIFICATION_ID))
+        assertNull("an empty batch posts no summary", shadowNotificationManager()
+            .getNotification(SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID))
     }
 }

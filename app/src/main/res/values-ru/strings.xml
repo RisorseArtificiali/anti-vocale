@@ -682,6 +682,8 @@
     <string name="notification_channel_inference_description">Фоновая обработка распознавания аудио</string>
     <string name="notification_channel_result">Результат распознавания</string>
     <string name="notification_channel_result_description">Готовый текст и действия с ним</string>
+    <string name="notification_channel_interrupted_runs">Прерванные распознавания</string>
+    <string name="notification_channel_interrupted_runs_description">Сводка, которая показывается при следующем запуске, когда закрываются распознавания, прерванные перезапуском.</string>
     <string name="notification_cancelling">Отмена…</string>
 
     <!-- No-model notification -->
@@ -869,6 +871,21 @@
     <string name="benchmark_provider_label">Провайдер</string>
     <string name="benchmark_provider_value">%1$s</string>
     <string name="transcription_interrupted_title">Распознавание было прервано</string>
+    <string name="interrupted_runs_title">Прерванные распознавания</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d распознавание было прервано до завершения. Подробности в Истории.</item>
+        <item quantity="few">%1$d распознавания были прерваны до завершения. Подробности в Истории.</item>
+        <item quantity="many">%1$d распознаваний было прервано до завершения. Подробности в Истории.</item>
+        <item quantity="other">%1$d распознаваний было прервано до завершения. Подробности в Истории.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d распознавание было прервано до завершения: в приложении закончилась память. Попробуйте более короткий файл, модель меньшего размера или закройте другие приложения. Подробности в Истории.</item>
+        <item quantity="few">%1$d распознавания были прерваны до завершения: в приложении закончилась память. Попробуйте более короткий файл, модель меньшего размера или закройте другие приложения. Подробности в Истории.</item>
+        <item quantity="many">%1$d распознаваний было прервано до завершения: в приложении закончилась память. Попробуйте более короткий файл, модель меньшего размера или закройте другие приложения. Подробности в Истории.</item>
+        <item quantity="other">%1$d распознаваний было прервано до завершения: в приложении закончилась память. Попробуйте более короткий файл, модель меньшего размера или закройте другие приложения. Подробности в Истории.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Уведомления о прерванных распознаваниях</string>
+    <string name="interrupted_run_notifications_description">Показывать уведомление, когда прерванные перезапуском приложения распознавания закрываются при следующем запуске.</string>
     <string name="action_dismiss">Отклонить</string>
 
     <!-- Model Info Overlay -->

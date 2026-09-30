@@ -89,6 +89,22 @@ interface PreferencesManager {
      */
     val earlyPreviewEnabled: Flow<Boolean>
 
+    /**
+     * TASK-684 (GH #109): notify when runs interrupted by a process death
+     * are closed at next start (the generic class: the suspended class always
+     * notifies). Default on: silence here is the reported gap.
+     */
+    val interruptedRunNotifications: Flow<Boolean>
+
+    /**
+     * TASK-684 one-shot read for the cold-start sweep, in the
+     * [getLegacyLanguagePreference] shape: the flow's onStart emits the
+     * process cache, which is cold at Application.onCreate (initialize()
+     * has no production callers), so first() on the flow would always
+     * answer the default. This reads DataStore directly.
+     */
+    suspend fun getInterruptedRunNotifications(): Boolean
+
     val defaultPrompt: Flow<String>
     /** TASK-276 punctuation pass mode: "off" | "auto" | "always"; default "auto". */
     val punctuationMode: Flow<String>
@@ -205,6 +221,9 @@ interface PreferencesManager {
     /** TASK-186: see [earlyPreviewEnabled]. */
     suspend fun saveEarlyPreviewEnabled(enabled: Boolean)
 
+    /** TASK-684: see [interruptedRunNotifications]. */
+    suspend fun saveInterruptedRunNotifications(enabled: Boolean)
+
     suspend fun saveDefaultPrompt(prompt: String)
     suspend fun savePunctuationMode(mode: String)
     suspend fun savePunctuationPrompt(prompt: String)
@@ -291,6 +310,8 @@ interface PreferencesManager {
         const val DEFAULT_PROGRESSIVE_TRANSCRIPTION = true
         /** TASK-186: the extra head decode is opt-in. */
         const val DEFAULT_EARLY_PREVIEW = false
+        /** TASK-684: on by default (the honest-failure principle). */
+        const val DEFAULT_INTERRUPTED_RUN_NOTIFICATIONS = true
 
         const val DEFAULT_PROMPT_VALUE = ""
 

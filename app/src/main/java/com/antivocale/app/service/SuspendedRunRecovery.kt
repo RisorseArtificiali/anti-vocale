@@ -124,6 +124,13 @@ object SuspendedRunRecovery {
      */
     const val NOTIFICATION_ID = 2502
 
+    /**
+     * TASK-684: the generic-interrupted summary (one above the suspension
+     * id, same reserved-range contract): a later summary replaces an
+     * earlier one, never stacks.
+     */
+    const val INTERRUPTED_NOTIFICATION_ID = 2503
+
     /** The stable [FailureContext.errorClass] token marking a suspension row (matched by the DAO's SQL). */
     const val SUSPENDED_ERROR_CLASS = "SystemSuspended"
 
@@ -133,7 +140,12 @@ object SuspendedRunRecovery {
      * only), then the generic sweep closes whatever is left, so the two can
      * never disagree on a row.
      */
-    suspend fun closeInterruptedRuns(context: Context, logDao: LogDao, wasOOMCrash: Boolean) {
+    suspend fun closeInterruptedRuns(
+        context: Context,
+        logDao: LogDao,
+        wasOOMCrash: Boolean,
+        notifyGenericInterrupted: Boolean = true,
+    ) {
         val heartbeat = RunHeartbeat.read(context)
         // No live-run evidence (the run never ticked, or it ended normally
         // and the heartbeat was cleared): exit stays null, the classifier
@@ -195,13 +207,27 @@ object SuspendedRunRecovery {
 
         // Everything not marked suspended closes with the pre-existing honest
         // reason, OOM advice included (TASK-396 pt.2). Terminal rows are
-        // untouched by the sweep's WHERE clause.
+        // untouched by the sweep's WHERE clause. The rowcount IS the generic
+        // batch size: every row the sweep closed had no suspension marker.
+        // This DB reason stays English (locale-independent persistence); the
+        // notification localizes its own copy (interrupted_runs_oom_text),
+        // which repeats the OOM advice in wording, not byte-for-byte.
         val reason = if (wasOOMCrash) {
             "Interrupted by app restart: out of memory. Try a shorter file, a smaller model, or close other apps."
         } else {
             "Interrupted by app restart"
         }
-        logDao.failAllNonTerminal(reason)
+        val genericCount = logDao.failAllNonTerminal(reason)
+        // TASK-684 (GH #109, maintainer decision): the generic class gets a
+        // quiet summary notification too, gated by [notifyGenericInterrupted]
+        // (the caller owns the preference read; this object has no DI). The
+        // suspended class always notifies. One notification for the batch,
+        // no retry action: there is no proven re-runnable file here.
+        if (genericCount > 0 && notifyGenericInterrupted) {
+            post(context, INTERRUPTED_NOTIFICATION_ID) {
+                ResultNotificationFactory(context).interruptedRunsNotification(genericCount, wasOOMCrash)
+            }
+        }
 
         // Single-use evidence: the heartbeat describes a dead run and must not
         // survive into this process's own lifetime.
@@ -221,8 +247,8 @@ object SuspendedRunRecovery {
         message: String,
         retryFileAlive: Boolean,
     ) {
-        runCatching {
-            val notification = ResultNotificationFactory(context).suspensionNotification(
+        post(context, NOTIFICATION_ID) {
+            ResultNotificationFactory(context).suspensionNotification(
                 text = message,
                 rerunTaskId = row.taskId,
                 filePath = row.filePath,
@@ -230,8 +256,13 @@ object SuspendedRunRecovery {
                 sourcePackage = row.sourcePackageName,
                 retryFileAlive = retryFileAlive,
             )
-            context.getSystemService(NotificationManager::class.java)
-                .notify(NOTIFICATION_ID, notification)
-        }.onFailure { Log.w(TAG, "Failed to post suspension notification", it) }
+        }
+    }
+
+    /** Contained notification post: a builder or system failure never breaks startup. */
+    private fun post(context: Context, id: Int, build: () -> android.app.Notification) {
+        runCatching {
+            context.getSystemService(NotificationManager::class.java).notify(id, build())
+        }.onFailure { Log.w(TAG, "Failed to post notification id=$id", it) }
     }
 }
