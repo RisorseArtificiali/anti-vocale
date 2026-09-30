@@ -25,5 +25,20 @@
             </intent-filter>
         </receiver>
 
+        <!-- TASK-269 spike: debug-only observation listener (metadata only);
+             enable command and design rationale in VoiceNoteListenerSpike's
+             KDoc. exported=false per the official NotificationListenerService
+             sample: only the system binds, the signature permission is the
+             real gate. -->
+        <service
+            android:name=".spike.VoiceNoteListenerSpike"
+            android:exported="false"
+            android:label="Voice note spike (debug)"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
     </application>
 </manifest>
