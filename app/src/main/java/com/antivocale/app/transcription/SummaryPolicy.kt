@@ -117,7 +117,7 @@ object SummaryPolicy {
     const val MIN_LONE_PARTIAL_COVERAGE_FRACTION = 0.25
 
     /** Stable DB tokens for why an attended summary attempt produced none.
-     *  Rendered localized at the single LogsTab caption mapping; never
+     *  Rendered localized at the single HistoryTab caption mapping; never
      *  persisted as user text. */
     const val SKIP_REASON_GUARDS = "guards"
     const val SKIP_REASON_CONTEXT = "context_limit" // legacy-read only: TASK-520

@@ -3187,7 +3187,7 @@ internal class SettingsRowFocus {
  * the shipped full-auto path; this card is its only in-app surface: the
  * consent state with a deep-link to the TASK-274 toggle row, the staging
  * constraint in one line, a copyable adb command with the runtime package
- * filled in, and the full guide link. The copy follows LogsTab
+ * filled in, and the full guide link. The copy follows HistoryTab
  * (ClipboardWriter + ToastCompat, TASK-688); the command carries no
  * transcript, so the TASK-650 signature does not apply to it.
  */

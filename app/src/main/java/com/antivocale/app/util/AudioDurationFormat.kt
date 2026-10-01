@@ -2,7 +2,7 @@ package com.antivocale.app.util
 
 /**
  * The one human duration clock for audio lengths: m:ss, and h:mm:ss past one
- * hour. Hoisted from LogsTab (TASK-487) because SubtitleFormatter's
+ * hour. Hoisted from HistoryTab (TASK-487) because SubtitleFormatter's
  * timestamped-txt export renders the same clock. Same consolidation pattern
  * as [ProcessingTimeFormat] (TASK-497). Truncates fractional seconds; never
  * rounds up. (PerformanceStatsDialog's formatAudioDuration is deliberately

@@ -18,7 +18,7 @@ import com.antivocale.app.ui.onboarding.TourStep
 import com.antivocale.app.ui.onboarding.tourCardModifier
 import com.antivocale.app.ui.onboarding.TourOverlayCard
 import com.antivocale.app.ui.onboarding.tourRevealable
-import com.antivocale.app.ui.tabs.LogsTab
+import com.antivocale.app.ui.tabs.HistoryTab
 import com.antivocale.app.ui.tabs.ModelTab
 import com.antivocale.app.ui.tabs.SettingsTab
 import com.antivocale.app.ui.viewmodel.LogsViewModel
@@ -183,11 +183,11 @@ fun MainScreen(
         // navigates to the export sub-page (TASK-543), where the folder
         // and format cards live.
         TabItem(R.string.logs_tab, Icons.Default.History) {
-            LogsTab(
+            HistoryTab(
                 highlightTaskId = highlightTaskId,
                 tourRevealState = revealState,
                 // TASK-617: the chip's destination; rationale on the
-                // LogsTab parameter it pairs with.
+                // HistoryTab parameter it pairs with.
                 onOpenLanguageSetting = {
                     openSettings(AppNavigation.Destination.SettingsSection("transcription"))
                 },

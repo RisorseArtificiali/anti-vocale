@@ -7,7 +7,7 @@ import com.antivocale.app.R
 /**
  * What swiping a History entry does (TASK-470, the ThemeType pattern): the
  * enum is the single authority for the Settings dropdown's options, the test
- * SPI's validation, and the LogsTab dispatch. Before it, the three sites
+ * SPI's validation, and the HistoryTab dispatch. Before it, the three sites
  * shared bare strings and an else-branch silently executed any unrecognized
  * value as immediate-delete.
  *

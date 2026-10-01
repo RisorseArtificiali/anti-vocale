@@ -336,7 +336,7 @@ private fun buildSwipeActions(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LogsTab(
+fun HistoryTab(
     onNavigateToSettings: (() -> Unit)? = null,
     /** TASK-617: the chip's own destination (transcription section), NOT
      *  the auto-save hint's export page: one callback cannot serve both. */

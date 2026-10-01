@@ -167,7 +167,7 @@ class LlmBudgetTest {
 
     @Test
     fun `the timeout skip-reason token stays stable for the DB and UI mapping`() {
-        // LogsTab's caption mapping and the Room rows key on this exact token.
+        // HistoryTab's caption mapping and the Room rows key on this exact token.
         assertEquals("timeout", SummaryPolicy.SKIP_REASON_TIMEOUT)
     }
 }
