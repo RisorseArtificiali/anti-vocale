@@ -331,21 +331,20 @@ class TranscriptionOrchestrator @Inject constructor(
                 }
             }
 
-            // GH #45 / TASK-734: the model credit is written BEFORE the load:
-            // the requested id plus the saved path resolve without a live
-            // backend, so the failure row and the F4 degradation arm keep the
-            // name too (the success site below re-derives the same value from
-            // the live backend, the exact name if a load ever substituted).
-            // Metadata only: rethrow cancellation (the contract 20 lines
-            // above), never break the run for the credit.
+            // Ensure the correct backend is loaded
+            val loadResult = ensureBackendLoaded(context, backendOverride, languageOverride)
+            // GH #45 / TASK-734/TASK-463: the credit writes AFTER the load's
+            // path resolution (which persists the corrected variant path) and
+            // BEFORE the decode: the failure row and the F4 arm keep the
+            // name, and the name is the variant that actually loaded, not the
+            // stale saved one. Metadata only: rethrow cancellation (the
+            // contract above), never break the run for the credit.
             runCatching {
                 logDao.setModelName(taskId, displayNameForBackend(context, requestedBackendId))
             }.onFailure {
                 if (it is kotlinx.coroutines.CancellationException) throw it
             }
 
-            // Ensure the correct backend is loaded
-            val loadResult = ensureBackendLoaded(context, backendOverride, languageOverride)
             // TASK-546 AC3 review F2: snapshot the pin at LOAD time, when the
             // engine's language is decided. Reading the preference at success
             // time (a minute later on a long run) would pin the row with a
