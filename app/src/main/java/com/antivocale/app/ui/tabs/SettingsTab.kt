@@ -911,6 +911,7 @@ fun SettingsTab(
                         titleRes = R.string.default_prompt_title,
                         summaryRes = R.string.default_prompt_description,
                         leadingIcon = Icons.Default.Edit,
+                        openActionLabelRes = R.string.open_prompt_settings,
                         onOpen = { showPromptSettings = true },
                     )
             }

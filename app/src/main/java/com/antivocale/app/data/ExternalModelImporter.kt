@@ -537,7 +537,7 @@ class ExternalModelImporter(
             // content findings abort the import. Unreadable surfaces as a
             // retryable error and the copy stays for the next attempt.
             if (integrityFindings.any { it.unreadable }) {
-                throw IllegalStateException(
+                throw TransientReadFailureException(
                     "integrity check could not read the copied files: " + integrityFindings.details())
             }
             throw IllegalArgumentException("integrity check failed: " + integrityFindings.details())
@@ -624,7 +624,7 @@ class ExternalModelImporter(
     private suspend fun <R> importCleaningUpOnFailure(targetDir: File, block: suspend () -> R): R =
         try {
             block()
-        } catch (e: IllegalStateException) {
+        } catch (e: TransientReadFailureException) {
             throw e
         } catch (e: Exception) {
             targetDir.deleteRecursively()
@@ -691,3 +691,12 @@ internal class SidecarReferenceScanner {
     /** All referenced sidecar names seen so far, in first-seen order. */
     fun names(): Set<String> = found
 }
+
+/**
+ * TASK-482 review: the TRANSIENT-read signal from the import-time integrity
+ * gate. A dedicated type (not IllegalStateException, which any check() can
+ * throw): only this passes through [importCleaningUpOnFailure] without the
+ * delete, keeping the no-heal-on-IO-hiccup contract independent of who else
+ * throws ISE inside the block.
+ */
+class TransientReadFailureException(message: String) : IllegalStateException(message)

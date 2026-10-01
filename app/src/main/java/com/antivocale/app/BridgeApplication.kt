@@ -15,6 +15,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
@@ -25,6 +26,7 @@ class BridgeApplication : Application(), Configuration.Provider {
     @Inject lateinit var preferencesManager: PreferencesManager
     @Inject lateinit var shareTargetManager: ShareTargetManager
     @Inject lateinit var shareShortcutManager: ShareShortcutManager
+    @Inject lateinit var voiceNoteIdentityCache: com.antivocale.app.receiver.VoiceNoteIdentityCache
     @Inject lateinit var launcherIconManager: com.antivocale.app.ui.appearance.LauncherIconManager
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var externalModelStore: com.antivocale.app.data.ExternalModelStore
@@ -91,6 +93,22 @@ class BridgeApplication : Application(), Configuration.Provider {
                 preferencesManager.saveExternalMigrationDone(false)
             }
         }
+        // TASK-736 hardening: the identity listener's COMPONENT follows the
+        // preference (ships disabled; the toggle, TEST_SPI, or any other
+        // writer flips it here, one owner). distinctUntilChanged: the flow
+        // replays the cached value at startup and the write is a binder
+        // call. Off also clears the RAM identity cache: the service's own
+        // collector is cancelled by the disable itself, so this owner must
+        // do it (the RAM-only contract: off leaves nothing readable).
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            preferencesManager.voiceNoteIdentityEnabled.distinctUntilChanged().collect { enabled ->
+                voiceNoteIdentityCache.accepting = enabled
+                com.antivocale.app.receiver.VoiceNoteIdentityComponent.setEnabled(
+                    this@BridgeApplication, enabled)
+                if (!enabled) voiceNoteIdentityCache.clear()
+            }
+        }
+
         // TASK-643: builds <=1.13.x persisted the unsuffixed catalog URL on
         // "Restore"; that literal is now the FROZEN legacy index and would
         // read as a phantom override (custom-source badge, no asset fallback,

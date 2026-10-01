@@ -73,17 +73,21 @@ object NativeCrashDetector {
      * does not nag again, AND a native crash then a low-memory kill (or vice versa) within
      * the window each surface once.
      */
-    fun checkForRecentCrash(context: Context): CrashCheckResult {
+    fun checkForRecentCrash(context: Context, exits: List<ExitRecord>? = null): CrashCheckResult {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) {
             return CrashCheckResult.None // API 30+ only
         }
 
         return try {
-            val am = context.getSystemService(ActivityManager::class.java)
-            val exitInfos = am?.getHistoricalProcessExitReasons(context.packageName, 0, 5)
+            // [exits] lets a caller that already read the history (the
+            // startup pair with MemoryKillStartupCheck) share ONE binder
+            // read instead of two per onCreate.
+            val records = exits ?: context.getSystemService(ActivityManager::class.java)
+                ?.getHistoricalProcessExitReasons(context.packageName, 0, 5)
+                ?.map { ExitRecord(it.reason, it.timestamp, it.description) }
                 ?: return CrashCheckResult.None
 
-            val mostRecent = exitInfos.firstOrNull() ?: return CrashCheckResult.None
+            val mostRecent = records.firstOrNull() ?: return CrashCheckResult.None
             val crashTime = mostRecent.timestamp
 
             // Map the OS exit reason to our sealed variant. Only these two are actionable;
@@ -240,5 +244,5 @@ object NativeCrashDetector {
 
     /** Telemetry carrier rendered as a Crashlytics non-fatal record. */
     class SilentProcessDeath(record: ExitRecord) :
-        RuntimeException("Silent process death: ${reasonName(record.reason, record.description)} (${record.description ?: "no description"})")
+        RuntimeException("Silent process death: ${reasonName(record.reason, record.description)}")
 }

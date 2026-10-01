@@ -100,8 +100,11 @@ class MainActivity : AppCompatActivity() {
         // context, not the Application: a post from a background process
         // start (cold race, a broadcast) is silently dropped on 13+ and
         // would consume the once-per-kill mark without ever being shown.
-        com.antivocale.app.util.MemoryKillStartupCheck.run(this)
-        when (val crash = NativeCrashDetector.checkForRecentCrash(this)) {
+        // TASK-426 review: ONE exit-history read serves both startup checks
+        // (this used to be two binder calls per onCreate, rotation included).
+        val startupExits = NativeCrashDetector.recentExits(this)
+        com.antivocale.app.util.MemoryKillStartupCheck.run(this, startupExits)
+        when (val crash = NativeCrashDetector.checkForRecentCrash(this, startupExits)) {
             is NativeCrashDetector.CrashCheckResult.NativeCrash -> {
                 // If the user had NNAPI selected, the crash was likely the NNAPI driver:
                 // auto-fallback to CPU so the app is usable on the next launch (issue #26).

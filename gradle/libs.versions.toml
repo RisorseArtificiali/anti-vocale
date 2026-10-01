@@ -35,9 +35,9 @@ androidxTestCore = "1.5.0"
 androidxTestExtJunit = "1.1.5"
 robolectric = "4.12.1"
 espresso = "3.5.1"
-firebaseBom = "34.0.0"
+firebaseBom = "34.19.0" # TASK-429: maps firebase-crashlytics 20.1.1 (the OOM/memory-limiter debug-data release)
 googleServices = "4.4.4"
-crashlyticsPlugin = "3.0.6"
+crashlyticsPlugin = "3.0.8"
 kotlinMetadataJvm = "2.4.10"
 
 [libraries]

@@ -55,9 +55,7 @@ class VoiceNoteIdentityListener : NotificationListenerService() {
         prefJob = scope.launch {
             preferencesManager.voiceNoteIdentityEnabled.collect {
                 enabled = it
-                // Toggle off must also forget what was captured: the RAM-only
-                // contract means off leaves nothing readable.
-                if (!it) cache.clear()
+                cache.accepting = it
             }
         }
         Log.i(TAG, "connected; enabled=$enabled (pref collector armed)")
@@ -126,8 +124,15 @@ class VoiceNoteIdentityCache @Inject constructor() {
 
     private val entries = ArrayDeque<VoiceNoteIdentityExtractor.VoiceNote>()
 
+    @Volatile internal var accepting = false
+
     @Synchronized
     fun remember(note: VoiceNoteIdentityExtractor.VoiceNote) {
+        // The toggle-off clear can race a notification already past the
+        // service's enabled check; the cache itself refuses to accept while
+        // off (review: the RAM-only contract must hold at the data
+        // structure, not only at the collector ordering).
+        if (!accepting) return
         // Re-posts of the SAME notification (app open, widget refresh,
         // direct-reply) must not duplicate the entry and evict distinct
         // recent notes from the bound.
@@ -162,4 +167,21 @@ class VoiceNoteIdentityCache @Inject constructor() {
         /** A note shared many hours late is better unlabeled than mislabeled. */
         const val TTL_MS = 6 * 60 * 60 * 1000L
     }
+}
+
+/**
+ * TASK-736 hardening: flips the listener COMPONENT with the preference. The
+ * service ships android:enabled="false", so the app is absent from the
+ * system's notification-access list until the user opts in; off removes it
+ * again. One owner (the BridgeApplication collector) drives this for every
+ * writer of the preference: the Settings card, TEST_SPI, anything. The
+ * component write itself is [com.antivocale.app.util.ComponentAliasSync.setEnabled],
+ * the declared single owner of this exact PackageManager call.
+ */
+object VoiceNoteIdentityComponent {
+    private const val TAG = "VoiceNoteIdentity"
+
+    fun setEnabled(context: android.content.Context, enabled: Boolean) =
+        com.antivocale.app.util.ComponentAliasSync.setEnabled(
+            context, VoiceNoteIdentityListener::class.java.name, enabled, TAG)
 }

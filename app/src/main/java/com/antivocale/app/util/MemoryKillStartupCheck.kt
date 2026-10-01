@@ -69,13 +69,16 @@ object MemoryKillStartupCheck {
             exitTimestamp > handledTimestamp &&
             nowMs - exitTimestamp <= ADVISE_WINDOW_MS
 
-    fun run(context: Context) {
+    fun run(context: Context, exits: List<NativeCrashDetector.ExitRecord>? = null) {
         runCatching {
             // The 5-record history, not the single most recent exit: a
             // limiter kill can be buried under a later exit (a service
             // restart that then died for any other reason), and telemetry's
-            // reportUnreportedDeaths sees exactly those records too.
-            val kills = NativeCrashDetector.recentExits(context)
+            // reportUnreportedDeaths sees exactly those records too. The
+            // caller may pass the snapshot it already read (MainActivity
+            // reads it once for NativeCrashDetector too; review: two binder
+            // reads per onCreate duplicated the cost on every rotation).
+            val kills = (exits ?: NativeCrashDetector.recentExits(context))
                 .filter { isMemoryLimiterKill(it.reason, it.description) }
             if (kills.isEmpty()) return
             val prefs = context.getSharedPreferences(

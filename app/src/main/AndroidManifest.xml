@@ -596,14 +596,19 @@
                 android:value="true" />
         </service>
 
-        <!-- TASK-735: the voice-note identity listener. Opt-in twice: the
-             system's notification access (this BIND gate) plus the in-app
-             toggle; until both hold it reads nothing. The cache is RAM-only;
+        <!-- TASK-735/736 hardening (maintainer decision 2026-10-01): the
+             listener component ships DISABLED, so the app does not even
+             appear in the system's notification-access list until the user
+             turns the in-app toggle on (BridgeApplication flips the component
+             with the preference). Notification access is NOT an install-time
+             permission: it is a special access the user grants by hand in
+             system settings, from the card's deep link. The cache is RAM-only;
              the durable label on the History row is the feature itself (see
              VoiceNoteIdentityListener's privacy contract). -->
         <service
             android:name=".receiver.VoiceNoteIdentityListener"
             android:label="@string/voice_note_identity_title"
+            android:enabled="false"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>

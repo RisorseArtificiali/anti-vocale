@@ -241,8 +241,15 @@ class SherpaOnnxModelDownloader<V>(
         val integrityFindings = DownloadedModelIntegrity.validate(modelDir)
         if (integrityFindings.isNotEmpty()) {
             val unreadable = integrityFindings.any { it.unreadable }
-            val errorMsg = "Downloaded model is incomplete or corrupt: " +
-                integrityFindings.details()
+            // TASK-482 review: the unreadable arm is NOT corruption and the
+            // dir is deliberately kept; the message must say what happened
+            // (the importer's twin path words it the same way).
+            val errorMsg = if (unreadable)
+                "Integrity check could not read the downloaded files (nothing was deleted; a retry may succeed): " +
+                    integrityFindings.details()
+            else
+                "Downloaded model is incomplete or corrupt: " +
+                    integrityFindings.details()
             Log.e(config.tag, errorMsg)
             onStateChange(DownloadState.Error(errorMsg))
             if (!unreadable) {
