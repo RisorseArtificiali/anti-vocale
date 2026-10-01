@@ -116,22 +116,38 @@ class BackendRegistryTest {
     }
 
     @Test
-    fun `share aliases are the ShareReceiverActivity ALIAS values and are unique`() {
+    fun `share aliases are the manifest activity-alias values and are unique`() {
         // The OmniVoice backend carries the blank sentinel (TASK-681: no
         // share target, the blank alias is a valid value for it), so it joins
         // the set without a manifest literal.
-        val expectedAliases = setOf(
-            "com.antivocale.app.ShareParakeet",
-            "com.antivocale.app.ShareWhisper",
-            "com.antivocale.app.ShareQwen3",
-            "com.antivocale.app.ShareNemotron",
-            "com.antivocale.app.ShareGigaam",
-            "com.antivocale.app.ShareGemma",
-            "",
-        )
         val aliases = registry.backends.map { it.shareAlias }
-        assertEquals(expectedAliases, aliases.toSet())
         assertEquals(aliases.size, aliases.toSet().size)
+        // TASK-464: the expected set is DERIVED FROM THE MANIFEST on disk
+        // (LauncherIconManifestTest's pattern), not a second hand-drawn
+        // literal list: a manifest alias rename must fail HERE, not at
+        // runtime alias resolution.
+        val manifestAliases = readManifestShareAliases()
+        val expected = manifestAliases + ""
+        assertEquals(
+            "registry share aliases must equal the manifest activity-alias set",
+            expected, aliases.toSet())
+    }
+
+    /** The manifest's activity-alias android:name values, read from disk. */
+    private fun readManifestShareAliases(): Set<String> {
+        val manifest = sequenceOf(File("src/main/AndroidManifest.xml"), File("app/src/main/AndroidManifest.xml"))
+            .firstOrNull { it.exists() }
+            ?: throw IllegalStateException("AndroidManifest.xml not found from ${File(".").absolutePath}")
+        val factory = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+        val builder = factory.newDocumentBuilder()
+        val nodes = builder.parse(manifest).getElementsByTagName("activity-alias")
+        return (0 until nodes.length)
+            .map { nodes.item(it) as org.w3c.dom.Element }
+            .mapNotNull { it.getAttribute("android:name").takeIf { name -> name.isNotBlank() } }
+            .map { name -> if (name.startsWith(".")) "com.antivocale.app" + name else name }
+            .filter { name -> name.startsWith("com.antivocale.app.Share") }
+            .filterNot { name -> name.endsWith(".ShareExternal") }
+            .toSet()
     }
 
     @Test
