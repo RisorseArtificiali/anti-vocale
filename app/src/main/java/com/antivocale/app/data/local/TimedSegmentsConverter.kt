@@ -26,6 +26,8 @@ object TimedSegmentsConverter {
             // TASK-670: the matched person's name rides only when present
             // (same null-removes-key trap as the speaker id).
             segment.speakerName?.let { cue.put("speakerName", it) }
+            // TASK-678: the honest mixed marker rides only when set.
+            if (segment.mixedSpeakers) cue.put("mixedSpeakers", true)
             array.put(cue)
         }
         return array.toString()
@@ -49,6 +51,7 @@ object TimedSegmentsConverter {
                             // TASK-670: blank-safe; rows before the named
                             // labels carry no key and stay generic.
                             speakerName = item.optString("speakerName").takeIf { it.isNotBlank() },
+                            mixedSpeakers = item.optBoolean("mixedSpeakers", false),
                         )
                     )
                 }

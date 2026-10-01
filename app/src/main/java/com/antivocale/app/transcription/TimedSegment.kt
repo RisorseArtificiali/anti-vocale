@@ -20,6 +20,13 @@ data class TimedSegment(
      *  null keeps the generic SPEAKER N prefix. Rides the same cue, so every
      *  rendering surface picks it up without forking. */
     val speakerName: String? = null,
+    /** TASK-678 (GH #83): this cue straddles two speakers and could not be
+     *  honestly split; renderers must not attribute it to one voice. */
+    val mixedSpeakers: Boolean = false,
+    /** TASK-678: the cue's own tokens, CHUNK-RELATIVE ms, transient by
+     *  design (never serialized; the speaker re-split consumes them in the
+     *  same pass that labels the cue, then they are irrelevant). */
+    val tokens: List<TimedToken> = emptyList(),
 )
 
 /**

@@ -4,6 +4,11 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
+
+/** TASK-678: cues now carry transient tokens; these tests pin cue geometry. */
+private fun List<com.antivocale.app.transcription.TimedSegment>.withoutTransientTokens() =
+    map { it.copy(tokens = emptyList()) }
+
 class SentenceCueBuilderTest {
 
     private fun token(text: String, startMs: Long, endMs: Long) =
@@ -23,7 +28,7 @@ class SentenceCueBuilderTest {
                 TimedSegment(0, 900, "One sentence."),
                 TimedSegment(1000, 1900, "Two sentence."),
             ),
-            cues,
+            cues.withoutTransientTokens(),
         )
     }
 
@@ -39,7 +44,7 @@ class SentenceCueBuilderTest {
                 TimedSegment(0, 500, "Alpha"),
                 TimedSegment(1500, 2000, "beta"),
             ),
-            cues,
+            cues.withoutTransientTokens(),
         )
         assertTrue("cues must not overlap", cues[0].endMs <= cues[1].startMs)
     }
@@ -58,7 +63,7 @@ class SentenceCueBuilderTest {
                 TimedSegment(0, 5900, "w0 w1 w2 w3 w4 w5 w6 w7 w8 w9 w10,"),
                 TimedSegment(6000, 7400, "w12 w13 w14"),
             ),
-            cues,
+            cues.withoutTransientTokens(),
         )
     }
 
@@ -74,7 +79,7 @@ class SentenceCueBuilderTest {
                 TimedSegment(0, 4900, "w0 w1 w2 w3 w4 w5 w6 w7 w8 w9"),
                 TimedSegment(5000, 7400, "w10 w11 w12 w13 w14"),
             ),
-            cues,
+            cues.withoutTransientTokens(),
         )
     }
 
@@ -87,7 +92,7 @@ class SentenceCueBuilderTest {
             token(".", 950, 1000),
         )
         val cues = SentenceCueBuilder.build(tokens, chunkStartMs = 0, chunkEndMs = 1500)
-        assertEquals(listOf(TimedSegment(0, 1000, "Hallo, welt.")), cues)
+        assertEquals(listOf(TimedSegment(0, 1000, "Hallo, welt.")), cues.withoutTransientTokens())
     }
 
     @Test
@@ -102,7 +107,7 @@ class SentenceCueBuilderTest {
                 TimedSegment(10_000, 10_200, "early"),
                 TimedSegment(14_800, 15_000, "late"),
             ),
-            cues,
+            cues.withoutTransientTokens(),
         )
     }
 
@@ -123,7 +128,8 @@ class SentenceCueBuilderTest {
         val tokens = listOf(token("▁ciao", 100, 500))
         assertEquals(
             listOf(TimedSegment(100, 500, "ciao")),
-            SentenceCueBuilder.build(tokens, chunkStartMs = 0, chunkEndMs = 600),
+            SentenceCueBuilder.build(tokens, chunkStartMs = 0, chunkEndMs = 600)
+                .withoutTransientTokens(),
         )
     }
 

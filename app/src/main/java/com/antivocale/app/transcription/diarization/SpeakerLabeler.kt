@@ -27,6 +27,30 @@ data class DiarizedSegment(
  */
 object SpeakerLabeler {
 
+    /**
+     * TASK-678: the cue/diarization overlap vote in MILLISECONDS, shared by
+     * the labeler and the re-split (one join owner; ties break toward the
+     * LOWER speaker id exactly as [label] does).
+     */
+    fun overlapVotesMs(
+        startMs: Long,
+        endMs: Long,
+        segments: List<DiarizedSegment>,
+    ): Map<Int, Long> {
+        val votes = HashMap<Int, Long>()
+        for (segment in segments) {
+            val overlap = kotlin.math.min(endMs, (segment.endSec * 1000).toLong()) -
+                maxOf(startMs, (segment.startSec * 1000).toLong())
+            if (overlap > 0) votes[segment.speaker] = (votes[segment.speaker] ?: 0L) + overlap
+        }
+        return votes
+    }
+
+    /** The vote winner with the labeler's tie-break, or null on no overlap. */
+    fun winnerMs(votes: Map<Int, Long>): Int? =
+        votes.entries.sortedWith(compareByDescending<Map.Entry<Int, Long>> { it.value }
+            .thenBy { it.key }).firstOrNull()?.key
+
     /** @return the dense speaker id for each cue index, null where the cue
      *  overlaps no speech; empty when there is nothing to join. */
     fun label(

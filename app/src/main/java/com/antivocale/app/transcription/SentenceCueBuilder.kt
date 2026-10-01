@@ -87,7 +87,12 @@ object SentenceCueBuilder {
                     cues[cues.size - 1] = previous.copy(endMs = maxOf(start, previous.startMs))
                 }
             }
-            cues.add(TimedSegment(start, end, text))
+            // TASK-678: the cue's tokens ride along (shifted to absolute
+            // ms), transient fuel for the speaker re-split.
+            val cueTokens = tokens.subList(first, last + 1).map {
+                it.copy(startMs = it.startMs + chunkStartMs, endMs = it.endMs + chunkStartMs)
+            }
+            cues.add(TimedSegment(start, end, text, tokens = cueTokens))
         }
         return mergePunctuationOnlyCues(cues)
     }
@@ -105,7 +110,12 @@ object SentenceCueBuilder {
                 out.add(cue)
             } else if (out.isNotEmpty()) {
                 val previous = out.removeAt(out.size - 1)
-                out.add(previous.copy(endMs = cue.endMs, text = previous.text + cue.text))
+                // TASK-678: folded cues concatenate their transient tokens
+                // too, so a merged cue still carries its word timing.
+                out.add(previous.copy(
+                    endMs = cue.endMs,
+                    text = previous.text + cue.text,
+                    tokens = previous.tokens + cue.tokens))
             } else {
                 // Nothing before it yet: keep it; the head fold below merges it
                 // into the first worded cue.

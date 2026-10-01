@@ -13,6 +13,10 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import java.io.File
 
+/** TASK-678: cues now carry transient tokens; these tests pin cue geometry. */
+private fun List<com.antivocale.app.transcription.TimedSegment>.withoutTransientTokens() =
+    map { it.copy(tokens = emptyList()) }
+
 @OptIn(ExperimentalCoroutinesApi::class)
 class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
 
@@ -368,7 +372,7 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
                 TimedSegment(6000, 7900, "Prima frase."),
                 TimedSegment(8000, 9900, "Seconda frase."),
             ),
-            segmentsSlot.captured,
+            segmentsSlot.captured.withoutTransientTokens(),
         )
     }
 

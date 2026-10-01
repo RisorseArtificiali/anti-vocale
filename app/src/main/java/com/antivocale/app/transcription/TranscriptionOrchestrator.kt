@@ -15,6 +15,7 @@ import com.antivocale.app.audio.AudioPreprocessor.StreamEvent
 import com.antivocale.app.transcription.diarization.DiarizationModels
 import com.antivocale.app.transcription.diarization.SpeakerDiarizer
 import com.antivocale.app.transcription.diarization.SpeakerEmbeddings
+import com.antivocale.app.transcription.diarization.SpeakerResplit
 import com.antivocale.app.transcription.diarization.SpeakerIdentityStore
 import com.antivocale.app.transcription.diarization.SpeakerLabeler
 import com.antivocale.app.transcription.diarization.SpeakerNamer
@@ -1750,21 +1751,33 @@ class TranscriptionOrchestrator @Inject constructor(
                 numThreads = threads,
             ).getOrThrow()
             var segmentsOut: List<com.antivocale.app.transcription.diarization.DiarizedSegment>? = null
-            var labelsOut: List<Int?>? = null
+            // TASK-678: the tier summary for the technical row, set when any cue straddled.
+            var resplitSummaryOut: String? = null
             try {
                 val segments = diarizer.diarize(samples, sampleRate)
                 val labels = SpeakerLabeler.label(transcription.segments, segments)
+                // TASK-678 (GH #83): a cue straddling two voices is re-split
+                // at the word nearest the speaker boundary (tier chain:
+                // tokens, proportional, honest mixed). Split halves carry
+                // their OWN re-voted speakers; unsplit cues take the
+                // labeler's label by ORIGINAL index (the split changes the
+                // cue count, so the two lists must never be re-zipped). The
+                // transient tokens are consumed here and dropped.
+                val outcomes = transcription.segments.mapIndexed { index, cue ->
+                    SpeakerResplit.resplit(cue, cue.tokens, segments, labels[index])
+                }
+                val tierCounts = outcomes.mapNotNull { it.tier }.groupingBy { it }.eachCount()
+                resplitSummaryOut = if (tierCounts.isEmpty()) null else
+                    tierCounts.entries.joinToString(",") { (tier, count) ->
+                        "${tier.name.lowercase()}=$count"
+                    }
                 segmentsOut = segments
-                labelsOut = labels
                 // Labels only here: naming waits until the diarizer session
                 // is RELEASED (review R2: the extractor loads its own titanet;
                 // running both native sessions at once doubled the ~40MB
                 // footprint at exactly the moment TASK-679's OOM class hits).
                 result.map { unlabeled ->
-                    unlabeled.copy(
-                        segments = unlabeled.segments.mapIndexed { index, cue ->
-                            cue.copy(speaker = labels[index])
-                        })
+                    unlabeled.copy(segments = outcomes.flatMap { it.cues })
                 }
             } finally {
                 diarizer.release()
@@ -1773,16 +1786,14 @@ class TranscriptionOrchestrator @Inject constructor(
             // AFTER the diarizer's release; every failure inside degrades to
             // the generic SPEAKER N labels, never a dropped or misnamed result.
             val segments = segmentsOut ?: return@runCatching result
-            val labels = labelsOut ?: return@runCatching result
             val names = speakerClusterNames(context, segments, samples, sampleRate, threads)
             result.map { unlabeled ->
                 unlabeled.copy(
-                    segments = unlabeled.segments.mapIndexed { index, cue ->
-                        cue.copy(
-                            speaker = labels[index],
-                            speakerName = labels[index]?.let(names::get),
-                        )
-                    })
+                    segments = unlabeled.segments.map { cue ->
+                        cue.copy(speakerName = cue.speaker?.let(names::get))
+                    },
+                    processing = unlabeled.processing?.copy(speakerResplit = resplitSummaryOut),
+                )
             }
         }.fold(
             onSuccess = { it },

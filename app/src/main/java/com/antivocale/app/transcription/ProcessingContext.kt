@@ -36,6 +36,10 @@ data class ProcessingContext(
      *  this minus the post-ladder empties). Written only when at least one
      *  chunk entered the ladder. */
     val retriedChunks: Int? = null,
+    /** TASK-678 (GH #83): the speaker re-split tier counts for this run
+     *  ("word=2,gap=1,mixed=1"), written only when at least one cue
+     *  straddled; the technical row renders it. */
+    val speakerResplit: String? = null,
     /** TASK-583 (GH #110): the delivered single-model transcript matched the
      *  repetition-loop detector (the dual arms already skip on it); the row
      *  and the result notification carry a visible warning, never a collapse
