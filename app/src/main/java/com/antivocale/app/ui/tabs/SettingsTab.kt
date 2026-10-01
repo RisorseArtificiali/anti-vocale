@@ -2403,7 +2403,9 @@ internal fun groupHasVisibleMember(group: SettingsSearchGroup, state: SettingsSe
  */
 @Composable
 private fun SettingsGroupLabel(group: SettingsSearchGroup, state: SettingsSearchState) {
-    if (groupHasVisibleMember(group, state)) {
+    // TASK-733: the member scan runs on state flips, not on every body
+    // recomposition (Compose skipping already covers the keystroke path).
+    if (remember(group, state) { groupHasVisibleMember(group, state) }) {
         GroupHeader(group.labelRes)
     }
 }
@@ -2424,11 +2426,17 @@ private fun SearchFilterRow(
 ) {
     // Simplify F2: the gate texts resolve INSIDE the row (the lookup was the
     // 39-site spread boilerplate; the signature now carries only identity).
-    // TASK-731: the vocabulary includes the card's group label.
-    val matchTexts = SETTINGS_SEARCH_CARDS
-        .first { card -> card.id == id }
-        .let { card -> cardVocabulary(card, state) }
-        .map { res -> stringResource(res) }
+    // TASK-731: the vocabulary includes the card's group label. TASK-733:
+    // remembered per row (keys mirror the tab-level derivation's: context
+    // plus state); before, every keystroke re-scanned the registry
+    // (first{}) and re-resolved the strings through stringResource.
+    val context = LocalContext.current
+    val matchTexts = remember(id, state, context) {
+        SETTINGS_SEARCH_CARDS
+            .first { card -> card.id == id }
+            .let { card -> cardVocabulary(card, state) }
+            .map(context::getString)
+    }
     if (matchesQuery(query, matchTexts)) {
         content()
     }
