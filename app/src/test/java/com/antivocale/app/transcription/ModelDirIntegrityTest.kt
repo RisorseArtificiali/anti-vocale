@@ -140,6 +140,35 @@ class ModelDirIntegrityTest {
     }
 
     /**
+     * TASK-482 review: a transient listing failure must read as UNREADABLE,
+     * not corruption - at the load gate a genuinely empty dir is unreachable
+     * (the completeness checks fail first), so a null listFiles (EIO on
+     * sdcardfs/FUSE, fd exhaustion) mistyped as "corrupt" would make the
+     * heal delete a healthy model directory. Simulated with a chmod-000 dir.
+     */
+    @Test
+    fun `an unreadable directory is a read failure, not a corruption verdict`() {
+        val dir = tmp.newFolder()
+        java.nio.file.Files.setPosixFilePermissions(
+            dir.toPath(),
+            java.nio.file.attribute.PosixFilePermissions.fromString("---------"),
+        )
+        try {
+            val verdict = ModelDirIntegrity.split(
+                ModelDirIntegrity.verify(dir, variant(CatalogFile("encoder.int8.onnx"))))
+            assertTrue(
+                "expected an unreadable finding, got ${verdict.corrupt}",
+                verdict.corrupt.isEmpty())
+            assertEquals(1, verdict.unreadable.size)
+        } finally {
+            java.nio.file.Files.setPosixFilePermissions(
+                dir.toPath(),
+                java.nio.file.attribute.PosixFilePermissions.fromString("rwxr-xr-x"),
+            )
+        }
+    }
+
+    /**
      * TASK-482 review round: a DIFFERENT pin against unchanged stats must
      * re-hash - a variant update or re-import rewrites the pin, and the warm
      * verdict is only good for the pin it verified.

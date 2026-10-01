@@ -236,17 +236,20 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
             // completeness layer and orphan cleaner watch.
             val integrityFailures = ModelDirIntegrity.verify(
                 dir, record.files.mapValues { it.value.sha256 })
-            // TASK-482 review: a READ failure is not corruption - same split
-            // as the built-in path, so a transient IO error must not tell the
-            // user to re-import a healthy model.
-            val unreadable = integrityFailures.filter { it.unreadable }
-            val corrupt = integrityFailures.filterNot { it.unreadable }
-            if (unreadable.isNotEmpty()) {
+            // TASK-482 review: a READ failure is not corruption - the same
+            // split the built-in path uses (ModelDirIntegrity.split), so a
+            // transient IO error must not tell the user to re-import a
+            // healthy model, and the two backends cannot diverge on the
+            // readability semantics.
+            val gateVerdict = ModelDirIntegrity.split(integrityFailures)
+            if (gateVerdict.unreadable.isNotEmpty()) {
                 Log.e(TAG, "External model files unreadable for ${record.backendId}: " +
-                    unreadable.joinToString { "${it.file.name} (${it.reason})" })
+                    gateVerdict.unreadable.joinToString { "${it.file.name} (${it.reason})" })
                 return@withContext Result.failure(TranscriptionException.ModelLoadError(
-                    "could not read the model files: " + unreadable.joinToString { it.file.name }))
+                    "could not read the model files: " +
+                        gateVerdict.unreadable.joinToString { "${it.file.name} (${it.reason})" }))
             }
+            val corrupt = gateVerdict.corrupt
             if (corrupt.isNotEmpty()) {
                 Log.e(TAG, "Integrity gate failed for ${record.backendId}: " +
                     corrupt.joinToString { "${it.file.name} (${it.reason})" })

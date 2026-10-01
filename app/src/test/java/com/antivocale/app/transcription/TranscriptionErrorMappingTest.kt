@@ -68,6 +68,19 @@ class TranscriptionErrorMappingTest {
     }
 
     @Test
+    fun `ExternalModelCorruptFiles maps to the external re-import string`() {
+        // TASK-482: an import's corruption has no re-download to offer; the
+        // branch must also stay ABOVE the ModelLoadError branch (a subtype
+        // after its supertype only warns, and imports would degrade to the
+        // "re-download it from the Model tab" advice, which does not exist
+        // for an import).
+        val error = TranscriptionException.ExternalModelCorruptFiles(
+            "corrupted model files (re-import from the Models tab): encoder.onnx (SHA-256 mismatch)")
+        val msg = TranscriptionOrchestrator.userFacingErrorMessage(context, error)
+        assertEquals(context.getString(R.string.error_model_external_corrupt), msg)
+    }
+
+    @Test
     fun `NoTranscriptionProduced maps to generic transcription_failed string`() {
         val error = TranscriptionException.NoTranscriptionProduced()
         val msg = TranscriptionOrchestrator.userFacingErrorMessage(context, error)

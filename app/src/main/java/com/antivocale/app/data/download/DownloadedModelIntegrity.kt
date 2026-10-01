@@ -21,7 +21,7 @@ object DownloadedModelIntegrity {
     /** Tokens smaller than this are a stub (a real BPE/vocab file is >= hundreds of bytes). */
     private const val MIN_TOKENS_BYTES: Long = 64L
 
-    data class Finding(val file: File, val reason: String) {
+    data class Finding(val file: File, val reason: String, val unreadable: Boolean = false) {
         fun describe(): String = "${file.name} ($reason)"
     }
 
@@ -57,7 +57,17 @@ object DownloadedModelIntegrity {
      */
     fun validate(modelDir: File): List<Finding> {
         if (!modelDir.isDirectory) return listOf(Finding(modelDir, "not a directory"))
-        val files = modelDir.listFiles()?.filter { it.isFile }.orEmpty()
+        // TASK-482 review: a NULL listing is an IO failure (EIO on sdcardfs/
+        // FUSE, fd exhaustion), not an empty dir. It must read as unreadable
+        // downstream: at the load gate a genuinely empty dir is unreachable
+        // (the completeness checks fail first), so every "empty" arriving
+        // here would otherwise be a transient failure mistyped as corruption,
+        // and the corruption heal would delete a healthy model directory.
+        // At download/import time the distinction is equally honest: the
+        // caller is told the dir could not be read, not that it is empty.
+        val listing = modelDir.listFiles()
+        if (listing == null) return listOf(Finding(modelDir, "unreadable", unreadable = true))
+        val files = listing.filter { it.isFile }
         if (files.isEmpty()) return listOf(Finding(modelDir, "directory is empty"))
         return files.mapNotNull { f ->
             when {

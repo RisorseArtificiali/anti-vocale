@@ -487,25 +487,27 @@ class SherpaBackend(
             // which the native loader answers with a process abort
             // ("Protobuf parsing failed") and every retry re-aborts on the
             // same bytes. Structural checks run for every file; SHA-256 for
-            // files the catalog pins. Failed files are removed with their
-            // sidecars so the next attempt is a clean re-download, not
-            // another abort.
+            // files the catalog pins. The failed files STAY ON DISK (the
+            // verdict must stay repeatable for callers that cannot heal);
+            // the orchestrator's heal removes the directory.
             // TASK-660: the verdict is the TYPED
             // [TranscriptionException.CorruptModelFiles] the orchestrator
             // heals on; the abort mechanism this gate exists to prevent lives
             // in that exception's KDoc (the one authoritative home).
-            val integrityFailures = ModelDirIntegrity.verify(dir, variant, verifyPins = variantMatchesDir)
             // TASK-482 review: a READ failure is not a corruption verdict -
             // typing it CorruptModelFiles would let the heal delete a healthy
             // dir over a transient IO error. Only real content failures heal.
-            val unreadable = integrityFailures.filter { it.unreadable }
-            val corrupt = integrityFailures.filterNot { it.unreadable }
-            if (unreadable.isNotEmpty()) {
+            val gateVerdict = ModelDirIntegrity.split(
+                ModelDirIntegrity.verify(dir, variant, verifyPins = variantMatchesDir))
+            if (gateVerdict.unreadable.isNotEmpty()) {
+                val unreadable = gateVerdict.unreadable
                 Log.e(TAG, "Model files unreadable in $modelDirectory: " +
                     unreadable.joinToString { "${it.file.name} (${it.reason})" })
                 return@withContext Result.failure(TranscriptionException.ModelLoadError(
-                    "could not read the model files: " + unreadable.joinToString { it.file.name }))
+                    "could not read the model files: " +
+                        unreadable.joinToString { "${it.file.name} (${it.reason})" }))
             }
+            val corrupt = gateVerdict.corrupt
             if (corrupt.isNotEmpty()) {
                 // TASK-660 review F1: the files stay ON DISK so the typed
                 // verdict stays REPEATABLE: a direct backend caller that

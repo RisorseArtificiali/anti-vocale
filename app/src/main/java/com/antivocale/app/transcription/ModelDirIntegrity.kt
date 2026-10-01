@@ -86,7 +86,7 @@ object ModelDirIntegrity {
             // An unreadable dir at load time is a completeness failure, not a
             // crash out of the Result contract (review F5).
             return listOf(Failure(dir, "unreadable: ${e.message}", unreadable = true))
-        }.map { Failure(it.file, it.reason) }
+        }.map { Failure(it.file, it.reason, it.unreadable) }
         return (structural + verifyPins(dir, pins, pinCache)).distinctBy { it.file.path }
     }
 
@@ -109,6 +109,22 @@ object ModelDirIntegrity {
             emptyMap()
         },
         pinCache,
+    )
+
+    /**
+     * TASK-482 review: the gate's verdict, pre-split so every caller reads
+     * the SAME readability semantics: [unreadable] must never route into a
+     * heal that deletes files (a transient IO failure is not corruption);
+     * [corrupt] is the content verdict the heals act on. Lives here, beside
+     * the flag it splits on, so the two backends cannot diverge on it.
+     */
+    data class Verdict(val unreadable: List<Failure>, val corrupt: List<Failure>) {
+        val anyFailure: Boolean get() = unreadable.isNotEmpty() || corrupt.isNotEmpty()
+    }
+
+    fun split(failures: List<Failure>): Verdict = Verdict(
+        failures.filter { it.unreadable },
+        failures.filterNot { it.unreadable },
     )
 
     /**
