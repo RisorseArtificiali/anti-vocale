@@ -110,6 +110,7 @@ class ModelViewModelLitertLmImportTest {
             applicationScope = kotlinx.coroutines.CoroutineScope(SupervisorJob()),
             // TASK-675: real demoter over the same preferences.
             silentModelDemoter = com.antivocale.app.transcription.SilentModelDemoter(prefs),
+            modelActivator = com.antivocale.app.transcription.ModelActivator(prefs, com.antivocale.app.transcription.SilentModelDemoter(prefs)),
         )
     }
 

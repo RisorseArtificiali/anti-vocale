@@ -111,6 +111,7 @@ class ModelViewModelActiveModelTest {
             applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
             // TASK-675: real demoter over the same preferences.
             silentModelDemoter = com.antivocale.app.transcription.SilentModelDemoter(fakePrefs),
+            modelActivator = com.antivocale.app.transcription.ModelActivator(fakePrefs, com.antivocale.app.transcription.SilentModelDemoter(fakePrefs)),
         )
 
     }

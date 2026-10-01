@@ -87,6 +87,7 @@ class ModelViewModel @Inject constructor(
     // TASK-675: the silent-model demotion seam (auto-selection skip, clear on
     // manual selection, the demoted set for the Model tab's honest line).
     private val silentModelDemoter: SilentModelDemoter,
+    private val modelActivator: com.antivocale.app.transcription.ModelActivator,
     // Process-lifetime scope for share-alias sync work (code review 2026-09-03):
     // on viewModelScope, a ViewModel clear mid-sync (DataStore reads + PackageManager
     // IPCs) killed the enablement and the affected model stayed MISSING from
@@ -1400,20 +1401,16 @@ class ModelViewModel @Inject constructor(
     fun useModel(entryId: String, variantName: String) {
         viewModelScope.launch {
             val context = ctx
-            val downloader = SherpaModelDownloader.of(entryId)
             // The catalog-state fallback is STALE (populated by an earlier scan), so its
-            // path is disk-checked here; the first two resolutions read the disk fresh
-            // and must stay free of extra IO (B2, TASK-342 device verification).
-            val modelPath = downloader.getModelPath(context, variantName)
-                ?: SherpaModelManager.of(entryId).resolveActiveModelPath(context)
-                ?: _catalogStates.value[entryId]?.modelPath?.takeIf { File(it).exists() }
+            // path is disk-checked inside the activator; the first two resolutions read
+            // the disk fresh and must stay free of extra IO (B2, TASK-342 device verification).
+            // TASK-552: the activation core lives in ModelActivator (the
+            // shortcut trampoline shares it); resolution ladder, the
+            // backend+path writes, and the demotion clear are ONE
+            // implementation.
+            val modelPath = modelActivator.activateCatalog(
+                context, entryId, variantName, _catalogStates.value[entryId]?.modelPath)
             if (modelPath != null) {
-                preferencesManager.saveSherpaModelPath(entryId, modelPath)
-                preferencesManager.saveTranscriptionBackend(entryId)
-                // TASK-675: the explicit pick is the give-it-another-chance
-                // path: any demotion for silent decodes clears here.
-                silentModelDemoter.onManualSelection(entryId)
-
                 val displayName = context.getString(CatalogVariantUi.of(entryId, variantName).titleResId)
                 val message = context.getString(R.string.model_selected_message, displayName)
                 _uiState.update {
@@ -1604,8 +1601,7 @@ class ModelViewModel @Inject constructor(
      */
     fun useRemoteOmnivoice() {
         viewModelScope.launch {
-            preferencesManager.saveTranscriptionBackend(
-                com.antivocale.app.transcription.RemoteOmnivoiceBackend.BACKEND_ID)
+            modelActivator.activateRemote()
             _uiState.update {
                 it.copy(
                     modelName = ctx.getString(R.string.remote_omnivoice_name),
@@ -1724,17 +1720,9 @@ class ModelViewModel @Inject constructor(
     }
 
     private suspend fun activateExternalModel(record: ExternalModelRecord) {
-        preferencesManager.saveTranscriptionBackend(record.backendId)
-        // TASK-675: the explicit pick clears any silent-decode demotion.
-        silentModelDemoter.onManualSelection(record.backendId)
-        // TASK-408: canary decodes empty on chunks cut mid-speech, so VAD-aligned
-        // segmentation is part of the deal: flip the preference on at selection
-        // time (visible in Settings) rather than overriding it silently. The
-        // orchestrator also routes canary through VAD regardless (share aliases
-        // and Tasker overrides never pass through here).
-        if (record.family == ModelFamily.CANARY && !preferencesManager.vadEnabled.first()) {
-            preferencesManager.saveVadEnabled(true)
-        }
+        // TASK-552: backend write, demotion clear, and the Canary VAD flip
+        // live in ModelActivator (TASK-408/675 rationale there).
+        modelActivator.activateExternal(record)
         val message = ctx.getString(R.string.model_selected_message, record.displayName)
         _uiState.update {
             it.copy(
@@ -1773,13 +1761,10 @@ class ModelViewModel @Inject constructor(
      */
     private fun setDownloadedModel(file: File) {
         viewModelScope.launch {
+            // TASK-552: path + backend persist together (GH #23 rationale in
+            // ModelActivator.activateLlm).
+            modelActivator.activateLlm(file)
             val modelPath = file.absolutePath
-            preferencesManager.saveModelPath(modelPath)
-            // Every legacy-download asset is an LLM (.litertlm) file; persisting
-            // the path without switching the backend leaves the previous backend
-            // active and Gemma never loads (same class as the c36199b fixes for
-            // useDownloadedModel/onModelSelected; reported again as GH #23).
-            preferencesManager.saveTranscriptionBackend(LlmTranscriptionBackend.BACKEND_ID)
             _uiState.update { it.copy(
                 modelPath = modelPath,
                 modelName = file.name,

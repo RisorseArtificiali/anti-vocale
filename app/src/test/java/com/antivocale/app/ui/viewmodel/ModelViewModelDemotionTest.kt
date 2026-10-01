@@ -108,6 +108,7 @@ class ModelViewModelDemotionTest {
             externalCatalogRepository = mockk(relaxed = true),
             applicationScope = kotlinx.coroutines.CoroutineScope(SupervisorJob()),
             silentModelDemoter = demoter,
+            modelActivator = com.antivocale.app.transcription.ModelActivator(prefs, demoter),
         )
     }
 
