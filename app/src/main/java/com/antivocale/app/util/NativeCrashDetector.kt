@@ -20,7 +20,13 @@ import androidx.core.content.edit
  */
 object NativeCrashDetector {
     private const val TAG = "NativeCrashDetector"
-    private const val PREFS_NAME = "native_crash_detection"
+
+    /**
+     * The exit-dedupe home, shared with [MemoryKillStartupCheck]'s advisory
+     * mark (one file, reason-scoped keys; TASK-426 review: a duplicated
+     * literal would silently fork the dedupe state on a future rename).
+     */
+    internal const val DEDUPE_PREFS_NAME = "native_crash_detection"
     private const val KEY_LAST_NATIVE_CRASH_TS = "last_native_crash_ts"
     private const val KEY_LAST_LOW_MEMORY_TS = "last_low_memory_ts"
     private const val KEY_LAST_REPORTED_DEATH_TS = "last_reported_death_ts"
@@ -31,10 +37,12 @@ object NativeCrashDetector {
      * as [ApplicationExitInfo.REASON_LOW_MEMORY]; OEM killers (MIUI
      * PowerKeeper, ColorOS UserAwareMgr) as [ApplicationExitInfo.REASON_SIGNALED];
      * native aborts (sherpa model-load deaths, TASK-479/GH #88) as
-     * [ApplicationExitInfo.REASON_CRASH_NATIVE]. None reach Crashlytics
-     * without this (no NDK SDK), which is why the 4GB crash investigation
-     * (TASK-468) had to be reconstructed statically: these reports close
-     * that blind spot.
+     * [ApplicationExitInfo.REASON_CRASH_NATIVE]. TASK-426 adds the Android 17
+     * memory-cap kill, which masquerades as REASON_OTHER and is separable
+     * only by the "MemoryLimiter" literal in its description. None reach
+     * Crashlytics without this (no NDK SDK), which is why the 4GB crash
+     * investigation (TASK-468) had to be reconstructed statically: these
+     * reports close that blind spot.
      */
     @android.annotation.SuppressLint("InlinedApi") // compile-time-int constants, no runtime field access below API 30
     private val REPORTED_DEATH_REASONS = setOf(
@@ -42,6 +50,11 @@ object NativeCrashDetector {
         ApplicationExitInfo.REASON_SIGNALED,
         ApplicationExitInfo.REASON_CRASH_NATIVE,
     )
+
+    /** Pure: is this exit one telemetry must hear about? */
+    internal fun isReportableDeath(record: ExitRecord): Boolean =
+        record.reason in REPORTED_DEATH_REASONS ||
+            MemoryKillStartupCheck.isMemoryLimiterKill(record.reason, record.description)
 
     /**
      * Sealed result so the caller can pick a distinct message per cause. Each non-None
@@ -87,7 +100,7 @@ object NativeCrashDetector {
             if (!isRecent) return CrashCheckResult.None
 
             // Reason-scoped dedup: each reason has its own last-shown timestamp key.
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val prefs = context.getSharedPreferences(DEDUPE_PREFS_NAME, Context.MODE_PRIVATE)
             val dedupKey = when (matched) {
                 is CrashCheckResult.NativeCrash -> KEY_LAST_NATIVE_CRASH_TS
                 is CrashCheckResult.LowMemory -> KEY_LAST_LOW_MEMORY_TS
@@ -134,6 +147,24 @@ object NativeCrashDetector {
     }
 
     /**
+     * TASK-426: the recent exit history, newest first (the guarded 5-record
+     * read [reportUnreportedDeaths] and the memory-limiter advisory share; a
+     * single-record read would miss a kill buried under a later exit).
+     * Null-safe on the platform errors; empty below API 30.
+     */
+    fun recentExits(context: Context): List<ExitRecord> {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return emptyList()
+        return try {
+            val am = context.getSystemService(ActivityManager::class.java) ?: return emptyList()
+            am.getHistoricalProcessExitReasons(context.packageName, 0, 5)
+                .map { ExitRecord(it.reason, it.timestamp, it.description) }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to read exit history", e)
+            emptyList()
+        }
+    }
+
+    /**
      * TASK-684 review: the EARLIEST exit at or after [afterMs], or null.
      * The freezer recovery's classifier needs the death that owns the
      * orphaned run: between the freeze and the sweep, an intervening
@@ -173,16 +204,15 @@ object NativeCrashDetector {
     fun reportUnreportedDeaths(context: Context) {
         if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R) return
         try {
-            val am = context.getSystemService(ActivityManager::class.java) ?: return
-            val exits = am.getHistoricalProcessExitReasons(context.packageName, 0, 5) ?: return
-            val records = exits.map { ExitRecord(it.reason, it.timestamp, it.description) }
-            val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            val records = recentExits(context)
+            if (records.isEmpty()) return
+            val prefs = context.getSharedPreferences(DEDUPE_PREFS_NAME, Context.MODE_PRIVATE)
             val lastTs = prefs.getLong(KEY_LAST_REPORTED_DEATH_TS, 0L)
             val toReport = unreported(records, lastTs)
             toReport.forEach { record ->
                 CrashReporter.report(
                     SilentProcessDeath(record),
-                    "Silent process exit: ${reasonName(record.reason)} at ${record.timestamp}",
+                    "Silent process exit: ${reasonName(record.reason, record.description)} at ${record.timestamp}",
                 )
             }
             val newMax = toReport.maxOfOrNull { it.timestamp } ?: lastTs
@@ -197,17 +227,18 @@ object NativeCrashDetector {
     /** Pure: deaths worth reporting, oldest first, past the last-reported mark. */
     internal fun unreported(records: List<ExitRecord>, lastReportedTs: Long): List<ExitRecord> =
         records
-            .filter { it.timestamp > lastReportedTs && it.reason in REPORTED_DEATH_REASONS }
+            .filter { it.timestamp > lastReportedTs && isReportableDeath(it) }
             .sortedBy { it.timestamp }
 
-    private fun reasonName(reason: Int): String = when (reason) {
-        ApplicationExitInfo.REASON_LOW_MEMORY -> "LOW_MEMORY"
-        ApplicationExitInfo.REASON_SIGNALED -> "SIGNALED"
-        ApplicationExitInfo.REASON_CRASH_NATIVE -> "CRASH_NATIVE"
+    private fun reasonName(reason: Int, description: String? = null): String = when {
+        MemoryKillStartupCheck.isMemoryLimiterKill(reason, description) -> "MEMORY_LIMITER"
+        reason == ApplicationExitInfo.REASON_LOW_MEMORY -> "LOW_MEMORY"
+        reason == ApplicationExitInfo.REASON_SIGNALED -> "SIGNALED"
+        reason == ApplicationExitInfo.REASON_CRASH_NATIVE -> "CRASH_NATIVE"
         else -> "reason=$reason"
     }
 
     /** Telemetry carrier rendered as a Crashlytics non-fatal record. */
     class SilentProcessDeath(record: ExitRecord) :
-        RuntimeException("Silent process death: ${reasonName(record.reason)} (${record.description ?: "no description"})")
+        RuntimeException("Silent process death: ${reasonName(record.reason, record.description)} (${record.description ?: "no description"})")
 }

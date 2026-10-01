@@ -234,13 +234,20 @@ class SherpaOnnxModelDownloader<V>(
         // TASK-305: structural validation for variants WITHOUT sha256 pins (most of
         // the catalog): truncated/corrupt files die here with an actionable message
         // instead of surfacing as an opaque native model-format error later.
+        // TASK-482 review: a READ failure (listFiles null, EIO on FUSE) must
+        // NOT delete the directory - that would destroy a fully downloaded
+        // multi-hundred-MB model over a transient hiccup. Only content
+        // findings delete; an unreadable dir stays for the next attempt.
         val integrityFindings = DownloadedModelIntegrity.validate(modelDir)
         if (integrityFindings.isNotEmpty()) {
+            val unreadable = integrityFindings.any { it.unreadable }
             val errorMsg = "Downloaded model is incomplete or corrupt: " +
                 integrityFindings.details()
             Log.e(config.tag, errorMsg)
             onStateChange(DownloadState.Error(errorMsg))
-            modelDir.deleteRecursively()
+            if (!unreadable) {
+                modelDir.deleteRecursively()
+            }
             return@withContext Result.failure(Exception(errorMsg))
         }
 

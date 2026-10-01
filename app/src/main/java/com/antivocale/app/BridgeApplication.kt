@@ -56,6 +56,14 @@ class BridgeApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         com.antivocale.app.data.catalog.BundledCatalog.attach(this)
+        // TASK-426: detect a previous memory-limiter/LMK kill of this
+        // process (one binder call) off the main thread; posts one
+        // dismissable advisory per kill and a Crashlytics breadcrumb so
+        // field incidence is measurable. No automatic fallback (the KDoc
+        // on MemoryKillStartupCheck says why).
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            com.antivocale.app.util.MemoryKillStartupCheck.run(this@BridgeApplication)
+        }
         // TASK-684 review: the suspension sweep (below) posts a Retry
         // notification pointing at files/shared_audio; this 24h cleanup must
         // not delete the file BEFORE the offer (a freezer kill + reopen >24h

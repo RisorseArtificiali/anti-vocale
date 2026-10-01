@@ -30,16 +30,22 @@ class NativeCrashDetectorTest {
         val signaled = android.app.ApplicationExitInfo.REASON_SIGNALED
         val native = android.app.ApplicationExitInfo.REASON_CRASH_NATIVE
         val anr = android.app.ApplicationExitInfo.REASON_ANR
+        val other = android.app.ApplicationExitInfo.REASON_OTHER
         val records = listOf(
             NativeCrashDetector.ExitRecord(lowMem, 100L, "lmkd"),
             NativeCrashDetector.ExitRecord(anr, 200L, "user saw a dialog: not silent"),
             NativeCrashDetector.ExitRecord(signaled, 300L, "PowerKeeper"),
             NativeCrashDetector.ExitRecord(native, 400L, "sherpa model load abort"),
             NativeCrashDetector.ExitRecord(lowMem, 50L, "already reported"),
+            // TASK-426: the Android 17 memory-cap kill rides REASON_OTHER and
+            // is separable only by the MemoryLimiter literal; a plain
+            // REASON_OTHER (user stop) stays unreported.
+            NativeCrashDetector.ExitRecord(other, 500L, "MemoryLimiter:AnonSwap"),
+            NativeCrashDetector.ExitRecord(other, 600L, "user requested"),
         )
         val result = NativeCrashDetector.unreported(records, lastReportedTs = 50L)
         assertEquals(
-            listOf(100L, 300L, 400L),
+            listOf(100L, 300L, 400L, 500L),
             result.map { it.timestamp },
         )
     }
