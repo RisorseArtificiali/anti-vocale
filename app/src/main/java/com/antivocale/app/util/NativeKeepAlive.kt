@@ -76,7 +76,10 @@ class NativeKeepAlive(
 
     /** Stores the timeout; a running timer restarts with the new value.
      *  TASK-665: an explicit setTimeout is the USER taking control: the flat
-     *  window wins and the adaptive pair stands down until re-armed. */
+     *  window wins and the adaptive pair stands down until re-armed. When
+     *  the FIRE wins instead, work racing into the window starts on the
+     *  already-unloaded backend and fails cleanly (NotInitialized); the
+     *  next initialize() re-arms. */
     private val userOverride = AtomicBoolean(false)
 
     fun setTimeout(minutes: Int) {
@@ -206,19 +209,19 @@ class NativeKeepAlive(
                 if (timerActive.get() && workInFlight.get() == 0) {
                     idleUnloadWindowHook?.invoke()
                     onIdleUnload()
-                    if (workInFlight.get() > 0) {
-                        // Work that queued while we held the lock started on an
-                        // unloaded backend (its read saw the post-unload null);
-                        // re-arm so the NEXT idle period still fires.
-                        restartLocked()
-                    } else {
-                        // Disarm: no no-op refires every timeout while idle.
-                        // The next initialize() re-arms via start(). TASK-665:
-                        // the idle unload fired: the next window is COLD.
-                        timerActive.set(false)
-                        idleDeadline = null
-                        warm.set(false)
-                    }
+                    // TASK-439: no post-unload re-check of workInFlight.
+                    // Every counter mutation happens under [lock] (beginWork,
+                    // endWork), so work ARRIVING during the unload blocks at
+                    // beginWork's monitor entry, increments only after this
+                    // section exits (by then disarmed), reads the post-unload
+                    // null, and fails cleanly with NotInitialized; the live
+                    // re-arm is the next initialize() calling start().
+                    // Disarm: no no-op refires every timeout while idle.
+                    // The next initialize() re-arms via start(). TASK-665:
+                    // the idle unload fired: the next window is COLD.
+                    timerActive.set(false)
+                    idleDeadline = null
+                    warm.set(false)
                 }
             }
         }

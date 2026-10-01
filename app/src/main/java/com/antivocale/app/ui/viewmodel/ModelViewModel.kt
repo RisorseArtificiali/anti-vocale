@@ -1188,14 +1188,21 @@ class ModelViewModel @Inject constructor(
      * Deletes a downloaded model and refreshes the state.
      */
     fun deleteModel(variant: ModelDownloader.ModelVariant) {
-        viewModelScope.launch {
+        // Review: the catalog-delete twin wraps the identical disk work in
+        // IO; a multi-GB .taskini deletion must not run on Main.immediate.
+        viewModelScope.launch(kotlinx.coroutines.Dispatchers.IO) {
             val success = ModelDownloader.deleteModel(ctx, variant)
             if (success) {
                 refreshDownloadedModels()
                 // Clear model path if this was the selected model
                 if (_uiState.value.modelPath.contains(variant.fileName)) {
                     preferencesManager.saveModelPath("")
-                    shareTargetManager.onModelDeleted(LlmTranscriptionBackend.BACKEND_ID)
+                    // TASK-441: the alias sync rides the app scope (DataStore
+                    // read + PackageManager IPC must survive a ViewModel
+                    // clear mid-sync, like the four sites F4 migrated).
+                    applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                        shareTargetManager.onModelDeleted(LlmTranscriptionBackend.BACKEND_ID)
+                    }
                     shareShortcutManager.refresh()
                     _uiState.update { it.copy(
                         modelPath = "",
@@ -1455,7 +1462,8 @@ class ModelViewModel @Inject constructor(
                     } else {
                         preferencesManager.clearSherpaModelPath(entryId)
                         _uiState.update { it.copy(modelPath = "", modelName = "") }
-                        shareTargetManager.onModelDeleted(entryId)
+                        // TASK-441: same scope move as the LLM site above.
+                        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) { shareTargetManager.onModelDeleted(entryId) }
                         shareShortcutManager.refresh()
                     }
                 }
