@@ -141,6 +141,9 @@ interface PreferencesManager {
     /** TASK-274: consent gate for the exported automation receivers (Tasker surface). */
     val externalAutomationEnabled: Flow<Boolean>
 
+    /** TASK-735: the identity listener's app-level gate; the privacy contract lives on the listener. */
+    val voiceNoteIdentityEnabled: Flow<Boolean>
+
     /**
      * TASK-681: the LAN-offload consent gate. Off by default; while off the
      * backend has no surface anywhere and nothing leaves the device. The
@@ -246,6 +249,9 @@ interface PreferencesManager {
 
     /** TASK-274: see [externalAutomationEnabled]. */
     suspend fun saveExternalAutomationEnabled(enabled: Boolean)
+
+    /** TASK-735: see [voiceNoteIdentityEnabled]. */
+    suspend fun saveVoiceNoteIdentityEnabled(enabled: Boolean)
     suspend fun saveCompactResultActions(enabled: Boolean)
     suspend fun saveLanguageChipEnabled(enabled: Boolean)
 
@@ -371,6 +377,9 @@ interface PreferencesManager {
         /** TASK-274: the automation receivers are opt-in; off, they answer with the error
          *  naming this setting instead of running the request. */
         const val DEFAULT_EXTERNAL_AUTOMATION_ENABLED = false
+
+        /** TASK-735: the identity listener ships off; both gates must be on. */
+        const val DEFAULT_VOICE_NOTE_IDENTITY_ENABLED = false
         /** TASK-681: LAN offload is opt-in; off, no audio ever leaves the device. */
         const val DEFAULT_REMOTE_OMNIVOICE_ENABLED = false
         /** TASK-670: speaker identities are off until the maintainer signs the

@@ -509,9 +509,24 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED
         )
 
+    /** TASK-735: the voice-note identity listener's app-level gate. */
+    val voiceNoteIdentityEnabled: StateFlow<Boolean> = preferencesManager.voiceNoteIdentityEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED
+        )
+
     fun saveExternalAutomationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveExternalAutomationEnabled(enabled)
+        }
+    }
+
+    /** TASK-735: see [voiceNoteIdentityEnabled]. */
+    fun saveVoiceNoteIdentityEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveVoiceNoteIdentityEnabled(enabled)
         }
     }
 

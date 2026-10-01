@@ -1828,6 +1828,55 @@ fun SettingsTab(
             SearchFilterRow(searchQuery, SettingsSearchId.AUTOMATION_HUB, searchState) {
                 SettingsHubCard(R.string.automation_settings_title, R.string.automation_settings_summary) { showAutomationSettings = true }
             }
+
+            // TASK-735: the voice-note identity listener's app-level gate.
+            // The system's notification access is the outer gate; while this
+            // toggle is off the listener reads nothing (the RAM-only privacy
+            // contract is on VoiceNoteIdentityListener). The access probe is
+            // NOT remembered: it must re-read when the user returns from the
+            // system screen.
+            val voiceNoteIdentityEnabled by viewModel.voiceNoteIdentityEnabled.collectAsState()
+            // The access probe is a binder IPC; refresh it exactly when the
+            // user comes back from the system screen (ON_RESUME), not on
+            // every recomposition of the section.
+            var notificationAccessGranted by remember { mutableStateOf(false) }
+            val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+            DisposableEffect(lifecycleOwner) {
+                fun probe() {
+                    notificationAccessGranted = androidx.core.app.NotificationManagerCompat
+                        .getEnabledListenerPackages(context).contains(context.packageName)
+                }
+                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+                    if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) probe()
+                }
+                probe() // ON_RESUME alone never fires for an already-resumed activity
+                lifecycleOwner.lifecycle.addObserver(observer)
+                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            }
+            SearchFilterRow(searchQuery, SettingsSearchId.VOICE_NOTE_IDENTITY, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.RecordVoiceOver,
+                    title = stringResource(R.string.voice_note_identity_title),
+                    description = stringResource(R.string.voice_note_identity_description),
+                    checked = voiceNoteIdentityEnabled,
+                    onCheckedChange = { enabled -> viewModel.saveVoiceNoteIdentityEnabled(enabled) }
+                )
+                if (voiceNoteIdentityEnabled && !notificationAccessGranted) {
+                    // The battery-exemption precedent: the grant action is a
+                    // Button row, not bare text.
+                    TextButton(onClick = {
+                        runCatching {
+                            context.startActivity(Intent(android.provider.Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                        }
+                    }) {
+                        Text(
+                            text = stringResource(R.string.voice_note_identity_grant_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
         }
 
         // Feedback & About section (issue #34 / TASK-341)
@@ -2772,7 +2821,7 @@ internal enum class SettingsSearchId {
     COMPACT_RESULT_ACTIONS, TECHNICAL_DETAILS, LANGUAGE_CHIP, RETRANSCRIBE,
     // Advanced
     BATTERY_EXEMPTION, HUGGINGFACE_AUTH, PERFORMANCE_HUB,
-    SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, PER_APP_SETTINGS,
+    SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_IDENTITY, PER_APP_SETTINGS,
     // Feedback
     FEEDBACK,
 }
@@ -3071,6 +3120,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.external_automation_title, R.string.external_automation_description,
             R.string.automation_guide_title, R.string.automation_guide_description,
             R.string.remote_offload_title, R.string.remote_offload_description),
+        group = SettingsSearchGroup.INTEGRATIONS,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.VOICE_NOTE_IDENTITY, SettingsSearchSection.ADVANCED,
+        listOf(R.string.voice_note_identity_title, R.string.voice_note_identity_description),
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
     // --- Feedback ---

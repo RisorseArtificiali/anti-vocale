@@ -867,6 +867,9 @@
     <string name="external_notice_single_pass">Áudio muito longo pode não ser processado por modelos grandes em uma única passagem. Corte o áudio ou escolha um modelo menor.</string>
     <string name="external_notice_family">Se a transcrição fechar sem erro, a arquitetura pode estar errada: exclua e reimporte o modelo com outra arquitetura.</string>
     <string name="share_targets_title">Modelos no menu Compartilhar</string>
+    <string name="voice_note_identity_title">Reconhecimento do remetente de áudios</string>
+    <string name="voice_note_identity_description">Reconhece quem enviou os áudios que você compartilha, para que o histórico possa mostrá-los e agrupá-los por remetente. Apenas notificações de mensagens são lidas; os nomes ficam na memória deste aparelho e nunca são enviados. Requer acesso às notificações.</string>
+    <string name="voice_note_identity_grant_hint">O acesso às notificações está desativado. Toque para abrir a configuração do sistema e ativá-lo para este app.</string>
     <string name="share_targets_description">Cada modelo baixado aparece como item separado no menu do sistema. O áudio é processado pelo modelo selecionado.</string>
     <string name="advanced_sharing_toggle">Mostrar modelos baixados</string>
     <string name="share_targets_models_info">Cada modelo baixado aparecerá como item no menu Compartilhar. Excluir um modelo remove-o do menu.</string>

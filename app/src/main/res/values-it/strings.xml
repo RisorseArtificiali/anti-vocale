@@ -975,6 +975,9 @@
     <string name="external_notice_single_pass">Un audio molto lungo potrebbe non essere elaborato dai modelli grandi in una sola passata. Accorcia l\'audio o scegli un modello più piccolo.</string>
     <string name="external_notice_family">Se la trascrizione si interrompe senza errori l\'architettura potrebbe essere sbagliata: elimina e reimporta il modello con un\'architettura diversa.</string>
     <string name="share_targets_title">Modelli nel menu Condividi</string>
+    <string name="voice_note_identity_title">Riconoscimento del mittente delle note vocali</string>
+    <string name="voice_note_identity_description">Riconosce chi ha inviato le note vocali che condividi, così la cronologia può mostrarle e raggrupparle per mittente. Vengono lette solo le notifiche di messaggistica; i nomi restano nella memoria di questo dispositivo e non vengono mai inviati. Richiede l\'accesso alle notifiche.</string>
+    <string name="voice_note_identity_grant_hint">L\'accesso alle notifiche è disattivato. Tocca per aprire l\'impostazione di sistema e attivarlo per questa app.</string>
     <string name="share_targets_description">Ogni modello scaricato appare come voce separata nel menu di sistema. L\'audio è elaborato dal modello selezionato.</string>
     <string name="advanced_sharing_toggle">Mostra modelli scaricati</string>
     <string name="share_targets_models_info">Ogni modello scaricato apparirà come voce nel menu Condividi. Eliminando un modello, questo viene rimosso dal menu.</string>

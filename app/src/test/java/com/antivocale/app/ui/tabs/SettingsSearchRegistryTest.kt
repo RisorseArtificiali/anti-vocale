@@ -92,7 +92,8 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.COMPACT_RESULT_ACTIONS, SettingsSearchId.TECHNICAL_DETAILS,
                 SettingsSearchId.LANGUAGE_CHIP, SettingsSearchId.RETRANSCRIBE),
             SettingsSearchGroup.INTEGRATIONS to listOf(
-                SettingsSearchId.SHARE_TARGETS, SettingsSearchId.SUBTITLE_TIMEOUT, SettingsSearchId.AUTOMATION_HUB),
+                SettingsSearchId.SHARE_TARGETS, SettingsSearchId.SUBTITLE_TIMEOUT, SettingsSearchId.AUTOMATION_HUB,
+                SettingsSearchId.VOICE_NOTE_IDENTITY),
         )
         val registryOrder = SETTINGS_SEARCH_CARDS.map { it.id }
         SettingsSearchGroup.entries.forEach { g ->
@@ -304,6 +305,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.SHARE_TARGETS,
                 SettingsSearchId.SUBTITLE_TIMEOUT,
                 SettingsSearchId.AUTOMATION_HUB,
+                SettingsSearchId.VOICE_NOTE_IDENTITY,
             ),
             base,
         )

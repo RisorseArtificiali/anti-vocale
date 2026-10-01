@@ -1026,6 +1026,9 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Models in Share Menu</string>
+    <string name="voice_note_identity_title">Voice note sender recognition</string>
+    <string name="voice_note_identity_description">Recognizes who sent the voice notes you share, so History can show and group them by sender. Only messaging notifications are read; names stay in this device\'s memory and are never sent anywhere. Requires notification access.</string>
+    <string name="voice_note_identity_grant_hint">Notification access is off. Tap to open the system setting and enable it for this app.</string>
     <string name="share_targets_description">Each downloaded model appears as a separate option in the system menu. Audio is processed by the selected model.</string>
     <string name="advanced_sharing_toggle">Show downloaded models</string>
     <string name="share_targets_models_info">Each downloaded model will appear as an item in the share menu. Deleting a model removes it from the menu.</string>

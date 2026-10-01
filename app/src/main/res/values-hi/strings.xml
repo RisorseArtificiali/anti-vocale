@@ -968,6 +968,9 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">शेयर मेन्यू में मॉडल</string>
+    <string name="voice_note_identity_title">वॉइस नोट भेजने वाले की पहचान</string>
+    <string name="voice_note_identity_description">पहचानता है कि आपके साझा किए वॉइस नोट किसने भेजे, ताकि इतिहास उन्हें भेजने वाले के अनुसार दिखा और समूहित कर सके। केवल मैसेजिंग सूचनाएँ पढ़ी जाती हैं; नाम इस डिवाइस की मेमोरी में रहते हैं और कहीं नहीं भेजे जाते। सूचना एक्सेस चाहिए।</string>
+    <string name="voice_note_identity_grant_hint">सूचना एक्सेस बंद है। सिस्टम सेटिंग खोलने और इस ऐप के लिए इसे चालू करने के लिए टैप करें।</string>
     <string name="share_targets_description">हर डाउनलोड किया मॉडल सिस्टम मेन्यू में अलग विकल्प के रूप में दिखेगा। ऑडियो चुने गए मॉडल से प्रोसेस होगा।</string>
     <string name="advanced_sharing_toggle">डाउनलोड किए मॉडल दिखाएं</string>
     <string name="share_targets_models_info">हर डाउनलोड किया मॉडल शेयर मेन्यू में अलग एंट्री के रूप में दिखेगा। मॉडल मिटाने पर वह मेन्यू से हट जाएगा।</string>

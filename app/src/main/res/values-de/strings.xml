@@ -969,6 +969,9 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Modelle im Teilen-Menü</string>
+    <string name="voice_note_identity_title">Erkennung des Absenders von Sprachnachrichten</string>
+    <string name="voice_note_identity_description">Erkennt, wer die geteilten Sprachnachrichten gesendet hat, damit der Verlauf sie nach Absender anzeigen und gruppieren kann. Gelesen werden nur Messaging-Benachrichtigungen; Namen bleiben im Speicher dieses Geräts und werden nie gesendet. Erfordert den Benachrichtigungszugriff.</string>
+    <string name="voice_note_identity_grant_hint">Benachrichtigungszugriff ist aus. Tippe, um die Systemeinstellung zu öffnen und ihn für diese App zu aktivieren.</string>
     <string name="share_targets_description">Jedes heruntergeladene Modell erscheint als eigener Eintrag im Systemmenü. Das Audio verarbeitet das ausgewählte Modell.</string>
     <string name="advanced_sharing_toggle">Heruntergeladene Modelle anzeigen</string>
     <string name="share_targets_models_info">Jedes heruntergeladene Modell erscheint als Eintrag im Teilen-Menü. Beim Löschen wird das Modell aus dem Menü entfernt.</string>

@@ -1018,6 +1018,9 @@
 
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">מודלים בתפריט השיתוף</string>
+    <string name="voice_note_identity_title">זיהוי שולח ההודעות הקוליות</string>
+    <string name="voice_note_identity_description">מזהה מי שלח את ההודעות הקוליות שאתה משתף, כדי שההיסטוריה תוכל להציגן ולקבץ אותן לפי שולח. נקראות רק התראות של יישומי הודעות; השמות נשארים בזיכרון המכשיר הזה ולעולם לא נשלחים לשום מקום. דורש גישה להתראות.</string>
+    <string name="voice_note_identity_grant_hint">גישה להתראות כבויה. הקש כדי לפתוח את הגדרת המערכת ולהפעיל אותה ליישום הזה.</string>
     <string name="share_targets_description">כל מודל שהורד מופיע כאפשרות נפרדת בתפריט המערכת. האודיו מעובד על ידי המודל שנבחר.</string>
     <string name="advanced_sharing_toggle">הצגת מודלים שהורדו</string>
     <string name="share_targets_models_info">כל מודל שהורד יופיע כפריט בתפריט השיתוף. מחיקת מודל מסירה אותו מהתפריט.</string>
