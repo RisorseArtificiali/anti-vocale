@@ -47,11 +47,14 @@ object VoiceNoteIdentityExtractor {
 
     /** "(m:ss)" or "(h:mm:ss)" to seconds; null when [secondsText] did not parse. */
     internal fun parseDurationSeconds(secondsText: String): Long? {
-        val parts = secondsText.split(":").mapNotNull { it.toLongOrNull() }
-        if (parts.isEmpty() || parts.any { it < 0 }) return null
+        // Total: a single unparsable segment rejects the whole text (a
+        // partial parse would confidently feed the 1s match tolerance a
+        // wrong duration).
+        val parts = secondsText.split(":").map { it.toLongOrNull() }
+        if (parts.any { it == null }) return null
         return when (parts.size) {
-            2 -> parts[0] * 60 + parts[1]
-            3 -> parts[0] * 3600 + parts[1] * 60 + parts[2]
+            2 -> parts[0]!! * 60 + parts[1]!!
+            3 -> parts[0]!! * 3600 + parts[1]!! * 60 + parts[2]!!
             else -> null
         }
     }
@@ -108,7 +111,12 @@ object VoiceNoteIdentityExtractor {
         )
     }
 
-    /** WhatsApp only until Telegram's voice marker is verified on a device. */
-    private fun isMessagingPackage(pkg: String): Boolean =
-        pkg.contains("whatsapp", ignoreCase = true)
+    /**
+     * EXACT ids only (review: a substring match let com.foo.whatsappclone
+     * through): the packages the spike verified. Telegram joins with its
+     * verified marker, not its package substring.
+     */
+    private val MESSAGING_PACKAGES = setOf("com.whatsapp", "com.whatsapp.w4b")
+
+    private fun isMessagingPackage(pkg: String): Boolean = pkg in MESSAGING_PACKAGES
 }

@@ -96,6 +96,11 @@ class MainActivity : AppCompatActivity() {
 
         // If the previous process died from a native crash (e.g. sherpa-onnx
         // exit(255) from a corrupt model) or a low-memory kill, explain what happened.
+        // TASK-426: the memory-limiter advisory posts from this foreground
+        // context, not the Application: a post from a background process
+        // start (cold race, a broadcast) is silently dropped on 13+ and
+        // would consume the once-per-kill mark without ever being shown.
+        com.antivocale.app.util.MemoryKillStartupCheck.run(this)
         when (val crash = NativeCrashDetector.checkForRecentCrash(this)) {
             is NativeCrashDetector.CrashCheckResult.NativeCrash -> {
                 // If the user had NNAPI selected, the crash was likely the NNAPI driver:

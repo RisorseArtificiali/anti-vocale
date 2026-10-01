@@ -12,7 +12,6 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
@@ -47,12 +46,12 @@ class VoiceNoteIdentityListener : NotificationListenerService() {
         // (review: an eternal collect per reconnect into the app scope
         // accumulates).
         prefJob?.cancel()
-        // Read once synchronously (this is a binder thread): notifications
-        // posted in the window before the DataStore collector's first
-        // emission must not be dropped when the toggle is on.
-        enabled = kotlinx.coroutines.runBlocking {
-            preferencesManager.voiceNoteIdentityEnabled.first()
-        }
+        // No synchronous read: these callbacks arrive on the service's MAIN
+        // looper, and runBlocking there parks the thread on a DataStore disk
+        // read at every rebind (Oplus rebinds aggressively). The collector's
+        // first emission arms the gate a few ms later; a voice note posted
+        // in that window stays unlabeled, which is the honest default
+        // (unlabeled beats mislabeled) and strictly better than a stall.
         prefJob = scope.launch {
             preferencesManager.voiceNoteIdentityEnabled.collect {
                 enabled = it
