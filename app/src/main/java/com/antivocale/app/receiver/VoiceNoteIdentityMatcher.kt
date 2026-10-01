@@ -6,14 +6,14 @@ package com.antivocale.app.receiver
  *
  * - Candidates are the listener's cache entries for the SAME calling
  *   package, newest first, already TTL-pruned by the cache.
- * - When the share's audio duration is known, a candidate counts only if
- *   the notification's "(m:ss)" marker agrees within [DURATION_TOLERANCE_S]:
- *   the marker is the spike-verified WhatsApp evidence and disagreement
- *   means it is a DIFFERENT note. No agreeing candidate and a known
- *   duration: NO label (no guessing), the honest answer for a stale cache.
- * - Without a probed duration the newest candidate wins (recency-only; the
- *   cache only ever holds marker-bearing voice notes, so the class of
- *   candidate is right even when the specific note is ambiguous).
+ * - A candidate counts only if the notification's "(m:ss)" marker agrees
+ *   with the probed audio duration within [DURATION_TOLERANCE_S]: the
+ *   marker is the spike-verified WhatsApp evidence and disagreement means
+ *   it is a DIFFERENT note.
+ * - Without a probed duration there is NO label (review: recency-only
+ *   matched the newest CACHED name to whatever was shared, writing a
+ *   person's name on the wrong note; a wrong name is the one outcome worse
+ *   than no name).
  * - Two notes of the same duration inside the window resolve to the NEWEST
  *   (best-effort; the collision is rare and the label is metadata, not
  *   gospel).
@@ -32,7 +32,7 @@ object VoiceNoteIdentityMatcher {
         audioDurationSeconds: Long?,
     ): VoiceNoteIdentityExtractor.VoiceNote? {
         if (candidates.isEmpty()) return null
-        if (audioDurationSeconds == null) return candidates.first()
+        if (audioDurationSeconds == null) return null
         return candidates.firstOrNull {
             it.durationSeconds != null &&
                 kotlin.math.abs(it.durationSeconds - audioDurationSeconds) <= DURATION_TOLERANCE_S

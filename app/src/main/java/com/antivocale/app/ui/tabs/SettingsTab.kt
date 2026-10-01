@@ -237,7 +237,11 @@ fun SettingsTab(
                     target = sectionOffsets[dest.key]
                 }
                 target?.let { rootY ->
-                    val contentY = rootY - scrollContentRootY
+                    // positionInRoot() shifts with the scroll placement, so
+                    // converting back to content space needs the CURRENT
+                    // scroll added (review: without it the target lands
+                    // scroll-now pixels too low on an already-scrolled list).
+                    val contentY = rootY - scrollContentRootY + scrollState.value
                     navScope.launch { scrollState.animateScrollTo(maxOf(0, contentY - 32)) }
                 }
             }
@@ -547,7 +551,7 @@ fun SettingsTab(
                     val key = matchedSections[matchHop % matchedSections.size]
                     matchHop++
                     val target = sectionOffsets[key] ?: return@clickable
-                    navScope.launch { scrollState.animateScrollTo(maxOf(0, target - scrollContentRootY - 32)) }
+                    navScope.launch { scrollState.animateScrollTo(maxOf(0, target - scrollContentRootY + scrollState.value - 32)) }
                 } else Modifier
             )
         }
@@ -903,51 +907,13 @@ fun SettingsTab(
             // status card at the top of this section.
             if (isLlmBackend) {
                 SearchFilterRow(searchQuery, SettingsSearchId.DEFAULT_PROMPT, searchState) {
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable(role = Role.Button) { showPromptSettings = true },
-                        shape = MaterialTheme.shapes.medium
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // Locale-safe: weight lets title/description wrap instead of
-                            // displacing the trailing chevron (TASK-345)
-                            Row(
-                                modifier = Modifier.weight(1f),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                                Column {
-                                    Text(
-                                        text = stringResource(R.string.default_prompt_title),
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Text(
-                                        text = stringResource(R.string.default_prompt_description),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = stringResource(R.string.open_prompt_settings),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-                }
+                    SettingsHubCard(
+                        titleRes = R.string.default_prompt_title,
+                        summaryRes = R.string.default_prompt_description,
+                        leadingIcon = Icons.Default.Edit,
+                        onOpen = { showPromptSettings = true },
+                    )
+            }
             }
 
             // Maintainer decision 2026-09-30: diarization settings moved
@@ -980,41 +946,12 @@ fun SettingsTab(
             // TASK-543: the two export cards live on their own sub-page now;
             // this entry card navigates there.
             SearchFilterRow(searchQuery, SettingsSearchId.EXPORT_SETTINGS, searchState) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button) { showExportSettings = true },
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.export_settings_title),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = stringResource(R.string.export_settings_description),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                SettingsHubCard(
+                    titleRes = R.string.export_settings_title,
+                    summaryRes = R.string.export_settings_description,
+                    leadingIcon = Icons.Default.Save,
+                    onOpen = { showExportSettings = true },
+                )
             }
 
             // TASK-647: the AI-disclaimer signature. Applies to what LEAVES
@@ -1758,47 +1695,13 @@ fun SettingsTab(
 
             // Per-App Settings Navigation Card
             SearchFilterRow(searchQuery, SettingsSearchId.PER_APP_SETTINGS, searchState) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button) { showPerAppSettings = true },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.per_app_settings_title),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    text = stringResource(R.string.per_app_settings_description),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = stringResource(R.string.open_per_app_settings),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                SettingsHubCard(
+                    titleRes = R.string.per_app_settings_title,
+                    summaryRes = R.string.per_app_settings_description,
+                    leadingIcon = Icons.Default.Settings,
+                    openActionLabelRes = R.string.open_per_app_settings,
+                    onOpen = { showPerAppSettings = true },
+                )
             }
 
             SettingsGroupLabel(SettingsSearchGroup.INTEGRATIONS, searchState)

@@ -32,12 +32,14 @@ class VoiceNoteIdentityMatcherTest {
     }
 
     @Test
-    fun `without a probed duration the newest candidate wins`() {
+    fun `without a probed duration there is no label`() {
+        // Review: recency-only wrote the newest CACHED name on whatever was
+        // shared; a wrong name beats silence in no direction.
         val candidates = listOf(
             note("Marta", 52L, ts = 2_000),
             note("Chiara", 4L, ts = 1_000),
         )
-        assertEquals("Marta", VoiceNoteIdentityMatcher.select(candidates, audioDurationSeconds = null)?.sender)
+        assertNull(VoiceNoteIdentityMatcher.select(candidates, audioDurationSeconds = null))
     }
 
     @Test

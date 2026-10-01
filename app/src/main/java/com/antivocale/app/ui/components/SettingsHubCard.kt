@@ -15,6 +15,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
@@ -24,11 +25,17 @@ import androidx.compose.ui.unit.dp
  * secondary page (title + one-line summary + chevron). The three instances
  * (Diarization, Performance & Memory, Automation & Offload) were identical
  * except the two resource ids, so this is their one shared shape.
+ * TASK-732: the entry cards that open a page as their WHOLE purpose
+ * (export settings, per-app settings, default prompt) converged onto this
+ * shape too; [leadingIcon] carries their icon (null = the plain hub look).
  */
 @Composable
 fun SettingsHubCard(
     titleRes: Int,
     summaryRes: Int,
+    leadingIcon: ImageVector? = null,
+    /** Optional chevron announcement for TalkBack (TASK-732: the converged cards keep theirs). */
+    openActionLabelRes: Int? = null,
     onOpen: () -> Unit,
 ) {
     Card(
@@ -44,6 +51,14 @@ fun SettingsHubCard(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            leadingIcon?.let {
+                Icon(
+                    imageVector = it,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(end = 12.dp)
+                )
+            }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = stringResource(titleRes),
@@ -57,7 +72,7 @@ fun SettingsHubCard(
             }
             Icon(
                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                contentDescription = null,
+                contentDescription = openActionLabelRes?.let { stringResource(it) },
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }

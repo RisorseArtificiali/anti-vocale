@@ -532,6 +532,14 @@ class ExternalModelImporter(
         // already runs) instead of a slow native-load failure later.
         val integrityFindings = DownloadedModelIntegrity.validate(targetDir)
         if (integrityFindings.isNotEmpty()) {
+            // TASK-482 review: a READ failure (listFiles null, transient IO)
+            // must NOT run the import-cleanup delete on a healthy copy; only
+            // content findings abort the import. Unreadable surfaces as a
+            // retryable error and the copy stays for the next attempt.
+            if (integrityFindings.any { it.unreadable }) {
+                throw IllegalStateException(
+                    "integrity check could not read the copied files: " + integrityFindings.details())
+            }
             throw IllegalArgumentException("integrity check failed: " + integrityFindings.details())
         }
 
@@ -606,10 +614,18 @@ class ExternalModelImporter(
         return targetDir
     }
 
-    /** Runs [block]; on failure removes [targetDir] so no half-imported dir survives. */
+    /**
+     * Runs [block]; on failure removes [targetDir] so no half-imported dir
+     * survives. TASK-482 review: a TRANSIENT read failure must not delete a
+     * healthy multi-GB copy, so the unreadable signal (IllegalStateException
+     * from the integrity gate) passes through WITHOUT the cleanup delete;
+     * the copy stays for a clean retry.
+     */
     private suspend fun <R> importCleaningUpOnFailure(targetDir: File, block: suspend () -> R): R =
         try {
             block()
+        } catch (e: IllegalStateException) {
+            throw e
         } catch (e: Exception) {
             targetDir.deleteRecursively()
             throw e

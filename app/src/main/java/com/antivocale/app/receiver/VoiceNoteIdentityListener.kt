@@ -63,6 +63,16 @@ class VoiceNoteIdentityListener : NotificationListenerService() {
         Log.i(TAG, "connected; enabled=$enabled (pref collector armed)")
     }
 
+    override fun onDestroy() {
+        // A rebind constructs a NEW service instance, and teardown paths that
+        // skip onListenerDisconnected (kill, access revoked while unbound)
+        // would leave THIS instance's eternal collector in the app scope
+        // holding a dead service (review).
+        prefJob?.cancel()
+        prefJob = null
+        super.onDestroy()
+    }
+
     override fun onListenerDisconnected() {
         prefJob?.cancel()
         prefJob = null
