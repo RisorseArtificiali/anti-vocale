@@ -319,15 +319,28 @@ class TranscriptionOrchestrator @Inject constructor(
                 if (it is kotlinx.coroutines.CancellationException) throw it
                 Log.w(TAG, "First pass machinery failed; single-model run", it)
             }.getOrNull()
+            val requestedBackendId = backendOverride ?: preferencesManager.transcriptionBackend.first()
             if (fastFirstPass != null) {
                 // Phase transition: the row keeps the first-pass text; the
                 // notification says what is happening now (the design's
                 // "Refining with <model>..." line).
                 runCatching {
-                    val accurateId = backendOverride ?: preferencesManager.transcriptionBackend.first()
-                    val name = displayNameForBackend(context, accurateId)
+                    val name = displayNameForBackend(context, requestedBackendId)
                     listener.onStatusUpdate(context.getString(R.string.refining_status, name))
                 }
+            }
+
+            // GH #45 / TASK-734: the model credit is written BEFORE the load:
+            // the requested id plus the saved path resolve without a live
+            // backend, so the failure row and the F4 degradation arm keep the
+            // name too (the success site below re-derives the same value from
+            // the live backend, the exact name if a load ever substituted).
+            // Metadata only: rethrow cancellation (the contract 20 lines
+            // above), never break the run for the credit.
+            runCatching {
+                logDao.setModelName(taskId, displayNameForBackend(context, requestedBackendId))
+            }.onFailure {
+                if (it is kotlinx.coroutines.CancellationException) throw it
             }
 
             // Ensure the correct backend is loaded
