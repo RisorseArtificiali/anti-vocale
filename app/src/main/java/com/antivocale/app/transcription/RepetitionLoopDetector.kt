@@ -78,6 +78,10 @@ object RepetitionLoopDetector {
     private val WHITESPACE = Regex("\\s+")
     private val CJK = Regex("[\\u3040-\\u30ff\\u3400-\\u4dbf\\u4e00-\\u9fff\\uf900-\\ufaff]")
 
+    /** The one formatter for the persisted compact form (see [Detection.metrics]). */
+    private fun formatMetrics(compression: Float, dominance: Float): String =
+        "compression=%.4f ngram=%.4f".format(Locale.US, compression, dominance)
+
     /**
      * TASK-582: a fired detection with the measured signal maxima for
      * threshold tuning. Once a window fires the scan CONTINUES to the end
@@ -94,8 +98,7 @@ object RepetitionLoopDetector {
         /** The compact persisted form, Locale-stable: "compression=2.3951
          *  ngram=0.1053". Four decimals: two decimals rendered 2.3951 and
          *  2.4049 identically, losing the tuning signal at 2.4. */
-        fun metrics(): String =
-            "compression=%.4f ngram=%.4f".format(Locale.US, maxCompressionRatio, maxTrigramDominance)
+        fun metrics(): String = formatMetrics(maxCompressionRatio, maxTrigramDominance)
     }
 
     /**
@@ -103,43 +106,33 @@ object RepetitionLoopDetector {
      * acceptable-text maxima (the one-sided-tuning gap: clean maxima were
      * computed then discarded, so a future false-positive report arrived
      * with no data on the acceptable distribution to move a threshold
-     * against). `cleanMaxima` is null exactly when a detection fired.
+     * against). `cleanMaxima` is null on a fired detection AND on short
+     * texts (the same floor where detect() returns null).
      */
     data class Scan(
         val detection: Detection?,
-        /** "compression=X ngram=Y" of the acceptable text; null on a fire. */
+        /** "compression=X ngram=Y" of the acceptable text; null on a fire
+         *  or on a short text (the same floor where detection is null). */
         val cleanMaxima: String?,
     )
 
-    fun scan(text: String): Scan {
-        val detection = detect(text)
-        return if (detection != null) Scan(detection, null) else Scan(null, cleanMaxima(text))
-    }
-
-    /** The acceptable-text maxima in the persisted compact form. */
-    private fun cleanMaxima(text: String): String? {
-        val tokens = tokenize(text)
-        if (tokens.size < MIN_TOKENS) return null
-        var maxCompression = 0f
-        var maxDominance = 0f
-        var start = 0
-        val lastStart = tokens.size - WINDOW_TOKENS
-        while (start <= lastStart) {
-            val window = tokens.subList(start, start + WINDOW_TOKENS).joinToString(" ")
-            maxCompression = maxOf(maxCompression, compressionRatio(window))
-            maxDominance = maxOf(maxDominance, topTrigramDominance(tokens, start, start + WINDOW_TOKENS))
-            if (start == lastStart) break
-            start = minOf(start + WINDOW_STEP, lastStart)
-        }
-        return "compression=%.4f ngram=%.4f".format(Locale.US, maxCompression, maxDominance)
-    }
+    /** The [Scan] payload before its packaging: maxima either way, the
+     *  first fired arm's reason when one fired. Null = short text. */
+    private data class WalkResult(
+        val firedReason: String?,
+        val maxCompression: Float,
+        val maxDominance: Float,
+    )
 
     /**
-     * @return the detection (reason plus measured values) when [text] is a
-     *   runaway repetition loop, null when the text is acceptable
-     *   (including every short or condensed text, by construction).
+     * THE one window walk: measures every window's compression and trigram
+     * dominance, records the first arm that fires, and returns the maxima
+     * either way so the fired and clean distributions stay comparable
+     * (simplify round: a second walk re-walking the same windows had made
+     * the two dialects drift-able exactly where the task's own next step,
+     * the Gap-1 window re-measurement, must edit them).
      */
-    fun detect(text: String): Detection? {
+    private fun walk(text: String): WalkResult? {
         val tokens = tokenize(text)
         if (tokens.size < MIN_TOKENS) return null
         var start = 0
@@ -165,7 +158,23 @@ object RepetitionLoopDetector {
             if (start == lastStart) break
             start = minOf(start + WINDOW_STEP, lastStart)
         }
-        return firedReason?.let { Detection(it, maxCompression, maxDominance) }
+        return WalkResult(firedReason, maxCompression, maxDominance)
+    }
+
+    fun scan(text: String): Scan = when (val w = walk(text)) {
+        null -> Scan(null, null)
+        else -> w.firedReason
+            ?.let { Scan(Detection(it, w.maxCompression, w.maxDominance), null) }
+            ?: Scan(null, formatMetrics(w.maxCompression, w.maxDominance))
+    }
+
+    /**
+     * @return the detection (reason plus measured values) when [text] is a
+     *   runaway repetition loop, null when the text is acceptable
+     *   (including every short or condensed text, by construction).
+     */
+    fun detect(text: String): Detection? = walk(text)?.let { w ->
+        w.firedReason?.let { Detection(it, w.maxCompression, w.maxDominance) }
     }
 
     /**
