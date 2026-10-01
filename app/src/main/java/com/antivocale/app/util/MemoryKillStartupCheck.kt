@@ -86,10 +86,20 @@ object MemoryKillStartupCheck {
 
             // The channel must exist before notify() or the system silently
             // drops the post (fresh installs can be killed before any result
-            // notification ever created it); the mark is written only AFTER a
-            // successful post so a dropped notification retries next launch.
+            // notification ever created it). TASK-426 review: a post the
+            // system DROPS (notifications disabled at the app or channel
+            // level, the common fresh-install state on 13+) must not consume
+            // the once-per-kill mark - nothing shown, nothing marked, and the
+            // advisory retries after the user grants the permission.
             AppNotificationChannel.TRANSCRIPTION_RESULT.create(context)
             val nm = context.getSystemService(android.app.NotificationManager::class.java)
+            val channel = nm.getNotificationChannel(AppNotificationChannel.TRANSCRIPTION_RESULT.id)
+            if (!nm.areNotificationsEnabled() ||
+                channel?.importance == android.app.NotificationManager.IMPORTANCE_NONE
+            ) {
+                Log.w(TAG, "Advisory skipped: notifications disabled; the kill stays unmarked")
+                return
+            }
             nm.notify(
                 NOTIFICATION_ID,
                 ResultNotificationFactory(context).alertNotification(
