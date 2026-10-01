@@ -26,6 +26,27 @@ class LogEntityMapperTest {
         assertEquals(LogEntry.Status.SUCCESS, entry.status)
     }
 
+    // ── toLogEntry/toEntity: senderName round trip (TASK-736) ──────
+    // A dropped mapper line would silently null the label on every whole-row
+    // @Update (the getByTaskId full-SELECT round trip); the projection test
+    // cannot catch it because it inserts via the DAO.
+
+    @Test
+    fun `senderName survives the entity to entry to entity round trip`() {
+        val entity = LogEntity(
+            id = "test-id",
+            timestamp = 1000L,
+            taskId = "task-1",
+            type = "AUDIO",
+            status = "SUCCESS",
+            sourcePackageName = "com.whatsapp",
+            senderName = "Chiara"
+        )
+        val roundTrip = entity.toLogEntry().toEntity()
+        assertEquals("Chiara", roundTrip.senderName)
+        assertNull(entity.copy(senderName = null).toLogEntry().senderName)
+    }
+
     // ── toLogEntry: sourcePackageName null ─────────────────────────
 
     @Test

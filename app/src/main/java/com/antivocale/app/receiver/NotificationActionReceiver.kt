@@ -169,6 +169,10 @@ class NotificationActionReceiver : BroadcastReceiver() {
             intent.getStringExtra(EXTRA_SOURCE_PACKAGE)?.let {
                 putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, it)
             }
+            // TASK-736: keep the sender label on the re-run's row.
+            intent.getStringExtra(InferenceService.EXTRA_SENDER_NAME)?.let {
+                putExtra(InferenceService.EXTRA_SENDER_NAME, it)
+            }
         }
         when (com.antivocale.app.service.InferenceEnqueue.start(context, serviceIntent)) {
             com.antivocale.app.service.InferenceEnqueue.Outcome.Started,

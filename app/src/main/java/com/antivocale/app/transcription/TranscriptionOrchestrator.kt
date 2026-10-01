@@ -3873,7 +3873,9 @@ class TranscriptionOrchestrator @Inject constructor(
         requestType: String,
         prompt: String = "",
         filePath: String? = null,
-        sourcePackageName: String? = null
+        sourcePackageName: String? = null,
+        /** TASK-736: the matched voice-note sender, from the share flow. */
+        senderName: String? = null,
     ) {
         logDao.insert(
             LogEntry(
@@ -3882,7 +3884,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 status = LogEntry.Status.QUEUED,
                 prompt = prompt,
                 filePath = filePath,
-                sourcePackageName = sourcePackageName
+                sourcePackageName = sourcePackageName,
+                senderName = senderName
             ).toEntity()
         )
     }

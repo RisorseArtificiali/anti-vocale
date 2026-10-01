@@ -67,6 +67,9 @@ interface BackendRegistryEntryPoint {
     /** The chooser reads valid external records; same no-@AndroidEntryPoint situation. */
     fun externalModelStore(): com.antivocale.app.data.ExternalModelStore
 
+    /** TASK-736: the identity cache the listener fills; the share flow matches against it. */
+    fun voiceNoteIdentityCache(): VoiceNoteIdentityCache
+
     /**
      * GH #18: the share-time decode probe. The copy path accepts every file,
      * so this is how the share flow learns whether the device can actually
@@ -519,7 +522,11 @@ class ShareReceiverActivity : Activity() {
         }
 
         // ---- Default ASR path ----
-        val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride)
+        // TASK-736: match the shared audio against the identity cache (the
+        // free candidates check first; the duration probe runs only when a
+        // voice note from this package is actually cached).
+        val senderName = withContext(Dispatchers.IO) { matchSenderIdentity(localPath) }
+        val serviceIntent = buildServiceIntent(taskId, localPath, requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO, trackIndex = -1, backendOverride = backendOverride, senderName = senderName)
 
         // F6: unified enqueue (trampoline fallback on the API 31+
         // restriction). The Failed branch is the no-signal case (e.g.
@@ -582,12 +589,14 @@ class ShareReceiverActivity : Activity() {
         localPath: String,
         requestType: String,
         trackIndex: Int,
-        backendOverride: String?
+        backendOverride: String?,
+        senderName: String? = null,
     ): Intent = Intent(this, InferenceService::class.java).apply {
         putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, requestType)
         putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, localPath)
         putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
         sourcePackage?.let { putExtra(EXTRA_SOURCE_PACKAGE, it) }
+        senderName?.let { putExtra(InferenceService.EXTRA_SENDER_NAME, it) }
         // Don't pass a prompt - let InferenceService use the default from settings
         putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_SHARE)
         backendOverride?.let { putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, it) }
@@ -596,6 +605,26 @@ class ShareReceiverActivity : Activity() {
         }
     }
 
+
+    /**
+     * TASK-736: the identity match for one shared file. Free short-circuit
+     * when nothing is cached for the calling package; the duration probe
+     * (one MediaMetadataRetriever pass) runs only for real candidates, so
+     * every ordinary share pays nothing.
+     */
+    private fun matchSenderIdentity(localPath: String): String? {
+        val candidates = appEntryPoint.voiceNoteIdentityCache()
+            .forPackage(sourcePackage.orEmpty())
+        if (candidates.isEmpty()) return null
+        // The HOUSE duration probe, not a raw MediaMetadataRetriever: voice
+        // notes are Ogg Opus, where the retriever's KEY_DURATION is the
+        // documented-unreliable path (GH #91); this one reads the granule
+        // position first. Returns seconds.
+        val durationSeconds = runCatching {
+            appEntryPoint.audioPreprocessor().getAudioDuration(localPath)
+        }.getOrNull()?.takeIf { it > 0 }?.toLong()
+        return VoiceNoteIdentityMatcher.select(candidates, durationSeconds)?.sender
+    }
 
     private fun cleanup() {
         // Unregister receiver and cancel timeout

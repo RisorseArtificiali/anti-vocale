@@ -1067,8 +1067,11 @@ fun LogEntryItem(
                     if (log.type == LogEntry.Type.AUDIO) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = log.sourcePackageName?.let { AppInfoUtils.getAppName(context, it) }
-                                ?: stringResource(R.string.voice_message_duration),
+                            // TASK-736: the matched sender leads, the source app follows.
+                            text = listOfNotNull(
+                                log.senderName,
+                                log.sourcePackageName?.let { AppInfoUtils.getAppName(context, it) },
+                            ).joinToString(", ").ifEmpty { stringResource(R.string.voice_message_duration) },
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             // Locale-safe: ellipsize instead of pushing the timestamp (TASK-345)

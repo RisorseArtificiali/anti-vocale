@@ -199,12 +199,15 @@ class ResultNotificationFactory(private val context: Context) {
         prompt: String?,
         sourcePackage: String?,
         retryFileAlive: Boolean = true,
+        /** TASK-736: the original row's sender, so the re-run's row keeps the label. */
+        senderName: String? = null,
     ): Notification {
         val rerunIntent = Intent(context, NotificationActionReceiver::class.java).apply {
             action = NotificationActionReceiver.ACTION_RERUN_SUSPENDED
             putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
             putExtra(TaskerRequestReceiver.EXTRA_PROMPT, prompt ?: "")
             sourcePackage?.let { putExtra(NotificationActionReceiver.EXTRA_SOURCE_PACKAGE, it) }
+            senderName?.let { putExtra(InferenceService.EXTRA_SENDER_NAME, it) }
             // Diagnostic only: the re-run mints its own task id.
             putExtra(NotificationActionReceiver.EXTRA_TASK_ID, rerunTaskId)
         }

@@ -22,6 +22,8 @@ data class LogEntity(
     val filePath: String? = null,
     val audioDurationSeconds: Double = 0.0,
     val sourcePackageName: String? = null,
+    /** TASK-736: the voice note's sender, matched from the notification identity cache at share time (null on pre-v13 rows and unmatched shares). */
+    val senderName: String? = null,
     /** True when transcription completed but one or more audio chunks were skipped (e.g. low-RAM OOM). */
     val isPartial: Boolean = false,
     /** Number of audio chunks that failed (only meaningful when isPartial == true). */
@@ -80,6 +82,7 @@ fun LogEntity.toLogEntry(): LogEntry = LogEntry(
     filePath = filePath,
     audioDurationSeconds = audioDurationSeconds,
     sourcePackageName = sourcePackageName,
+    senderName = senderName,
     isPartial = isPartial,
     failedChunkCount = failedChunkCount,
     modelName = modelName,
@@ -107,6 +110,7 @@ fun LogEntry.toEntity(): LogEntity = LogEntity(
     filePath = filePath,
     audioDurationSeconds = audioDurationSeconds,
     sourcePackageName = sourcePackageName,
+    senderName = senderName,
     isPartial = isPartial,
     failedChunkCount = failedChunkCount,
     modelName = modelName,

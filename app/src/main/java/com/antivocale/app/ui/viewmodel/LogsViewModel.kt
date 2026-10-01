@@ -68,6 +68,8 @@ data class LogEntry(
     val failedChunkCount: Int = 0,
     /** Display name of the model that produced this transcription (GH #45; null on old rows). */
     val modelName: String? = null,
+    /** TASK-736: the voice note's sender (null on old rows and unmatched shares). */
+    val senderName: String? = null,
     /** TASK-276 AC3: raw ASR text pre-punctuation, when the pass changed it. */
     val rawTranscript: String? = null,
     /** TASK-121.4: the AI summary of a long transcript, when the pass produced one. */
@@ -810,6 +812,11 @@ class LogsViewModel @Inject constructor(
             }
             originalEntry.sourcePackageName?.let {
                 putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, it)
+            }
+            // TASK-736: the sender label must survive a re-run (the fresh
+            // row is a new task; without this the label is one-shot).
+            originalEntry.senderName?.let {
+                putExtra(InferenceService.EXTRA_SENDER_NAME, it)
             }
         }
         // F2: unified enqueue; a restricted start rides the fallback

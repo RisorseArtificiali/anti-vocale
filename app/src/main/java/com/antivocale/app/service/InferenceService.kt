@@ -80,6 +80,8 @@ class InferenceService : Service(), TranscriptionListener {
 
         const val EXTRA_SOURCE = "source"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
+        /** TASK-736: the matched voice-note sender (share flow only). */
+        const val EXTRA_SENDER_NAME = "sender_name"
         const val SOURCE_SHARE = "share"
 
         /** TASK-500: the History browse FAB; not a share request. */
@@ -163,6 +165,8 @@ class InferenceService : Service(), TranscriptionListener {
         val startTime: Long = System.currentTimeMillis(),
         val source: String? = null,
         val sourcePackage: String? = null,
+        /** TASK-736: the matched voice-note sender, written on the row at enqueue. */
+        val senderName: String? = null,
         val backendOverride: String? = null,
         /** TASK-546 AC3: request-scoped language override, like [backendOverride]. */
         val languageOverride: String? = null,
@@ -214,6 +218,7 @@ class InferenceService : Service(), TranscriptionListener {
             requesterPackage = intent?.getStringExtra(EXTRA_REQUESTER_PACKAGE),
             source = intent?.getStringExtra(EXTRA_SOURCE),
             sourcePackage = intent?.getStringExtra(EXTRA_SOURCE_PACKAGE),
+            senderName = intent?.getStringExtra(EXTRA_SENDER_NAME),
             backendOverride = intent?.getStringExtra(EXTRA_BACKEND_OVERRIDE),
             languageOverride = intent?.getStringExtra(EXTRA_LANGUAGE_OVERRIDE),
             trackIndex = intent?.getIntExtra(TaskerRequestReceiver.EXTRA_SUBTITLE_TRACK_INDEX, -1) ?: -1
@@ -244,6 +249,7 @@ class InferenceService : Service(), TranscriptionListener {
                     prompt = request.prompt,
                     filePath = request.filePath,
                     sourcePackageName = request.sourcePackage,
+                    senderName = request.senderName,
                 )
             }.onFailure { Log.w(TAG, "Failed to log queued request ${request.taskId}", it) }
         }

@@ -75,6 +75,7 @@ class LogDaoProjectionTest {
             isPartial = false,
             failedChunkCount = 1,
             modelName = "m",
+            senderName = "Chiara",
             rawTranscript = "raw",
             // The lean columns too: a null here would hide a projection gap.
             segments = """[{"startMs":0,"endMs":9,"text":"c"}]""",
@@ -130,7 +131,7 @@ class LogDaoProjectionTest {
             status = "SUCCESS", prompt = "p", result = "has % literal",
             errorMessage = "e", durationMs = 16_000L, filePath = "/f",
             audioDurationSeconds = 2.0, sourcePackageName = "pkg", isPartial = false,
-            failedChunkCount = 1, modelName = "m", rawTranscript = "raw",
+            failedChunkCount = 1, modelName = "m", senderName = "Chiara", rawTranscript = "raw",
             summary = "s", summarySkipReason = "skip", failureContext = "fx",
             processingContext = "{}", firstPassTranscript = "first",
             detectedLanguage = "de", languagePin = "it",
@@ -140,6 +141,7 @@ class LogDaoProjectionTest {
             status = "SUCCESS", prompt = "p", result = "plain text row",
             errorMessage = "e", durationMs = 1L, filePath = "/f2", audioDurationSeconds = 1.0,
             sourcePackageName = "pkg", isPartial = false, failedChunkCount = 0, modelName = "m",
+            senderName = "Chiara",
             rawTranscript = "raw", summary = "s", summarySkipReason = "skip",
             failureContext = "fx", processingContext = "{}", firstPassTranscript = null,
             detectedLanguage = null, languagePin = null))

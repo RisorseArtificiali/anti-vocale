@@ -1031,7 +1031,7 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Modele w menu udostępniania</string>
     <string name="voice_note_identity_title">Rozpoznawanie nadawcy notatek głosowych</string>
-    <string name="voice_note_identity_description">Rozpoznaje, kto wysłał udostępniane notatki głosowe, aby historia mogła je pokazywać i grupować według nadawcy. Odczytywane są tylko powiadomienia z komunikatorów; imiona pozostają w pamięci tego urządzenia i nigdy nie są wysyłane. Wymaga dostępu do powiadomień.</string>
+    <string name="voice_note_identity_description">Rozpoznaje, kto wysłał udostępniane notatki głosowe, i zapisuje imię w wierszu tej notatki w historii. Odczytywane są tylko powiadomienia z komunikatorów, nic nigdy nie jest wysyłane, a wyłączenie zatrzymuje każdy odczyt. Wymaga dostępu do powiadomień.</string>
     <string name="voice_note_identity_grant_hint">Dostęp do powiadomień jest wyłączony. Dotknij, aby otworzyć ustawienie systemu i włączyć go dla tej aplikacji.</string>
     <string name="share_targets_description">Każdy pobrany model pojawia się jako osobna pozycja w menu systemowym. Audio przetwarza wybrany model.</string>
     <string name="advanced_sharing_toggle">Pokazuj pobrane modele</string>

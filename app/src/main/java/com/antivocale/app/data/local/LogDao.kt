@@ -43,7 +43,7 @@ interface LogDao {
      */
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs ORDER BY timestamp DESC LIMIT 500")
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs ORDER BY timestamp DESC LIMIT 500")
     fun getAll(): Flow<List<LogEntity>>
 
     // TASK-613: RAW query, ESCAPE-clause-aware. Room interfaces cannot give a
@@ -56,7 +56,7 @@ interface LogDao {
     // "%" matching the newest 500 rows regardless of the query).
     @Query("SELECT id, timestamp, taskId, type, status, prompt, result, errorMessage, durationMs, " +
         "filePath, audioDurationSeconds, sourcePackageName, isPartial, failedChunkCount, " +
-        "modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
+        "senderName, modelName, rawTranscript, summary, summarySkipReason, failureContext, processingContext, detectedLanguage, languagePin FROM logs WHERE result LIKE '%' || :query || '%' ESCAPE '\\' " +
         "ORDER BY timestamp DESC LIMIT 500")
     fun searchAllRaw(query: String): Flow<List<LogEntity>>
 

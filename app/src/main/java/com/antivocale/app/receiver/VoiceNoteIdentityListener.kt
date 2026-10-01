@@ -24,9 +24,11 @@ import kotlinx.coroutines.launch
  *
  * PRIVACY CONTRACT (the toggle copy states it): only message-category
  * notifications from messaging packages are inspected; only the sender,
- * the duration marker and the timestamp are kept; the cache is IN MEMORY
- * ONLY (names never touch disk, never reach Crashlytics or any report);
- * process death forgets everything; toggle off = nothing read.
+ * the duration marker and the timestamp are kept. The CACHE is in memory
+ * only (never Crashlytics, never any report; process death forgets it;
+ * toggle off clears it and stops all reading). The durable part is the
+ * LABEL the share flow writes on the History row, which persists exactly
+ * like the transcript it names; that is the feature, stated in the copy.
  */
 @AndroidEntryPoint
 class VoiceNoteIdentityListener : NotificationListenerService() {

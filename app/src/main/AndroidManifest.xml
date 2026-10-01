@@ -598,8 +598,9 @@
 
         <!-- TASK-735: the voice-note identity listener. Opt-in twice: the
              system's notification access (this BIND gate) plus the in-app
-             toggle; until both hold it reads nothing. Sender names stay in
-             RAM only (see VoiceNoteIdentityListener's privacy contract). -->
+             toggle; until both hold it reads nothing. The cache is RAM-only;
+             the durable label on the History row is the feature itself (see
+             VoiceNoteIdentityListener's privacy contract). -->
         <service
             android:name=".receiver.VoiceNoteIdentityListener"
             android:label="@string/voice_note_identity_title"
