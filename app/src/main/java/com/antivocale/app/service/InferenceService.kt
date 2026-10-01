@@ -26,7 +26,6 @@ import com.antivocale.app.transcription.DualRefinementPolicy
 import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.transcription.TranscriptionBackendManager
 import com.antivocale.app.transcription.TranscriptionOrchestrator
-import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.util.CrashReporter
 import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.ProgressThrottler

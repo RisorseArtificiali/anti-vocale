@@ -94,10 +94,12 @@ class AppNavigationTest {
             // other three sub-pages are matched by literal. An either/or
             // here would let a rename ship as a silent no-op.
             val wired = if (key == AppNavigation.SUBPAGE_KEY_EXPORT) {
-                // Anchored to the actual comparison: a bare contains() stays
+                // Anchored to the actual branch use: a bare contains() stays
                 // green on any unrelated constant mention elsewhere in the
                 // file while the branch itself drifts back to a literal.
-                Regex("==\\s*AppNavigation\\.SUBPAGE_KEY_EXPORT").containsMatchIn(source)
+                // TASK-632: the branch is now a when-arm label, so both the
+                // comparison and the arrow forms count.
+                Regex("(==\\s*AppNavigation\\.SUBPAGE_KEY_EXPORT)|(AppNavigation\\.SUBPAGE_KEY_EXPORT\\s*->)").containsMatchIn(source)
             } else {
                 source.contains("\"$key\"")
             }
@@ -134,14 +136,22 @@ class AppNavigationTest {
     }
 
     @Test
-    fun `settings focus rows parse by enum name and reject unknown values`() {
-        // TASK-625: the wire value is the enum name the error notification's
-        // PendingIntent writes and MainActivity parses at its boundary.
-        assertEquals(SettingsFocusRow.MEMORY_PROTECTION, AppNavigation.parseSettingsFocusRow("MEMORY_PROTECTION"))
-        assertNull(AppNavigation.parseSettingsFocusRow(null))
-        assertNull(AppNavigation.parseSettingsFocusRow(""))
-        assertNull(AppNavigation.parseSettingsFocusRow("memory_protection")) // valueOf is exact
-        assertNull(AppNavigation.parseSettingsFocusRow("MEMORY_PROTECTION "))
+    fun `the settings row parses through the shared parser and rejects unknown keys`() {
+        // TASK-632: the row is a Destination on the settings: prefix, same
+        // parser as every other destination; the writer (both error surfaces)
+        // and the reader (MainActivity) share the ROW_KEYS key.
+        assertEquals(AppNavigation.Destination.SettingsRow(AppNavigation.ROW_KEY_MEMORY_PROTECTION),
+            AppNavigation.parse("settings:" + AppNavigation.ROW_KEY_MEMORY_PROTECTION))
+        assertNull(AppNavigation.parse("settings:unknown_row"))
+        assertNull(AppNavigation.parse("settings:"))
+        assertNull(AppNavigation.parse("settings:MEMORY_PROTECTION")) // keys are lowercase
+        assertEquals("performance", AppNavigation.rowPage(AppNavigation.ROW_KEY_MEMORY_PROTECTION))
+        // Every reachable row must own a page, or the Settings-tab branch
+        // silently lands on the main list (review: the parser passing is not
+        // the delivery).
+        AppNavigation.ROW_KEYS.forEach { key ->
+            assertTrue("row '$key' has no sub-page mapping", AppNavigation.rowPage(key) != null)
+        }
     }
 
     @Test
@@ -149,6 +159,6 @@ class AppNavigationTest {
         // Writer (both error-notification surfaces) and reader (MainActivity)
         // share these literals; a drift in either is a silent no-op.
         assertEquals("navigate_to_settings_row", MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW)
-        assertEquals("MEMORY_PROTECTION", SettingsFocusRow.MEMORY_PROTECTION.name)
+        assertEquals("memory_protection", AppNavigation.ROW_KEY_MEMORY_PROTECTION)
     }
 }

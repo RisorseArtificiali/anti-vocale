@@ -14,7 +14,7 @@ import com.antivocale.app.util.AppInfoUtils
 import com.antivocale.app.util.TranscriptSignature
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.LanguageNames
-import com.antivocale.app.ui.SettingsFocusRow
+import com.antivocale.app.ui.AppNavigation
 import java.util.concurrent.atomic.AtomicInteger
 
 /** Everything needed to (re)build one result notification (TASK-327). */
@@ -116,7 +116,7 @@ class ResultNotificationFactory(private val context: Context) {
      */
     fun errorNotification(errorMessage: String, memoryAction: Boolean): Notification {
         val launch = if (memoryAction) {
-            settingsRowPendingIntent(SettingsFocusRow.MEMORY_PROTECTION)
+            settingsRowPendingIntent(AppNavigation.ROW_KEY_MEMORY_PROTECTION)
         } else {
             plainLaunchPendingIntent()
         }
@@ -263,11 +263,11 @@ class ResultNotificationFactory(private val context: Context) {
      * TASK-625: the settings-row deep link. In-app handoff (the live activity
      * receives the extra via onNewIntent), not a task clear.
      */
-    fun settingsRowPendingIntent(row: SettingsFocusRow): PendingIntent = PendingIntent.getActivity(
+    fun settingsRowPendingIntent(rowKey: String): PendingIntent = PendingIntent.getActivity(
         context, RC_ERROR_LAUNCH_SETTINGS_ROW,
         Intent(context, MainActivity::class.java)
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-            .putExtra(MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW, row.name),
+            .putExtra(MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW, rowKey),
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 

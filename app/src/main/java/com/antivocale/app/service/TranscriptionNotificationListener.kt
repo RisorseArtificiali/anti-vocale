@@ -15,7 +15,6 @@ import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.transcription.TimedSegment
-import com.antivocale.app.ui.SettingsFocusRow
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.ClipboardWriter
 import com.antivocale.app.util.SubtitleFormatter

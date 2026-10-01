@@ -10,17 +10,10 @@ import java.util.concurrent.atomic.AtomicLong
  * its debug-only pending token and read as test-only tooling while
  * production navigation (the capped-transcript auto-save hint, TASK-548)
  * depended on it. The debug bridge keeps its own object; everything the
- * release build uses lives here.
+ * release build uses lives here. TASK-632: the settings-row deep link parses
+ * here too (as [Destination.SettingsRow]) instead of riding a parallel
+ * enum channel.
  */
-
-/**
- * TASK-625: a single Settings row to scroll into view and briefly highlight.
- * Set by the memory-failure error notification's action, which names the
- * Memory protection setting; the value travels as its enum name in
- * [com.antivocale.app.MainActivity.EXTRA_NAVIGATE_TO_SETTINGS_ROW].
- */
-enum class SettingsFocusRow { MEMORY_PROTECTION }
-
 object AppNavigation {
     private val seqCounter = AtomicLong(0)
 
@@ -44,6 +37,22 @@ object AppNavigation {
 
     /** Settings sub-pages reachable by key. */
     val SUBPAGE_KEYS = setOf("icon_picker", "prompt", "per_app", SUBPAGE_KEY_EXPORT, "speaker", "performance", "automation")
+
+    /**
+     * TASK-632: Settings ROWS reachable by key (the deep-link targets one
+     * row, which lives on a sub-page since the 2026-09-30 regroup). The row
+     * key and its page are pinned here so the parser, the notification
+     * action, and the Settings-tab branch cannot drift apart.
+     */
+    const val ROW_KEY_MEMORY_PROTECTION = "memory_protection"
+    val ROW_KEYS = setOf(ROW_KEY_MEMORY_PROTECTION)
+
+    /** The sub-page a deep-linked row lives on (single source for the branch). */
+    fun rowPage(key: String): String? =
+        when (key) {
+            ROW_KEY_MEMORY_PROTECTION -> "performance"
+            else -> null
+        }
 
     /** Models-tab targets reachable by key (single source for parser + UI). */
     val MODEL_KEYS = setOf("import")
@@ -80,12 +89,10 @@ object AppNavigation {
         data class SettingsSubPage(val key: String) : Destination
         data class SettingsSection(val key: String) : Destination
         data class ModelTarget(val key: String) : Destination
-    }
 
-    /** TASK-625: parses the settings-row extra; null on unknown values. */
-    fun parseSettingsFocusRow(name: String?): SettingsFocusRow? =
-        if (name.isNullOrBlank()) null
-        else runCatching { SettingsFocusRow.valueOf(name) }.getOrNull()
+        /** TASK-632: one Settings row, by key (see [ROW_KEYS]). */
+        data class SettingsRow(val key: String) : Destination
+    }
 
     fun parse(dest: String?): Destination? {
         if (dest.isNullOrBlank()) return null
@@ -101,6 +108,7 @@ object AppNavigation {
             val key = dest.removePrefix("settings:")
             SECTION_KEYS.firstOrNull { it == key }?.let { return Destination.SettingsSection(it) }
             SUBPAGE_KEYS.firstOrNull { it == key }?.let { return Destination.SettingsSubPage(it) }
+            ROW_KEYS.firstOrNull { it == key }?.let { return Destination.SettingsRow(it) }
         }
         return null
     }

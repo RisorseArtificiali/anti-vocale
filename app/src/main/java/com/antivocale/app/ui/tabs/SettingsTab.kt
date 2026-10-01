@@ -63,7 +63,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
 import com.antivocale.app.ui.AppNavigation
-import com.antivocale.app.ui.SettingsFocusRow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -122,8 +121,6 @@ fun SettingsTab(
     onNavigateToModelTab: () -> Unit = {},
     navRequest: AppNavigation.NavRequest? = null,
     onNavConsumed: () -> Unit = {},
-    focusRow: SettingsFocusRow? = null,
-    onFocusRowConsumed: () -> Unit = {},
 ) {
     val context = LocalContext.current
     val activity = context as? Activity
@@ -165,12 +162,10 @@ fun SettingsTab(
     var showPerformanceSettings by remember { mutableStateOf(false) }
     var showAutomationSettings by remember { mutableStateOf(false) }
 
-    // 2026-09-30 regroup: system back on ANY subpage must return to the
-    // main tree, not finish the activity (no other BackHandler covers
-    // these flags; without this, back from a subpage closes the app).
-    androidx.activity.compose.BackHandler(enabled = showIconSettings || showExportSettings ||
-        showPromptSettings || showPerAppSettings || showSpeakerSettings ||
-        showPerformanceSettings || showAutomationSettings) {
+    // The ONE sub-page clear (TASK-632): system back and every nav-effect
+    // branch share it, so a future sub-page flag cannot be cleared in one
+    // place and missed in the other.
+    fun closeSubPages() {
         showIconSettings = false
         showExportSettings = false
         showPromptSettings = false
@@ -178,6 +173,15 @@ fun SettingsTab(
         showSpeakerSettings = false
         showPerformanceSettings = false
         showAutomationSettings = false
+    }
+
+    // 2026-09-30 regroup: system back on ANY subpage must return to the
+    // main tree, not finish the activity (no other BackHandler covers
+    // these flags; without this, back from a subpage closes the app).
+    androidx.activity.compose.BackHandler(enabled = showIconSettings || showExportSettings ||
+        showPromptSettings || showPerAppSettings || showSpeakerSettings ||
+        showPerformanceSettings || showAutomationSettings) {
+        closeSubPages()
     }
     // TASK-625 deep-link carrier: the memory-failure notification action
     // opens the performance page with focus on its card (2026-09-30 regroup).
@@ -207,34 +211,46 @@ fun SettingsTab(
         onNavConsumed()
         when (val dest = request.destination) {
             is AppNavigation.Destination.SettingsSubPage -> {
-                // Exactly one sub-page wins the if/else-if chain: clear the
-                // siblings, or the currently-open screen silently keeps it.
-                showIconSettings = dest.key == "icon_picker"
-                showPromptSettings = dest.key == "prompt"
-                showPerAppSettings = dest.key == "per_app"
-                showExportSettings = dest.key == AppNavigation.SUBPAGE_KEY_EXPORT
-                showSpeakerSettings = dest.key == "speaker"
-                showPerformanceSettings = dest.key == "performance"
-                showAutomationSettings = dest.key == "automation"
+                closeSubPages()
+                when (dest.key) {
+                    "icon_picker" -> showIconSettings = true
+                    "prompt" -> showPromptSettings = true
+                    "per_app" -> showPerAppSettings = true
+                    AppNavigation.SUBPAGE_KEY_EXPORT -> showExportSettings = true
+                    "speaker" -> showSpeakerSettings = true
+                    "performance" -> showPerformanceSettings = true
+                    "automation" -> showAutomationSettings = true
+                }
+            }
+            is AppNavigation.Destination.SettingsRow -> {
+                // TASK-632: the row deep link rides the ONE navRequest
+                // channel. A row lives on a sub-page since the 2026-09-30
+                // regroup: open that page (AppNavigation.rowPage owns the
+                // mapping) with the page's focus flag, and the page runs its
+                // own capture/flash on its scroll state.
+                closeSubPages()
+                if (AppNavigation.rowPage(dest.key) == "performance") {
+                    showPerformanceSettings = true
+                    performanceFocusMemoryProtection = true
+                }
             }
             is AppNavigation.Destination.SettingsSection -> {
                 // A section target needs the main Column composed: back out
                 // of any open sub-page first or the scroll anchor never lays
                 // out and the expand lands on a hidden screen.
-                showIconSettings = false
-                showPromptSettings = false
-                showPerAppSettings = false
-                showExportSettings = false
-                showSpeakerSettings = false
-                showPerformanceSettings = false
-                showAutomationSettings = false
+                closeSubPages()
                 expandCounters[dest.key] = (expandCounters[dest.key] ?: 0) + 1
-                // First composition may run before layout delivers offsets:
-                // wait one frame, then scroll if the anchor appeared.
+                // First composition may run before layout delivers offsets
+                // (TASK-632: slow frames, large expansions). Wait UP TO ten
+                // frames for the anchor instead of exactly one: each frame is
+                // ~16ms, so the bound caps the wait at ~160ms while giving
+                // heavy sections room to lay out.
                 var target = sectionOffsets[dest.key]
-                if (target == null) {
+                var frames = 0
+                while (target == null && frames < 10) {
                     withFrameNanos { }
                     target = sectionOffsets[dest.key]
+                    frames++
                 }
                 target?.let { rootY ->
                     // positionInRoot() shifts with the scroll placement, so
@@ -246,39 +262,6 @@ fun SettingsTab(
                 }
             }
             else -> Unit
-        }
-    }
-
-    // TASK-625: row-level focus (the memory-failure notification action).
-    // Same mechanics as the section branch above: consume first, back out of
-    // any open sub-page, then scroll to the row's captured content-space Y
-    // once layout has delivered it. The scroll and the highlight decay run in
-    // navScope so they survive this effect's relaunch on consumption.
-    // TASK-625/275: the focusable Advanced rows (memory protection via the
-    // notification action; the TASK-274 toggle via TASK-275's Automation
-    // card). One holder per row: captured Y, flash flag, and the flash
-    // itself (scroll, highlight, 2.5s decay) live in ONE definition.
-    LaunchedEffect(focusRow) {
-        val row = focusRow ?: return@LaunchedEffect
-        onFocusRowConsumed()
-        when (row) {
-            SettingsFocusRow.MEMORY_PROTECTION -> {
-                // 2026-09-30 regroup: the card moved to the performance
-                // subpage; the notification action now OPENS the page with
-                // the focus flag, and the page runs its own capture/flash
-                // on its scroll state (the TASK-625 UX is unchanged: the
-                // user lands on a flashing memory-protection card). Every
-                // earlier sibling in the if/else-if chain must clear or
-                // this page never composes.
-                showIconSettings = false
-                showPromptSettings = false
-                showPerAppSettings = false
-                showExportSettings = false
-                showSpeakerSettings = false
-                showAutomationSettings = false
-                showPerformanceSettings = true
-                performanceFocusMemoryProtection = true
-            }
         }
     }
 
