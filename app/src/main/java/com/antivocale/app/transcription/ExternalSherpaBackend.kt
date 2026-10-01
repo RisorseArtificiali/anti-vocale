@@ -304,6 +304,10 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                     modelDir = record.dir
                     configuredId = record.backendId
                     configuredFamily = record.family
+                    // Streaming externals do not condition on language: the
+                    // residency answer is "auto" (review: leaving the
+                    // previous model's pin here reloaded the engine forever).
+                    configuredLanguage = "auto"
                     lowercaseOutput = isLowercaseOutput(record)
                     isInitialized = true
                     keepAlive.start()
@@ -314,10 +318,15 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                 val modelConfig = support.buildModelConfig(
                     record, externalConfig.numThreads, externalConfig.provider,
                     languageOverride = externalConfig.languageOverride)
-                configuredLanguage = modelConfig.whisper?.language
-                    ?: modelConfig.senseVoice?.language
-                    ?: modelConfig.canary?.srcLang
-                    ?: ""
+                // Review: the SAME "auto" normalization the built-in applies,
+                // so the residency check compares like with like (a raw record
+                // default like canary's "en" against an "auto" expectation
+                // would re-initialize the engine on EVERY request).
+                configuredLanguage = (
+                    modelConfig.whisper?.language
+                        ?: modelConfig.senseVoice?.language
+                        ?: modelConfig.canary?.srcLang
+                        ?: "").ifBlank { "auto" }
 
                 val recognizerConfig = OfflineRecognizerConfig(
                     modelConfig = modelConfig,
@@ -463,6 +472,7 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
         recognizer = null
         onlineRecognizer?.release()
         onlineRecognizer = null
+        configuredLanguage = ""
         modelDir = null
         isInitialized = false
         configuredId = PLACEHOLDER_ID

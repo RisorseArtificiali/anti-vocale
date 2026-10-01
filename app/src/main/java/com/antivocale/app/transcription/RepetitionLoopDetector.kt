@@ -42,7 +42,7 @@ object RepetitionLoopDetector {
 
     /**
      * TASK-581 (review F6): phase 2 completed non-blank but COLLAPSED over a
-     * good first pass - "Si." over a 200-word transcript. detect() cannot see
+     * good first pass ("Si." over a 200-word transcript). detect() cannot see
      * it (no loop). The bar for the first pass mirrors [MIN_TOKENS] (a short
      * first pass has nothing to protect); the refined text must be under a
      * quarter of it. Only consulted for PLAIN transcription prompts: a

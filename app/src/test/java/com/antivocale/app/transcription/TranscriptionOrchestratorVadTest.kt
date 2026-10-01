@@ -334,7 +334,11 @@ class TranscriptionOrchestratorVadTest : TranscriptionOrchestratorTestBase() {
             transcriptionCalibrator.record(
                 backendId = "whisper",
                 modelPath = "/models/whisper",
-                displayName = "Whisper Whisper",
+                // TASK-442: the label rides the shared variant-aware
+                // derivation now; "/models/whisper" resolves no variant dir,
+                // so the family label alone is the honest name (the estimate
+                // key is still backendId+path: unchanged).
+                displayName = "Whisper",
                 audioDurationSeconds = any(),
                 processingTimeMs = any()
             )

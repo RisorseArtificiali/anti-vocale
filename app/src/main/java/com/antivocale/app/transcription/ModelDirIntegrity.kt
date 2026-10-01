@@ -69,8 +69,8 @@ object ModelDirIntegrity {
     private val defaultPinCache = PinVerdictCache()
 
     /**
-     * TASK-482: the ONE load gate - structural checks for every file plus
-     * SHA-pin verification - as the external-model backend consumes it
+     * TASK-482: the ONE load gate: structural checks for every file plus
+     * SHA-pin verification, as the external-model backend consumes it
      * (its records pin every file at import: server pin or
      * trust-on-first-use). Missing files are the completeness layer's job,
      * not a gate failure.

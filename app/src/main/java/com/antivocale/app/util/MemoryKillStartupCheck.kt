@@ -11,7 +11,7 @@ import com.antivocale.app.service.ResultNotificationFactory
  * finding 3): Android 17 scales per-app total-memory caps to device RAM and
  * enforces them in two steps, forced zRAM swap then a process kill. The kill
  * lands in ApplicationExitInfo as REASON_OTHER with a description containing
- * the literal "MemoryLimiter" - anonymous native memory (ONNX arenas, the
+ * the literal "MemoryLimiter"; anonymous native memory (ONNX arenas, the
  * Gemma working set), which the TASK-416 Java-heap work could not bound.
  *
  * SCOPE: this check owns ONLY the MemoryLimiter class. The classic LMK kill
@@ -92,7 +92,7 @@ object MemoryKillStartupCheck {
             // notification ever created it). TASK-426 review: a post the
             // system DROPS (notifications disabled at the app or channel
             // level, the common fresh-install state on 13+) must not consume
-            // the once-per-kill mark - nothing shown, nothing marked, and the
+            // the once-per-kill mark; nothing shown, nothing marked, and the
             // advisory retries after the user grants the permission.
             AppNotificationChannel.TRANSCRIPTION_RESULT.create(context)
             val nm = context.getSystemService(android.app.NotificationManager::class.java)

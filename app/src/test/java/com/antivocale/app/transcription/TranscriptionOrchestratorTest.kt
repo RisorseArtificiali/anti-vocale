@@ -25,36 +25,6 @@ class TranscriptionOrchestratorTest : TranscriptionOrchestratorTestBase() {
     }
 
     @Test
-    fun `deriveDisplayName extracts Whisper variant from path`() {
-        val result = orchestrator.deriveDisplayName(
-            BuiltInBackendIds.WHISPER,
-            "/data/models/sherpa-onnx-whisper-turbo",
-            "Whisper"
-        )
-        assertEquals("Whisper Turbo", result)
-    }
-
-    @Test
-    fun `deriveDisplayName falls back for unknown backend`() {
-        val result = orchestrator.deriveDisplayName(
-            "unknown_backend",
-            "/some/path",
-            "Fallback"
-        )
-        assertEquals("Fallback", result)
-    }
-
-    @Test
-    fun `deriveDisplayName extracts Qwen3 variant`() {
-        val result = orchestrator.deriveDisplayName(
-            BuiltInBackendIds.QWEN3_ASR,
-            "/data/models/sherpa-onnx-qwen3-asr-large-int8",
-            "Qwen3-ASR"
-        )
-        assertEquals("Large", result)
-    }
-
-    @Test
     fun `isNoModelConfiguredError detects model config errors`() {
         val error = TranscriptionException.NotInitialized()
         assertTrue(TranscriptionOrchestrator.isNoModelConfiguredError(error))

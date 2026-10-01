@@ -731,13 +731,14 @@ class LogsViewModel @Inject constructor(
      * bug class): every display label routes through the registry.
      */
     private suspend fun displayNameFor(backendId: String, context: Context): String {
+        // TASK-442: the SAME variant-aware derivation the log row and the
+        // Settings show (the old family-only form labeled the retranscribe
+        // picker "Whisper" while both siblings said "Whisper Small").
         val descriptor = backendRegistry.byBackendId(backendId)
             ?: return transcriptionBackendManager.getBackend(backendId)?.displayName ?: backendId
         val path = descriptor.modelPathFlow(preferencesManager).first()
-        return when {
-            descriptor.displayNameResId != null -> context.getString(descriptor.displayNameResId)
-            else -> descriptor.deriveDisplayName(context, path ?: "")
-        }
+        return com.antivocale.app.transcription.variantAwareDisplayName(context, descriptor, path)
+            .ifBlank { backendId }
     }
 
     fun reTranscribeWithBackend(

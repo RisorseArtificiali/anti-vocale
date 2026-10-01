@@ -129,7 +129,7 @@ data class BackendDescriptor(
  * catalog variant; path-derived backends keep the descriptor's own
  * [BackendDescriptor.deriveDisplayName]. Callers keep their null-descriptor
  * fallbacks (backend.displayName / the model file name), which is why
- * [descriptor] is non-null here.
+ * [descriptor] is nullable (null is the empty derivation; the caller falls back).
  *
  * Fixed-label rule: when the catalog entry has multiple variants and the saved
  * path's directory is one of them, the localized variant title replaces the
@@ -142,9 +142,12 @@ data class BackendDescriptor(
  */
 internal fun variantAwareDisplayName(
     context: Context,
-    descriptor: BackendDescriptor,
+    descriptor: BackendDescriptor?,
     savedPath: String?,
 ): String {
+    // TASK-442: a null descriptor (unregistered backend) is the empty
+    // derivation; the caller's fallback name wins.
+    if (descriptor == null) return ""
     val familyResId = descriptor.displayNameResId
         ?: return descriptor.deriveDisplayName(context, savedPath ?: "")
     val family = context.getString(familyResId)
@@ -180,9 +183,8 @@ internal fun variantAwareDisplayName(
  *    flow + display-name derivation; unknown ids keep the generic-modelPath
  *    fallback locally
  *  - [com.antivocale.app.transcription.TranscriptionOrchestrator] — backend
- *    load keys on the [backendId]; its calibration display-name derivation is a
- *    string-keyed when (BACKEND_ID constants) that keeps its own dir-name
- *    semantics (see TranscriptionOrchestratorTest)
+ *    load keys on the [backendId]; its calibration display name rides the
+ *    shared [variantAwareDisplayName] (TASK-442 closed the local fork)
  *  - the share-target sites ([ShareReceiverActivity].backendIdForAlias via
  *    byShareAlias, [ShareTargetManager] component sync + has-model check)
  *  - [com.antivocale.app.ui.viewmodel.LogsViewModel] (re-transcribe picker)

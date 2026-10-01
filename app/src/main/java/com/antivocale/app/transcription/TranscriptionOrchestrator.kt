@@ -379,21 +379,8 @@ class TranscriptionOrchestrator @Inject constructor(
                 return Result.failure(error)
             }
 
-            // GH #45: record which model handled the request, as soon as the
-            // backend is resolved (before the result lands). Resolved through the
-            // registry display-name contract so raw backend ids never reach the
-            // Logs UI; TASK-436 makes the shared derivation variant-aware
-            // ("Whisper Small", not the bare family label). Metadata only:
-            // never let it break the transcription itself.
-            runCatching {
-                val backend = backendManager.getActiveBackend() ?: return@runCatching
-                val descriptor = backendRegistry.byBackendId(backend.id)
-                val name = when {
-                    descriptor == null -> backend.displayName
-                    else -> variantAwareDisplayName(context, descriptor, modelPathForBackend(backend.id))
-                }
-                logDao.setModelName(taskId, name)
-            }
+            // GH #45/TASK-734: the credit is written pre-decode above (the
+            // success-site rewrite was a duplicate of the same derivation).
 
             // GH #83: collect the preprocessed chunks once for the optional
             // speaker-labeling pass (references only; the concatenated copy
@@ -2612,7 +2599,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 result.isSuccess -> {
                     val tr = ladderResult?.getOrNull() ?: result.getOrThrow()
                     if (tr.text.isNotBlank()) {
-                        recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
+                        recordCalibration(context, backend, audioDurationSeconds, chunkProcessingStartTime)
                         val trimmed = tr.text.trim()
                         // GH #92: sentence cues when the backend supplied token
                         // timestamps, else the one positional cue for the one
@@ -2688,6 +2675,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 backend, promptPlan.finalPass,
                 processProgressiveSegments(
                     taskId = taskId,
+                    context = context,
                     chunkCapSeconds = maxChunkDuration,
                     availableRamBytes = availableRamBytes,
                     vadRequested = vadRequested,
@@ -2712,6 +2700,7 @@ class TranscriptionOrchestrator @Inject constructor(
             backend, promptPlan.finalPass,
             processParallelChunks(
                 taskId = taskId,
+                context = context,
                 chunkCapSeconds = maxChunkDuration,
                 availableRamBytes = availableRamBytes,
                 vadRequested = vadRequested,
@@ -2767,7 +2756,7 @@ class TranscriptionOrchestrator @Inject constructor(
             languagePref, com.antivocale.app.util.LocaleManager.phoneLanguage(context))
         val result = backend.transcribeFile(filePath, language = language)
         if (durationSeconds > 0.0) {
-            recordCalibration(backend, durationSeconds.toInt(), chunkProcessingStartTime)
+            recordCalibration(context, backend, durationSeconds.toInt(), chunkProcessingStartTime)
         }
         return result.map { tr ->
             tr.copy(
@@ -2895,6 +2884,7 @@ class TranscriptionOrchestrator @Inject constructor(
      */
     private suspend fun processProgressiveSegments(
         taskId: String,
+        context: Context,
         chunkCapSeconds: Int?,
         availableRamBytes: Long?,
         vadRequested: Boolean,
@@ -2989,7 +2979,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         val totalMs = System.currentTimeMillis() - chunkProcessingStartTime
         Log.i(TAG, "PERF: progressive total ${totalMs}ms for ${audioDurationSeconds}s audio, $chunkCount segments, backend=${backend.id}")
-        recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
+        recordCalibration(context, backend, audioDurationSeconds, chunkProcessingStartTime)
 
         if (blankSegments > 0) {
             // TASK-622: a blank is silence by design (GH #96) but also the
@@ -3057,6 +3047,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
     private suspend fun processParallelChunks(
         taskId: String,
+        context: Context,
         chunkCapSeconds: Int?,
         availableRamBytes: Long?,
         vadRequested: Boolean,
@@ -3090,7 +3081,11 @@ class TranscriptionOrchestrator @Inject constructor(
 
         val backendId = backend.id
         val modelPath = modelPathForBackend(backendId)
-        val modelDisplayName = deriveDisplayName(backendId, modelPath, backend.displayName)
+        // TASK-442: the fallback label rides the shared derivation (the
+        // estimate stays keyed by id+path: unchanged).
+        val chunkDescriptor = backendRegistry.byBackendId(backendId)
+        val modelDisplayName = variantAwareDisplayName(context, chunkDescriptor, modelPath)
+            .ifBlank { backend.displayName }
         val calibrationProfile = transcriptionCalibrator.getEstimate(backendId, modelPath)
         val chunkDurationSeconds = (audioDurationSeconds.toDouble() / chunkCount).toLong()
         val estimatedChunkDurationMs = calibrationProfile?.let {
@@ -3291,7 +3286,7 @@ class TranscriptionOrchestrator @Inject constructor(
         val totalMs = System.currentTimeMillis() - chunkProcessingStartTime
         Log.i(TAG, "PERF: parallel total ${totalMs}ms for ${audioDurationSeconds}s audio, $chunkCount chunks, backend=${backend.id}")
 
-        recordCalibration(backend, audioDurationSeconds, chunkProcessingStartTime)
+        recordCalibration(context, backend, audioDurationSeconds, chunkProcessingStartTime)
 
         // TASK-675: the aggregate is "the WHOLE clip decoded empty": a run
         // that delivered text anywhere is a working model and never counts,
@@ -3723,7 +3718,7 @@ class TranscriptionOrchestrator @Inject constructor(
             totalDurationSeconds = decodedSeconds
             updateAudioDuration(taskId, decodedSeconds)
         }
-        recordCalibration(backend, totalDurationSeconds.toInt(), chunkProcessingStartTime)
+        recordCalibration(context, backend, totalDurationSeconds.toInt(), chunkProcessingStartTime)
 
         val totalMs = System.currentTimeMillis() - pipelineStartMs
         Log.i(TAG, "PERF: pipeline total ${totalMs}ms for ${totalDurationSeconds}s audio, $processedChunks chunks (expected $expectedChunkCount), backend=${backend.id}, ttft_decode=${firstChunkDecodeMs}ms")
@@ -3906,7 +3901,15 @@ class TranscriptionOrchestrator @Inject constructor(
 
     // ---- Calibration ----
 
+    /** TASK-601/442: variant-aware display name; the id itself as the fallback. */
+    private suspend fun displayNameForBackend(context: Context, backendId: String): String =
+        backendRegistry.byBackendId(backendId)
+            ?.let { variantAwareDisplayName(context, it, modelPathForBackend(backendId)) }
+            ?.ifBlank { backendId }
+            ?: backendId
+
     private suspend fun recordCalibration(
+        context: Context,
         backend: TranscriptionBackend,
         audioDurationSeconds: Int,
         startTimeMs: Long
@@ -3915,7 +3918,11 @@ class TranscriptionOrchestrator @Inject constructor(
         try {
             val backendId = backend.id
             val modelPath = modelPathForBackend(backendId)
-            val modelDisplayName = deriveDisplayName(backendId, modelPath, backend.displayName)
+            // TASK-442: the profile's display name rides the SAME shared
+            // variant-aware derivation the Logs and Settings show.
+            val descriptor = backendRegistry.byBackendId(backendId)
+            val modelDisplayName = variantAwareDisplayName(context, descriptor, modelPath)
+                .ifBlank { backend.displayName }
             transcriptionCalibrator.record(
                 backendId = backendId,
                 modelPath = modelPath,
@@ -4506,38 +4513,6 @@ class TranscriptionOrchestrator @Inject constructor(
             descriptor != null -> descriptor.modelPathFlow(preferencesManager).first()
             else -> preferencesManager.modelPath.first()
         } ?: ""
-    }
-
-    /**
-     * TASK-601: the display name for a backend id, variant-aware when a
-     * saved model path resolves, the id itself as the fallback. Shared by
-     * the refining status, the Logs model credit, and the notification's
-     * "Refined from" line (the GH #45 credit site keeps its own chain:
-     * its unknown-id fallback is the backend's display name, not the raw
-     * id, and it is not this helper's to change).
-     */
-    private suspend fun displayNameForBackend(context: Context, backendId: String): String =
-        backendRegistry.byBackendId(backendId)
-            ?.let { variantAwareDisplayName(context, it, modelPathForBackend(backendId)) }
-            ?: backendId
-
-    internal fun deriveDisplayName(backendId: String, modelPath: String, fallbackName: String?): String {
-        val dirName = File(modelPath).name
-        return when (backendId) {
-            BuiltInBackendIds.WHISPER -> {
-                val variant = dirName.removePrefix("sherpa-onnx-whisper-")
-                    .replace("-", " ")
-                    .replaceFirstChar { it.uppercase() }
-                if (variant.isNotEmpty()) "Whisper $variant" else fallbackName ?: "Whisper"
-            }
-            BuiltInBackendIds.QWEN3_ASR -> {
-                dirName.removePrefix("sherpa-onnx-qwen3-asr-")
-                    .replace("-int8", "")
-                    .replace("-", " ")
-                    .replaceFirstChar { it.uppercase() }
-            }
-            else -> fallbackName ?: backendId
-        }
     }
 
     internal fun formatEta(
