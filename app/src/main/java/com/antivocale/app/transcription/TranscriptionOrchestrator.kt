@@ -1372,7 +1372,7 @@ class TranscriptionOrchestrator @Inject constructor(
             // fail fast with ExternalModelUnavailable instead of falling through to the
             // LLM loader (pinned by the unknown-external-id override test).
             val loadResult = if (preferredBackendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX)) {
-                loadExternalBackend(context, preferredBackendId)
+                loadExternalBackend(context, preferredBackendId, languageOverride)
             } else when (preferredBackendId) {
                 // The LLM backend ("llm") stores its model in the generic preference.
                 LlmTranscriptionBackend.BACKEND_ID -> loadLlmBackend(context)
@@ -1453,13 +1453,26 @@ class TranscriptionOrchestrator @Inject constructor(
         // blank answer means "this backend does not track its language"
         // (test doubles, non-sherpa engines) and stays warm.
         val resident = activeBackend?.getConfiguredLanguage()?.takeIf { it.isNotEmpty() } ?: return false
-        val entry = BundledCatalog.byId(preferredBackendId) ?: return false
         val preference = languageOverride ?: preferencesManager.transcriptionLanguage.first()
-        val expected = TranscriptionLanguagePolicy.resolveForEntry(
-            phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(context),
-            entry = entry,
-            preference = preference,
-        )
+        val phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(context)
+        val expected = when {
+            // TASK-462: externals resolve through the same policy's external
+            // arm (the record's family decides capability); a null record is
+            // an unresolvable backend, not a mismatch (stays warm).
+            preferredBackendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX) -> {
+                val id = preferredBackendId.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX)
+                val record = externalModelStore.byId(id) ?: return false
+                TranscriptionLanguagePolicy.externalOverride(record, preference, phoneLanguage)
+            }
+            else -> {
+                val entry = BundledCatalog.byId(preferredBackendId) ?: return false
+                TranscriptionLanguagePolicy.resolveForEntry(
+                    phoneLanguage = phoneLanguage,
+                    entry = entry,
+                    preference = preference,
+                )
+            }
+        }
         return expected.ifBlank { "auto" } != resident
     }
 
@@ -1750,8 +1763,10 @@ class TranscriptionOrchestrator @Inject constructor(
                 numThreads = threads,
             ).getOrThrow()
             var segmentsOut: List<com.antivocale.app.transcription.diarization.DiarizedSegment>? = null
-            // TASK-678: the tier summary for the technical row, set when any cue straddled.
+            // TASK-678: the tier summary and the split cues, set inside the
+            // try (the naming pass below consumes them after the release).
             var resplitSummaryOut: String? = null
+            var outcomes: List<SpeakerResplit.Outcome> = emptyList()
             try {
                 val segments = diarizer.diarize(samples, sampleRate)
                 val labels = SpeakerLabeler.label(transcription.segments, segments)
@@ -1762,7 +1777,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 // labeler's label by ORIGINAL index (the split changes the
                 // cue count, so the two lists must never be re-zipped). The
                 // transient tokens are consumed here and dropped.
-                val outcomes = transcription.segments.mapIndexed { index, cue ->
+                outcomes = transcription.segments.mapIndexed { index, cue ->
                     SpeakerResplit.resplit(cue, cue.tokens, segments, labels[index])
                 }
                 val tierCounts = outcomes.mapNotNull { it.tier }.groupingBy { it }.eachCount()
@@ -1775,9 +1790,6 @@ class TranscriptionOrchestrator @Inject constructor(
                 // is RELEASED (review R2: the extractor loads its own titanet;
                 // running both native sessions at once doubled the ~40MB
                 // footprint at exactly the moment TASK-679's OOM class hits).
-                result.map { unlabeled ->
-                    unlabeled.copy(segments = outcomes.flatMap { it.cues })
-                }
             } finally {
                 diarizer.release()
             }
@@ -1786,9 +1798,13 @@ class TranscriptionOrchestrator @Inject constructor(
             // the generic SPEAKER N labels, never a dropped or misnamed result.
             val segments = segmentsOut ?: return@runCatching result
             val names = speakerClusterNames(context, segments, samples, sampleRate, threads)
+            // TASK-678 review: map the RESPLIT segments (outcomes carry the
+            // labeled/re-split cues; mapping the original result discarded
+            // them and every label with them).
+            val outcomesSegments = outcomes.flatMap { it.cues }
             result.map { unlabeled ->
                 unlabeled.copy(
-                    segments = unlabeled.segments.map { cue ->
+                    segments = outcomesSegments.map { cue ->
                         cue.copy(speakerName = cue.speaker?.let(names::get))
                     },
                     processing = unlabeled.processing?.copy(speakerResplit = resplitSummaryOut),
@@ -2190,12 +2206,28 @@ class TranscriptionOrchestrator @Inject constructor(
      * Loads an external (user-imported) model by resolving the record from the store.
      * The [backendId] must carry [ExternalModelRecord.BACKEND_ID_PREFIX] with the record UUID after it.
      */
-    private suspend fun loadExternalBackend(context: Context, backendId: String): Result<Unit> {
+    /** TASK-462: the request's language preference (sentinels pass through). */
+    private suspend fun languagePrefForRequest(): String =
+        preferencesManager.transcriptionLanguage.first()
+
+    private suspend fun loadExternalBackend(
+        context: Context,
+        backendId: String,
+        languageOverride: String? = null,
+    ): Result<Unit> {
         val record = externalModelStore.byId(backendId.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX))
             ?: run {
                 Log.w(TAG, "no external model record for $backendId")
                 return Result.failure(TranscriptionException.ExternalModelUnavailable(backendId))
             }
+        // TASK-462: the language preference rides the config the same way
+        // it does for built-ins: a concrete pin overrides the record's own
+        // option/default in the language-capable families, the sentinels and
+        // "" mean detection (the family defaults apply unchanged).
+        val resolvedLanguage = TranscriptionLanguagePolicy.externalOverride(
+            record,
+            preference = languageOverride ?: languagePrefForRequest(),
+        )
         return configureBackend(
             backendId = record.backendId,
             label = record.displayName,
@@ -2206,6 +2238,7 @@ class TranscriptionOrchestrator @Inject constructor(
                 record = record,
                 numThreads = threadCount,
                 provider = provider,
+                languageOverride = resolvedLanguage,
             )
         }
     }

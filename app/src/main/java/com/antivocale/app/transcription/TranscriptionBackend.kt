@@ -190,6 +190,14 @@ sealed class BackendConfig {
         val record: ExternalModelRecord,
         val numThreads: Int,
         val provider: String,
+        /**
+         * TASK-462: the policy-resolved language pin for this request (""
+         * and the sentinels mean detection: the family defaults apply).
+         * Consumed by the families whose engines condition on language
+         * (Whisper forced decoding, SenseVoice, Canary) over the record's
+         * own option/default.
+         */
+        val languageOverride: String = "",
     ) : BackendConfig()
 
     /**

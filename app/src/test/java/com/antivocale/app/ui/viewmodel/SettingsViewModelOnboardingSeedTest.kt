@@ -3,6 +3,7 @@ package com.antivocale.app.ui.viewmodel
 import android.app.Application
 import android.content.Context
 import com.antivocale.app.data.ActiveModelRepository
+import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.ExternalModelRecordsProvider
 import com.antivocale.app.data.FakePreferencesManager
 import com.antivocale.app.transcription.staticRegistry
@@ -80,7 +81,7 @@ class SettingsViewModelOnboardingSeedTest {
             activeModelRepository = ActiveModelRepository(
                 fakePrefs,
                 mockk<Context>(relaxed = true),
-                staticRegistry(),
+                staticRegistry(), FakeExternalRecordsProvider(),
             ),
             // TASK-670 simplify F2: the enrollment pipeline seam; these
             // tests never enroll.

@@ -9,6 +9,7 @@ import com.antivocale.app.transcription.variantAwareDisplayName
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
 import java.io.File
@@ -33,7 +34,9 @@ class ActiveModelRepository @Inject constructor(
     private val preferencesManager: PreferencesManager,
     @ApplicationContext private val context: Context,
     private val backendRegistry: BackendRegistry,
+    externalModelRecordsProvider: ExternalModelRecordsProvider,
 ) {
+    private val externalRecords = externalModelRecordsProvider.records
     /**
      * The active backend plus its saved model path and display name, reactively
      * derived from the backend preference and the matching per-backend model-path
@@ -59,11 +62,22 @@ class ActiveModelRepository @Inject constructor(
      * and which path feed the offered set can never drift between surfaces.
      */
     val offeredLanguageCodes: Flow<Set<String>> =
-        activeModelFlow.map { active ->
-            TranscriptionLanguagePolicy.offeredLanguages(
-                modelPath = active.modelPath,
-                entry = BundledCatalog.byId(active.backendId),
-            )
+        combine(activeModelFlow, externalRecords) { active, records ->
+            when {
+                // TASK-462: external backends have no catalog entry; the
+                // RECORD's languages drive the offered set when its family
+                // conditions on language, else the truthful empty set.
+                active.backendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX) -> {
+                    val id = active.backendId.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX)
+                    TranscriptionLanguagePolicy.offeredLanguagesForExternal(
+                        records.firstOrNull { it.id == id }
+                            ?: return@combine emptySet())
+                }
+                else -> TranscriptionLanguagePolicy.offeredLanguages(
+                    modelPath = active.modelPath,
+                    entry = BundledCatalog.byId(active.backendId),
+                )
+            }
         }
 
     /**

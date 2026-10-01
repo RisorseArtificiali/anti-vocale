@@ -142,6 +142,14 @@ sealed interface ModelFamilySupport {
     val family: ModelFamily
 
     /**
+     * TASK-462: whether this family's engine conditions on a language pin
+     * (Whisper forced decoding, SenseVoice, Canary). Drives the external
+     * picker's offered set and the override gate; transducer/moonshine
+     * auto-detect and stay false.
+     */
+    val languageCapable: Boolean get() = false
+
+    /**
      * Mel-band count the recognizer's FeatureConfig must carry. Every family
      * ships 80 except CANARY (128: the encoder's feat_dim metadata; feeding 80
      * bands either fails the native load or decodes garbage). Single definition
@@ -181,7 +189,15 @@ sealed interface ModelFamilySupport {
     fun metadataKeys(modelType: String): List<String>
 
     /** Builds the sherpa [OfflineModelConfig] for [record] (engine-side). */
-    fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig
+    fun buildModelConfig(
+        record: ExternalModelRecord,
+        numThreads: Int,
+        provider: String,
+        // Defaulted HERE only: overrides repeat the plain param (Kotlin
+        // forbids default values in overrides); every existing caller keeps
+        // compiling and ExternalSherpaBackend passes the resolved pin.
+        languageOverride: String = "",
+    ): OfflineModelConfig
 
     /**
      * Optional metadata key (on the file named by [metadataFileRole]) whose VALUE
@@ -406,7 +422,12 @@ object TransducerSupport : ModelFamilySupport {
         }
     }
 
-    override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig =
+    override fun buildModelConfig(
+        record: ExternalModelRecord,
+        numThreads: Int,
+        provider: String,
+        languageOverride: String,
+    ): OfflineModelConfig =
         OfflineModelConfig(
             transducer = OfflineTransducerModelConfig(
                 encoder = "${record.dir}/${SherpaBackend.CANONICAL_ENCODER}",
@@ -444,6 +465,7 @@ object TransducerSupport : ModelFamilySupport {
  */
 object WhisperSupport : ModelFamilySupport {
     override val family: ModelFamily = ModelFamily.WHISPER
+        override val languageCapable: Boolean = true
 
     override fun requiredRoles(): List<String> = listOf(
         SherpaBackend.CANONICAL_ENCODER,
@@ -470,10 +492,19 @@ object WhisperSupport : ModelFamilySupport {
         }
     }
 
-    override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig {
-        val language = record.options[ModelFamilySupport.OPTION_WHISPER_LANGUAGE]
-            ?: record.languages.firstOrNull()
-            ?: ""
+    override fun buildModelConfig(
+        record: ExternalModelRecord,
+        numThreads: Int,
+        provider: String,
+        languageOverride: String,
+    ): OfflineModelConfig {
+        // TASK-462: a request-resolved pin wins; the record's option and the
+        // languages list stay the defaults (detection when nothing pins).
+        val language = languageOverride.ifBlank {
+            record.options[ModelFamilySupport.OPTION_WHISPER_LANGUAGE]
+                ?: record.languages.firstOrNull()
+                ?: ""
+        }
         val task = record.options[ModelFamilySupport.OPTION_WHISPER_TASK] ?: "transcribe"
         return OfflineModelConfig(
             whisper = OfflineWhisperModelConfig(
@@ -577,7 +608,12 @@ object CtcSupport : ModelFamilySupport {
 
     override fun metadataKeys(modelType: String): List<String> = emptyList()
 
-    override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig {
+    override fun buildModelConfig(
+        record: ExternalModelRecord,
+        numThreads: Int,
+        provider: String,
+        languageOverride: String,
+    ): OfflineModelConfig {
         val encoderPath = "${record.dir}/${SherpaBackend.CANONICAL_ENCODER}"
         return when (record.modelType) {
             ModelFamilySupport.CTC_TYPE_NEMO -> OfflineModelConfig(
@@ -634,6 +670,7 @@ object SenseVoiceSupport : ModelFamilySupport {
     const val CANONICAL_MODEL = SherpaBackend.CANONICAL_MODEL
 
     override val family: ModelFamily = ModelFamily.SENSE_VOICE
+        override val languageCapable: Boolean = true
 
     override fun requiredRoles(): List<String> = listOf(CANONICAL_MODEL, SherpaBackend.CANONICAL_TOKENS)
 
@@ -647,8 +684,16 @@ object SenseVoiceSupport : ModelFamilySupport {
 
     override fun metadataKeys(modelType: String): List<String> = emptyList()
 
-    override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig {
-        val language = record.options[ModelFamilySupport.OPTION_SENSEVOICE_LANGUAGE] ?: ""
+    override fun buildModelConfig(
+        record: ExternalModelRecord,
+        numThreads: Int,
+        provider: String,
+        languageOverride: String,
+    ): OfflineModelConfig {
+        // TASK-462: the request pin over the record's own option.
+        val language = languageOverride.ifBlank {
+            record.options[ModelFamilySupport.OPTION_SENSEVOICE_LANGUAGE] ?: ""
+        }
         // "true"/"1" enable ITN; anything else (including absent) leaves it off.
         val itn = record.options[ModelFamilySupport.OPTION_SENSEVOICE_ITN]?.let { it == "true" || it == "1" } ?: false
         return OfflineModelConfig(
@@ -691,6 +736,7 @@ object SenseVoiceSupport : ModelFamilySupport {
  */
 object CanarySupport : ModelFamilySupport {
     override val family: ModelFamily = ModelFamily.CANARY
+        override val languageCapable: Boolean = true
 
     override val featureDim: Int = 128
 
@@ -719,10 +765,18 @@ object CanarySupport : ModelFamilySupport {
         }
     }
 
-    override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig {
-        val language = record.options[ModelFamilySupport.OPTION_CANARY_LANGUAGE]
-            ?: record.languages.firstOrNull()
-            ?: "en"
+    override fun buildModelConfig(
+        record: ExternalModelRecord,
+        numThreads: Int,
+        provider: String,
+        languageOverride: String,
+    ): OfflineModelConfig {
+        // TASK-462: the request pin over the record's option/languages.
+        val language = languageOverride.ifBlank {
+            record.options[ModelFamilySupport.OPTION_CANARY_LANGUAGE]
+                ?: record.languages.firstOrNull()
+                ?: "en"
+        }
         return OfflineModelConfig(
             canary = OfflineCanaryModelConfig(
                 encoder = "${record.dir}/${SherpaBackend.CANONICAL_ENCODER}",
@@ -885,7 +939,12 @@ object MoonshineSupport : ModelFamilySupport {
 
     override fun metadataKeys(modelType: String): List<String> = emptyList()
 
-    override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig {
+    override fun buildModelConfig(
+        record: ExternalModelRecord,
+        numThreads: Int,
+        provider: String,
+        languageOverride: String,
+    ): OfflineModelConfig {
         // record.files.keys is the import-time truth (the canonical names the
         // import actually wrote): a stray file dropped into the directory
         // later cannot flip the generation under the load check's feet
@@ -941,7 +1000,12 @@ object DolphinSupport : ModelFamilySupport {
 
     override fun metadataKeys(modelType: String): List<String> = emptyList()
 
-    override fun buildModelConfig(record: ExternalModelRecord, numThreads: Int, provider: String): OfflineModelConfig =
+    override fun buildModelConfig(
+        record: ExternalModelRecord,
+        numThreads: Int,
+        provider: String,
+        languageOverride: String,
+    ): OfflineModelConfig =
         OfflineModelConfig(
             dolphin = OfflineDolphinModelConfig(
                 model = "${record.dir}/$CANONICAL_MODEL",

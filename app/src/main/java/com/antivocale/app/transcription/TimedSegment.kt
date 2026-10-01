@@ -23,9 +23,10 @@ data class TimedSegment(
     /** TASK-678 (GH #83): this cue straddles two speakers and could not be
      *  honestly split; renderers must not attribute it to one voice. */
     val mixedSpeakers: Boolean = false,
-    /** TASK-678: the cue's own tokens, CHUNK-RELATIVE ms, transient by
-     *  design (never serialized; the speaker re-split consumes them in the
-     *  same pass that labels the cue, then they are irrelevant). */
+    /** TASK-678: the cue's own tokens, ABSOLUTE ms from the audio start
+     *  (the builder shifts chunk-relative times when attaching), transient
+     *  by design: never serialized, consumed by the speaker re-split in the
+     *  same pass that labels the cue, then irrelevant. */
     val tokens: List<TimedToken> = emptyList(),
 )
 

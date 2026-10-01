@@ -3,6 +3,7 @@ package com.antivocale.app.ui.viewmodel
 import android.content.Context
 import android.net.Uri
 import com.antivocale.app.data.ActiveModelRepository
+import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.ExternalModelImportOperations
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelSource
@@ -122,7 +123,7 @@ class ModelViewModelExternalImportTest {
         }
         viewModel = ModelViewModel(
             preferencesManager = fakePrefs,
-            activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry()),
+            activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
             tokenManager = mockk(relaxed = true),
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),

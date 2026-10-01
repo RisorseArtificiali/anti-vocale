@@ -165,6 +165,12 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
     )
     private val onAutoUnloadCallback = java.util.concurrent.atomic.AtomicReference<(() -> Unit)?>(null)
 
+    /** TASK-462: the language the warm engine was configured with ("" when
+     *  detection), for the residency check a preference change triggers. */
+    override fun getConfiguredLanguage(): String = configuredLanguage
+
+    private var configuredLanguage: String = ""
+
     override suspend fun initialize(context: Context, config: BackendConfig): Result<Unit> {
         val externalConfig = config as? BackendConfig.ExternalConfig
             ?: return Result.failure(IllegalArgumentException(
@@ -305,7 +311,13 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                     return@withContext Result.success(Unit)
                 }
 
-                val modelConfig = support.buildModelConfig(record, externalConfig.numThreads, externalConfig.provider)
+                val modelConfig = support.buildModelConfig(
+                    record, externalConfig.numThreads, externalConfig.provider,
+                    languageOverride = externalConfig.languageOverride)
+                configuredLanguage = modelConfig.whisper?.language
+                    ?: modelConfig.senseVoice?.language
+                    ?: modelConfig.canary?.srcLang
+                    ?: ""
 
                 val recognizerConfig = OfflineRecognizerConfig(
                     modelConfig = modelConfig,

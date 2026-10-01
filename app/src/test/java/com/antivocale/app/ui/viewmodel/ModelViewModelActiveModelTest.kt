@@ -3,6 +3,7 @@ package com.antivocale.app.ui.viewmodel
 import android.content.Context
 import com.antivocale.app.R
 import com.antivocale.app.data.ActiveModelRepository
+import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.FakePreferencesManager
 import com.antivocale.app.transcription.staticRegistry
 import io.mockk.every
@@ -92,7 +93,7 @@ class ModelViewModelActiveModelTest {
         com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
         viewModel = ModelViewModel(
             preferencesManager = fakePrefs,
-            activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry()),
+            activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
             tokenManager = mockk(relaxed = true),
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),

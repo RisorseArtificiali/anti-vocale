@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import com.antivocale.app.R
 import com.antivocale.app.data.ActiveModelRepository
+import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelRecordsProvider
 import com.antivocale.app.data.FakePreferencesManager
@@ -97,7 +98,7 @@ class SettingsViewModelActiveModelTest {
                 mockk<Context>(relaxed = true) {
                     every { getString(any()) } answers { "str:${args[0]}" }
                 },
-                staticRegistry(),
+                staticRegistry(), FakeExternalRecordsProvider(),
             ),
             // TASK-670 simplify F2: the enrollment pipeline seam; these
             // tests never enroll, a mock enroller and an empty real store

@@ -109,6 +109,37 @@ object TranscriptionLanguagePolicy {
     }
 
     /**
+     * TASK-462: the override an EXTERNAL config consumes. The sentinels and
+     * "" (auto/phone-unreadable) mean detection: "" (the family defaults
+     * apply); a concrete pin passes through ONLY when the record's family
+     * conditions on language (a pin on a transducer would be a silent lie,
+     * the exact class the empty-set picker rule exists to prevent).
+     */
+    fun externalOverride(
+        record: com.antivocale.app.data.ExternalModelRecord,
+        preference: String,
+        phoneLanguage: String? = null,
+    ): String =
+        when {
+            !ModelFamilySupport.forFamily(record.family).languageCapable -> ""
+            // Review: ALL sentinels mean detection (the untouched default is
+            // "system", and PREF_PHONE resolves through the device locale
+            // like the built-in arms; an unreadable locale detects too).
+            isAutoDetect(preference) && preference != PREF_PHONE -> ""
+            preference == PREF_PHONE -> phoneLanguage?.takeIf { it.isNotBlank() } ?: ""
+            else -> preference
+        }
+
+    /**
+     * TASK-462: the codes an EXTERNAL record conditions on: its own languages
+     * list when the family can consume one (Whisper forced decoding,
+     * SenseVoice, Canary), else the empty set (the disabled card, truthful).
+     */
+    fun offeredLanguagesForExternal(record: com.antivocale.app.data.ExternalModelRecord): Set<String> =
+        if (ModelFamilySupport.forFamily(record.family).languageCapable) record.languages.toSet()
+        else emptySet()
+
+    /**
      * TASK-458: how the picker renders the stored preference against the
      * offered set. A concrete pin the active model does not support is KEPT
      * (no destructive preference writes) and shown with a note; the dropdown

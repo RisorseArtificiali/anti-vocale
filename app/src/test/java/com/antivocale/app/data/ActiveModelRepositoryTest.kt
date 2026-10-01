@@ -64,7 +64,7 @@ class ActiveModelRepositoryTest {
     private val mockContext: Context = mockk<Context>(relaxed = true)
 
     private fun makeRepo(): ActiveModelRepository {
-        return ActiveModelRepository(fakePrefs, mockContext, staticRegistry())
+        return ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), FakeExternalRecordsProvider())
     }
 
     // -- (a) Backend change propagates to activeModelFlow --
@@ -249,7 +249,7 @@ class ActiveModelRepositoryTest {
         fakePrefs._transcriptionBackend.value = "whisper"
         fakePrefs._sherpaModelPath("whisper").value = "/data/models/sherpa-onnx-whisper-small"
 
-        val repo = ActiveModelRepository(fakePrefs, context, staticRegistry())
+        val repo = ActiveModelRepository(fakePrefs, context, staticRegistry(), FakeExternalRecordsProvider())
 
         assertEquals("Whisper Small", repo.activeModelFlow.first().modelName)
     }

@@ -58,7 +58,10 @@ object SpeakerResplit {
         fallbackSpeaker: Int? = null,
     ): Outcome {
         val votes = SpeakerLabeler.overlapVotesMs(cue.startMs, cue.endMs, segments)
-        val ranked = votes.entries.sortedByDescending { it.value }
+        // Review: the same tie-break winnerMs applies (lower speaker id on
+        // equal overlap), so the "second voice" is deterministic.
+        val ranked = votes.entries.sortedWith(
+            compareByDescending<Map.Entry<Int, Long>> { it.value }.thenBy { it.key })
         if (ranked.size < 2 || ranked[1].value < MIN_SECOND_VOICE_MS) {
             return Outcome(
                 listOf(cue.copy(speaker = fallbackSpeaker, tokens = emptyList())), null)

@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.antivocale.app.data.ActiveModelRepository
+import com.antivocale.app.data.FakeExternalRecordsProvider
 import com.antivocale.app.data.ExternalModelImporter
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.LitertLmFile
@@ -91,7 +92,7 @@ class ModelViewModelLitertLmImportTest {
         com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
         viewModel = ModelViewModel(
             preferencesManager = prefs,
-            activeModelRepository = ActiveModelRepository(prefs, mockContext, staticRegistry()),
+            activeModelRepository = ActiveModelRepository(prefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
             tokenManager = mockk(relaxed = true),
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),
