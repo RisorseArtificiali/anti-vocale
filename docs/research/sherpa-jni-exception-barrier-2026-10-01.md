@@ -67,3 +67,9 @@ extend the same barrier to the rest if you prefer one pass.
   TASK-479 (catalog models) and TASK-482 (external imports, 2026-10-01)
 - Runtime confirmation on a device is pending the next phone window;
   the repro recipe above is the exact procedure.
+
+## Published (maintainer approval 2026-10-01)
+
+https://github.com/k2-fsa/sherpa-onnx/pull/4014 (base master, head
+paoloantinori:jni-convert-ort-exception-to-java). Body passed the
+unslop audit before posting; "Fixes #3987" links the issue.
