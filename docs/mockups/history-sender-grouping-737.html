@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mockup: Cronologia raggruppata per mittente (TASK-737)</title>
+<style>
+  :root {
+    --bg: #FEF7FF; --surface: #FFFFFF; --surface-dim: #F7F2FA;
+    --on-surface: #1D1B20; --on-surface-var: #49454F;
+    --primary: #6750A4; --primary-container: #EADDFF; --on-primary-container: #21005D;
+    --outline: #79747E; --error: #B3261E;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #ECECEC; font-family: Roboto, "Segoe UI", sans-serif;
+    display: flex; gap: 32px; padding: 24px; align-items: flex-start; flex-wrap: wrap;
+  }
+  .phone {
+    width: 390px; background: var(--bg); border-radius: 24px; overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,.25); border: 8px solid #1D1B20; height: 820px; display: flex; flex-direction: column;
+  }
+  .statusbar { height: 28px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; font-size: 12px; color: var(--on-surface); }
+  .apptitle { padding: 10px 16px 6px; font-size: 22px; font-weight: 500; color: var(--on-surface); display:flex; align-items:center; gap:10px;}
+  .tabrow { display: flex; gap: 4px; padding: 0 12px 8px; }
+  .tab { padding: 8px 14px; border-radius: 20px; font-size: 13px; color: var(--on-surface-var); }
+  .tab.on { background: var(--primary-container); color: var(--on-primary-container); font-weight: 600; }
+  .search { margin: 0 16px 10px; background: var(--surface-dim); border-radius: 28px; padding: 10px 16px; font-size: 14px; color: var(--on-surface-var); display: flex; gap: 10px; align-items: center;}
+  .list { flex: 1; overflow-y: auto; padding: 0 12px 24px; }
+  .apphead { display: flex; align-items: center; gap: 10px; padding: 14px 8px 6px; font-size: 13px; font-weight: 700; letter-spacing: .4px; color: var(--on-surface-var); text-transform: uppercase; cursor: pointer;}
+  .apphead .chev { margin-left: auto; transition: transform .2s; }
+  .sender { background: var(--surface); border-radius: 16px; margin: 8px 0; overflow: hidden; }
+  .sender > .head { display: flex; align-items: center; gap: 12px; padding: 12px 14px; cursor: pointer; }
+  .avatar { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; }
+  .sender > .head .name { font-size: 15px; font-weight: 600; color: var(--on-surface); }
+  .sender > .head .meta { font-size: 12px; color: var(--on-surface-var); margin-top: 2px;}
+  .sender > .head .chev { margin-left: auto; color: var(--on-surface-var); transition: transform .2s; }
+  .sender.collapsed .chev { transform: rotate(-90deg); }
+  .sender.collapsed .rows { display: none; }
+  .rows { border-top: 1px solid #E7E0EC; }
+  .row { padding: 10px 14px; border-bottom: 1px solid #F4EFF4; }
+  .row:last-child { border-bottom: none; }
+  .row .top { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--on-surface-var); }
+  .row .chip { background: var(--primary-container); color: var(--on-primary-container); border-radius: 8px; padding: 1px 8px; font-weight: 600; }
+  .row .dur { color: var(--on-surface-var); }
+  .row .time { margin-left: auto; }
+  .row .text { font-size: 14px; color: var(--on-surface); margin-top: 4px; line-height: 1.4;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .plain { background: var(--surface); border-radius: 16px; margin: 8px 0; }
+  .plain .row { border-bottom: 1px solid #F4EFF4; }
+  .note { max-width: 430px; font-size: 14px; color: #333; line-height: 1.55; }
+  .note h2 { font-size: 18px; margin: 14px 0 8px; color: #1a1a1a;}
+  .note li { margin: 6px 0 6px 18px; }
+  .note .cap { font-size: 12px; color: #777; margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="statusbar"><span>16:42</span><span>▉▉▉ ⌁ 87%</span></div>
+  <div class="apptitle">Anti-Vocale</div>
+  <div class="tabrow">
+    <div class="tab">Modelli</div>
+    <div class="tab on">Cronologia</div>
+    <div class="tab">Impostazioni</div>
+  </div>
+  <div class="search">🔍  Cerca nelle trascrizioni…</div>
+  <div class="list">
+
+    <div class="apphead">🟢 WhatsApp <span style="font-weight:400;text-transform:none;letter-spacing:0">· 4 voci</span><span class="chev">⌄</span></div>
+
+    <div class="sender">
+      <div class="head">
+        <div class="avatar" style="background:#EADDFF;color:#21005D">C</div>
+        <div><div class="name">Chiara</div><div class="meta">2 note · ultima oggi 14:03</div></div>
+        <span class="chev">⌄</span>
+      </div>
+      <div class="rows">
+        <div class="row">
+          <div class="top"><span class="chip">Chiara</span><span class="dur">🎤 0:04</span><span class="time">oggi 14:03</span></div>
+          <div class="text">Sì, ci vediamo alle sette davanti al cinema, poi decidiamo dove cenare…</div>
+        </div>
+        <div class="row">
+          <div class="top"><span class="chip">Chiara</span><span class="dur">🎤 0:11</span><span class="time">ieri 21:17</span></div>
+          <div class="text">Ho prenotato il tavolo per sei, se arriva qualcun altro avvisami che chiamo…</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="sender collapsed">
+      <div class="head">
+        <div class="avatar" style="background:#D8E8D8;color:#1B4620">M</div>
+        <div><div class="name">Marta</div><div class="meta">1 nota · 3 giorni fa</div></div>
+        <span class="chev">⌄</span>
+      </div>
+      <div class="rows"></div>
+    </div>
+
+    <div class="apphead" style="margin-top:10px">🔵 Telegram <span style="font-weight:400;text-transform:none;letter-spacing:0">· 2 voci</span><span class="chev">⌄</span></div>
+
+    <div class="sender">
+      <div class="head">
+        <div class="avatar" style="background:#D6E4FF;color:#00296B">G</div>
+        <div><div class="name">Giulia</div><div class="meta">2 note · ultima 29 set</div></div>
+        <span class="chev">⌄</span>
+      </div>
+      <div class="rows">
+        <div class="row">
+          <div class="top"><span class="chip">Giulia</span><span class="dur">🎤 0:27</span><span class="time">29 set 18:02</span></div>
+          <div class="text">Ti ho girato il documento in chat, guardalo con calma e dimmi se il paragrafo tre…</div>
+        </div>
+        <div class="row">
+          <div class="top"><span class="chip">Giulia</span><span class="dur">🎤 0:06</span><span class="time">27 set 09:31</span></div>
+          <div class="text">Perfetto, allora confermo per giovedì.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="apphead" style="margin-top:10px">📁 Altre fonti <span style="font-weight:400;text-transform:none;letter-spacing:0">· senza mittente</span><span class="chev">⌄</span></div>
+    <div class="plain">
+      <div class="row">
+        <div class="top"><span class="dur">🎤 1:02</span><span class="time">28 set 08:12</span></div>
+        <div class="text">Memo vocale del telefono: ricordarsi di ritirare la spedizione…</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="note">
+  <h2>TASK-737: Cronologia raggruppata per mittente</h2>
+  <p>Il mockup mostra la forma proposta: dentro ogni sezione app (oggi già esistente, "Raggruppa per conversazione"), una sottosezione comprimibile per mittente, con avatar iniziale, conteggio note e ultima attività. Le righe restano identiche a oggi, con il chip del mittente già spedito dalla TASK-736.</p>
+  <h2>Regole visualizzate</h2>
+  <ul>
+    <li><b>Marta è collassata</b>: toccare l'intestazione espande/comprime, come le sezioni app esistenti.</li>
+    <li><b>"Altre fonti"</b>: le righe senza mittente (vecchie, non matchate, fonti non di messaggistica) restano nella sezione piatta di oggi, senza bucket "sconosciuto" rumoroso.</li>
+    <li>La riga dentro mantiene chip + durata + ora; il raggruppamento aggiunge solo il livello, non cambia la riga.</li>
+  </ul>
+  <h2>Domande per te</h2>
+  <ul>
+    <li>Questa forma, o preferisci il mittente come primo livello (niente sezione app visibile quando c'è un solo utente per app)?</li>
+    <li>L'header del mittente mostra "2 note · ultima oggi": abbastanza, o vuoi anche il totale minuti?</li>
+  </ul>
+  <p class="cap">Mockup statico; i colori seguono la palette Material 3 dell'app (tema chiaro). Al buio viene servito lo stesso HTML col tema scuro.</p>
+</div>
+
+</body>
+</html>
