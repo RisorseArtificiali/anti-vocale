@@ -213,4 +213,31 @@ class RepetitionLoopDetectorTest {
         // Blank has its own handling upstream; here it must never read as a collapse.
         assertFalse(RepetitionLoopDetector.shortCollapseOverGoodFirstPass(goodFirstPass, "  "))
     }
+
+    // ---- TASK-585: the scan result carries the acceptable-text maxima ----
+
+    @Test
+    fun `a clean substantial text carries its maxima, a fire does not`() {
+        // diverseProse, NOT parola1..parola60: a shared "parola" prefix is
+        // deflate-compressible to a 3.8x ratio all by itself, so the
+        // "clean" fixture would fire compression for the prefix, not a loop.
+        val clean = diverseProse(60)
+        val scan = RepetitionLoopDetector.scan(clean)
+        assertNull("clean distinct-word text must not fire", scan.detection)
+        assertTrue("clean maxima must be present", scan.cleanMaxima!!.startsWith("compression="))
+        // The corpus's canonical loop (a short phrase repeated to the token
+        // budget); NOT clean+clean, which is literal duplication and fires
+        // compression for a different reason.
+        val loop = RepetitionLoopDetector.scan((1..20).joinToString(" ") { "¡Muy bien!" })
+        assertNotNull(loop.detection)
+        assertNull("a fired row carries the loop metrics, not the clean form", loop.cleanMaxima)
+    }
+
+    @Test
+    fun `a short text scans clean with null maxima`() {
+        // Under the 24-token floor there is no distribution to record.
+        val scan = RepetitionLoopDetector.scan("tre parole")
+        assertNull(scan.detection)
+        assertNull(scan.cleanMaxima)
+    }
 }

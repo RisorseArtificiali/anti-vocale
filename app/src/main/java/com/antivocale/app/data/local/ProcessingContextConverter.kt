@@ -27,6 +27,7 @@ object ProcessingContextConverter {
             c.refinementPhase?.let { put("refinementPhase", toJson(it)) }
             c.refinementSkipReason?.let { put("refinementSkipReason", it) }
             c.refinementLoopMetrics?.let { put("refinementLoopMetrics", it) }
+            c.refinementCleanMaxima?.let { put("refinementCleanMaxima", it) }
         }.toString()
     }
 
@@ -51,6 +52,7 @@ object ProcessingContextConverter {
                     refinementPhase = fromJson(o.optStringOrNull("refinementPhase")),
                     refinementSkipReason = o.optStringOrNull("refinementSkipReason"),
                     refinementLoopMetrics = o.optStringOrNull("refinementLoopMetrics"),
+                    refinementCleanMaxima = o.optStringOrNull("refinementCleanMaxima"),
                 )
             }.getOrNull()
         }
@@ -95,6 +97,7 @@ object ProcessingContextConverter {
             c.refinementPhase?.backendId?.let { add("refined=$it") }
             c.refinementSkipReason?.let { add("skip=$it") }
             c.refinementLoopMetrics?.let { add("loop=$it") }
+            c.refinementCleanMaxima?.let { add("cleanMax=$it") }
         }.joinToString(" ")
     }
 }

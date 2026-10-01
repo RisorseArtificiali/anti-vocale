@@ -69,6 +69,11 @@ data class ProcessingContext(
     /** TASK-582: measured loop-detector values at the skip ("compression=
      *  2.61 ngram=0.42"); null unless refinementSkipReason is a loop token. */
     val refinementLoopMetrics: String? = null,
+    /** TASK-585: the acceptable-text scan maxima ("compression=X ngram=Y"),
+     *  persisted on substantial clean runs so a future false-positive report
+     *  arrives WITH the acceptable distribution. Null on a fired detection
+     *  (that row carries [refinementLoopMetrics] instead) and on short texts. */
+    val refinementCleanMaxima: String? = null,
 ) {
     companion object {
         /**

@@ -1865,7 +1865,11 @@ class TranscriptionOrchestrator @Inject constructor(
         fastFirstPass: FirstPassOutcome,
         refined: TranscriptionResult,
     ): Result<TranscriptionResult> {
-        val loop = RepetitionLoopDetector.detect(refined.text)
+        // TASK-585: the scan either way; the acceptable-text maxima ride the
+        // CLEAN row (a future false-positive report then arrives with the
+        // acceptable distribution, not a bare threshold complaint).
+        val scan = RepetitionLoopDetector.scan(refined.text)
+        val loop = scan.detection
         val refineLoopMetrics = loop?.metrics()
         if (loop != null) {
             return recoverFirstPass(
@@ -1893,7 +1897,10 @@ class TranscriptionOrchestrator @Inject constructor(
                 DualRefinementPolicy.SKIP_REFINE_COLLAPSED,
             )
         }
-        return Result.success(refined.copy(firstPass = fastFirstPass))
+        return Result.success(refined.copy(
+            firstPass = fastFirstPass,
+            processing = refined.processing?.copy(refinementCleanMaxima = scan.cleanMaxima),
+        ))
     }
 
     /**

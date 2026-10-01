@@ -99,6 +99,42 @@ object RepetitionLoopDetector {
     }
 
     /**
+     * TASK-585: the scan result either way: a FIRED [Detection] or the
+     * acceptable-text maxima (the one-sided-tuning gap: clean maxima were
+     * computed then discarded, so a future false-positive report arrived
+     * with no data on the acceptable distribution to move a threshold
+     * against). `cleanMaxima` is null exactly when a detection fired.
+     */
+    data class Scan(
+        val detection: Detection?,
+        /** "compression=X ngram=Y" of the acceptable text; null on a fire. */
+        val cleanMaxima: String?,
+    )
+
+    fun scan(text: String): Scan {
+        val detection = detect(text)
+        return if (detection != null) Scan(detection, null) else Scan(null, cleanMaxima(text))
+    }
+
+    /** The acceptable-text maxima in the persisted compact form. */
+    private fun cleanMaxima(text: String): String? {
+        val tokens = tokenize(text)
+        if (tokens.size < MIN_TOKENS) return null
+        var maxCompression = 0f
+        var maxDominance = 0f
+        var start = 0
+        val lastStart = tokens.size - WINDOW_TOKENS
+        while (start <= lastStart) {
+            val window = tokens.subList(start, start + WINDOW_TOKENS).joinToString(" ")
+            maxCompression = maxOf(maxCompression, compressionRatio(window))
+            maxDominance = maxOf(maxDominance, topTrigramDominance(tokens, start, start + WINDOW_TOKENS))
+            if (start == lastStart) break
+            start = minOf(start + WINDOW_STEP, lastStart)
+        }
+        return "compression=%.4f ngram=%.4f".format(Locale.US, maxCompression, maxDominance)
+    }
+
+    /**
      * @return the detection (reason plus measured values) when [text] is a
      *   runaway repetition loop, null when the text is acceptable
      *   (including every short or condensed text, by construction).
