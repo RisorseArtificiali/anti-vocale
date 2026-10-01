@@ -81,6 +81,7 @@ import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.languageOptionLabel
 import com.antivocale.app.ui.components.transcriptionSentinelLabels
 import com.antivocale.app.ui.components.CollapsibleSection
+import com.antivocale.app.ui.components.GroupHeader
 import com.antivocale.app.ui.components.HF_TOKEN_SETTINGS_URL
 import com.antivocale.app.ui.components.OAuthLoginSection
 import com.antivocale.app.ui.components.SectionCard
@@ -430,14 +431,19 @@ fun SettingsTab(
         // match count, the section visibility, and every SearchFilterRow
         // gate below read the SAME per-card registry (SETTINGS_SEARCH_CARDS,
         // bottom of this file): each entry's visible() mirrors the
-        // compositional if that wraps its row in the tree, and its res() is
-        // the exact match vocabulary, resolved against the current locale so
+        // compositional if that wraps its row in the tree, and its res()
+        // plus its group label (cardVocabulary) is the exact match
+        // vocabulary, resolved against the current locale so
         // the match works in all 12. One source kills the two-list
         // convention TASK-542 left behind (hand-maintained count groups vs
         // hand-built per-row gates, the drift the TASK-275 review's F3
         // flagged and AUTOMATION_GUIDE_SEARCH_RES fixed for one card):
         // a body-only query can never count a match the tree never renders,
-        // nor hide a card that owns the matched string. Closing that drift
+        // nor hide a card that owns the matched string. TASK-731 adds the
+        // ONE exception: the card's group label rides the match vocabulary
+        // (see cardVocabulary) even though no card body renders it, so a
+        // query naming a group lands on the cards grouped under it.
+        // Closing that drift
         // also FIXED three real gaps: the GH #43 refinement and GH #83
         // speaker-labels cards had gates but no count entries, and
         // TASK-576's text size matched the theme gate but not its count
@@ -465,7 +471,7 @@ fun SettingsTab(
                 .filter { card -> card.visible(searchState) }
                 .groupBy(
                     keySelector = { card -> card.section },
-                    valueTransform = { card -> card.res(searchState).map(context::getString) },
+                    valueTransform = { card -> cardVocabulary(card, searchState).map(context::getString) },
                 )
         }
         fun sectionGroups(section: SettingsSearchSection): List<List<String>> =
@@ -695,90 +701,7 @@ fun SettingsTab(
                 }
             }
 
-            // Auto-Copy Setting
-            val autoCopyTitle = stringResource(R.string.auto_copy_title)
-            val autoCopyDescription = stringResource(R.string.auto_copy_description)
-            SearchFilterRow(searchQuery, SettingsSearchId.AUTO_COPY, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.ContentCopy,
-                    title = autoCopyTitle,
-                    description = autoCopyDescription,
-                    checked = autoCopyEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveAutoCopyEnabled(enabled)
-                    }
-                )
-            }
-
-            // TASK-543: the two export cards live on their own sub-page now;
-            // this entry card navigates there.
-            SearchFilterRow(searchQuery, SettingsSearchId.EXPORT_SETTINGS, searchState) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button) { showExportSettings = true },
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth()
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = stringResource(R.string.export_settings_title),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Text(
-                                text = stringResource(R.string.export_settings_description),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        Icon(
-                            imageVector = Icons.Default.ChevronRight,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-            }
-
-            // GH #43: two-pass transcription (instant preview, then refine).
-            val refinementTitle = stringResource(R.string.refinement_title)
-            val refinementDescription = stringResource(R.string.refinement_description)
-            val refinementEnabled by viewModel.refinementEnabled.collectAsState()
-            val refinementAvailable by viewModel.refinementAvailable.collectAsState()
-            // TASK-689: the gate reads the registry; this GH #43 card had a
-            // gate but no count entry under the old two-list convention.
-            SearchFilterRow(searchQuery, SettingsSearchId.REFINEMENT, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.Bolt,
-                    title = refinementTitle,
-                    description = refinementDescription,
-                    // Greyed out until a streaming model is installed and the
-                    // selected backend is not the streaming one itself.
-                    enabled = refinementAvailable,
-                    checked = refinementEnabled && refinementAvailable,
-                    onCheckedChange = { enabled -> viewModel.saveRefinementEnabled(enabled) }
-                )
-            }
-
-            // Maintainer decision 2026-09-30: diarization settings moved
-            // to their own page; the hub below opens it. Search contract:
-            // the hub's registry vocabulary is the UNION of its own and
-            // both children's strings (state-gated to the identities
-            // card's privacy gate), so old queries still land one tap
-            // from the card they matched.
-            SearchFilterRow(searchQuery, SettingsSearchId.DIARIZATION_HUB, searchState) {
-                SettingsHubCard(R.string.speaker_settings_title, R.string.speaker_settings_summary) { showSpeakerSettings = true }
-            }
+            SettingsGroupLabel(SettingsSearchGroup.DECODING, searchState)
 
             // VAD Silence Stripping Setting
             val vadTitle = stringResource(R.string.vad_title)
@@ -832,21 +755,27 @@ fun SettingsTab(
                 )
             }
 
-            // TASK-684 (GH #109): the quiet summary notification for runs
-            // the process death closed without a proven cause. Default on;
-            // the user can silence it here (the suspended class always
-            // notifies, independent of this toggle).
-            SearchFilterRow(searchQuery, SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, searchState) {
+            // GH #43: two-pass transcription (instant preview, then refine).
+            val refinementTitle = stringResource(R.string.refinement_title)
+            val refinementDescription = stringResource(R.string.refinement_description)
+            val refinementEnabled by viewModel.refinementEnabled.collectAsState()
+            val refinementAvailable by viewModel.refinementAvailable.collectAsState()
+            // TASK-689: the gate reads the registry; this GH #43 card had a
+            // gate but no count entry under the old two-list convention.
+            SearchFilterRow(searchQuery, SettingsSearchId.REFINEMENT, searchState) {
                 ToggleSettingCard(
-                    icon = Icons.Default.Notifications,
-                    title = stringResource(R.string.interrupted_run_notifications_title),
-                    description = stringResource(R.string.interrupted_run_notifications_description),
-                    checked = interruptedRunNotifications,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveInterruptedRunNotifications(enabled)
-                    },
+                    icon = Icons.Default.Bolt,
+                    title = refinementTitle,
+                    description = refinementDescription,
+                    // Greyed out until a streaming model is installed and the
+                    // selected backend is not the streaming one itself.
+                    enabled = refinementAvailable,
+                    checked = refinementEnabled && refinementAvailable,
+                    onCheckedChange = { enabled -> viewModel.saveRefinementEnabled(enabled) }
                 )
             }
+
+            SettingsGroupLabel(SettingsSearchGroup.GEMMA_TEXT, searchState)
 
             // TASK-276: punctuation pass mode + prompt override. TASK-507: exposed only when the pass can run at all. Runtime
             // preconditions are a configured Gemma (the pass engine) AND a
@@ -920,41 +849,6 @@ fun SettingsTab(
                 }
             }
 
-            // TASK-647: the AI-disclaimer signature. Applies to what LEAVES
-            // the app (copy, share, export); the in-app screens stay raw.
-            SearchFilterRow(searchQuery, SettingsSearchId.SIGNATURE, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.Notes,
-                    title = stringResource(R.string.signature_setting_title),
-                    description = stringResource(R.string.signature_setting_description),
-                    checked = signatureOn,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveSignatureEnabled(enabled)
-                    }
-                )
-                if (signatureOn) {
-                    SignatureTextCard(
-                        text = signatureTextValue,
-                        onSave = { viewModel.saveSignatureText(it) }
-                    )
-                    SectionCard(
-                        icon = Icons.Default.SwapVert,
-                        title = signaturePositionTitle,
-                        description = null
-                    ) {
-                        SettingsDropdown(
-                            currentValue = signaturePositionValue,
-                            options = PreferencesManager.SIGNATURE_POSITIONS,
-                            currentValueDisplay = signaturePositionLabel(signaturePositionValue),
-                            optionDisplay = { signaturePositionLabel(it) },
-                            onOptionSelected = { viewModel.saveSignaturePosition(it) },
-                            label = signaturePositionTitle,
-                            enabled = true
-                        )
-                    }
-                }
-            }
-
             // Default Prompt Setting Navigation Card. TASK-507:
             // the prompt feeds resolvePrompt -> ChunkPromptPolicy, which only
             // the LLM backend consumes (ASR models take no instruction), so the
@@ -1009,6 +903,124 @@ fun SettingsTab(
                 }
             }
 
+            // Maintainer decision 2026-09-30: diarization settings moved
+            // to their own page; the hub below opens it. Search contract:
+            // the hub's registry vocabulary is the UNION of its own and
+            // both children's strings (state-gated to the identities
+            // card's privacy gate), so old queries still land one tap
+            // from the card they matched.
+            SearchFilterRow(searchQuery, SettingsSearchId.DIARIZATION_HUB, searchState) {
+                SettingsHubCard(R.string.speaker_settings_title, R.string.speaker_settings_summary) { showSpeakerSettings = true }
+            }
+
+            SettingsGroupLabel(SettingsSearchGroup.OUTPUT, searchState)
+
+            // Auto-Copy Setting
+            val autoCopyTitle = stringResource(R.string.auto_copy_title)
+            val autoCopyDescription = stringResource(R.string.auto_copy_description)
+            SearchFilterRow(searchQuery, SettingsSearchId.AUTO_COPY, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.ContentCopy,
+                    title = autoCopyTitle,
+                    description = autoCopyDescription,
+                    checked = autoCopyEnabled,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveAutoCopyEnabled(enabled)
+                    }
+                )
+            }
+
+            // TASK-543: the two export cards live on their own sub-page now;
+            // this entry card navigates there.
+            SearchFilterRow(searchQuery, SettingsSearchId.EXPORT_SETTINGS, searchState) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { showExportSettings = true },
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.export_settings_title),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = stringResource(R.string.export_settings_description),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // TASK-647: the AI-disclaimer signature. Applies to what LEAVES
+            // the app (copy, share, export); the in-app screens stay raw.
+            SearchFilterRow(searchQuery, SettingsSearchId.SIGNATURE, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Notes,
+                    title = stringResource(R.string.signature_setting_title),
+                    description = stringResource(R.string.signature_setting_description),
+                    checked = signatureOn,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveSignatureEnabled(enabled)
+                    }
+                )
+                if (signatureOn) {
+                    SignatureTextCard(
+                        text = signatureTextValue,
+                        onSave = { viewModel.saveSignatureText(it) }
+                    )
+                    SectionCard(
+                        icon = Icons.Default.SwapVert,
+                        title = signaturePositionTitle,
+                        description = null
+                    ) {
+                        SettingsDropdown(
+                            currentValue = signaturePositionValue,
+                            options = PreferencesManager.SIGNATURE_POSITIONS,
+                            currentValueDisplay = signaturePositionLabel(signaturePositionValue),
+                            optionDisplay = { signaturePositionLabel(it) },
+                            onOptionSelected = { viewModel.saveSignaturePosition(it) },
+                            label = signaturePositionTitle,
+                            enabled = true
+                        )
+                    }
+                }
+            }
+
+            // TASK-684 (GH #109): the quiet summary notification for runs
+            // the process death closed without a proven cause. Default on;
+            // the user can silence it here (the suspended class always
+            // notifies, independent of this toggle).
+            SearchFilterRow(searchQuery, SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Notifications,
+                    title = stringResource(R.string.interrupted_run_notifications_title),
+                    description = stringResource(R.string.interrupted_run_notifications_description),
+                    checked = interruptedRunNotifications,
+                    onCheckedChange = { enabled ->
+                        viewModel.saveInterruptedRunNotifications(enabled)
+                    },
+                )
+            }
+
             // Keep-Alive Timeout Setting
             val timeoutTitle = stringResource(R.string.auto_unload_timeout)
             SearchFilterRow(searchQuery, SettingsSearchId.KEEP_ALIVE_TIMEOUT, searchState) {
@@ -1049,6 +1061,8 @@ fun SettingsTab(
             },
             initiallyExpanded = true
         ) {
+            SettingsGroupLabel(SettingsSearchGroup.LOOK_AND_FEEL, searchState)
+
             // Theme Setting
             val themeTitle = stringResource(R.string.theme_title)
             val themeModeTitle = stringResource(R.string.theme_mode_title)
@@ -1186,6 +1200,8 @@ fun SettingsTab(
                     )
                 }
             }
+
+            SettingsGroupLabel(SettingsSearchGroup.HISTORY, searchState)
 
             // Swipe Action Setting
             val swipeActionTitle = stringResource(R.string.swipe_action_title)
@@ -1328,6 +1344,14 @@ fun SettingsTab(
                         }
                     }
                 }
+            }
+
+            // Maintainer decision 2026-09-30: performance and memory
+            // settings moved to their own page; the hub below opens it.
+            // Search contract: the hub's registry vocabulary is the union
+            // of its own and all five children's strings.
+            SearchFilterRow(searchQuery, SettingsSearchId.PERFORMANCE_HUB, searchState) {
+                SettingsHubCard(R.string.performance_settings_title, R.string.performance_settings_summary) { showPerformanceSettings = true }
             }
 
             // HuggingFace Token Card
@@ -1685,13 +1709,52 @@ fun SettingsTab(
                 }
             }
 
-            // Maintainer decision 2026-09-30: performance and memory
-            // settings moved to their own page; the hub below opens it.
-            // Search contract: the hub's registry vocabulary is the union
-            // of its own and all five children's strings.
-            SearchFilterRow(searchQuery, SettingsSearchId.PERFORMANCE_HUB, searchState) {
-                SettingsHubCard(R.string.performance_settings_title, R.string.performance_settings_summary) { showPerformanceSettings = true }
+            // Per-App Settings Navigation Card
+            SearchFilterRow(searchQuery, SettingsSearchId.PER_APP_SETTINGS, searchState) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { showPerAppSettings = true },
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Column {
+                                Text(
+                                    text = stringResource(R.string.per_app_settings_title),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Text(
+                                    text = stringResource(R.string.per_app_settings_description),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = stringResource(R.string.open_per_app_settings),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
+
+            SettingsGroupLabel(SettingsSearchGroup.INTEGRATIONS, searchState)
 
             // Advanced Sharing Card
             SearchFilterRow(searchQuery, SettingsSearchId.SHARE_TARGETS, searchState) {
@@ -1764,51 +1827,6 @@ fun SettingsTab(
             // union of its own and all three children's strings.
             SearchFilterRow(searchQuery, SettingsSearchId.AUTOMATION_HUB, searchState) {
                 SettingsHubCard(R.string.automation_settings_title, R.string.automation_settings_summary) { showAutomationSettings = true }
-            }
-
-            // Per-App Settings Navigation Card
-            SearchFilterRow(searchQuery, SettingsSearchId.PER_APP_SETTINGS, searchState) {
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable(role = Role.Button) { showPerAppSettings = true },
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Column {
-                                Text(
-                                    text = stringResource(R.string.per_app_settings_title),
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                Text(
-                                    text = stringResource(R.string.per_app_settings_description),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                            contentDescription = stringResource(R.string.open_per_app_settings),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
             }
         }
 
@@ -2366,6 +2384,32 @@ private fun matchesQuery(query: String, texts: List<String?>): Boolean =
     query.isBlank() || texts.any { it?.contains(query, ignoreCase = true) == true }
 
 /**
+ * TASK-731: the strings a card matches on: its own vocabulary plus its
+ * group label (see [SettingsSearchGroup]).
+ */
+internal fun cardVocabulary(card: SettingsSearchCard, state: SettingsSearchState): List<Int> =
+    if (card.group == null) card.res(state)
+    else card.res(state) + listOf(card.group.labelRes)
+
+/**
+ * TASK-731: a group's header renders only while at least one member card
+ * does (see [SettingsSearchGroup]).
+ */
+internal fun groupHasVisibleMember(group: SettingsSearchGroup, state: SettingsSearchState): Boolean =
+    SETTINGS_SEARCH_CARDS.any { it.group == group && it.visible(state) }
+
+/**
+ * TASK-731: one in-section group label (see [SettingsSearchGroup]); the
+ * flat-search suppression lives in [GroupHeader].
+ */
+@Composable
+private fun SettingsGroupLabel(group: SettingsSearchGroup, state: SettingsSearchState) {
+    if (groupHasVisibleMember(group, state)) {
+        GroupHeader(group.labelRes)
+    }
+}
+
+/**
  * TASK-542: card-level gate for the settings search. Renders [content] only
  * when [matchesQuery] accepts the query. TASK-689: callers pass their card's
  * registry identity ([id] + [state]) and the texts resolve inside from the
@@ -2381,9 +2425,10 @@ private fun SearchFilterRow(
 ) {
     // Simplify F2: the gate texts resolve INSIDE the row (the lookup was the
     // 39-site spread boilerplate; the signature now carries only identity).
+    // TASK-731: the vocabulary includes the card's group label.
     val matchTexts = SETTINGS_SEARCH_CARDS
         .first { card -> card.id == id }
-        .res(state)
+        .let { card -> cardVocabulary(card, state) }
         .map { res -> stringResource(res) }
     if (matchesQuery(query, matchTexts)) {
         content()
@@ -2726,6 +2771,25 @@ internal enum class SettingsSearchId {
 }
 
 /**
+ * TASK-731: the in-section sub-group labels (the maintainer's 2026-10-01
+ * diagnosis: thematic intersections inside one section). Membership lives
+ * on the registry entries (`group = ...`), and BOTH search concerns derive
+ * from it: a group's label matches in search through its member cards
+ * (the label is tree text; a query naming it must find the cards), and
+ * the tree's [SettingsGroupLabel] renders a group's header only while at
+ * least one member is visible, so no hand-maintained visibility mirror
+ * can drift from the member gates.
+ */
+internal enum class SettingsSearchGroup(val labelRes: Int) {
+    DECODING(R.string.settings_group_decoding),
+    GEMMA_TEXT(R.string.settings_group_gemma),
+    OUTPUT(R.string.settings_group_output),
+    LOOK_AND_FEEL(R.string.settings_group_appearance),
+    HISTORY(R.string.settings_group_history),
+    INTEGRATIONS(R.string.settings_group_integrations),
+}
+
+/**
  * TASK-689: the runtime conditions the registry reads, collected at the tab
  * level (the TASK-542 pattern: the count must mirror the tree's conditions
  * before the sections compose, because a hidden section's rows never
@@ -2760,6 +2824,8 @@ internal class SettingsSearchCard(
     val section: SettingsSearchSection,
     val res: (SettingsSearchState) -> List<Int>,
     val visible: (SettingsSearchState) -> Boolean = { true },
+    /** TASK-731: the in-section group whose header renders above this card. */
+    val group: SettingsSearchGroup? = null,
 ) {
     /** Static vocabulary: most cards never vary with state. */
     internal constructor(
@@ -2767,7 +2833,8 @@ internal class SettingsSearchCard(
         section: SettingsSearchSection,
         res: List<Int>,
         visible: (SettingsSearchState) -> Boolean = { true },
-    ) : this(id, section, { res }, visible)
+        group: SettingsSearchGroup? = null,
+    ) : this(id, section, { res }, visible, group)
 }
 
 /**
@@ -2801,19 +2868,58 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         res = { s -> listOfNotNull(R.string.transcription_language_title, s.transcriptionHintRes) },
     ),
     SettingsSearchCard(
-        SettingsSearchId.AUTO_COPY, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.auto_copy_title, R.string.auto_copy_description),
+        SettingsSearchId.VAD, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.vad_title, R.string.vad_description),
+        group = SettingsSearchGroup.DECODING,
     ),
     SettingsSearchCard(
-        SettingsSearchId.EXPORT_SETTINGS, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.export_settings_title, R.string.export_settings_description),
+        SettingsSearchId.PROGRESSIVE, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.progressive_title, R.string.progressive_description),
+        group = SettingsSearchGroup.DECODING,
     ),
-    // TASK-689: this and the two entries below closed real gaps in the old
-    // count groups (the gates existed, the count entries did not): the
-    // GH #43 two-pass refinement card.
+    // TASK-186: the early-preview toggle, right after its sibling.
+    SettingsSearchCard(
+        SettingsSearchId.EARLY_PREVIEW, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.early_preview_title, R.string.early_preview_description),
+        group = SettingsSearchGroup.DECODING,
+    ),
+    // TASK-689: closed a real gap in the old count groups (the gate
+    // existed, the count entry did not): the GH #43 two-pass
+    // refinement card.
     SettingsSearchCard(
         SettingsSearchId.REFINEMENT, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.refinement_title, R.string.refinement_description),
+        group = SettingsSearchGroup.DECODING,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.PUNCTUATION_MODE, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.punctuation_mode_title, R.string.punctuation_mode_description),
+        visible = { s -> s.gemmaConfigured && !s.isLlmBackend },
+        group = SettingsSearchGroup.GEMMA_TEXT,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.PUNCTUATION_PROMPT, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.punctuation_prompt_title, R.string.punctuation_prompt_description),
+        visible = { s -> s.gemmaConfigured && !s.isLlmBackend && s.punctuationPromptForced },
+        group = SettingsSearchGroup.GEMMA_TEXT,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.SUMMARIZE, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.summarize_title, R.string.summarize_description),
+        visible = { s -> s.gemmaConfigured },
+        group = SettingsSearchGroup.GEMMA_TEXT,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.SUMMARY_PROMPT, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.summary_prompt_title, R.string.summary_prompt_description),
+        visible = { s -> s.gemmaConfigured && s.summarizeOn },
+        group = SettingsSearchGroup.GEMMA_TEXT,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.DEFAULT_PROMPT, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.default_prompt_title, R.string.default_prompt_description),
+        visible = { s -> s.isLlmBackend },
+        group = SettingsSearchGroup.GEMMA_TEXT,
     ),
     // The GH #83 speaker-labels toggle.
     // Maintainer decision 2026-09-30: the diarization hub. Union
@@ -2832,43 +2938,15 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
                 R.string.speaker_labels_title, R.string.speaker_labels_description)
         },
     ),
-    // The TASK-670 identities card, behind its default-off privacy gate.
     SettingsSearchCard(
-        SettingsSearchId.VAD, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.vad_title, R.string.vad_description),
+        SettingsSearchId.AUTO_COPY, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.auto_copy_title, R.string.auto_copy_description),
+        group = SettingsSearchGroup.OUTPUT,
     ),
     SettingsSearchCard(
-        SettingsSearchId.PROGRESSIVE, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.progressive_title, R.string.progressive_description),
-    ),
-    // TASK-186: the early-preview toggle, right after its sibling.
-    SettingsSearchCard(
-        SettingsSearchId.EARLY_PREVIEW, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.early_preview_title, R.string.early_preview_description),
-    ),
-    SettingsSearchCard(
-        SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.interrupted_run_notifications_title, R.string.interrupted_run_notifications_description),
-    ),
-    SettingsSearchCard(
-        SettingsSearchId.PUNCTUATION_MODE, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.punctuation_mode_title, R.string.punctuation_mode_description),
-        visible = { s -> s.gemmaConfigured && !s.isLlmBackend },
-    ),
-    SettingsSearchCard(
-        SettingsSearchId.PUNCTUATION_PROMPT, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.punctuation_prompt_title, R.string.punctuation_prompt_description),
-        visible = { s -> s.gemmaConfigured && !s.isLlmBackend && s.punctuationPromptForced },
-    ),
-    SettingsSearchCard(
-        SettingsSearchId.SUMMARIZE, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.summarize_title, R.string.summarize_description),
-        visible = { s -> s.gemmaConfigured },
-    ),
-    SettingsSearchCard(
-        SettingsSearchId.SUMMARY_PROMPT, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.summary_prompt_title, R.string.summary_prompt_description),
-        visible = { s -> s.gemmaConfigured && s.summarizeOn },
+        SettingsSearchId.EXPORT_SETTINGS, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.export_settings_title, R.string.export_settings_description),
+        group = SettingsSearchGroup.OUTPUT,
     ),
     // TASK-647: the card renders unconditionally, so its entry must too
     // (review F3: bundling it with the Gemma-gated summarize group hid it
@@ -2876,11 +2954,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.SIGNATURE, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.signature_setting_title, R.string.signature_setting_description),
+        group = SettingsSearchGroup.OUTPUT,
     ),
     SettingsSearchCard(
-        SettingsSearchId.DEFAULT_PROMPT, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.default_prompt_title, R.string.default_prompt_description),
-        visible = { s -> s.isLlmBackend },
+        SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, SettingsSearchSection.TRANSCRIPTION,
+        listOf(R.string.interrupted_run_notifications_title, R.string.interrupted_run_notifications_description),
     ),
     SettingsSearchCard(
         SettingsSearchId.KEEP_ALIVE_TIMEOUT, SettingsSearchSection.TRANSCRIPTION,
@@ -2897,48 +2975,53 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.theme_mode_title, R.string.theme_mode_description,
             R.string.text_size_title, R.string.text_size_description,
         ),
+        group = SettingsSearchGroup.LOOK_AND_FEEL,
     ),
     SettingsSearchCard(
         SettingsSearchId.APP_ICON, SettingsSearchSection.APPEARANCE,
         listOf(R.string.app_icon_title),
+        group = SettingsSearchGroup.LOOK_AND_FEEL,
     ),
     SettingsSearchCard(
         SettingsSearchId.APP_LANGUAGE, SettingsSearchSection.APPEARANCE,
         listOf(R.string.language_title, R.string.language_description),
+        group = SettingsSearchGroup.LOOK_AND_FEEL,
     ),
     SettingsSearchCard(
         SettingsSearchId.SWIPE_ACTION, SettingsSearchSection.APPEARANCE,
         listOf(R.string.swipe_action_title, R.string.swipe_action_description),
+        group = SettingsSearchGroup.HISTORY,
     ),
     SettingsSearchCard(
         SettingsSearchId.CONVERSATION_GROUPING, SettingsSearchSection.APPEARANCE,
         listOf(R.string.conversation_grouping_title, R.string.conversation_grouping_description),
+        group = SettingsSearchGroup.HISTORY,
     ),
     SettingsSearchCard(
         SettingsSearchId.COMPACT_RESULT_ACTIONS, SettingsSearchSection.APPEARANCE,
         listOf(R.string.compact_result_actions_title, R.string.compact_result_actions_description),
+        group = SettingsSearchGroup.HISTORY,
     ),
     SettingsSearchCard(
         SettingsSearchId.TECHNICAL_DETAILS, SettingsSearchSection.APPEARANCE,
         listOf(R.string.technical_details_title, R.string.technical_details_description),
+        group = SettingsSearchGroup.HISTORY,
     ),
     SettingsSearchCard(
         SettingsSearchId.LANGUAGE_CHIP, SettingsSearchSection.APPEARANCE,
         listOf(R.string.language_chip_setting_title, R.string.language_chip_setting_description),
+        group = SettingsSearchGroup.HISTORY,
     ),
     SettingsSearchCard(
         SettingsSearchId.RETRANSCRIBE, SettingsSearchSection.APPEARANCE,
         listOf(R.string.retranscribe_setting_title, R.string.retranscribe_setting_description),
+        group = SettingsSearchGroup.HISTORY,
     ),
     // --- Advanced ---
     SettingsSearchCard(
         SettingsSearchId.BATTERY_EXEMPTION, SettingsSearchSection.ADVANCED,
         listOf(R.string.battery_exemption_title, R.string.battery_exemption_description),
         visible = { s -> s.batteryExemptionOffered },
-    ),
-    SettingsSearchCard(
-        SettingsSearchId.HUGGINGFACE_AUTH, SettingsSearchSection.ADVANCED,
-        listOf(R.string.huggingface_auth, R.string.huggingface_auth_description),
     ),
     // Maintainer decision 2026-09-30: the performance-and-memory hub.
     // Static union vocabulary: the hub's strings plus all five
@@ -2954,12 +3037,22 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.memory_diagnostics_title, R.string.memory_diagnostics_subtitle),
     ),
     SettingsSearchCard(
+        SettingsSearchId.HUGGINGFACE_AUTH, SettingsSearchSection.ADVANCED,
+        listOf(R.string.huggingface_auth, R.string.huggingface_auth_description),
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.PER_APP_SETTINGS, SettingsSearchSection.ADVANCED,
+        listOf(R.string.per_app_settings_title, R.string.per_app_settings_description),
+    ),
+    SettingsSearchCard(
         SettingsSearchId.SHARE_TARGETS, SettingsSearchSection.ADVANCED,
         listOf(R.string.share_targets_title, R.string.share_targets_description, R.string.advanced_sharing_toggle),
+        group = SettingsSearchGroup.INTEGRATIONS,
     ),
     SettingsSearchCard(
         SettingsSearchId.SUBTITLE_TIMEOUT, SettingsSearchSection.ADVANCED,
         listOf(R.string.subtitle_timeout_title, R.string.subtitle_timeout_description),
+        group = SettingsSearchGroup.INTEGRATIONS,
     ),
     // Maintainer decision 2026-09-30: the automation-and-offload hub.
     // Static union vocabulary: the hub's strings plus all three
@@ -2971,13 +3064,8 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.external_automation_title, R.string.external_automation_description,
             R.string.automation_guide_title, R.string.automation_guide_description,
             R.string.remote_offload_title, R.string.remote_offload_description),
+        group = SettingsSearchGroup.INTEGRATIONS,
     ),
-    SettingsSearchCard(
-        SettingsSearchId.PER_APP_SETTINGS, SettingsSearchSection.ADVANCED,
-        listOf(R.string.per_app_settings_title, R.string.per_app_settings_description),
-    ),
-    // TASK-679: the memory diagnostics card rides the same registry so
-    // "memory" finds it like every other Advanced card.
     // --- Feedback ---
     // One entry for one Card: the count reports cards, and the Feedback
     // rows do not filter individually (the section-level visibility check

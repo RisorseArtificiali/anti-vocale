@@ -1160,4 +1160,10 @@
     <string name="performance_settings_summary">थ्रेड, प्रोवाइडर, मेमोरी सुरक्षा और डायग्नोस्टिक्स</string>
     <string name="automation_settings_title">स्वचालन और ऑफलोड</string>
     <string name="automation_settings_summary">टास्कर रिसीवर, ब्रॉडकास्ट गाइड और LAN ऑफलोड</string>
+    <string name="settings_group_appearance">रूप और अनुभव</string>
+    <string name="settings_group_history">इतिहास</string>
+    <string name="settings_group_decoding">डिकोडिंग और पूर्वावलोकन</string>
+    <string name="settings_group_gemma">टेक्स्ट प्रोसेसिंग (Gemma)</string>
+    <string name="settings_group_output">आउटपुट</string>
+    <string name="settings_group_integrations">इंटीग्रेशन</string>
 </resources>

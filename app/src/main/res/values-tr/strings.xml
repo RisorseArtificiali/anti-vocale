@@ -1161,4 +1161,10 @@
     <string name="performance_settings_summary">İş parçacıkları, sağlayıcı, bellek koruması ve tanılama</string>
     <string name="automation_settings_title">Otomasyon ve yük aktarma</string>
     <string name="automation_settings_summary">Tasker alıcıları, broadcast kılavuzu ve LAN aktarımı</string>
+    <string name="settings_group_appearance">Görünüm</string>
+    <string name="settings_group_history">Kayıtlar</string>
+    <string name="settings_group_decoding">Kod çözme ve önizleme</string>
+    <string name="settings_group_gemma">Metin işleme (Gemma)</string>
+    <string name="settings_group_output">Çıktı</string>
+    <string name="settings_group_integrations">Entegrasyonlar</string>
 </resources>

@@ -1029,4 +1029,10 @@
     <string name="performance_settings_summary">Threads, provedor, proteção de memória e diagnóstico</string>
     <string name="automation_settings_title">Automação e offload</string>
     <string name="automation_settings_summary">Receptores Tasker, guia de broadcast e offload LAN</string>
+    <string name="settings_group_appearance">Aparência</string>
+    <string name="settings_group_history">Histórico</string>
+    <string name="settings_group_decoding">Decodificação e prévia</string>
+    <string name="settings_group_gemma">Processamento de texto (Gemma)</string>
+    <string name="settings_group_output">Saída</string>
+    <string name="settings_group_integrations">Integrações</string>
 </resources>

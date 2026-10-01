@@ -1187,4 +1187,10 @@
     <string name="performance_settings_summary">Потоки, провайдер, захист пам\'яті та діагностика</string>
     <string name="automation_settings_title">Автоматизація та розвантаження</string>
     <string name="automation_settings_summary">Приймачі Tasker, підручник broadcast та LAN-розвантаження</string>
+    <string name="settings_group_appearance">Вигляд</string>
+    <string name="settings_group_history">Історія</string>
+    <string name="settings_group_decoding">Декодування та передперегляд</string>
+    <string name="settings_group_gemma">Обробка тексту (Gemma)</string>
+    <string name="settings_group_output">Результат</string>
+    <string name="settings_group_integrations">Інтеграції</string>
 </resources>

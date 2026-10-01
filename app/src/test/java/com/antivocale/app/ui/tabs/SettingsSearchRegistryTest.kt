@@ -65,24 +65,92 @@ class SettingsSearchRegistryTest {
         }
     }
 
+    /**
+     * TASK-731: the sub-group membership the tree's SettingsGroupLabel
+     * renders. A card moving between groups (or into no group) must
+     * consciously update this map; a wrong member ships a header over
+     * cards it does not own. The registry sits in tree order, so the
+     * contiguity and single-section pins keep every cluster under one
+     * header in one section.
+     */
+    @Test
+    fun `group membership matches the tree clusters`() {
+        val members = mapOf(
+            SettingsSearchGroup.DECODING to listOf(
+                SettingsSearchId.VAD, SettingsSearchId.PROGRESSIVE,
+                SettingsSearchId.EARLY_PREVIEW, SettingsSearchId.REFINEMENT),
+            SettingsSearchGroup.GEMMA_TEXT to listOf(
+                SettingsSearchId.PUNCTUATION_MODE, SettingsSearchId.PUNCTUATION_PROMPT,
+                SettingsSearchId.SUMMARIZE, SettingsSearchId.SUMMARY_PROMPT,
+                SettingsSearchId.DEFAULT_PROMPT),
+            SettingsSearchGroup.OUTPUT to listOf(
+                SettingsSearchId.AUTO_COPY, SettingsSearchId.EXPORT_SETTINGS, SettingsSearchId.SIGNATURE),
+            SettingsSearchGroup.LOOK_AND_FEEL to listOf(
+                SettingsSearchId.THEME, SettingsSearchId.APP_ICON, SettingsSearchId.APP_LANGUAGE),
+            SettingsSearchGroup.HISTORY to listOf(
+                SettingsSearchId.SWIPE_ACTION, SettingsSearchId.CONVERSATION_GROUPING,
+                SettingsSearchId.COMPACT_RESULT_ACTIONS, SettingsSearchId.TECHNICAL_DETAILS,
+                SettingsSearchId.LANGUAGE_CHIP, SettingsSearchId.RETRANSCRIBE),
+            SettingsSearchGroup.INTEGRATIONS to listOf(
+                SettingsSearchId.SHARE_TARGETS, SettingsSearchId.SUBTITLE_TIMEOUT, SettingsSearchId.AUTOMATION_HUB),
+        )
+        val registryOrder = SETTINGS_SEARCH_CARDS.map { it.id }
+        SettingsSearchGroup.entries.forEach { g ->
+            val grouped = SETTINGS_SEARCH_CARDS.filter { it.group == g }
+            assertEquals("group $g membership", members.getValue(g), grouped.map { it.id })
+            assertEquals("group $g stays in one section", 1, grouped.map { it.section }.distinct().size)
+            val positions = members.getValue(g).map { registryOrder.indexOf(it) }
+            assertEquals("group $g is one contiguous tree run", positions.max() - positions.min(), positions.size - 1)
+        }
+    }
+
+    /**
+     * TASK-731: group labels enter search ONLY through membership: no
+     * card's own vocabulary contains a group label, so a query naming a
+     * group matches exactly the cards its registry membership groups.
+     */
+    @Test
+    fun `group labels enter search only through membership`() {
+        val labels = SettingsSearchGroup.entries.map { it.labelRes }.toSet()
+        SETTINGS_SEARCH_CARDS.forEach { card ->
+            assertTrue(
+                "card ${card.id} lists a group label in its own res()",
+                card.res(state()).none { it in labels },
+            )
+        }
+    }
+
+    /**
+     * TASK-731: the orphan-header net, on the real derivation the tree
+     * renders. GEMMA_TEXT is the one group whose members are all gated;
+     * its header must disappear exactly when every member does.
+     */
+    @Test
+    fun `the gemma group header hides when all its members do`() {
+        assertEquals(false, groupHasVisibleMember(SettingsSearchGroup.GEMMA_TEXT, state(gemmaConfigured = false)))
+        assertEquals(true, groupHasVisibleMember(SettingsSearchGroup.GEMMA_TEXT, state(gemmaConfigured = true)))
+        assertEquals(true, groupHasVisibleMember(SettingsSearchGroup.GEMMA_TEXT, state(isLlmBackend = true, isModelLoaded = true)))
+    }
+
     @Test
     fun `transcription vocabularies with gemma on a non-llm backend`() {
-        // The old transcriptionSearchGroups, entry for entry, plus the
-        // three cards the two-list convention had left uncounted.
+        // The 2026-10-01 sub-grouping order: model cluster, decoding and
+        // preview, Gemma text processing, speakers, output, then the
+        // service rows (the registry order IS the tree order; TASK-689).
         assertEquals(
             listOf(
                 SettingsSearchId.ACTIVE_MODEL,
                 SettingsSearchId.TRANSCRIPTION_LANGUAGE,
-                SettingsSearchId.AUTO_COPY,
-                SettingsSearchId.EXPORT_SETTINGS,
-                SettingsSearchId.REFINEMENT,
-                SettingsSearchId.DIARIZATION_HUB,
                 SettingsSearchId.VAD,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
-                SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS,
+                SettingsSearchId.REFINEMENT,
                 SettingsSearchId.PUNCTUATION_MODE,
                 SettingsSearchId.SUMMARIZE,
+                SettingsSearchId.DIARIZATION_HUB,
+                SettingsSearchId.AUTO_COPY,
+                SettingsSearchId.EXPORT_SETTINGS,
                 SettingsSearchId.SIGNATURE,
+                SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS,
                 SettingsSearchId.KEEP_ALIVE_TIMEOUT,
             ),
             visibleIds(SettingsSearchSection.TRANSCRIPTION, state()),
@@ -95,14 +163,14 @@ class SettingsSearchRegistryTest {
             listOf(
                 SettingsSearchId.ACTIVE_MODEL,
                 SettingsSearchId.TRANSCRIPTION_LANGUAGE,
-                SettingsSearchId.AUTO_COPY,
-                SettingsSearchId.EXPORT_SETTINGS,
-                SettingsSearchId.REFINEMENT,
-                SettingsSearchId.DIARIZATION_HUB,
                 SettingsSearchId.VAD,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
-                SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS,
+                SettingsSearchId.REFINEMENT,
+                SettingsSearchId.DIARIZATION_HUB,
+                SettingsSearchId.AUTO_COPY,
+                SettingsSearchId.EXPORT_SETTINGS,
                 SettingsSearchId.SIGNATURE,
+                SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS,
                 SettingsSearchId.KEEP_ALIVE_TIMEOUT,
             ),
             visibleIds(SettingsSearchSection.TRANSCRIPTION, state(gemmaConfigured = false)),
@@ -119,20 +187,20 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.MODEL_STATUS,
                 SettingsSearchId.ACTIVE_MODEL,
                 SettingsSearchId.TRANSCRIPTION_LANGUAGE,
-                SettingsSearchId.AUTO_COPY,
-                SettingsSearchId.EXPORT_SETTINGS,
-                SettingsSearchId.REFINEMENT,
-                SettingsSearchId.DIARIZATION_HUB,
-                // (the identities card lives on the subpage now; its
-                //  vocabulary rides the hub, state-gated.)
                 SettingsSearchId.VAD,
                 SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
-                SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS,
+                SettingsSearchId.REFINEMENT,
                 SettingsSearchId.SUMMARIZE,
+                // (the identities card lives on the subpage now; its
+                //  vocabulary rides the hub, state-gated.)
+                SettingsSearchId.DEFAULT_PROMPT,
+                SettingsSearchId.DIARIZATION_HUB,
+                SettingsSearchId.AUTO_COPY,
+                SettingsSearchId.EXPORT_SETTINGS,
                 SettingsSearchId.SIGNATURE,
+                SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS,
                 // SUMMARY_PROMPT is absent too: summarizeOn defaults false
                 // in this state (its flip test covers the pair together).
-                SettingsSearchId.DEFAULT_PROMPT,
                 SettingsSearchId.KEEP_ALIVE_TIMEOUT,
             ),
             visibleIds(SettingsSearchSection.TRANSCRIPTION, state(isLlmBackend = true, isModelLoaded = true)))
@@ -223,16 +291,20 @@ class SettingsSearchRegistryTest {
 
     @Test
     fun `advanced vocabularies gain the battery card after a background kill`() {
+        // The 2026-10-01 sub-grouping order: the kill-recovery offer, the
+        // ungrouped head (performance, HuggingFace auth, per-app), then the
+        // terminal Integrations cluster (share targets, subtitle choice,
+        // automation).
         val base = visibleIds(SettingsSearchSection.ADVANCED, state())
         assertEquals(
             listOf(
-                SettingsSearchId.HUGGINGFACE_AUTH,
                 SettingsSearchId.PERFORMANCE_HUB,
-                                                SettingsSearchId.SHARE_TARGETS,
+                SettingsSearchId.HUGGINGFACE_AUTH,
+                SettingsSearchId.PER_APP_SETTINGS,
+                SettingsSearchId.SHARE_TARGETS,
                 SettingsSearchId.SUBTITLE_TIMEOUT,
                 SettingsSearchId.AUTOMATION_HUB,
-                                                                                SettingsSearchId.PER_APP_SETTINGS,
-                                            ),
+            ),
             base,
         )
         assertEquals(

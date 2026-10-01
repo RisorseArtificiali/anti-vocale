@@ -1171,4 +1171,10 @@
     <string name="performance_settings_summary">תהליכונים, ספק, הגנת זיכרון ואבחון</string>
     <string name="automation_settings_title">אוטומציה והאצה חוצה</string>
     <string name="automation_settings_summary">מקלטי Tasker, מדריך broadcast והעברה ל-LAN</string>
+    <string name="settings_group_appearance">מראה ותחושה</string>
+    <string name="settings_group_history">היסטוריה</string>
+    <string name="settings_group_decoding">פענוח ותצוגה מקדימה</string>
+    <string name="settings_group_gemma">עיבוד טקסט (Gemma)</string>
+    <string name="settings_group_output">פלט</string>
+    <string name="settings_group_integrations">שילובים</string>
 </resources>
