@@ -1191,4 +1191,13 @@
     <string name="shortcut_icon_custom">תמונה מותאמת אישית</string>
     <string name="shortcut_icon_saved">סמל קיצור הדרך נשמר</string>
     <string name="shortcut_icon_error">טעינת התמונה נכשלה</string>
+    <!-- TASK-552: app icon shortcuts (dynamic model switch + static tabs) -->
+    <string name="shortcut_history_short">היסטוריה</string>
+    <string name="shortcut_history_long">פתיחת ההיסטוריה</string>
+    <string name="shortcut_models_short">מודלים</string>
+    <string name="shortcut_models_long">פתיחת מודלים</string>
+    <string name="model_switched_title">המודל הוחלף</string>
+    <string name="model_switched_message">מודל פעיל: %1$s</string>
+    <string name="model_switch_failed">ההחלפה נכשלה: המודל אינו במכשיר</string>
+    <string name="model_shortcut_switch_label">מעבר אל %1$s</string>
 </resources>

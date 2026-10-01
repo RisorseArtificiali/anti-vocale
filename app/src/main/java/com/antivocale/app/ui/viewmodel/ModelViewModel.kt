@@ -32,6 +32,7 @@ import com.antivocale.app.transcription.ModelFamilyDetector
 import com.antivocale.app.transcription.SherpaModelDownloader
 import com.antivocale.app.transcription.SherpaModelManager
 import com.antivocale.app.transcription.SilentModelDemoter
+import com.antivocale.app.transcription.ModelActivator
 import com.antivocale.app.transcription.cleanOrphanedModelDirs
 import com.antivocale.app.R
 import com.antivocale.app.data.catalog.BundledCatalog
@@ -87,7 +88,7 @@ class ModelViewModel @Inject constructor(
     // TASK-675: the silent-model demotion seam (auto-selection skip, clear on
     // manual selection, the demoted set for the Model tab's honest line).
     private val silentModelDemoter: SilentModelDemoter,
-    private val modelActivator: com.antivocale.app.transcription.ModelActivator,
+    private val modelActivator: ModelActivator,
     // Process-lifetime scope for share-alias sync work (code review 2026-09-03):
     // on viewModelScope, a ViewModel clear mid-sync (DataStore reads + PackageManager
     // IPCs) killed the enablement and the affected model stayed MISSING from
@@ -816,12 +817,9 @@ class ModelViewModel @Inject constructor(
             val copiedPath = copyModelToAppStorage(context, uri)
 
             if (copiedPath != null) {
-                // Persist the model path and activate the LLM backend: a manually
-                // imported model file is an LLM asset; leaving the previous backend
-                // (e.g. a catalog sherpa entry) would ignore it (same class as the
-                // useDownloadedModel fix).
-                preferencesManager.saveModelPath(copiedPath)
-                preferencesManager.saveTranscriptionBackend(LlmTranscriptionBackend.BACKEND_ID)
+                // TASK-552: path + backend persist together (the GH #23
+                // rationale lives in ModelActivator.activateLlm now).
+                modelActivator.activateLlm(File(copiedPath))
 
                 val fileName = extractFileName(copiedPath)
                 _uiState.update { it.copy(
@@ -902,8 +900,8 @@ class ModelViewModel @Inject constructor(
                 litertLmUrlInput = "") }
             result.fold(
                 onSuccess = { downloaded ->
-                    preferencesManager.saveModelPath(downloaded.absolutePath)
-                    preferencesManager.saveTranscriptionBackend(LlmTranscriptionBackend.BACKEND_ID)
+                    // TASK-552: the paired write lives in ModelActivator.activateLlm.
+                    modelActivator.activateLlm(downloaded)
                     _uiState.update { it.copy(
                         modelPath = downloaded.absolutePath,
                         modelName = downloaded.name,

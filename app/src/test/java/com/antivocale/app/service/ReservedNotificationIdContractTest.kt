@@ -48,6 +48,7 @@ class ReservedNotificationIdContractTest {
         assertTrue(TranscriptionOrchestrator.MEMORY_MARGIN_WARNING_ID < base)
         assertTrue(com.antivocale.app.util.MemoryKillStartupCheck.NOTIFICATION_ID < base)
         assertTrue(SubtitleChoiceTimeoutWorker.NOTIFICATION_ID < base)
+        assertTrue(com.antivocale.app.receiver.ModelShortcutActivity.SWITCH_NOTIFICATION_ID < base)
         assertTrue(ExtractionService.NOTIFICATION_ID_BASE + ExtractionService.NOTIFICATION_ID_RANGE - 1 < base)
         assertTrue(ShareReceiverActivity.CHOICE_ID_BAND_BASE + ShareReceiverActivity.CHOICE_ID_BAND_RANGE - 1 < base)
         assertTrue(ShareReceiverActivity.ERROR_ID_BAND_BASE + ShareReceiverActivity.ERROR_ID_BAND_RANGE - 1 < base)

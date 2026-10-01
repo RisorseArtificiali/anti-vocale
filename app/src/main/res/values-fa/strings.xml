@@ -1186,4 +1186,13 @@
     <string name="shortcut_icon_custom">تصویر دلخواه</string>
     <string name="shortcut_icon_saved">آیکون میانبر ذخیره شد</string>
     <string name="shortcut_icon_error">تصویر بارگیری نشد</string>
+    <!-- TASK-552: app icon shortcuts (dynamic model switch + static tabs) -->
+    <string name="shortcut_history_short">تاریخچه</string>
+    <string name="shortcut_history_long">باز کردن تاریخچه</string>
+    <string name="shortcut_models_short">مدل ها</string>
+    <string name="shortcut_models_long">باز کردن مدل ها</string>
+    <string name="model_switched_title">مدل عوض شد</string>
+    <string name="model_switched_message">مدل فعال: %1$s</string>
+    <string name="model_switch_failed">تعویض ممکن نشد: مدل روی دستگاه نیست</string>
+    <string name="model_shortcut_switch_label">تعویض به %1$s</string>
 </resources>

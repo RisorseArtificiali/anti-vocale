@@ -14,6 +14,7 @@ import android.graphics.drawable.Icon
 import android.util.Log
 import androidx.core.content.ContextCompat
 import com.antivocale.app.R
+import com.antivocale.app.receiver.ModelShortcutActivity
 import com.antivocale.app.receiver.ShareReceiverActivity
 import com.antivocale.app.transcription.BackendDescriptor
 import com.antivocale.app.transcription.BackendRegistry
@@ -73,9 +74,19 @@ class ShareShortcutManager(
         /** Stable per-backend shortcut id; renaming one drops the launcher's persisted entry. */
         private const val SHORTCUT_ID_PREFIX = "share-"
 
+        /** TASK-552: the switch entries' id prefix (a distinct stable namespace). */
+        private const val SHORTCUT_ID_SWITCH_PREFIX = "model-"
+
         // Launcher dynamic-shortcut budgets are 4-5; 3 keeps every launcher under
         // its cap (the shade-cap lesson: less is more on crowded surfaces).
-        private const val MAX_SHORTCUTS = 3
+        /** TASK-393: share entries (the "Transcribe with" shortcuts). */
+        private const val MAX_SHARE_SHORTCUTS = 3
+
+        /** TASK-552: model-switch entries (the "switch to" shortcuts). */
+        private const val MAX_MODEL_SHORTCUTS = 2
+
+        /** TASK-552: the static shortcuts sharing the same long-press menu. */
+        private const val STATIC_SHORTCUT_COUNT = 2
     }
 
     private val shortcutManager: ShortcutManager? =
@@ -118,6 +129,9 @@ class ShareShortcutManager(
         val label: String,
         val rank: Int,
         val descriptor: BackendDescriptor,
+        /** TASK-552: a switch entry (the app-icon "make active" shortcut),
+         *  not a share target: the intent targets the trampoline. */
+        val switchOnly: Boolean = false,
     )
 
     /**
@@ -126,7 +140,7 @@ class ShareShortcutManager(
      * recency source moves), and wherever model deletions/downloads change the
      * eligible set. [ShortcutManager.setDynamicShortcuts] replaces the previous
      * set atomically, so stale ids (deleted models, backends falling out of the
-     * top [MAX_SHORTCUTS]) disappear without a separate removal pass.
+     * top [MAX_SHARE_SHORTCUTS]) disappear without a separate removal pass.
      * Shortcut sync is metadata-only: a failure is logged, never thrown.
      */
     suspend fun refresh() = withContext(Dispatchers.Default) {
@@ -142,13 +156,35 @@ class ShareShortcutManager(
             // lifecycleScope), and a malformed label would throw from
             // ShortcutInfo.Builder before any IPC.
             runCatching {
-                val candidates = if (!preferencesManager.advancedSharingEnabled.first()) {
-                    emptyList()
+                // TASK-552: the launcher alias anchors ONE dynamic set, so
+                // share and switch entries are built together. The SHARE
+                // half follows the advanced-sharing toggle; the SWITCH half
+                // does not (it opens no share surface - losing it to that
+                // toggle would silently disappear the feature). The dynamic
+                // budget leaves room for the STATIC shortcuts sharing the
+                // same long-press menu (maxShortcutCountPerActivity covers
+                // static + dynamic shown entries).
+                val dynamicBudget = (
+                    manager.maxShortcutCountPerActivity - STATIC_SHORTCUT_COUNT
+                    ).coerceAtLeast(0)
+                val ranked = rankRecentBackends(recentUsage(), dynamicBudget)
+                val shareCandidates = if (preferencesManager.advancedSharingEnabled.first()) {
+                    ranked.take(minOf(MAX_SHARE_SHORTCUTS, dynamicBudget))
+                        .mapIndexedNotNull { rank, backendId -> resolveCandidate(backendId, rank, switchOnly = false) }
                 } else {
-                    val cap = minOf(MAX_SHORTCUTS, manager.maxShortcutCountPerActivity)
-                    rankRecentBackends(recentUsage(), cap)
-                        .mapIndexedNotNull { rank, backendId -> resolveShortcut(backendId, rank) }
+                    emptyList()
                 }
+                val shareIds = shareCandidates.map { it.descriptor.backendId }.toSet()
+                // The remaining budget scans the WHOLE ranked list minus the
+                // published share ids: a backend dropped from share candidacy
+                // (its dir vanished) is still offered as a switch entry,
+                // where the trampoline reports the failure loudly.
+                val modelCandidates = ranked.filter { it !in shareIds }
+                    .take(minOf(MAX_MODEL_SHORTCUTS, (dynamicBudget - shareCandidates.size).coerceAtLeast(0)))
+                    .mapIndexedNotNull { i, backendId ->
+                        resolveCandidate(backendId, shareCandidates.size + i, switchOnly = true)
+                    }
+                val candidates = shareCandidates + modelCandidates
                 // The anchor is the ENABLED launcher alias: a shortcut is visible
                 // only on the activity the launcher resolved, and the icon-variant
                 // switcher enables a different alias component (TASK-392/473).
@@ -173,22 +209,29 @@ class ShareShortcutManager(
     }
 
     /**
-     * Resolves one shortcut candidate, or null when the backend must not get
-     * one: no registered descriptor (stale usage row), no share alias (external
-     * models deliberately carry blank aliases; they share through the family
-     * chooser), or no saved model path (model deleted since it was last used).
+     * Resolves one shortcut candidate (share or switch), or null when the
+     * backend must not get one: no registered descriptor (a stale usage row).
+     * The SHARE eligibility additionally needs a share alias (external models
+     * deliberately carry blank aliases; they share through the family chooser)
+     * and a saved model path (the share tap dead-ends in the SAF picker with
+     * no recovery). The SWITCH eligibility needs neither: switching a model
+     * whose dir vanished fails loudly through the trampoline's notification,
+     * never silently, and externals switch fine (the asymmetry is the
+     * contract). The label is the variant-aware display name either way.
      */
-    private suspend fun resolveShortcut(backendId: String, rank: Int): ResolvedShortcut? {
+    private suspend fun resolveCandidate(backendId: String, rank: Int, switchOnly: Boolean): ResolvedShortcut? {
         val descriptor = backendRegistry.byBackendId(backendId) ?: return null
-        if (descriptor.shareAlias.isBlank()) return null
         val modelPath = descriptor.modelPathFlow(preferencesManager).first()
-        if (modelPath.isNullOrBlank()) return null
-
+        if (!switchOnly) {
+            if (descriptor.shareAlias.isBlank()) return null
+            if (modelPath.isNullOrBlank()) return null
+        }
         return ResolvedShortcut(
-            id = SHORTCUT_ID_PREFIX + backendId,
-            label = variantAwareDisplayName(context, descriptor, modelPath),
+            id = (if (switchOnly) SHORTCUT_ID_SWITCH_PREFIX else SHORTCUT_ID_PREFIX) + backendId,
+            label = variantAwareDisplayName(context, descriptor, modelPath).ifBlank { backendId },
             rank = rank,
             descriptor = descriptor,
+            switchOnly = switchOnly,
         )
     }
 
@@ -197,11 +240,22 @@ class ShareShortcutManager(
         // component, which ShareReceiverActivity resolves back to this backend
         // via its intent component (no parallel backend-override contract). The
         // shortcut marker routes the (stream-less) tap into the SAF audio
-        // picker instead of the "no audio" error path.
-        val intent = Intent(Intent.ACTION_SEND).apply {
-            component = ComponentName(context, resolved.descriptor.shareAlias)
-            type = "audio/*"
-            putExtra(ShareReceiverActivity.EXTRA_FROM_SHORTCUT, true)
+        // picker instead of the "no audio" error path. A SWITCH entry
+        // (TASK-552) instead targets the no-UI trampoline that activates the
+        // model and confirms by notification.
+        val intent = if (resolved.switchOnly) {
+            // ShortcutInfo demands an action on every intent; the explicit
+            // component is what actually routes it.
+            Intent(Intent.ACTION_VIEW, null, context, ModelShortcutActivity::class.java).apply {
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                putExtra(ModelShortcutActivity.EXTRA_BACKEND_ID, resolved.descriptor.backendId)
+            }
+        } else {
+            Intent(Intent.ACTION_SEND).apply {
+                component = ComponentName(context, resolved.descriptor.shareAlias)
+                type = "audio/*"
+                putExtra(ShareReceiverActivity.EXTRA_FROM_SHORTCUT, true)
+            }
         }
         val color = ContextCompat.getColor(context, resolved.descriptor.accentColorRes)
         // TASK-490: the user's pick wins; an absent/undecodable file falls
@@ -214,7 +268,14 @@ class ShareShortcutManager(
         return ShortcutInfo.Builder(context, resolved.id)
             .setActivity(anchor)
             .setShortLabel(resolved.label)
-            .setLongLabel(context.getString(R.string.share_shortcut_transcribe_with, resolved.label))
+            .setLongLabel(
+                if (resolved.switchOnly) {
+                    // The switch entries say what they do; the share label
+                    // would promise a picker that never opens.
+                    context.getString(R.string.model_shortcut_switch_label, resolved.label)
+                } else {
+                    context.getString(R.string.share_shortcut_transcribe_with, resolved.label)
+                })
             .setIcon(Icon.createWithAdaptiveBitmap(icon))
             .setIntent(intent)
             .setRank(resolved.rank)

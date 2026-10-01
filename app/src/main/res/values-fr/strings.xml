@@ -1049,4 +1049,13 @@
     <string name="shortcut_icon_custom">Image personnalisée</string>
     <string name="shortcut_icon_saved">Icône du raccourci enregistrée</string>
     <string name="shortcut_icon_error">Impossible de charger l\'image</string>
+    <!-- TASK-552: app icon shortcuts (dynamic model switch + static tabs) -->
+    <string name="shortcut_history_short">Historique</string>
+    <string name="shortcut_history_long">Ouvrir l\'historique</string>
+    <string name="shortcut_models_short">Modèles</string>
+    <string name="shortcut_models_long">Ouvrir les modèles</string>
+    <string name="model_switched_title">Modèle changé</string>
+    <string name="model_switched_message">Modèle actif : %1$s</string>
+    <string name="model_switch_failed">Impossible de changer : le modèle n\'est pas sur l\'appareil</string>
+    <string name="model_shortcut_switch_label">Basculer vers %1$s</string>
 </resources>

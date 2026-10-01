@@ -1207,4 +1207,13 @@
     <string name="shortcut_icon_custom">Власне зображення</string>
     <string name="shortcut_icon_saved">Значок ярлика збережено</string>
     <string name="shortcut_icon_error">Не вдалося завантажити зображення</string>
+    <!-- TASK-552: app icon shortcuts (dynamic model switch + static tabs) -->
+    <string name="shortcut_history_short">Історія</string>
+    <string name="shortcut_history_long">Відкрити історію</string>
+    <string name="shortcut_models_short">Моделі</string>
+    <string name="shortcut_models_long">Відкрити моделі</string>
+    <string name="model_switched_title">Модель перемкнено</string>
+    <string name="model_switched_message">Активна модель: %1$s</string>
+    <string name="model_switch_failed">Не вдалося перемкнути: моделі немає на пристрої</string>
+    <string name="model_shortcut_switch_label">Перемкнути на %1$s</string>
 </resources>

@@ -90,6 +90,7 @@ class ModelViewModelLitertLmImportTest {
         }
         every { mockContext.applicationContext } returns mockContext
         com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
+        val sharedDemoter = com.antivocale.app.transcription.SilentModelDemoter(prefs)
         viewModel = ModelViewModel(
             preferencesManager = prefs,
             activeModelRepository = ActiveModelRepository(prefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
@@ -109,8 +110,13 @@ class ModelViewModelLitertLmImportTest {
             externalCatalogRepository = mockk(relaxed = true),
             applicationScope = kotlinx.coroutines.CoroutineScope(SupervisorJob()),
             // TASK-675: real demoter over the same preferences.
-            silentModelDemoter = com.antivocale.app.transcription.SilentModelDemoter(prefs),
-            modelActivator = com.antivocale.app.transcription.ModelActivator(prefs, com.antivocale.app.transcription.SilentModelDemoter(prefs)),
+            silentModelDemoter = sharedDemoter,
+            modelActivator = com.antivocale.app.transcription.ModelActivator(
+                prefs,
+                sharedDemoter,
+                externalModelStore = com.antivocale.app.data.ExternalModelStore(prefs),
+                backendRegistry = staticRegistry(),
+                ),
         )
     }
 

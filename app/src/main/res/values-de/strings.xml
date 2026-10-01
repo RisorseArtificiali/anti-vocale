@@ -1181,4 +1181,13 @@
     <string name="shortcut_icon_custom">Eigenes Bild</string>
     <string name="shortcut_icon_saved">Verknüpfungssymbol gespeichert</string>
     <string name="shortcut_icon_error">Bild konnte nicht geladen werden</string>
+    <!-- TASK-552: app icon shortcuts (dynamic model switch + static tabs) -->
+    <string name="shortcut_history_short">Verlauf</string>
+    <string name="shortcut_history_long">Verlauf öffnen</string>
+    <string name="shortcut_models_short">Modelle</string>
+    <string name="shortcut_models_long">Modelle öffnen</string>
+    <string name="model_switched_title">Modell gewechselt</string>
+    <string name="model_switched_message">Aktives Modell: %1$s</string>
+    <string name="model_switch_failed">Wechsel nicht möglich: das Modell ist nicht auf dem Gerät</string>
+    <string name="model_shortcut_switch_label">Wechseln zu %1$s</string>
 </resources>

@@ -140,6 +140,8 @@ class ShareShortcutManagerTest {
         use("llm", now - 10); use("whisper", now - 5)
         manager.refresh()
         assertEquals(setOf("share-whisper", "share-llm"), dynamicShortcutsById().keys)
+        // (Two distinct backends used: both are share entries; the model
+        // budget finds nothing beyond them, so no model- ids.)
 
         usage = emptyList()
         use("qwen3-asr", now); use("whisper", now - 1)
@@ -157,8 +159,14 @@ class ShareShortcutManagerTest {
 
         manager.refresh()
 
-        // Timestamps rank nemotron > gigaam > qwen3 > llm > whisper; only the top 3 register.
-        assertEquals(setOf("share-gigaam", "share-nemotron-streaming", "share-qwen3-asr"), dynamicShortcutsById().keys)
+        // Timestamps rank nemotron > gigaam > qwen3 > llm > whisper: the top
+        // 3 register as share entries (TASK-393's cap), and TASK-552 adds the
+        // next 2 as switch entries under the same set.
+        assertEquals(
+            setOf(
+                "share-gigaam", "share-nemotron-streaming", "share-qwen3-asr",
+                "model-llm", "model-whisper"),
+            dynamicShortcutsById().keys)
     }
 
     /**
@@ -193,25 +201,35 @@ class ShareShortcutManagerTest {
 
     @Test
     fun `launcher shortcut budget below three caps the set`() = runTest {
+        // TASK-552: the per-activity budget covers static + dynamic entries;
+        // the two statics (History, Models) eat the floor first, so a
+        // two-slot launcher shows them and no dynamic set at all.
         shadowOf(shortcutManager).setMaxShortcutCountPerActivity(2)
         saveModel("whisper"); saveModel("llm"); saveModel("qwen3-asr")
         usage = listOf("whisper", "llm", "qwen3-asr").mapIndexed { i, id -> RecentModelUse(id, now + i) }
 
         manager.refresh()
 
+        assertEquals(emptySet<String>(), dynamicShortcutsById().keys)
+
+        // Four slots: two left after the statics, both go to share entries.
+        shadowOf(shortcutManager).setMaxShortcutCountPerActivity(4)
+        manager.refresh()
         assertEquals(setOf("share-qwen3-asr", "share-llm"), dynamicShortcutsById().keys)
     }
 
     @Test
-    fun `advanced sharing off clears every dynamic shortcut`() = runTest {
+    fun `advanced sharing off clears the share entries and keeps the switch ones`() = runTest {
         saveModel("whisper"); use("whisper", now)
         manager.refresh()
-        assertEquals(1, dynamicShortcutsById().size)
+        assertEquals(setOf("share-whisper"), dynamicShortcutsById().keys)
 
         fake._advancedSharingEnabled.value = false
         manager.refresh()
 
-        assertTrue(dynamicShortcutsById().isEmpty())
+        // TASK-552 review: the switch entries open no share surface, so the
+        // toggle must not take them down with the share targets.
+        assertEquals(setOf("model-whisper"), dynamicShortcutsById().keys)
     }
 
     @Test
@@ -222,7 +240,10 @@ class ShareShortcutManagerTest {
 
         manager.refresh()
 
-        assertEquals(setOf("share-whisper"), dynamicShortcutsById().keys)
+        // The SHARE entry needs the saved path; the SWITCH entry for gigaam is
+        // still offered (its activation fails loudly through the trampoline,
+        // never silently - the asymmetry is the contract).
+        assertEquals(setOf("share-whisper", "model-gigaam"), dynamicShortcutsById().keys)
     }
 
     @Test
@@ -244,4 +265,36 @@ class ShareShortcutManagerTest {
 
         assertTrue(dynamicShortcutsById().isEmpty())
     }
+    @Test
+    fun `switch shortcuts target the trampoline and keep the share set within the launcher cap`() = runTest {
+        for (id in listOf("whisper", "llm", "qwen3-asr", "gigaam", "nemotron-streaming")) saveModel(id)
+        usage = listOf("whisper", "llm", "qwen3-asr", "gigaam", "nemotron-streaming")
+            .mapIndexed { i, id -> RecentModelUse(id, now + i) }
+
+        manager.refresh()
+
+        val byId = dynamicShortcutsById()
+        // The switch entries ride the same set, after the share entries.
+        val switch = byId.getValue("model-llm")
+        assertEquals(3, switch.rank)
+        val intent = switch.intent!!
+        assertEquals("com.antivocale.app.receiver.ModelShortcutActivity", intent.component?.className)
+        assertEquals("llm", intent.getStringExtra("model_shortcut_backend_id"))
+        // The set stays within the launcher's per-activity cap (5 on API 34).
+        assertTrue(byId.size <= shortcutManager.maxShortcutCountPerActivity)
+    }
+    @Test
+    fun `switch entries survive the advanced-sharing toggle going off`() = runTest {
+        saveModel("whisper"); saveModel("llm")
+        usage = listOf("whisper", "llm").mapIndexed { i, id -> RecentModelUse(id, now + i) }
+        fake._advancedSharingEnabled.value = false
+
+        manager.refresh()
+
+        // No share entries (the toggle owns those), but the model switches
+        // open no share surface: they stay.
+        assertEquals(setOf("model-whisper", "model-llm"), dynamicShortcutsById().keys)
+    }
 }
+
+

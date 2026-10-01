@@ -1,10 +1,12 @@
 package com.antivocale.app.transcription
 
 import android.content.Context
+import com.antivocale.app.R
 import com.antivocale.app.data.ExternalModelRecord
+import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.data.PreferencesManager
-import com.antivocale.app.transcription.diarization.SpeakerEnroller
+import com.antivocale.app.data.catalog.BundledCatalog
 import java.io.File
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,6 +41,8 @@ import kotlinx.coroutines.flow.first
 class ModelActivator @Inject constructor(
     private val preferencesManager: PreferencesManager,
     private val silentModelDemoter: SilentModelDemoter,
+    private val externalModelStore: ExternalModelStore,
+    private val backendRegistry: BackendRegistry,
 ) {
 
     /**
@@ -55,7 +59,7 @@ class ModelActivator @Inject constructor(
     fun resolveCatalogPath(
         context: Context,
         entryId: String,
-        variantName: String,
+        variantName: String?,
         staleCatalogPath: String?,
     ): String? =
         SherpaModelDownloader.of(entryId).getModelPath(context, variantName)
@@ -70,7 +74,7 @@ class ModelActivator @Inject constructor(
     suspend fun activateCatalog(
         context: Context,
         entryId: String,
-        variantName: String,
+        variantName: String?,
         staleCatalogPath: String?,
     ): String? {
         val modelPath = resolveCatalogPath(context, entryId, variantName, staleCatalogPath)
@@ -99,5 +103,46 @@ class ModelActivator @Inject constructor(
     /** Activates the LAN-offload backend (no model directory exists). */
     suspend fun activateRemote() {
         preferencesManager.saveTranscriptionBackend(RemoteOmnivoiceBackend.BACKEND_ID)
+    }
+
+    /**
+     * The headless entry (the app-icon shortcut trampoline): dispatches on
+     * the backend id's KIND and runs the matching family activation.
+     *
+     * @return the activated model's DISPLAY NAME (for the confirmation
+     *   notification), or null when the id is unknown or its model is not
+     *   on disk anymore (the caller reports the failure; the previous
+     *   backend stays active, never a dangling preference).
+     */
+    suspend fun activate(backendId: String, context: Context): String? = when {
+        backendId == RemoteOmnivoiceBackend.BACKEND_ID -> {
+            activateRemote()
+            context.getString(R.string.remote_omnivoice_name)
+        }
+        backendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX) -> {
+            val record = externalModelStore.byId(backendId.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX))
+                ?: return null
+            activateExternal(record)
+            record.displayName
+        }
+        backendId == LlmTranscriptionBackend.BACKEND_ID -> {
+            val path = backendRegistry.byBackendId(backendId)
+                ?.modelPathFlow(preferencesManager)?.first()
+                ?: return null
+            // The generic modelPath preference keeps stale paths after a
+            // file delete (the catalog arm disk-checks through its ladder;
+            // this arm must honor the same no-dangling-preference contract).
+            if (!File(path).isFile) return null
+            activateLlm(File(path))
+            variantAwareDisplayName(context, backendRegistry.byBackendId(backendId), path)
+                .ifBlank { backendId }
+        }
+        BundledCatalog.byId(backendId) != null -> {
+            val path = activateCatalog(context, backendId, variantName = null, staleCatalogPath = null)
+                ?: return null
+            variantAwareDisplayName(context, backendRegistry.byBackendId(backendId), path)
+                .ifBlank { backendId }
+        }
+        else -> null
     }
 }

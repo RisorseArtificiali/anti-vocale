@@ -1432,23 +1432,10 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Selects a model and saves it to preferences.
-     */
-    fun selectModel(model: DiscoveredModel) {
-        viewModelScope.launch {
-            preferencesManager.saveModelPath(model.path)
-            // Switch to LLM backend when selecting an LLM model
-            preferencesManager.saveTranscriptionBackend(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
-            // Refresh the list to update current selection
-            scanAvailableModels()
-            // Update current model display
-            _uiState.update { it.copy(
-                currentModelPath = model.path,
-                currentModelName = model.name
-            )}
-        }
-    }
+    // TASK-552 review: the DiscoveredModel selectModel is DELETED, not
+    // migrated to ModelActivator: it had no callers (the Settings-tab model
+    // list it served is long gone) and its body carried the GH #23 bug class
+    // (persisting the LLM path while activating the default sherpa backend).
     // ---- TASK-490: user-chosen share-shortcut icons ----
 
     /** One share-capable backend row of the icon-pick card. */

@@ -1205,4 +1205,13 @@
     <string name="shortcut_icon_custom">Własny obraz</string>
     <string name="shortcut_icon_saved">Zapisano ikonę skrótu</string>
     <string name="shortcut_icon_error">Nie udało się wczytać obrazu</string>
+    <!-- TASK-552: app icon shortcuts (dynamic model switch + static tabs) -->
+    <string name="shortcut_history_short">Historia</string>
+    <string name="shortcut_history_long">Otwórz historię</string>
+    <string name="shortcut_models_short">Modele</string>
+    <string name="shortcut_models_long">Otwórz modele</string>
+    <string name="model_switched_title">Przełączono model</string>
+    <string name="model_switched_message">Aktywny model: %1$s</string>
+    <string name="model_switch_failed">Nie udało się przełączyć: modelu nie ma na urządzeniu</string>
+    <string name="model_shortcut_switch_label">Przełącz na %1$s</string>
 </resources>

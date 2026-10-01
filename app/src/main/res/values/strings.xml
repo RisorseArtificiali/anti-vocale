@@ -1193,4 +1193,13 @@
     <string name="shortcut_icon_custom">Custom image</string>
     <string name="shortcut_icon_saved">Shortcut icon saved</string>
     <string name="shortcut_icon_error">Could not load the image</string>
+    <!-- TASK-552: app icon shortcuts (dynamic model switch + static tabs) -->
+    <string name="shortcut_history_short">History</string>
+    <string name="shortcut_history_long">Open History</string>
+    <string name="shortcut_models_short">Models</string>
+    <string name="shortcut_models_long">Open Models</string>
+    <string name="model_switched_title">Model switched</string>
+    <string name="model_switched_message">Active model: %1$s</string>
+    <string name="model_switch_failed">Could not switch: the model is not on the device</string>
+    <string name="model_shortcut_switch_label">Switch to %1$s</string>
 </resources>

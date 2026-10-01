@@ -91,6 +91,7 @@ class ModelViewModelActiveModelTest {
         every { mockContext.assets } returns assetManager
         every { mockContext.applicationContext } returns mockContext
         com.antivocale.app.data.catalog.BundledCatalog.attach(mockContext)
+        val sharedDemoter = com.antivocale.app.transcription.SilentModelDemoter(fakePrefs)
         viewModel = ModelViewModel(
             preferencesManager = fakePrefs,
             activeModelRepository = ActiveModelRepository(fakePrefs, mockContext, staticRegistry(), FakeExternalRecordsProvider()),
@@ -110,8 +111,13 @@ class ModelViewModelActiveModelTest {
             externalCatalogRepository = io.mockk.mockk(relaxed = true),
             applicationScope = kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob()),
             // TASK-675: real demoter over the same preferences.
-            silentModelDemoter = com.antivocale.app.transcription.SilentModelDemoter(fakePrefs),
-            modelActivator = com.antivocale.app.transcription.ModelActivator(fakePrefs, com.antivocale.app.transcription.SilentModelDemoter(fakePrefs)),
+            silentModelDemoter = sharedDemoter,
+            modelActivator = com.antivocale.app.transcription.ModelActivator(
+                fakePrefs,
+                sharedDemoter,
+                externalModelStore = com.antivocale.app.data.ExternalModelStore(fakePrefs),
+                backendRegistry = staticRegistry(),
+            ),
         )
 
     }

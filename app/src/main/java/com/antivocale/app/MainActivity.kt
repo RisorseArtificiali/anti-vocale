@@ -112,7 +112,11 @@ class MainActivity : AppCompatActivity() {
 
         if (!checkDeviceCompatibility()) return
 
-        val startOnModelTab = intent.getBooleanExtra(EXTRA_NAVIGATE_TO_MODEL_TAB, false)
+        // TASK-552: the static Models shortcut delivers its extra as a
+        // String (static-shortcut extras are string-only), while the
+        // notification writers use a Boolean; both forms navigate.
+        val startOnModelTab = intent.getBooleanExtra(EXTRA_NAVIGATE_TO_MODEL_TAB, false) ||
+            intent.getStringExtra(EXTRA_NAVIGATE_TO_MODEL_TAB) == "true"
         if (startOnModelTab) intent.removeExtra(EXTRA_NAVIGATE_TO_MODEL_TAB)
         captureTestNavigation(intent)
 

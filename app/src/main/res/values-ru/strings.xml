@@ -1206,4 +1206,13 @@
     <string name="shortcut_icon_custom">Своё изображение</string>
     <string name="shortcut_icon_saved">Значок ярлыка сохранён</string>
     <string name="shortcut_icon_error">Не удалось загрузить изображение</string>
+    <!-- TASK-552: app icon shortcuts (dynamic model switch + static tabs) -->
+    <string name="shortcut_history_short">История</string>
+    <string name="shortcut_history_long">Открыть историю</string>
+    <string name="shortcut_models_short">Модели</string>
+    <string name="shortcut_models_long">Открыть модели</string>
+    <string name="model_switched_title">Модель переключена</string>
+    <string name="model_switched_message">Активная модель: %1$s</string>
+    <string name="model_switch_failed">Не удалось переключить: модели нет на устройстве</string>
+    <string name="model_shortcut_switch_label">Переключить на %1$s</string>
 </resources>

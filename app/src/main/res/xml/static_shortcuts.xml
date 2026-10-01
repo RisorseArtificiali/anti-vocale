@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TASK-552 AC5: the static long-press shortcuts. Navigation-only (no
+     switching side effect): History is the default tab, Models rides the
+     existing navigate_to_model_tab extra. -->
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="history"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_history_short"
+        android:shortcutLongLabel="@string/shortcut_history_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.antivocale.app.MainActivity" />
+    </shortcut>
+    <shortcut
+        android:shortcutId="models"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_models_short"
+        android:shortcutLongLabel="@string/shortcut_models_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetClass="com.antivocale.app.MainActivity" />
+        <extra
+            android:name="navigate_to_model_tab"
+            android:value="true" />
+    </shortcut>
+</shortcuts>
