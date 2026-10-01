@@ -96,6 +96,12 @@ class ShareShortcutManager(
     private data class ShortcutSetSignature(
         val anchorAlias: String,
         val shortcuts: List<Triple<String, String, Int>>,
+        // TASK-490 review: the stored-icon state must be part of the
+        // no-op signature, or a pick/reset republishes nothing and the
+        // launcher keeps the stale icon until an unrelated signature
+        // change. lastModified + length catch a re-pick over the same
+        // backend, not just the pick's appearance.
+        val iconTokens: List<String>,
     )
 
     private var lastSignature: ShortcutSetSignature? = null
@@ -154,6 +160,10 @@ class ShareShortcutManager(
                 val signature = ShortcutSetSignature(
                     anchorAlias = anchor.className,
                     shortcuts = candidates.map { Triple(it.id, it.label, it.rank) },
+                    iconTokens = candidates.mapNotNull { c ->
+                        shortcutIconStore.iconFile(c.descriptor.backendId)
+                            ?.let { "${c.id}:${it.lastModified()}:${it.length()}" }
+                    },
                 )
                 if (signature == lastSignature) return@runCatching
                 manager.setDynamicShortcuts(candidates.map { buildShortcut(it, anchor) })

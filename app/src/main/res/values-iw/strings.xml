@@ -1183,4 +1183,12 @@
     <string name="settings_group_gemma">עיבוד טקסט (Gemma)</string>
     <string name="settings_group_output">פלט</string>
     <string name="settings_group_integrations">שילובים</string>
+    <!-- TASK-490: user-chosen share-shortcut icons -->
+    <string name="share_shortcut_icons_title">סמלי קיצורי הדרך לשיתוף</string>
+    <string name="share_shortcut_icons_description">בחרו תמונה מותאמת אישית לכל קיצור דרך לשיתוף, או חזרו לסמל שנוצר אוטומטית</string>
+    <string name="shortcut_icon_choose">בחירת תמונה</string>
+    <string name="shortcut_icon_reset">איפוס</string>
+    <string name="shortcut_icon_custom">תמונה מותאמת אישית</string>
+    <string name="shortcut_icon_saved">סמל קיצור הדרך נשמר</string>
+    <string name="shortcut_icon_error">טעינת התמונה נכשלה</string>
 </resources>

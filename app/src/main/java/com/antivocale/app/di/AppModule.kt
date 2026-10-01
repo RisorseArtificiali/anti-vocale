@@ -95,6 +95,12 @@ object AppModule {
         )
     }
 
+    @Provides
+    @Singleton
+    fun provideShortcutIconStore(
+        @ApplicationContext context: Context,
+    ): ShortcutIconStore = ShortcutIconStore(context)
+
     /**
      * The dynamic share-shortcut manager's recency source (TASK-393): the
      * calibrator's per-model last-use timestamps, which are keyed by backend id.
@@ -102,12 +108,6 @@ object AppModule {
      * display name, a localized string that cannot be mapped back to a backend
      * after a locale change, while calibration keys parse losslessly.
      */
-    @Provides
-    @Singleton
-    fun provideShortcutIconStore(
-        @ApplicationContext context: Context,
-    ): ShortcutIconStore = ShortcutIconStore(context)
-
     @Provides
     @Singleton
     fun provideShareShortcutManager(

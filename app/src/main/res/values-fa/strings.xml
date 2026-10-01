@@ -1178,4 +1178,12 @@
     <string name="settings_group_gemma">پردازش متن (جما)</string>
     <string name="settings_group_output">خروجی</string>
     <string name="settings_group_integrations">یکپارچه‌سازی‌ها</string>
+    <!-- TASK-490: user-chosen share-shortcut icons -->
+    <string name="share_shortcut_icons_title">آیکون های میانبر اشتراک گذاری</string>
+    <string name="share_shortcut_icons_description">برای هر میانبر اشتراک گذاری یک تصویر دلخواه انتخاب کنید یا به آیکون تولیدشده برگردید</string>
+    <string name="shortcut_icon_choose">انتخاب تصویر</string>
+    <string name="shortcut_icon_reset">بازنشانی</string>
+    <string name="shortcut_icon_custom">تصویر دلخواه</string>
+    <string name="shortcut_icon_saved">آیکون میانبر ذخیره شد</string>
+    <string name="shortcut_icon_error">تصویر بارگیری نشد</string>
 </resources>

@@ -1199,4 +1199,12 @@
     <string name="settings_group_gemma">Обробка тексту (Gemma)</string>
     <string name="settings_group_output">Результат</string>
     <string name="settings_group_integrations">Інтеграції</string>
+    <!-- TASK-490: user-chosen share-shortcut icons -->
+    <string name="share_shortcut_icons_title">Значки ярликів надсилання</string>
+    <string name="share_shortcut_icons_description">Виберіть власне зображення для кожного ярлика надсилання або поверніться до згенерованого значка</string>
+    <string name="shortcut_icon_choose">Вибрати зображення</string>
+    <string name="shortcut_icon_reset">Скинути</string>
+    <string name="shortcut_icon_custom">Власне зображення</string>
+    <string name="shortcut_icon_saved">Значок ярлика збережено</string>
+    <string name="shortcut_icon_error">Не вдалося завантажити зображення</string>
 </resources>

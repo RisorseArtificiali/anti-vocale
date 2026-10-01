@@ -109,4 +109,3 @@ class ShareShortcutIconsTest {
         assertEquals(Color.WHITE, icon.getPixel(icon.width / 2, icon.height / 2))
     }
 }
-

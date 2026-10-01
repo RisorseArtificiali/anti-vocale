@@ -1172,4 +1172,12 @@
     <string name="settings_group_gemma">टेक्स्ट प्रोसेसिंग (Gemma)</string>
     <string name="settings_group_output">आउटपुट</string>
     <string name="settings_group_integrations">इंटीग्रेशन</string>
+    <!-- TASK-490: user-chosen share-shortcut icons -->
+    <string name="share_shortcut_icons_title">शेयर शॉर्टकट आइकॉन</string>
+    <string name="share_shortcut_icons_description">हर शेयर शॉर्टकट के लिए कोई कस्टम चित्र चुनें, या जनरेट किए गए आइकॉन पर लौटें</string>
+    <string name="shortcut_icon_choose">चित्र चुनें</string>
+    <string name="shortcut_icon_reset">रीसेट</string>
+    <string name="shortcut_icon_custom">कस्टम चित्र</string>
+    <string name="shortcut_icon_saved">शॉर्टकट आइकॉन सहेजा गया</string>
+    <string name="shortcut_icon_error">चित्र लोड नहीं हो सका</string>
 </resources>

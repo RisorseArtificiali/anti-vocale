@@ -1041,4 +1041,12 @@
     <string name="settings_group_gemma">Procesamiento de texto (Gemma)</string>
     <string name="settings_group_output">Salida</string>
     <string name="settings_group_integrations">Integraciones</string>
+    <!-- TASK-490: user-chosen share-shortcut icons -->
+    <string name="share_shortcut_icons_title">Iconos de accesos directos para compartir</string>
+    <string name="share_shortcut_icons_description">Elige una imagen personalizada para cada acceso directo de compartir, o vuelve al icono generado</string>
+    <string name="shortcut_icon_choose">Elegir imagen</string>
+    <string name="shortcut_icon_reset">Restablecer</string>
+    <string name="shortcut_icon_custom">Imagen personalizada</string>
+    <string name="shortcut_icon_saved">Icono del acceso directo guardado</string>
+    <string name="shortcut_icon_error">No se pudo cargar la imagen</string>
 </resources>

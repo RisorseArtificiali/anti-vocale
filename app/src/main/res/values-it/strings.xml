@@ -1178,4 +1178,12 @@
     <string name="settings_group_gemma">Elaborazione del testo (Gemma)</string>
     <string name="settings_group_output">Output</string>
     <string name="settings_group_integrations">Integrazioni</string>
+    <!-- TASK-490: user-chosen share-shortcut icons -->
+    <string name="share_shortcut_icons_title">Icone scorciatoie di condivisione</string>
+    <string name="share_shortcut_icons_description">Scegli un\'immagine personalizzata per ogni scorciatoia di condivisione, oppure torna all\'icona generata</string>
+    <string name="shortcut_icon_choose">Scegli immagine</string>
+    <string name="shortcut_icon_reset">Ripristina</string>
+    <string name="shortcut_icon_custom">Immagine personalizzata</string>
+    <string name="shortcut_icon_saved">Icona della scorciatoia salvata</string>
+    <string name="shortcut_icon_error">Impossibile caricare l\'immagine</string>
 </resources>

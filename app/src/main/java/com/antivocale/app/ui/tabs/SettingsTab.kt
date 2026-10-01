@@ -9,6 +9,7 @@ import android.widget.Toast
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -47,6 +48,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -1819,6 +1821,9 @@ fun SettingsTab(
                     }
                 }
             }
+            SearchFilterRow(searchQuery, SettingsSearchId.SHARE_SHORTCUT_ICONS, searchState) {
+                ShareShortcutIconsCard(viewModel)
+            }
         }
 
         // Feedback & About section (issue #34 / TASK-341)
@@ -2766,6 +2771,7 @@ internal enum class SettingsSearchId {
     // Advanced
     BATTERY_EXEMPTION, HUGGINGFACE_AUTH, PERFORMANCE_HUB,
     SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_IDENTITY, PER_APP_SETTINGS,
+    SHARE_SHORTCUT_ICONS,
     // Feedback
     FEEDBACK,
 }
@@ -3069,6 +3075,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.VOICE_NOTE_IDENTITY, SettingsSearchSection.ADVANCED,
         listOf(R.string.voice_note_identity_title, R.string.voice_note_identity_description),
+        group = SettingsSearchGroup.INTEGRATIONS,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.SHARE_SHORTCUT_ICONS, SettingsSearchSection.ADVANCED,
+        listOf(R.string.share_shortcut_icons_title, R.string.share_shortcut_icons_description),
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
     // --- Feedback ---
@@ -3503,3 +3514,73 @@ fun ExportSettingsScreen(
     }
 }
 
+/**
+ * TASK-490: per-share-shortcut custom icons. Each share-capable backend
+ * (registry order) gets a gallery pick; the image is copied app-side at
+ * pick time and masked into the adaptive canvas at build time, with the
+ * generated family icon as the fallback. The rows re-derive on entry and
+ * after every pick/reset, so the buttons always reflect the stored state.
+ */
+@Composable
+internal fun ShareShortcutIconsCard(viewModel: SettingsViewModel) {
+    val context = LocalContext.current
+    val backends by viewModel.shareIconBackends.collectAsState()
+    val advancedSharingEnabled by viewModel.advancedSharingEnabled.collectAsState()
+    LaunchedEffect(Unit) { viewModel.refreshShareIconBackends() }
+    // Saveable (review): the picker can outlive a configuration change; a
+    // plain remember would silently drop the pick on recreation.
+    var pendingBackendId by rememberSaveable { mutableStateOf<String?>(null) }
+    val picker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        val backendId = pendingBackendId
+        pendingBackendId = null
+        if (uri != null && backendId != null) {
+            viewModel.onShortcutIconPicked(backendId, uri) { saved ->
+                com.antivocale.app.util.ToastCompat.show(
+                    context,
+                    context.getString(
+                        if (saved) R.string.shortcut_icon_saved else R.string.shortcut_icon_error),
+                )
+            }
+        }
+    }
+    SectionCard(
+        icon = Icons.Default.Image,
+        title = stringResource(R.string.share_shortcut_icons_title),
+        description = stringResource(R.string.share_shortcut_icons_description),
+    ) {
+        // The sibling Share targets card gates its backend rows behind the
+        // toggle the same way: with sharing off there are no dynamic
+        // shortcuts to icon.
+        if (advancedSharingEnabled) backends.forEach { backend ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(backend.label, style = MaterialTheme.typography.bodyLarge)
+                    if (backend.hasCustomIcon) {
+                        Text(
+                            text = stringResource(R.string.shortcut_icon_custom),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                }
+                TextButton(onClick = {
+                    pendingBackendId = backend.backendId
+                    picker.launch(PickVisualMediaRequest(
+                        ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }) {
+                    Text(stringResource(R.string.shortcut_icon_choose))
+                }
+                if (backend.hasCustomIcon) {
+                    TextButton(onClick = { viewModel.clearShortcutIcon(backend.backendId) }) {
+                        Text(stringResource(R.string.shortcut_icon_reset))
+                    }
+                }
+            }
+        }
+    }
+}

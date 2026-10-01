@@ -40,7 +40,7 @@ class ShortcutIconStoreTest {
 
     @Test
     fun `a saved pick round-trips as a decodable file`() = runTest {
-        assertTrue(store.save("sherpa-onnx", pngBytes()))
+        assertTrue(store.saveBytes("sherpa-onnx", pngBytes()))
         val file = store.iconFile("sherpa-onnx")
         assertNotNull(file)
         assertNotNull(store.decode("sherpa-onnx"))
@@ -54,15 +54,15 @@ class ShortcutIconStoreTest {
 
     @Test
     fun `external colon ids sanitize to a safe flat name`() = runTest {
-        assertTrue(store.save("external:abc123", pngBytes()))
+        assertTrue(store.saveBytes("external:abc123", pngBytes()))
         assertNotNull(store.iconFile("external:abc123"))
-        // Both ids resolve to distinct files; neither escapes the icons dir.
+        // The sanitized file stays inside the icons dir.
         assertTrue(store.iconFile("external:abc123")!!.path.contains("shortcut_icons"))
     }
 
     @Test
     fun `clear removes the pick and absent ids read as none`() = runTest {
-        assertTrue(store.save("llm", pngBytes()))
+        assertTrue(store.saveBytes("llm", pngBytes()))
         assertNotNull(store.iconFile("llm"))
         store.clear("llm")
         assertNull(store.iconFile("llm"))
@@ -72,9 +72,9 @@ class ShortcutIconStoreTest {
     @Test
     fun `a re-pick overwrites the previous file`() = runTest {
         val first = pngBytes(32)
-        assertTrue(store.save("llm", first))
+        assertTrue(store.saveBytes("llm", first))
         val firstLen = store.iconFile("llm")!!.length()
-        assertTrue(store.save("llm", pngBytes(200)))
+        assertTrue(store.saveBytes("llm", pngBytes(200)))
         val second = store.iconFile("llm")!!
         assertTrue("a re-pick must replace, not append", second.length() != firstLen)
         assertEquals(store.decode("llm")!!.width, 200)
@@ -83,7 +83,7 @@ class ShortcutIconStoreTest {
     @Test
     fun `an oversized source is downscaled into the storage budget`() = runTest {
         // 3000px source decodes with inSampleSize down toward the 1024 cap.
-        assertTrue(store.save("llm", pngBytes(3000)))
+        assertTrue(store.saveBytes("llm", pngBytes(3000)))
         val decoded = store.decode("llm")!!
         assertTrue("stored image must fit the budget, got ${decoded.width}",
             maxOf(decoded.width, decoded.height) <= 1024)

@@ -68,6 +68,10 @@ class SettingsViewModelOnboardingSeedTest {
             llmManager = mockk(relaxed = true),
             shareTargetManager = mockk(relaxed = true),
             shareShortcutManager = mockk(relaxed = true),
+            backendRegistry = staticRegistry(),
+            // TASK-490: these tests never pick an icon; a relaxed mock of
+            // the store keeps the construction honest without Robolectric.
+            shortcutIconStore = mockk<com.antivocale.app.data.ShortcutIconStore>(relaxed = true),
             launcherIconManager = mockk(relaxed = true) {
                 every { current() } returns LauncherIconVariant.DEFAULT
             },

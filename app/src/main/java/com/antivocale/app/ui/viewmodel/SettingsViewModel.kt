@@ -21,6 +21,8 @@ import com.antivocale.app.data.ModelDiscovery
 import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.data.ActiveModelRepository
 import com.antivocale.app.data.PerAppPreferencesManager
+import com.antivocale.app.data.ShortcutIconStore
+import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.data.ShareTargetManager
@@ -61,6 +63,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
 /**
@@ -86,6 +89,8 @@ class SettingsViewModel @Inject constructor(
     private val llmManager: LlmManager,
     private val shareTargetManager: ShareTargetManager,
     private val shareShortcutManager: ShareShortcutManager,
+    private val backendRegistry: BackendRegistry,
+    private val shortcutIconStore: ShortcutIconStore,
     private val activeModelRepository: ActiveModelRepository,
     private val launcherIconManager: LauncherIconManager,
     // TASK-681: the LAN-offload connection probe runs through the real
@@ -1444,5 +1449,63 @@ class SettingsViewModel @Inject constructor(
             )}
         }
     }
-}
+    // ---- TASK-490: user-chosen share-shortcut icons ----
 
+    /** One share-capable backend row of the icon-pick card. */
+    data class ShareIconBackend(
+        val backendId: String,
+        val label: String,
+        val hasCustomIcon: Boolean,
+    )
+
+    private val _shareIconBackends = MutableStateFlow<List<ShareIconBackend>>(emptyList())
+    val shareIconBackends: StateFlow<List<ShareIconBackend>> = _shareIconBackends.asStateFlow()
+
+    /**
+     * Re-derives the card rows: every share-capable backend (registry order,
+     * blank-alias targets skipped: those have no shortcut to icon) plus
+     * whether a pick is currently stored. Labels ride the registry's ONE
+     * display-name derivation (variant-aware: the card says "Whisper Small"
+     * where the shortcut does), and the whole derivation (path read + per-row
+     * file stat) runs on IO.
+     */
+    suspend fun refreshShareIconBackends() = withContext(Dispatchers.IO) {
+        val context = getApplication<Application>()
+        _shareIconBackends.value = backendRegistry.backends
+            .filter { it.shareAlias.isNotBlank() }
+            .map { d ->
+                val path = d.modelPathFlow(preferencesManager).first()
+                val label = com.antivocale.app.transcription.variantAwareDisplayName(context, d, path)
+                    .ifBlank { d.backendId }
+                ShareIconBackend(
+                    backendId = d.backendId,
+                    label = label,
+                    hasCustomIcon = shortcutIconStore.iconFile(d.backendId) != null,
+                )
+            }
+    }
+
+    /**
+     * Copies the gallery pick app-side (TASK-490 AC3: never a URI grant) and
+     * republishes the shortcut set: a pick that never reaches the launcher
+     * is a no-op (review: the pick flow itself must trigger refresh, like
+     * the sharing toggle and the icon-variant switcher do).
+     */
+    fun onShortcutIconPicked(backendId: String, uri: Uri, onDone: (Boolean) -> Unit) {
+        viewModelScope.launch {
+            val saved = shortcutIconStore.save(backendId, uri)
+            refreshShareIconBackends()
+            shareShortcutManager.refresh()
+            onDone(saved)
+        }
+    }
+
+    /** Reverts to the generated family icon and republishes. */
+    fun clearShortcutIcon(backendId: String) {
+        viewModelScope.launch {
+            shortcutIconStore.clear(backendId)
+            refreshShareIconBackends()
+            shareShortcutManager.refresh()
+        }
+    }
+}

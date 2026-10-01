@@ -1173,4 +1173,12 @@
     <string name="settings_group_gemma">Textverarbeitung (Gemma)</string>
     <string name="settings_group_output">Ausgabe</string>
     <string name="settings_group_integrations">Integrationen</string>
+    <!-- TASK-490: user-chosen share-shortcut icons -->
+    <string name="share_shortcut_icons_title">Symbole für Teilen-Verknüpfungen</string>
+    <string name="share_shortcut_icons_description">Wähle ein eigenes Bild für jede Teilen-Verknüpfung oder kehre zum generierten Symbol zurück</string>
+    <string name="shortcut_icon_choose">Bild wählen</string>
+    <string name="shortcut_icon_reset">Zurücksetzen</string>
+    <string name="shortcut_icon_custom">Eigenes Bild</string>
+    <string name="shortcut_icon_saved">Verknüpfungssymbol gespeichert</string>
+    <string name="shortcut_icon_error">Bild konnte nicht geladen werden</string>
 </resources>

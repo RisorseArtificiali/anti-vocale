@@ -75,6 +75,10 @@ class SettingsViewModelActiveModelTest {
             llmManager = mockk(relaxed = true),
             shareTargetManager = mockk(relaxed = true),
             shareShortcutManager = mockk(relaxed = true),
+            backendRegistry = staticRegistry(),
+            // TASK-490: these tests never pick an icon; a relaxed mock of
+            // the store keeps the construction honest without Robolectric.
+            shortcutIconStore = mockk<com.antivocale.app.data.ShortcutIconStore>(relaxed = true),
             // Enum returns are stubbed explicitly: a relaxed mock's enum answer
             // is version-dependent, and the ViewModel reads current() at init.
             launcherIconManager = mockk(relaxed = true) {
