@@ -1,10 +1,17 @@
 package com.antivocale.app.data
 
 import android.content.Context
+import com.antivocale.app.di.ApplicationScope
 import com.antivocale.app.transcription.BackendDescriptor
 import com.antivocale.app.transcription.BackendRegistry
 import com.antivocale.app.util.ComponentAliasSync
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Keeps the manifest share-target activity-aliases in sync with model availability.
@@ -20,24 +27,48 @@ import kotlinx.coroutines.flow.first
  * component is enabled iff advanced sharing is on AND at least one valid record exists.
  * The store (not the records provider) backs that check: the provider's StateFlow starts
  * empty and fills asynchronously, and this manager's syncs can run at
- * BridgeApplication.onCreate (launched on an application scope) before the first
- * emission lands.
+ * BridgeApplication.onCreate before the first emission lands.
  *
- * Every read here is a suspend DataStore/flow read: callers must already be on a
- * coroutine (BridgeApplication's application scope, viewModelScope, or a test's
- * runTest); the manager never blocks its calling thread.
+ * TASK-738: the manager OWNS its execution. The public entry points are
+ * fire-and-forget: they launch on the injected [ApplicationScope] (never a
+ * viewModelScope, so a ViewModel cleared mid-sync cannot cancel the PackageManager
+ * IPC) and return Unit immediately, so callers no longer need a scope or a suspend
+ * context. The two-form contract:
+ *  - public fire-and-forget forms for isolated triggers (an import finished, an
+ *    external entry deleted) where nothing is ordered against the sync;
+ *  - the [internal] suspend forms for the sites pinned to an ADJACENT ordering
+ *    (the cold-start heal -> sync -> shortcut-refresh chain, the corrupt-dir heal
+ *    retiring the alias before the shortcut refresh, the download and toggle
+ *    blocks that refresh shortcuts right after): those still await the sync
+ *    inside their own coroutine, by design, not by omission.
+ * Concurrent entry points are SERIALIZED on [syncMutex] (a full sync interleaved
+ * with another at the setComponentEnabled granularity is last-writer-wins on a
+ * stale snapshot); ordering WITHIN one caller chain comes from awaiting the
+ * suspend form. Every sync re-derives the full state, so no caller depends on
+ * cross-entry ordering, only on its own.
  */
-class ShareTargetManager(
+class ShareTargetManager constructor(
     private val context: Context,
     private val preferencesManager: PreferencesManager,
     private val backendRegistry: BackendRegistry,
     private val externalModelStore: ExternalModelStore,
+    @ApplicationScope private val applicationScope: CoroutineScope,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
     companion object {
         private const val TAG = "ShareTargetManager"
         // Single source (also used by ShareReceiverActivity): renaming must find
         // the manifest literal too, pinned by BackendRegistryTest.
         internal const val EXTERNAL_FAMILY_ALIAS = "com.antivocale.app.ShareExternal"
+    }
+
+    private val syncMutex = Mutex()
+
+    // No mutex here: the wrappers below launch the LOCKED Now-forms, so the
+    // serialization lives in exactly one place (a withLock here too would
+    // double-lock the non-reentrant Mutex and hang the sync).
+    private fun launchSync(block: suspend () -> Unit) {
+        applicationScope.launch(ioDispatcher) { block() }
     }
 
     private suspend fun hasModel(backendId: String): Boolean {
@@ -59,7 +90,9 @@ class ShareTargetManager(
         ComponentAliasSync.setEnabled(context, EXTERNAL_FAMILY_ALIAS, advancedEnabled && externalRecordsPresent(), TAG)
     }
 
-    suspend fun syncAll() {
+    /** The full resync, lock-free: [syncAllNow] wraps it, and so does the enable
+     *  branch of [setAdvancedSharingEnabledNow] (the Mutex is not reentrant). */
+    private suspend fun syncAllBody() {
         val advancedEnabled = preferencesManager.advancedSharingEnabled.first()
 
         backendRegistry.backends.forEach { target ->
@@ -72,7 +105,19 @@ class ShareTargetManager(
         syncExternalFamily(advancedEnabled)
     }
 
-    suspend fun onModelDeleted(backendId: String) {
+    /** Fire-and-forget full sync. */
+    fun syncAll() {
+        launchSync { syncAllNow() }
+    }
+
+    internal suspend fun syncAllNow() = syncMutex.withLock { syncAllBody() }
+
+    /** Fire-and-forget deletion resync. */
+    fun onModelDeleted(backendId: String) {
+        launchSync { onModelDeletedNow(backendId) }
+    }
+
+    internal suspend fun onModelDeletedNow(backendId: String) = syncMutex.withLock {
         // An external record deletion can remove the LAST valid record: resync the family.
         // This runs BEFORE the descriptor lookup: an external id may not derive a descriptor
         // anymore (already deleted from the store; the provider snapshot lags), and the
@@ -81,17 +126,23 @@ class ShareTargetManager(
             val advancedEnabled = preferencesManager.advancedSharingEnabled.first()
             syncExternalFamily(advancedEnabled)
         }
-        val target = backendRegistry.backends.find { it.backendId == backendId } ?: return
+        val target = backendRegistry.backends.find { it.backendId == backendId } ?: return@withLock
         setComponentEnabled(target, false)
     }
 
-    suspend fun onModelDownloaded() {
-        syncAll()
+    /** Fire-and-forget post-download/import resync. */
+    fun onModelDownloaded() {
+        launchSync { syncAllNow() }
     }
 
-    suspend fun setAdvancedSharingEnabled(enabled: Boolean) {
+    /** Fire-and-forget toggle resync. */
+    fun setAdvancedSharingEnabled(enabled: Boolean) {
+        launchSync { setAdvancedSharingEnabledNow(enabled) }
+    }
+
+    internal suspend fun setAdvancedSharingEnabledNow(enabled: Boolean) = syncMutex.withLock {
         if (enabled) {
-            syncAll()
+            syncAllBody()
         } else {
             backendRegistry.backends.forEach { setComponentEnabled(it, false) }
             ComponentAliasSync.setEnabled(context, EXTERNAL_FAMILY_ALIAS, false, TAG)

@@ -479,7 +479,9 @@ class SettingsViewModel @Inject constructor(
     fun saveAdvancedSharingEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveAdvancedSharingEnabled(enabled)
-            shareTargetManager.setAdvancedSharingEnabled(enabled)
+            // TASK-738 review: the suspend form stays so the alias state has
+            // landed before the shortcut refresh below re-derives the set.
+            shareTargetManager.setAdvancedSharingEnabledNow(enabled)
             // Shortcuts launch the alias components this toggle just enabled or
             // disabled; their eligibility shares the same predicate, so they
             // re-derive here too (TASK-393).

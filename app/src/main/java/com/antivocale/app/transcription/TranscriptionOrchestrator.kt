@@ -1609,8 +1609,9 @@ class TranscriptionOrchestrator @Inject constructor(
             descriptor.clearModelPath(preferencesManager)
             // Review F2: mirror the Models-tab delete's share-surface
             // retirement (the alias must not stay selectable for a
-            // not-installed model).
-            shareTargetManager.onModelDeleted(descriptor.backendId)
+            // not-installed model). TASK-738: the suspend form stays so the
+            // retirement lands BEFORE the shortcut refresh below.
+            shareTargetManager.onModelDeletedNow(descriptor.backendId)
             shareShortcutManager.refresh()
         }
         return true

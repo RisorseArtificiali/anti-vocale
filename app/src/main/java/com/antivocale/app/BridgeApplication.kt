@@ -228,7 +228,9 @@ class BridgeApplication : Application(), Configuration.Provider {
             // from a retired icon variant (TASK-473) has every alias disabled,
             // and the shortcuts must anchor to the healed, enabled Default.
             launcherIconManager.healIfNoAliasEnabled()
-            shareTargetManager.syncAll()
+            // Ordered chain, TASK-738: the heal, the alias sync and the shortcut
+            // refresh must land in this sequence, so the suspend form stays.
+            shareTargetManager.syncAllNow()
             // Dynamic long-press share shortcuts (TASK-393): same startup slot,
             // after the alias sync so the components the shortcut intents launch
             // are already in their persisted state.

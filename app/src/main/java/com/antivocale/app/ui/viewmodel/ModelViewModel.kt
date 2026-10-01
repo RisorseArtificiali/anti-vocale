@@ -424,7 +424,9 @@ class ModelViewModel @Inject constructor(
                     orphanedVariants = it.orphanedVariants - (variantName ?: "")
                 ) }
                 applicationScope.launch {
-                    shareTargetManager.onModelDownloaded()
+                    // TASK-738: the alias sync stays ordered BEFORE the shortcut
+                    // refresh here (suspend form, same block), by design.
+                    shareTargetManager.syncAllNow()
                     shareShortcutManager.refresh()
                 }
                 if (variantName != null) {
@@ -501,7 +503,8 @@ class ModelViewModel @Inject constructor(
                 }
                 refreshDownloadedModels()
                 applicationScope.launch {
-                    shareTargetManager.onModelDownloaded()
+                    // TASK-738: alias sync ordered BEFORE the shortcut refresh (see above).
+                    shareTargetManager.syncAllNow()
                     shareShortcutManager.refresh()
                 }
                 if (_uiState.value.modelName.isBlank()) setDownloadedModel(file)
@@ -1197,12 +1200,9 @@ class ModelViewModel @Inject constructor(
                 // Clear model path if this was the selected model
                 if (_uiState.value.modelPath.contains(variant.fileName)) {
                     preferencesManager.saveModelPath("")
-                    // TASK-441: the alias sync rides the app scope (DataStore
-                    // read + PackageManager IPC must survive a ViewModel
-                    // clear mid-sync, like the four sites F4 migrated).
-                    applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
-                        shareTargetManager.onModelDeleted(LlmTranscriptionBackend.BACKEND_ID)
-                    }
+                    // TASK-738 review: the suspend form keeps the alias
+                    // retirement ordered BEFORE the shortcut refresh below.
+                    shareTargetManager.onModelDeletedNow(LlmTranscriptionBackend.BACKEND_ID)
                     shareShortcutManager.refresh()
                     _uiState.update { it.copy(
                         modelPath = "",
@@ -1462,8 +1462,9 @@ class ModelViewModel @Inject constructor(
                     } else {
                         preferencesManager.clearSherpaModelPath(entryId)
                         _uiState.update { it.copy(modelPath = "", modelName = "") }
-                        // TASK-441: same scope move as the LLM site above.
-                        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) { shareTargetManager.onModelDeleted(entryId) }
+                        // TASK-738 review: suspend form, ordered before the
+                        // shortcut refresh below (same contract as the LLM site).
+                        shareTargetManager.onModelDeletedNow(entryId)
                         shareShortcutManager.refresh()
                     }
                 }
@@ -1707,8 +1708,9 @@ class ModelViewModel @Inject constructor(
     private fun onExternalImported(record: ExternalModelRecord) {
         _externalImportState.value = ExternalImportState.Idle
         _snackbarEvent.tryEmit(SnackbarEvent.Message(ctx.getString(R.string.external_imported, record.displayName)))
-        // Called from a non-suspend fold callback; the manager is suspend since TASK-264.
-        applicationScope.launch { shareTargetManager.onModelDownloaded() }
+        // Called from a non-suspend fold callback; TASK-738: the manager's
+        // fire-and-forget entry point is exactly for scope-less callers.
+        shareTargetManager.onModelDownloaded()
         // First-run behavior: auto-select when nothing is active.
         // TASK-675: a demoted external model is skipped by that auto-selection.
         if (_uiState.value.modelName.isBlank()) {
@@ -1759,7 +1761,7 @@ class ModelViewModel @Inject constructor(
                 preferencesManager.saveTranscriptionBackend(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
                 _uiState.update { it.copy(modelPath = "", modelName = "") }
             }
-            applicationScope.launch { shareTargetManager.syncAll() }
+            shareTargetManager.syncAll()
             _snackbarEvent.tryEmit(SnackbarEvent.Message(
                 ctx.getString(R.string.external_deleted, record.displayName)))
         }

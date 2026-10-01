@@ -82,9 +82,16 @@ object AppModule {
         @ApplicationContext context: Context,
         preferencesManager: PreferencesManager,
         backendRegistry: BackendRegistry,
-        externalModelStore: ExternalModelStore
+        externalModelStore: ExternalModelStore,
+        @ApplicationScope applicationScope: CoroutineScope
     ): ShareTargetManager {
-        return ShareTargetManager(context, preferencesManager, backendRegistry, externalModelStore)
+        return ShareTargetManager(
+            context,
+            preferencesManager,
+            backendRegistry,
+            externalModelStore,
+            applicationScope,
+        )
     }
 
     /**
