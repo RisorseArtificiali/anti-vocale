@@ -40,7 +40,7 @@ class AudioPreprocessorTest {
     @Test
     fun `PreprocessingError DurationTooLong has correct message`() {
         val error = AudioPreprocessor.PreprocessingError.DurationTooLong(
-            600L, AudioDurationPolicy.DecodePath.STREAMING)
+            600L, AudioDurationPolicy.DecodePath.STREAMING, 601.0)
         assertEquals("Audio exceeds 10 minute limit on this path", error.message)
     }
 

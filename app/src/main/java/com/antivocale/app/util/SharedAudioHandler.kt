@@ -21,7 +21,7 @@ object SharedAudioHandler {
 
     /** Video containers treated as audio input (audio track extracted, no visual analysis).
      *  Public so the Logs tab can mark entries whose source was a video file. */
-    val VIDEO_EXTENSIONS = setOf("mp4", "m4v", "mkv", "webm", "mov", "3g2")
+    val VIDEO_EXTENSIONS = setOf("mp4", "m4v", "mkv", "webm", "mov", "3g2", "3gp")
 
     /** TASK-677 (GH #92 import half): subtitle files the share flow imports
      *  as the transcript instead of decoding audio. */

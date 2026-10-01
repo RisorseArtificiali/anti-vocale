@@ -36,7 +36,8 @@ object DownloadedModelIntegrity {
      * carried a hand-rolled read each). Null when the file is shorter than
      * 8 bytes.
      */
-    private fun head8(f: File): ByteArray? = f.inputStream().use { ins ->
+    private fun head8(f: File): ByteArray? = runCatching {
+        f.inputStream().use { ins ->
         val buf = ByteArray(8)
         var off = 0
         while (off < 8) {
@@ -44,8 +45,11 @@ object DownloadedModelIntegrity {
             if (n < 0) break
             off += n
         }
-        if (off == 8) buf else null
-    }
+            if (off == 8) buf else null
+        }
+    }.getOrNull() // Review: an IO failure (EIO, fd exhaustion) is a read
+    // failure, not corruption; returning null reports truncation through the
+    // caller's normal finding, never an exception into the import cleanup.
 
     /**
      * Validates every file in [modelDir] that matters to sherpa-onnx:

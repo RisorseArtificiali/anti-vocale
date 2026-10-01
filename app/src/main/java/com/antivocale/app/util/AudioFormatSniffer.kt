@@ -27,15 +27,15 @@ object AudioFormatSniffer {
             header[0] == 0xFF.toByte() && (header[1].toInt() and 0xE0) == 0xE0 ->
                 mpegAudio(header[1])
             // MP4 family: ftyp box at offset 4, brand at offset 8
-            header.size >= 8 && matchesAt(header, 4, "ftyp") -> mp4Brand(header)
+            matchesAt(header, 4, "ftyp") -> mp4Brand(header)
             // OGG (includes Opus-in-Ogg and Vorbis)
             matchesAt(header, 0, "OggS") -> "ogg"
             // WAV: RIFF container with WAVE form type
-            header.size >= 12 && matchesAt(header, 0, "RIFF") && matchesAt(header, 8, "WAVE") -> "wav"
+            matchesAt(header, 0, "RIFF") && matchesAt(header, 8, "WAVE") -> "wav"
             // FLAC
             matchesAt(header, 0, "fLaC") -> "flac"
             // AMR (narrowband and wideband both start with #!AMR)
-            header.size >= 5 && matchesAt(header, 0, "#!AMR") -> "amr"
+            matchesAt(header, 0, "#!AMR") -> "amr"
             // WebM/Matroska: EBML magic bytes
             header[0] == 0x1A.toByte() && header[1] == 0x45.toByte() &&
                 header[2] == 0xDF.toByte() && header[3] == 0xA3.toByte() -> "webm"

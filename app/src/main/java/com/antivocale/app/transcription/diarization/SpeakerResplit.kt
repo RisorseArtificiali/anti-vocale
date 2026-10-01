@@ -186,13 +186,25 @@ object SpeakerResplit {
         segments: List<DiarizedSegment>,
         secondVoice: Int,
     ): Long? {
+        // Review: the boundary is the START of the second voice's LONGEST
+        // interior overlap (the takeover moment). Returning the first
+        // interior edge in list order let a brief interjection beat the
+        // sustained run and split at the wrong word.
+        var bestStart: Long? = null
+        var bestDuration = 0L
         for (segment in segments.filter { it.speaker == secondVoice }) {
             val startMs = (segment.startSec * 1000).toLong()
             val endMs = (segment.endSec * 1000).toLong()
-            if (startMs > cue.startMs && startMs < cue.endMs) return startMs
-            if (endMs > cue.startMs && endMs < cue.endMs) return endMs
+            val interiorStart = maxOf(startMs, cue.startMs)
+            val interiorEnd = minOf(endMs, cue.endMs)
+            if (interiorEnd <= interiorStart) continue
+            val duration = interiorEnd - interiorStart
+            if (duration > bestDuration) {
+                bestDuration = duration
+                bestStart = interiorStart
+            }
         }
-        return null
+        return bestStart
     }
 
     private val WHITESPACE = Regex("\\s+")

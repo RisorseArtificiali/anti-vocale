@@ -165,7 +165,7 @@ class AudioPreprocessor @Inject constructor() {
         data object FileNotFound : PreprocessingError("Audio file not found")
         data object FileTooLarge : PreprocessingError("Audio file exceeds 2GB limit")
         data object InvalidFormat : PreprocessingError("Unable to determine audio format")
-        data class DurationTooLong(val ceilingSeconds: Long, val path: AudioDurationPolicy.DecodePath, val durationSeconds: Double = 0.0) :
+        data class DurationTooLong(val ceilingSeconds: Long, val path: AudioDurationPolicy.DecodePath, val durationSeconds: Double) :
             PreprocessingError("Audio exceeds ${ceilingSeconds / 60} minute limit on this path")
         data object DurationUnknown : PreprocessingError("Could not determine audio duration")
         data class ConversionFailed(val reason: String) : PreprocessingError("Conversion failed: $reason")

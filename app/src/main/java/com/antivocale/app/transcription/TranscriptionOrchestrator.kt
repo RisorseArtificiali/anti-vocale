@@ -2214,6 +2214,10 @@ class TranscriptionOrchestrator @Inject constructor(
         val resolvedLanguage = TranscriptionLanguagePolicy.externalOverride(
             record,
             preference = languageOverride ?: languagePrefForRequest(),
+            // Review: the SAME phone-language read the residency check uses,
+            // so a PREF_PHONE pin resolves identically at load and at the
+            // warmth check (a "" here vs "it" there reloaded every request).
+            phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(context),
         )
         return configureBackend(
             backendId = record.backendId,
@@ -3901,12 +3905,23 @@ class TranscriptionOrchestrator @Inject constructor(
 
     // ---- Calibration ----
 
-    /** TASK-601/442: variant-aware display name; the id itself as the fallback. */
-    private suspend fun displayNameForBackend(context: Context, backendId: String): String =
+    /** TASK-601/442: variant-aware display name. Raw backend ids never
+     *  reach the Logs model column: an unregistered external falls back to
+     *  its RECORD's display name, and only an unresolvable id degrades to
+     *  the manager's backend name (still a display string). */
+    private suspend fun displayNameForBackend(context: Context, backendId: String): String {
         backendRegistry.byBackendId(backendId)
             ?.let { variantAwareDisplayName(context, it, modelPathForBackend(backendId)) }
-            ?.ifBlank { backendId }
-            ?: backendId
+            ?.takeIf { it.isNotBlank() }
+            ?.let { return it }
+        // Review: a deleted external record has no descriptor; its store row
+        // may still resolve a human name for the failure row.
+        if (backendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX)) {
+            externalModelStore.byId(backendId.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX))
+                ?.let { return it.displayName }
+        }
+        return backendManager.getBackend(backendId)?.displayName ?: backendId
+    }
 
     private suspend fun recordCalibration(
         context: Context,

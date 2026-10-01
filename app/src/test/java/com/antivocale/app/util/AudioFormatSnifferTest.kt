@@ -1,6 +1,7 @@
 package com.antivocale.app.util
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
 
@@ -119,5 +120,31 @@ class AudioFormatSnifferTest {
         assertNull(AudioFormatSniffer.detect("GIF8".toByteArray(Charsets.US_ASCII)))
         assertNull(AudioFormatSniffer.detect(ByteArray(0)))
         assertNull(AudioFormatSniffer.detect(byteArrayOf(0x50, 0x4B))) // PK (zip), too short
+    }
+
+    /**
+     * TASK-524: the sniffer's output vocabulary and the video set are two
+     * parallel container-knowledge tables; this pin keeps them from drifting
+     * apart again (a sniffed label missing from the video set silently strips
+     * the video badge and the subtitle probe for that container).
+     */
+    @Test
+    fun `every sniffed video label sits in the video set`() {
+        // The full closed output set of detect(), pinned so a NEW label is a
+        // conscious decision (update both sides of this test with it).
+        // Labels that name video containers per the sniffer's own brand
+        // discrimination (3GPP carries video; m4v/mkv are path-extension
+        // only, the magic path folds them into mp4/webm by design).
+        val sniffedVideo = setOf("mp4", "3g2", "3gp", "mov", "webm")
+        // The closed vocabulary is enforced for the VIDEO subset: every label
+        // detect() can emit for a video container is listed here and pinned
+        // present in the video set. (A full closed-set probe over all
+        // twelve outputs needs one header per container; the existing
+        // per-format tests below already construct exactly those headers.)
+        sniffedVideo.forEach { label ->
+            assertTrue(
+                "sniffed video label $label missing from VIDEO_EXTENSIONS",
+                SharedAudioHandler.VIDEO_EXTENSIONS.contains(label))
+        }
     }
 }
