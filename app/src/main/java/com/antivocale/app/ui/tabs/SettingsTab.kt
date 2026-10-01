@@ -2388,8 +2388,7 @@ private fun matchesQuery(query: String, texts: List<String?>): Boolean =
  * group label (see [SettingsSearchGroup]).
  */
 internal fun cardVocabulary(card: SettingsSearchCard, state: SettingsSearchState): List<Int> =
-    if (card.group == null) card.res(state)
-    else card.res(state) + listOf(card.group.labelRes)
+    card.res(state) + listOfNotNull(card.group?.labelRes)
 
 /**
  * TASK-731: a group's header renders only while at least one member card
