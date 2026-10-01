@@ -4,8 +4,11 @@
         <item name="android:colorPrimary">@color/primary</item>
         <item name="android:colorPrimaryDark">@color/primary_dark</item>
         <item name="android:colorAccent">@color/secondary</item>
-        <item name="android:statusBarColor">@android:color/transparent</item>
-        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <!-- TASK-466: statusBarColor/navigationBarColor REMOVED (deprecated
+             in Android 15; colors ignored on API 35+, where edge-to-edge is
+             the default). The app already calls enableEdgeToEdge() in
+             MainActivity, which owns the transparent-bars look on every API
+             level the theme items used to cover. -->
         <item name="android:windowBackground">@color/background</item>
     </style>
 </resources>
