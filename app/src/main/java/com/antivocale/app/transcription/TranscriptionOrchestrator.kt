@@ -435,15 +435,20 @@ class TranscriptionOrchestrator @Inject constructor(
                             null
                         },
                     )
-                    if (fastFirstPass == null) phase2
-                    else phase2.fold(
-                        onSuccess = { refined -> refinementFoldSuccess(fastFirstPass, refined) },
-                        onFailure = { failure ->
-                            // Design F5: deliver through the same funnel.
-                            recoverFirstPass(fastFirstPass, failure,
-                                DualRefinementPolicy.SKIP_REFINE_INFERENCE_FAILED)
-                        }
-                    )
+                    if (fastFirstPass == null) {
+                        phase2
+                    } else {
+                        phase2.fold(
+                            onSuccess = { refined ->
+                                refinementFoldSuccess(fastFirstPass, refined)
+                            },
+                            onFailure = { failure ->
+                                // Design F5: deliver through the same funnel.
+                                recoverFirstPass(fastFirstPass, failure,
+                                    DualRefinementPolicy.SKIP_REFINE_INFERENCE_FAILED)
+                            },
+                        )
+                    }
                 }
                 else -> processTextRequest(prompt)
             }
@@ -1847,16 +1852,33 @@ class TranscriptionOrchestrator @Inject constructor(
     ): Result<TranscriptionResult> {
         val loop = RepetitionLoopDetector.detect(refined.text)
         val refineLoopMetrics = loop?.metrics()
-        return if (loop == null) {
-            Result.success(refined.copy(firstPass = fastFirstPass))
-        } else {
-            recoverFirstPass(
+        if (loop != null) {
+            return recoverFirstPass(
                 fastFirstPass,
                 IllegalStateException("refinement repetition loop: ${loop.reason} $refineLoopMetrics"),
                 DualRefinementPolicy.SKIP_REFINE_LOOP,
                 loopMetrics = refineLoopMetrics,
             )
         }
+        // TASK-581 (review F6): a non-blank SHORT collapse over a good first
+        // pass used to ship as the final transcript; the first pass is the
+        // better answer. The condensing exemption reads the RESULT's
+        // finalPassApplied flag (set by applyFinalGenerativePass when the
+        // custom prompt produced this text): deriving the fact from
+        // ChunkPromptPolicy again here would re-own the routing decision and
+        // disarm the guard for every non-condensing custom prompt too.
+        if (!refined.finalPassApplied &&
+            RepetitionLoopDetector.shortCollapseOverGoodFirstPass(fastFirstPass.text, refined.text)
+        ) {
+            return recoverFirstPass(
+                fastFirstPass,
+                IllegalStateException(
+                    "refinement short collapse: ${refined.text.length} chars over a " +
+                        "${fastFirstPass.text.length}-char first pass"),
+                DualRefinementPolicy.SKIP_REFINE_COLLAPSED,
+            )
+        }
+        return Result.success(refined.copy(firstPass = fastFirstPass))
     }
 
     /**
@@ -2744,8 +2766,11 @@ class TranscriptionOrchestrator @Inject constructor(
         }
             .fold(
                 onSuccess = { processed ->
-                    if (processed.isNotBlank()) result.map { it.copy(text = processed.trim()) }
-                    else result
+                    if (processed.isNotBlank()) {
+                        result.map { it.copy(text = processed.trim(), finalPassApplied = true) }
+                    } else {
+                        result
+                    }
                 },
                 onFailure = { error ->
                     Log.w(TAG, "Final generative pass failed; delivering raw transcript", error)

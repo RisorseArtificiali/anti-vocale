@@ -352,6 +352,10 @@ data class TranscriptionResult(
     /** TASK-276 AC3: the raw ASR text before the punctuation pass, set only
      *  when the pass replaced the text (persisted as the log row's original). */
     val rawTranscript: String? = null,
+    /** TASK-581: the text is the output of a custom final generative pass
+     *  (the condensing class): a short result is then the PROMPT's job, not a
+     *  collapsed decode, and the refinement guard must leave it alone. */
+    val finalPassApplied: Boolean = false,
     /** TASK-121.4: the AI summary of a long transcript, attached as metadata
      *  (persisted as the log row's summary). The delivered [text] is never
      *  replaced by it. */

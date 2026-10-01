@@ -40,6 +40,28 @@ import java.util.zip.DeflaterOutputStream
  */
 object RepetitionLoopDetector {
 
+    /**
+     * TASK-581 (review F6): phase 2 completed non-blank but COLLAPSED over a
+     * good first pass - "Si." over a 200-word transcript. detect() cannot see
+     * it (no loop). The bar for the first pass mirrors [MIN_TOKENS] (a short
+     * first pass has nothing to protect); the refined text must be under a
+     * quarter of it. Only consulted for PLAIN transcription prompts: a
+     * condensing prompt legitimately produces a short phase 2 (the lesson of
+     * the reverted 7112ca0d guard, AC3).
+     */
+    fun shortCollapseOverGoodFirstPass(firstPassText: String, refinedText: String): Boolean {
+        // [tokenize] on BOTH sides (symmetric): for unspaced scripts the
+        // whitespace count would be ~1 word and the floor below would silence
+        // the guard exactly where a one-word collapse is worst; tokenize's
+        // CJK codepoint retokenization applies to both texts alike, so the
+        // ratio stays comparable for every script mix.
+        val firstPassWords = tokenize(firstPassText)
+        if (firstPassWords.size < MIN_TOKENS) return false
+        val refinedWords = tokenize(refinedText)
+        if (refinedWords.isEmpty()) return false // blank has its own arm
+        return refinedWords.size * COLLAPSE_FRACTION < firstPassWords.size
+    }
+
     /** Stable reason tokens persisted in ProcessingContext. */
     const val REASON_COMPRESSION = "compression"
     const val REASON_NGRAM = "ngram"
@@ -49,6 +71,9 @@ object RepetitionLoopDetector {
     private const val WINDOW_TOKENS = 40
     private const val WINDOW_STEP = 20
     private const val MIN_TOKENS = 24
+
+    /** TASK-581: refined under this fraction of a good first pass is a collapse. */
+    private const val COLLAPSE_FRACTION = 4
     private const val CJK_RETOKENIZE_BYTES = 500
     private val WHITESPACE = Regex("\\s+")
     private val CJK = Regex("[\\u3040-\\u30ff\\u3400-\\u4dbf\\u4e00-\\u9fff\\uf900-\\ufaff]")

@@ -2,6 +2,7 @@ package com.antivocale.app.transcription
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -180,5 +181,36 @@ class RepetitionLoopDetectorTest {
         // stays below it (its 40-token windows hold ~2.7 sentence repeats).
         assertTrue("tail windows recorded: ${d!!.maxCompressionRatio}",
             d.maxCompressionRatio > 4.0f)
+    }
+
+    // ---- TASK-581 (review F6): the short-collapse-over-good-first-pass check ----
+
+    private val goodFirstPass = (1..60).joinToString(" ") { "parola$it" } // 60 words >= the 24 floor
+
+    @Test
+    fun `a short non-blank phase two over a good first pass is a collapse`() {
+        assertTrue(RepetitionLoopDetector.shortCollapseOverGoodFirstPass(goodFirstPass, "Si."))
+        assertTrue(RepetitionLoopDetector.shortCollapseOverGoodFirstPass(goodFirstPass, "una frase di dieci parole circa basta"))
+    }
+
+    @Test
+    fun `a proportionate phase two is not a collapse`() {
+        // A quarter or more of a good first pass stays: refinement edits,
+        // it does not have to preserve length exactly.
+        val proportional = (1..20).joinToString(" ") { "parola$it" } // 20 of 60
+        assertFalse(RepetitionLoopDetector.shortCollapseOverGoodFirstPass(goodFirstPass, proportional))
+    }
+
+    @Test
+    fun `a short first pass has nothing to protect`() {
+        // Under the 24-word floor the first pass itself is the fragment
+        // class; the refined text is the better answer whatever its length.
+        assertFalse(RepetitionLoopDetector.shortCollapseOverGoodFirstPass("tre parole", "Si."))
+    }
+
+    @Test
+    fun `a blank phase two is not this arm`() {
+        // Blank has its own handling upstream; here it must never read as a collapse.
+        assertFalse(RepetitionLoopDetector.shortCollapseOverGoodFirstPass(goodFirstPass, "  "))
     }
 }

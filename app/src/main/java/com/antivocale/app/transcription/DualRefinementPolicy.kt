@@ -27,6 +27,9 @@ object DualRefinementPolicy {
      *  (RepetitionLoopDetector); the first pass is delivered instead. */
     const val SKIP_REFINE_LOOP = "refine_loop_detected"
 
+    /** TASK-581 (review F6): phase 2 delivered a non-blank short collapse over a good first pass. */
+    const val SKIP_REFINE_COLLAPSED = "refine_short_collapse"
+
     /** TASK-579 (AC2): the fast first pass itself looped; the run degrades
      *  to single-model exactly like a fast load failure. */
     const val SKIP_FAST_LOOP = "fast_loop_detected"

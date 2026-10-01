@@ -215,4 +215,39 @@ class TranscriptionOrchestratorRepetitionCollapseTest : TranscriptionOrchestrato
             })
         }
     }
+
+    // ---- TASK-581 (review F6): the short-collapse fold arm ----
+
+    @Test
+    fun `a plain-prompt short collapse delivers the first pass with the collapse token`() = runTest {
+        stubExistingRow("collapse-fold-1")
+        val goodFirstPass = (1..60).joinToString(" ") { "parola$it" }
+        val firstPass = FirstPassOutcome(
+            text = goodFirstPass,
+            processing = ProcessingContext(decodePath = "whole_file", backendId = "nemotron-streaming"),
+        )
+
+        val delivered = orchestrator.refinementFoldSuccess(
+            firstPass, TranscriptionResult(text = "Si.")).getOrThrow()
+
+        assertEquals(goodFirstPass, delivered.text)
+        assertEquals(
+            DualRefinementPolicy.SKIP_REFINE_COLLAPSED,
+            delivered.firstPass?.refinementFailedToken)
+    }
+
+    @Test
+    fun `a final-pass result may return short text`() = runTest {
+        stubExistingRow("collapse-fold-2")
+        val firstPass = FirstPassOutcome(
+            text = (1..60).joinToString(" ") { "parola$it" },
+            processing = ProcessingContext(decodePath = "whole_file", backendId = "nemotron-streaming"),
+        )
+
+        val delivered = orchestrator.refinementFoldSuccess(
+            firstPass, TranscriptionResult(text = "Punti chiave: uno, due.", finalPassApplied = true)).getOrThrow()
+
+        // The condensed text IS the deliverable for a condensing prompt.
+        assertEquals("Punti chiave: uno, due.", delivered.text)
+    }
 }
