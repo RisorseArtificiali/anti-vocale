@@ -3,8 +3,8 @@ package com.antivocale.app.transcription
 import com.antivocale.app.data.catalog.CatalogVariant
 import com.antivocale.app.data.download.DownloadedModelIntegrity
 import com.antivocale.app.data.download.HashVerifier
-import com.antivocale.app.data.download.ResumeDownloadHelper
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * TASK-479 / GH #88: content-level model-dir validation at LOAD time.
@@ -22,13 +22,73 @@ import java.io.File
  *   corruption; costs ~1-2 s per GB on device during a load that already takes
  *   seconds).
  *
+ * TASK-482: the pin pass is shared with the external-model backend
+ * ([verifyPins]) and its verdicts are cached per (path, length, lastModified)
+ * so a re-initialize (keep-alive unload, backend switch, benchmark) does not
+ * re-hash ~862MB on the request hot path; the boundary lives on
+ * [PinVerdictCache].
+ *
  * [verify] is pure I/O (no Android types) so the decision is unit-testable;
  * the caller owns the failure UX and the heal.
  */
 object ModelDirIntegrity {
 
-    /** One file that failed verification, with the human-readable reason. */
-    data class Failure(val file: File, val reason: String)
+    /**
+     * One file that failed verification, with the human-readable reason.
+     * [unreadable] marks a READ failure (transient IO), not a corruption
+     * verdict: callers must not route it into a heal that deletes the files
+     * (TASK-482 review: a healthy dir deleted over an EIO).
+     */
+    data class Failure(val file: File, val reason: String, val unreadable: Boolean = false)
+
+    /**
+     * TASK-482: remembers which files already passed the SHA-pin check, one
+     * entry per path holding the (length, lastModified, pin) descriptor it
+     * verified (so a stats change or a different pin re-verifies, and no
+     * superseded generation accumulates). CONSCIOUS BOUNDARY (the measured
+     * decision the task asked for): same-length bit rot that also preserves
+     * mtime after one clean verify stays undetected until the next process
+     * start, exactly the marker-sidecar boundary the unpinned-file test below
+     * documents; the alternative (re-hashing every load) costs 1.7-3.4s per
+     * reload of the default model.
+     */
+    class PinVerdictCache {
+        private val verified = ConcurrentHashMap<String, String>()
+
+        private fun descriptor(f: File, pin: String) = "${f.length()}:${f.lastModified()}:$pin"
+
+        fun isVerified(f: File, pin: String): Boolean =
+            verified[f.path] == descriptor(f, pin)
+
+        fun rememberVerified(f: File, pin: String) {
+            verified[f.path] = descriptor(f, pin)
+        }
+    }
+
+    /** Shared default: verdicts live once per process. */
+    private val defaultPinCache = PinVerdictCache()
+
+    /**
+     * TASK-482: the ONE load gate - structural checks for every file plus
+     * SHA-pin verification - as the external-model backend consumes it
+     * (its records pin every file at import: server pin or
+     * trust-on-first-use). Missing files are the completeness layer's job,
+     * not a gate failure.
+     */
+    fun verify(
+        dir: File,
+        pins: Map<String, String>,
+        pinCache: PinVerdictCache = defaultPinCache,
+    ): List<Failure> {
+        val structural = runCatching {
+            DownloadedModelIntegrity.validate(dir)
+        }.getOrElse { e ->
+            // An unreadable dir at load time is a completeness failure, not a
+            // crash out of the Result contract (review F5).
+            return listOf(Failure(dir, "unreadable: ${e.message}", unreadable = true))
+        }.map { Failure(it.file, it.reason) }
+        return (structural + verifyPins(dir, pins, pinCache)).distinctBy { it.file.path }
+    }
 
     /**
      * Verifies [dir] against [variant]. Returns the failures (empty = healthy).
@@ -36,40 +96,42 @@ object ModelDirIntegrity {
      * here; their existence is the completeness layer's job
      * ([CatalogModelValidator]).
      */
-    fun verify(dir: File, variant: CatalogVariant, verifyPins: Boolean = true): List<Failure> {
-        val structural = runCatching {
-            DownloadedModelIntegrity.validate(dir)
-        }.getOrElse { e ->
-            // An unreadable dir at load time is a completeness failure, not a
-            // crash out of the Result contract (review F5).
-            return listOf(Failure(dir, "unreadable: ${e.message}"))
-        }.map { Failure(it.file, it.reason) }
-        if (!verifyPins) return structural.distinctBy { it.file.path }
-        val pinned = variant.files
-            .filter { it.sha256 != null }
-            .mapNotNull { catalogFile ->
-                val onDisk = File(dir, catalogFile.name)
-                if (!onDisk.isFile) return@mapNotNull null // presence is the completeness layer's job
-                val actual = runCatching { HashVerifier.sha256(onDisk) }.getOrNull()
-                    ?: return@mapNotNull Failure(onDisk, "unreadable")
-                if (!actual.equals(catalogFile.sha256, ignoreCase = true)) {
-                    Failure(onDisk, "SHA-256 mismatch (pinned ${catalogFile.sha256})")
-                } else null
-            }
-        return (structural + pinned).distinctBy { it.file.path }
-    }
+    fun verify(
+        dir: File,
+        variant: CatalogVariant,
+        verifyPins: Boolean = true,
+        pinCache: PinVerdictCache = defaultPinCache,
+    ): List<Failure> = verify(
+        dir,
+        if (verifyPins) {
+            variant.files.filter { it.sha256 != null }.associate { it.name to it.sha256!! }
+        } else {
+            emptyMap()
+        },
+        pinCache,
+    )
 
     /**
-     * The heal half: removes every failed file AND its `.size` sidecar, so the
-     * downloader treats it as missing (the Models tab offers a clean
-     * re-download) instead of the loader re-aborting on the same bytes.
-     * Directory-level findings (an empty or missing dir) are skipped: they
-     * belong to the completeness layer, and deleting directories here would
-     * overreach.
+     * TASK-482: the SHA-pin half of the gate, exposed for the pin-map
+     * contract test. Missing files are the completeness layer's job, not a
+     * pin failure.
      */
-    fun removeFailed(failures: List<Failure>) {
-        failures
-            .filter { it.file.isFile }
-            .forEach { failure -> ResumeDownloadHelper.clearTarDownload(failure.file) }
-    }
+    fun verifyPins(
+        dir: File,
+        pins: Map<String, String>,
+        pinCache: PinVerdictCache = defaultPinCache,
+    ): List<Failure> =
+        pins.mapNotNull { (name, expected) ->
+            val onDisk = File(dir, name)
+            if (!onDisk.isFile) return@mapNotNull null
+            if (pinCache.isVerified(onDisk, expected)) return@mapNotNull null
+            val actual = runCatching { HashVerifier.sha256(onDisk) }.getOrNull()
+                ?: return@mapNotNull Failure(onDisk, "unreadable", unreadable = true)
+            if (!actual.equals(expected, ignoreCase = true)) {
+                Failure(onDisk, "SHA-256 mismatch (pinned $expected)")
+            } else {
+                pinCache.rememberVerified(onDisk, expected)
+                null
+            }
+        }
 }

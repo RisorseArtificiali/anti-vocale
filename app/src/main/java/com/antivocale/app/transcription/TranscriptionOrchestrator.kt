@@ -130,6 +130,11 @@ class TranscriptionOrchestrator @Inject constructor(
                     // (ModelLoadError prepends "Model load failed: " to every
                     // detail).
                     context.getString(R.string.error_model_corrupt_healed)
+                is TranscriptionException.ExternalModelCorruptFiles ->
+                    // TASK-482: an import's corruption has no re-download to
+                    // offer; the generic model-load advice would point at a
+                    // download that does not exist for this model.
+                    context.getString(R.string.error_model_external_corrupt)
                 is TranscriptionException.ModelLoadError ->
                     context.getString(R.string.error_model_load)
                 is TranscriptionException.InsufficientMemory ->

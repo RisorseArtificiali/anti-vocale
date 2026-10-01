@@ -243,6 +243,16 @@ sealed class TranscriptionException(message: String, cause: Throwable? = null) :
      */
     class CorruptModelFiles(detail: String) : ModelLoadError(detail)
 
+    /**
+     * TASK-482: the same pre-native content gate as [CorruptModelFiles], but
+     * the rejected model is a USER IMPORT (external backend): there is no
+     * catalog re-download to offer, so the orchestrator heal must NOT fire;
+     * the heal is delete + re-import from the Models tab, which the
+     * user-facing message says. Deliberately NOT a [CorruptModelFiles]
+     * subtype: instanceof would route it into the catalog dir-heal.
+     */
+    class ExternalModelCorruptFiles(detail: String) : ModelLoadError(detail)
+
     /** The model loaded but a native/decoding error occurred during transcription. */
     class NativeError(detail: String, cause: Throwable? = null) :
         TranscriptionException("Native inference error: $detail", cause)

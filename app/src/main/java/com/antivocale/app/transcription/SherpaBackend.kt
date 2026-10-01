@@ -495,20 +495,31 @@ class SherpaBackend(
             // heals on; the abort mechanism this gate exists to prevent lives
             // in that exception's KDoc (the one authoritative home).
             val integrityFailures = ModelDirIntegrity.verify(dir, variant, verifyPins = variantMatchesDir)
-            if (integrityFailures.isNotEmpty()) {
-                // TASK-660 review F1: the files stay ON DISK (no removeFailed
-                // here) so the typed verdict stays REPEATABLE: a direct
-                // backend caller that cannot heal (the benchmark) would
-                // otherwise strip them, and every later load would fail the
-                // completeness check with a generic missing-files error the
-                // heal can never fire on. The orchestrator's heal removes the
-                // whole directory on the first ordinary load.
+            // TASK-482 review: a READ failure is not a corruption verdict -
+            // typing it CorruptModelFiles would let the heal delete a healthy
+            // dir over a transient IO error. Only real content failures heal.
+            val unreadable = integrityFailures.filter { it.unreadable }
+            val corrupt = integrityFailures.filterNot { it.unreadable }
+            if (unreadable.isNotEmpty()) {
+                Log.e(TAG, "Model files unreadable in $modelDirectory: " +
+                    unreadable.joinToString { "${it.file.name} (${it.reason})" })
+                return@withContext Result.failure(TranscriptionException.ModelLoadError(
+                    "could not read the model files: " + unreadable.joinToString { it.file.name }))
+            }
+            if (corrupt.isNotEmpty()) {
+                // TASK-660 review F1: the files stay ON DISK so the typed
+                // verdict stays REPEATABLE: a direct backend caller that
+                // cannot heal (the benchmark) would otherwise strip them, and
+                // every later load would fail the completeness check with a
+                // generic missing-files error the heal can never fire on. The
+                // orchestrator's heal removes the whole directory on the
+                // first ordinary load.
                 Log.e(TAG, "Corrupt model files in $modelDirectory: " +
-                    integrityFailures.joinToString { "${it.file.name} (${it.reason})" } +
+                    corrupt.joinToString { "${it.file.name} (${it.reason})" } +
                     " - the orchestrator heal removes the dir for re-download")
                 return@withContext Result.failure(TranscriptionException.CorruptModelFiles(
                     "corrupted model files (re-download from the Models tab): " +
-                    integrityFailures.joinToString { it.file.name })
+                    corrupt.joinToString { it.file.name })
                 )
             }
             // Pre-native validation: sherpa-onnx calls exit(255) when the encoder is missing

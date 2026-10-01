@@ -230,6 +230,7 @@
     <string name="transcription_partial_chip">अधूरा</string>
     <string name="transcription_failed">ट्रांसक्रिप्शन विफल</string>
     <string name="error_model_load">मॉडल फ़ाइल ख़राब या गलत फ़ॉर्मैट की हो सकती है। मॉडल टैब से इसे फिर से डाउनलोड करें।</string>
+    <string name="error_model_external_corrupt">आयातित मॉडल की फ़ाइलें दूषित हैं। इसे मॉडल टैब से हटाएँ और फिर से आयात करें।</string>
     <string name="error_model_corrupt_healed">मॉडल की कुछ फ़ाइलें दूषित थीं, इसलिए हटा दी गईं। मॉडल टैब खोलकर मॉडल फिर से डाउनलोड करें।</string>
     <string name="error_native">ट्रांसक्रिप्शन के दौरान एक अंदरूनी गड़बड़ी हुई। अगर यह बार-बार हो तो कोई दूसरा मॉडल आज़माएं।</string>
     <string name="error_not_initialized">कोई मॉडल लोड नहीं है। मॉडल टैब खोलकर एक मॉडल डाउनलोड करें या चुनें।</string>

@@ -251,6 +251,7 @@
     <string name="transcription_partial_chip">חלקי</string>
     <string name="transcription_failed">התמלול נכשל</string>
     <string name="error_model_load">ייתכן שקובץ המודל פגום או בפורמט שגוי. נסה להוריד אותו מחדש מהלשונית מודלים.</string>
+    <string name="error_model_external_corrupt">הקבצים של המודל המיובא פגומים. מחק אותו מלשונית המודלים וייבא אותו מחדש.</string>
     <string name="error_model_corrupt_healed">חלק מקבצי המודל היו פגומים, ולכן האפליקציה הסירה אותם. פתח את הלשונית מודלים והורד את המודל מחדש.</string>
     <string name="error_native">אירעה שגיאה פנימית במהלך התמלול. אם זה חוזר, נסה מודל אחר.</string>
     <string name="error_not_initialized">לא נטען מודל. פתח את הלשונית מודלים כדי להוריד או לבחור אחד.</string>

@@ -249,6 +249,7 @@
     <string name="transcription_partial_chip">ناقص</string>
     <string name="transcription_failed">رونویسی ناموفق بود</string>
     <string name="error_model_load">ممکن است فایل مدل خراب باشد یا قالب آن نادرست باشد. دانلود دوباره آن را از زبانه مدل امتحان کنید.</string>
+    <string name="error_model_external_corrupt">فایل‌های مدل واردشده خراب است. آن را از تب مدل‌ها حذف و دوباره وارد کنید.</string>
     <string name="error_model_corrupt_healed">برخی فایل‌های مدل خراب بودند و برنامه آن‌ها را حذف کرد. زبانه مدل‌ها را باز کنید و مدل را دوباره دانلود کنید.</string>
     <string name="error_native">هنگام رونویسی خطای داخلی رخ داد. اگر ادامه داشت، مدل دیگری را امتحان کنید.</string>
     <string name="error_not_initialized">هیچ مدلی بارگذاری نشده است. برای دانلود یا انتخاب مدل، زبانه مدل را باز کنید.</string>

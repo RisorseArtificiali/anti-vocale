@@ -4,8 +4,6 @@ import android.content.Context
 import android.util.Log
 import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ModelFamily
-import com.antivocale.app.data.download.DownloadedModelIntegrity
-import com.antivocale.app.data.download.details
 import com.k2fsa.sherpa.onnx.FeatureConfig
 import com.k2fsa.sherpa.onnx.OfflineRecognizer
 import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
@@ -218,23 +216,46 @@ class ExternalSherpaBackend @Inject constructor() : TranscriptionBackend {
                     "family validation failed for ${record.backendId}: ${e.message ?: "no detail provided"}", e))
             }
 
-            // TASK-304: cheap header/magic gate before the native recognizer
-            // is constructed: files corrupted AFTER import (partial
-            // re-download, disk issues) fail here in milliseconds with the
-            // specific finding instead of inside OfflineRecognizer
-            // construction. ~10 8-byte reads per load.
-            // runCatching: an IOException (file vanished mid-load) must degrade
-            // to a ModelLoadError, not escape the sealed Result contract.
-            val integrityFindings = runCatching { DownloadedModelIntegrity.validate(dir) }
-                .getOrElse { e ->
-                    return@withContext Result.failure(TranscriptionException.ModelLoadError(
-                        "integrity check could not read the model files: ${e.message}"))
-                }
-            if (integrityFindings.isNotEmpty()) {
-                val detail = integrityFindings.details()
-                Log.e(TAG, "Integrity gate failed for ${record.backendId}: $detail")
+            // TASK-304/482: the ONE shared load gate before the native
+            // recognizer is constructed: structural header/magic/size checks
+            // for every file (milliseconds, ~10 8-byte reads) plus the
+            // import-time SHA pins (server pin or trust-on-first-use). The
+            // structural half alone cannot see corruption AFTER import that
+            // keeps a valid ONNX first byte (rewritten graph,
+            // truncated-then-refilled); the pin catches it before the native
+            // loader aborts (the GH #88 death class, on the import path).
+            // The verdict is typed ExternalModelCorruptFiles: there is no
+            // catalog re-download for an import, so the orchestrator's
+            // CorruptModelFiles heal must not fire (delete + re-import from
+            // the Models tab is the external heal). ACCEPTED COST: the first
+            // load of each process hashes the whole import (1-2 s/GB,
+            // matching the built-in path's TASK-479 behavior); re-initializes
+            // then cost nothing (verdicts cached per path, stats and pin). A
+            // persisted marker sidecar was weighed and rejected: it widens
+            // the stale-verdict window across boots and lives in dirs the
+            // completeness layer and orphan cleaner watch.
+            val integrityFailures = ModelDirIntegrity.verify(
+                dir, record.files.mapValues { it.value.sha256 })
+            // TASK-482 review: a READ failure is not corruption - same split
+            // as the built-in path, so a transient IO error must not tell the
+            // user to re-import a healthy model.
+            val unreadable = integrityFailures.filter { it.unreadable }
+            val corrupt = integrityFailures.filterNot { it.unreadable }
+            if (unreadable.isNotEmpty()) {
+                Log.e(TAG, "External model files unreadable for ${record.backendId}: " +
+                    unreadable.joinToString { "${it.file.name} (${it.reason})" })
                 return@withContext Result.failure(TranscriptionException.ModelLoadError(
-                    "integrity check failed: $detail. The model files may be corrupt; try re-importing them."))
+                    "could not read the model files: " + unreadable.joinToString { it.file.name }))
+            }
+            if (corrupt.isNotEmpty()) {
+                Log.e(TAG, "Integrity gate failed for ${record.backendId}: " +
+                    corrupt.joinToString { "${it.file.name} (${it.reason})" })
+                // The reasons ride the detail (what the logcat/Tasker surfaces
+                // print from error.message); the localized re-import advice
+                // lives in the orchestrator's message mapping.
+                return@withContext Result.failure(TranscriptionException.ExternalModelCorruptFiles(
+                    "corrupted model files (re-import from the Models tab): " +
+                        corrupt.joinToString { "${it.file.name} (${it.reason})" }))
             }
 
             // TASK-720 load-time echo of the importer's streaming-flag check:
