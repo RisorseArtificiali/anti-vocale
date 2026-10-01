@@ -33,6 +33,7 @@ import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -426,12 +427,13 @@ fun SettingsTab(
             transcriptionHintRes = transcriptionHintRes,
         )
         @SuppressLint("RememberReturnType")
+        val resolver = remember(context, searchState) { LocaleVariantResolver(context) }
         val searchGroups = remember(context, searchState) {
             SETTINGS_SEARCH_CARDS
                 .filter { card -> card.visible(searchState) }
                 .groupBy(
                     keySelector = { card -> card.section },
-                    valueTransform = { card -> cardVocabulary(card, searchState).map(context::getString) },
+                    valueTransform = { card -> localizedVocabulary(resolver, card, searchState) },
                 )
         }
         fun sectionGroups(section: SettingsSearchSection): List<List<String>> =
@@ -2377,8 +2379,62 @@ private fun TimeoutSettingCard(
     }
 }
 
-private fun matchesQuery(query: String, texts: List<String?>): Boolean =
+internal fun matchesQuery(query: String, texts: List<String?>): Boolean =
     query.isBlank() || texts.any { it?.contains(query, ignoreCase = true) == true }
+
+/**
+ * TASK-629: resolves the search's locale set ONCE (the app context plus the
+ * two derived contexts: the PHONE locale and the English base), then every
+ * resource id resolves to its distinct variants against them. A user on an
+ * English UI typing an Italian query ("forza" against "Force model load")
+ * must still find the setting: the MATCH walks every variant, while the
+ * RENDERED text stays app-locale everywhere (no UI change).
+ *
+ * The phone leg reads through [com.antivocale.app.util.LocaleManager.phoneLocale]
+ * (the per-app-aware system read): Resources.getSystem() returns the APP
+ * locale on API 33+ once a per-app language is pinned (the TASK-547
+ * finding), which would collapse the phone leg exactly for the users this
+ * feature targets. A leg whose LANGUAGE matches the app's is skipped (the
+ * base leg under any English app locale, the phone leg for a same-language
+ * device); distinct keeps mono-locale setups at exactly today's token list.
+ *
+ * The two derived contexts are built per RESOLVER, not per id (review: one
+ * per id allocated hundreds of ContextImpls per searchState flip), and a
+ * failed leg logs and falls back to nothing rather than throwing out of
+ * composition.
+ */
+internal class LocaleVariantResolver(
+    private val context: Context,
+    phoneLocale: java.util.Locale? = com.antivocale.app.util.LocaleManager.phoneLocale(context),
+) {
+    private val app: Context = context
+    private val appLanguage: String = context.resources.configuration.locales[0].language
+    private val phone: Context? = overlay(phoneLocale)
+    private val english: Context? = overlay(java.util.Locale.ENGLISH)
+
+    private fun overlay(locale: java.util.Locale?): Context? {
+        if (locale == null || locale.language == appLanguage) return null
+        val config = android.content.res.Configuration(context.resources.configuration)
+        config.setLocale(locale)
+        return runCatching { context.createConfigurationContext(config) }
+            .onFailure { android.util.Log.d(TAG, "search locale overlay failed for $locale", it) }
+            .getOrNull()
+    }
+
+    fun variants(@StringRes resId: Int): List<String> = listOfNotNull(
+        runCatching { app.getString(resId) }.getOrNull(),
+        phone?.let { runCatching { it.getString(resId) }.getOrNull() },
+        english?.let { runCatching { it.getString(resId) }.getOrNull() },
+    ).distinct()
+
+    private companion object {
+        const val TAG = "LocaleVariantResolver"
+    }
+}
+
+/** TASK-629: one card's match vocabulary, all locale variants in. */
+private fun localizedVocabulary(resolver: LocaleVariantResolver, card: SettingsSearchCard, state: SettingsSearchState): List<String> =
+    cardVocabulary(card, state).flatMap(resolver::variants)
 
 /**
  * TASK-731: the strings a card matches on: its own vocabulary plus its
@@ -2430,10 +2486,10 @@ private fun SearchFilterRow(
     // (first{}) and re-resolved the strings through stringResource.
     val context = LocalContext.current
     val matchTexts = remember(id, state, context) {
+        val resolver = LocaleVariantResolver(context)
         SETTINGS_SEARCH_CARDS
             .first { card -> card.id == id }
-            .let { card -> cardVocabulary(card, state) }
-            .map(context::getString)
+            .let { card -> localizedVocabulary(resolver, card, state) }
     }
     if (matchesQuery(query, matchTexts)) {
         content()

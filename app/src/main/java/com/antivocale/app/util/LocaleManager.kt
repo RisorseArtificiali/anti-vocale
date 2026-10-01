@@ -98,6 +98,17 @@ object LocaleManager {
     }
 
     /**
+     * The PHONE locale itself ([phoneLanguage]'s full form, TASK-629: the
+     * settings search's locale set reads it so a query in the user's
+     * language matches even under a pinned per-app language).
+     */
+    fun phoneLocale(context: Context): Locale? = try {
+        LocaleManagerCompat.getSystemLocales(context)[0]?.takeIf { it.language.isNotBlank() }
+    } catch (e: RuntimeException) {
+        null
+    }
+
+    /**
      * Updates the context with the current locale for Compose content.
      * This is needed for apps using ComponentActivity instead of AppCompatActivity.
      */
