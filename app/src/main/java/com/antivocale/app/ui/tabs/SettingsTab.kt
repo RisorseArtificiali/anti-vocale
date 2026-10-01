@@ -15,6 +15,12 @@ import androidx.compose.animation.core.tween
 import androidx.documentfile.provider.DocumentFile
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.layout
+import kotlin.math.roundToInt
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
@@ -390,23 +396,9 @@ fun SettingsTab(
         com.antivocale.app.ui.components.LocalSettingsSearchCompact provides
             searchQuery.isNotBlank()
     ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .navigationBarsPadding()
-            .verticalScroll(scrollState)
-            .onGloballyPositioned { scrollContentRootY = it.positionInRoot().y.toInt() }
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        // TASK-542 (GH #98): search field. Blank = normal tab.
-        // TASK-605 (c): the shared SearchField (icon drift unified).
-        SearchField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholderRes = R.string.settings_search_hint,
-        )
-
+    // TASK-563: the pin derivation and the search derivation hoist ABOVE the
+    // bar/sections split (the bar's count line and the sections' visibility
+    // both read them).
         // TASK-457/TASK-542: the pin state and the one hint line that renders
         // for it, hoisted so the search groups and the card below share the
         // exact same values (the card would otherwise match text it does not
@@ -427,34 +419,9 @@ fun SettingsTab(
             else -> null
         }
 
-        // TASK-689: card-level live filter (TASK-542), now derived. The
-        // match count, the section visibility, and every SearchFilterRow
-        // gate below read the SAME per-card registry (SETTINGS_SEARCH_CARDS,
-        // bottom of this file): each entry's visible() mirrors the
-        // compositional if that wraps its row in the tree, and its res()
-        // plus its group label (cardVocabulary) is the exact match
-        // vocabulary, resolved against the current locale so
-        // the match works in all 12. One source kills the two-list
-        // convention TASK-542 left behind (hand-maintained count groups vs
-        // hand-built per-row gates, the drift the TASK-275 review's F3
-        // flagged and AUTOMATION_GUIDE_SEARCH_RES fixed for one card):
-        // a body-only query can never count a match the tree never renders,
-        // nor hide a card that owns the matched string. TASK-731 adds the
-        // ONE exception: the card's group label rides the match vocabulary
-        // (see cardVocabulary) even though no card body renders it, so a
-        // query naming a group lands on the cards grouped under it.
-        // Closing that drift
-        // also FIXED three real gaps: the GH #43 refinement and GH #83
-        // speaker-labels cards had gates but no count entries, and
-        // TASK-576's text size matched the theme gate but not its count
-        // group. The Feedback section is one Card of rows, so it is a
-        // single entry. remember keyed on the ONE state object keeps the
-        // resource lookups off every keystroke and re-resolves exactly when
-        // a condition the registry reads flips. A WRONG visible() or vocabulary
-        // degrades (ghost or hidden matches: the residual mirror surface the
-        // registry KDoc documents); a MISSING entry for a gated id crashes
-        // the tab at composition (the first{} lookup) and the id-coverage
-        // test exists to catch that before it ships.
+        // TASK-689 contract (full text on SETTINGS_SEARCH_CARDS' KDoc): every
+        // gate and the count below read that ONE registry, so the match
+        // vocabulary can never drift from the tree.
         val searchState = SettingsSearchState(
             isLlmBackend = isLlmBackend,
             isModelLoaded = isModelLoaded,
@@ -493,6 +460,69 @@ fun SettingsTab(
                 feedbackSearchGroups.count { matchesQuery(searchQuery, it) }
         else 0
 
+    // TASK-563: the pinned collapsing search bar (enterAlways semantics):
+    // any downward scroll slides it out, any upward scroll brings it back
+    // mid-list, and an ACTIVE query pins it open so the count line and the
+    // filtered results can never be trapped off-screen (AC3).
+    var searchBarOffsetPx by remember { mutableStateOf(0f) }
+    var searchBarHeightPx by remember { mutableStateOf(0f) }
+    val searchBarScroll = remember {
+        // The delegated query read is LIVE here (closure over the state, not
+        // a captured Boolean). Known v1 gap: no fling settle, so a fling can
+        // leave the bar half-collapsed; the next touch completes it.
+        object : androidx.compose.ui.input.nestedscroll.NestedScrollConnection {
+            override fun onPreScroll(
+                available: Offset,
+                source: androidx.compose.ui.input.nestedscroll.NestedScrollSource,
+            ): Offset {
+                if (searchQuery.isNotBlank()) {
+                    if (searchBarOffsetPx != 0f) searchBarOffsetPx = 0f
+                    return Offset.Zero
+                }
+                // available.y < 0 is scrolling DOWN the list (the androidx
+                // collapsing-toolbar sign): the bar collapses, and the taken
+                // delta is returned so the content does not double-consume.
+                val previous = searchBarOffsetPx
+                searchBarOffsetPx = (previous - available.y).coerceIn(0f, searchBarHeightPx)
+                return Offset(0f, previous - searchBarOffsetPx)
+            }
+        }
+    }
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+    ) {
+        // The collapse reads the offset in the LAYOUT phase only (a
+        // composition-scope height read would recompose the whole tab every
+        // scroll frame): measure the bar once at full size, place it shifted
+        // up by the offset, and report the shrunken height so the sections
+        // column grows into the freed space.
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 16.dp, end = 16.dp, top = 16.dp)
+                .clipToBounds()
+                .layout { measurable, constraints ->
+                    val bar = measurable.measure(
+                        constraints.copy(minWidth = 0, minHeight = 0))
+                    searchBarHeightPx = bar.height.toFloat()
+                    val offset = searchBarOffsetPx.coerceIn(0f, bar.height.toFloat())
+                    layout(bar.width, (bar.height - offset.roundToInt()).coerceAtLeast(0)) {
+                        bar.placeRelative(0, -offset.roundToInt())
+                    }
+                }
+        ) {
+            Column(
+                modifier = Modifier
+            ) {
+                // TASK-542 (GH #98): search field. Blank = normal tab.
+                // TASK-605 (c): the shared SearchField (icon drift unified).
+                SearchField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholderRes = R.string.settings_search_hint,
+                )
         if (searchActive) {
             // TASK-628: matched cards can sit below tall merged cards (the
             // "forza" diagnosis: the ~1420px Tema card pushed the force row to
@@ -517,10 +547,27 @@ fun SettingsTab(
                     val key = matchedSections[matchHop % matchedSections.size]
                     matchHop++
                     val target = sectionOffsets[key] ?: return@clickable
-                    navScope.launch { scrollState.animateScrollTo(maxOf(0, target - 32)) }
+                    navScope.launch { scrollState.animateScrollTo(maxOf(0, target - scrollContentRootY - 32)) }
                 } else Modifier
             )
         }
+            }
+        }
+        // TASK-563: the sections keep the original scroll column verbatim;
+        // the bar's connection sits above verticalScroll so collapse and
+        // expand consume the delta before the content moves (enterAlways).
+        Column(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth()
+                .nestedScroll(searchBarScroll)
+                .verticalScroll(scrollState)
+                .onGloballyPositioned { scrollContentRootY = it.positionInRoot().y.toInt() }
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+
+
 
         CollapsibleSection(
             title = stringResource(R.string.settings_section_transcription),
@@ -1891,6 +1938,7 @@ fun SettingsTab(
 
         // Spacer for scroll
         Spacer(modifier = Modifier.height(32.dp))
+        }
         }
     }
     } // End of if-else for showPerAppSettings
