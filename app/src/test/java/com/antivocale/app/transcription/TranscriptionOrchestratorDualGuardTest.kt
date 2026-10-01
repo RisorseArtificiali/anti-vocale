@@ -61,10 +61,10 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
         assertEquals(fastText, delivered.text)
         assertEquals(
             DualRefinementPolicy.SKIP_REFINE_LOOP,
-            delivered.firstPass?.refinementFailedToken)
+            delivered.firstPass?.skipOutcome?.token)
         // TASK-582: the measured loop values ride the same record, so a
         // field firing is tunable after the fact.
-        val metrics = delivered.firstPass?.refinementLoopMetrics
+        val metrics = delivered.firstPass?.skipOutcome?.loopMetrics
         assertNotNull(metrics)
         assertTrue("compression= and ngram= in: $metrics",
             metrics!!.startsWith("compression=") && metrics.contains("ngram="))
@@ -80,7 +80,7 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
 
         assertEquals(cleanRefined, delivered.text)
         assertEquals(fastText, delivered.firstPass?.text)
-        assertNull(delivered.firstPass?.refinementFailedToken)
+        assertNull(delivered.firstPass?.skipOutcome?.token)
     }
 
     @Test

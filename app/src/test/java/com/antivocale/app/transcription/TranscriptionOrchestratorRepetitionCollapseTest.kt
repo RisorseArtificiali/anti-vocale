@@ -181,7 +181,7 @@ class TranscriptionOrchestratorRepetitionCollapseTest : TranscriptionOrchestrato
         assertEquals("prima passata completa e pulita", delivered.text)
         assertEquals(
             DualRefinementPolicy.SKIP_REFINE_LOOP,
-            delivered.firstPass?.refinementFailedToken)
+            delivered.firstPass?.skipOutcome?.token)
     }
 
     @Test
@@ -233,7 +233,7 @@ class TranscriptionOrchestratorRepetitionCollapseTest : TranscriptionOrchestrato
         assertEquals(goodFirstPass, delivered.text)
         assertEquals(
             DualRefinementPolicy.SKIP_REFINE_COLLAPSED,
-            delivered.firstPass?.refinementFailedToken)
+            delivered.firstPass?.skipOutcome?.token)
     }
 
     @Test

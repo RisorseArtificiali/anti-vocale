@@ -438,10 +438,8 @@ data class FirstPassOutcome(
      *  partial results as partial (guard-review finding). */
     val isPartial: Boolean = false,
     val failedChunkCount: Int = 0,
-    /** Stable token when refinement did NOT complete (F4/F5): the delivered
-     *  text IS the first pass and the row carries a not-refined caption. */
-    val refinementFailedToken: String? = null,
-    /** TASK-582: the detector's measured values when the token is a loop
-     *  skip ("compression=2.61 ngram=0.42"), for field threshold tuning. */
-    val refinementLoopMetrics: String? = null,
+    /** TASK-584: the paired skip verdict (token + loop metrics when the
+     *  token is a loop token; null when refinement completed). The
+     *  delivered text IS the first pass whenever this is set. */
+    val skipOutcome: DualRefinementPolicy.SkipOutcome? = null,
 )

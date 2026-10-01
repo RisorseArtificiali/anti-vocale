@@ -20,6 +20,10 @@ object DualRefinementPolicy {
     /** Stable skip tokens recorded in ProcessingContext.refinementSkipReason. */
     const val SKIP_FAST_LOAD_FAILED = "fast_load_failed"
     const val SKIP_FAST_BLANK = "fast_blank"
+
+    /** TASK-584 review: phase 1 attempted but its machinery threw; the run
+     * degraded to single-model with the attempt recorded. */
+    const val SKIP_FAST_MACHINERY_FAILED = "fast_machinery_failed"
     const val SKIP_REFINE_LOAD_FAILED = "refine_load_failed"
     const val SKIP_REFINE_INFERENCE_FAILED = "refine_inference_failed"
 
@@ -29,6 +33,30 @@ object DualRefinementPolicy {
 
     /** TASK-581 (review F6): phase 2 delivered a non-blank short collapse over a good first pass. */
     const val SKIP_REFINE_COLLAPSED = "refine_short_collapse"
+
+    /**
+     * TASK-584: the paired skip verdict (token + its loop metrics when the
+     * token IS a loop token). Loop-exclusivity is structural here: the
+     * metrics ride ONLY the loop constructors, so no consumer-side whitelist
+     * can drift.
+     */
+    data class SkipOutcome internal constructor(
+        val token: String,
+        val loopMetrics: String? = null,
+    ) {
+        companion object {
+            /** Any token without detector values. */
+            fun plain(token: String) = SkipOutcome(token)
+
+            /** THE only way metrics enter: a loop-token verdict. */
+            fun loopOutcome(token: String, metrics: String): SkipOutcome {
+                require(token == SKIP_FAST_LOOP || token == SKIP_REFINE_LOOP) {
+                    "loop metrics ride only loop tokens: $token"
+                }
+                return SkipOutcome(token, metrics)
+            }
+        }
+    }
 
     /** TASK-579 (AC2): the fast first pass itself looped; the run degrades
      *  to single-model exactly like a fast load failure. */
