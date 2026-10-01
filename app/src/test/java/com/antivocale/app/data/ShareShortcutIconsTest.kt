@@ -1,6 +1,9 @@
 package com.antivocale.app.data
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -79,4 +82,31 @@ class ShareShortcutIconsTest {
         assertNull(ShareShortcutIcons.initialFor("123"))
         assertNull(ShareShortcutIcons.initialFor(""))
     }
+
+    @Test
+    fun `a picked image masks into the canvas with an aspect-preserving center crop`() {
+        // TASK-490: a wide source keeps its aspect (scaled to COVER, never
+        // stretched), and the output is exactly the adaptive canvas.
+        val source = Bitmap.createBitmap(600, 200, Bitmap.Config.ARGB_8888)
+        source.eraseColor(Color.RED)
+        val icon = ShareShortcutIcons.createAdaptiveIcon(source)
+        assertEquals(ShareShortcutIcons.CANVAS_SIZE_PX, icon.width)
+        assertEquals(ShareShortcutIcons.CANVAS_SIZE_PX, icon.height)
+        assertEquals(icon.config, Bitmap.Config.ARGB_8888)
+    }
+
+    @Test
+    fun `a picked image's center pixel survives the crop`() {
+        // Center-crop discipline: the subject at the source center lands at
+        // the canvas center (no off-center subjects through the launcher mask).
+        val source = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888)
+        source.eraseColor(Color.BLACK)
+        val canvas = Canvas(source)
+        canvas.drawColor(Color.BLACK)
+        val marker = Paint().apply { color = Color.WHITE }
+        canvas.drawRect(149f, 149f, 151f, 151f, marker)
+        val icon = ShareShortcutIcons.createAdaptiveIcon(source)
+        assertEquals(Color.WHITE, icon.getPixel(icon.width / 2, icon.height / 2))
+    }
 }
+

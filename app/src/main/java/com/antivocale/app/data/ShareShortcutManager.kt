@@ -64,6 +64,7 @@ class ShareShortcutManager(
     private val preferencesManager: PreferencesManager,
     private val backendRegistry: BackendRegistry,
     private val launcherIconManager: LauncherIconManager,
+    private val shortcutIconStore: ShortcutIconStore,
     private val recentUsage: suspend () -> List<RecentModelUse>,
 ) {
     companion object {
@@ -193,11 +194,18 @@ class ShareShortcutManager(
             putExtra(ShareReceiverActivity.EXTRA_FROM_SHORTCUT, true)
         }
         val color = ContextCompat.getColor(context, resolved.descriptor.accentColorRes)
+        // TASK-490: the user's pick wins; an absent/undecodable file falls
+        // back to the generated family icon (the push must never fail on a
+        // broken pick). Decoding is off the main thread: refresh() shifts to
+        // Dispatchers.Default before it gets here.
+        val icon = shortcutIconStore.decode(resolved.descriptor.backendId)
+            ?.let { ShareShortcutIcons.createAdaptiveIcon(it) }
+            ?: ShareShortcutIcons.createAdaptiveIcon(resolved.label, color)
         return ShortcutInfo.Builder(context, resolved.id)
             .setActivity(anchor)
             .setShortLabel(resolved.label)
             .setLongLabel(context.getString(R.string.share_shortcut_transcribe_with, resolved.label))
-            .setIcon(Icon.createWithAdaptiveBitmap(ShareShortcutIcons.createAdaptiveIcon(resolved.label, color)))
+            .setIcon(Icon.createWithAdaptiveBitmap(icon))
             .setIntent(intent)
             .setRank(resolved.rank)
             .build()
@@ -246,4 +254,28 @@ internal object ShareShortcutIcons {
     /** First letter of the label, uppercase; null when there is none (the icon stays the plain disc). */
     internal fun initialFor(label: String): String? =
         label.firstOrNull { it.isLetter() }?.uppercaseChar()?.toString()
+
+    /**
+     * TASK-490: the user-picked image masked into the same adaptive canvas.
+     * Aspect-preserving CENTER-CROP (the smaller dimension is scaled up to
+     * cover the canvas, the overflow trimmed symmetrically): no distortion,
+     * and the subject stays centered through the launcher's crop and
+     * parallax, the same geometry discipline as the launcher icon assets.
+     * The source is consumed read-only and never recycled here (the caller
+     * owns its lifecycle).
+     */
+    fun createAdaptiveIcon(source: Bitmap): Bitmap {
+        val scale = maxOf(
+            CANVAS_SIZE_PX.toFloat() / source.width,
+            CANVAS_SIZE_PX.toFloat() / source.height,
+        )
+        val scaledWidth = (source.width * scale).toInt().coerceAtLeast(CANVAS_SIZE_PX)
+        val scaledHeight = (source.height * scale).toInt().coerceAtLeast(CANVAS_SIZE_PX)
+        val scaled = Bitmap.createScaledBitmap(source, scaledWidth, scaledHeight, true)
+        val left = (scaledWidth - CANVAS_SIZE_PX) / 2
+        val top = (scaledHeight - CANVAS_SIZE_PX) / 2
+        val cropped = Bitmap.createBitmap(scaled, left, top, CANVAS_SIZE_PX, CANVAS_SIZE_PX)
+        if (cropped !== scaled) scaled.recycle()
+        return cropped
+    }
 }

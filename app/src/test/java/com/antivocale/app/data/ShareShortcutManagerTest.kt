@@ -49,7 +49,7 @@ class ShareShortcutManagerTest {
         val registry = BackendRegistry(ExternalModelStore(fake), emptyRecordsProvider())
         iconManager = LauncherIconManager(context)
         manager = ShareShortcutManager(
-            context, fake, registry, iconManager, recentUsage = { usage },
+            context, fake, registry, iconManager, ShortcutIconStore(context), recentUsage = { usage },
         )
         shortcutManager = context.getSystemService(ShortcutManager::class.java)!!
         fake._advancedSharingEnabled.value = true

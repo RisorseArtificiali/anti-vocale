@@ -10,6 +10,7 @@ import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.PreferencesManagerImpl
 import com.antivocale.app.data.RecentModelUse
 import com.antivocale.app.data.ShareShortcutManager
+import com.antivocale.app.data.ShortcutIconStore
 import com.antivocale.app.data.ShareTargetManager
 import com.antivocale.app.data.TranscriptionCalibrator
 import com.antivocale.app.data.EXTERNAL_MODELS_DIR_NAME
@@ -103,11 +104,18 @@ object AppModule {
      */
     @Provides
     @Singleton
+    fun provideShortcutIconStore(
+        @ApplicationContext context: Context,
+    ): ShortcutIconStore = ShortcutIconStore(context)
+
+    @Provides
+    @Singleton
     fun provideShareShortcutManager(
         @ApplicationContext context: Context,
         preferencesManager: PreferencesManager,
         backendRegistry: BackendRegistry,
         launcherIconManager: LauncherIconManager,
+        shortcutIconStore: ShortcutIconStore,
         transcriptionCalibrator: TranscriptionCalibrator
     ): ShareShortcutManager {
         return ShareShortcutManager(
@@ -115,6 +123,7 @@ object AppModule {
             preferencesManager = preferencesManager,
             backendRegistry = backendRegistry,
             launcherIconManager = launcherIconManager,
+            shortcutIconStore = shortcutIconStore,
             recentUsage = {
                 transcriptionCalibrator.getAllProfiles().map { profile ->
                     RecentModelUse(
