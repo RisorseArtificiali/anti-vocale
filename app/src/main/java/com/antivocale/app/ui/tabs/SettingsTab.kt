@@ -423,6 +423,10 @@ fun SettingsTab(
             else -> null
         }
 
+        // TASK-493: the proactive battery-exemption offer, one derivation
+        // feeding the registry visible-lambda and the card's compositional if.
+        val offerBatteryExemption = backgroundKills > 0 || viewModel.proactiveBatteryExemption
+
         // TASK-689 contract (full text on SETTINGS_SEARCH_CARDS' KDoc): every
         // gate and the count below read that ONE registry, so the match
         // vocabulary can never drift from the tree.
@@ -432,7 +436,7 @@ fun SettingsTab(
             gemmaConfigured = gemmaConfigured,
             punctuationPromptForced = currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS,
             summarizeOn = summarizeOn,
-            batteryExemptionOffered = backgroundKills > 0,
+            batteryExemptionOffered = offerBatteryExemption,
             speakerIdEnabled = speakerIdEnabled,
             transcriptionHintRes = transcriptionHintRes,
         )
@@ -1306,7 +1310,11 @@ fun SettingsTab(
             // interruption). The count refresh itself is hoisted to the tab
             // level: this section's content only composes when expanded AND
             // visible, and the search filter needs the count before that.
-            if (backgroundKills > 0) {
+            // TASK-493: on the kill-vulnerable class (low-RAM; the TASK-468
+            // MIUI/PowerKeeper verdict) the card appears PROACTIVELY: after
+            // the first kill the trace may be gone, and a pre-emptive grant
+            // is the only reachable mitigation there.
+            if (offerBatteryExemption) {
                 val context = LocalContext.current
                 SearchFilterRow(searchQuery, SettingsSearchId.BATTERY_EXEMPTION, searchState) {
                     Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
@@ -2388,6 +2396,7 @@ private fun matchesQuery(query: String, texts: List<String?>): Boolean =
  * TASK-731: the strings a card matches on: its own vocabulary plus its
  * group label (see [SettingsSearchGroup]).
  */
+
 internal fun cardVocabulary(card: SettingsSearchCard, state: SettingsSearchState): List<Int> =
     card.res(state) + listOfNotNull(card.group?.labelRes)
 
@@ -3510,3 +3519,4 @@ fun ExportSettingsScreen(
         }
     }
 }
+

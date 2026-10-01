@@ -425,6 +425,18 @@ class SettingsViewModel @Inject constructor(
     private val _backgroundKills = MutableStateFlow(0)
     val backgroundKills: StateFlow<Int> = _backgroundKills.asStateFlow()
 
+    /**
+     * TASK-493: the kill-vulnerable device class (low-RAM), for the
+     * PROACTIVE battery-exemption offer. Read once; the device class is
+     * fixed for the install's lifetime.
+     */
+    val proactiveBatteryExemption: Boolean by lazy {
+        com.antivocale.app.util.proactiveBatteryExemptionOffer(
+            com.antivocale.app.audio.MemoryReadings.isLowRamDevice(getApplication()),
+            com.antivocale.app.audio.MemoryReadings.totalRamBytes(getApplication()),
+        )
+    }
+
     fun refreshBackgroundKills() {
         viewModelScope.launch {
             // Look back 30 days: enough history to matter, bounded so the card
