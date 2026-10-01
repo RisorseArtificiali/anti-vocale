@@ -1140,7 +1140,7 @@
     <string name="speaker_labels_title">Identyfikuj mówców</string>
     <string name="speaker_labels_description">Dodaje etykietę mówcy do każdego zdania. Przy pierwszym użyciu pobiera ok.~47 MB modeli; wydłuża czas przetwarzania.</string>
     <string name="speaker_id_title">Tożsamości mówców</string>
-    <string name="speaker_id_description">Zarejestruj głos, aby jego etykiety w transkrypcji miały imię. Odciski głosu i próbki zostają wyłącznie na tym telefonie i nigdy go nie opuszczają.</string>
+    <string name="speaker_id_description">Porównuje głosy w twoich transkrypcjach z próbkami, które nagrywasz, i umieszcza na etykietach mówców pasujące imię. Próbki i odciski głosu zostają wyłącznie na tym telefonie i nigdy go nie opuszczają.</string>
     <string name="speaker_id_empty">Nikt jeszcze nie został zarejestrowany.</string>
     <string name="speaker_id_add">Dodaj głos</string>
     <string name="speaker_id_sample_seconds">próbka %1$d s</string>

@@ -1129,7 +1129,7 @@
     <string name="speaker_labels_title">Identifica gli interlocutori</string>
     <string name="speaker_labels_description">Aggiunge la label del parlante a ogni frase. Al primo uso scarica circa~47 MB di modelli; aumenta il tempo di elaborazione.</string>
     <string name="speaker_id_title">Identità dei parlanti</string>
-    <string name="speaker_id_description">Registra una voce per mettere il suo nome sulle label della trascrizione. Le impronte vocali e i campioni restano solo su questo telefono e non lo lasciano mai.</string>
+    <string name="speaker_id_description">Confronta le voci delle tue trascrizioni con i campioni che registri, e mette sulle label dei parlanti il nome di chi corrisponde. I campioni e le impronte vocali restano solo su questo telefono e non lo lasciano mai.</string>
     <string name="speaker_id_empty">Nessuna voce registrata.</string>
     <string name="speaker_id_add">Aggiungi una voce</string>
     <string name="speaker_id_sample_seconds">campione di %1$d s</string>

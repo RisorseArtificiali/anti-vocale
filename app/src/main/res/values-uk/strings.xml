@@ -1142,7 +1142,7 @@
     <string name="speaker_labels_title">Визначати мовців</string>
     <string name="speaker_labels_description">Додає мітку мовця до кожного речення. При першому використанні завантажує близько~47 МБ моделей; збільшує час обробки.</string>
     <string name="speaker_id_title">Голосові профілі</string>
-    <string name="speaker_id_description">Зареєструйте голос, щоб його мітки в розшифровках мали ім\'я. Голосові відбитки та зразки залишаються лише на цьому телефоні й ніколи його не покидають.</string>
+    <string name="speaker_id_description">Порівнює голоси у ваших розшифровках зі зразками, які ви записуєте, і ставить на мітки мовців ім\'я, що збігається. Зразки та відбитки голосу лишаються лише на цьому телефоні й ніколи його не покидають.</string>
     <string name="speaker_id_empty">Ще нікого не зареєстровано.</string>
     <string name="speaker_id_add">Додати голос</string>
     <string name="speaker_id_sample_seconds">зразок %1$d с</string>

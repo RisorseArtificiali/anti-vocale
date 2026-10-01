@@ -1127,7 +1127,7 @@
     <string name="speaker_labels_title">זיהוי דוברים</string>
     <string name="speaker_labels_description">מוסיף תווית דובר לכל משפט. בשימוש הראשון מוריד כ-~47 מ״ב של מודלים; מוסיף זמן עיבוד.</string>
     <string name="speaker_id_title">זהויות דוברים</string>
-    <string name="speaker_id_description">רושמים קול כדי לתת לו שם בתוויות התמליל. טביעות הקול והדגימות נשארות בטלפון הזה בלבד ולעולם לא עוזבות אותו.</string>
+    <string name="speaker_id_description">משווה את הקולות בתמלילים שלך לדגימות שאתה מקליט, ושם על תוויות הדוברים את השם שתואם. הדגימות וטביעות הקול נשארות רק בטלפון הזה ולעולם לא עוזבות אותו.</string>
     <string name="speaker_id_empty">עדיין לא נרשם אף אחד.</string>
     <string name="speaker_id_add">הוספת קול</string>
     <string name="speaker_id_sample_seconds">דגימה של %1$d שנ׳</string>

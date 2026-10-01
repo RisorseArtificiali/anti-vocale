@@ -1123,7 +1123,7 @@
     <string name="speaker_labels_title">شناسایی گویندگان</string>
     <string name="speaker_labels_description">به هر جمله یک برچسب گوینده اضافه می‌کند. در اولین استفاده حدود ۴۷ مگابایت مدل دانلود می‌شود؛ زمان پردازش بیشتر می‌شود.</string>
     <string name="speaker_id_title">هویت‌های گوینده</string>
-    <string name="speaker_id_description">با ثبت یک صدا، برچسب‌های آن در رونویس‌ها نام‌گذاری می‌شود. اثر صدا و نمونه‌ها فقط روی همین گوشی می‌مانند و هرگز از آن خارج نمی‌شوند.</string>
+    <string name="speaker_id_description">صداهای رونویسی‌های شما را با نمونه‌هایی که ضبط می‌کنید مقایسه می‌کند و نام مطابق را روی برچسب گویندگان می‌گذارد. نمونه‌ها و اثر صدا فقط روی همین گوشی می‌مانند و هرگز از آن خارج نمی‌شوند.</string>
     <string name="speaker_id_empty">هنوز کسی ثبت نشده است.</string>
     <string name="speaker_id_add">افزودن صدا</string>
     <string name="speaker_id_sample_seconds">نمونه %1$d ثانیه‌ای</string>

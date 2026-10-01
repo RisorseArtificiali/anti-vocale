@@ -1118,7 +1118,7 @@
     <string name="speaker_labels_title">Konuşmacıları tanımla</string>
     <string name="speaker_labels_description">Her cümleye bir konuşmacı etiketi ekler. İlk kullanımda yaklaşık~47 MB model indirir; işlem süresini artırır.</string>
     <string name="speaker_id_title">Konuşmacı kimlikleri</string>
-    <string name="speaker_id_description">Bir ses kaydedin, transkriptlerdeki etiketleri onun adıyla görünsün. Ses parmak izleri ve örnekler yalnızca bu telefonda kalır ve asla telefonden çıkmaz.</string>
+    <string name="speaker_id_description">Transkriptlerindeki sesleri kaydettiğin örneklerle karşılaştırır ve eşleşen adı konuşmacı etiketlerine koyar. Örnekler ve ses parmak izleri yalnızca bu telefonda kalır ve asla dışarı çıkmaz.</string>
     <string name="speaker_id_empty">Henüz kimse kaydedilmedi.</string>
     <string name="speaker_id_add">Ses ekle</string>
     <string name="speaker_id_sample_seconds">%1$d sn örnek</string>

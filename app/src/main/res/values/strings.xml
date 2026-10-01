@@ -1136,7 +1136,7 @@
     <!-- TASK-670 (GH #83): speaker identities. Voiceprints are biometric-adjacent:
          the wording states plainly that they never leave the phone. -->
     <string name="speaker_id_title">Speaker identities</string>
-    <string name="speaker_id_description">Enroll a voice to name its labels on transcripts. Voiceprints and samples stay on this phone only and never leave it.</string>
+    <string name="speaker_id_description">Compares the voices in your transcriptions with samples you record, and names the speaker labels with the matching name. Samples and voiceprints stay on this phone and never leave it.</string>
     <string name="speaker_id_empty">No one enrolled yet.</string>
     <string name="speaker_id_add">Add a voice</string>
     <string name="speaker_id_sample_seconds">%1$d s sample</string>

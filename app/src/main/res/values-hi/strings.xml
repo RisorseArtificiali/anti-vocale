@@ -1117,7 +1117,7 @@
     <string name="speaker_labels_title">वक्ताओं की पहचान करें</string>
     <string name="speaker_labels_description">प्रत्येक वाक्य में वक्ता का लेबल जोड़ता है। पहले उपयोग पर लगभग~47 MB मॉडल डाउनलोड होते हैं; प्रोसेसिंग समय बढ़ता है।</string>
     <string name="speaker_id_title">वक्ता पहचान</string>
-    <string name="speaker_id_description">एक आवाज़ नामांकित करें ताकि ट्रांसक्रिप्ट में उसके लेबल नाम से दिखें। वॉयसप्रिंट और नमूने केवल इसी फ़ोन पर रहते हैं और कभी बाहर नहीं जाते।</string>
+    <string name="speaker_id_description">आपकी ट्रांसक्रिप्शन की आवाज़ों की तुलना आपके रिकॉर्ड किए गए सैंपल से करता है, और मिलान करने वाले नाम को स्पीकर लेबल पर लगाता है। सैंपल और वॉयसप्रिंट सिर्फ़ इसी फ़ोन पर रहते हैं और कभी बाहर नहीं जाते।</string>
     <string name="speaker_id_empty">अभी कोई नामांकित नहीं है।</string>
     <string name="speaker_id_add">आवाज़ जोड़ें</string>
     <string name="speaker_id_sample_seconds">%1$d s नमूना</string>

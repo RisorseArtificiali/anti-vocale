@@ -986,7 +986,7 @@
     <string name="speaker_labels_title">Identificar hablantes</string>
     <string name="speaker_labels_description">Añade una etiqueta de hablante a cada frase. Descarga unos~47 MB de modelos en el primer uso; añade tiempo de procesamiento.</string>
     <string name="speaker_id_title">Identidades de hablantes</string>
-    <string name="speaker_id_description">Registra una voz para poner nombre a sus etiquetas en las transcripciones. Las huellas de voz y las muestras permanecen solo en este teléfono y nunca salen de él.</string>
+    <string name="speaker_id_description">Compara las voces de tus transcripciones con muestras que grabas, y pone en las etiquetas de hablante el nombre que coincide. Las muestras y las huellas de voz permanecen solo en este teléfono y nunca salen de él.</string>
     <string name="speaker_id_empty">Aún no hay nadie registrado.</string>
     <string name="speaker_id_add">Añadir una voz</string>
     <string name="speaker_id_sample_seconds">muestra de %1$d s</string>

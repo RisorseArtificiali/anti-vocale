@@ -986,7 +986,7 @@
     <string name="speaker_labels_title">Identifier les locuteurs</string>
     <string name="speaker_labels_description">Ajoute une étiquette de locuteur à chaque phrase. Télécharge environ~47 Mo de modèles au premier usage; allonge le temps de traitement.</string>
     <string name="speaker_id_title">Identités des locuteurs</string>
-    <string name="speaker_id_description">Enregistrez une voix pour nommer ses étiquettes dans les transcriptions. Les empreintes vocales et les échantillons restent uniquement sur ce téléphone et n\'en partent jamais.</string>
+    <string name="speaker_id_description">Compare les voix de vos transcriptions avec des échantillons que vous enregistrez, et met sur les étiquettes des locuteurs le nom qui correspond. Les échantillons et les empreintes vocales restent uniquement sur ce téléphone et n\'en partent jamais.</string>
     <string name="speaker_id_empty">Personne n\'est encore enregistré.</string>
     <string name="speaker_id_add">Ajouter une voix</string>
     <string name="speaker_id_sample_seconds">échantillon de %1$d s</string>

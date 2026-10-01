@@ -986,7 +986,7 @@
     <string name="speaker_labels_title">Identificar falantes</string>
     <string name="speaker_labels_description">Adiciona um rótulo de falante a cada frase. Baixa cerca de~47 MB de modelos no primeiro uso; adiciona tempo de processamento.</string>
     <string name="speaker_id_title">Identidades de falantes</string>
-    <string name="speaker_id_description">Cadastre uma voz para nomear os rótulos dela nas transcrições. As impressões de voz e as amostras ficam somente neste telefone e nunca saem dele.</string>
+    <string name="speaker_id_description">Compara as vozes das suas transcrições com amostras que você grava, e coloca nos rótulos de falante o nome que corresponde. As amostras e as impressões de voz ficam somente neste telefone e nunca saem dele.</string>
     <string name="speaker_id_empty">Ninguém cadastrado ainda.</string>
     <string name="speaker_id_add">Adicionar uma voz</string>
     <string name="speaker_id_sample_seconds">amostra de %1$d s</string>
