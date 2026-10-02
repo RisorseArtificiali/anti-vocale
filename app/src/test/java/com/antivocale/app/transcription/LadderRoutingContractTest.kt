@@ -61,12 +61,16 @@ class LadderRoutingContractTest {
         val source = orchestratorSource().readText()
         val wrapped = Regex("withSeedHeartbeat\\s*\\{").findAll(source).count()
         assertEquals(
-            "expected the 10 known withSeedHeartbeat spans (the nine TASK-698 sites: " +
-                "post-pass funnel, speaker labels, single-chunk conditional, progressive " +
-                "decode, parallel decode, pipeline decode, GC retry, final-generative " +
-                "pass, recoverEmptyChunk; plus the TASK-186 early-preview head decode); " +
-                "a new decode or post-pass site must join them or say why not (TASK-698)",
-            10,
+            "expected the 11 known withSeedHeartbeat spans: the nine TASK-698 " +
+                "sites (post-pass funnel, speaker labels, single-chunk conditional, " +
+                "progressive decode, parallel decode, pipeline decode, GC retry, " +
+                "final-generative pass, recoverEmptyChunk), the TASK-186 " +
+                "early-preview head decode, and the TASK-699 run-level span " +
+                "(stage 1: the whole processRequest body rides one span; the " +
+                "per-stretch wraps inside stay redundant-but-harmless until " +
+                "stage 2 strips them); a new decode or post-pass site must " +
+                "join them or say why not (TASK-698/699)",
+            11,
             wrapped,
         )
     }

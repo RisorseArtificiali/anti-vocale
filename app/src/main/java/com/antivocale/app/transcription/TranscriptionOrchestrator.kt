@@ -237,6 +237,39 @@ class TranscriptionOrchestrator @Inject constructor(
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope
     ): Result<String> {
+        // TASK-699 stage 1: ONE heartbeat span for the whole run. The
+        // per-stretch wraps inside stay (redundant but harmless, the task's
+        // own staged-rollout note); what this span adds is coverage of the
+        // pre-decode stretches (accurate-model load, whole-file
+        // preprocessing) and everything between wraps, which the per-stretch
+        // chase kept missing. The subtitle arms never seed (verified: no
+        // savePartial in their scopes) so their stay inside the span is a
+        // no-op.
+        return withSeedHeartbeat {
+            processRequestInner(
+                taskId, requestType, prompt, filePath, source, sourcePackage,
+                backendOverride, languageOverride, trackIndex, queuePosition,
+                queueTotal, context, cacheDir, listener, coroutineScope)
+        }
+    }
+
+    private suspend fun processRequestInner(
+        taskId: String,
+        requestType: String,
+        prompt: String,
+        filePath: String?,
+        source: String?,
+        sourcePackage: String?,
+        backendOverride: String?,
+        languageOverride: String?,
+        trackIndex: Int,
+        queuePosition: Int,
+        queueTotal: Int,
+        context: Context,
+        cacheDir: File,
+        listener: TranscriptionListener,
+        coroutineScope: CoroutineScope
+    ): Result<String> {
         val isShareRequest = source == InferenceService.SOURCE_SHARE
 
         // Log request start
@@ -4061,7 +4094,12 @@ class TranscriptionOrchestrator @Inject constructor(
             detectedLanguage = detectedLanguage,
             languagePin = languagePin
         ).toEntity())
-        preferencesManager.clearPartialTranscriptionState()
+        // TASK-699: the clear rides the SAME mutex as the heartbeat tick's
+        // read+write, making clear-vs-tick atomic: a tick either completed
+        // before the clear (mutex) or starts after it (the seed is already
+        // null, the isNullOrBlank guard no-ops). No join, no field, no
+        // ordering hazard - and no resurrection window (TASK-692 class).
+        seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
         lastPartialSaveMs = 0L
         lastInterimRoomWriteMs.remove(taskId)
         // TASK-713 (GH #112 second half): seed a received-note language into
@@ -4095,7 +4133,10 @@ class TranscriptionOrchestrator @Inject constructor(
             status = LogEntry.Status.ERROR, errorMessage = errorMessage,
             durationMs = if (durationMs > 0) durationMs else entity.durationMs
         ).toEntity())
-        preferencesManager.clearPartialTranscriptionState()
+        // TASK-699: same mutex discipline as logSuccess (see there); the
+        // error path is the WORSE resurrection case (persistPipelineFailure
+        // writes the seed right before this clear on mid-stream failures).
+        seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
         lastPartialSaveMs = 0L
         lastInterimRoomWriteMs.remove(taskId)
     }
