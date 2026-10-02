@@ -28,6 +28,10 @@ fun ToggleSettingCard(
     icon: ImageVector,
     title: String,
     description: String,
+    /** TASK-736 field report: cards whose description is the contract
+     *  (the sender-recognition limits) render it in full even in the
+     *  compact search rendering. */
+    descriptionMaxLinesCompact: Int = SETTINGS_SEARCH_COMPACT_DESCRIPTION_LINES,
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -59,20 +63,23 @@ fun ToggleSettingCard(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 CardTitleRow(icon = icon, title = title)
-                if (!LocalSettingsSearchCompact.current) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = description,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                // TASK-628 bounded the description away in search; the
+                // maintainer's field report (2026-10-02: the sender-
+                // recognition limits, found VIA search, were invisible
+                // there) settles it: compact shows a CAPPED description
+                // instead of none. The 628 goal was height, not the
+                // absence of context.
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = description,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = if (LocalSettingsSearchCompact.current) descriptionMaxLinesCompact else Int.MAX_VALUE,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                )
                 supportingText?.let {
-                    Text(
-                        text = it,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    // Same compact height discipline as the description.
+                    CardDescription(text = it, maxLinesCompact = 2)
                 }
             }
             Spacer(modifier = Modifier.width(16.dp))

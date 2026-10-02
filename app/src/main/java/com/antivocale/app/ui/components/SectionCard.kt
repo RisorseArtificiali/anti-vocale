@@ -90,14 +90,7 @@ fun SectionCard(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CardTitleRow(icon = icon, title = title, iconTint = iconTint)
-            // TASK-628: suppressed while Settings search is compact.
-            if (!LocalSettingsSearchCompact.current) description?.let {
-                Text(
-                    text = it,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            description?.let { CardDescription(it) }
             HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
             content()
         }

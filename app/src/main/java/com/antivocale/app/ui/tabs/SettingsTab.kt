@@ -381,7 +381,8 @@ fun SettingsTab(
         )
     } else {
     // TASK-628: compact rendering while search is active (descriptions
-    // suppressed) so matched cards are reachable below tall merged cards.
+    // capped: see SETTINGS_SEARCH_COMPACT_DESCRIPTION_LINES) so matched
+    // cards stay reachable below tall merged cards.
     androidx.compose.runtime.CompositionLocalProvider(
         com.antivocale.app.ui.components.LocalSettingsSearchCompact provides
             searchQuery.isNotBlank()
