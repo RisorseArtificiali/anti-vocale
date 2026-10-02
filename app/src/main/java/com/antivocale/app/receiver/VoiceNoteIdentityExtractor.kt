@@ -88,7 +88,20 @@ object VoiceNoteIdentityExtractor {
         if (category != "msg" || !isMessagingPackage(packageName)) return null
         if (isGroupSummary) return null
 
-        val match = VOICE_MARKER.find(text?.toString().orEmpty()) ?: return null
+        val textString = text?.toString().orEmpty()
+        val match = VOICE_MARKER.find(textString) ?: run {
+            // TASK-736 E2E chase: a text carrying the mic emoji but NOT the
+            // expected "(m:ss)" tail is a voice note whose notification
+            // shape drifted (version, locale, channel suffix). WhatsApp's
+            // own placeholder text is not user content; plain text messages
+            // (no mic) never reach this line.
+            if (textString.contains("\uD83C\uDFA4")) {
+                android.util.Log.w(
+                    "VoiceNoteIdentity",
+                    "voice-note marker drift: text=[$textString]")
+            }
+            return null
+        }
 
         // ONLY the newest message's Person (the last of the style): a Person
         // from an OLDER message names the wrong speaker, never this note.
