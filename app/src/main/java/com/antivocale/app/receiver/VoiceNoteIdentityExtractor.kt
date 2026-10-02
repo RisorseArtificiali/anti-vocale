@@ -90,15 +90,17 @@ object VoiceNoteIdentityExtractor {
 
         val textString = text?.toString().orEmpty()
         val match = VOICE_MARKER.find(textString) ?: run {
-            // TASK-736 E2E chase: a text carrying the mic emoji but NOT the
-            // expected "(m:ss)" tail is a voice note whose notification
-            // shape drifted (version, locale, channel suffix). WhatsApp's
-            // own placeholder text is not user content; plain text messages
-            // (no mic) never reach this line.
+            // TASK-736 E2E chase + range review: a text carrying the mic
+            // emoji but NOT the expected "(m:ss)" tail is a voice note
+            // whose notification shape drifted - OR an ordinary TEXT
+            // message that happens to contain the emoji, which is user
+            // content. The log therefore carries the SHAPE only (length,
+            // presence of a parenthesized tail), never the text.
             if (textString.contains("\uD83C\uDFA4")) {
                 android.util.Log.w(
                     "VoiceNoteIdentity",
-                    "voice-note marker drift: text=[$textString]")
+                    "voice-note marker drift: len=${textString.length} " +
+                        "parenTail=${Regex("\\)\\s*$").containsMatchIn(textString)}")
             }
             return null
         }

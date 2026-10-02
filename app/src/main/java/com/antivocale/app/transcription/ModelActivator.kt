@@ -61,8 +61,15 @@ class ModelActivator @Inject constructor(
         entryId: String,
         variantName: String?,
         staleCatalogPath: String?,
+        preferredPath: String? = null,
     ): String? =
-        SherpaModelDownloader.of(entryId).getModelPath(context, variantName)
+        // Range review: the user's SAVED variant path wins when it still
+        // exists - the ladder otherwise resolves the FIRST variant (turbo
+        // over the user's small), silently reverting their Models-tab pick.
+        // Only the headless switch passes one; useModel's explicit
+        // variantName picks take the same first slot via the downloader.
+        preferredPath?.takeIf { File(it).exists() }
+            ?: SherpaModelDownloader.of(entryId).getModelPath(context, variantName)
             ?: SherpaModelManager.of(entryId).resolveActiveModelPath(context)
             ?: staleCatalogPath?.takeIf { File(it).exists() }
 
@@ -76,8 +83,9 @@ class ModelActivator @Inject constructor(
         entryId: String,
         variantName: String?,
         staleCatalogPath: String?,
+        preferredPath: String? = null,
     ): String? {
-        val modelPath = resolveCatalogPath(context, entryId, variantName, staleCatalogPath)
+        val modelPath = resolveCatalogPath(context, entryId, variantName, staleCatalogPath, preferredPath)
         if (modelPath == null) return null
         preferencesManager.saveSherpaModelPath(entryId, modelPath)
         preferencesManager.saveTranscriptionBackend(entryId)
@@ -138,7 +146,14 @@ class ModelActivator @Inject constructor(
                 .ifBlank { backendId }
         }
         BundledCatalog.byId(backendId) != null -> {
-            val path = activateCatalog(context, backendId, variantName = null, staleCatalogPath = null)
+            // Range review: the user's SAVED variant path wins when it still
+            // resolves (the ladder otherwise picks the FIRST variant: turbo
+            // over the user's small, silently reverting their Models-tab
+            // pick). The saved path rides the stale-path slot, which the
+            // ladder disk-checks before trusting.
+            val savedPath = backendRegistry.byBackendId(backendId)
+                ?.modelPathFlow(preferencesManager)?.first()
+            val path = activateCatalog(context, backendId, variantName = null, staleCatalogPath = savedPath)
                 ?: return null
             variantAwareDisplayName(context, backendRegistry.byBackendId(backendId), path)
                 .ifBlank { backendId }

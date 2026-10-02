@@ -189,7 +189,22 @@ class VoiceNoteIdentityCache @Inject constructor() {
 object VoiceNoteIdentityComponent {
     private const val TAG = "VoiceNoteIdentity"
 
-    fun setEnabled(context: android.content.Context, enabled: Boolean) =
+    /**
+     * Range review: read the current state first (LauncherIconManager's
+     * pattern): the preference flow replays its cached value on every
+     * cold start, and an unconditional setComponentEnabledSetting is a
+     * binder write plus package-state churn on the startup path for an
+     * already-correct component (the default-off case on every start).
+     */
+    fun setEnabled(context: android.content.Context, enabled: Boolean) {
+        val component = android.content.ComponentName(context, VoiceNoteIdentityListener::class.java)
+        val current = context.packageManager.getComponentEnabledSetting(component)
+        val target = if (enabled)
+            android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        else
+            android.content.pm.PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+        if (current == target) return
         com.antivocale.app.util.ComponentAliasSync.setEnabled(
             context, VoiceNoteIdentityListener::class.java.name, enabled, TAG)
+    }
 }

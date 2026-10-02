@@ -509,16 +509,15 @@ fun SettingsTab(
                     }
                 }
         ) {
-            Column(
-                modifier = Modifier
-            ) {
-                // TASK-542 (GH #98): search field. Blank = normal tab.
-                // TASK-605 (c): the shared SearchField (icon drift unified).
-                SearchField(
-                    value = searchQuery,
-                    onValueChange = { searchQuery = it },
-                    placeholderRes = R.string.settings_search_hint,
-                )
+            // TASK-542 (GH #98): search field. Blank = normal tab.
+            // TASK-605 (c): the shared SearchField (icon drift unified).
+            // Range review: the no-op Column wrapper left by the 563 move
+            // is gone; the Box's measured layout takes the field directly.
+            SearchField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholderRes = R.string.settings_search_hint,
+            )
         if (searchActive) {
             // TASK-628: matched cards can sit below tall merged cards (the
             // "forza" diagnosis: the ~1420px Tema card pushed the force row to
@@ -547,7 +546,6 @@ fun SettingsTab(
                 } else Modifier
             )
         }
-            }
         }
         // TASK-563: the sections keep the original scroll column verbatim;
         // the bar's connection sits above verticalScroll so collapse and

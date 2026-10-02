@@ -45,6 +45,11 @@ class ModelShortcutActivity : ComponentActivity() {
 
     private suspend fun switch(context: Context, backendId: String) {
         val displayName = runCatching { modelActivator.activate(backendId, context) }.getOrNull()
+        // Range review: with POST_NOTIFICATIONS denied the notify() drops
+        // silently; skip the dead post (MemoryKillStartupCheck's precedent).
+        // The switch itself still lands; the system setting is the user's.
+        val nm = context.getSystemService(NotificationManager::class.java) ?: return
+        if (!nm.areNotificationsEnabled()) return
         val notification = resultNotificationFactory.alertNotification(
             title = context.getString(R.string.model_switched_title),
             text = if (displayName != null) {
@@ -53,8 +58,7 @@ class ModelShortcutActivity : ComponentActivity() {
                 context.getString(R.string.model_switch_failed)
             },
         )
-        val manager = context.getSystemService(NotificationManager::class.java)
-        manager?.notify(SWITCH_NOTIFICATION_ID, notification)
+        nm.notify(SWITCH_NOTIFICATION_ID, notification)
     }
 
     companion object {
