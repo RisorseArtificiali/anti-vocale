@@ -39,7 +39,7 @@ class SettingsSearchLocaleVariantsTest {
     @Test
     fun `a query in the user's language matches a card rendered in the app language`() {
         // The filed scenario, mirrored exactly: app English, phone Italian.
-        val resolver = LocaleVariantResolver(appLocaleContext("en"), Locale.ITALY)
+        val resolver = LocaleVariantResolver(appLocaleContext("en"), listOf(Locale.ITALY))
         val variants = resolver.variants(R.string.settings_group_integrations)
         assertEquals("Integrations", variants.first())
         assertTrue("the Italian text must be matchable: $variants",
@@ -50,7 +50,7 @@ class SettingsSearchLocaleVariantsTest {
 
     @Test
     fun `three different locales yield three distinct variants`() {
-        val resolver = LocaleVariantResolver(appLocaleContext("it"), Locale.GERMANY)
+        val resolver = LocaleVariantResolver(appLocaleContext("it"), listOf(Locale.GERMANY))
         val variants = resolver.variants(R.string.settings_group_integrations)
         assertEquals(3, variants.distinct().size)
         assertEquals("Integrazioni", variants.first())
@@ -58,15 +58,28 @@ class SettingsSearchLocaleVariantsTest {
 
     @Test
     fun `a mono-locale setup resolves to a single variant`() {
-        val resolver = LocaleVariantResolver(appLocaleContext("en"), Locale.US)
+        val resolver = LocaleVariantResolver(appLocaleContext("en"), listOf(Locale.US))
         assertEquals(listOf("Integrations"), resolver.variants(R.string.settings_group_integrations))
     }
 
     @Test
     fun `the app-locale text always leads the variants`() {
         val itContext = appLocaleContext("it")
-        val resolver = LocaleVariantResolver(itContext, Locale.ITALY)
+        val resolver = LocaleVariantResolver(itContext, listOf(Locale.ITALY))
         assertEquals(itContext.getString(R.string.settings_group_integrations),
             resolver.variants(R.string.settings_group_integrations).first())
+    }
+
+    @Test
+    fun `the device finding - a second system locale joins the set`() {
+        // The maintainer's phone: system list [en-IT, it-IT], app pinned EN.
+        // Reading only [0] missed the Italian entirely (the on-device
+        // "No matching settings" for "scuro" 2026-10-02).
+        val resolver = LocaleVariantResolver(
+            appLocaleContext("en"), listOf(java.util.Locale.forLanguageTag("en-IT"), Locale.ITALY))
+        val variants = resolver.variants(R.string.settings_group_integrations)
+        assertEquals("Integrations", variants.first())
+        assertTrue("the second system locale must be matchable: $variants",
+            variants.contains("Integrazioni"))
     }
 }

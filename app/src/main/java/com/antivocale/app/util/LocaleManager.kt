@@ -102,10 +102,19 @@ object LocaleManager {
      * settings search's locale set reads it so a query in the user's
      * language matches even under a pinned per-app language).
      */
-    fun phoneLocale(context: Context): Locale? = try {
-        LocaleManagerCompat.getSystemLocales(context)[0]?.takeIf { it.language.isNotBlank() }
+    fun phoneLocale(context: Context): Locale? = phoneLocalesList(context).firstOrNull()
+
+    /**
+     * The SYSTEM locale list, app-override-aware (see [phoneLanguage]):
+     * the device finding 2026-10-02 - a phone can carry en-IT primary
+     * with it-IT second, so the first entry alone misses the user's
+     * other language entirely. Blank-language entries dropped.
+     */
+    fun phoneLocalesList(context: Context): List<Locale> = try {
+        val list = LocaleManagerCompat.getSystemLocales(context)
+        (0 until list.size()).mapNotNull { list[it] }.filter { it.language.isNotBlank() }
     } catch (e: RuntimeException) {
-        null
+        emptyList()
     }
 
     /**

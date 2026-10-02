@@ -2410,11 +2410,20 @@ internal fun matchesQuery(query: String, texts: List<String?>): Boolean =
  */
 internal class LocaleVariantResolver(
     private val context: Context,
-    phoneLocale: java.util.Locale? = com.antivocale.app.util.LocaleManager.phoneLocale(context),
+    // DEVICE FINDING (2026-10-02, the maintainer's own en-IT phone): the
+    // SYSTEM locale list's FIRST entry can be the same language as the app
+    // (en-IT primary with it-IT second): reading only [0] collapses the
+    // phone leg exactly for the multilingual users the feature targets.
+    // Every system locale joins the set, bounded so a long list cannot
+    // mint a context per locale.
+    phoneLocales: List<java.util.Locale> = com.antivocale.app.util.LocaleManager.phoneLocalesList(context),
 ) {
     private val app: Context = context
     private val appLanguage: String = context.resources.configuration.locales[0].language
-    private val phone: Context? = overlay(phoneLocale)
+    private val phone: List<Context> = phoneLocales
+        .filter { it.language != appLanguage }
+        .distinctBy { it.language }
+        .take(MAX_PHONE_LOCALES).mapNotNull(::overlay)
     private val english: Context? = overlay(java.util.Locale.ENGLISH)
 
     private fun overlay(locale: java.util.Locale?): Context? {
@@ -2426,14 +2435,14 @@ internal class LocaleVariantResolver(
             .getOrNull()
     }
 
-    fun variants(@StringRes resId: Int): List<String> = listOfNotNull(
-        runCatching { app.getString(resId) }.getOrNull(),
-        phone?.let { runCatching { it.getString(resId) }.getOrNull() },
-        english?.let { runCatching { it.getString(resId) }.getOrNull() },
-    ).distinct()
+    fun variants(@StringRes resId: Int): List<String> =
+        (sequenceOf(app) + phone.asSequence() + listOfNotNull(english))
+            .mapNotNull { ctx -> runCatching { ctx.getString(resId) }.getOrNull() }
+            .distinct().toList()
 
     private companion object {
         const val TAG = "LocaleVariantResolver"
+        const val MAX_PHONE_LOCALES = 2
     }
 }
 
