@@ -141,7 +141,7 @@ specific contexts; the safer targets are r/AndroidBR (app posts welcome with
 flair) and r/appsdoandroid. Rule-check both on the day; r/brasil only inside
 a thread where voice messages or transcription comes up naturally.
 
-**Title:** App gratuita e open-source para transcrever audios do WhatsApp no proprio celular, sem enviar nada pra nuvem
+**Title:** App gratuita e open-source para transcrever audios do WhatsApp no próprio celular, sem enviar nada pra nuvem
 
 **Body (PT-BR):**
 
@@ -149,7 +149,7 @@ Anti-Vocale: transcrição offline de mensagens de voz para Android (português 
 
 Se você também recebe aquela mensagem de voz de 7 minutos e não pode ouvir na hora, esse projeto é pra você. O Anti-Vocale transcreve audios do WhatsApp, Telegram e Signal inteiramente no celular, sem nuvem, sem conta, sem internet depois de baixar os modelos.
 
-**O problema:** a transcrição nativa do WhatsApp no Android não cobre português, e as alternativas existentes ou mandam seu áudio pra nuvem de terceiros, ou não funcionam offline. No Anti-Vocale o áudio nunca sai do aparelho.
+**O problema (corrigido 2026-10-02):** o WhatsApp hoje JÁ transcreve em português no Android em aparelhos recentes (a transcrição nativa cobre EN/PT/ES/RU/HI; confirme os idiomas atuais no dia do post). O Anti-Vocale não compete com "existe ou não": os diferenciais verificáveis são outros: o Telegram não tem transcrição gratuita no aparelho; as alternativas de terceiros mandam o áudio pra nuvem; o WhatsApp nativo funciona só em aparelhos que receberam o recurso. No Anti-Vocale o áudio nunca sai do aparelho, em qualquer Android 8+.
 
 **O que faz:**
 - Transcreve português e outros 25 idiomas europeus com modelos de IA que rodam no próprio telefone
