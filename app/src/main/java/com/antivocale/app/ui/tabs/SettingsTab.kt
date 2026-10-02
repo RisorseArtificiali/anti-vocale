@@ -1803,6 +1803,12 @@ fun SettingsTab(
                     icon = Icons.Default.RecordVoiceOver,
                     title = stringResource(R.string.voice_note_identity_title),
                     description = stringResource(R.string.voice_note_identity_description),
+                    // The description IS the maintainer-mandated limits
+                    // text: it renders in full wherever the card renders,
+                    // search included. (Range review: the first attempt at
+                    // this override silently never applied - the fourth
+                    // scripted non-application; disk grep is the proof.)
+                    descriptionMaxLinesCompact = Int.MAX_VALUE,
                     checked = voiceNoteIdentityEnabled,
                     onCheckedChange = { enabled -> viewModel.saveVoiceNoteIdentityEnabled(enabled) }
                 )

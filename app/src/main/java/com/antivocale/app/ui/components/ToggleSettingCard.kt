@@ -67,16 +67,10 @@ fun ToggleSettingCard(
                 // maintainer's field report (2026-10-02: the sender-
                 // recognition limits, found VIA search, were invisible
                 // there) settles it: compact shows a CAPPED description
-                // instead of none. The 628 goal was height, not the
-                // absence of context.
+                // instead of none - through the ONE renderer (range
+                // review: this inline copy was the idiom's second site).
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = if (LocalSettingsSearchCompact.current) descriptionMaxLinesCompact else Int.MAX_VALUE,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                )
+                CardDescription(text = description, maxLinesCompact = descriptionMaxLinesCompact)
                 supportingText?.let {
                     // Same compact height discipline as the description.
                     CardDescription(text = it, maxLinesCompact = 2)

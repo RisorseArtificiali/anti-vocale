@@ -85,7 +85,13 @@ class ShareShortcutManager(
         /** TASK-552: model-switch entries (the "switch to" shortcuts). */
         private const val MAX_MODEL_SHORTCUTS = 2
 
-        /** TASK-552: the static shortcuts sharing the same long-press menu. */
+        /** TASK-552: the static shortcuts sharing the same long-press menu.
+         *  CONSCIOUS DESIGN (range review): shares take the budget FIRST,
+         *  switch entries get the remainder - with 2+ recent share-eligible
+         *  models on a cap-4 launcher the switch entries starve to zero.
+         *  Share-first is the deliberate priority (the share shortcuts are
+         *  the older, higher-traffic surface); revisit only on evidence the
+         *  switch entries are being missed. */
         private const val STATIC_SHORTCUT_COUNT = 2
     }
 

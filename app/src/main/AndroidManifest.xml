@@ -111,13 +111,13 @@
         </activity-alias>
 
         <!-- derei's icon concepts (GH #61, TASK-473): raster foreground layers
-             over the shared gradient, one alias per concept. -->
+             over the shared gradient, one alias per concept.
              Every alias also carries the android.app.shortcuts meta-data
              (TASK-552 AC5): the launcher resolves the ENABLED alias, so the
              static History/Models shortcuts must live where the icon
              resolves - the same anchoring rule the dynamic set follows.
              Missing meta on a future eighth variant = that icon silently
-             loses the long-press statics (pinned by LauncherIconManifestTest).
+             loses the long-press statics (pinned by LauncherIconManifestTest). -->
         <activity-alias
             android:name=".LauncherWavecut"
             android:targetActivity=".MainActivity"
