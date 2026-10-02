@@ -1690,7 +1690,7 @@ class TranscriptionOrchestrator @Inject constructor(
         val load = ensureBackendLoaded(context, fastId, languageOverride)
         if (load.isFailure) {
             Log.i(TAG, "Fast first pass skipped (load failed): ${load.exceptionOrNull()?.message}")
-            onSkipped(DualRefinementPolicy.SkipOutcome(DualRefinementPolicy.SKIP_FAST_LOAD_FAILED))
+            onSkipped(DualRefinementPolicy.SkipOutcome.plain(DualRefinementPolicy.SKIP_FAST_LOAD_FAILED))
             return null
         }
         // The base listener is passed as-is: processAudioRequest reports
@@ -2235,9 +2235,6 @@ class TranscriptionOrchestrator @Inject constructor(
      * The [backendId] must carry [ExternalModelRecord.BACKEND_ID_PREFIX] with the record UUID after it.
      */
     /** TASK-462: the request's language preference (sentinels pass through). */
-    private suspend fun languagePrefForRequest(): String =
-        preferencesManager.transcriptionLanguage.first()
-
     private suspend fun loadExternalBackend(
         context: Context,
         backendId: String,
@@ -2254,7 +2251,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // "" mean detection (the family defaults apply unchanged).
         val resolvedLanguage = TranscriptionLanguagePolicy.externalOverride(
             record,
-            preference = languageOverride ?: languagePrefForRequest(),
+            preference = languageOverride ?: preferencesManager.transcriptionLanguage.first(),
             // Review: the SAME phone-language read the residency check uses,
             // so a PREF_PHONE pin resolves identically at load and at the
             // warmth check (a "" here vs "it" there reloaded every request).

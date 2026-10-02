@@ -16,6 +16,21 @@ import com.antivocale.app.R
  * Android's [NotificationManager.createNotificationChannel] is idempotent —
  * calling [create] multiple times with the same values is a no-op.
  */
+/**
+ * Range review (REUSE): the can-this-notification-actually-post gate that
+ * InferenceEnqueue, MemoryKillStartupCheck and ModelShortcutActivity each
+ * hand-rolled - and drifted (the trampoline copy missed the
+ * channel-blocked half, silently dropping the switch-FAILURE notice for
+ * users who silenced the result channel). One gate, both predicates:
+ * app-level denial and per-channel block.
+ */
+fun canPostNotification(context: android.content.Context, channel: AppNotificationChannel): Boolean {
+    val nm = context.getSystemService(android.app.NotificationManager::class.java) ?: return false
+    if (!nm.areNotificationsEnabled()) return false
+    return nm.getNotificationChannel(channel.id)?.importance !=
+        android.app.NotificationManager.IMPORTANCE_NONE
+}
+
 enum class AppNotificationChannel(
     val id: String,
     val nameResId: Int,

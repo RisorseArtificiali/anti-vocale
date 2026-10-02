@@ -26,6 +26,7 @@ import com.antivocale.app.data.ShareShortcutManager
 import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.ui.AppNavigation
+import com.antivocale.app.util.MemoryKillStartupCheck
 import com.antivocale.app.ui.MainScreen
 import com.antivocale.app.ui.TestNavigation
 import com.antivocale.app.ui.theme.AntiVocaleTheme
@@ -129,7 +130,7 @@ class MainActivity : AppCompatActivity() {
         // TASK-426 review: ONE exit-history read serves both startup checks
         // (this used to be two binder calls per onCreate, rotation included).
         val startupExits = NativeCrashDetector.recentExits(this)
-        com.antivocale.app.util.MemoryKillStartupCheck.run(this, startupExits)
+        MemoryKillStartupCheck.run(this, startupExits)
         when (val crash = NativeCrashDetector.checkForRecentCrash(this, startupExits)) {
             is NativeCrashDetector.CrashCheckResult.NativeCrash -> {
                 // If the user had NNAPI selected, the crash was likely the NNAPI driver:
