@@ -72,6 +72,10 @@ You get feedback from several places:
 
 The Logs tab *is* the list: every transcription appears there with a status (pending/done/error), timestamp, and processing time. The pending state currently lumps together "queued" and "actively processing"; splitting those into distinct labels is tracked in [#51](https://github.com/RisorseArtificiali/anti-vocale/issues/51).
 
+## Does the app read my notifications?
+
+Only if you turn on "Voice note sender recognition" in Settings (off by default), and only messaging notifications from WhatsApp. It reads the sender name and the voice note length from the notification, keeps them in memory while it waits for you to share that note, and writes the name on the History row when both the package and the length match. Limits worth knowing: WhatsApp only (Telegram and other apps are not recognized yet); the name appears only if the notification arrived while the setting was on (a note you open and share later gets no name); no name is written when the length cannot be matched (no guesses); the name stays on that row like the transcript itself, also after turning the setting off. Turning the setting off stops all reading and clears the in-memory list.
+
 ## Results and metadata
 
 ### Where do I see which model was used and how long it took?

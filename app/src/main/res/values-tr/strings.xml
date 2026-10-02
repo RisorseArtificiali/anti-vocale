@@ -1013,7 +1013,7 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Paylaşım Menüsünde Modeller</string>
     <string name="voice_note_identity_title">Sesli not gönderenini tanıma</string>
-    <string name="voice_note_identity_description">Paylaştığın sesli notları kimin gönderdiğini tanır ve adı geçmişte o notun satırına kaydeder. Yalnızca mesajlaşma bildirimleri okunur, hiçbir şey hiçbir yere gönderilmez ve kapatmak tüm okumayı durdurur. Bildirim erişimi gerektirir.</string>
+    <string name="voice_note_identity_description">Paylaşılan sesli mesajın geçmiş satırına gönderenin adını yazar. Şimdilik sadece WhatsApp. Ad, yalnızca mesajın bildirimi bu açıkken geldiyse ve bildirilen süre sesle uyuyorsa görünür (tahmine dayanı ad yok). Ad, bunu kapattıktan sonra da o satırda kalır; bekleme listesi yalnız bellekte yaşar. Bildirim erişimi gerekir.</string>
     <string name="voice_note_identity_grant_hint">Bildirim erişimi kapalı. Sistem ayarını açıp bu uygulama için etkinleştirmek üzere dokunun.</string>
     <string name="share_targets_description">İndirilen her model sistem menüsünde ayrı bir seçenek olarak görünür. Sesi seçilen model işler.</string>
     <string name="advanced_sharing_toggle">İndirilen modelleri göster</string>

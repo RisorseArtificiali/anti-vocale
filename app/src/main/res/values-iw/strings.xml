@@ -1019,7 +1019,7 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">מודלים בתפריט השיתוף</string>
     <string name="voice_note_identity_title">זיהוי שולח ההודעות הקוליות</string>
-    <string name="voice_note_identity_description">מזהה מי שלח את ההודעות הקוליות שאתה משתף ושומר את השם בשורת אותה הודעה בהיסטוריה. נקראות רק התראות של יישומי הודעות, שום דבר לא נשלח לשום מקום, וכיבוי עוצר כל קריאה. דורש גישה להתראות.</string>
+    <string name="voice_note_identity_description">כותב בשורת ההיסטוריה את שם השולח של הודעת הקול ששותפה. לעת עתה רק WhatsApp. השם מופיע רק אם ההתראה של ההודעה הגיעה בעת שהאפשרות היתה פעילה, ורק אם האוך שדווח תואם לשמע (בלי שמות מנוחשים). השם נשאר בשורה גם לאחר כיבוי; רשימת ההמתנה מוחזרת רק בזכרון. דורש הרשאת גישה להתראות.</string>
     <string name="voice_note_identity_grant_hint">גישה להתראות כבויה. הקש כדי לפתוח את הגדרת המערכת ולהפעיל אותה ליישום הזה.</string>
     <string name="share_targets_description">כל מודל שהורד מופיע כאפשרות נפרדת בתפריט המערכת. האודיו מעובד על ידי המודל שנבחר.</string>
     <string name="advanced_sharing_toggle">הצגת מודלים שהורדו</string>

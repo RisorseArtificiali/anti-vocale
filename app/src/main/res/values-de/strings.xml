@@ -970,7 +970,7 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Modelle im Teilen-Menü</string>
     <string name="voice_note_identity_title">Erkennung des Absenders von Sprachnachrichten</string>
-    <string name="voice_note_identity_description">Erkennt, wer die geteilten Sprachnachrichten gesendet hat, und speichert den Namen in der Zeile dieser Notiz im Verlauf. Gelesen werden nur Messaging-Benachrichtigungen, es wird niemals etwas gesendet, und Ausschalten beendet jedes Lesen. Erfordert den Benachrichtigungszugriff.</string>
+    <string name="voice_note_identity_description">Trägt den Namen des Absenders in die Verlaufszeile einer geteilten Sprachnachricht ein. Zurzeit nur WhatsApp. Der Name erscheint nur, wenn die Benachrichtigung der Nachricht eintraf, während dies aktiviert war, und nur wenn die gemeldete Länge zum Audio passt (keine geratenen Namen). Der Name bleibt auf der Zeile, auch nachdem du dies ausschaltest; die Warteliste liegt nur im Speicher. Benötigt Benachrichtigungszugriff.</string>
     <string name="voice_note_identity_grant_hint">Benachrichtigungszugriff ist aus. Tippe, um die Systemeinstellung zu öffnen und ihn für diese App zu aktivieren.</string>
     <string name="share_targets_description">Jedes heruntergeladene Modell erscheint als eigener Eintrag im Systemmenü. Das Audio verarbeitet das ausgewählte Modell.</string>
     <string name="advanced_sharing_toggle">Heruntergeladene Modelle anzeigen</string>

@@ -1027,7 +1027,7 @@
     <!-- Advanced sharing settings -->
     <string name="share_targets_title">Models in Share Menu</string>
     <string name="voice_note_identity_title">Voice note sender recognition</string>
-    <string name="voice_note_identity_description">Recognizes who sent the voice notes you share and saves the name on that note\'s row in History. Only messaging notifications are read, nothing is ever sent anywhere, and turning this off stops all reading. Requires notification access.</string>
+    <string name="voice_note_identity_description">Labels the History row of a shared voice note with the sender\'s name. WhatsApp only for now. The name appears only if the note\'s notification arrived while this was on, and only when its reported length matches the audio (no guessed names). The name stays on that row even after you turn this off; the waiting list lives in memory only. Requires notification access.</string>
     <string name="voice_note_identity_grant_hint">Notification access is off. Tap to open the system setting and enable it for this app.</string>
     <string name="share_targets_description">Each downloaded model appears as a separate option in the system menu. Audio is processed by the selected model.</string>
     <string name="advanced_sharing_toggle">Show downloaded models</string>

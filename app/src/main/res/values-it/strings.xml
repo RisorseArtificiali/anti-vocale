@@ -976,7 +976,7 @@
     <string name="external_notice_family">Se la trascrizione si interrompe senza errori l\'architettura potrebbe essere sbagliata: elimina e reimporta il modello con un\'architettura diversa.</string>
     <string name="share_targets_title">Modelli nel menu Condividi</string>
     <string name="voice_note_identity_title">Riconoscimento del mittente delle note vocali</string>
-    <string name="voice_note_identity_description">Riconosce chi ha inviato le note vocali che condividi e salva il nome sulla riga di quella nota nella cronologia. Vengono lette solo le notifiche di messaggistica, nulla viene mai inviato altrove, e spegnere l\'opzione interrompe ogni lettura. Richiede l\'accesso alle notifiche.</string>
+    <string name="voice_note_identity_description">Scrive sulla riga della cronologia il nome del mittente della nota vocale condivisa. Per ora solo WhatsApp. Il nome compare solo se la notifica della nota è arrivata mentre l\'opzione era accesa, e solo se la durata dichiarata corrisponde all\'audio (nessun nome azzardato). Il nome resta su quella riga anche dopo aver spento l\'opzione; l\'elenco delle note in attesa sta solo in memoria. Richiede l\'accesso alle notifiche.</string>
     <string name="voice_note_identity_grant_hint">L\'accesso alle notifiche è disattivato. Tocca per aprire l\'impostazione di sistema e attivarlo per questa app.</string>
     <string name="share_targets_description">Ogni modello scaricato appare come voce separata nel menu di sistema. L\'audio è elaborato dal modello selezionato.</string>
     <string name="advanced_sharing_toggle">Mostra modelli scaricati</string>

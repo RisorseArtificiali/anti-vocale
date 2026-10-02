@@ -868,7 +868,7 @@
     <string name="external_notice_family">Si la transcription plante sans erreur, l\'architecture est peut-être incorrecte : supprimez puis réimportez le modèle avec une autre architecture.</string>
     <string name="share_targets_title">Modèles dans le menu Partager</string>
     <string name="voice_note_identity_title">Reconnaissance de l\'expéditeur des notes vocales</string>
-    <string name="voice_note_identity_description">Reconnaît qui a envoyé les notes vocales que vous partagez et enregistre le nom sur la ligne de cette note dans l\'historique. Seules les notifications de messagerie sont lues, rien n\'est jamais envoyé, et désactiver arrête toute lecture. Nécessite l\'accès aux notifications.</string>
+    <string name="voice_note_identity_description">Inscrit sur la ligne d\'historique le nom de l\'expéditeur de la note vocale partagée. Pour l\'instant WhatsApp uniquement. Le nom n\'apparaît que si la notification de la note est arrivée pendant que c\'était activé, et seulement si la durée annoncée correspond à l\'audio (aucun nom deviné). Le nom reste sur cette ligne même après désactivation ; la liste d\'attente vit uniquement en mémoire. Nécessite l\'accès aux notifications.</string>
     <string name="voice_note_identity_grant_hint">L\'accès aux notifications est désactivé. Touchez pour ouvrir le réglage système et l\'activer pour cette app.</string>
     <string name="share_targets_description">Chaque modèle téléchargé apparaît comme entrée distincte dans le menu système. L\'audio est traité par le modèle sélectionné.</string>
     <string name="advanced_sharing_toggle">Afficher les modèles téléchargés</string>
