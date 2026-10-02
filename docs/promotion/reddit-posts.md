@@ -98,7 +98,9 @@ Anti-Vocale transcribes voice messages entirely on-device — no cloud, no API c
 
 **Built with:** Kotlin + Compose, ONNX Runtime, Apache 2.0.
 
-**Links:** [Play Store](https://play.google.com/store/apps/details?id=com.antivocale.app) · [GitHub](https://github.com/RisorseArtificiali/anti-vocale) · v1.8.0 just released.
+**Links:** [Play Store](https://play.google.com/store/apps/details?id=com.antivocale.app) · [GitHub](https://github.com/RisorseArtificiali/anti-vocale) · F-Droid https://f-droid.org/packages/com.antivocale.app/
+
+*(Update the version line at posting time: the draft predates v1.13; current releases and notes live on the GitHub releases page.)*
 
 ---
 
