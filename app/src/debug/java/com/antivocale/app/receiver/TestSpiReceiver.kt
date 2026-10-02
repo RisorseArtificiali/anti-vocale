@@ -49,6 +49,7 @@ class TestSpiReceiver : BroadcastReceiver() {
     @Inject lateinit var preferencesManager: PreferencesManager
     @Inject lateinit var externalModelStore: ExternalModelStore
     @Inject lateinit var importer: com.antivocale.app.data.ExternalModelImportOperations
+    @Inject lateinit var voiceNoteIdentityCache: com.antivocale.app.receiver.VoiceNoteIdentityCache
 
     companion object {
         const val TAG = "TestSpi"
@@ -110,7 +111,10 @@ class TestSpiReceiver : BroadcastReceiver() {
         if (!BuildConfig.DEBUG) return
 
         val pendingResult = goAsync()
-        val ops = TestSpiOps(preferencesManager, externalModelStore, importer, context.applicationContext)
+        val ops = TestSpiOps(
+            preferencesManager, externalModelStore, importer, context.applicationContext,
+            // TASK-736: the identity-cache dump op needs the live singleton.
+            voiceNoteIdentityCache)
         val op = intent.getStringExtra(EXTRA_OP)
         val key = intent.getStringExtra(EXTRA_KEY)
         val value = intent.getStringExtra(EXTRA_VALUE)

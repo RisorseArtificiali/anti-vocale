@@ -126,6 +126,14 @@ class VoiceNoteIdentityCache @Inject constructor() {
 
     @Volatile internal var accepting = false
 
+    /**
+     * TASK-736 device debugging: a read-only snapshot for the TEST_SPI
+     * dump (debug builds only). No names in logcat; this is an explicit
+     * adb-driven inspection surface instead.
+     */
+    @Synchronized
+    internal fun snapshot(): List<VoiceNoteIdentityExtractor.VoiceNote> = entries.toList()
+
     @Synchronized
     fun remember(note: VoiceNoteIdentityExtractor.VoiceNote) {
         // The toggle-off clear can race a notification already past the

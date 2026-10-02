@@ -44,6 +44,10 @@ internal class TestSpiOps(
     private val importer: ExternalModelImportOperations,
     /** Needed by the notify_memory_error op; the debug receiver passes its context. */
     private val appContext: android.content.Context? = null,
+    /** TASK-736 device debugging: the RAM identity cache snapshot. Debug
+     *  builds pass it; the main-source default keeps release construction
+     *  unchanged. */
+    private val identityCache: com.antivocale.app.receiver.VoiceNoteIdentityCache? = null,
 ) {
 
     suspend fun handle(
@@ -59,6 +63,7 @@ internal class TestSpiOps(
             OP_GET -> get()
             OP_SET -> set(key, value, entry)
             OP_RECORDS -> records()
+            OP_IDENTITY_CACHE -> identityCache()
             OP_IMPORT -> importModel(url, family, modelType)
             OP_NOTIFY_MEMORY_ERROR -> notifyMemoryError()
             OP_CLIPBOARD -> clipboard()
@@ -400,6 +405,34 @@ internal class TestSpiOps(
         .toString()
 
     /**
+     * TASK-736: the voice-note identity cache (RAM, names included - this
+     * is the explicit adb inspection surface the E2E debugging needed; the
+     * field report came back "no label" and nothing else could tell a
+     * never-cached note from a duration-mismatch refusal).
+     */
+    private fun identityCache(): String {
+        val cache = identityCache ?: return JSONObject()
+            .put("op", OP_IDENTITY_CACHE)
+            .put("error", "cache not wired")
+            .toString()
+        val array = JSONArray()
+        for (note in cache.snapshot()) {
+            array.put(
+                JSONObject()
+                    .put("package", note.packageName)
+                    .put("sender", note.sender)
+                    .put("durationSeconds", note.durationSeconds)
+                    .put("postedAtMs", note.postedAtMs))
+        }
+        return JSONObject()
+            .put("op", OP_IDENTITY_CACHE)
+            .put("accepting", cache.accepting)
+            .put("count", array.length())
+            .put("entries", array)
+            .toString()
+    }
+
+    /**
      * ALL records, not just the valid ones: dangling entries (dir removed from
      * disk) are exactly what a debugging session needs to see. Each element is
      * the record's own persisted JSON ([ExternalModelRecord.toJson], which is
@@ -597,6 +630,7 @@ internal class TestSpiOps(
         const val OP_GET = "get"
         const val OP_SET = "set"
         const val OP_RECORDS = "records"
+        internal const val OP_IDENTITY_CACHE = "identity_cache"
         const val OP_IMPORT = "import"
         const val OP_NOTIFY_MEMORY_ERROR = "notify_memory_error"
         const val OP_CLIPBOARD = "clipboard"
@@ -609,7 +643,7 @@ internal class TestSpiOps(
          * is deliberately absent: it is intercepted receiver-side before
          * handle() runs, so it lives in the receiver's own table.
          */
-        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_HELP)
+        val OPS = listOf(OP_GET, OP_SET, OP_RECORDS, OP_IDENTITY_CACHE, OP_IMPORT, OP_NOTIFY_MEMORY_ERROR, OP_CLIPBOARD, OP_NOTIFICATIONS, OP_HELP)
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024

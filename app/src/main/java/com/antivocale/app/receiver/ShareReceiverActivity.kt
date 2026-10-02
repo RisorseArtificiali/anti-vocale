@@ -615,7 +615,14 @@ class ShareReceiverActivity : Activity() {
     private fun matchSenderIdentity(localPath: String): String? {
         val candidates = appEntryPoint.voiceNoteIdentityCache()
             .forPackage(sourcePackage.orEmpty())
-        if (candidates.isEmpty()) return null
+        // TASK-736 E2E instrumentation: the field report was a bare "no
+        // label"; this line separates the three failure classes (nothing
+        // cached for the package, unreadable duration, disagreement).
+        // Counts and seconds only, no names in logcat.
+        if (candidates.isEmpty()) {
+            Log.i(TAG, "identity match: no cached candidates for ${sourcePackage.orEmpty()}")
+            return null
+        }
         // The HOUSE duration probe, not a raw MediaMetadataRetriever: voice
         // notes are Ogg Opus, where the retriever's KEY_DURATION is the
         // documented-unreliable path (GH #91); this one reads the granule
@@ -623,7 +630,13 @@ class ShareReceiverActivity : Activity() {
         val durationSeconds = runCatching {
             appEntryPoint.audioPreprocessor().getAudioDuration(localPath)
         }.getOrNull()?.takeIf { it > 0 }?.toLong()
-        return VoiceNoteIdentityMatcher.select(candidates, durationSeconds)?.sender
+        val verdict = VoiceNoteIdentityMatcher.select(candidates, durationSeconds)
+        Log.i(
+            TAG,
+            "identity match: ${candidates.size} candidate(s), audio ${durationSeconds}s, " +
+                "durations ${candidates.mapNotNull { it.durationSeconds }}, " +
+                "labeled=${verdict != null}")
+        return verdict?.sender
     }
 
     private fun cleanup() {
