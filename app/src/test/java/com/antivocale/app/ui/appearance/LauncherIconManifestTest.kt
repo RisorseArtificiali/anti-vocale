@@ -3,6 +3,7 @@ package com.antivocale.app.ui.appearance
 import java.io.File
 import javax.xml.parsers.DocumentBuilderFactory
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -64,6 +65,28 @@ class LauncherIconManifestTest {
             ),
             launcherAliases().map { it.getAttribute("android:name") },
         )
+    }
+
+    /**
+     * TASK-552 (device-verified 2026-10-02): the static long-press shortcuts
+     * appear ONLY on the component the launcher resolves - the ENABLED alias.
+     * Anchoring the meta-data on MainActivity (no LAUNCHER filter) published
+     * nothing; every alias must carry it or that icon variant silently loses
+     * History/Models on long-press.
+     */
+    @Test
+    fun `every launcher alias carries the static-shortcuts meta-data`() {
+        launcherAliases().forEach { alias ->
+            val metas = (0 until alias.childNodes.length)
+                .map { alias.childNodes.item(it) }
+                .filterIsInstance<Element>()
+                .filter { it.tagName == "meta-data" }
+            val shortcutMeta = metas.firstOrNull {
+                it.getAttribute("android:name") == "android.app.shortcuts"
+            }
+            assertNotNull("alias ${alias.getAttribute("android:name")} lacks the android.app.shortcuts meta-data", shortcutMeta)
+            assertEquals("@xml/static_shortcuts", shortcutMeta!!.getAttribute("android:resource"))
+        }
     }
 
     @Test

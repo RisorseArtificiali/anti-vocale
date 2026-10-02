@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- TASK-552 AC5: the static long-press shortcuts. Navigation-only (no
      switching side effect): History is the default tab, Models rides the
-     existing navigate_to_model_tab extra. -->
+     existing navigate_to_model_tab extra. The Default launcher icon on both
+     entries is deliberate v1 branding: static icons cannot follow the active
+     launcher variant without one XML per alias. -->
 <shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
     <shortcut
         android:shortcutId="history"

@@ -71,11 +71,6 @@
             android:supportsPictureInPicture="true"
             android:configChanges="screenSize|smallestScreenSize|screenLayout|orientation"
             android:theme="@style/Theme.AntiVocale">
-            <!-- TASK-552 AC5: the static long-press shortcuts (History,
-                 Models). -->
-            <meta-data
-                android:name="android.app.shortcuts"
-                android:resource="@xml/static_shortcuts" />
         </activity>
         <!-- TASK-552: the dynamic model-shortcut trampoline. NoDisplay:
              never visible, never in recents, finishes before drawing; the
@@ -105,6 +100,10 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name">
+            <!-- TASK-552 AC5: static shortcuts ride this alias (see the alias-section note). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/static_shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -113,6 +112,12 @@
 
         <!-- derei's icon concepts (GH #61, TASK-473): raster foreground layers
              over the shared gradient, one alias per concept. -->
+             Every alias also carries the android.app.shortcuts meta-data
+             (TASK-552 AC5): the launcher resolves the ENABLED alias, so the
+             static History/Models shortcuts must live where the icon
+             resolves - the same anchoring rule the dynamic set follows.
+             Missing meta on a future eighth variant = that icon silently
+             loses the long-press statics (pinned by LauncherIconManifestTest).
         <activity-alias
             android:name=".LauncherWavecut"
             android:targetActivity=".MainActivity"
@@ -120,6 +125,10 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_derei_wavecut"
             android:label="@string/app_name">
+            <!-- TASK-552 AC5: static shortcuts ride this alias (see the alias-section note). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/static_shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -133,6 +142,10 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_derei_crossed"
             android:label="@string/app_name">
+            <!-- TASK-552 AC5: static shortcuts ride this alias (see the alias-section note). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/static_shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -146,6 +159,10 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_derei_textblock"
             android:label="@string/app_name">
+            <!-- TASK-552 AC5: static shortcuts ride this alias (see the alias-section note). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/static_shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -159,6 +176,10 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_derei_monogram"
             android:label="@string/app_name">
+            <!-- TASK-552 AC5: static shortcuts ride this alias (see the alias-section note). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/static_shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -172,6 +193,10 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_derei_capsule"
             android:label="@string/app_name">
+            <!-- TASK-552 AC5: static shortcuts ride this alias (see the alias-section note). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/static_shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -185,6 +210,10 @@
             android:exported="true"
             android:icon="@mipmap/ic_launcher_derei_mutebar"
             android:label="@string/app_name">
+            <!-- TASK-552 AC5: static shortcuts ride this alias (see the alias-section note). -->
+            <meta-data
+                android:name="android.app.shortcuts"
+                android:resource="@xml/static_shortcuts" />
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
