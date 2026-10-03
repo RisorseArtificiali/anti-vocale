@@ -9,9 +9,16 @@ denial that exercises the trampoline).
 
 1. The file `av-broadcast-test.tsk.xml` is already in the phone's
    Download folder (pushed 2026-10-03). It also lives here in the repo.
-2. Open Tasker -> TASKS tab -> + (Add) -> **Import Task**.
-3. Pick `av-broadcast-test.tsk.xml` from Download.
-4. The task "AV Background Test" appears in the list.
+2. Open Tasker -> TASKS tab -> **LONG-PRESS on the TASKS tab header**
+   (the canonical import entry point, per the Tasker documentation; the
+   + button is NOT it - corrected 2026-10-03 after the maintainer
+   flagged it).
+3. Pick **Import Task** (or Import, depending on version), then
+   `av-broadcast-test.tsk.xml` from Download.
+4. The task "AV Background Test" appears in the list. If Beginner Mode
+   hides the long-press menu: Tasker's three-dot menu -> More ->
+   Android Settings... no - disable Beginner Mode in Tasker's
+   preferences first (the FAQ's note), then the long-press works.
 
 ## Run the experiment
 
