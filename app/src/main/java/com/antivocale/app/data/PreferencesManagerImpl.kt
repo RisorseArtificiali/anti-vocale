@@ -36,6 +36,8 @@ class PreferencesManagerImpl(
         private val THEME_PREFERENCE = stringPreferencesKey("theme_preference")
         private val TEXT_SCALE = stringPreferencesKey("text_scale")
         private val REFINEMENT_ENABLED = booleanPreferencesKey("refinement_enabled")
+        private val SETTINGS_TRANSCRIPTION_ADVANCED_EXPANDED =
+            booleanPreferencesKey("settings_transcription_advanced_expanded")
         private val SPEAKER_LABELS_ENABLED = booleanPreferencesKey("speaker_labels_enabled")
         // TASK-670 (GH #83): the named-labels privacy gate, default off.
         private val SPEAKER_ID_ENABLED = booleanPreferencesKey("speaker_id_enabled")
@@ -306,6 +308,16 @@ class PreferencesManagerImpl(
     override suspend fun saveRefinementEnabled(enabled: Boolean) {
         dataStore.edit { preferences ->
             preferences[REFINEMENT_ENABLED] = enabled
+        }
+    }
+
+    // TASK-588.1: default collapsed.
+    override val settingsTranscriptionAdvancedExpanded: Flow<Boolean> =
+        dataStore.data.map { it[SETTINGS_TRANSCRIPTION_ADVANCED_EXPANDED] ?: false }
+
+    override suspend fun saveSettingsTranscriptionAdvancedExpanded(expanded: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[SETTINGS_TRANSCRIPTION_ADVANCED_EXPANDED] = expanded
         }
     }
 

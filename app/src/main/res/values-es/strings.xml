@@ -1061,4 +1061,6 @@
     <string name="model_shortcut_switch_label">Cambiar a %1$s</string>
     <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
     <string name="punctuation_default_prompt_conservative">Añade puntuación, mayúsculas y saltos de párrafo a esta transcripción. No traduzcas, no resumas y no añadas, quites, reordenes ni corrijas ninguna palabra: la secuencia de palabras debe permanecer exactamente como está escrita. Devuelve solo la transcripción formateada.</string>
+    <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
+    <string name="settings_advanced_reveal">Opciones avanzadas (%1$d)</string>
 </resources>

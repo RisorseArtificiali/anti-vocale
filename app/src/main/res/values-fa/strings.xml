@@ -1198,4 +1198,6 @@
     <string name="model_shortcut_switch_label">تعویض به %1$s</string>
     <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
     <string name="punctuation_default_prompt_conservative">به این رونوشت نشانه‌گذاری، حروف بزرگ و شکستن بندها را اضافه کن. ترجمه نکن، خلاصه نکن و هیچ واژه‌ای را اضافه، حذف، جابه‌جا یا اصلاح نکن: ترتیب واژه‌ها باید دقیقاً همان‌طور بماند که نوشته شده است. فقط رونوشت قالب‌بندی‌شده را برگردان.</string>
+    <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
+    <string name="settings_advanced_reveal">گزینه‌های پیشرفته (%1$d)</string>
 </resources>

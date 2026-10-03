@@ -62,6 +62,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.R
@@ -759,43 +762,6 @@ fun SettingsTab(
                 )
             }
 
-            // Progressive Transcription Display Setting
-            val progressiveTitle = stringResource(R.string.progressive_title)
-            val progressiveDescription = stringResource(R.string.progressive_description)
-            SearchFilterRow(searchQuery, SettingsSearchId.PROGRESSIVE, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.Visibility,
-                    title = progressiveTitle,
-                    description = progressiveDescription,
-                    checked = progressiveEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveProgressiveTranscription(enabled)
-                    }
-                )
-            }
-
-            // TASK-186: early preview of the pipeline's first chunk. Default
-            // off (the extra head decode costs battery on every long clip).
-            // Review F2: the preview rides the progressive pipeline, so the
-            // card is greyed with a reason until its sibling is on.
-            val earlyPreviewTitle = stringResource(R.string.early_preview_title)
-            val earlyPreviewDescription = stringResource(R.string.early_preview_description)
-            val earlyPreviewRequiresProgressive =
-                stringResource(R.string.early_preview_requires_progressive)
-            SearchFilterRow(searchQuery, SettingsSearchId.EARLY_PREVIEW, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.Preview,
-                    title = earlyPreviewTitle,
-                    description = earlyPreviewDescription,
-                    checked = earlyPreviewEnabled,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveEarlyPreviewEnabled(enabled)
-                    },
-                    enabled = progressiveEnabled,
-                    supportingText = if (progressiveEnabled) null else earlyPreviewRequiresProgressive,
-                )
-            }
-
             // GH #43: two-pass transcription (instant preview, then refine).
             val refinementTitle = stringResource(R.string.refinement_title)
             val refinementDescription = stringResource(R.string.refinement_description)
@@ -816,61 +782,15 @@ fun SettingsTab(
                 )
             }
 
-            SettingsGroupLabel(SettingsSearchGroup.GEMMA_TEXT, searchState)
-
-            // TASK-276: punctuation pass mode + prompt override. TASK-507: exposed only when the pass can run at all. Runtime
-            // preconditions are a configured Gemma (the pass engine) AND a
-            // non-LLM active backend (LLM output is polished by its own final
-            // pass; double-passing is skipped in the orchestrator). The
-            // dropdown sits in the section's standard Card (icon header +
-            // description + divider), matching every sibling setting; the
-            // TASK-276 bare-dropdown shape read as a foreign element
-            // (maintainer trial, radius mismatch).
-            if (gemmaConfigured && !isLlmBackend) {
-                val punctuationModeTitle = stringResource(R.string.punctuation_mode_title)
-                SearchFilterRow(searchQuery, SettingsSearchId.PUNCTUATION_MODE, searchState) {
-                    SectionCard(
-                        icon = Icons.Default.FormatQuote,
-                        title = punctuationModeTitle,
-                        description = stringResource(R.string.punctuation_mode_description)
-                    ) {
-                        SettingsDropdown(
-                            currentValue = currentPunctuationMode,
-                            options = viewModel.punctuationModeOptions,
-                            currentValueDisplay = punctuationModeLabel(currentPunctuationMode),
-                            optionDisplay = { punctuationModeLabel(it) },
-                            onOptionSelected = { viewModel.savePunctuationMode(it) },
-                            label = punctuationModeTitle,
-                            enabled = !uiState.isSaving
-                        )
-                    }
-                }
-                // TASK-507 (maintainer): the prompt override text area stays
-                // hidden until the user forces the pass (ALWAYS), mirroring
-                // how the summary prompt only appears behind its enabled
-                // toggle. AUTO can never run it today (see the options note
-                // in SettingsViewModel); the previous condition (mode != off)
-                // kept the box on screen from the untouched AUTO default.
-                // TASK-666: CONSERVATIVE forces the pass too but PINS the
-                // fenced prompt (an override could break the fences), so the
-                // card stays ALWAYS-only: the condition is "override
-                // honored", not "pass forced".
-                SearchFilterRow(searchQuery, SettingsSearchId.PUNCTUATION_PROMPT, searchState) {
-                    if (currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS) {
-                        PunctuationPromptCard(
-                            prompt = viewModel.currentPunctuationPrompt.collectAsState().value,
-                            onSave = { viewModel.savePunctuationPrompt(it) }
-                        )
-                    }
-                }
-            }
-
             // TASK-121.4: smart-summary toggle. TASK-507: shown
             // only when a Gemma model is configured (the pass engine); without
             // one it silently skipped at runtime, so the toggle was a no-op.
             // Unlike punctuation, it is offered on the LLM backend too: it
             // summarizes any transcript, including Gemma's own.
+            // TASK-588.2: a WEEK-ONE card: it sits in the basic block even
+            // though its prompt override lives behind the reveal below.
             if (gemmaConfigured) {
+                SettingsGroupLabel(SettingsSearchGroup.GEMMA_TEXT, searchState)
                 val summarizeTitle = stringResource(R.string.summarize_title)
                 val summarizeDescription = stringResource(R.string.summarize_description)
                 SearchFilterRow(searchQuery, SettingsSearchId.SUMMARIZE, searchState) {
@@ -884,41 +804,6 @@ fun SettingsTab(
                         }
                     )
                 }
-                SearchFilterRow(searchQuery, SettingsSearchId.SUMMARY_PROMPT, searchState) {
-                    if (summarizeOn) {
-                        SummaryPromptCard(
-                            prompt = viewModel.currentSummaryPrompt.collectAsState().value,
-                            onSave = { viewModel.saveSummaryPrompt(it) }
-                        )
-                    }
-                }
-            }
-
-            // Default Prompt Setting Navigation Card. TASK-507:
-            // the prompt feeds resolvePrompt -> ChunkPromptPolicy, which only
-            // the LLM backend consumes (ASR models take no instruction), so the
-            // card exposes only on the LLM backend, symmetric with the model
-            // status card at the top of this section.
-            if (isLlmBackend) {
-                SearchFilterRow(searchQuery, SettingsSearchId.DEFAULT_PROMPT, searchState) {
-                    SettingsHubCard(
-                        titleRes = R.string.default_prompt_title,
-                        summaryRes = R.string.default_prompt_description,
-                        leadingIcon = Icons.Default.Edit,
-                        openActionLabelRes = R.string.open_prompt_settings,
-                        onOpen = { showPromptSettings = true },
-                    )
-            }
-            }
-
-            // Maintainer decision 2026-09-30: diarization settings moved
-            // to their own page; the hub below opens it. Search contract:
-            // the hub's registry vocabulary is the UNION of its own and
-            // both children's strings (state-gated to the identities
-            // card's privacy gate), so old queries still land one tap
-            // from the card they matched.
-            SearchFilterRow(searchQuery, SettingsSearchId.DIARIZATION_HUB, searchState) {
-                SettingsHubCard(R.string.speaker_settings_title, R.string.speaker_settings_summary) { showSpeakerSettings = true }
             }
 
             SettingsGroupLabel(SettingsSearchGroup.OUTPUT, searchState)
@@ -949,85 +834,244 @@ fun SettingsTab(
                 )
             }
 
-            // TASK-647: the AI-disclaimer signature. Applies to what LEAVES
-            // the app (copy, share, export); the in-app screens stay raw.
-            SearchFilterRow(searchQuery, SettingsSearchId.SIGNATURE, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.Notes,
-                    title = stringResource(R.string.signature_setting_title),
-                    description = stringResource(R.string.signature_setting_description),
-                    checked = signatureOn,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveSignatureEnabled(enabled)
+            // TASK-588.2: the progressive-disclosure reveal (design note
+            // docs/research/2026-10-03-settings-basic-advanced-design-study.md).
+            // De-emphasize, never hide: the count names what is folded, and
+            // during an ACTIVE search the block opens by itself so a
+            // collapsed card can never hide from results (SearchFilterRow
+            // still filters the non-matching rows, so an active search
+            // renders exactly the matching cards).
+            val transcriptionAdvancedExpanded by viewModel.transcriptionAdvancedExpanded.collectAsState()
+            // TASK-588.2: the folded-count derives from the registry (the
+            // ONE gate owner, the TASK-689 doctrine) through the SECTION-level
+            // gates only: it must stay STABLE while inner toggles flip inside
+            // the fold (the summary prompt counts whenever Gemma is
+            // configured, not only when the summary toggle is on).
+            val advancedCount = remember(searchState) { SETTINGS_SEARCH_CARDS.count {
+                it.advanced &&
+                    it.section == SettingsSearchSection.TRANSCRIPTION &&
+                    it.outerSectionGate(searchState)
+            } }
+            if (!searchActive) {
+                AdvancedRevealCard(
+                    count = advancedCount,
+                    expanded = transcriptionAdvancedExpanded,
+                    onToggle = {
+                        viewModel.setTranscriptionAdvancedExpanded(!transcriptionAdvancedExpanded)
                     }
                 )
-                if (signatureOn) {
-                    SignatureTextCard(
-                        text = signatureTextValue,
-                        onSave = { viewModel.saveSignatureText(it) }
+            }
+            if (transcriptionAdvancedExpanded || searchActive) {
+                SettingsGroupLabel(SettingsSearchGroup.DECODING, searchState)
+                // Progressive Transcription Display Setting
+                val progressiveTitle = stringResource(R.string.progressive_title)
+                val progressiveDescription = stringResource(R.string.progressive_description)
+                SearchFilterRow(searchQuery, SettingsSearchId.PROGRESSIVE, searchState) {
+                    ToggleSettingCard(
+                        icon = Icons.Default.Visibility,
+                        title = progressiveTitle,
+                        description = progressiveDescription,
+                        checked = progressiveEnabled,
+                        onCheckedChange = { enabled ->
+                            viewModel.saveProgressiveTranscription(enabled)
+                        }
                     )
-                    SectionCard(
-                        icon = Icons.Default.SwapVert,
-                        title = signaturePositionTitle,
-                        description = null
-                    ) {
-                        SettingsDropdown(
-                            currentValue = signaturePositionValue,
-                            options = PreferencesManager.SIGNATURE_POSITIONS,
-                            currentValueDisplay = signaturePositionLabel(signaturePositionValue),
-                            optionDisplay = { signaturePositionLabel(it) },
-                            onOptionSelected = { viewModel.saveSignaturePosition(it) },
-                            label = signaturePositionTitle,
-                            enabled = true
-                        )
+                }
+
+                // TASK-186: early preview of the pipeline's first chunk. Default
+                // off (the extra head decode costs battery on every long clip).
+                // Review F2: the preview rides the progressive pipeline, so the
+                // card is greyed with a reason until its sibling is on.
+                val earlyPreviewTitle = stringResource(R.string.early_preview_title)
+                val earlyPreviewDescription = stringResource(R.string.early_preview_description)
+                val earlyPreviewRequiresProgressive =
+                    stringResource(R.string.early_preview_requires_progressive)
+                SearchFilterRow(searchQuery, SettingsSearchId.EARLY_PREVIEW, searchState) {
+                    ToggleSettingCard(
+                        icon = Icons.Default.Preview,
+                        title = earlyPreviewTitle,
+                        description = earlyPreviewDescription,
+                        checked = earlyPreviewEnabled,
+                        onCheckedChange = { enabled ->
+                            viewModel.saveEarlyPreviewEnabled(enabled)
+                        },
+                        enabled = progressiveEnabled,
+                        supportingText = if (progressiveEnabled) null else earlyPreviewRequiresProgressive,
+                    )
+                }
+
+                SettingsGroupLabel(SettingsSearchGroup.GEMMA_TEXT, searchState)
+
+                // TASK-276: punctuation pass mode + prompt override. TASK-507: exposed only when the pass can run at all. Runtime
+                // preconditions are a configured Gemma (the pass engine) AND a
+                // non-LLM active backend (LLM output is polished by its own final
+                // pass; double-passing is skipped in the orchestrator). The
+                // dropdown sits in the section's standard Card (icon header +
+                // description + divider), matching every sibling setting; the
+                // TASK-276 bare-dropdown shape read as a foreign element
+                // (maintainer trial, radius mismatch).
+                if (gemmaConfigured && !isLlmBackend) {
+                    val punctuationModeTitle = stringResource(R.string.punctuation_mode_title)
+                    SearchFilterRow(searchQuery, SettingsSearchId.PUNCTUATION_MODE, searchState) {
+                        SectionCard(
+                            icon = Icons.Default.FormatQuote,
+                            title = punctuationModeTitle,
+                            description = stringResource(R.string.punctuation_mode_description)
+                        ) {
+                            SettingsDropdown(
+                                currentValue = currentPunctuationMode,
+                                options = viewModel.punctuationModeOptions,
+                                currentValueDisplay = punctuationModeLabel(currentPunctuationMode),
+                                optionDisplay = { punctuationModeLabel(it) },
+                                onOptionSelected = { viewModel.savePunctuationMode(it) },
+                                label = punctuationModeTitle,
+                                enabled = !uiState.isSaving
+                            )
+                        }
+                    }
+                    // TASK-507 (maintainer): the prompt override text area stays
+                    // hidden until the user forces the pass (ALWAYS), mirroring
+                    // how the summary prompt only appears behind its enabled
+                    // toggle. AUTO can never run it today (see the options note
+                    // in SettingsViewModel); the previous condition (mode != off)
+                    // kept the box on screen from the untouched AUTO default.
+                    // TASK-666: CONSERVATIVE forces the pass too but PINS the
+                    // fenced prompt (an override could break the fences), so the
+                    // card stays ALWAYS-only: the condition is "override
+                    // honored", not "pass forced".
+                    SearchFilterRow(searchQuery, SettingsSearchId.PUNCTUATION_PROMPT, searchState) {
+                        if (currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS) {
+                            PunctuationPromptCard(
+                                prompt = viewModel.currentPunctuationPrompt.collectAsState().value,
+                                onSave = { viewModel.savePunctuationPrompt(it) }
+                            )
+                        }
                     }
                 }
-            }
 
-            // TASK-684 (GH #109): the quiet summary notification for runs
-            // the process death closed without a proven cause. Default on;
-            // the user can silence it here (the suspended class always
-            // notifies, independent of this toggle).
-            SearchFilterRow(searchQuery, SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, searchState) {
-                ToggleSettingCard(
-                    icon = Icons.Default.Notifications,
-                    title = stringResource(R.string.interrupted_run_notifications_title),
-                    description = stringResource(R.string.interrupted_run_notifications_description),
-                    checked = interruptedRunNotifications,
-                    onCheckedChange = { enabled ->
-                        viewModel.saveInterruptedRunNotifications(enabled)
-                    },
-                )
-            }
+                // TASK-121.4: the summary prompt override; the summary
+                // TOGGLE lives in the basic block (TASK-588.2). Same
+                // gemmaConfigured gate as its toggle.
+                if (gemmaConfigured) {
+                    SearchFilterRow(searchQuery, SettingsSearchId.SUMMARY_PROMPT, searchState) {
+                        if (summarizeOn) {
+                            SummaryPromptCard(
+                                prompt = viewModel.currentSummaryPrompt.collectAsState().value,
+                                onSave = { viewModel.saveSummaryPrompt(it) }
+                            )
+                        }
+                    }
+                }
 
-            // Keep-Alive Timeout Setting
-            val timeoutTitle = stringResource(R.string.auto_unload_timeout)
-            SearchFilterRow(searchQuery, SettingsSearchId.KEEP_ALIVE_TIMEOUT, searchState) {
-                TimeoutSettingCard(
-                    icon = Icons.Default.Timer,
-                    title = timeoutTitle,
-                    description = stringResource(R.string.timeout_description),
-                    currentValue = currentTimeout,
-                    options = viewModel.timeoutOptions,
-                    currentValueDisplay = when (currentTimeout) {
-                        1 -> stringResource(R.string.timeout_1_minute)
-                        60 -> stringResource(R.string.timeout_1_hour)
-                        else -> pluralStringResource(R.plurals.timeout_minutes, currentTimeout, currentTimeout)
-                    },
-                    optionDisplay = { minutes ->
-                        when (minutes) {
+                // Default Prompt Setting Navigation Card. TASK-507:
+                // the prompt feeds resolvePrompt -> ChunkPromptPolicy, which only
+                // the LLM backend consumes (ASR models take no instruction), so the
+                // card exposes only on the LLM backend, symmetric with the model
+                // status card at the top of this section.
+                if (isLlmBackend) {
+                    SearchFilterRow(searchQuery, SettingsSearchId.DEFAULT_PROMPT, searchState) {
+                        SettingsHubCard(
+                            titleRes = R.string.default_prompt_title,
+                            summaryRes = R.string.default_prompt_description,
+                            leadingIcon = Icons.Default.Edit,
+                            openActionLabelRes = R.string.open_prompt_settings,
+                            onOpen = { showPromptSettings = true },
+                        )
+                }
+                }
+
+                // Maintainer decision 2026-09-30: diarization settings moved
+                // to their own page; the hub below opens it. Search contract:
+                // the hub's registry vocabulary is the UNION of its own and
+                // both children's strings (state-gated to the identities
+                // card's privacy gate), so old queries still land one tap
+                // from the card they matched.
+                SearchFilterRow(searchQuery, SettingsSearchId.DIARIZATION_HUB, searchState) {
+                    SettingsHubCard(R.string.speaker_settings_title, R.string.speaker_settings_summary) { showSpeakerSettings = true }
+                }
+
+                    SettingsGroupLabel(SettingsSearchGroup.OUTPUT, searchState)
+
+            // TASK-647: the AI-disclaimer signature. Applies to what LEAVES
+                // the app (copy, share, export); the in-app screens stay raw.
+                SearchFilterRow(searchQuery, SettingsSearchId.SIGNATURE, searchState) {
+                    ToggleSettingCard(
+                        icon = Icons.Default.Notes,
+                        title = stringResource(R.string.signature_setting_title),
+                        description = stringResource(R.string.signature_setting_description),
+                        checked = signatureOn,
+                        onCheckedChange = { enabled ->
+                            viewModel.saveSignatureEnabled(enabled)
+                        }
+                    )
+                    if (signatureOn) {
+                        SignatureTextCard(
+                            text = signatureTextValue,
+                            onSave = { viewModel.saveSignatureText(it) }
+                        )
+                        SectionCard(
+                            icon = Icons.Default.SwapVert,
+                            title = signaturePositionTitle,
+                            description = null
+                        ) {
+                            SettingsDropdown(
+                                currentValue = signaturePositionValue,
+                                options = PreferencesManager.SIGNATURE_POSITIONS,
+                                currentValueDisplay = signaturePositionLabel(signaturePositionValue),
+                                optionDisplay = { signaturePositionLabel(it) },
+                                onOptionSelected = { viewModel.saveSignaturePosition(it) },
+                                label = signaturePositionTitle,
+                                enabled = true
+                            )
+                        }
+                    }
+                }
+
+                // TASK-684 (GH #109): the quiet summary notification for runs
+                // the process death closed without a proven cause. Default on;
+                // the user can silence it here (the suspended class always
+                // notifies, independent of this toggle).
+                SearchFilterRow(searchQuery, SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, searchState) {
+                    ToggleSettingCard(
+                        icon = Icons.Default.Notifications,
+                        title = stringResource(R.string.interrupted_run_notifications_title),
+                        description = stringResource(R.string.interrupted_run_notifications_description),
+                        checked = interruptedRunNotifications,
+                        onCheckedChange = { enabled ->
+                            viewModel.saveInterruptedRunNotifications(enabled)
+                        },
+                    )
+                }
+
+                // Keep-Alive Timeout Setting
+                val timeoutTitle = stringResource(R.string.auto_unload_timeout)
+                SearchFilterRow(searchQuery, SettingsSearchId.KEEP_ALIVE_TIMEOUT, searchState) {
+                    TimeoutSettingCard(
+                        icon = Icons.Default.Timer,
+                        title = timeoutTitle,
+                        description = stringResource(R.string.timeout_description),
+                        currentValue = currentTimeout,
+                        options = viewModel.timeoutOptions,
+                        currentValueDisplay = when (currentTimeout) {
                             1 -> stringResource(R.string.timeout_1_minute)
                             60 -> stringResource(R.string.timeout_1_hour)
-                            else -> pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
-                        }
-                    },
-                    onOptionSelected = { viewModel.saveKeepAliveTimeout(it) },
-                    enabled = !uiState.isSaving,
-                    isSaving = uiState.isSaving,
-                    saveSuccess = uiState.saveSuccess,
-                    errorMessage = uiState.errorMessage,
-                )
-            }
+                            else -> pluralStringResource(R.plurals.timeout_minutes, currentTimeout, currentTimeout)
+                        },
+                        optionDisplay = { minutes ->
+                            when (minutes) {
+                                1 -> stringResource(R.string.timeout_1_minute)
+                                60 -> stringResource(R.string.timeout_1_hour)
+                                else -> pluralStringResource(R.plurals.timeout_minutes, minutes, minutes)
+                            }
+                        },
+                        onOptionSelected = { viewModel.saveKeepAliveTimeout(it) },
+                        enabled = !uiState.isSaving,
+                        isSaving = uiState.isSaving,
+                        saveSuccess = uiState.saveSuccess,
+                        errorMessage = uiState.errorMessage,
+                    )
+                }
+            } // TASK-588.2: the advanced reveal block
         }
 
         CollapsibleSection(
@@ -2483,6 +2527,57 @@ private fun SettingsGroupLabel(group: SettingsSearchGroup, state: SettingsSearch
 }
 
 /**
+ * TASK-588.1: the progressive-disclosure reveal row for the TRANSCRIPTION
+ * section's advanced block. De-emphasize, never hide: the count names what
+ * is folded away; a tap expands in place (persisted). Never rendered during
+ * an active search; the search path opens the block by itself so every
+ * card stays findable (the design note's one new behavior).
+ */
+@Composable
+private fun AdvancedRevealCard(
+    count: Int,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+) {
+    // TASK-382 contract (as CollapsibleSection): the row is the accessible
+    // toggle; stateDescription conveys the state, the chevron announces
+    // the action.
+    val stateDescriptionText = stringResource(
+        if (expanded) R.string.a11y_collapse else R.string.a11y_expand)
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(role = Role.Button, onClick = onToggle)
+            .semantics { stateDescription = stateDescriptionText },
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(R.string.settings_advanced_reveal, count),
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.primary,
+            )
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowDown,
+                contentDescription = stateDescriptionText,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier
+                    .size(24.dp)
+                    .graphicsLayer { rotationZ = if (expanded) 180f else 0f },
+            )
+        }
+    }
+}
+
+/**
  * TASK-542: card-level gate for the settings search. Renders [content] only
  * when [matchesQuery] accepts the query. TASK-689: callers pass their card's
  * registry identity ([id] + [state]) and the texts resolve inside from the
@@ -2912,6 +3007,12 @@ internal class SettingsSearchCard(
     val visible: (SettingsSearchState) -> Boolean = { true },
     /** TASK-731: the in-section group whose header renders above this card. */
     val group: SettingsSearchGroup? = null,
+    /**
+     * TASK-588.2: the card sits behind the TRANSCRIPTION section's advanced
+     * reveal. The reveal's count derives from this flag (the registry is the
+     * ONE gate owner; a card moved behind the reveal edits only this).
+     */
+    val advanced: Boolean = false,
 ) {
     /** Static vocabulary: most cards never vary with state. */
     internal constructor(
@@ -2920,7 +3021,25 @@ internal class SettingsSearchCard(
         res: List<Int>,
         visible: (SettingsSearchState) -> Boolean = { true },
         group: SettingsSearchGroup? = null,
-    ) : this(id, section, { res }, visible, group)
+        advanced: Boolean = false,
+    ) : this(id, section, { res }, visible, group, advanced)
+}
+
+/**
+ * TASK-588.2: the SECTION-level render gate of an advanced TRANSCRIPTION
+ * card: the outer `if` conditions at the render site, NOT the inner
+ * toggles, so the folded-count stays stable while inner toggles flip.
+ * DRIFT PIN: the same conditions exist as compositional ifs at the render
+ * site (a third home this function deliberately mirrors); the registry
+ * pins in SettingsSearchRegistryTest are the drift tripwire: change one
+ * side, update the other in the same commit.
+ */
+internal fun SettingsSearchCard.outerSectionGate(state: SettingsSearchState): Boolean = when (id) {
+    SettingsSearchId.PUNCTUATION_MODE, SettingsSearchId.PUNCTUATION_PROMPT ->
+        state.gemmaConfigured && !state.isLlmBackend
+    SettingsSearchId.SUMMARY_PROMPT -> state.gemmaConfigured
+    SettingsSearchId.DEFAULT_PROMPT -> state.isLlmBackend
+    else -> true
 }
 
 /**
@@ -2962,12 +3081,14 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         SettingsSearchId.PROGRESSIVE, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.progressive_title, R.string.progressive_description),
         group = SettingsSearchGroup.DECODING,
+        advanced = true,
     ),
     // TASK-186: the early-preview toggle, right after its sibling.
     SettingsSearchCard(
         SettingsSearchId.EARLY_PREVIEW, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.early_preview_title, R.string.early_preview_description),
         group = SettingsSearchGroup.DECODING,
+        advanced = true,
     ),
     // TASK-689: closed a real gap in the old count groups (the gate
     // existed, the count entry did not): the GH #43 two-pass
@@ -2986,12 +3107,14 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
             R.string.punctuation_mode_conservative),
         visible = { s -> s.gemmaConfigured && !s.isLlmBackend },
         group = SettingsSearchGroup.GEMMA_TEXT,
+        advanced = true,
     ),
     SettingsSearchCard(
         SettingsSearchId.PUNCTUATION_PROMPT, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.punctuation_prompt_title, R.string.punctuation_prompt_description),
         visible = { s -> s.gemmaConfigured && !s.isLlmBackend && s.punctuationPromptForced },
         group = SettingsSearchGroup.GEMMA_TEXT,
+        advanced = true,
     ),
     SettingsSearchCard(
         SettingsSearchId.SUMMARIZE, SettingsSearchSection.TRANSCRIPTION,
@@ -3004,12 +3127,14 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         listOf(R.string.summary_prompt_title, R.string.summary_prompt_description),
         visible = { s -> s.gemmaConfigured && s.summarizeOn },
         group = SettingsSearchGroup.GEMMA_TEXT,
+        advanced = true,
     ),
     SettingsSearchCard(
         SettingsSearchId.DEFAULT_PROMPT, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.default_prompt_title, R.string.default_prompt_description),
         visible = { s -> s.isLlmBackend },
         group = SettingsSearchGroup.GEMMA_TEXT,
+        advanced = true,
     ),
     // The GH #83 speaker-labels toggle.
     // Maintainer decision 2026-09-30: the diarization hub. Union
@@ -3027,6 +3152,7 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
                 R.string.speaker_settings_title, R.string.speaker_settings_summary,
                 R.string.speaker_labels_title, R.string.speaker_labels_description)
         },
+        advanced = true,
     ),
     SettingsSearchCard(
         SettingsSearchId.AUTO_COPY, SettingsSearchSection.TRANSCRIPTION,
@@ -3045,14 +3171,17 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         SettingsSearchId.SIGNATURE, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.signature_setting_title, R.string.signature_setting_description),
         group = SettingsSearchGroup.OUTPUT,
+        advanced = true,
     ),
     SettingsSearchCard(
         SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.interrupted_run_notifications_title, R.string.interrupted_run_notifications_description),
+        advanced = true,
     ),
     SettingsSearchCard(
         SettingsSearchId.KEEP_ALIVE_TIMEOUT, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.auto_unload_timeout, R.string.timeout_description),
+        advanced = true,
     ),
     // --- Appearance ---
     // TASK-689: text size is part of the vocabulary; TASK-576 added the

@@ -1203,4 +1203,6 @@
     <string name="model_shortcut_switch_label">מעבר אל %1$s</string>
     <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
     <string name="punctuation_default_prompt_conservative">הוסף לתמליל הזה פיסוק, אותיות גדולות ומעברי פסקה. אל תתרגם, אל תסכם ואל תוסיף, תסיר, תשנה סדר או תתקן אף מילה: רצף המילים חייב להישאר בדיוק כפי שנכתב. החזר רק את התמליל המעוצב.</string>
+    <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
+    <string name="settings_advanced_reveal">אפשרויות מתקדמות (%1$d)</string>
 </resources>

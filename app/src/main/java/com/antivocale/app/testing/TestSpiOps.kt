@@ -92,6 +92,9 @@ internal class TestSpiOps(
             .put("progressiveEnabled", preferences.progressiveTranscription.first())
             .put("earlyPreviewEnabled", preferences.earlyPreviewEnabled.first())
             .put("interruptedRunNotifications", preferences.interruptedRunNotifications.first())
+            // TASK-588.1: the advanced-reveal state (the conformance test
+            // pins every flow exposed, keyed by its flow name).
+            .put("settingsTranscriptionAdvancedExpanded", preferences.settingsTranscriptionAdvancedExpanded.first())
             .put("punctuationMode", preferences.punctuationMode.first())
             .put("punctuationPrompt", preferences.punctuationPrompt.first())
             .put("threadCount", preferences.threadCount.first())

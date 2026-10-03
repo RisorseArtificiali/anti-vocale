@@ -1192,4 +1192,6 @@
     <string name="model_shortcut_switch_label">%1$s पर स्विच करें</string>
     <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
     <string name="punctuation_default_prompt_conservative">इस प्रतिलिपि में विराम चिह्न, बड़े अक्षर और अनुच्छेद विभाजन जोड़ें। अनुवाद न करें, सारांश न दें, और कोई शब्द न जोड़ें, न हटाएं, न उसका क्रम बदलें और न ठीक करें: शब्दों का क्रम ठीक वैसा ही रहना चाहिए जैसा लिखा गया है। केवल प्रारूपित प्रतिलिपि ही दें।</string>
+    <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
+    <string name="settings_advanced_reveal">उन्नत विकल्प (%1$d)</string>
 </resources>

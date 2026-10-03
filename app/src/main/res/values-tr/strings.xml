@@ -1193,4 +1193,6 @@
     <string name="model_shortcut_switch_label">%1$s öğesine geç</string>
     <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
     <string name="punctuation_default_prompt_conservative">Bu transkripte noktalama, büyük harfler ve paragraf sonları ekle. Çevirme, özetleme ve hiçbir kelimeyi ekleme, çıkarma, sırasını değiştirme veya düzeltme: kelime dizisi tamamen yazıldığı gibi kalmalı. Yalnızca biçimlendirilmiş transkripti ver.</string>
+    <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
+    <string name="settings_advanced_reveal">Gelişmiş seçenekler (%1$d)</string>
 </resources>

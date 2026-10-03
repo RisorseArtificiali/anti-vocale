@@ -1219,4 +1219,6 @@
     <string name="model_shortcut_switch_label">Перемкнути на %1$s</string>
     <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
     <string name="punctuation_default_prompt_conservative">Додай до цього транскрипту пунктуацію, великі літери та розбиття на абзаци. Не перекладай, не стискуй і не додавай, не видаляй, не змінюй порядок і не виправляй жодного слова: послідовність слів має залишитися точно такою, як написано. Поверни лише відформатований транскрипт.</string>
+    <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
+    <string name="settings_advanced_reveal">Додаткові налаштування (%1$d)</string>
 </resources>

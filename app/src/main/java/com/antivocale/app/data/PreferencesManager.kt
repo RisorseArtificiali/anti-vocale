@@ -20,6 +20,13 @@ interface PreferencesManager {
     /** GH #43: two-pass transcription (fast streaming preview, then refine). */
     val refinementEnabled: Flow<Boolean>
 
+    /**
+     * TASK-588.1: whether the TRANSCRIPTION section's advanced card block
+     * is expanded (the persisted progressive-disclosure reveal state).
+     */
+    val settingsTranscriptionAdvancedExpanded: Flow<Boolean>
+    suspend fun saveSettingsTranscriptionAdvancedExpanded(expanded: Boolean)
+
     /** GH #83: post-transcription speaker labeling on the cue timeline. */
     val speakerLabelsEnabled: Flow<Boolean>
     suspend fun saveRefinementEnabled(enabled: Boolean)

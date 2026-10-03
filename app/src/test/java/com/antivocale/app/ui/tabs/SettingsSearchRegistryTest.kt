@@ -49,6 +49,51 @@ class SettingsSearchRegistryTest {
     private fun res(id: SettingsSearchId, state: SettingsSearchState): List<Int> =
         SETTINGS_SEARCH_CARDS.first { card -> card.id == id }.res(state)
 
+
+    // ---- TASK-588.2: the advanced reveal's membership and stable count ----
+
+    @Test
+    fun `the advanced flag marks exactly the reveal's ten cards`() {
+        val advanced = SETTINGS_SEARCH_CARDS.filter { it.advanced }.map { it.id }.toSet()
+        assertEquals(
+            setOf(
+                SettingsSearchId.PROGRESSIVE, SettingsSearchId.EARLY_PREVIEW,
+                SettingsSearchId.PUNCTUATION_MODE, SettingsSearchId.PUNCTUATION_PROMPT,
+                SettingsSearchId.SUMMARY_PROMPT, SettingsSearchId.DEFAULT_PROMPT,
+                SettingsSearchId.DIARIZATION_HUB, SettingsSearchId.SIGNATURE,
+                SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, SettingsSearchId.KEEP_ALIVE_TIMEOUT,
+            ),
+            advanced,
+        )
+        // and they are all TRANSCRIPTION cards
+        assertTrue(advanced.all { id ->
+            SETTINGS_SEARCH_CARDS.first { it.id == id }.section == SettingsSearchSection.TRANSCRIPTION
+        })
+    }
+
+    @Test
+    fun `the folded count follows the section gates and ignores inner toggles`() {
+        fun folded(state: SettingsSearchState) = SETTINGS_SEARCH_CARDS.count {
+            it.advanced &&
+                it.section == SettingsSearchSection.TRANSCRIPTION &&
+                it.outerSectionGate(state)
+        }
+        // gemma configured, ASR backend: 6 always + punctuation pair + summary prompt
+        assertEquals(9, folded(state(gemmaConfigured = true, isLlmBackend = false)))
+        // no gemma: the six unconditional cards alone
+        assertEquals(6, folded(state(gemmaConfigured = false, isLlmBackend = false)))
+        // LLM backend: 6 + the default-prompt hub
+        assertEquals(7, folded(state(gemmaConfigured = false, isLlmBackend = true)))
+        // STABILITY: inner toggles never move the folded count
+        assertEquals(
+            folded(state(gemmaConfigured = true, summarizeOn = false)),
+            folded(state(gemmaConfigured = true, summarizeOn = true)),
+        )
+        assertEquals(
+            folded(state(gemmaConfigured = true, punctuationPromptForced = false)),
+            folded(state(gemmaConfigured = true, punctuationPromptForced = true)),
+        )
+    }
     @Test
     fun `every id has exactly one registry entry`() {
         assertEquals(SettingsSearchId.entries.size, SETTINGS_SEARCH_CARDS.size)

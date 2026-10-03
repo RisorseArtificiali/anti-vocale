@@ -551,6 +551,9 @@
     <string name="output_folder_clear">Clear folder</string>
 
     <!-- Settings Tab - VAD -->
+    <!-- TASK-588: the TRANSCRIPTION section's advanced-block reveal. -->
+    <string name="settings_advanced_reveal">Advanced options (%1$d)</string>
+
     <!-- Settings Tab - Punctuation (TASK-276) -->
     <string name="punctuation_status">Formatting with AI…</string>
     <string name="punctuation_mode_title">Punctuation and Formatting</string>

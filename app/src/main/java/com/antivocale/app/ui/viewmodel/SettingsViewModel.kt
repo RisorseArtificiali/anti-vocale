@@ -129,6 +129,8 @@ class SettingsViewModel @Inject constructor(
                 modelConfigured = !preferencesManager.modelPath.first().isNullOrBlank(),
                 punctuationPrompt = preferencesManager.punctuationPrompt.first(),
                 summaryPrompt = preferencesManager.summaryPrompt.first(),
+                transcriptionAdvancedExpanded =
+                    preferencesManager.settingsTranscriptionAdvancedExpanded.first(),
         )
     }
 
@@ -136,6 +138,8 @@ class SettingsViewModel @Inject constructor(
         val modelConfigured: Boolean,
         val punctuationPrompt: String,
         val summaryPrompt: String,
+        /** TASK-588.1: seeds the advanced-reveal state (no first-frame flash). */
+        val transcriptionAdvancedExpanded: Boolean,
     )
 
     val gemmaConfigured: StateFlow<Boolean> = preferencesManager.modelPath
@@ -405,6 +409,19 @@ class SettingsViewModel @Inject constructor(
     val refinementEnabled: StateFlow<Boolean> = _refinementEnabled.asStateFlow()
     private val _refinementAvailable = MutableStateFlow(false)
     val refinementAvailable: StateFlow<Boolean> = _refinementAvailable.asStateFlow()
+
+    // TASK-588.1: the TRANSCRIPTION section's advanced-block reveal. Seeded
+    // from the warmed prefs (a plain false would flash the block collapsed
+    // for one frame for expanded users (the TASK-485 class)), and the setter
+    // sets the state synchronously before the DataStore write so the expand
+    // never waits on disk.
+    private val _transcriptionAdvancedExpanded =
+        MutableStateFlow(warmedPrefs.transcriptionAdvancedExpanded)
+    val transcriptionAdvancedExpanded: StateFlow<Boolean> = _transcriptionAdvancedExpanded.asStateFlow()
+    fun setTranscriptionAdvancedExpanded(expanded: Boolean) {
+        _transcriptionAdvancedExpanded.value = expanded
+        viewModelScope.launch { preferencesManager.saveSettingsTranscriptionAdvancedExpanded(expanded) }
+    }
 
     // GH #83: speaker labeling after transcription.
     private val _speakerLabelsEnabled = MutableStateFlow(false)
@@ -756,6 +773,12 @@ class SettingsViewModel @Inject constructor(
         // GH #43: refinement toggle + availability
         viewModelScope.launch {
             preferencesManager.refinementEnabled.collect { _refinementEnabled.value = it }
+        }
+        // TASK-588.1: the advanced-block reveal state.
+        viewModelScope.launch {
+            preferencesManager.settingsTranscriptionAdvancedExpanded.collect {
+                _transcriptionAdvancedExpanded.value = it
+            }
         }
         // GH #83: speaker labeling toggle
         viewModelScope.launch {

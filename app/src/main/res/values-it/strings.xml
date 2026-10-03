@@ -1198,4 +1198,6 @@
     <string name="model_shortcut_switch_label">Passa a %1$s</string>
     <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
     <string name="punctuation_default_prompt_conservative">Aggiungi punteggiatura, maiuscole e interruzioni di paragrafo a questa trascrizione. Non tradurre, non riassumere e non aggiungere, rimuovere, riordinare o correggere nessuna parola: la sequenza di parole deve restare esattamente quella scritta. Restituisci solo la trascrizione formattata.</string>
+    <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
+    <string name="settings_advanced_reveal">Opzioni avanzate (%1$d)</string>
 </resources>

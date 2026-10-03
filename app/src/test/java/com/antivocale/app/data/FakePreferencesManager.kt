@@ -223,6 +223,13 @@ internal class FakePreferencesManager : PreferencesManager {
     // GH #43
     val _refinementEnabled = MutableStateFlow(false)
     override val refinementEnabled: Flow<Boolean> = _refinementEnabled
+
+    // TASK-588.1: the advanced-reveal state (default collapsed, like prod).
+    val _transcriptionAdvancedExpanded = MutableStateFlow(false)
+    override val settingsTranscriptionAdvancedExpanded: Flow<Boolean> = _transcriptionAdvancedExpanded
+    override suspend fun saveSettingsTranscriptionAdvancedExpanded(expanded: Boolean) {
+        _transcriptionAdvancedExpanded.value = expanded
+    }
     override suspend fun saveRefinementEnabled(enabled: Boolean) {
         _refinementEnabled.value = enabled
     }
