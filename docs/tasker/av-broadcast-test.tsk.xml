@@ -1,0 +1,29 @@
+<TaskerData sr="" dvi="1" tv="6.3.13">
+	<Task sr="task99">
+		<cdate>1770000000000</cdate>
+		<edate>1770000000000</edate>
+		<id>99</id>
+		<nme>AV Background Test</nme>
+		<pri>10</pri>
+		<Action sr="act0" ve="7">
+			<code>131</code>
+			<Str sr="arg0" ve="3">com.antivocale.app.PROCESS_REQUEST</Str>
+			<Str sr="arg1" ve="3"/>
+			<Str sr="arg2" ve="3"/>
+			<Str sr="arg3" ve="3"/>
+			<Str sr="arg4" ve="3">BroadcastReceiver</Str>
+			<Str sr="arg5" ve="3">request_type</Str>
+			<Str sr="arg6" ve="3">audio</Str>
+			<Str sr="arg7" ve="3">file_path</Str>
+			<Str sr="arg8" ve="3">/data/data/com.antivocale.app.debug/files/shared_audio/two_speakers.wav</Str>
+			<Str sr="arg9" ve="3"/>
+			<Str sr="arg10" ve="3"/>
+			<Str sr="arg11" ve="3"/>
+			<Str sr="arg12" ve="3"/>
+			<Str sr="arg13" ve="3"/>
+			<Str sr="arg14" ve="3">com.antivocale.app.debug</Str>
+			<Str sr="arg15" ve="3">com.antivocale.app.debug.receiver.TaskerRequestReceiver</Str>
+			<Int sr="arg16" val="0"/>
+		</Action>
+	</Task>
+</TaskerData>
