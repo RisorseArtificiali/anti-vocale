@@ -134,7 +134,10 @@ install_and_verify() {
     local adb_args=("$@")
     local out rc
     set +e
-    out="$("$ADB" "${adb_args[@]}" install --user 0 -r "$APK" 2>&1)"
+    # bash-3.2 (macOS system bash) treats an empty array expansion as
+    # unbound under set -u; the +expansion guard keeps the no-args
+    # single-device path working there (fixed upstream in bash 4.4).
+    out="$("$ADB" ${adb_args[@]+"${adb_args[@]}"} install --user 0 -r "$APK" 2>&1)"
     rc=$?
     set -e
     echo "$out"
@@ -146,8 +149,8 @@ install_and_verify() {
     # client: the debug build carries the .debug applicationIdSuffix.
     local pkg
     for pkg in com.antivocale.app.debug com.antivocale.app; do
-        if "$ADB" "${adb_args[@]}" shell pm path "$pkg" >/dev/null 2>&1; then
-            echo "Installed: $pkg ($("$ADB" "${adb_args[@]}" shell dumpsys package "$pkg" 2>/dev/null | sed -n 's/.*versionName=\([^ ]*\).*/\1/p' | head -1))"
+        if "$ADB" ${adb_args[@]+"${adb_args[@]}"} shell pm path "$pkg" >/dev/null 2>&1; then
+            echo "Installed: $pkg ($("$ADB" ${adb_args[@]+"${adb_args[@]}"} shell dumpsys package "$pkg" 2>/dev/null | sed -n 's/.*versionName=\([^ ]*\).*/\1/p' | head -1))"
             echo "Done."
             return 0
         fi
