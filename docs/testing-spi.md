@@ -59,7 +59,7 @@ Set keys and value formats:
 | `speaker_labels_enabled` | `saveSpeakerLabelsEnabled` | `true` or `false` (GH #83 speaker labeling toggle) |
 | `speaker_id_enabled` | `saveSpeakerIdEnabled` | `true` or `false` (TASK-670 named speaker labels; default off, the privacy gate) |
 | `voice_note_identity_enabled` | `saveVoiceNoteIdentityEnabled` | `true` or `false` (TASK-735 voice-note identity listener gate; default off) |
-| `punctuation` | `savePunctuationMode` | `off`, `auto`, `always` (the settings dropdown's exact set; anything else is rejected) |
+| `punctuation` | `savePunctuationMode` | `off`, `auto`, `always`, `conservative` (TASK-666; the dropdown offers off/always/conservative, SPI also accepts the legacy auto; anything else is rejected) |
 | `punctuation_prompt` | `savePunctuationPrompt` | free text, 500-char cap; blank = the localized built-in prompt |
 | `keep_alive` | `saveKeepAliveTimeout` | positive integer (minutes); 0/negative rejected (would silently fall back to the default) |
 | `subtitle_timeout` | `saveSubtitleChoiceTimeoutMinutes` | positive integer (minutes); TASK-515: the subtitles-or-transcribe choice timeout |

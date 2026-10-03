@@ -320,7 +320,10 @@ class SettingsViewModel @Inject constructor(
     // ships. At that point normalize the stored value at read time, and
     // return the option the same day.
     val punctuationModeOptions: List<String> =
-        listOf(PunctuationPolicy.PREF_OFF, PunctuationPolicy.PREF_ALWAYS)
+        // TASK-666: derived from the preference vocabulary so a future mode
+        // ships selectable the day MODE_PREFS gains it (AUTO stays hidden:
+        // see the legacy note above).
+        PunctuationPolicy.MODE_PREFS.filter { it != PunctuationPolicy.PREF_AUTO }
     val currentPunctuationMode: StateFlow<String> = preferencesManager.punctuationMode
         .stateIn(
             scope = viewModelScope,

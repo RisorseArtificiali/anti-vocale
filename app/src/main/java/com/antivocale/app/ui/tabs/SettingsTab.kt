@@ -851,6 +851,10 @@ fun SettingsTab(
                 // toggle. AUTO can never run it today (see the options note
                 // in SettingsViewModel); the previous condition (mode != off)
                 // kept the box on screen from the untouched AUTO default.
+                // TASK-666: CONSERVATIVE forces the pass too but PINS the
+                // fenced prompt (an override could break the fences), so the
+                // card stays ALWAYS-only: the condition is "override
+                // honored", not "pass forced".
                 SearchFilterRow(searchQuery, SettingsSearchId.PUNCTUATION_PROMPT, searchState) {
                     if (currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS) {
                         PunctuationPromptCard(
@@ -2876,7 +2880,13 @@ internal data class SettingsSearchState(
     val isLlmBackend: Boolean,
     val isModelLoaded: Boolean,
     val gemmaConfigured: Boolean,
-    /** The punctuation pass is forced (PREF_ALWAYS): its prompt card renders. */
+    /**
+     * The prompt OVERRIDE is honored (PREF_ALWAYS only): its card renders.
+     * TASK-666: the name predates CONSERVATIVE; that mode also forces the
+     * pass but PINS the fenced prompt (the override is ignored by
+     * design), so it must stay out of this flag - including it would
+     * render a card whose edits are silently discarded.
+     */
     val punctuationPromptForced: Boolean,
     val summarizeOn: Boolean,
     /** A background kill was swept: the battery-exemption card offers itself. */
@@ -2969,7 +2979,11 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     ),
     SettingsSearchCard(
         SettingsSearchId.PUNCTUATION_MODE, SettingsSearchSection.TRANSCRIPTION,
-        listOf(R.string.punctuation_mode_title, R.string.punctuation_mode_description),
+        // TASK-666: the option label joins the vocabulary so "paragraph"
+        // / "conservative" queries find the card.
+        listOf(
+            R.string.punctuation_mode_title, R.string.punctuation_mode_description,
+            R.string.punctuation_mode_conservative),
         visible = { s -> s.gemmaConfigured && !s.isLlmBackend },
         group = SettingsSearchGroup.GEMMA_TEXT,
     ),
@@ -3444,6 +3458,8 @@ private fun remoteTestReasonText(
 private fun punctuationModeLabel(pref: String): String = when (pref) {
     PunctuationPolicy.PREF_OFF -> stringResource(R.string.punctuation_mode_off)
     PunctuationPolicy.PREF_ALWAYS -> stringResource(R.string.punctuation_mode_always)
+    // TASK-666: the bounded-cleanup mode (fenced prompt, strict validation).
+    PunctuationPolicy.PREF_CONSERVATIVE -> stringResource(R.string.punctuation_mode_conservative)
     else -> stringResource(R.string.punctuation_mode_auto)
 }
 

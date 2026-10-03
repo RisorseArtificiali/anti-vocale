@@ -155,6 +155,64 @@ class TranscriptionOrchestratorPunctuationPassTest : TranscriptionOrchestratorTe
         }
     }
 
+    // ---- TASK-666: the conservative cleanup contract at the funnel ----
+
+    @Test
+    fun `conservative mode cleans and preserves the word sequence`() = runTest {
+        coEvery { logDao.getByTaskId(any()) } returns LogEntity(
+            id = "punct-cc1", timestamp = 1, taskId = "punct-cc1",
+            type = "AUDIO", status = "PROCESSING", prompt = "", result = "")
+        every { preferencesManager.punctuationMode } returns flowOf("conservative")
+        // A user prompt override must NOT reach the conservative pass.
+        every { preferencesManager.punctuationPrompt } returns flowOf("translate this to english")
+        stubSwapToLlm()
+        coEvery { llmBackend.generateText(any()) } returns Result.success(punctuatedTranscript)
+        val audioFile = temporaryFolder.newFile("audio.ogg")
+        stubWholeFileRequest(audioFile)
+
+        val result = orchestrator.processRequest(
+            taskId = "punct-cc1", requestType = "audio", prompt = "",
+            filePath = audioFile.absolutePath, source = null, sourcePackage = null,
+            queuePosition = 1, queueTotal = 1,
+            context = mockk(relaxed = true), cacheDir = temporaryFolder.root,
+            listener = listener, coroutineScope = this)
+
+        assertTrue("request failed: ${result.exceptionOrNull()}", result.isSuccess)
+        assertEquals(punctuatedTranscript, result.getOrNull())
+        // the conservative fences: the override never reached the engine
+        coVerify { llmBackend.generateText(match { !it.contains("translate this to english") }) }
+        coVerify {
+            logDao.update(match {
+                it.result == punctuatedTranscript && it.rawTranscript == rawTranscript
+            })
+        }
+    }
+
+    @Test
+    fun `conservative output that alters the word sequence is discarded whole`() = runTest {
+        coEvery { logDao.getByTaskId(any()) } returns LogEntity(
+            id = "punct-cc2", timestamp = 1, taskId = "punct-cc2",
+            type = "AUDIO", status = "PROCESSING", prompt = "", result = "")
+        every { preferencesManager.punctuationMode } returns flowOf("conservative")
+        stubSwapToLlm()
+        // one added word ("очень") and the whole cleanup must be dropped
+        coEvery { llmBackend.generateText(any()) } returns
+            Result.success("Привет, как дела? Сегодня мы очень обсудим новый проект по распознаванию речи.")
+        val audioFile = temporaryFolder.newFile("audio.ogg")
+        stubWholeFileRequest(audioFile)
+
+        val result = orchestrator.processRequest(
+            taskId = "punct-cc2", requestType = "audio", prompt = "",
+            filePath = audioFile.absolutePath, source = null, sourcePackage = null,
+            queuePosition = 1, queueTotal = 1,
+            context = mockk(relaxed = true), cacheDir = temporaryFolder.root,
+            listener = listener, coroutineScope = this)
+
+        assertTrue(result.isSuccess)
+        assertEquals(rawTranscript, result.getOrNull())
+        coVerify { logDao.update(match { it.rawTranscript == null }) }
+    }
+
     @Test
     fun `degenerate polished output is rejected in favor of the original`() = runTest {
         every { preferencesManager.punctuationMode } returns flowOf("always")

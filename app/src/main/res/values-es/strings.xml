@@ -456,10 +456,11 @@
     <string name="output_folder_clear">Quitar carpeta</string>
     <string name="punctuation_status">Formateando con IA…</string>
     <string name="punctuation_mode_title">Puntuación y formato</string>
-    <string name="punctuation_mode_description">Reescribe las transcripciones sin puntuación con el modelo Gemma. Automático solo para modelos que no puntúan (requiere Gemma descargado).</string>
+    <string name="punctuation_mode_description">Reescribe las transcripciones con el modelo Gemma. Automático solo funciona para modelos sin puntuación; Siempre también normaliza la puntuación; Conservador añade párrafos y nunca cambia las palabras (requiere Gemma descargado).</string>
     <string name="punctuation_mode_off">Desactivado</string>
     <string name="punctuation_mode_auto">Automático</string>
     <string name="punctuation_mode_always">Siempre</string>
+    <string name="punctuation_mode_conservative">Conservador (solo puntuación y párrafos)</string>
     <string name="punctuation_prompt_title">Prompt de puntuación</string>
     <string name="punctuation_prompt_description">Instrucción para el paso de puntuación. Déjalo vacío para usar el integrado.</string>
     <string name="punctuation_prompt_placeholder">Prompt integrado</string>
@@ -1058,4 +1059,6 @@
     <string name="model_switched_message">Modelo activo: %1$s</string>
     <string name="model_switch_failed">No se pudo cambiar: el modelo no está en el dispositivo</string>
     <string name="model_shortcut_switch_label">Cambiar a %1$s</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Añade puntuación, mayúsculas y saltos de párrafo a esta transcripción. No traduzcas, no resumas y no añadas, quites, reordenes ni corrijas ninguna palabra: la secuencia de palabras debe permanecer exactamente como está escrita. Devuelve solo la transcripción formateada.</string>
 </resources>

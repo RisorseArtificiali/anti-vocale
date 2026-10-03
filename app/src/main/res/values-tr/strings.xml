@@ -540,10 +540,11 @@
     <!-- Settings Tab - VAD -->
     <string name="punctuation_status">YZ ile biçimlendiriliyor…</string>
     <string name="punctuation_mode_title">Noktalama ve biçimlendirme</string>
-    <string name="punctuation_mode_description">Noktalamasız transkriptleri Gemma modeliyle yeniden yazar. Otomatik yalnızca noktalama yapmayan modeller için (Gemma indirilmiş olmalı).</string>
+    <string name="punctuation_mode_description">Transkriptleri Gemma modeliyle yeniden biçimlendirir. Otomatik yalnızca noktalama yapmayan modellerde çalışır; Her zaman noktalamayı da normalleştirir; Muhafazakâr paragraf ekler ve kelimeleri asla değiştirmez (Gemma indirilmeli).</string>
     <string name="punctuation_mode_off">Kapalı</string>
     <string name="punctuation_mode_auto">Otomatik</string>
     <string name="punctuation_mode_always">Her zaman</string>
+    <string name="punctuation_mode_conservative">Muhafazakâr (yalnızca noktalama ve paragraflar)</string>
     <string name="punctuation_prompt_title">Noktalama istemi</string>
     <string name="punctuation_prompt_description">Noktalama adımı için yönerge. Yerleşik olanı kullanmak için boş bırakın.</string>
     <string name="punctuation_prompt_placeholder">Yerleşik istem</string>
@@ -1190,4 +1191,6 @@
     <string name="model_switched_message">Etkin model: %1$s</string>
     <string name="model_switch_failed">Değiştirilemedi: model cihazda değil</string>
     <string name="model_shortcut_switch_label">%1$s öğesine geç</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Bu transkripte noktalama, büyük harfler ve paragraf sonları ekle. Çevirme, özetleme ve hiçbir kelimeyi ekleme, çıkarma, sırasını değiştirme veya düzeltme: kelime dizisi tamamen yazıldığı gibi kalmalı. Yalnızca biçimlendirilmiş transkripti ver.</string>
 </resources>

@@ -530,10 +530,11 @@
     <!-- Settings Tab - VAD -->
     <string name="punctuation_status">Форматирование с помощью ИИ…</string>
     <string name="punctuation_mode_title">Пунктуация и форматирование</string>
-    <string name="punctuation_mode_description">Переписывает расшифровки без пунктуации моделью Gemma. Автоматически только для моделей без пунктуации (нужно, чтобы Gemma была скачана).</string>
+    <string name="punctuation_mode_description">Переформатирует расшифровки моделью Gemma. Автоматически работает только для моделей без пунктуации; Всегда также нормализует пунктуацию; Консервативный добавляет абзацы и никогда не меняет слова (нужно скачать Gemma).</string>
     <string name="punctuation_mode_off">Выключено</string>
     <string name="punctuation_mode_auto">Автоматически</string>
     <string name="punctuation_mode_always">Всегда</string>
+    <string name="punctuation_mode_conservative">Консервативный (только пунктуация и абзацы)</string>
     <string name="punctuation_prompt_title">Промпт пунктуации</string>
     <string name="punctuation_prompt_description">Инструкция для этапа пунктуации. Оставьте пустым, чтобы использовать встроенную.</string>
     <string name="punctuation_prompt_placeholder">Встроенный промпт</string>
@@ -1215,4 +1216,6 @@
     <string name="model_switched_message">Активная модель: %1$s</string>
     <string name="model_switch_failed">Не удалось переключить: модели нет на устройстве</string>
     <string name="model_shortcut_switch_label">Переключить на %1$s</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Добавь в эту расшифровку пунктуацию, заглавные буквы и разбиение на абзацы. Не переводи, не пересказывай и не добавляй, не удаляй, не меняй порядок и не исправляй ни одного слова: последовательность слов должна остаться точно как написано. Выведи только отформатированную расшифровку.</string>
 </resources>

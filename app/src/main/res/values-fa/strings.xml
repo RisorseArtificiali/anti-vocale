@@ -528,10 +528,11 @@
     <!-- Settings Tab - Punctuation (TASK-276) -->
     <string name="punctuation_status">در حال قالب‌بندی با هوش مصنوعی…</string>
     <string name="punctuation_mode_title">نشانه‌گذاری و قالب‌بندی</string>
-    <string name="punctuation_mode_description">متن رونویسی‌های بدون نشانه‌گذاری را با مدل Gemma بازنویسی می‌کند. حالت خودکار فقط برای مدل‌هایی که نشانه‌گذاری نمی‌کنند اجرا می‌شود (نیازمند دانلود Gemma).</string>
+    <string name="punctuation_mode_description">رونوشت‌ها را با مدل Gemma دوباره قالب‌بندی می‌کند. خودکار فقط برای مدل‌های بدون نشانه‌گذاری کار می‌کند؛ همیشه نشانه‌گذاری را نیز یکدست می‌کند؛ محتاط‌کارانه بندها را می‌افزاید و هرگز واژه‌ها را تغییر نمی‌دهد (دانلود Gemma لازم است).</string>
     <string name="punctuation_mode_off">خاموش</string>
     <string name="punctuation_mode_auto">خودکار</string>
     <string name="punctuation_mode_always">همیشه</string>
+    <string name="punctuation_mode_conservative">محتاط‌کارانه (فقط نشانه‌گذاری و بندها)</string>
     <string name="punctuation_prompt_title">دستور نشانه‌گذاری</string>
     <string name="punctuation_prompt_description">دستور مرحله نشانه‌گذاری. برای استفاده از دستور داخلی خالی بگذارید.</string>
     <string name="punctuation_prompt_placeholder">دستور داخلی</string>
@@ -1195,4 +1196,6 @@
     <string name="model_switched_message">مدل فعال: %1$s</string>
     <string name="model_switch_failed">تعویض ممکن نشد: مدل روی دستگاه نیست</string>
     <string name="model_shortcut_switch_label">تعویض به %1$s</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">به این رونوشت نشانه‌گذاری، حروف بزرگ و شکستن بندها را اضافه کن. ترجمه نکن، خلاصه نکن و هیچ واژه‌ای را اضافه، حذف، جابه‌جا یا اصلاح نکن: ترتیب واژه‌ها باید دقیقاً همان‌طور بماند که نوشته شده است. فقط رونوشت قالب‌بندی‌شده را برگردان.</string>
 </resources>

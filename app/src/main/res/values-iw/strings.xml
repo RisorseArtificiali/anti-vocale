@@ -541,10 +541,11 @@
     <!-- Settings Tab - Punctuation (TASK-276) -->
     <string name="punctuation_status">מעצב עם AI…</string>
     <string name="punctuation_mode_title">פיסוק ועיצוב</string>
-    <string name="punctuation_mode_description">כותב מחדש תמלילים לא מפוסקים בעזרת מודל Gemma. הרצה אוטומטית חלה רק על מודלים שאינם מפסקים (דורש הורדת Gemma).</string>
+    <string name="punctuation_mode_description">מעצב מחדש תמלילים עם מודל Gemma. אוטומטי פועל רק למודלים ללא פיסוק; תמיד מנרמל גם את הפיסוק; שמרני מוסיף פסקאות ולעולם אינו משנה מילים (נדרש Gemma שהורד).</string>
     <string name="punctuation_mode_off">כבוי</string>
     <string name="punctuation_mode_auto">אוטומטי</string>
     <string name="punctuation_mode_always">תמיד</string>
+    <string name="punctuation_mode_conservative">שמרני (רק פיסוק ופסקאות)</string>
     <string name="punctuation_prompt_title">פרומפט פיסוק</string>
     <string name="punctuation_prompt_description">הוראה לשלב הפיסוק. השאר ריק כדי להשתמש בפרומפט המובנה.</string>
     <string name="punctuation_prompt_placeholder">פרומפט מובנה</string>
@@ -1200,4 +1201,6 @@
     <string name="model_switched_message">מודל פעיל: %1$s</string>
     <string name="model_switch_failed">ההחלפה נכשלה: המודל אינו במכשיר</string>
     <string name="model_shortcut_switch_label">מעבר אל %1$s</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">הוסף לתמליל הזה פיסוק, אותיות גדולות ומעברי פסקה. אל תתרגם, אל תסכם ואל תוסיף, תסיר, תשנה סדר או תתקן אף מילה: רצף המילים חייב להישאר בדיוק כפי שנכתב. החזר רק את התמליל המעוצב.</string>
 </resources>

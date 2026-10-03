@@ -509,10 +509,11 @@
     <!-- Settings Tab - VAD -->
     <string name="punctuation_status">Formatierung mit KI…</string>
     <string name="punctuation_mode_title">Zeichensetzung und Formatierung</string>
-    <string name="punctuation_mode_description">Schreibt Transkripte ohne Zeichensetzung mit dem Gemma-Modell neu. Automatisch nur für Modelle ohne Zeichensetzung (erfordert das heruntergeladene Gemma).</string>
+    <string name="punctuation_mode_description">Transkripte mit dem Gemma-Modell neu formatieren. Automatisch läuft nur für Modelle ohne Zeichensetzung; Immer normalisiert auch die Zeichensetzung; Konservativ fügt Absätze hinzu und ändert nie die Wörter (Gemma muss heruntergeladen sein).</string>
     <string name="punctuation_mode_off">Aus</string>
     <string name="punctuation_mode_auto">Automatisch</string>
     <string name="punctuation_mode_always">Immer</string>
+    <string name="punctuation_mode_conservative">Konservativ (nur Zeichensetzung und Absätze)</string>
     <string name="punctuation_prompt_title">Zeichensetzungs-Prompt</string>
     <string name="punctuation_prompt_description">Anweisung für den Zeichensetzungsschritt. Leer lassen, um den eingebauten Prompt zu verwenden.</string>
     <string name="punctuation_prompt_placeholder">Eingebauter Prompt</string>
@@ -1190,4 +1191,6 @@
     <string name="model_switched_message">Aktives Modell: %1$s</string>
     <string name="model_switch_failed">Wechsel nicht möglich: das Modell ist nicht auf dem Gerät</string>
     <string name="model_shortcut_switch_label">Wechseln zu %1$s</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Füge dieser Transkription Zeichensetzung, Großschreibung und Absatzumbrüche hinzu. Übersetze nicht, fasse nicht zusammen und füge kein Wort hinzu, entferne, ordne oder korrigiere keines: die Wortfolge muss genau wie geschrieben bleiben. Gib nur die formatierte Transkription aus.</string>
 </resources>

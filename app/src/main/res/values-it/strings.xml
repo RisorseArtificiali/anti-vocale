@@ -528,10 +528,11 @@
     <!-- Settings Tab - Punctuation (TASK-276) -->
     <string name="punctuation_status">Formattazione con IA…</string>
     <string name="punctuation_mode_title">Punteggiatura e formattazione</string>
-    <string name="punctuation_mode_description">Riscrive le trascrizioni senza punteggiatura con il modello Gemma. Automatico solo per i modelli che non punteggiano (richiede Gemma scaricato).</string>
+    <string name="punctuation_mode_description">Riscrivi le trascrizioni col modello Gemma. Automatica vale solo per modelli che non punteggiano; Sempre normalizza anche la punteggiatura; Conservativa aggiunge i paragrafi e non cambia mai le parole (serve Gemma scaricato).</string>
     <string name="punctuation_mode_off">Disattivata</string>
     <string name="punctuation_mode_auto">Automatica</string>
     <string name="punctuation_mode_always">Sempre</string>
+    <string name="punctuation_mode_conservative">Conservativa (solo punteggiatura e paragrafi)</string>
     <string name="punctuation_prompt_title">Prompt di punteggiatura</string>
     <string name="punctuation_prompt_description">Istruzione per la passata di punteggiatura. Lascia vuoto per usare quella integrata.</string>
     <string name="punctuation_prompt_placeholder">Prompt integrato</string>
@@ -1195,4 +1196,6 @@
     <string name="model_switched_message">Modello attivo: %1$s</string>
     <string name="model_switch_failed">Impossibile cambiare: il modello non è sul dispositivo</string>
     <string name="model_shortcut_switch_label">Passa a %1$s</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Aggiungi punteggiatura, maiuscole e interruzioni di paragrafo a questa trascrizione. Non tradurre, non riassumere e non aggiungere, rimuovere, riordinare o correggere nessuna parola: la sequenza di parole deve restare esattamente quella scritta. Restituisci solo la trascrizione formattata.</string>
 </resources>

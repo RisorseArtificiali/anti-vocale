@@ -916,11 +916,18 @@ class TranscriptionOrchestrator @Inject constructor(
             listener.onStatusUpdate(context.getString(R.string.punctuation_status))
             ensureBackendLoaded(context, LlmTranscriptionBackend.BACKEND_ID).getOrThrow()
             val llm = backendManager.getActiveBackend() ?: error("LLM backend not active after load")
-            val prompt = ChunkPromptPolicy.finalPrompt(
+            // TASK-666: a fenced mode pins its prompt and ignores the user
+            // override (an arbitrary override could break the fences the
+            // token validation enforces); promptIsFenced is the policy's
+            // one home for that dispatch.
+            val passPrompt = if (PunctuationPolicy.promptIsFenced(mode)) {
+                context.getString(R.string.punctuation_default_prompt_conservative)
+            } else {
                 PunctuationPolicy.effectivePrompt(
                     preferencesManager.punctuationPrompt.first(),
-                    context.getString(R.string.punctuation_default_prompt)),
-                result.text)
+                    context.getString(R.string.punctuation_default_prompt))
+            }
+            val prompt = ChunkPromptPolicy.finalPrompt(passPrompt, result.text)
             // TASK-674: the cleanup pass runs under the shared wall clock; a
             // timeout degrades to the raw transcript exactly like any other
             // generation failure (typed + breadcrumb inside the owner).
@@ -933,6 +940,15 @@ class TranscriptionOrchestrator @Inject constructor(
             if (!PunctuationPolicy.acceptablePolish(polished, result.text)) {
                 error("punctuation pass collapsed the transcript " +
                     "(${polished.length} vs ${result.text.length} chars); keeping the original")
+            }
+            // TASK-666: the conservative fence - anything beyond
+            // punctuation/paragraphs/casing (added, removed, reordered or
+            // translated words, or an inserted standalone punctuation
+            // token) discards the whole cleaned text.
+            if (PunctuationPolicy.promptIsFenced(mode) &&
+                !PunctuationPolicy.conservativeAcceptable(polished, result.text)
+            ) {
+                error("conservative cleanup altered the token sequence; keeping the original")
             }
             val effectiveText = polished.ifBlank { result.text }
             result.copy(

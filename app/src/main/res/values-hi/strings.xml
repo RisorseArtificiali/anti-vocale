@@ -508,10 +508,11 @@
     <!-- Settings Tab - VAD -->
     <string name="punctuation_status">AI से फ़ॉर्मैट हो रहा है…</string>
     <string name="punctuation_mode_title">विराम चिह्न और फ़ॉर्मैटिंग</string>
-    <string name="punctuation_mode_description">बिना विराम चिह्न वाली ट्रांसक्रिप्शन को Gemma मॉडल से फिर से लिखता है। स्वतः केवल उन मॉडलों के लिए जो विराम चिह्न नहीं लगाते (Gemma डाउनलोड आवश्यक)।</string>
+    <string name="punctuation_mode_description">प्रतिलिपियों को Gemma मॉडल से पुनः स्वरूपित करता है। स्वचालित केवल बिना विराम चिह्न वाले मॉडलों पर चलता है; सदैव विराम चिह्न भी सामान्य करता है; सतर्क अनुच्छेद जोड़ता है और कभी शब्द नहीं बदलता (Gemma डाउनलोड आवश्यक)।</string>
     <string name="punctuation_mode_off">बंद</string>
     <string name="punctuation_mode_auto">स्वतः</string>
     <string name="punctuation_mode_always">हमेशा</string>
+    <string name="punctuation_mode_conservative">सतर्क (केवल विराम चिह्न और अनुच्छेद)</string>
     <string name="punctuation_prompt_title">विराम चिह्न प्रॉम्प्ट</string>
     <string name="punctuation_prompt_description">विराम चिह्न चरण के लिए निर्देश। अंतर्निहित प्रॉम्प्ट के लिए खाली छोड़ें।</string>
     <string name="punctuation_prompt_placeholder">अंतर्निहित प्रॉम्प्ट</string>
@@ -1189,4 +1190,6 @@
     <string name="model_switched_message">सक्रिय मॉडल: %1$s</string>
     <string name="model_switch_failed">बदला नहीं जा सका: मॉडल डिवाइस पर नहीं है</string>
     <string name="model_shortcut_switch_label">%1$s पर स्विच करें</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">इस प्रतिलिपि में विराम चिह्न, बड़े अक्षर और अनुच्छेद विभाजन जोड़ें। अनुवाद न करें, सारांश न दें, और कोई शब्द न जोड़ें, न हटाएं, न उसका क्रम बदलें और न ठीक करें: शब्दों का क्रम ठीक वैसा ही रहना चाहिए जैसा लिखा गया है। केवल प्रारूपित प्रतिलिपि ही दें।</string>
 </resources>

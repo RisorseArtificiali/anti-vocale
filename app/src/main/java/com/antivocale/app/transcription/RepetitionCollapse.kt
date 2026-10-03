@@ -128,8 +128,12 @@ object RepetitionCollapse {
      * lowercased, so "URL", "url," and "URL." compare equal. Null when
      * nothing survives the strip (an all-punctuation token): those never
      * join a run, so a stream of "," tokens never collapses.
+     * TASK-666: internal, the ONE word-identity normalizer the package
+     * shares (the conservative cleanup fence compares word sequences
+     * through it); widening its scope elsewhere means widening this, not
+     * adding a second dialect.
      */
-    private fun tokenKey(word: String): String? =
+    internal fun tokenKey(word: String): String? =
         word.filter { it.isLetterOrDigit() || it == '_' }
             .lowercase()
             .ifEmpty { null }

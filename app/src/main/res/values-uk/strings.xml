@@ -550,10 +550,11 @@
     <!-- Settings Tab - VAD -->
     <string name="punctuation_status">Форматування ШІ…</string>
     <string name="punctuation_mode_title">Пунктуація та форматування</string>
-    <string name="punctuation_mode_description">Переписує розшифровки без пунктуації моделлю Gemma. Автоматично лише для моделей без пунктуації (потрібно завантажене Gemma).</string>
+    <string name="punctuation_mode_description">Переформатовує транскрипти моделлю Gemma. Автоматично працює лише для моделей без пунктуації; Завжди також нормалізує пунктуацію; Консервативний додає абзаци й ніколи не змінює слова (потрібно завантажити Gemma).</string>
     <string name="punctuation_mode_off">Вимкнено</string>
     <string name="punctuation_mode_auto">Автоматично</string>
     <string name="punctuation_mode_always">Завжди</string>
+    <string name="punctuation_mode_conservative">Консервативний (лише пунктуація та абзаци)</string>
     <string name="punctuation_prompt_title">Промпт пунктуації</string>
     <string name="punctuation_prompt_description">Інструкція для кроку пунктуації. Залиште порожнім, щоб використати вбудовану.</string>
     <string name="punctuation_prompt_placeholder">Вбудований промпт</string>
@@ -1216,4 +1217,6 @@
     <string name="model_switched_message">Активна модель: %1$s</string>
     <string name="model_switch_failed">Не вдалося перемкнути: моделі немає на пристрої</string>
     <string name="model_shortcut_switch_label">Перемкнути на %1$s</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Додай до цього транскрипту пунктуацію, великі літери та розбиття на абзаци. Не перекладай, не стискуй і не додавай, не видаляй, не змінюй порядок і не виправляй жодного слова: послідовність слів має залишитися точно такою, як написано. Поверни лише відформатований транскрипт.</string>
 </resources>

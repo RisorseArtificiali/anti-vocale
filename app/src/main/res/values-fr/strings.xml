@@ -456,10 +456,11 @@
     <string name="output_folder_clear">Effacer le dossier</string>
     <string name="punctuation_status">Mise en forme par IA…</string>
     <string name="punctuation_mode_title">Ponctuation et mise en forme</string>
-    <string name="punctuation_mode_description">Réécrit les transcriptions sans ponctuation avec le modèle Gemma. Automatique uniquement pour les modèles qui ne ponctuent pas (nécessite Gemma téléchargé).</string>
+    <string name="punctuation_mode_description">Reformate les transcriptions avec le modèle Gemma. Automatique ne s\'applique qu\'aux modèles sans ponctuation ; Toujours normalise aussi la ponctuation ; Conservateur ajoute des paragraphes et ne change jamais les mots (Gemma doit être téléchargé).</string>
     <string name="punctuation_mode_off">Désactivée</string>
     <string name="punctuation_mode_auto">Automatique</string>
     <string name="punctuation_mode_always">Toujours</string>
+    <string name="punctuation_mode_conservative">Conservateur (ponctuation et paragraphes uniquement)</string>
     <string name="punctuation_prompt_title">Prompt de ponctuation</string>
     <string name="punctuation_prompt_description">Instruction pour la passe de ponctuation. Laisser vide pour utiliser celle intégrée.</string>
     <string name="punctuation_prompt_placeholder">Prompt intégré</string>
@@ -1058,4 +1059,6 @@
     <string name="model_switched_message">Modèle actif : %1$s</string>
     <string name="model_switch_failed">Impossible de changer : le modèle n\'est pas sur l\'appareil</string>
     <string name="model_shortcut_switch_label">Basculer vers %1$s</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Ajoute la ponctuation, les majuscules et les sauts de paragraphe à cette transcription. Ne traduis pas, ne résume pas et n\'ajoute, ne supprime, ne réordonne ni ne corrige aucun mot : la séquence de mots doit rester exactement telle qu\'écrite. Retourne uniquement la transcription formatée.</string>
 </resources>

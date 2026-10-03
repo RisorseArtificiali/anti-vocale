@@ -98,4 +98,94 @@ class PunctuationPolicyTest {
         assertEquals(PunctuationPolicy.Mode.AUTO, PunctuationPolicy.modeFromPref(""))
         assertEquals(PunctuationPolicy.Mode.AUTO, PunctuationPolicy.modeFromPref("banana"))
     }
+
+    // ---- TASK-666: the cleanup contract (off | conservative | inherit) ----
+
+    @Test
+    fun `conservative parsing joins the closed preference vocabulary`() {
+        // The contract's tri-state maps onto the preference: off = off,
+        // conservative = the new bounded mode, inherit = AUTO/ALWAYS (the
+        // TASK-276 definition those two already carry).
+        assertEquals(PunctuationPolicy.Mode.CONSERVATIVE, PunctuationPolicy.modeFromPref("conservative"))
+        // The preference vocabulary stays closed: SPI validation reads it.
+        assertTrue("conservative" in PunctuationPolicy.MODE_PREFS)
+    }
+
+    @Test
+    fun `conservative runs on the text gate, blind to the model punctuates flag`() {
+        val unpunctuated = "ciao come stai oggi io bene grazie e tu tutto bene qui"
+        // Like ALWAYS (the pass is chosen for paragraphing too), but the
+        // per-model flag must not gate a mode the user picked explicitly.
+        assertTrue(PunctuationPolicy.shouldRun(PunctuationPolicy.Mode.CONSERVATIVE, true, unpunctuated))
+        val punctuated = "Uno. Due. Tre. Quattro. Cinque. Sei. Sette. Otto. Nove. Dieci. Undici. Dodici."
+        assertFalse(PunctuationPolicy.shouldRun(PunctuationPolicy.Mode.CONSERVATIVE, false, punctuated))
+    }
+
+    @Test
+    fun `conservative also fires on punctuated but unparagraphed text`() {
+        // TASK-666 review F1: the mode's headline capability is
+        // paragraphing; the density arm alone would silently no-op on
+        // typical punctuating-model output (punctuated, one wall of text).
+        val punctuatedWall = (1..40).joinToString(" ") { "Frase numero $it del testo." }
+        assertTrue(PunctuationPolicy.shouldRun(PunctuationPolicy.Mode.CONSERVATIVE, true, punctuatedWall))
+        // already paragraphed substantial text: nothing to do
+        val paragraphed = (1..40).chunked(10).joinToString("\n\n") { chunk ->
+            chunk.joinToString(" ") { "Frase numero $it del testo." } }
+        assertFalse(PunctuationPolicy.shouldRun(PunctuationPolicy.Mode.CONSERVATIVE, true, paragraphed))
+        // short single-paragraph text stays skipped (nothing worth a load)
+        val shortPunctuated = "Uno. Due. Tre. Quattro."
+        assertFalse(PunctuationPolicy.shouldRun(PunctuationPolicy.Mode.CONSERVATIVE, true, shortPunctuated))
+        // and the paragraph arm is conservative-only: ALWAYS ignores it
+        assertFalse(PunctuationPolicy.shouldRun(PunctuationPolicy.Mode.ALWAYS, true, punctuatedWall))
+    }
+
+    @Test
+    fun `conservative accepts repunctuation paragraphs and casing`() {
+        val original = "ciao come stai oggi io bene grazie e tu tutto bene qui"
+        assertTrue(PunctuationPolicy.conservativeAcceptable(
+            "Ciao, come stai oggi? Io bene, grazie. E tu?\n\nTutto bene qui.", original))
+        assertTrue(PunctuationPolicy.conservativeAcceptable(
+            "Ciao come stai oggi io bene grazie e tu tutto bene qui", original))
+    }
+
+    @Test
+    fun `an inserted standalone punctuation token fails the fence`() {
+        // TASK-666 review F3: a words-only fence would pass this, the
+        // downstream TASK-598 word-count reconciliation would then reject
+        // it on the diarized surfaces - the marker strictness keeps the
+        // fence the sole arbiter.
+        val original = "ciao come stai oggi io bene grazie e tu tutto bene qui"
+        assertFalse(PunctuationPolicy.conservativeAcceptable(
+            "Ciao, come stai oggi? Io bene, grazie. E tu? Tutto bene qui ...", original))
+        // a punctuation MERGE (spaced comma drawn into the word) is also
+        // rejected: conservative keeps the original rather than gambling
+        assertFalse(PunctuationPolicy.conservativeAcceptable(
+            "ciao , come stai oggi io bene grazie e tu tutto bene qui",
+            "ciao come stai oggi io bene grazie e tu tutto bene qui"))
+    }
+
+    @Test
+    fun `a stray embedded newline does not count as a paragraph break`() {
+        // TASK-666 review F1: recognizer text carries stray newline
+        // tokens; one of them must not disable the paragraph arm.
+        val punctuatedWall = (1..40).joinToString(" ") { "Frase numero $it del testo.\n" }
+        assertTrue(PunctuationPolicy.shouldRun(PunctuationPolicy.Mode.CONSERVATIVE, true, punctuatedWall))
+    }
+
+    @Test
+    fun `conservative rejects added removed reordered and translated words`() {
+        val original = "ciao come stai oggi io bene grazie e tu tutto bene qui"
+        // added word
+        assertFalse(PunctuationPolicy.conservativeAcceptable(
+            "Ciao, come stai oggi? Io bene, grazie davvero. E tu? Tutto bene qui.", original))
+        // removed word
+        assertFalse(PunctuationPolicy.conservativeAcceptable(
+            "Ciao, come stai oggi? Io bene. E tu? Tutto bene qui.", original))
+        // reordered words
+        assertFalse(PunctuationPolicy.conservativeAcceptable(
+            "Ciao, come oggi stai? Io bene, grazie. E tu? Tutto qui bene.", original))
+        // translated output (a different token sequence entirely)
+        assertFalse(PunctuationPolicy.conservativeAcceptable(
+            "Hello, how are you today? I am fine, thanks. And you? All good here.", original))
+    }
 }

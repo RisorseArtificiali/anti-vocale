@@ -554,10 +554,12 @@
     <!-- Settings Tab - Punctuation (TASK-276) -->
     <string name="punctuation_status">Formatting with AI…</string>
     <string name="punctuation_mode_title">Punctuation and Formatting</string>
-    <string name="punctuation_mode_description">Rewrite unpunctuated transcripts with the Gemma model. Automatic runs only for models that do not punctuate (needs Gemma downloaded).</string>
+    <string name="punctuation_mode_description">Rewrite transcripts with the Gemma model. Automatic runs only for models that do not punctuate; Always also normalizes punctuation; Conservative adds paragraph breaks and never changes the words (needs Gemma downloaded).</string>
     <string name="punctuation_mode_off">Off</string>
     <string name="punctuation_mode_auto">Automatic</string>
     <string name="punctuation_mode_always">Always</string>
+    <!-- TASK-666: the bounded-cleanup mode of the cleanup contract. -->
+    <string name="punctuation_mode_conservative">Conservative (punctuation and paragraphs only)</string>
     <string name="punctuation_prompt_title">Punctuation Prompt</string>
     <string name="punctuation_prompt_description">Instruction for the punctuation pass. Leave empty to use the built-in prompt.</string>
     <string name="punctuation_prompt_placeholder">Built-in prompt</string>
@@ -571,6 +573,8 @@
     <string name="signature_position_append">After the transcript</string>
     <string name="summary_prompt_description">Override the AI summary instruction. Blank uses the built-in two-to-three-sentence prompt.</string>
     <string name="punctuation_default_prompt">Add punctuation and capitalization to this transcript. Keep every word exactly as written; do not fix, translate, add, or remove anything. Output only the corrected transcript.</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Add punctuation, capitalization and paragraph breaks to this transcript. Do not translate, do not summarize, and do not add, remove, reorder or correct any word: the word sequence must stay exactly as written. Output only the formatted transcript.</string>
     <!-- Settings Tab - Smart Summary (TASK-121.4) -->
     <string name="summarize_title">Summarize Long Transcriptions</string>
     <string name="summarize_description">Add a short AI summary to long transcriptions with the Gemma model (needs Gemma downloaded).</string>

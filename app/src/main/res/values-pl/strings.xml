@@ -548,10 +548,11 @@
     <!-- Settings Tab - VAD -->
     <string name="punctuation_status">Formatowanie przez AI…</string>
     <string name="punctuation_mode_title">Interpunkcja i formatowanie</string>
-    <string name="punctuation_mode_description">Przepisuje transkrypcje bez interpunkcji modelem Gemma. Automatycznie tylko dla modeli bez interpunkcji (wymaga pobranego Gemma).</string>
+    <string name="punctuation_mode_description">Przetwarza transkrypcje modelem Gemma. Automatycznie działa tylko dla modeli bez interpunkcji; Zawsze normalizuje też interpunkcję; Konserwatywny dodaje akapity i nigdy nie zmienia słów (wymaga pobranego Gemma).</string>
     <string name="punctuation_mode_off">Wyłączona</string>
     <string name="punctuation_mode_auto">Automatycznie</string>
     <string name="punctuation_mode_always">Zawsze</string>
+    <string name="punctuation_mode_conservative">Konserwatywny (tylko interpunkcja i akapity)</string>
     <string name="punctuation_prompt_title">Prompt interpunkcji</string>
     <string name="punctuation_prompt_description">Instrukcja dla kroku interpunkcji. Zostaw puste, aby użyć wbudowanej.</string>
     <string name="punctuation_prompt_placeholder">Wbudowany prompt</string>
@@ -1214,4 +1215,6 @@
     <string name="model_switched_message">Aktywny model: %1$s</string>
     <string name="model_switch_failed">Nie udało się przełączyć: modelu nie ma na urządzeniu</string>
     <string name="model_shortcut_switch_label">Przełącz na %1$s</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Dodaj do tej transkrypcji interpunkcję, wielkie litery i podziały na akapity. Nie tłumacz, nie streszczaj i nie dodawaj, usuwaj, przestawiaj ani nie poprawiaj żadnego słowa: kolejność słów musi pozostać dokładnie taka, jak jest napisana. Zwróć tylko sformatowaną transkrypcję.</string>
 </resources>
