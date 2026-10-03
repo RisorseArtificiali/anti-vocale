@@ -167,7 +167,7 @@ class ExternalCatalogTest {
         // + moonshine base uk/es/vi (TASK-619, maintainer "tieni": the light
         // NC-licensed tier accepted for the external catalog; pins hashed
         // from the downloaded artifacts)
-        assertEquals(28, entries.size)
+        assertEquals(29, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
