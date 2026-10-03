@@ -5,10 +5,10 @@ This document describes the verified steps to build the Anti-Vocale app with Lit
 ## Prerequisites
 
 - **Java**: 21+ (JDK 21 required, LiteRT-LM v0.10.0+ ships Java 21 bytecode)
-- **Gradle**: 8.14.5 (via wrapper `./gradlew`)
+- **Gradle**: 9.8.0 (via wrapper `./gradlew`; AGP 9.4.1 floor is 9.6.0)
 - **Android SDK**: API 36 (compileSdk = 36, targetSdk = 36)
 - **adb**: Must be in PATH
-- **Kotlin**: 2.2.0
+- **Kotlin**: 2.4.10 (AGP 9 built-in Kotlin compiles it; no kotlin.android plugin involved)
 - **sherpa-onnx AAR**: NOT committed to the repo. Run `./scripts/fetch-sherpa-aar.sh` once after cloning (downloads the pinned release into `app/libs/`; CI does the same in both workflow jobs). Without it Gradle fails resolving `app/libs/sherpa-onnx.aar`.
 - **Sherpa version sync**: when bumping sherpa-onnx, update the version in THREE places: (1) `SHERPA_ONNX_VERSION` in `scripts/fetch-sherpa-aar.sh`, (2) the `SRCLIB PIN` comment in `app/build.gradle.kts`, (3) the `.sherpa-version` marker file at the repo root. The marker file is what the F-Droid recipe tooling reads to pin the srclib (issue #38); the srclib commit is the matching k2-fsa/sherpa-onnx tag.
 
@@ -38,7 +38,7 @@ export PATH="$HOME/Android/Sdk/platform-tools:$PATH"
 
 # Verify versions
 java -version      # Should show 21.x
-./gradlew --version   # Should show 8.14.5
+./gradlew --version   # Should show 9.8.0
 adb version        # Should not error
 ```
 
@@ -85,9 +85,10 @@ The project requires specific Kotlin and dependency versions for LiteRT-LM compa
 
 ```kotlin
 plugins {
-    id("com.android.application") version "8.10.0" apply false
-    id("org.jetbrains.kotlin.android") version "2.2.0" apply false
-    id("org.jetbrains.kotlin.plugin.compose") version "2.2.0" apply false
+    id("com.android.application") version "9.4.1" apply false
+    // org.jetbrains.kotlin.android is NEVER applied under AGP 9: built-in
+    // Kotlin makes it a hard configuration error (TASK-710).
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.10" apply false
 }
 ```
 

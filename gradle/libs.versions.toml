@@ -7,10 +7,10 @@
 
 [versions]
 exifinterface = "1.4.2"
-agp = "8.10.0"
+agp = "9.4.1"
 kotlin = "2.4.10"
 ksp = "2.3.11"
-hilt = "2.58"
+hilt = "2.60.1"
 androidxHilt = "1.2.0"
 composeBom = "2025.01.00"
 coreKtx = "1.12.0"
@@ -39,7 +39,6 @@ espresso = "3.5.1"
 firebaseBom = "34.19.0" # TASK-429: maps firebase-crashlytics 20.1.1 (the OOM/memory-limiter debug-data release)
 googleServices = "4.4.4"
 crashlyticsPlugin = "3.0.8"
-kotlinMetadataJvm = "2.4.10"
 
 [libraries]
 androidx-exifinterface = { group = "androidx.exifinterface", name = "exifinterface", version.ref = "exifinterface" }
@@ -83,7 +82,6 @@ androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx"
 androidx-room-runtime = { group = "androidx.room", name = "room-runtime", version.ref = "room" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "room" }
 androidx-room-compiler = { group = "androidx.room", name = "room-compiler", version.ref = "room" }
-kotlin-metadata-jvm = { group = "org.jetbrains.kotlin", name = "kotlin-metadata-jvm", version.ref = "kotlinMetadataJvm" }
 # Testing
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 org-json = { group = "org.json", name = "json", version.ref = "orgJson" }
@@ -98,7 +96,10 @@ firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashly
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+# TASK-710: the kotlin-android alias is REMOVED - AGP 9's built-in Kotlin
+# makes applying org.jetbrains.kotlin.android a hard configuration error,
+# so the catalog must not advertise it. kotlin-compose stays (the compose
+# compiler plugin is still applied on top of built-in Kotlin).
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 hilt = { id = "com.google.dagger.hilt.android", version.ref = "hilt" }

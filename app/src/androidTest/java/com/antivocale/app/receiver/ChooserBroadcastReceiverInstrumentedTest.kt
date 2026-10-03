@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import androidx.core.content.ContextCompat
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.antivocale.app.data.PerAppPreferencesManager
@@ -52,7 +53,10 @@ class ChooserBroadcastReceiverInstrumentedTest {
             }
         }
 
-        context.registerReceiver(listener, filter)
+        // AGP 9 lint (TASK-710): the same-process share-chosen broadcast
+        // must declare its exported state; NOT_EXPORTED is the honest flag
+        // (nothing outside the app sends this action).
+        ContextCompat.registerReceiver(context, listener, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
         try {
             val chooserIntent = Intent().apply {
                 componentInfo?.let { putExtra(ChooserBroadcastReceiver.EXTRA_CHOSEN_COMPONENT, it) }

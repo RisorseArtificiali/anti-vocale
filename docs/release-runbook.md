@@ -454,6 +454,15 @@ Proof: Play Console shows the new release in review/published.
 
 ## Preflight and verify gates (TASK-335, added after v1.10.0)
 
+Toolchain expectation for the F-Droid build servers (TASK-710, AGP 9 bump):
+the recipe (metadata/com.antivocale.app.yml) is UNCHANGED and pins NO JDK
+line at all - the buildserver image's own JDK is what runs the build.
+fdroidserver resolves the build to the repo wrapper (gradlew-fdroid ->
+our gradlew), which downloads Gradle 9.8.0; that Gradle needs a JDK 17+
+on the image to start (AGP 9.4.1 floor). If a buildserver run ever fails
+at Gradle startup, check the image JDK, not the recipe. The wrapper, not
+the recipe, is the Gradle version carrier.
+
 One command before the pre-tag dispatch and again before publishing:
 
 ```bash
