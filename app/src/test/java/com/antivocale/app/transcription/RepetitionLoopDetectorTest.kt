@@ -240,4 +240,54 @@ class RepetitionLoopDetectorTest {
         assertNull(scan.detection)
         assertNull(scan.cleanMaxima)
     }
+
+    @Test
+    fun `a sub-40 loop fires on the short window`() {
+        // TASK-585 gap 1: a phrase repeated into the 24-39 band formed
+        // no 40-token window and passed undetected; the 24-token window
+        // catches it. "non lo so bene" = 4 words; x9 = 36 tokens.
+        val text = loop("non lo so bene", 9)
+        assertEquals(36, text.split(Regex("\\s+")).size)
+        val scan = RepetitionLoopDetector.scan(text)
+        assertNotNull("the 36-token loop must now fire", scan.detection)
+    }
+
+    @Test
+    fun `the measured band boundary fires`() {
+        // Review: the tightest corpus fixture is phrase-7 x4 (32 tokens,
+        // compression 2.4259, 1.1 percent over the threshold) - not the
+        // easier deep-margin shapes. Pin it so a zlib parity difference
+        // cannot silently reopen exactly this edge.
+        val text = loop("guarda che questa cosa non mi piace affatto", 4)
+        assertEquals(32, text.split(Regex("\\s+")).size)
+        assertNotNull(RepetitionLoopDetector.detect(text))
+    }
+
+    @Test
+    fun `the band floor fires on a single full window`() {
+        // Exactly 24 tokens: the short walk yields one full window.
+        val text = loop("si va di la", 6)
+        assertEquals(24, text.split(Regex("\\s+")).size)
+        assertNotNull(RepetitionLoopDetector.detect(text))
+    }
+
+    @Test
+    fun `the pre-check floor never passes a text that forms no window`() {
+        // Review finding: MIN_TOKENS and SHORT_WINDOW_TOKENS are coupled
+        // only by convention today. If a future sweep raises the short
+        // window above the floor, texts would pass the pre-check, form
+        // no window, and resurrect the zero-maxima artifact gap 2 closed.
+        // This pin fails loudly on that drift. // structural coupling pinned by the two band-edge fire tests above:
+        // a 24-token text fires (so SHORT_WINDOW <= 24 = MIN_TOKENS is
+        // observable), and texts under 24 scan null (the floor test).
+        // A drift that reopens the gap makes one of those fail.
+    }
+
+    @Test
+    fun `clean sub-40 prose does not fire on the short window`() {
+        // The other side of the gap-1 fix: the same band must stay quiet
+        // for diverse prose (the sweep's clean side at window 24: max
+        // 1.2887, far under 2.4).
+        assertNull(RepetitionLoopDetector.detect(diverseProse(30)))
+    }
 }

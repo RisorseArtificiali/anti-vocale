@@ -14,7 +14,8 @@ import java.util.zip.DeflaterOutputStream
  *
  * Both arms are WINDOWED over the token list (40 tokens, step 20, plus a
  * final window anchored at the tail so the last few tokens are always
- * covered). The 2026-09-20 review measured that a whole-text compression
+ * covered; the 24-39-token band scans a 24/12 window instead, see
+ * TASK-585 gap 1 below). The 2026-09-20 review measured that a whole-text compression
  * ratio grows without bound on clean prose (2.4 crossed near 1950 Italian
  * words), which would make long clean transcripts false-positive; a
  * 40-token window of clean prose stays near 1.5-2.0 while any window of a
@@ -30,10 +31,12 @@ import java.util.zip.DeflaterOutputStream
  * caveat that they were measured on spaced scripts, not on CJK prose.
  *
  * Condensing outputs (summaries, short answers) never fire: neither arm
- * measures length against the audio. The floor is effectively 40 tokens
- * (one full window): 24-39-token texts pass the pre-check but form no
- * window, so a loop shorter than one window goes undetected (tracked;
- * the thresholds were measured on 40-token windows). The
+ * measures length against the audio. TASK-585 gap 1 closed the floor:
+ * texts of 24-39 tokens (which form no 40-token window) now scan with
+ * the measured 24-token window; the thresholds are UNCHANGED (the
+ * 2026-10-03 sweep: COMPRESSION separates at window 24, clean max
+ * 1.2887 < 2.4 <= loop min 2.4259; the ngram arm separates nowhere in
+ * the loop corpus and is clean-side-safe only). The
  * evaluated-and-rejected third arm: a words-per-second ceiling anchored on
  * audio duration; the greedy token budget itself caps loops at ~6 words/s,
  * too close to real fast speech to separate.
@@ -71,6 +74,27 @@ object RepetitionLoopDetector {
     private const val WINDOW_TOKENS = 40
     private const val WINDOW_STEP = 20
     private const val MIN_TOKENS = 24
+
+    /**
+     * TASK-585 gap 1: the sub-40 window. Texts of 24-39 tokens form no
+     * 40-token window and passed undetected (the 4-word-phrase x9 = 36
+     * tokens case). The 2026-10-03 sweep (eval/loop_threshold_sweep.py,
+     * clean corpus = the reference transcripts + the 280-word real ASR
+     * sample; loop corpus = 456 synthesized incident-class texts)
+     * measured that a 24-token window separates on the COMPRESSION arm
+     * at the SHIPPED threshold: clean max 1.2887 < 2.4 <= loop min
+     * 2.4259 (the phrase-7 x4 boundary, a 1.1 percent margin - the
+     * tightest fixture in the corpus; pinned by a test). The ngram arm
+     * does NOT separate in this band (loop min 0.1364, far under 0.4):
+     * clean-side-safe but no detection power here. So the short band
+     * scans with this window; both thresholds are unchanged. The clean
+     * side is thin IN the band (one real transcript, 37 tokens, plus
+     * sub-windows of longer texts): a real short note with mild
+     * repetition above 2.4 would fire - watch the clean-maxima
+     * telemetry as this band fills.
+     */
+    private const val SHORT_WINDOW_TOKENS = 24
+    private const val SHORT_WINDOW_STEP = 12
 
     /** TASK-581: refined under this fraction of a good first pass is a collapse. */
     private const val COLLAPSE_FRACTION = 4
@@ -135,16 +159,23 @@ object RepetitionLoopDetector {
     private fun walk(text: String): WalkResult? {
         val tokens = tokenize(text)
         if (tokens.size < MIN_TOKENS) return null
+        // TASK-585 gap 1: the sub-40 band scans with the measured short
+        // window (24) and its half-step; 40+ keeps the original window.
+        // One walk, two window sizes: the tail anchor and the first-fire
+        // semantics are identical in both bands, so the persisted maxima
+        // stay comparable across the floor.
+        val windowTokens = if (tokens.size < WINDOW_TOKENS) SHORT_WINDOW_TOKENS else WINDOW_TOKENS
+        val windowStep = if (tokens.size < WINDOW_TOKENS) SHORT_WINDOW_STEP else WINDOW_STEP
         var start = 0
-        val lastStart = tokens.size - WINDOW_TOKENS
+        val lastStart = tokens.size - windowTokens
         var maxCompression = 0f
         var maxDominance = 0f
         var firedReason: String? = null
         while (start <= lastStart) {
-            val window = tokens.subList(start, start + WINDOW_TOKENS).joinToString(" ")
+            val window = tokens.subList(start, start + windowTokens).joinToString(" ")
             val compression = compressionRatio(window)
             maxCompression = maxOf(maxCompression, compression)
-            val dominance = topTrigramDominance(tokens, start, start + WINDOW_TOKENS)
+            val dominance = topTrigramDominance(tokens, start, start + windowTokens)
             maxDominance = maxOf(maxDominance, dominance)
             // First fire fixes the reason and the verdict; the scan still
             // continues so later windows update the tuning maxima.
@@ -156,7 +187,7 @@ object RepetitionLoopDetector {
                 }
             }
             if (start == lastStart) break
-            start = minOf(start + WINDOW_STEP, lastStart)
+            start = minOf(start + windowStep, lastStart)
         }
         return WalkResult(firedReason, maxCompression, maxDominance)
     }
