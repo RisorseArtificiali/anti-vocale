@@ -1,0 +1,1 @@
+sendIntent( "com.antivocale.app.PROCESS_REQUEST", "receiver", "com.antivocale.app.debug", "com.antivocale.app.debug.receiver.TaskerRequestReceiver", undefined, undefined, undefined, [ "request_type:audio", "file_path:/data/data/com.antivocale.app.debug/files/shared_audio/two_speakers.wav" ] );
