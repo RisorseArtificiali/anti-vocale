@@ -180,6 +180,22 @@ class TranscriptionOrchestrator @Inject constructor(
     @Volatile
     private var lastPartialSaveMs: Long = 0L
 
+    /**
+     * TASK-699 stage 2 (code-review F1/F2): whether THIS run has written a
+     * seed. The run-level heartbeat ticks only when this is set, so a run
+     * that never seeds (subtitle import/extract, text LLM) costs no ticks,
+     * and - the correctness half - a STALE seed left by an earlier crashed
+     * run is NOT refreshed by an unrelated later run: the tick's re-save
+     * would keep the dead run's recovery offer past the staleness gate
+     * forever. Reset at [processRequest] entry; set by the two seed-write
+     * sites ([updateInterimResult]'s throttled save and the first-pass
+     * outcome save). Racy-by-design-adjacent: the serial service queue owns
+     * runs, and the SubtitleChoiceTimeoutWorker concurrency is the
+     * pre-existing single-seed-key assumption (see the stage-1 note).
+     */
+    @Volatile
+    private var runArmedSeed: Boolean = false
+
     /** Per-task timestamp of the last interim Room write (throttle, TASK-340 Fix 2b). */
     private val lastInterimRoomWriteMs = mutableMapOf<String, Long>()
 
@@ -237,14 +253,16 @@ class TranscriptionOrchestrator @Inject constructor(
         listener: TranscriptionListener,
         coroutineScope: CoroutineScope
     ): Result<String> {
-        // TASK-699 stage 1: ONE heartbeat span for the whole run. The
-        // per-stretch wraps inside stay (redundant but harmless, the task's
-        // own staged-rollout note); what this span adds is coverage of the
-        // pre-decode stretches (accurate-model load, whole-file
-        // preprocessing) and everything between wraps, which the per-stretch
-        // chase kept missing. The subtitle arms never seed (verified: no
-        // savePartial in their scopes) so their stay inside the span is a
-        // no-op.
+        runArmedSeed = false
+        // TASK-699 stage 2: ONE heartbeat span for the whole run, the only
+        // one left (the ten former per-stretch spans are stripped; see the
+        // LadderRoutingContractTest count). runArmedSeed resets here so the
+        // tick judges THIS run's seeding, never a stale foreign seed. It
+        // covers the pre-decode
+        // stretches (accurate-model load, whole-file preprocessing) and
+        // everything between, which the per-stretch chase kept missing. The
+        // subtitle arms never seed (verified: no savePartial in their
+        // scopes) so their stay inside the span is a no-op.
         return withSeedHeartbeat {
             processRequestInner(
                 taskId, requestType, prompt, filePath, source, sourcePackage,
@@ -491,8 +509,9 @@ class TranscriptionOrchestrator @Inject constructor(
             // the summary judges the collapsed text, not the loop.
             // TASK-698: the post-pass chain (collapse, punctuation, summary) is
             // one silent stretch (SUMMARY_BUDGET_MS alone is 8x the staleness
-            // gate): one heartbeat span covers the whole chain.
-            val delivered: Result<TranscriptionResult> = withSeedHeartbeat {
+            // gate). TASK-699 stage 2: the run-level span covers the chain;
+            // the former per-chain span is gone.
+            val delivered: Result<TranscriptionResult> =
                 if (requestType == "audio" && result.isSuccess) {
                     // Captured once here (not re-read inside the pass): the
                     // backend that produced this result. The queue is serial,
@@ -516,7 +535,6 @@ class TranscriptionOrchestrator @Inject constructor(
                         .map { applyPunctuationPass(context, asrBackendId, it, listener) }
                         .map { applySummaryPass(context, it, listener) }
                 } else result
-            }
 
             // GH #83: the optional speaker-labeling pass. Runs on the same
             // timeline the cues were assembled on (the concatenated
@@ -536,12 +554,10 @@ class TranscriptionOrchestrator @Inject constructor(
             val speakerLabeled: Result<TranscriptionResult> =
                 if (delivered.isSuccess && diarizationChunks != null) {
                     // TASK-698: whole-clip diarization (plus the first-use
-                    // model download) is a silent stretch; the heartbeat
-                    // covers it like the post-pass chain above.
-                    withSeedHeartbeat {
-                        applySpeakerLabels(
-                            context, delivered, diarizationChunks!!, diarizationSampleRate, listener)
-                    }
+                    // model download) is a silent stretch. TASK-699 stage 2:
+                    // the run-level span covers it.
+                    applySpeakerLabels(
+                        context, delivered, diarizationChunks!!, diarizationSampleRate, listener)
                         // The concatenated copy must not outlive the pass.
                         .also { diarizationChunks = null }
                 } else {
@@ -908,8 +924,9 @@ class TranscriptionOrchestrator @Inject constructor(
             // TASK-674: the cleanup pass runs under the shared wall clock; a
             // timeout degrades to the raw transcript exactly like any other
             // generation failure (typed + breadcrumb inside the owner).
-            // TASK-698: the seed-heartbeat span lives at the funnel (the
-            // post-pass chain runs inside withSeedHeartbeat).
+            // TASK-698: the seed-heartbeat span lives at the run entry
+            // (processRequest; TASK-699 stage 2 folded the per-stretch spans
+            // into it).
             val polished = LlmBudget.generateWithBudget(
                 llm, prompt, LlmBudget.CLEANUP_BUDGET_MS, pass = "Punctuation",
             ).getOrThrow().trim()
@@ -1727,6 +1744,7 @@ class TranscriptionOrchestrator @Inject constructor(
         // goes stale and the interruption dialog misfires mid-run.
         runCatching {
             logDao.updateInterimResult(taskId, outcome.text, isPartial = true)
+            runArmedSeed = true
             preferencesManager.savePartialTranscriptionState(outcome.text)
         }
         return FirstPassOutcome(
@@ -2578,34 +2596,27 @@ class TranscriptionOrchestrator @Inject constructor(
             val t0 = System.currentTimeMillis()
             // TASK-602 F1: without a heartbeat the phase-2 boundary seed ages
             // past the staleness gate while the accurate model loads and
-            // decodes, and reopening mid-run offers recovery for a LIVE run
-            // (see withSeedHeartbeat). The ladder rungs carry their own
-            // heartbeat inside recoverEmptyChunk.
-            val decodeOnce: suspend () -> Result<TranscriptionResult> = {
-                backend.transcribeAudioStreaming(
-                    prompt = resolvedPrompt,
-                    samples = preprocessingResult.chunks.first(),
-                    sampleRate = preprocessingResult.sampleRate
-                ) { partial ->
+            // decodes, and reopening mid-run offers recovery for a LIVE run.
+            // TASK-699 stage 2: the run-level span (processRequest) covers
+            // this stretch and the ladder rungs alike; with emitInterim the
+            // emitted partials refresh the seed themselves.
+            val result = backend.transcribeAudioStreaming(
+                prompt = resolvedPrompt,
+                samples = preprocessingResult.chunks.first(),
+                sampleRate = preprocessingResult.sampleRate
+            ) { partial ->
                 if (emitInterim) {
                     updateInterimResult(taskId, partial)
                     listener.onInterimResult(
-                    contentText = partial,
-                    bigText = partial,
-                    subText = "",
-                    chunkIndex = 0,
-                    chunkText = partial,
-                    totalChunks = 1
-                )
-                    }
+                        contentText = partial,
+                        bigText = partial,
+                        subText = "",
+                        chunkIndex = 0,
+                        chunkText = partial,
+                        totalChunks = 1
+                    )
                 }
             }
-            // The span is unconditional (review of the earlier conditional):
-            // with emitInterim an OFFLINE backend emits no partials either,
-            // so the conditional left a silent stretch whenever a seed
-            // lingered from a cancelled prior run; the no-seed guard makes
-            // the heartbeat a no-op when nothing needs refreshing.
-            val result = withSeedHeartbeat { decodeOnce() }
             val inferMs = System.currentTimeMillis() - t0
             Log.i(TAG, "Inference timing: ${inferMs}ms for ${audioDurationSeconds}s audio (backend=${backend.id}, provider=$resolvedProvider, threads=${threadCount}, chunks=$chunkCount)")
             fireCollector()
@@ -2831,13 +2842,11 @@ class TranscriptionOrchestrator @Inject constructor(
         // Review R4: this is the third on-device LLM post-pass; it runs
         // under the SAME wall-clock owner (the custom-prompt final pass is
         // a single generation over the transcript, so the cleanup budget
-        // shape fits).
-        // TASK-698: same silent-stretch cover as the punctuation pass.
-        return withSeedHeartbeat {
-            LlmBudget.generateWithBudget(
-                backend, ChunkPromptPolicy.finalPrompt(generativePrompt, transcript),
-                LlmBudget.CLEANUP_BUDGET_MS, "final-generative")
-        }
+        // shape fits). TASK-699 stage 2: the run-level span covers the
+        // silent stretch.
+        return LlmBudget.generateWithBudget(
+            backend, ChunkPromptPolicy.finalPrompt(generativePrompt, transcript),
+            LlmBudget.CLEANUP_BUDGET_MS, "final-generative")
             .fold(
                 onSuccess = { processed ->
                     if (processed.isNotBlank()) {
@@ -2959,10 +2968,9 @@ class TranscriptionOrchestrator @Inject constructor(
             }
 
             // TASK-698: the chunk decode is a silent stretch (interims fire at
-            // completion); run it under the seed heartbeat like every other.
-            val firstPass = withSeedHeartbeat {
+            // completion). TASK-699 stage 2: the run-level span covers it.
+            val firstPass =
                 backend.transcribeAudio(samples = chunks[i], sampleRate = sampleRate, prompt = prompt)
-            }
             val segResult = decodeWithEmptyChunkRecovery(
                 backend = backend,
                 firstPass = firstPass,
@@ -3177,9 +3185,11 @@ class TranscriptionOrchestrator @Inject constructor(
                     chunkSemaphore.acquire()
                     try {
                         // TASK-698: silent stretch, same as the progressive arm.
-                        val firstPass = withSeedHeartbeat {
+                        // TASK-699 stage 2: the run-level span covers it (the
+                        // run span lives in the caller's context; these async
+                        // children are inside it).
+                        val firstPass =
                             backend.transcribeAudio(samples = chunk, sampleRate = sampleRate, prompt = prompt)
-                        }
                         val chunkResult = decodeWithEmptyChunkRecovery(
                             backend = backend,
                             firstPass = firstPass,
@@ -3527,8 +3537,8 @@ class TranscriptionOrchestrator @Inject constructor(
             val held = heldEmpty ?: return
             heldEmpty = null
             retriedChunks++
-            // TASK-696: routed through recoverEmptyChunk so this ladder runs
-            // under the seed heartbeat like every other arm (the direct
+            // TASK-696: routed through recoverEmptyChunk so this ladder
+            // shares the one Outcome-to-Result mapping (the direct
             // EmptyChunkRecovery.recover call here was the fourth ladder site
             // the wrapper-only grep missed).
             val outcome = recoverEmptyChunk(
@@ -3636,13 +3646,11 @@ class TranscriptionOrchestrator @Inject constructor(
                                 chunk0SampleRate = chunk.sampleRate,
                             )?.let { previewSeconds ->
                                 val headSamples = chunk.sampleRate * previewSeconds
-                                withSeedHeartbeat {
-                                    backend.transcribeAudio(
-                                        samples = chunk.samples.copyOf(headSamples),
-                                        sampleRate = chunk.sampleRate,
-                                        prompt = resolvedPrompt
-                                    )
-                                }.fold(
+                                backend.transcribeAudio(
+                                    samples = chunk.samples.copyOf(headSamples),
+                                    sampleRate = chunk.sampleRate,
+                                    prompt = resolvedPrompt
+                                ).fold(
                                     onSuccess = { tr ->
                                         tr.text.trim().takeIf { text -> text.isNotEmpty() }
                                     },
@@ -3663,13 +3671,12 @@ class TranscriptionOrchestrator @Inject constructor(
 
                         // TASK-698: silent stretch like the other arms' chunk
                         // decodes (partials fire between chunks, not within).
-                        val chunkResult = withSeedHeartbeat {
-                            backend.transcribeAudio(
-                                samples = chunk.samples,
-                                sampleRate = chunk.sampleRate,
-                                prompt = resolvedPrompt
-                            )
-                        }
+                        // TASK-699 stage 2: the run-level span covers it.
+                        val chunkResult = backend.transcribeAudio(
+                            samples = chunk.samples,
+                            sampleRate = chunk.sampleRate,
+                            prompt = resolvedPrompt
+                        )
                         chunkResult.fold(
                             onSuccess = { tr ->
                                 if (tr.text.isNotBlank()) {
@@ -4182,6 +4189,7 @@ class TranscriptionOrchestrator @Inject constructor(
 
         if (now - lastPartialSaveMs >= PARTIAL_SAVE_INTERVAL_MS) {
             lastPartialSaveMs = now
+            runArmedSeed = true
             try {
                 seedSaveMutex.withLock {
                     preferencesManager.savePartialTranscriptionState(accumulatedText)
@@ -4429,9 +4437,12 @@ class TranscriptionOrchestrator @Inject constructor(
      * silent decode stretch that outlasts the gate would otherwise let a
      * reopen mid-run offer crash recovery for a LIVE run (TASK-602 F1 class).
      * The isNullOrBlank guard makes it a no-op when nothing was seeded, and
-     * every write goes through [seedSaveMutex]. Callers whose stretch emits
-     * its own partials skip it (the single-chunk first decode with
-     * emitInterim); the ladder rungs never emit, so they always run one.
+     * every write goes through [seedSaveMutex]. TASK-699 stage 2: the one
+     * span is the run-level one (processRequest), so every stretch of a
+     * seeded run ticks, including the emitInterim first decode whose
+     * partials also refresh the seed themselves (a tick there is a
+     * redundant-but-harmless extra refresh, and the mutex keeps it ordered
+     * against the partial saves).
      */
     private fun CoroutineScope.launchSeedHeartbeat(): Job = launch {
         while (isActive) {
@@ -4441,10 +4452,18 @@ class TranscriptionOrchestrator @Inject constructor(
             // builder scope would cancel the covered decode with it (every
             // span runs on one); a skipped tick is harmless.
             try {
-                seedSaveMutex.withLock {
-                    val seed = preferencesManager.partialTranscriptionText.first()
-                    if (!seed.isNullOrBlank()) {
-                        preferencesManager.savePartialTranscriptionState(seed)
+                // TASK-699 stage 2 (review F1/F2): a run that has not seeded
+                // itself must not tick at all - neither to waste the read nor
+                // to refresh a FOREIGN stale seed and keep a dead run's
+                // recovery offer alive past the staleness gate. Skip, not
+                // exit: the seed arms mid-run (first interim), later ticks
+                // must run.
+                if (runArmedSeed) {
+                    seedSaveMutex.withLock {
+                        val seed = preferencesManager.partialTranscriptionText.first()
+                        if (!seed.isNullOrBlank()) {
+                            preferencesManager.savePartialTranscriptionState(seed)
+                        }
                     }
                 }
             } catch (e: CancellationException) {
@@ -4457,13 +4476,18 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     /**
-     * TASK-698: runs one silent stretch (a chunk decode, or a budgeted LLM
-     * generation) under the seed heartbeat: any stretch longer than the
-     * staleness gate would otherwise age the phase-2 seed and let a reopen
-     * mid-run offer crash recovery for a live run (TASK-602 F1 class). The
-     * builder scope dies with the stretch; the join lets an in-flight seed
-     * write settle. The single-chunk FIRST decode keeps its conditional
-     * launch instead: with emitInterim it streams partials, self-refreshing.
+     * TASK-699 stage 2: THE one seed heartbeat span, run-level. A stretch
+     * longer than the staleness gate would otherwise age the phase-2 seed
+     * and let a reopen mid-run offer crash recovery for a live run
+     * (TASK-602 F1 class); one span at [processRequest] ticks across every
+     * stretch of the run, so no per-stretch wrapping exists (and none may
+     * return: see the LadderRoutingContractTest count). Only a run that
+     * armed the seed ticks (runArmedSeed): a never-seeding run costs
+     * nothing, and a stale foreign seed is left to age out. The builder
+     * scope and the join let an in-flight seed write settle at run end;
+     * the join adds at most one in-flight write of latency to completion,
+     * accepted (review F5) over a cancel-without-join that could drop a
+     * legitimate refresh mid-write.
      */
     private suspend fun <T> withSeedHeartbeat(block: suspend () -> T): T =
         coroutineScope {
@@ -4493,15 +4517,14 @@ class TranscriptionOrchestrator @Inject constructor(
         nextChunk: FloatArray?,
         decode: suspend (FloatArray) -> Result<TranscriptionResult>,
     ): Result<TranscriptionResult>? {
-        // TASK-696: the rungs never emit partials, so every ladder runs
-        // under the seed heartbeat (see withSeedHeartbeat).
-        return withSeedHeartbeat {
-            val outcome = EmptyChunkRecovery.recover(chunk, sampleRate, previousChunk, nextChunk, decode)
-            when (outcome) {
-                is EmptyChunkRecovery.Outcome.Recovered -> Result.success(outcome.result)
-                is EmptyChunkRecovery.Outcome.EngineWedged -> Result.failure(outcome.error)
-                EmptyChunkRecovery.Outcome.StillEmpty -> null
-            }
+        // TASK-696: the rungs never emit partials. TASK-699 stage 2: the
+        // per-stretch heartbeat is gone; the run-level span (processRequest)
+        // ticks across the whole run, rungs included.
+        val outcome = EmptyChunkRecovery.recover(chunk, sampleRate, previousChunk, nextChunk, decode)
+        return when (outcome) {
+            is EmptyChunkRecovery.Outcome.Recovered -> Result.success(outcome.result)
+            is EmptyChunkRecovery.Outcome.EngineWedged -> Result.failure(outcome.error)
+            EmptyChunkRecovery.Outcome.StillEmpty -> null
         }
     }
 
@@ -4554,10 +4577,8 @@ class TranscriptionOrchestrator @Inject constructor(
         System.gc()
         delay(100)
         // TASK-698: the retry re-decodes the same chunk the wrapped first
-        // pass just failed: same silent-stretch cover.
-        return withSeedHeartbeat {
-            backend.transcribeAudio(samples = samples, sampleRate = sampleRate, prompt = prompt)
-        }
+        // pass just failed. TASK-699 stage 2: the run-level span covers it.
+        return backend.transcribeAudio(samples = samples, sampleRate = sampleRate, prompt = prompt)
     }
 
     // ---- Utilities ----

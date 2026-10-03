@@ -48,29 +48,36 @@ class LadderRoutingContractTest {
     }
 
     /**
-     * TASK-698: the silent-stretch sweep's tripwire. Every decode or
-     * generation stretch that can outlast the staleness gate runs inside
-     * withSeedHeartbeat; a new call site added outside it compiles clean and
-     * silently reopens the TASK-602 F1 class (the speaker-pass miss this
-     * count pins shut). When you add or remove a site, update the count WITH
-     * it and say why in the commit. The tenth span is TASK-186's
-     * early-preview head decode (a 10s decode before the full chunk 0).
+     * TASK-698 -> TASK-699: the silent-stretch tripwire, stage 2 shape. ONE
+     * run-level span at processRequest covers every decode, post-pass and
+     * preprocessing stretch INSIDE processRequest's call graph (the
+     * guarantee is scoped to that graph: a decode loop added in another file
+     * is outside this tripwire's sight); the ten former per-stretch spans
+     * are stripped. The subtitle arms DO reach processRequest
+     * (InferenceService and SubtitleChoiceTimeoutWorker both call it), so
+     * they ride inside the span; they never arm the seed (runArmedSeed), so
+     * their ticks are no-ops AND a stale foreign seed is not refreshed by
+     * them. The count pins BOTH directions:
+     * removing the run-level
+     * span silently reopens the TASK-602 F1 class (a reopen mid-run offering
+     * crash recovery for a live run), and a new per-stretch span is a
+     * redundant second ticker under the run one. A new silent stretch needs
+     * NO wiring; if a future scope change moves the seeding arms out of
+     * processRequest, move the span with them and update this count in the
+     * same commit.
      */
     @Test
     fun `every silent stretch runs under withSeedHeartbeat`() {
         val source = orchestratorSource().readText()
         val wrapped = Regex("withSeedHeartbeat\\s*\\{").findAll(source).count()
         assertEquals(
-            "expected the 11 known withSeedHeartbeat spans: the nine TASK-698 " +
-                "sites (post-pass funnel, speaker labels, single-chunk conditional, " +
-                "progressive decode, parallel decode, pipeline decode, GC retry, " +
-                "final-generative pass, recoverEmptyChunk), the TASK-186 " +
-                "early-preview head decode, and the TASK-699 run-level span " +
-                "(stage 1: the whole processRequest body rides one span; the " +
-                "per-stretch wraps inside stay redundant-but-harmless until " +
-                "stage 2 strips them); a new decode or post-pass site must " +
-                "join them or say why not (TASK-698/699)",
-            11,
+            "expected exactly the TASK-699 stage-2 shape: one run-level " +
+                "withSeedHeartbeat span at processRequest covering the whole " +
+                "audio/text run. Zero spans reopens TASK-602 F1 (stale-seed " +
+                "recovery offered over a live run); more than one means a " +
+                "per-stretch span returned - redundant under the run span, " +
+                "say why or remove it (TASK-699)",
+            1,
             wrapped,
         )
     }
