@@ -1,0 +1,16 @@
+# TASK-695 (decision 2026-10-03, maintainer "okay a tutto"): dependabot
+# for github-actions. The repo bumped action versions by hand, so drift
+# surfaced only where CI actually runs - the upload-artifact@v4 stragglers
+# survived a full sweep because their steps only execute on
+# release/dispatch events. Bot PRs now cover every site regardless of
+# trigger. Gate policy (recorded on TASK-695): runtime-major bumps carry
+# the full gate battery (research-first, /simplify, code-review high);
+# minor/patch fast-track on CI green. Convention unchanged: floating
+# major tags, no SHA pinning.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
