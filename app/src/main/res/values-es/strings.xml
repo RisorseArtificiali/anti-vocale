@@ -263,10 +263,10 @@
     <string name="faq_card_trouble_title">Algo ha fallado</string>
     <string name="faq_card_trouble_body">Si no llega un resultado, el fabricante puede haber congelado la app en segundo plano: sigue el consejo de batería de la notificación de error. Un resultado fallido conserva una entrada de informe.</string>
     <string name="no_app_to_open_link">No hay ninguna app para abrir el enlace</string>
-    <string name="remote_omnivoice_name">Delegación LAN (OmniVoice)</string>
-    <string name="remote_offload_title">Delegación LAN (experimental)</string>
-    <string name="remote_offload_description">Delega las transcripciones largas o pesadas en tu propio servidor OmniVoice de tu red Wi-Fi. Cuando esté activado, selecciónalo en la pestaña Modelos.</string>
-    <string name="remote_offload_disclosure">Cuando está activado y seleccionado, el audio de esas transcripciones se envía solo a la dirección del servidor que introduzcas abajo, en tu propia red. Todo lo demás se transcribe en este dispositivo. Está desactivado de forma predeterminada: nada sale de tu teléfono a menos que lo actives.</string>
+    <string name="remote_omnivoice_name">Descarga remota (OmniVoice)</string>
+    <string name="remote_offload_title">Descarga remota (experimental)</string>
+    <string name="remote_offload_description">Delega las transcripciones largas o pesadas a un servidor compatible con OmniVoice que elijas. Cuando está activado, selecciónalo en la pestaña Modelos.</string>
+    <string name="remote_offload_disclosure">Cuando está activado y seleccionado, el audio de esas transcripciones se envía solo a la dirección del servidor que escribas abajo, esté donde esté: puede estar en tu red o en internet. Todo lo demás se transcribe en este dispositivo. Está desactivado por defecto: nada sale de tu teléfono hasta que lo actives.</string>
     <string name="remote_offload_endpoint_label">Dirección del servidor</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">Clave de API</string>
@@ -364,7 +364,7 @@
     <string name="chunk_nav_empty">No hay texto para este fragmento</string>
     <string name="settings_section_transcription">Transcripción</string>
     <string name="settings_section_appearance">Apariencia</string>
-    <string name="settings_section_advanced">Avanzado</string>
+    <string name="settings_section_advanced">Sistema e integraciones</string>
     <string name="settings_section_feedback">Comentarios y acerca de</string>
     <string name="settings_feedback_send_title">Enviar comentario / Reportar problema</string>
     <string name="settings_feedback_send_description">Abre tu app de correo con los detalles prellenados</string>
@@ -1035,7 +1035,7 @@
     <string name="performance_settings_title">Rendimiento y memoria</string>
     <string name="performance_settings_summary">Hilos, proveedor, protección de memoria y diagnóstico</string>
     <string name="automation_settings_title">Automatización y descarga externa</string>
-    <string name="automation_settings_summary">Receptores Tasker, guía de broadcast y descarga a LAN</string>
+    <string name="automation_settings_summary">Receptores de Tasker, guía de broadcast y descarga remota</string>
     <string name="settings_group_appearance">Apariencia</string>
     <string name="settings_group_history">Historial</string>
     <string name="settings_group_decoding">Decodificación y vista previa</string>

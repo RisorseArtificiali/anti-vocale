@@ -263,10 +263,10 @@
     <string name="faq_card_trouble_title">Quelque chose a échoué</string>
     <string name="faq_card_trouble_body">Si un résultat n’arrive pas, le fabricant a peut-être gelé l’app en arrière-plan : suivez le conseil batterie de la notification d’erreur. Un échec conserve une entrée de rapport.</string>
     <string name="no_app_to_open_link">Aucune application trouvée pour ouvrir le lien</string>
-    <string name="remote_omnivoice_name">Délestage LAN (OmniVoice)</string>
-    <string name="remote_offload_title">Délestage LAN (expérimental)</string>
-    <string name="remote_offload_description">Délègue les transcriptions longues ou lourdes à votre propre serveur OmniVoice sur votre réseau Wi-Fi. Une fois activé, sélectionnez-le dans l\'onglet Modèles.</string>
-    <string name="remote_offload_disclosure">Lorsque cette fonction est activée et sélectionnée, l\'audio de ces transcriptions est envoyé uniquement à l\'adresse du serveur que vous saisissez ci-dessous, sur votre propre réseau. Tout le reste est transcrit sur cet appareil. Désactivée par défaut : rien ne quitte votre téléphone tant que vous ne l\'activez pas.</string>
+    <string name="remote_omnivoice_name">Déport distant (OmniVoice)</string>
+    <string name="remote_offload_title">Déport distant (expérimental)</string>
+    <string name="remote_offload_description">Délègue les transcriptions longues ou lourdes à un serveur compatible OmniVoice de ton choix. Une fois activé, sélectionne-le dans l\'onglet Modèles.</string>
+    <string name="remote_offload_disclosure">Quand c\'est activé et sélectionné, l\'audio de ces transcriptions part uniquement vers l\'adresse du serveur saisie ci-dessous, où que soit ce serveur : sur ton réseau ou n\'importe où sur internet. Tout le reste est transcrit sur cet appareil. Désactivé par défaut : rien ne quitte ton téléphone tant que tu ne l\'actives pas.</string>
     <string name="remote_offload_endpoint_label">Adresse du serveur</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">Clé API</string>
@@ -364,7 +364,7 @@
     <string name="chunk_nav_empty">Aucun texte pour ce fragment</string>
     <string name="settings_section_transcription">Transcription</string>
     <string name="settings_section_appearance">Apparence</string>
-    <string name="settings_section_advanced">Avancé</string>
+    <string name="settings_section_advanced">Système et intégrations</string>
     <string name="settings_section_feedback">Commentaires &amp; À propos</string>
     <string name="settings_feedback_send_title">Envoyer un commentaire / Signaler un problème</string>
     <string name="settings_feedback_send_description">Ouvre votre application de messagerie avec les détails pré-remplis</string>
@@ -1035,7 +1035,7 @@
     <string name="performance_settings_title">Performance et mémoire</string>
     <string name="performance_settings_summary">Threads, fournisseur, protection mémoire et diagnostics</string>
     <string name="automation_settings_title">Automatisation et délestage</string>
-    <string name="automation_settings_summary">Récepteurs Tasker, guide broadcast et délestage LAN</string>
+    <string name="automation_settings_summary">Récepteurs Tasker, guide broadcast et déport distant</string>
     <string name="settings_group_appearance">Apparence</string>
     <string name="settings_group_history">Historique</string>
     <string name="settings_group_decoding">Décodage et aperçu</string>

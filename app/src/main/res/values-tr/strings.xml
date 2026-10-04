@@ -315,10 +315,10 @@
     <string name="faq_card_trouble_title">Bir şey ters gitti</string>
     <string name="faq_card_trouble_body">Sonuç gelmiyorsa üretici uygulamayı arka planda dondurmuş olabilir: hata bildirimindeki pil önerisini izleyin. Başarısız sonuç bir rapor kaydı tutar.</string>
     <string name="no_app_to_open_link">Bağlantıyı açmak için uygulama bulunamadı</string>
-    <string name="remote_omnivoice_name">LAN devri (OmniVoice)</string>
-    <string name="remote_offload_title">LAN devri (deneysel)</string>
-    <string name="remote_offload_description">Uzun veya ağır transkripsiyonları Wi-Fi ağınızdaki kendi OmniVoice sunucunuza devreder. Etkinleştirildiğinde Model sekmesinden seçin.</string>
-    <string name="remote_offload_disclosure">Bu özellik etkinken ve seçiliyken, bu transkripsiyonların sesi yalnızca aşağıya girdiğiniz sunucu adresine, kendi ağınız üzerinden gönderilir. Geri kalan her şey bu cihazda transkribe edilir. Varsayılan olarak kapalıdır: siz açmadıkça telefonunuzdan hiçbir şey çıkmaz.</string>
+    <string name="remote_omnivoice_name">Uzak aktarım (OmniVoice)</string>
+    <string name="remote_offload_title">Uzak aktarım (deneysel)</string>
+    <string name="remote_offload_description">Uzun veya ağır transkripsiyonları seçtiğin OmniVoice uyumlu bir sunucuya devret. Etkinleştirildiğinde Modeller sekmesinden seç.</string>
+    <string name="remote_offload_disclosure">Bu etkin ve seçiliyken, o transkripsiyonların sesi yalnızca aşağıya girdiğin sunucu adresine gönderilir; sunucu nerede olursa olsun: kendi ağında ya da internette. Geri kalan her şey bu cihazda yazıya dökülür. Varsayılan olarak kapalı: sen açmadıkça telefonundan hiçbir şey çıkmaz.</string>
     <string name="remote_offload_endpoint_label">Sunucu adresi</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">API anahtarı</string>
@@ -427,7 +427,7 @@
     <!-- Settings Tab - Section Titles -->
     <string name="settings_section_transcription">Metin Çıkarma</string>
     <string name="settings_section_appearance">Görünüm</string>
-    <string name="settings_section_advanced">Gelişmiş</string>
+    <string name="settings_section_advanced">Sistem ve entegrasyonlar</string>
     <string name="settings_section_feedback">Geri Bildirim &amp; Hakkında</string>
     <string name="settings_feedback_send_title">Geri bildirim gönder / Sorun bildir</string>
     <string name="settings_feedback_send_description">Ayrıntıları önceden doldurulmuş olarak e-posta uygulamanızı açar</string>
@@ -1167,7 +1167,7 @@
     <string name="performance_settings_title">Performans ve bellek</string>
     <string name="performance_settings_summary">İş parçacıkları, sağlayıcı, bellek koruması ve tanılama</string>
     <string name="automation_settings_title">Otomasyon ve yük aktarma</string>
-    <string name="automation_settings_summary">Tasker alıcıları, broadcast kılavuzu ve LAN aktarımı</string>
+    <string name="automation_settings_summary">Tasker alıcıları, broadcast kılavuzu ve uzak aktarım</string>
     <string name="settings_group_appearance">Görünüm</string>
     <string name="settings_group_history">Kayıtlar</string>
     <string name="settings_group_decoding">Kod çözme ve önizleme</string>

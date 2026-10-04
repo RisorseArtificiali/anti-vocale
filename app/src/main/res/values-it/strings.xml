@@ -312,10 +312,10 @@
     <string name="faq_card_trouble_title">Qualcosa è andato storto</string>
     <string name="faq_card_trouble_body">Se un risultato non arriva, il produttore del telefono potrebbe aver congelato l\'app in background: segui il consiglio nelle impostazioni batteria che trovi nella notifica di errore. Un risultato fallito conserva una voce di report con tutto il necessario per diagnosticarlo.</string>
     <string name="no_app_to_open_link">Nessuna app trovata per aprire il link</string>
-    <string name="remote_omnivoice_name">Offload LAN (OmniVoice)</string>
-    <string name="remote_offload_title">Offload LAN (sperimentale)</string>
-    <string name="remote_offload_description">Delega le trascrizioni lunghe o pesanti al tuo server OmniVoice sulla tua rete Wi-Fi. Una volta attivo, selezionalo nella scheda Modelli.</string>
-    <string name="remote_offload_disclosure">Quando è attivo e selezionato, l\'audio di quelle trascrizioni viene inviato solo all\'indirizzo del server che inserisci qui sotto, sulla tua rete. Tutto il resto viene trascritto su questo dispositivo. È disattivato per impostazione predefinita: nulla lascia il telefono a meno che non lo attivi tu.</string>
+    <string name="remote_omnivoice_name">Offload remoto (OmniVoice)</string>
+    <string name="remote_offload_title">Offload remoto (sperimentale)</string>
+    <string name="remote_offload_description">Delega le trascrizioni lunghe o pesanti a un server compatibile OmniVoice che scegli tu. Quando attivo, selezionalo nella scheda Modelli.</string>
+    <string name="remote_offload_disclosure">Quando è attivo e selezionato, l\'audio di quelle trascrizioni viene inviato solo all\'indirizzo del server che inserisci sotto, ovunque si trovi: può essere nella tua rete o in internet. Tutto il resto viene trascritto su questo dispositivo. È disattivo per impostazione predefinita: nulla lascia il telefono finché non lo attivi.</string>
     <string name="remote_offload_endpoint_label">Indirizzo del server</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">Chiave API</string>
@@ -421,7 +421,7 @@
     <!-- Impostazioni - Titoli Sezioni -->
     <string name="settings_section_transcription">Trascrizione</string>
     <string name="settings_section_appearance">Aspetto</string>
-    <string name="settings_section_advanced">Avanzate</string>
+    <string name="settings_section_advanced">Sistema e integrazioni</string>
     <string name="settings_section_feedback">Feedback e informazioni</string>
     <string name="settings_feedback_send_title">Invia feedback / Segnala un problema</string>
     <string name="settings_feedback_send_description">Apre la tua app email con i dettagli gia compilati</string>
@@ -1172,7 +1172,7 @@
     <string name="performance_settings_title">Prestazioni e memoria</string>
     <string name="performance_settings_summary">Thread, provider, protezione memoria e diagnostica</string>
     <string name="automation_settings_title">Automazione e offload</string>
-    <string name="automation_settings_summary">Ricevitori Tasker, guida broadcast e offload LAN</string>
+    <string name="automation_settings_summary">Ricevitori Tasker, guida ai broadcast e offload remoto</string>
     <string name="settings_group_appearance">Aspetto</string>
     <string name="settings_group_history">Cronologia</string>
     <string name="settings_group_decoding">Decodifica e anteprima</string>

@@ -303,10 +303,10 @@
     <string name="faq_card_trouble_title">Что-то пошло не так</string>
     <string name="faq_card_trouble_body">Если результат не приходит, производитель мог заморозить приложение в фоне: следуйте совету о батарее в уведомлении об ошибке. Неудавшийся результат сохраняет запись отчёта.</string>
     <string name="no_app_to_open_link">Не найдено приложение для открытия ссылки</string>
-    <string name="remote_omnivoice_name">Перенос на сервер LAN (OmniVoice)</string>
-    <string name="remote_offload_title">Перенос на сервер LAN (экспериментально)</string>
-    <string name="remote_offload_description">Передача длинных или тяжёлых расшифровок вашему собственному серверу OmniVoice в вашей сети Wi-Fi. После включения выберите его на вкладке «Модели».</string>
-    <string name="remote_offload_disclosure">Когда функция включена и выбрана, звук этих расшифровок отправляется только на адрес сервера, который вы укажете ниже, в вашей собственной сети. Всё остальное расшифровывается на этом устройстве. По умолчанию выключено: ничего не покидает телефон, пока вы это не включите.</string>
+    <string name="remote_omnivoice_name">Удалённая разгрузка (OmniVoice)</string>
+    <string name="remote_offload_title">Удалённая разгрузка (экспериментально)</string>
+    <string name="remote_offload_description">Делегируйте длинные или тяжёлые расшифровки совместимому с OmniVoice серверу по вашему выбору. Когда включено, выберите его на вкладке Модели.</string>
+    <string name="remote_offload_disclosure">Когда это включено и выбрано, аудио этих расшифровок отправляется только на адрес сервера, введённый ниже, где бы он ни находился: в вашей сети или где-то в интернете. Всё остальное расшифровывается на этом устройстве. По умолчанию выключено: ничего не покидает телефон, пока вы это не включите.</string>
     <string name="remote_offload_endpoint_label">Адрес сервера</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">API-ключ</string>
@@ -415,7 +415,7 @@
     <!-- Settings Tab - Section Titles -->
     <string name="settings_section_transcription">Распознавание</string>
     <string name="settings_section_appearance">Оформление</string>
-    <string name="settings_section_advanced">Дополнительно</string>
+    <string name="settings_section_advanced">Система и интеграции</string>
     <string name="settings_section_feedback">Обратная связь и о приложении</string>
     <string name="settings_feedback_send_title">Отправить отзыв / Сообщить о проблеме</string>
     <string name="settings_feedback_send_description">Открывает почтовое приложение с заранее заполненными данными</string>
@@ -1192,7 +1192,7 @@
     <string name="performance_settings_title">Производительность и память</string>
     <string name="performance_settings_summary">Потоки, провайдер, защита памяти и диагностика</string>
     <string name="automation_settings_title">Автоматизация и разгрузка</string>
-    <string name="automation_settings_summary">Приёмники Tasker, руководство по broadcast и LAN-разгрузка</string>
+    <string name="automation_settings_summary">Приёмники Tasker, руководство по broadcast и удалённая разгрузка</string>
     <string name="settings_group_appearance">Оформление</string>
     <string name="settings_group_history">История</string>
     <string name="settings_group_decoding">Декодирование и предпросмотр</string>

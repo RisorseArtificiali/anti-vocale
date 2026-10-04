@@ -314,10 +314,10 @@
     <string name="faq_card_trouble_title">משהו השתבש</string>
     <string name="faq_card_trouble_body">אם תוצאה לא מגיעה, ייתכן שיצרן הטלפון הקפיא את האפליקציה ברקע: עקבו אחרי עצת הסוללה בהתראת השגיאה. תוצאה שנכשלה שומרת רשומת דיווח.</string>
     <string name="no_app_to_open_link">לא נמצאה אפליקציה לפתיחת הקישור</string>
-    <string name="remote_omnivoice_name">העברה לשרת LAN (OmniVoice)</string>
-    <string name="remote_offload_title">העברה לשרת LAN (ניסיוני)</string>
-    <string name="remote_offload_description">מעביר תמלולים ארוכים או כבדים לשרת ה-OmniVoice שלכם ברשת ה-Wi-Fi. לאחר ההפעלה בחרו אותו בלשונית המודלים.</string>
-    <string name="remote_offload_disclosure">כשהתכונה מופעלת ונבחרת, האודיו של אותם תמלולים נשלח רק אל כתובת השרת שתזינו למטה, ברשת שלכם. כל השאר מתומלל על המכשיר הזה. כבויה כברירת מחדל: שום דבר לא יוצא מהטלפון אלא אם תפעילו.</string>
+    <string name="remote_omnivoice_name">האצה מרחוק (OmniVoice)</string>
+    <string name="remote_offload_title">האצה מרחוק (ניסיוני)</string>
+    <string name="remote_offload_description">האצלת תמלילים ארוכים או כבדים לשרת תואם OmniVoice שתבחרו. כשמופעל, בחרו אותו בלשונית המודלים.</string>
+    <string name="remote_offload_disclosure">כשהתכונה מופעלת ונבחרה, האודיו של אותם תמלילים נשלח רק אל כתובת השרת שתזינו למטה, בכל מקום שהשרת נמצא בו: ברשת הביתית או באינטרנט. כל השאר מתומלל במכשיר זה. כבוי כברירת מחדל: שום דבר לא עוזב את הטלפון עד שתפעילו.</string>
     <string name="remote_offload_endpoint_label">כתובת השרת</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">מפתח API</string>
@@ -427,7 +427,7 @@
     <!-- Settings Tab - Section Titles -->
     <string name="settings_section_transcription">תמלול</string>
     <string name="settings_section_appearance">עיצוב</string>
-    <string name="settings_section_advanced">מתקדם</string>
+    <string name="settings_section_advanced">מערכת ושילובים</string>
     <string name="settings_section_feedback">משוב &amp; אודות</string>
     <string name="settings_feedback_send_title">שליחת משוב / דיווח על בעיה</string>
     <string name="settings_feedback_send_description">פותח את אפליקציית הדוא״ל שלך עם הפרטים מלאים מראש</string>
@@ -1177,7 +1177,7 @@
     <string name="performance_settings_title">ביצועים וזיכרון</string>
     <string name="performance_settings_summary">תהליכונים, ספק, הגנת זיכרון ואבחון</string>
     <string name="automation_settings_title">אוטומציה והאצה חוצה</string>
-    <string name="automation_settings_summary">מקלטי Tasker, מדריך broadcast והעברה ל-LAN</string>
+    <string name="automation_settings_summary">מקלטי Tasker, מדריך broadcast והאצה מרחוק</string>
     <string name="settings_group_appearance">מראה ותחושה</string>
     <string name="settings_group_history">היסטוריה</string>
     <string name="settings_group_decoding">פענוח ותצוגה מקדימה</string>

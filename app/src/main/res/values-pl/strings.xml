@@ -319,10 +319,10 @@
     <string name="faq_card_trouble_title">Coś poszło nie tak</string>
     <string name="faq_card_trouble_body">Gdy wynik nie nadchodzi, producent mógł zamrozić aplikację w tle: skorzystaj z porady o baterii w powiadomieniu błędu. Nieudany wynik zachowuje wpis raportu.</string>
     <string name="no_app_to_open_link">Nie znaleziono aplikacji do otwarcia linku</string>
-    <string name="remote_omnivoice_name">Odciążenie LAN (OmniVoice)</string>
-    <string name="remote_offload_title">Odciążenie LAN (eksperymentalne)</string>
-    <string name="remote_offload_description">Przekazuje długie lub wymagające transkrypcje własnemu serwerowi OmniVoice w Twojej sieci Wi-Fi. Po włączeniu wybierz go w zakładce Modele.</string>
-    <string name="remote_offload_disclosure">Gdy ta funkcja jest włączona i wybrana, dźwięk tych transkrypcji jest wysyłany wyłącznie na adres serwera podany poniżej, w Twojej własnej sieci. Wszystko inne jest transkrybowane na tym urządzeniu. Domyślnie wyłączone: nic nie opuszcza telefonu, dopóki tego nie włączysz.</string>
+    <string name="remote_omnivoice_name">Przekazywanie zdalne (OmniVoice)</string>
+    <string name="remote_offload_title">Przekazywanie zdalne (eksperymentalne)</string>
+    <string name="remote_offload_description">Zlecaj długie lub wymagające transkrypcje wybranemu serwerowi zgodnemu z OmniVoice. Po włączeniu wybierz go w karcie Modele.</string>
+    <string name="remote_offload_disclosure">Gdy to jest włączone i wybrane, audio tych transkrypcji trafia wyłącznie na adres serwera wpisany poniżej, gdziekolwiek ten serwer jest: w Twojej sieci lub w internecie. Wszystko inne jest transkrybowane na tym urządzeniu. Domyślnie wyłączone: nic nie opuszcza telefonu, dopóki tego nie włączysz.</string>
     <string name="remote_offload_endpoint_label">Adres serwera</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">Klucz API</string>
@@ -433,7 +433,7 @@
     <!-- Settings Tab - Section Titles -->
     <string name="settings_section_transcription">Transkrypcja</string>
     <string name="settings_section_appearance">Wygląd</string>
-    <string name="settings_section_advanced">Zaawansowane</string>
+    <string name="settings_section_advanced">System i integracje</string>
     <string name="settings_section_feedback">Opinia &amp; Informacje</string>
     <string name="settings_feedback_send_title">Wyślij opinię / Zgłoś problem</string>
     <string name="settings_feedback_send_description">Otwiera aplikację pocztową z wstępnie wypełnionymi szczegółami</string>
@@ -1191,7 +1191,7 @@
     <string name="performance_settings_title">Wydajność i pamięć</string>
     <string name="performance_settings_summary">Wątki, dostawca, ochrona pamięci i diagnostyka</string>
     <string name="automation_settings_title">Automatyzacja i odciążenie</string>
-    <string name="automation_settings_summary">Odbiorniki Tasker, przewodnik broadcast i odciążenie LAN</string>
+    <string name="automation_settings_summary">Odbiorniki Tasker, przewodnik broadcast i przekazywanie zdalne</string>
     <string name="settings_group_appearance">Wygląd</string>
     <string name="settings_group_history">Historia</string>
     <string name="settings_group_decoding">Dekodowanie i podgląd</string>

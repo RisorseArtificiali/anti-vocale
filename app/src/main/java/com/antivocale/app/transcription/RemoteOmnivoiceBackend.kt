@@ -118,7 +118,7 @@ class RemoteOmnivoiceBackend @Inject constructor(
     private var config: BackendConfig.RemoteConfig? = null
 
     override val id: String = BACKEND_ID
-    override val displayName: String = "OmniVoice (LAN)"
+    override val displayName: String = "OmniVoice (remote)"
     override val supportsAudio: Boolean = true
     override val supportsText: Boolean = false
 

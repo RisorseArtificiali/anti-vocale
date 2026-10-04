@@ -321,10 +321,10 @@
     <string name="faq_card_trouble_title">Щось пішло не так</string>
     <string name="faq_card_trouble_body">Якщо результат не надходить, виробник міг заморозити застосунок у фоні: дотримуйтеся поради про акумулятор у сповіщенні про помилку. Невдалий результат зберігає запис звіту.</string>
     <string name="no_app_to_open_link">Не знайдено застосунка для відкриття посилання</string>
-    <string name="remote_omnivoice_name">Перенесення на сервер LAN (OmniVoice)</string>
-    <string name="remote_offload_title">Перенесення на сервер LAN (експериментально)</string>
-    <string name="remote_offload_description">Передача довгих або важких розшифровок вашому власному серверу OmniVoice у вашій мережі Wi-Fi. Після ввімкнення виберіть його на вкладці «Моделі».</string>
-    <string name="remote_offload_disclosure">Коли функцію ввімкнено та вибрано, звук цих розшифровок надсилається лише на адресу сервера, яку ви вкажете нижче, у вашій власній мережі. Усе інше розшифровується на цьому пристрої. Типово вимкнено: нічого не залишає телефон, доки ви це не ввімкнете.</string>
+    <string name="remote_omnivoice_name">Віддалене розвантаження (OmniVoice)</string>
+    <string name="remote_offload_title">Віддалене розвантаження (експериментально)</string>
+    <string name="remote_offload_description">Делегуйте довгі чи важкі транскрипції сумісному з OmniVoice серверу на ваш вибір. Коли увімкнено, виберіть його на вкладці Моделі.</string>
+    <string name="remote_offload_disclosure">Коли це увімкнено й вибрано, аудіо цих транскрипцій надсилається лише на адресу сервера, введену нижче, де б той сервер не був: у вашій мережі чи десь в інтернеті. Усе інше транскрибується на цьому пристрої. Типово вимкнено: нічого не залишає телефон, поки ви це не увімкнете.</string>
     <string name="remote_offload_endpoint_label">Адреса сервера</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">Ключ API</string>
@@ -435,7 +435,7 @@
     <!-- Settings Tab - Section Titles -->
     <string name="settings_section_transcription">Розшифровка</string>
     <string name="settings_section_appearance">Зовнішній вигляд</string>
-    <string name="settings_section_advanced">Розширені</string>
+    <string name="settings_section_advanced">Система та інтеграції</string>
     <string name="settings_section_feedback">Відгук &amp; Про додаток</string>
     <string name="settings_feedback_send_title">Надіслати відгук / Повідомити про проблему</string>
     <string name="settings_feedback_send_description">Відкриває вашу поштову програму з попередньо заповненими даними</string>
@@ -1193,7 +1193,7 @@
     <string name="performance_settings_title">Продуктивність і пам\'ять</string>
     <string name="performance_settings_summary">Потоки, провайдер, захист пам\'яті та діагностика</string>
     <string name="automation_settings_title">Автоматизація та розвантаження</string>
-    <string name="automation_settings_summary">Приймачі Tasker, підручник broadcast та LAN-розвантаження</string>
+    <string name="automation_settings_summary">Приймачі Tasker, керівництво з broadcast і віддалене розвантаження</string>
     <string name="settings_group_appearance">Вигляд</string>
     <string name="settings_group_history">Історія</string>
     <string name="settings_group_decoding">Декодування та передперегляд</string>

@@ -312,10 +312,10 @@
     <string name="faq_card_trouble_title">چیزی درست پیش نرفت</string>
     <string name="faq_card_trouble_body">اگر نتیجه‌ای نمی‌رسد، سازنده گوشی ممکن است اپ را در پس‌زمینه замرده باشد: توصیه باتری در اعلان خطا را دنبال کنید. نتیجه ناموفق یک ورودی گزارش نگه می‌دارد.</string>
     <string name="no_app_to_open_link">اپلیکیشنی برای باز کردن پیوند پیدا نشد</string>
-    <string name="remote_omnivoice_name">واگذاری به LAN (OmniVoice)</string>
-    <string name="remote_offload_title">واگذاری به LAN (آزمایشی)</string>
-    <string name="remote_offload_description">رونویسی‌های طولانی یا سنگین را به سرور OmniVoice خودتان در شبکه Wi-Fi می‌سپارد. پس از فعال شدن، آن را در برگه Model انتخاب کنید.</string>
-    <string name="remote_offload_disclosure">وقتی این قابلیت فعال و انتخاب شده باشد، صدای آن رونویسی‌ها فقط به نشانی سروری که در پایین وارد می‌کنید، در شبکه خودتان فرستاده می‌شود. همه چیز دیگر روی همین دستگاه رونویسی می‌شود. به طور پیش‌فرض خاموش است: تا آن را روشن نکنید هیچ چیزی از گوشی خارج نمی‌شود.</string>
+    <string name="remote_omnivoice_name">بارگذاری به سرور راه دور (OmniVoice)</string>
+    <string name="remote_offload_title">بارگذاری به سرور راه دور (آزمایشی)</string>
+    <string name="remote_offload_description">رونوشت‌های طولانی یا سنگین را به یک سرور سازگار با OmniVoice به انتخاب خودتان بسپارید. وقتی فعال است، آن را در برگه مدل‌ها انتخاب کنید.</string>
+    <string name="remote_offload_disclosure">وقتی این گزینه فعال و انتخاب شده باشد، صدای آن رونوشت‌ها فقط به نشانه سروری که در پایین وارد می‌کنید فرستاده می‌شود، هر جا که آن سرور باشد: در شبکه شما یا هرجای اینترنت. همه چیز دیگر روی همین دستگاه رونویسی می‌شود. به طور پیش‌فرض خاموش است: تا روشنش نکنید هیچ چیزی از گوشی خارج نمی‌شود.</string>
     <string name="remote_offload_endpoint_label">نشانی سرور</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">کلید API</string>
@@ -421,7 +421,7 @@
     <!-- Settings - Section titles -->
     <string name="settings_section_transcription">رونویسی</string>
     <string name="settings_section_appearance">ظاهر</string>
-    <string name="settings_section_advanced">پیشرفته</string>
+    <string name="settings_section_advanced">سیستم و یکپارچه‌سازی</string>
     <string name="settings_section_feedback">بازخورد و درباره برنامه</string>
     <string name="settings_feedback_send_title">ارسال بازخورد / گزارش مشکل</string>
     <string name="settings_feedback_send_description">برنامه ایمیل شما را با جزئیات از پیش پرشده باز می‌کند</string>
@@ -1172,7 +1172,7 @@
     <string name="performance_settings_title">عملکرد و حافظه</string>
     <string name="performance_settings_summary">رشته‌ها، ارائه‌دهنده، محافظت از حافظه و تشخیص خطا</string>
     <string name="automation_settings_title">اتوماسیون و بارگذاری خارجی</string>
-    <string name="automation_settings_summary">گیرنده‌های تسکر، راهنمای broadcast و تخلیه LAN</string>
+    <string name="automation_settings_summary">گیرنده‌های Tasker، راهنمای broadcast و بارگذاری راه دور</string>
     <string name="settings_group_appearance">ظاهر و حس</string>
     <string name="settings_group_history">تاریخچه</string>
     <string name="settings_group_decoding">رمزگشایی و پیش‌نمایش</string>

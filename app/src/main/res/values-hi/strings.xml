@@ -293,10 +293,10 @@
     <string name="faq_card_trouble_title">कुछ गड़बड़ हो गई</string>
     <string name="faq_card_trouble_body">परिणाम न आए तो फ़ोन निर्माता ने ऐप को बैकग्राउंड में फ़्रीज़ किया हो सकता है: ग़लती की नोटिफिकेशन में बैटरी सलाह देखें। असफल परिणाम रिपोर्ट प्रविष्टी रखता है।</string>
     <string name="no_app_to_open_link">लिंक खोलने के लिए कोई ऐप नहीं मिला</string>
-    <string name="remote_omnivoice_name">LAN ऑफ़लोड (OmniVoice)</string>
-    <string name="remote_offload_title">LAN ऑफ़लोड (प्रायोगिक)</string>
-    <string name="remote_offload_description">लंबी या भारी ट्रांसक्रिप्शन को अपने Wi-Fi नेटवर्क पर चलने वाले अपने OmniVoice सर्वर को भेजता है। सक्षम होने पर इसे Model टैब में चुनें।</string>
-    <string name="remote_offload_disclosure">जब यह सक्षम और चुना गया हो, तो उन ट्रांसक्रिप्शन का ऑडियो केवल नीचे दर्ज किए गए सर्वर पते पर, आपके अपने नेटवर्क में भेजा जाता है। बाकी सब कुछ इसी डिवाइस पर ट्रांसक्राइब होता है। यह डिफ़ॉल्ट रूप से बंद है: जब तक आप इसे चालू न करें, फ़ोन से कुछ भी बाहर नहीं जाता।</string>
+    <string name="remote_omnivoice_name">रिमोट ऑफ़लोड (OmniVoice)</string>
+    <string name="remote_offload_title">रिमोट ऑफ़लोड (प्रायोगिक)</string>
+    <string name="remote_offload_description">लंबी या भारी प्रतिलिपियाँ आपके चुने हुए OmniVoice-संगत सर्वर को सौंपें। सक्षम होने पर इसे मॉडल टैब में चुनें।</string>
+    <string name="remote_offload_disclosure">जब यह सक्षम और चुना गया है, उन प्रतिलिपियों का ऑडियो केवल नीचे दर्ज किए गए सर्वर पते पर भेजा जाता है, वह सर्वर जहाँ भी हो: आपके नेटवर्क में या इंटरनेट पर। बाकी सब इसी डिवाइस पर लिप्यंतरित होता है। यह डिफ़ॉल्ट रूप से बंद है: जब तक आप चालू न करें, फ़ोन से कुछ भी बाहर नहीं जाता।</string>
     <string name="remote_offload_endpoint_label">सर्वर पता</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">API कुंजी</string>
@@ -399,7 +399,7 @@
     <!-- Settings Tab - Section Titles -->
     <string name="settings_section_transcription">ट्रांसक्रिप्शन</string>
     <string name="settings_section_appearance">दिखावट</string>
-    <string name="settings_section_advanced">अतिरिक्त सेटिंग</string>
+    <string name="settings_section_advanced">सिस्टम और एकीकरण</string>
     <string name="settings_section_feedback">सुझाव और जानकारी</string>
     <string name="settings_feedback_send_title">सुझाव भेजें / समस्या की रिपोर्ट करें</string>
     <string name="settings_feedback_send_description">विवरण पहले से भरे हुए आपका मेल ऐप खोलता है</string>
@@ -1166,7 +1166,7 @@
     <string name="performance_settings_title">प्रदर्शन और मेमोरी</string>
     <string name="performance_settings_summary">थ्रेड, प्रोवाइडर, मेमोरी सुरक्षा और डायग्नोस्टिक्स</string>
     <string name="automation_settings_title">स्वचालन और ऑफलोड</string>
-    <string name="automation_settings_summary">टास्कर रिसीवर, ब्रॉडकास्ट गाइड और LAN ऑफलोड</string>
+    <string name="automation_settings_summary">Tasker रिसीवर, ब्रॉडकास्ट गाइड और रिमोट ऑफ़लोड</string>
     <string name="settings_group_appearance">रूप और अनुभव</string>
     <string name="settings_group_history">इतिहास</string>
     <string name="settings_group_decoding">डिकोडिंग और पूर्वावलोकन</string>

@@ -294,10 +294,10 @@
     <string name="faq_card_trouble_title">Etwas ist schiefgelaufen</string>
     <string name="faq_card_trouble_body">Kommt kein Ergebnis, hat der Hersteller die App im Hintergrund eingefroren: folge dem Akku-Hinweis in der Fehlerbenachrichtigung. Ein fehlgeschlagene Ergebnis behält einen Report-Eintrag mit allen Diagnosedaten.</string>
     <string name="no_app_to_open_link">Keine App zum Öffnen des Links gefunden</string>
-    <string name="remote_omnivoice_name">LAN-Auslagerung (OmniVoice)</string>
-    <string name="remote_offload_title">LAN-Auslagerung (experimentell)</string>
-    <string name="remote_offload_description">Lagert lange oder schwere Transkriptionen an Ihren eigenen OmniVoice-Server in Ihrem WLAN aus. Wenn aktiviert, wählen Sie ihn im Modell-Tab aus.</string>
-    <string name="remote_offload_disclosure">Wenn dies aktiviert und ausgewählt ist, wird das Audio dieser Transkriptionen nur an die unten eingegebene Serveradresse in Ihrem eigenen Netzwerk gesendet. Alles andere wird auf diesem Gerät transkribiert. Standardmäßig deaktiviert: Nichts verlässt Ihr Telefon, solange Sie dies nicht einschalten.</string>
+    <string name="remote_omnivoice_name">Remote-Offload (OmniVoice)</string>
+    <string name="remote_offload_title">Remote-Offload (experimentell)</string>
+    <string name="remote_offload_description">Lange oder schwere Transkriptionen an einen kompatiblen OmniVoice-Server deiner Wahl auslagern. Wenn aktiviert, im Tab Modelle auswählen.</string>
+    <string name="remote_offload_disclosure">Wenn dies aktiviert und ausgewählt ist, wird das Audio dieser Transkriptionen nur an die unten eingegebene Serveradresse gesendet, egal wo dieser Server läuft: im eigenen Netzwerk oder irgendwo im Internet. Alles andere wird auf diesem Gerät transkribiert. Standardmäßig deaktiviert: Nichts verlässt dein Telefon, bis du es aktivierst.</string>
     <string name="remote_offload_endpoint_label">Serveradresse</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">API-Schlüssel</string>
@@ -400,7 +400,7 @@
     <!-- Settings Tab - Section Titles -->
     <string name="settings_section_transcription">Transkription</string>
     <string name="settings_section_appearance">Erscheinungsbild</string>
-    <string name="settings_section_advanced">Erweitert</string>
+    <string name="settings_section_advanced">System &amp; Integrationen</string>
     <string name="settings_section_feedback">Feedback &amp; Über</string>
     <string name="settings_feedback_send_title">Feedback senden / Problem melden</string>
     <string name="settings_feedback_send_description">Öffnet deine E-Mail-App mit den vorausgefüllten Details</string>
@@ -1167,7 +1167,7 @@
     <string name="performance_settings_title">Leistung und Speicher</string>
     <string name="performance_settings_summary">Threads, Anbieter, Speicherschutz und Diagnose</string>
     <string name="automation_settings_title">Automatisierung und Auslagerung</string>
-    <string name="automation_settings_summary">Tasker-Empfänger, Broadcast-Anleitung und LAN-Auslagerung</string>
+    <string name="automation_settings_summary">Tasker-Empfänger, Broadcast-Anleitung und Remote-Offload</string>
     <string name="settings_group_appearance">Erscheinungsbild</string>
     <string name="settings_group_history">Verlauf</string>
     <string name="settings_group_decoding">Dekodierung und Vorschau</string>

@@ -310,13 +310,13 @@
     <string name="automation_guide_open">Full guide</string>
     <string name="automation_guide_no_browser">No app found to open the guide</string>
     <string name="no_app_to_open_link">No app found to open the link</string>
-    <!-- TASK-681: LAN offload (the user's own OmniVoice server). The
+    <!-- TASK-681: remote offload (the user's own OmniVoice server). The
          disclosure string is the privacy contract: it must keep saying
          exactly where audio goes and that the feature is off by default. -->
-    <string name="remote_omnivoice_name">LAN offload (OmniVoice)</string>
-    <string name="remote_offload_title">LAN offload (experimental)</string>
-    <string name="remote_offload_description">Delegate long or heavy transcriptions to your own OmniVoice server on your Wi-Fi network. When enabled, select it in the Model tab.</string>
-    <string name="remote_offload_disclosure">When this is enabled and selected, the audio of those transcriptions is sent only to the server address you enter below, on your own network. Everything else is transcribed on this device. It is disabled by default: nothing leaves your phone unless you turn this on.</string>
+    <string name="remote_omnivoice_name">Remote offload (OmniVoice)</string>
+    <string name="remote_offload_title">Remote offload (experimental)</string>
+    <string name="remote_offload_description">Delegate long or heavy transcriptions to an OmniVoice-compatible server you choose. When enabled, select it in the Model tab.</string>
+    <string name="remote_offload_disclosure">When this is enabled and selected, the audio of those transcriptions is sent only to the server address you enter below, wherever that server is: it may be on your home network or anywhere on the internet. Everything else is transcribed on this device. It is disabled by default: nothing leaves your phone unless you turn this on.</string>
     <string name="remote_offload_endpoint_label">Server address</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
     <string name="remote_offload_key_label">API key</string>
@@ -430,7 +430,7 @@
     <!-- Settings Tab - Section Titles -->
     <string name="settings_section_transcription">Transcription</string>
     <string name="settings_section_appearance">Appearance</string>
-    <string name="settings_section_advanced">Advanced</string>
+    <string name="settings_section_advanced">System &amp; Integrations</string>
     <string name="settings_section_feedback">Feedback &amp; About</string>
     <string name="settings_feedback_send_title">Send feedback / Report a problem</string>
     <string name="settings_feedback_send_description">Opens your mail app with the details pre-filled</string>
@@ -1190,7 +1190,7 @@
     <string name="performance_settings_title">Performance and memory</string>
     <string name="performance_settings_summary">Threads, provider, memory protection and diagnostics</string>
     <string name="automation_settings_title">Automation and offload</string>
-    <string name="automation_settings_summary">Tasker receivers, the broadcast guide and LAN offload</string>
+    <string name="automation_settings_summary">Tasker receivers, the broadcast guide and remote offload</string>
     <string name="settings_group_appearance">Look and feel</string>
     <string name="settings_group_history">History</string>
     <string name="settings_group_decoding">Decoding and preview</string>
