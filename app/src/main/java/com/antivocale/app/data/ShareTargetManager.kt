@@ -73,7 +73,14 @@ class ShareTargetManager constructor(
 
     private suspend fun hasModel(backendId: String): Boolean {
         val descriptor = backendRegistry.byBackendId(backendId) ?: return false
-        return descriptor.modelPathFlow(preferencesManager).first() != null
+        val path = descriptor.modelPathFlow(preferencesManager).first() ?: return false
+        // TASK-743: the SAVED PATH is a preference and can outlive the model
+        // dir it named (a delete, a test session's cleanup, a re-install):
+        // the share target is offered only when the model is really on
+        // disk, never on a stale preference (the maintainer's report: the
+        // sheet listed every family). exists(), not isDirectory(): the LLM
+        // descriptor's path names a .litertlm FILE.
+        return java.io.File(path).exists()
     }
 
     private fun setComponentEnabled(target: BackendDescriptor, enabled: Boolean) {

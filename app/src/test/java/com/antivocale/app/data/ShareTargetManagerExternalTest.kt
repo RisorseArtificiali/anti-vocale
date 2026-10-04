@@ -88,6 +88,38 @@ class ShareTargetManagerExternalTest {
         context.packageManager.getComponentEnabledSetting(familyAlias) ==
             PackageManager.COMPONENT_ENABLED_STATE_ENABLED
 
+    // ---- TASK-743: a stale saved path keeps its family OUT of the sheet ----
+
+    @Test
+    fun `a backend whose saved path points at a deleted dir gets no share alias`() = runTest {
+        // The preference holds a path (the family was once used); the dir is
+        // gone. Advanced sharing is ON so the STALE PATH is the only thing
+        // that can disable the alias (with it off, the gate would pass the
+        // test even on the pre-fix code - the discriminating cell).
+        fake._advancedSharingEnabled.value = true
+        fake._sherpaModelPath("whisper").value = "/gone/whisper-turbo"
+        manager = newManager(testScheduler)
+        manager.syncAll()
+
+        val state = context.packageManager.getComponentEnabledSetting(
+            ComponentName(context, "com.antivocale.app.ShareWhisper"))
+        assertEquals(PackageManager.COMPONENT_ENABLED_STATE_DISABLED, state)
+    }
+
+    @Test
+    fun `a backend with a real installed dir gets its share alias`() = runTest {
+        // advanced sharing must also be on: it is the other gate of the sync.
+        fake._advancedSharingEnabled.value = true
+        fake._sherpaModelPath("whisper").value =
+            Files.createTempDirectory("whisper-model").toFile().absolutePath
+        manager = newManager(testScheduler)
+        manager.syncAll()
+
+        val state = context.packageManager.getComponentEnabledSetting(
+            ComponentName(context, "com.antivocale.app.ShareWhisper"))
+        assertEquals(PackageManager.COMPONENT_ENABLED_STATE_ENABLED, state)
+    }
+
     @Test
     fun `advanced sharing on with one valid record enables the family alias`() = runTest {
         manager = newManager(testScheduler)
