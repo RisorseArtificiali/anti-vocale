@@ -1499,7 +1499,14 @@ private fun CatalogModelSection(
                         }
                     },
                     // TASK-742: offer the bundle share only for a present dir
-                    onExportClick = onExportBundle?.let { hook ->
+                    onExportClick = onExportBundle?.takeIf {
+                        // Only TRANSFERABLE entries offer the bundle: a
+                        // modelType with no import family (qwen3, the
+                        // online Nemotron, the LLM) cannot land as an
+                        // external import on the receiving device.
+                        com.antivocale.app.data.ModelBundleCodec
+                            .importFamilyForModelType(entry.modelType) != null
+                    }?.let { hook ->
                         entryDirFor(context, entry.id, variant.variantName)?.let { dir ->
                             { hook(dir, entry, variant) }
                         }
@@ -2557,7 +2564,11 @@ private fun exportBundleTo(
             // entry's architecture string: the manifest round-trips into
             // ModelFamily on the receiving device.
             family = com.antivocale.app.data.ModelBundleCodec
-                .importFamilyForModelType(entry.modelType).name,
+                .importFamilyForModelType(entry.modelType)?.name
+                // Unreachable for the button (it is gated on the same
+                // predicate); the loud fallback if a future call site
+                // forgets the gate.
+                ?: error("model type '${entry.modelType}' is not bundle-transferable"),
             modelType = entry.modelType,
             languages = com.antivocale.app.data.catalog.BundledCatalog
                 .byId(entry.id)?.variants

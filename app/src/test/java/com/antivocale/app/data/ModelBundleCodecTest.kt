@@ -129,11 +129,23 @@ class ModelBundleCodecTest {
     fun `a pre-fix architecture-family bundle imports via the modelType bridge`() {
         // The first export build wrote the catalog's architecture string
         // ("ENCODER_ONLY_CTC"); those bundles must still import (the
-        // modelType carries the truth).
+        // modelType carries the truth) - but only for modelTypes that
+        // HAVE an import family: qwen3_asr has none (the device trial's
+        // second catch) and must fail with the honest message.
         val manifest = org.json.JSONObject()
             .put("family", "ENCODER_ONLY_CTC")
-            .put("modelType", "qwen3_asr")
+            .put("modelType", "nemo_ctc")
         assertEquals(ModelFamily.CTC, ModelBundleCodec.recordParams(manifest).family)
+
+        val qwen = org.json.JSONObject()
+            .put("family", "ENCODER_ONLY_CTC")
+            .put("modelType", "qwen3_asr")
+        try {
+            ModelBundleCodec.recordParams(qwen)
+            fail("qwen3 must not transfer")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message!!.contains("no import family"))
+        }
         // A genuinely foreign family still fails loudly (the bridge covers
         // only the known architecture strings).
         val foreign = org.json.JSONObject().put("family", "TELEPATHY").put("modelType", "")

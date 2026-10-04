@@ -172,14 +172,23 @@ object ModelBundleCodec {
     private val ARCHITECTURE_FAMILIES =
         setOf("TRANSDUCER", "ENCODER_DECODER", "ENCODER_ONLY_CTC", "LLM")
 
-    fun importFamilyForModelType(modelType: String): ModelFamily = when (modelType) {
+    /**
+     * The IMPORT family for a catalog modelType, or null when the type has
+     * NO slot in the external-import taxonomy (qwen3_asr, the online
+     * Nemotron's "", and the LLM are catalog/online-only architectures
+     * whose sherpa configs the ExternalSherpaBackend cannot build). The
+     * export button hides those; a hand-made bundle of one fails loudly
+     * here instead of dying at a misleading CTC subtype error.
+     */
+    fun importFamilyForModelType(modelType: String): ModelFamily? = when (modelType) {
         "whisper" -> ModelFamily.WHISPER
-        "qwen3_asr", "nemo_ctc", "zipformer_ctc", "omnilingual_ctc" -> ModelFamily.CTC
+        "nemo_ctc", "zipformer_ctc", "omnilingual_ctc", "paraformer" -> ModelFamily.CTC
         "sense_voice" -> ModelFamily.SENSE_VOICE
         "canary" -> ModelFamily.CANARY
         "moonshine" -> ModelFamily.MOONSHINE
         "dolphin" -> ModelFamily.DOLPHIN
-        else -> ModelFamily.TRANSDUCER
+        "nemo_transducer", "conformer_transducer" -> ModelFamily.TRANSDUCER
+        else -> null
     }
 
     fun recordParams(manifest: JSONObject): RecordParams {
@@ -189,9 +198,12 @@ object ModelBundleCodec {
             // ("ENCODER_ONLY_CTC" etc); ONLY those known strings bridge by
             // modelType (the round-trip device trial caught this) - a
             // genuinely foreign family still fails loudly.
-            ?: if (familyName in ARCHITECTURE_FAMILIES)
+            ?: if (familyName in ARCHITECTURE_FAMILIES) {
                 importFamilyForModelType(manifest.optString("modelType"))
-            else throw IllegalArgumentException("unknown model family '$familyName' in bundle")
+                    ?: throw IllegalArgumentException(
+                        "model type '${manifest.optString("modelType")}' has no import family; " +
+                            "this model cannot be transferred as an external import")
+            } else throw IllegalArgumentException("unknown model family '$familyName' in bundle")
         val optionsJson = manifest.optJSONObject("options")
         val languagesJson = manifest.optJSONArray("languages")
         return RecordParams(
