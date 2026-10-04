@@ -69,7 +69,7 @@ jobs:
       # Node 24 (GitHub changelog 2025-09-19); v5 is the first major running
       # node24 natively.
       - name: Cache Robolectric android-all artifacts
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository/org/robolectric
           key: robolectric-androidall-4.12.1-sdk31-34
@@ -135,7 +135,7 @@ jobs:
       # Node 24 (GitHub changelog 2025-09-19); v5 is the first major running
       # node24 natively.
       - name: Cache Robolectric android-all artifacts
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: ~/.m2/repository/org/robolectric
           key: robolectric-androidall-4.12.1-sdk31-34
