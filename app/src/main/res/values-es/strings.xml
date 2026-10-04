@@ -1066,4 +1066,5 @@
     <string name="refinement_model_title">Modelo de refinado</string>
     <string name="refinement_model_description">El modelo que usa la segunda pasada. Deja en heredar para usar el modelo activo.</string>
     <string name="refinement_model_inherit">Heredar modelo activo</string>
+    <string name="export_model_bundle">Compartir modelo para transferencia sin conexión</string>
 </resources>

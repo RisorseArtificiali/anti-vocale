@@ -389,6 +389,7 @@
     <string name="cancel_download">Cancel Download</string>
     <string name="cancel_extract">Cancel Extract</string>
     <string name="extract_model">Extract</string>
+    <string name="export_model_bundle">Share model for offline transfer</string>
     <string name="use_model">Use Model</string>
     <string name="active_badge">Active</string>
     <string name="model_selected_message">%1$s selected</string>

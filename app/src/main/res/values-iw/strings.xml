@@ -1208,4 +1208,5 @@
     <string name="refinement_model_title">מודל החידוד</string>
     <string name="refinement_model_description">המודל ששלב השני משתמש בו. השאר על ירושה כדי להשתמש במודל הפעיל.</string>
     <string name="refinement_model_inherit">רשת מודל פעיל</string>
+    <string name="export_model_bundle">שיתוף המודל להעברה ללא רשת</string>
 </resources>

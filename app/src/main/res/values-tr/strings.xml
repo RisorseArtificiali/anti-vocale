@@ -1198,4 +1198,5 @@
     <string name="refinement_model_title">Refine modeli</string>
     <string name="refinement_model_description">İkinci geçişin kullandığı model. Etkin modeli kullanmak için devral\'da bırakın.</string>
     <string name="refinement_model_inherit">Etkin modeli devral</string>
+    <string name="export_model_bundle">Modeli çevrimdışı aktarım için paylaş</string>
 </resources>

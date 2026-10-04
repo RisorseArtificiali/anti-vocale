@@ -1222,4 +1222,5 @@
     <string name="refinement_model_title">Model doprecyzowujący</string>
     <string name="refinement_model_description">Model używany przez drugie przejście. Zostaw na dziedzicz, aby używać aktywnego modelu.</string>
     <string name="refinement_model_inherit">Dziedzicz aktywny model</string>
+    <string name="export_model_bundle">Udostępnij model do transferu offline</string>
 </resources>

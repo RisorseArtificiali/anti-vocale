@@ -1198,4 +1198,5 @@
     <string name="refinement_model_title">Verfeinerungsmodell</string>
     <string name="refinement_model_description">Das Modell des zweiten Durchlaufs. Auf erben lassen, um das aktive Modell zu verwenden.</string>
     <string name="refinement_model_inherit">Aktives Modell erben</string>
+    <string name="export_model_bundle">Modell für Offline-Übertragung teilen</string>
 </resources>

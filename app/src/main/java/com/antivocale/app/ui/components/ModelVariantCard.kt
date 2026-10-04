@@ -103,6 +103,8 @@ fun ModelVariantCard(
     onUpdateClick: () -> Unit = {},
     onDeleteClick: () -> Unit = {},
     onBenchmarkClick: (() -> Unit)? = null,
+    /** TASK-742: share the model as an offline transfer bundle; null hides it. */
+    onExportClick: (() -> Unit)? = null,
     onInfoClick: (() -> Unit)? = null
 ) {
     Card(
@@ -249,6 +251,15 @@ fun ModelVariantCard(
                                 modifier = Modifier.heightIn(min = 48.dp)
                             ) {
                                 Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.benchmark_button))
+                            }
+                        }
+                        if (onExportClick != null) {
+                            // TASK-742 (GH #124): the offline-transfer share.
+                            OutlinedButton(
+                                onClick = onExportClick,
+                                modifier = Modifier.heightIn(min = 48.dp)
+                            ) {
+                                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.export_model_bundle))
                             }
                         }
                         // TASK-381: 48dp minimum touch target for icon-only button

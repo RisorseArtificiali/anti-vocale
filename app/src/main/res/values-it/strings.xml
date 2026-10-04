@@ -1203,4 +1203,5 @@
     <string name="refinement_model_title">Modello di raffinamento</string>
     <string name="refinement_model_description">Il modello usato dal secondo passaggio. Lascia su eredita per usare il modello attivo.</string>
     <string name="refinement_model_inherit">Eredita modello attivo</string>
+    <string name="export_model_bundle">Condividi il modello per il trasferimento offline</string>
 </resources>

@@ -179,6 +179,24 @@ fun ModelTab(
             importFolder(picked, family)
         }
     }
+    // TASK-742 (GH #124): the offline-transfer share. The chosen target URI
+    // and the pending export (model dir + metadata) are remembered; the
+    // launcher callback streams the bundle into the user-picked file.
+    // TASK-742 (GH #124): the offline-transfer share. The remembered
+    // pending write streams the bundle once the user picks a target.
+    var pendingBundleWrite by remember { mutableStateOf<((android.net.Uri) -> Unit)?>(null) }
+    val bundleExportPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument("application/zip")
+    ) { uri ->
+        val write = pendingBundleWrite
+        pendingBundleWrite = null
+        if (uri != null && write != null) write(uri)
+    }
+    fun launchBundleExport(dir: java.io.File, entry: CatalogEntry, variant: CatalogVariantUi) {
+        pendingBundleWrite = { uri -> exportBundleTo(context, uri, dir, entry, variant) }
+        bundleExportPicker.launch(exportFileName(entry.id, variant.variantName))
+    }
+
     val externalFolderPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocumentTree()
     ) { uri ->
@@ -601,6 +619,7 @@ fun ModelTab(
                     viewModel = viewModel,
                     benchmarkViewModel = benchmarkViewModel,
                     entry = entry,
+                    onExportBundle = ::launchBundleExport,
                     state = catalogStates[entry.id] ?: ModelViewModel.ModelEntryUiState(),
                     activeBackendId = activeBackendId,
                     isTranscribing = isTranscribing,
@@ -1293,6 +1312,8 @@ private fun CatalogModelSection(
     viewModel: ModelViewModel,
     benchmarkViewModel: BenchmarkViewModel,
     entry: CatalogEntry,
+    /** TASK-742: the bundle-export hook (launcher arm + remembered target). */
+    onExportBundle: ((java.io.File, CatalogEntry, CatalogVariantUi) -> Unit)? = null,
     state: ModelViewModel.ModelEntryUiState,
     activeBackendId: String,
     isTranscribing: Boolean,
@@ -1454,6 +1475,12 @@ private fun CatalogModelSection(
                                 path,
                                 context.getString(variant.titleResId)
                             )
+                        }
+                    },
+                    // TASK-742: offer the bundle share only for a present dir
+                    onExportClick = onExportBundle?.let { hook ->
+                        entryDirFor(context, entry.id, variant.variantName)?.let { dir ->
+                            { hook(dir, entry, variant) }
                         }
                     },
                     onInfoClick = { onInfoClick(variant) }
@@ -2468,4 +2495,48 @@ private fun AudioLimitLabel(limit: AudioLimit) {
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.primary
     )
+}
+
+
+// ---- TASK-742 (GH #124): bundle-export helpers ----
+
+/** The installed dir of a catalog variant, or null when absent. */
+private fun entryDirFor(
+    context: android.content.Context,
+    entryId: String,
+    variantName: String,
+): java.io.File? =
+    SherpaModelDownloader.of(entryId).getModelPath(context, variantName)?.let { java.io.File(it) }
+
+private fun exportFileName(entryId: String, variantName: String?): String =
+    "antivocale-model-$entryId-${variantName ?: "default"}.zip"
+
+/** Streams the bundle into the SAF target; errors surface as a log and a
+ *  toast-free no-op (the share can be retried; the model is untouched). */
+private fun exportBundleTo(
+    context: android.content.Context,
+    uri: android.net.Uri,
+    dir: java.io.File,
+    entry: CatalogEntry,
+    variant: CatalogVariantUi,
+) {
+    try {
+        val metadata = com.antivocale.app.data.ModelBundleCodec.BundleMetadata(
+            displayName = context.getString(variant.titleResId),
+            family = entry.family,
+            modelType = entry.modelType,
+            languages = com.antivocale.app.data.catalog.BundledCatalog
+                .byId(entry.id)?.variants
+                ?.firstOrNull { it.dirName == variant.variantName }?.languages ?: emptyList(),
+            streaming = entry.isStreaming,
+            options = emptyMap(),
+            appVersion = com.antivocale.app.BuildConfig.VERSION_NAME,
+        )
+        context.contentResolver.openOutputStream(uri)?.use { out ->
+            com.antivocale.app.data.ModelBundleCodec.export(dir, out, metadata)
+        } ?: error("cannot open export target $uri")
+        android.util.Log.i("ModelTab", "Model bundle exported: ${dir.name} -> $uri")
+    } catch (e: Exception) {
+        android.util.Log.w("ModelTab", "Model bundle export failed", e)
+    }
 }
