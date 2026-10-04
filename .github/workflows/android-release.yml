@@ -98,7 +98,7 @@ jobs:
         if: failure()
         # TASK-683.9: v4 targets Node 20 (forced to Node 24); v6 is the first
         # major that runs node24 by default with no behavior change.
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: unit-test-results
           path: app/build/reports/tests/testFdroidDebugUnitTest/
@@ -207,7 +207,7 @@ jobs:
       - name: Upload fdroid Release APK artifact
         if: steps.fdroid-apk.outcome == 'success'
         # TASK-683.9: node24-native major (see the test-job comment).
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: app-fdroid-release
           path: app/build/outputs/apk/fdroid/release/app-fdroid-*-release-unsigned.apk
@@ -217,7 +217,7 @@ jobs:
           (github.event_name == 'release' && github.event.action == 'published') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
         # TASK-683.9: node24-native major (see the test-job comment).
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: app-release-aab
           path: app/build/outputs/bundle/playStoreRelease/app-playStore-release.aab
@@ -235,7 +235,7 @@ jobs:
         # (the file's own idiom) instead of repeating the event matrix.
         if: steps.playstore-aab.outcome == 'success' 
         # TASK-683.9: node24-native major (see the test-job comment).
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: app-playstore-mapping
           path: app/build/outputs/mapping/playStoreRelease/mapping.txt
@@ -245,7 +245,7 @@ jobs:
         if: >-
           (github.event_name == 'release' && github.event.action == 'published') ||
           (github.event_name == 'workflow_dispatch' && github.event.inputs.play-store-track != '')
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: release-notes
           path: whats-new/
@@ -344,7 +344,7 @@ jobs:
         if: >-
           github.event_name == 'workflow_dispatch' &&
           github.event.inputs.commit != '' && github.event.inputs.tag == ''
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: tester-apks
           path: test-apks/*.apk
@@ -848,7 +848,7 @@ jobs:
         if: >-
           github.event_name == 'workflow_dispatch' &&
           github.event.inputs.commit != '' && github.event.inputs.tag == ''
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: fdroid-signed-references
           path: app-fdroid-*-release.apk
