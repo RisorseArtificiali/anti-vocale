@@ -1195,4 +1195,7 @@
     <string name="punctuation_default_prompt_conservative">Bu transkripte noktalama, büyük harfler ve paragraf sonları ekle. Çevirme, özetleme ve hiçbir kelimeyi ekleme, çıkarma, sırasını değiştirme veya düzeltme: kelime dizisi tamamen yazıldığı gibi kalmalı. Yalnızca biçimlendirilmiş transkripti ver.</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">Gelişmiş seçenekler (%1$d)</string>
+    <string name="refinement_model_title">Refine modeli</string>
+    <string name="refinement_model_description">İkinci geçişin kullandığı model. Etkin modeli kullanmak için devral\'da bırakın.</string>
+    <string name="refinement_model_inherit">Etkin modeli devral</string>
 </resources>

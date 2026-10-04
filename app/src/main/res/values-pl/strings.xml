@@ -1219,4 +1219,7 @@
     <string name="punctuation_default_prompt_conservative">Dodaj do tej transkrypcji interpunkcję, wielkie litery i podziały na akapity. Nie tłumacz, nie streszczaj i nie dodawaj, usuwaj, przestawiaj ani nie poprawiaj żadnego słowa: kolejność słów musi pozostać dokładnie taka, jak jest napisana. Zwróć tylko sformatowaną transkrypcję.</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">Opcje zaawansowane (%1$d)</string>
+    <string name="refinement_model_title">Model doprecyzowujący</string>
+    <string name="refinement_model_description">Model używany przez drugie przejście. Zostaw na dziedzicz, aby używać aktywnego modelu.</string>
+    <string name="refinement_model_inherit">Dziedzicz aktywny model</string>
 </resources>

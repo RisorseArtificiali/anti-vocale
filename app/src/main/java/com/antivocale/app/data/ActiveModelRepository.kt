@@ -4,6 +4,8 @@ import android.content.Context
 import com.antivocale.app.data.catalog.BundledCatalog
 import com.antivocale.app.transcription.BackendDescriptor
 import com.antivocale.app.transcription.BackendRegistry
+import com.antivocale.app.transcription.BuiltInBackendIds
+import com.antivocale.app.transcription.LlmTranscriptionBackend
 import com.antivocale.app.transcription.TranscriptionLanguagePolicy
 import com.antivocale.app.transcription.variantAwareDisplayName
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -81,6 +83,49 @@ class ActiveModelRepository @Inject constructor(
         }
 
     /**
+     * TASK-740.1 (GH #127): every INSTALLED backend, reactively: the
+     * bundled catalog entries whose saved model path is non-blank, the
+     * external records, and the LLM backend when its model path is set
+     * (the same installed test as the builtin loop and the retranscribe
+     * picker). DELIBERATELY EXCLUDES the LAN-offload backend even when
+     * enabled: the refine picker must not offer it (the policy excludes
+     * remote as the accurate side), and any future picker that wants it
+     * should derive from the retranscribe picker's source instead. The
+     * reactive owner of "what is installed" for pickers; the Settings
+     * refine-model dropdown collects this instead of re-probing disk
+     * (the retranscribe picker keeps its on-demand derivation for its
+     * badge flag).
+     */
+    val installedBackendsFlow: Flow<List<InstalledBackend>> =
+        combine(
+            combine(
+                BuiltInBackendIds.ALL.map { id ->
+                    preferencesManager.sherpaModelPath(id).map { path -> id to path }
+                },
+            ) { pairs -> pairs.toList() },
+            preferencesManager.modelPath,
+            externalRecords,
+        ) { builtin: List<Pair<String, String?>>, llmPath: String?, records: List<ExternalModelRecord> ->
+            buildList {
+                // ONE installed test + ONE name derivation for both
+                // registry-keyed arms (builtin entries and the LLM).
+                fun addIfInstalled(id: String, path: String?) {
+                    val effective = path?.takeUnless { it.isBlank() } ?: return
+                    add(InstalledBackend(
+                        backendId = id,
+                        displayName = variantAwareDisplayName(
+                            context, backendRegistry.byBackendId(id), effective),
+                    ))
+                }
+                builtin.forEach { (id, path) -> addIfInstalled(id, path) }
+                addIfInstalled(LlmTranscriptionBackend.BACKEND_ID, llmPath)
+                records.forEach { record ->
+                    add(InstalledBackend(record.backendId, record.displayName))
+                }
+            }
+        }
+
+    /**
      * The descriptor's saved-model-path flow, falling back to the generic
      * preference for backend ids the registry does not know.
      */
@@ -118,4 +163,14 @@ data class ActiveModel(
     val backendId: String,
     val modelPath: String?,
     val modelName: String?
+)
+
+/**
+ * TASK-740.1 (GH #127): one installed backend for the refine-model picker
+ * (and any future picker): the backend id plus the same variant-aware
+ * display name the Active Model card shows.
+ */
+data class InstalledBackend(
+    val backendId: String,
+    val displayName: String,
 )

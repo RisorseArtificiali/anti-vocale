@@ -1195,4 +1195,7 @@
     <string name="punctuation_default_prompt_conservative">Füge dieser Transkription Zeichensetzung, Großschreibung und Absatzumbrüche hinzu. Übersetze nicht, fasse nicht zusammen und füge kein Wort hinzu, entferne, ordne oder korrigiere keines: die Wortfolge muss genau wie geschrieben bleiben. Gib nur die formatierte Transkription aus.</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">Erweiterte Optionen (%1$d)</string>
+    <string name="refinement_model_title">Verfeinerungsmodell</string>
+    <string name="refinement_model_description">Das Modell des zweiten Durchlaufs. Auf erben lassen, um das aktive Modell zu verwenden.</string>
+    <string name="refinement_model_inherit">Aktives Modell erben</string>
 </resources>

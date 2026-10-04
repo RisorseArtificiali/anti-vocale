@@ -1063,4 +1063,7 @@
     <string name="punctuation_default_prompt_conservative">Ajoute la ponctuation, les majuscules et les sauts de paragraphe à cette transcription. Ne traduis pas, ne résume pas et n\'ajoute, ne supprime, ne réordonne ni ne corrige aucun mot : la séquence de mots doit rester exactement telle qu\'écrite. Retourne uniquement la transcription formatée.</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">Options avancées (%1$d)</string>
+    <string name="refinement_model_title">Modèle de raffinage</string>
+    <string name="refinement_model_description">Le modèle utilisé par la seconde passe. Laissez sur hériter pour utiliser le modèle actif.</string>
+    <string name="refinement_model_inherit">Hériter du modèle actif</string>
 </resources>

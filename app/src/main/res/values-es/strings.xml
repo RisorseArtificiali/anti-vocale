@@ -1063,4 +1063,7 @@
     <string name="punctuation_default_prompt_conservative">Añade puntuación, mayúsculas y saltos de párrafo a esta transcripción. No traduzcas, no resumas y no añadas, quites, reordenes ni corrijas ninguna palabra: la secuencia de palabras debe permanecer exactamente como está escrita. Devuelve solo la transcripción formateada.</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">Opciones avanzadas (%1$d)</string>
+    <string name="refinement_model_title">Modelo de refinado</string>
+    <string name="refinement_model_description">El modelo que usa la segunda pasada. Deja en heredar para usar el modelo activo.</string>
+    <string name="refinement_model_inherit">Heredar modelo activo</string>
 </resources>

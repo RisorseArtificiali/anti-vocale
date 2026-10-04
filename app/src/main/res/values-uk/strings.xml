@@ -1221,4 +1221,7 @@
     <string name="punctuation_default_prompt_conservative">Додай до цього транскрипту пунктуацію, великі літери та розбиття на абзаци. Не перекладай, не стискуй і не додавай, не видаляй, не змінюй порядок і не виправляй жодного слова: послідовність слів має залишитися точно такою, як написано. Поверни лише відформатований транскрипт.</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">Додаткові налаштування (%1$d)</string>
+    <string name="refinement_model_title">Модель уточнення</string>
+    <string name="refinement_model_description">Модель другого проходу. Залиште «успадкувати», щоб використовувати активну модель.</string>
+    <string name="refinement_model_inherit">Успадкувати активну модель</string>
 </resources>

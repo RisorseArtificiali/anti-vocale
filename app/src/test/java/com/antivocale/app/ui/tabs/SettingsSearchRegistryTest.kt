@@ -27,6 +27,7 @@ class SettingsSearchRegistryTest {
         punctuationPromptForced: Boolean = false,
         summarizeOn: Boolean = false,
         batteryExemptionOffered: Boolean = false,
+        refinementOn: Boolean = false,
         speakerIdEnabled: Boolean = false,
         transcriptionHintRes: Int? = null,
     ) = SettingsSearchState(
@@ -36,6 +37,7 @@ class SettingsSearchRegistryTest {
         punctuationPromptForced = punctuationPromptForced,
         summarizeOn = summarizeOn,
         batteryExemptionOffered = batteryExemptionOffered,
+        refinementOn = refinementOn,
         speakerIdEnabled = speakerIdEnabled,
         transcriptionHintRes = transcriptionHintRes,
     )
@@ -62,6 +64,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.SUMMARY_PROMPT, SettingsSearchId.DEFAULT_PROMPT,
                 SettingsSearchId.DIARIZATION_HUB, SettingsSearchId.SIGNATURE,
                 SettingsSearchId.INTERRUPTED_RUN_NOTIFICATIONS, SettingsSearchId.KEEP_ALIVE_TIMEOUT,
+                SettingsSearchId.REFINEMENT_MODEL,
             ),
             advanced,
         )
@@ -79,11 +82,11 @@ class SettingsSearchRegistryTest {
                 it.outerSectionGate(state)
         }
         // gemma configured, ASR backend: 6 always + punctuation pair + summary prompt
-        assertEquals(9, folded(state(gemmaConfigured = true, isLlmBackend = false)))
+        assertEquals(10, folded(state(gemmaConfigured = true, isLlmBackend = false)))
         // no gemma: the six unconditional cards alone
-        assertEquals(6, folded(state(gemmaConfigured = false, isLlmBackend = false)))
+        assertEquals(7, folded(state(gemmaConfigured = false, isLlmBackend = false)))
         // LLM backend: 6 + the default-prompt hub
-        assertEquals(7, folded(state(gemmaConfigured = false, isLlmBackend = true)))
+        assertEquals(8, folded(state(gemmaConfigured = false, isLlmBackend = true)))
         // STABILITY: inner toggles never move the folded count
         assertEquals(
             folded(state(gemmaConfigured = true, summarizeOn = false)),
@@ -94,6 +97,17 @@ class SettingsSearchRegistryTest {
             folded(state(gemmaConfigured = true, punctuationPromptForced = true)),
         )
     }
+    @Test
+    fun `the refine-model card rides the two-pass availability gate`() {
+        // TASK-740.1: visible only when the two-pass is on AND can run, and
+        // advanced (behind the TRANSCRIPTION reveal).
+        val id = SettingsSearchId.REFINEMENT_MODEL
+        val card = SETTINGS_SEARCH_CARDS.first { it.id == id }
+        assertTrue(card.advanced)
+        assertTrue(id in visibleIds(SettingsSearchSection.TRANSCRIPTION, state(refinementOn = true)))
+        assertTrue(id !in visibleIds(SettingsSearchSection.TRANSCRIPTION, state(refinementOn = false)))
+    }
+
     @Test
     fun `every id has exactly one registry entry`() {
         assertEquals(SettingsSearchId.entries.size, SETTINGS_SEARCH_CARDS.size)
@@ -123,7 +137,8 @@ class SettingsSearchRegistryTest {
         val members = mapOf(
             SettingsSearchGroup.DECODING to listOf(
                 SettingsSearchId.VAD, SettingsSearchId.PROGRESSIVE,
-                SettingsSearchId.EARLY_PREVIEW, SettingsSearchId.REFINEMENT),
+                SettingsSearchId.EARLY_PREVIEW, SettingsSearchId.REFINEMENT,
+                SettingsSearchId.REFINEMENT_MODEL),
             SettingsSearchGroup.GEMMA_TEXT to listOf(
                 SettingsSearchId.PUNCTUATION_MODE, SettingsSearchId.PUNCTUATION_PROMPT,
                 SettingsSearchId.SUMMARIZE, SettingsSearchId.SUMMARY_PROMPT,

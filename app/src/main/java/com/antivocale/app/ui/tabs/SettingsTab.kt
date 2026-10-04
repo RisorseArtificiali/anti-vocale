@@ -416,6 +416,10 @@ fun SettingsTab(
         // TASK-493: the proactive battery-exemption offer, one derivation
         // feeding the registry visible-lambda and the card's compositional if.
         val offerBatteryExemption = backgroundKills > 0 || viewModel.proactiveBatteryExemption
+        // TASK-740.1: hoisted above the search state (the registry's
+        // refinementOn gate and the card's own if read the same pair).
+        val refinementEnabled by viewModel.refinementEnabled.collectAsState()
+        val refinementAvailable by viewModel.refinementAvailable.collectAsState()
 
         // TASK-689 contract (full text on SETTINGS_SEARCH_CARDS' KDoc): every
         // gate and the count below read that ONE registry, so the match
@@ -427,6 +431,7 @@ fun SettingsTab(
             punctuationPromptForced = currentPunctuationMode == PunctuationPolicy.PREF_ALWAYS,
             summarizeOn = summarizeOn,
             batteryExemptionOffered = offerBatteryExemption,
+            refinementOn = refinementEnabled && refinementAvailable,
             speakerIdEnabled = speakerIdEnabled,
             transcriptionHintRes = transcriptionHintRes,
         )
@@ -765,8 +770,6 @@ fun SettingsTab(
             // GH #43: two-pass transcription (instant preview, then refine).
             val refinementTitle = stringResource(R.string.refinement_title)
             val refinementDescription = stringResource(R.string.refinement_description)
-            val refinementEnabled by viewModel.refinementEnabled.collectAsState()
-            val refinementAvailable by viewModel.refinementAvailable.collectAsState()
             // TASK-689: the gate reads the registry; this GH #43 card had a
             // gate but no count entry under the old two-list convention.
             SearchFilterRow(searchQuery, SettingsSearchId.REFINEMENT, searchState) {
@@ -780,6 +783,52 @@ fun SettingsTab(
                     checked = refinementEnabled && refinementAvailable,
                     onCheckedChange = { enabled -> viewModel.saveRefinementEnabled(enabled) }
                 )
+                // TASK-740.1 (GH #127): the refine-model picker, visible only
+                // when the pass it configures can run. Blank = inherit the
+                // active backend (the pre-feature behavior).
+                if (refinementEnabled && refinementAvailable) {
+                    SearchFilterRow(searchQuery, SettingsSearchId.REFINEMENT_MODEL, searchState) {
+                    val installed by viewModel.installedBackends.collectAsState()
+                    val pinned by viewModel.refinementModelBackendId.collectAsState()
+                    SectionCard(
+                        icon = Icons.Default.Tune,
+                        title = stringResource(R.string.refinement_model_title),
+                        description = stringResource(R.string.refinement_model_description)
+                    ) {
+                        val inheritLabel = stringResource(R.string.refinement_model_inherit)
+                        // The FAST arm (the installed streaming backend) is
+                        // excluded: pinning it would silently kill the
+                        // two-pass (the policy's degenerate check) while the
+                        // toggle stays on.
+                        val streamingId by viewModel.streamingBackendId.collectAsState()
+                        val options = listOf("") + installed
+                            .map { it.backendId }
+                            .filter { it != streamingId }
+                        // A stale pin (model deleted after pinning) falls
+                        // back to the catalog family label, never the raw
+                        // backend id (the picker invariant).
+                        val staleTitleRes: Int? = remember(pinned) {
+                            runCatching {
+                                com.antivocale.app.transcription.CatalogVariantUi.of(pinned).titleResId
+                            }.getOrNull()
+                        }
+                        val staleTitle = staleTitleRes?.let { stringResource(it) } ?: inheritLabel
+                        fun labelFor(id: String) =
+                            if (id.isBlank()) inheritLabel
+                            else installed.firstOrNull { it.backendId == id }?.displayName
+                                ?: staleTitle
+                        SettingsDropdown(
+                            currentValue = pinned,
+                            options = options,
+                            currentValueDisplay = labelFor(pinned),
+                            optionDisplay = { id -> labelFor(id) },
+                            onOptionSelected = { viewModel.saveRefinementModelBackendId(it) },
+                            label = stringResource(R.string.refinement_model_title),
+                            enabled = !uiState.isSaving
+                        )
+                    }
+                    }
+                }
             }
 
             // TASK-121.4: smart-summary toggle. TASK-507: shown
@@ -2930,7 +2979,7 @@ internal enum class SettingsSearchSection { TRANSCRIPTION, APPEARANCE, ADVANCED,
 internal enum class SettingsSearchId {
     // Transcription
     MODEL_STATUS, ACTIVE_MODEL, TRANSCRIPTION_LANGUAGE, AUTO_COPY, EXPORT_SETTINGS,
-    REFINEMENT, DIARIZATION_HUB, VAD, PROGRESSIVE, EARLY_PREVIEW,
+    REFINEMENT, REFINEMENT_MODEL, DIARIZATION_HUB, VAD, PROGRESSIVE, EARLY_PREVIEW,
     INTERRUPTED_RUN_NOTIFICATIONS,
     PUNCTUATION_MODE, PUNCTUATION_PROMPT, SUMMARIZE, SUMMARY_PROMPT, SIGNATURE,
     DEFAULT_PROMPT, KEEP_ALIVE_TIMEOUT,
@@ -2986,6 +3035,8 @@ internal data class SettingsSearchState(
     val summarizeOn: Boolean,
     /** A background kill was swept: the battery-exemption card offers itself. */
     val batteryExemptionOffered: Boolean,
+    /** TASK-740.1: the two-pass is on AND can run; the refine-model card renders. */
+    val refinementOn: Boolean,
     /** The TASK-670 privacy switch: the speaker-identities card exists. */
     val speakerIdEnabled: Boolean,
     /** The one hint line the transcription-language card renders, if any. */
@@ -3097,6 +3148,15 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         SettingsSearchId.REFINEMENT, SettingsSearchSection.TRANSCRIPTION,
         listOf(R.string.refinement_title, R.string.refinement_description),
         group = SettingsSearchGroup.DECODING,
+    ),
+    SettingsSearchCard(
+        SettingsSearchId.REFINEMENT_MODEL, SettingsSearchSection.TRANSCRIPTION,
+        listOf(
+            R.string.refinement_model_title, R.string.refinement_model_description,
+            R.string.refinement_model_inherit),
+        visible = { s -> s.refinementOn },
+        group = SettingsSearchGroup.DECODING,
+        advanced = true,
     ),
     SettingsSearchCard(
         SettingsSearchId.PUNCTUATION_MODE, SettingsSearchSection.TRANSCRIPTION,

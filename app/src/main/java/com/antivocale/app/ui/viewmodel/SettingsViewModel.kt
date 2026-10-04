@@ -20,6 +20,7 @@ import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.data.ModelDiscovery
 import com.antivocale.app.data.ModelFamily
 import com.antivocale.app.data.ActiveModelRepository
+import com.antivocale.app.data.InstalledBackend
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.ShortcutIconStore
 import com.antivocale.app.transcription.BackendRegistry
@@ -410,6 +411,28 @@ class SettingsViewModel @Inject constructor(
     private val _refinementAvailable = MutableStateFlow(false)
     val refinementAvailable: StateFlow<Boolean> = _refinementAvailable.asStateFlow()
 
+    // TASK-740.1: the installed backends for the refine-model picker (the
+    // repository owns the derivation; the dropdown adds the inherit option).
+    private val _installedBackends = MutableStateFlow<List<InstalledBackend>>(emptyList())
+    val installedBackends: StateFlow<List<InstalledBackend>> = _installedBackends.asStateFlow()
+
+    private val _refinementModelBackendId = MutableStateFlow("")
+    val refinementModelBackendId: StateFlow<String> = _refinementModelBackendId.asStateFlow()
+
+    /** TASK-740.1: the FAST arm's backend id (excluded from the refine picker). */
+    private val _streamingBackendId = MutableStateFlow<String?>(null)
+    val streamingBackendId: StateFlow<String?> = _streamingBackendId.asStateFlow()
+    fun saveRefinementModelBackendId(backendId: String) {
+        viewModelScope.launch {
+            try {
+                preferencesManager.saveRefinementModelBackendId(backendId)
+                _refinementModelBackendId.value = backendId
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to save refinement model pin", e)
+            }
+        }
+    }
+
     // TASK-588.1: the TRANSCRIPTION section's advanced-block reveal. Seeded
     // from the warmed prefs (a plain false would flash the block collapsed
     // for one frame for expanded users (the TASK-485 class)), and the setter
@@ -780,6 +803,13 @@ class SettingsViewModel @Inject constructor(
                 _transcriptionAdvancedExpanded.value = it
             }
         }
+        // TASK-740.1: the refine-model pin + the installed set.
+        viewModelScope.launch {
+            preferencesManager.refinementModelBackendId.collect { _refinementModelBackendId.value = it }
+        }
+        viewModelScope.launch {
+            activeModelRepository.installedBackendsFlow.collect { _installedBackends.value = it }
+        }
         // GH #83: speaker labeling toggle
         viewModelScope.launch {
             preferencesManager.speakerLabelsEnabled.collect { _speakerLabelsEnabled.value = it }
@@ -809,10 +839,11 @@ class SettingsViewModel @Inject constructor(
                     preferencesManager.sherpaModelPath(streamingEntry.id),
                 ) { selected, _ -> selected }
                     .collect { selected ->
-                        val installed =
+                        val installedId =
                             com.antivocale.app.transcription.SherpaModelManager
-                                .installedStreamingEntryId(getApplication<Application>()) != null
-                        _refinementAvailable.value = installed && streamingEntry.id != selected
+                                .installedStreamingEntryId(getApplication<Application>())
+                        _streamingBackendId.value = installedId
+                        _refinementAvailable.value = installedId != null && streamingEntry.id != selected
                     }
             }
         }

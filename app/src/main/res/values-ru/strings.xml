@@ -1220,4 +1220,7 @@
     <string name="punctuation_default_prompt_conservative">Добавь в эту расшифровку пунктуацию, заглавные буквы и разбиение на абзацы. Не переводи, не пересказывай и не добавляй, не удаляй, не меняй порядок и не исправляй ни одного слова: последовательность слов должна остаться точно как написано. Выведи только отформатированную расшифровку.</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">Расширенные настройки (%1$d)</string>
+    <string name="refinement_model_title">Модель уточнения</string>
+    <string name="refinement_model_description">Модель второго прохода. Оставьте «наследовать», чтобы использовать активную модель.</string>
+    <string name="refinement_model_inherit">Наследовать активную модель</string>
 </resources>

@@ -1194,4 +1194,7 @@
     <string name="punctuation_default_prompt_conservative">इस प्रतिलिपि में विराम चिह्न, बड़े अक्षर और अनुच्छेद विभाजन जोड़ें। अनुवाद न करें, सारांश न दें, और कोई शब्द न जोड़ें, न हटाएं, न उसका क्रम बदलें और न ठीक करें: शब्दों का क्रम ठीक वैसा ही रहना चाहिए जैसा लिखा गया है। केवल प्रारूपित प्रतिलिपि ही दें।</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">उन्नत विकल्प (%1$d)</string>
+    <string name="refinement_model_title">परिशोधन मॉडल</string>
+    <string name="refinement_model_description">दूसरे चरण द्वारा उपयोग किया जाने वाला मॉडल। सक्रिय मॉडल का उपयोग करने के लिए इनहेरिट पर छोड़ें।</string>
+    <string name="refinement_model_inherit">सक्रिय मॉडल इनहेरिट करें</string>
 </resources>

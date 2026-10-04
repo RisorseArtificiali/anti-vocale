@@ -1200,4 +1200,7 @@
     <string name="punctuation_default_prompt_conservative">Aggiungi punteggiatura, maiuscole e interruzioni di paragrafo a questa trascrizione. Non tradurre, non riassumere e non aggiungere, rimuovere, riordinare o correggere nessuna parola: la sequenza di parole deve restare esattamente quella scritta. Restituisci solo la trascrizione formattata.</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">Opzioni avanzate (%1$d)</string>
+    <string name="refinement_model_title">Modello di raffinamento</string>
+    <string name="refinement_model_description">Il modello usato dal secondo passaggio. Lascia su eredita per usare il modello attivo.</string>
+    <string name="refinement_model_inherit">Eredita modello attivo</string>
 </resources>

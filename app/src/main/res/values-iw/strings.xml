@@ -1205,4 +1205,7 @@
     <string name="punctuation_default_prompt_conservative">הוסף לתמליל הזה פיסוק, אותיות גדולות ומעברי פסקה. אל תתרגם, אל תסכם ואל תוסיף, תסיר, תשנה סדר או תתקן אף מילה: רצף המילים חייב להישאר בדיוק כפי שנכתב. החזר רק את התמליל המעוצב.</string>
     <!-- TASK-588: the TRANSCRIPTION section advanced-block reveal. -->
     <string name="settings_advanced_reveal">אפשרויות מתקדמות (%1$d)</string>
+    <string name="refinement_model_title">מודל החידוד</string>
+    <string name="refinement_model_description">המודל ששלב השני משתמש בו. השאר על ירושה כדי להשתמש במודל הפעיל.</string>
+    <string name="refinement_model_inherit">רשת מודל פעיל</string>
 </resources>
