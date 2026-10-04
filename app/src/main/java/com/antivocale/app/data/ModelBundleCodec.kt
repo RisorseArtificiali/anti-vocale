@@ -162,10 +162,36 @@ object ModelBundleCodec {
      * sibling import entries). An unknown family fails LOUDLY at parse
      * time, not as a confusing transducer-shaped copy error later.
      */
+    /**
+     * The IMPORT family for a catalog entry's modelType (the export wrote
+     * the entry's ARCHITECTURE family - "ENCODER_ONLY_CTC" etc - which is
+     * a different taxonomy; the import needs the sherpa import family).
+     * This is the ONE catalog->import bridge for bundles.
+     */
+    /** The catalog's ARCHITECTURE vocabulary (the pre-fix bundle family). */
+    private val ARCHITECTURE_FAMILIES =
+        setOf("TRANSDUCER", "ENCODER_DECODER", "ENCODER_ONLY_CTC", "LLM")
+
+    fun importFamilyForModelType(modelType: String): ModelFamily = when (modelType) {
+        "whisper" -> ModelFamily.WHISPER
+        "qwen3_asr", "nemo_ctc", "zipformer_ctc", "omnilingual_ctc" -> ModelFamily.CTC
+        "sense_voice" -> ModelFamily.SENSE_VOICE
+        "canary" -> ModelFamily.CANARY
+        "moonshine" -> ModelFamily.MOONSHINE
+        "dolphin" -> ModelFamily.DOLPHIN
+        else -> ModelFamily.TRANSDUCER
+    }
+
     fun recordParams(manifest: JSONObject): RecordParams {
         val familyName = manifest.optString("family").ifBlank { ModelFamily.TRANSDUCER.name }
         val family = ModelFamily.entries.firstOrNull { it.name == familyName }
-            ?: throw IllegalArgumentException("unknown model family '$familyName' in bundle")
+            // Pre-fix bundles carry the catalog ARCHITECTURE vocabulary
+            // ("ENCODER_ONLY_CTC" etc); ONLY those known strings bridge by
+            // modelType (the round-trip device trial caught this) - a
+            // genuinely foreign family still fails loudly.
+            ?: if (familyName in ARCHITECTURE_FAMILIES)
+                importFamilyForModelType(manifest.optString("modelType"))
+            else throw IllegalArgumentException("unknown model family '$familyName' in bundle")
         val optionsJson = manifest.optJSONObject("options")
         val languagesJson = manifest.optJSONArray("languages")
         return RecordParams(

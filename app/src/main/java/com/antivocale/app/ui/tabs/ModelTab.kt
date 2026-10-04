@@ -2553,7 +2553,11 @@ private fun exportBundleTo(
     try {
         val metadata = com.antivocale.app.data.ModelBundleCodec.BundleMetadata(
             displayName = context.getString(variant.titleResId),
-            family = entry.family,
+            // The IMPORT family (the sherpa import taxonomy), NOT the
+            // entry's architecture string: the manifest round-trips into
+            // ModelFamily on the receiving device.
+            family = com.antivocale.app.data.ModelBundleCodec
+                .importFamilyForModelType(entry.modelType).name,
             modelType = entry.modelType,
             languages = com.antivocale.app.data.catalog.BundledCatalog
                 .byId(entry.id)?.variants
