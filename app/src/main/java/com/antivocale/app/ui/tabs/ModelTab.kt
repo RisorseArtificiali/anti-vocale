@@ -1949,6 +1949,10 @@ private fun ExternalModelsSection(
                 }
             }
 
+            // TASK-744: two per row, never three - localized labels up to
+            // 23 chars wrapped in a 3-way split and the buttons grew
+            // vertically (the maintainer's report). The bundle import
+            // (TASK-742) takes its own full-width row below.
             Row(modifier = Modifier.fillMaxWidth()) {
             Button(
                 onClick = folderPicker,
@@ -1957,22 +1961,26 @@ private fun ExternalModelsSection(
             ) {
                 Icon(Icons.Default.FolderOpen, contentDescription = null)
                 Spacer(modifier = Modifier.width(6.dp))
-                Text(stringResource(R.string.external_import_folder))
+                Text(stringResource(R.string.external_import_folder),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
             Spacer(modifier = Modifier.width(8.dp))
             OutlinedButton(
                 onClick = { urlDialogOpen = true },
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
                 modifier = Modifier.weight(1f)
-            ) { Text(stringResource(R.string.external_import_url)) }
-            Spacer(modifier = Modifier.width(8.dp))
-            // TASK-742 (GH #124): the offline-transfer bundle import.
+            ) {
+                Text(stringResource(R.string.external_import_url),
+                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+            }
+            }
+            // TASK-742 (GH #124): the offline-transfer bundle import,
+            // full-width (TASK-744: sharing the row wrapped it).
             OutlinedButton(
                 onClick = onImportBundle,
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
             ) { Text(stringResource(R.string.external_import_bundle)) }
-        }
 
 
         ExternalImportStateView(importState)

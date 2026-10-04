@@ -541,12 +541,14 @@ internal fun PartialDownloadSection(
                 ) {
                     Icon(Icons.Default.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(stringResource(R.string.download_resume))
+                    Text(stringResource(R.string.download_resume),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
                 OutlinedButton(
                     onClick = onClearClick
                 ) {
-                    Text(stringResource(R.string.download_clear_partial))
+                    Text(stringResource(R.string.download_clear_partial),
+                        maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
             }
         }
