@@ -25,6 +25,36 @@ class DualRefinementPolicyTest {
         streamingBackendId = streaming,
     )
 
+    // ---- TASK-740: the refineOverride gate ----
+
+    @Test
+    fun `a pin equal to the streaming backend disqualifies the two-pass`() {
+        // pin=nemotron-streaming, active=whisper: without the gate the run
+        // would decode both phases on the same model (double decode).
+        assertNull(DualRefinementPolicy.fastBackendFor(
+            requestType = "audio", backendOverride = null, refinementEnabled = true,
+            selectedBackendId = "whisper", streamingBackendId = "nemotron-streaming",
+            refineOverride = "nemotron-streaming"))
+    }
+
+    @Test
+    fun `a pin as the accurate side keeps the pass alive when it differs from the fast model`() {
+        assertEquals("nemotron-streaming", DualRefinementPolicy.fastBackendFor(
+            requestType = "audio", backendOverride = null, refinementEnabled = true,
+            selectedBackendId = "whisper", streamingBackendId = "nemotron-streaming",
+            refineOverride = "gigaam"))
+    }
+
+    @Test
+    fun `a pinned remote offload backend is excluded like a selected one`() {
+        // TASK-681 hazard: a local first pass must never mask server-side
+        // failures behind local text, pin or no pin.
+        assertNull(DualRefinementPolicy.fastBackendFor(
+            requestType = "audio", backendOverride = null, refinementEnabled = true,
+            selectedBackendId = "whisper", streamingBackendId = "nemotron-streaming",
+            refineOverride = "remote-omnivoice"))
+    }
+
     @Test
     fun `a qualifying audio request picks the streaming backend`() {
         assertEquals("nemotron-streaming", fast())

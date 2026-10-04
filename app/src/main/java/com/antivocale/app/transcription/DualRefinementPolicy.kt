@@ -78,18 +78,27 @@ object DualRefinementPolicy {
         refinementEnabled: Boolean,
         selectedBackendId: String,
         streamingBackendId: String?,
+        /** TASK-740 (GH #127): the pinned refinement model; the accurate
+         *  side is THIS when set, the selected backend otherwise. */
+        refineOverride: String? = null,
     ): String? {
         if (requestType != "audio") return null
         if (!backendOverride.isNullOrEmpty()) return null
         if (!refinementEnabled) return null
         val fast = streamingBackendId ?: return null
-        if (fast == selectedBackendId) return null
+        // TASK-740: ONE notion of "the accurate side" - the pin when set,
+        // the selected backend otherwise - feeds BOTH the degenerate check
+        // and the offload exclusion below (a pinned remote backend must be
+        // excluded exactly like a selected one, or a local first pass would
+        // mask server-side failures behind local text).
+        val accurate = refineOverride ?: selectedBackendId
+        if (fast == accurate) return null
         // TASK-681: an offload run takes no local first pass. The remote arm
         // exists for files the phone should not decode at all; a local
         // streaming preview would duplicate exactly that work, and the F4/F5
         // first-pass fallback would mask server-side failures behind local
         // text, the opposite of the honest-timeout contract.
-        if (selectedBackendId == RemoteOmnivoiceBackend.BACKEND_ID) return null
+        if (accurate == RemoteOmnivoiceBackend.BACKEND_ID) return null
         return fast
     }
 }

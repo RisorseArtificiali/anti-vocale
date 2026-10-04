@@ -47,6 +47,14 @@ interface PreferencesManager {
     suspend fun saveSpeakerIdEnabled(enabled: Boolean)
     val themeMode: Flow<String>
     val transcriptionBackend: Flow<String>
+
+    /**
+     * TASK-740 (GH #127): the backend the two-pass REFINEMENT phase loads,
+     * empty (blank) = inherit the active [transcriptionBackend]. Only
+     * consulted when the two-pass refinement actually runs.
+     */
+    val refinementModelBackendId: Flow<String>
+    suspend fun saveRefinementModelBackendId(backendId: String)
     /**
      * Saved model-path preference for a built-in sherpa-onnx catalog entry,
      * keyed by the entry id (BackendRegistry descriptors delegate to this).

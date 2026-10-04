@@ -438,6 +438,9 @@ data class FirstPassOutcome(
      *  partial results as partial (guard-review finding). */
     val isPartial: Boolean = false,
     val failedChunkCount: Int = 0,
+    /** TASK-740 (GH #127): the refinement-model pin the pass read (null =
+     *  unset); the caller applies it to the phase-2 backend load. */
+    val refinePin: String? = null,
     /** TASK-584: the paired skip verdict (token + loop metrics when the
      *  token is a loop token; null when refinement completed). The
      *  delivered text IS the first pass whenever this is set. */

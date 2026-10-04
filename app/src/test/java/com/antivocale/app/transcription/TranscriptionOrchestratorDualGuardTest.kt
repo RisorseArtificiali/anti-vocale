@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.slot
 import io.mockk.mockk
@@ -53,6 +54,75 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
         isPartial = partial,
     )
 
+    /**
+     * TASK-740: the shared two-pass F4 fixture (the setUpGigaamWholeFileFixture
+     * precedent): a real nemotron variant dir so the streaming entry resolves
+     * as installed, the streaming mock with BOTH transcribe methods stubbed
+     * (the stub-BOTH gotcha; the relaxed streaming default would return blank
+     * and phase 1 would skip as F2/F3), and the whole-file preprocessing
+     * stub. The phase-2 (accurate) load then fails natively, exactly the F4
+     * shape both twins assert over. [pin] selects TASK-740's refine-model
+     * pin (null = unset, the pre-740 behavior).
+     */
+    private suspend fun runTwoPassF4(
+        taskId: String,
+        pin: String? = null,
+        scope: kotlinx.coroutines.CoroutineScope,
+    ): Result<String> {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val variantDir = File(context.filesDir, "nemotron/nemotron-3.5-asr-streaming-0.6b-1120ms-int8")
+        variantDir.mkdirs()
+        tempFilesDir = File(context.filesDir, "nemotron")
+        listOf("encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt")
+            .forEach { File(variantDir, it).writeText("x") }
+
+        every { preferencesManager.refinementEnabled } returns flowOf(true)
+        stubDefaultWhisperPreferences()
+        // AFTER the helper: mockk's later identical-signature stub wins (the
+        // base's own "re-stub after baseSetUp and win" convention).
+        if (pin != null) {
+            every { preferencesManager.refinementModelBackendId } returns flowOf(pin)
+            // The credit's display-name derivation reads the pin's saved
+            // path (the same relaxed-Flow trap as the fast model's).
+            every { preferencesManager.sherpaModelPath(pin) } returns flowOf("")
+        }
+        // The F8 display-name credit resolves the fast model's saved path
+        // (a relaxed Flow explodes on first(), the base's documented trap).
+        every { preferencesManager.sherpaModelPath("nemotron-streaming") } returns flowOf("")
+        val streaming = mockk<TranscriptionBackend>(relaxed = true) {
+            every { id } returns "nemotron-streaming"
+            every { isReady() } returns true
+            every { isAudioSupported() } returns true
+            every { supportsAudio } returns true
+            // Null cap (the house pattern for whole-file mocks): a relaxed 0
+            // routes the request into the pipeline path with 0 s chunks and
+            // phase 1 dies before preprocessing.
+            every { maxChunkDurationSeconds } returns null
+        }
+        every { backendManager.hasActiveBackend() } returns true
+        every { backendManager.getActiveBackend() } returns streaming
+        coEvery { streaming.transcribeAudio(any(), any(), any()) } returns
+            Result.success(TranscriptionResult(text = fastText))
+        coEvery { streaming.transcribeAudioStreaming(any(), any(), any(), any()) } returns
+            Result.success(TranscriptionResult(text = fastText))
+        stubPreprocessing(listOf(FloatArray(1600)), 8.0)
+
+        return orchestrator.processRequest(
+            taskId = taskId,
+            requestType = "audio",
+            prompt = "",
+            filePath = "/path/to/audio.wav",
+            source = null,
+            sourcePackage = null,
+            queuePosition = 1,
+            queueTotal = 1,
+            context = context,
+            cacheDir = File("/cache"),
+            listener = listener,
+            coroutineScope = scope,
+        )
+    }
+
     @Test
     fun `guard arm delivers the first pass with the loop token and fast credit`() {
         val delivered = orchestrator.refinementFoldSuccess(
@@ -92,63 +162,30 @@ class TranscriptionOrchestratorDualGuardTest : TranscriptionOrchestratorTestBase
     }
 
     @Test
-    fun `phase 2 load failure delivers the first pass through the full funnel`() = runTest {
-        // The streaming entry resolves as installed: a real directory with
-        // the catalog variant's file names under the Robolectric filesDir
-        // (the ModelManagerCatalogTest pattern; a mocked filesDir is not
-        // stubbable).
-        val context = ApplicationProvider.getApplicationContext<Context>()
-        val variantDir = File(context.filesDir, "nemotron/nemotron-3.5-asr-streaming-0.6b-1120ms-int8")
-        variantDir.mkdirs()
-        tempFilesDir = File(context.filesDir, "nemotron")
-        listOf("encoder.int8.onnx", "decoder.int8.onnx", "joiner.int8.onnx", "tokens.txt")
-            .forEach { File(variantDir, it).writeText("x") }
+    fun `the pinned refinement model reaches the phase-2 load request`() = runTest {
+        // TASK-740 (GH #127): with the pin set to a DIFFERENT backend than
+        // the active default (whisper), the phase-2 LOAD targets it even
+        // when the load itself fails on the JVM: the observable is the
+        // credit setModelName, which must name the PINNED model. A pin
+        // equal to the active backend would be indistinguishable from
+        // inheritance (the review's vacuity finding).
+        val result = runTwoPassF4(taskId = "dual-740", pin = "gigaam", scope = this)
 
-        every { preferencesManager.refinementEnabled } returns flowOf(true)
-        stubDefaultWhisperPreferences()
-        // The F8 display-name credit resolves the fast model's saved path
-        // (a relaxed Flow explodes on first(), the base's documented trap).
-        every { preferencesManager.sherpaModelPath("nemotron-streaming") } returns flowOf("")
-        val streaming = mockk<TranscriptionBackend>(relaxed = true) {
-            every { id } returns "nemotron-streaming"
-            every { isReady() } returns true
-            every { isAudioSupported() } returns true
-            every { supportsAudio } returns true
-            // Null cap (the house pattern for whole-file mocks): a relaxed 0
-            // routes the request into the pipeline path with 0 s chunks and
-            // phase 1 dies before preprocessing.
-            every { maxChunkDurationSeconds } returns null
-        }
-        every { backendManager.hasActiveBackend() } returns true
-        every { backendManager.getActiveBackend() } returns streaming
-        coEvery { streaming.transcribeAudio(any(), any(), any()) } returns
-            Result.success(TranscriptionResult(text = fastText))
-        // The single-chunk path routes through the streaming variant so
-        // backends can emit partials; the relaxed default would return a
-        // blank result and phase 1 would skip as F2/F3.
-        coEvery { streaming.transcribeAudioStreaming(any(), any(), any(), any()) } returns
-            Result.success(TranscriptionResult(text = fastText))
-        stubPreprocessing(listOf(FloatArray(1600)), 8.0)
-
-        val result = orchestrator.processRequest(
-            taskId = "dual-f4",
-            requestType = "audio",
-            prompt = "",
-            filePath = "/path/to/audio.wav",
-            source = null,
-            sourcePackage = null,
-            queuePosition = 1,
-            queueTotal = 1,
-            context = context,
-            cacheDir = File("/cache"),
-            listener = listener,
-            coroutineScope = this,
-        )
-
-        // F4: phase 2 (whisper) cannot load against this filesDir; the run
-        // still succeeds on the streaming first pass.
         assertEquals(fastText, result.getOrThrow())
+        coVerify {
+            logDao.setModelName(eq("dual-740"), match { it.contains("GigaAM", ignoreCase = true) })
+        }
+    }
+
+    @Test
+    fun `phase 2 load failure delivers the first pass through the full funnel`() = runTest {
         val outcome = slot<String?>()
+        val result = runTwoPassF4(taskId = "dual-f4", scope = this)
+
+        assertEquals(fastText, result.getOrThrow())
+        // The FULL funnel: the delivery rides onSuccess (never a silent
+        // return) and the not-refined caption tells the truth (the F4 arm
+        // is a degraded delivery, not a completed refinement).
         verify {
             listener.onSuccess(
                 eq("dual-f4"), eq(fastText), any(), any(), any(), any(), any(),

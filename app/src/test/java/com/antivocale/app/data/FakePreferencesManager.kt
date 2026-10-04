@@ -224,6 +224,13 @@ internal class FakePreferencesManager : PreferencesManager {
     val _refinementEnabled = MutableStateFlow(false)
     override val refinementEnabled: Flow<Boolean> = _refinementEnabled
 
+    // TASK-740: the two-pass refinement model pin (empty = inherit active).
+    val _refinementModelBackendId = MutableStateFlow("")
+    override val refinementModelBackendId: Flow<String> = _refinementModelBackendId
+    override suspend fun saveRefinementModelBackendId(backendId: String) {
+        _refinementModelBackendId.value = backendId
+    }
+
     // TASK-588.1: the advanced-reveal state (default collapsed, like prod).
     val _transcriptionAdvancedExpanded = MutableStateFlow(false)
     override val settingsTranscriptionAdvancedExpanded: Flow<Boolean> = _transcriptionAdvancedExpanded

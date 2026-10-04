@@ -43,6 +43,7 @@ class PreferencesManagerImpl(
         private val SPEAKER_ID_ENABLED = booleanPreferencesKey("speaker_id_enabled")
         private val THEME_MODE = stringPreferencesKey("theme_mode")
         private val TRANSCRIPTION_BACKEND = stringPreferencesKey("transcription_backend")
+        private val REFINEMENT_MODEL_BACKEND_ID = stringPreferencesKey("refinement_model_backend_id")
         private val SHERPA_MODEL_PATH_PREFIX = "sherpa_model_path_"
         /**
          * Data-store keys of the pre-consolidation per-model path preferences, mapped to
@@ -127,6 +128,7 @@ class PreferencesManagerImpl(
         val themeMode: String = PreferencesManager.DEFAULT_THEME_MODE,
         val textScale: String = PreferencesManager.DEFAULT_TEXT_SCALE,
         val transcriptionBackend: String = PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND,
+        val refinementModelBackendId: String = "",
         val sherpaModelPaths: Map<String, String?> = emptyMap(),
         val customTransducerModelPath: String? = null,
         val customTransducerModelType: String = PreferencesManager.DEFAULT_CUSTOM_TRANSDUCER_MODEL_TYPE,
@@ -184,6 +186,7 @@ class PreferencesManagerImpl(
         themeMode = this[THEME_MODE] ?: PreferencesManager.DEFAULT_THEME_MODE,
         textScale = this[TEXT_SCALE] ?: PreferencesManager.DEFAULT_TEXT_SCALE,
         transcriptionBackend = this[TRANSCRIPTION_BACKEND] ?: PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND,
+        refinementModelBackendId = this[REFINEMENT_MODEL_BACKEND_ID] ?: "",
         sherpaModelPaths = LEGACY_MODEL_PATH_KEYS.entries.associate { (entryId, legacyKey) ->
             entryId to (this[sherpaModelPathKey(entryId)] ?: this[legacyKey])
         },
@@ -362,6 +365,18 @@ class PreferencesManagerImpl(
         // identical value and every collector (ActiveModelRepository's flatMapLatest,
         // ModelViewModel's activeBackendId) would restart on it for nothing.
         .distinctUntilChanged()
+
+    override val refinementModelBackendId: Flow<String> =
+        dataStore.data.map { it[REFINEMENT_MODEL_BACKEND_ID] ?: "" }
+            .onStart { emit(cache.get().refinementModelBackendId) }
+            .distinctUntilChanged()
+
+    override suspend fun saveRefinementModelBackendId(backendId: String) {
+        dataStore.edit { preferences ->
+            preferences[REFINEMENT_MODEL_BACKEND_ID] = backendId
+        }
+        cache.updateAndGet { it.copy(refinementModelBackendId = backendId) }
+    }
 
     override suspend fun saveTranscriptionBackend(backendId: String) {
         dataStore.edit { preferences ->

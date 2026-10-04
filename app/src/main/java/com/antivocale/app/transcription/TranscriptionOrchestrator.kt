@@ -376,18 +376,33 @@ class TranscriptionOrchestrator @Inject constructor(
                 Log.w(TAG, "First pass machinery failed; single-model run", it)
             }.getOrNull()
             val requestedBackendId = backendOverride ?: preferencesManager.transcriptionBackend.first()
-            if (fastFirstPass != null) {
+            // TASK-740 (GH #127): the pin the first pass carried out (read
+            // only when the two-pass was a candidate); applied as the
+            // phase-2 backend, never diverting a single-model run.
+            val refineBackendOverride = fastFirstPass?.refinePin
+            val phase2BackendId = refineBackendOverride ?: requestedBackendId
+            // Derived lazily (only when the two-pass ran) and defensively:
+            // the derivation reads backend state that an early-failing run
+            // (no file, load refusal) never reached, and a failure here must
+            // degrade to a skipped status line, never fail the run.
+            val phase2Name = fastFirstPass?.let {
+                runCatching { displayNameForBackend(context, phase2BackendId) }.getOrNull()
+            }
+            if (phase2Name != null) {
                 // Phase transition: the row keeps the first-pass text; the
                 // notification says what is happening now (the design's
                 // "Refining with <model>..." line).
                 runCatching {
-                    val name = displayNameForBackend(context, requestedBackendId)
-                    listener.onStatusUpdate(context.getString(R.string.refining_status, name))
+                    listener.onStatusUpdate(context.getString(R.string.refining_status, phase2Name))
                 }
             }
 
-            // Ensure the correct backend is loaded
-            val loadResult = ensureBackendLoaded(context, backendOverride, languageOverride)
+            // Ensure the correct backend is loaded. TASK-740: the pin replaces
+            // the active preference here; WITHOUT a pin the null flows on so
+            // the loader re-reads the preference itself (passing the resolved
+            // phase2BackendId would freeze this line's earlier read and change
+            // mid-run semantics after a Settings flip during phase 1).
+            val loadResult = ensureBackendLoaded(context, refineBackendOverride ?: backendOverride, languageOverride)
             // GH #45 / TASK-734/TASK-463: the credit writes AFTER the load's
             // path resolution (which persists the corrected variant path) and
             // BEFORE the decode: the failure row and the F4 arm keep the
@@ -395,7 +410,7 @@ class TranscriptionOrchestrator @Inject constructor(
             // stale saved one. Metadata only: rethrow cancellation (the
             // contract above), never break the run for the credit.
             runCatching {
-                logDao.setModelName(taskId, displayNameForBackend(context, requestedBackendId))
+                logDao.setModelName(taskId, phase2Name ?: displayNameForBackend(context, phase2BackendId))
             }.onFailure {
                 if (it is kotlinx.coroutines.CancellationException) throw it
             }
@@ -1710,12 +1725,21 @@ class TranscriptionOrchestrator @Inject constructor(
         coroutineScope: CoroutineScope,
         onSkipped: (DualRefinementPolicy.SkipOutcome) -> Unit = {},
     ): FirstPassOutcome? {
+        // TASK-740 (GH #127): the pin is read HERE (a two-pass candidate is
+        // the only consumer; single-model runs never pay the read) and rides
+        // the outcome to the caller, which applies it to the phase-2 load.
+        // Defensive (the collectSpeakers idiom): a source that cannot answer
+        // degrades to inherit-active, never failing the pass.
+        val refinePin = runCatching {
+            preferencesManager.refinementModelBackendId.first()
+        }.getOrDefault("").takeIf(String::isNotBlank)
         val fastId = DualRefinementPolicy.fastBackendFor(
             requestType = requestType,
             backendOverride = backendOverride,
             refinementEnabled = preferencesManager.refinementEnabled.first(),
             selectedBackendId = preferencesManager.transcriptionBackend.first(),
             streamingBackendId = installedStreamingBackendId(context),
+            refineOverride = refinePin,
         ) ?: return null
 
         // F1: a fast-model load failure skips phase 1 silently; the run
@@ -1778,6 +1802,7 @@ class TranscriptionOrchestrator @Inject constructor(
             segments = outcome.segments,
             isPartial = outcome.isPartial,
             failedChunkCount = outcome.failedChunkCount,
+            refinePin = refinePin,
         )
     }
 

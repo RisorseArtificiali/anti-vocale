@@ -92,6 +92,8 @@ internal class TestSpiOps(
             .put("progressiveEnabled", preferences.progressiveTranscription.first())
             .put("earlyPreviewEnabled", preferences.earlyPreviewEnabled.first())
             .put("interruptedRunNotifications", preferences.interruptedRunNotifications.first())
+            // TASK-740: the two-pass refinement model pin (empty = inherit).
+            .put("refinementModelBackendId", preferences.refinementModelBackendId.first())
             // TASK-588.1: the advanced-reveal state (the conformance test
             // pins every flow exposed, keyed by its flow name).
             .put("settingsTranscriptionAdvancedExpanded", preferences.settingsTranscriptionAdvancedExpanded.first())
@@ -330,6 +332,17 @@ internal class TestSpiOps(
                     null
                 }
             }
+            // TASK-740: the two-pass refinement model pin. Blank = inherit
+            // the active backend; any known backend id pins phase 2.
+            putUnique("refinement_model") { value, _ ->
+                if (value.isBlank() || isKnownBackend(value)) {
+                    preferences.saveRefinementModelBackendId(value)
+                    null
+                } else {
+                    "unknown backend '$value' (blank, a catalog id, '${LlmTranscriptionBackend.BACKEND_ID}', " +
+                        "'${RemoteOmnivoiceBackend.BACKEND_ID}' or '${ExternalModelRecord.BACKEND_ID_PREFIX}<record id>')"
+                }
+            }
             putUnique("sherpa_path") { value, entry ->
                 if (entry == null || entry !in BuiltInBackendIds.ALL) {
                     "sherpa_path requires entry=<catalog id> " +
@@ -353,6 +366,8 @@ internal class TestSpiOps(
     private val blankClearingKeys = setOf(
         "external_catalog_url", "output_folder", "signature_text",
         "punctuation_prompt", "default_prompt", "summary_prompt",
+        // TASK-740: blank is the pin's documented clear (inherit active).
+        "refinement_model",
     )
 
     private suspend fun set(key: String?, value: String?, entry: String?): String {

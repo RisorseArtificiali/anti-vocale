@@ -191,6 +191,9 @@ abstract class TranscriptionOrchestratorTestBase {
 
     protected fun stubDefaultWhisperPreferences() {
         every { preferencesManager.transcriptionBackend } returns flowOf("whisper")
+        // TASK-740: the refinement-model pin; the default is the empty
+        // (inherit-active) value.
+        every { preferencesManager.refinementModelBackendId } returns flowOf("")
         every { preferencesManager.vadEnabled } returns flowOf(false)
         every { preferencesManager.threadCount } returns flowOf(4)
         every { preferencesManager.inferenceProvider } returns flowOf("auto")
