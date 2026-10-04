@@ -985,6 +985,7 @@
     <string name="model_advanced_section">Advanced</string>
     <string name="model_advanced_description">Manually import model files</string>
     <string name="external_import_folder">Select folder</string>
+    <string name="external_import_bundle">Import bundle</string>
     <string name="external_import_url">Import from URL</string>
     <string name="external_url_hint">HuggingFace repo or catalog-entry JSON URL</string>
     <string name="external_import">Import</string>

@@ -182,6 +182,26 @@ fun ModelTab(
     // TASK-742 (GH #124): the offline-transfer share. The chosen target URI
     // and the pending export (model dir + metadata) are remembered; the
     // launcher callback streams the bundle into the user-picked file.
+    // TASK-742 (GH #124): the offline-transfer IMPORT. OpenDocument picks
+    // the .zip; the VM verifies (sha256, format) into a staging dir and
+    // registers through the normal import core.
+    val bundleImportPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { picked ->
+            // Some OEM pickers return a grant without the persistable flag
+            // (the folder picker's documented trap); the unguarded call
+            // would throw inside the callback.
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    picked, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }.onFailure {
+                android.util.Log.w("ModelTab", "persistable grant failed for $picked", it)
+            }
+            viewModel.importExternalFromBundle(context, picked)
+        }
+    }
+
     // TASK-742 (GH #124): the offline-transfer share. The remembered
     // pending write streams the bundle once the user picks a target.
     var pendingBundleWrite by remember { mutableStateOf<((android.net.Uri) -> Unit)?>(null) }
@@ -776,7 +796,8 @@ fun ModelTab(
                     detectedFamily = detectedExternalFamily,
                     selection = externalImport,
                     onSelectionChange = { externalImport = it; detectedExternalFamily = null },
-                    onDeleteRequest = { externalToDelete = it }
+                    onDeleteRequest = { externalToDelete = it },
+                    onImportBundle = { bundleImportPicker.launch(arrayOf("application/zip")) }
                 )
 
                 if (ambiguousPick != null) {
@@ -1749,6 +1770,8 @@ private fun ExternalModelsSection(
     onSelectionChange: (ExternalImportUiState) -> Unit,
     detectedFamily: ModelFamily? = null,
     onDeleteRequest: (ExternalModelRecord) -> Unit,
+    /** TASK-742: opens the bundle (.zip) import picker. */
+    onImportBundle: () -> Unit = {},
 ) {
     val records by viewModel.externalModels.collectAsState()
     // TASK-675: the honest one-line reason travels to external cards too.
@@ -1935,6 +1958,13 @@ private fun ExternalModelsSection(
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
                 modifier = Modifier.weight(1f)
             ) { Text(stringResource(R.string.external_import_url)) }
+            Spacer(modifier = Modifier.width(8.dp))
+            // TASK-742 (GH #124): the offline-transfer bundle import.
+            OutlinedButton(
+                onClick = onImportBundle,
+                enabled = importState !is ModelViewModel.ExternalImportState.Importing,
+                modifier = Modifier.weight(1f)
+            ) { Text(stringResource(R.string.external_import_bundle)) }
         }
 
 

@@ -1067,4 +1067,5 @@
     <string name="refinement_model_description">Le modèle utilisé par la seconde passe. Laissez sur hériter pour utiliser le modèle actif.</string>
     <string name="refinement_model_inherit">Hériter du modèle actif</string>
     <string name="export_model_bundle">Partager le modèle pour un transfert hors ligne</string>
+    <string name="external_import_bundle">Importer un paquet</string>
 </resources>

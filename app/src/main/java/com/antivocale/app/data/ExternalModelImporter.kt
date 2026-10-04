@@ -18,13 +18,27 @@ import java.security.MessageDigest
 import javax.inject.Singleton
 
 /**
- * The two import entries the ViewModel drives, as a minimal injectable seam so UI-layer
+ * The import entries the ViewModel drives, as a minimal injectable seam so UI-layer
  * tests can verify argument forwarding without SAF or network machinery (TASK-331 Task 12).
  * Implemented by [ExternalModelImporter] and faked in ModelViewModelExternalImportTest.
  * TASK-513 adds [listTreeFileNames], a listing concern (family detection in
- * the import dialog) that rides along rather than a third import entry.
+ * the import dialog) that rides along rather than a separate import entry.
  */
 interface ExternalModelImportOperations {
+    /** TASK-742: register an already-verified local directory as a record.
+     *  [displayName] overrides the src-derived name (the bundle's manifest
+     *  carries the exporter's name; without it a re-import would rename a
+     *  properly named record to the staging directory's name). */
+    suspend fun importFromDirectory(
+        src: File,
+        modelType: String? = null,
+        family: ModelFamily = ModelFamily.TRANSDUCER,
+        options: Map<String, String> = emptyMap(),
+        languages: List<String> = emptyList(),
+        streaming: Boolean = false,
+        displayName: String? = null,
+    ): ExternalModelRecord
+
     suspend fun importFromTreeUri(
         context: Context,
         treeUri: Uri,
@@ -245,18 +259,22 @@ class ExternalModelImporter(
         return importCore(children, modelType, displayName, family, options, languages, streaming)
     }
 
-    /** Direct-file import: tests and tooling. The Task 9 migration does NOT use this
-     *  (it hand-computes pins over the already-copied TASK-313 directory). */
-    suspend fun importFromDirectory(
+    /** Direct-file import: the TASK-742 bundle registration and tests.
+     *  The Task 9 migration does NOT use this (it hand-computes pins over
+     *  the already-copied TASK-313 directory). The displayName override
+     *  carries the bundle manifest's name so a re-import never renames a
+     *  properly named record to the staging dir's name. */
+    override suspend fun importFromDirectory(
         src: File,
-        modelType: String? = null,
-        family: ModelFamily = ModelFamily.TRANSDUCER,
-        options: Map<String, String> = emptyMap(),
-        languages: List<String> = emptyList(),
-        streaming: Boolean = false,
+        modelType: String?,
+        family: ModelFamily,
+        options: Map<String, String>,
+        languages: List<String>,
+        streaming: Boolean,
+        displayName: String?,
     ): ExternalModelRecord {
         val children = src.listFiles()?.filter { it.isFile }?.map(::FileSource) ?: emptyList()
-        return importCore(children, modelType, src.name, family, options, languages, streaming)
+        return importCore(children, modelType, displayName ?: src.name, family, options, languages, streaming)
     }
 
     /**

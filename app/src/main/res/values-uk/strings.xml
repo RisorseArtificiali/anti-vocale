@@ -1225,4 +1225,5 @@
     <string name="refinement_model_description">Модель другого проходу. Залиште «успадкувати», щоб використовувати активну модель.</string>
     <string name="refinement_model_inherit">Успадкувати активну модель</string>
     <string name="export_model_bundle">Поділитися моделлю для перенесення без мережі</string>
+    <string name="external_import_bundle">Імпортувати пакет</string>
 </resources>

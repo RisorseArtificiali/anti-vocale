@@ -37,6 +37,16 @@ class TestSpiOpsTest {
         var lastModelType: String? = null,
         val answer: (String) -> ExternalModelRecord,
     ) : ExternalModelImportOperations {
+        override suspend fun importFromDirectory(
+            src: java.io.File,
+            modelType: String?,
+            family: ModelFamily,
+            options: Map<String, String>,
+            languages: List<String>,
+            streaming: Boolean,
+            displayName: String?,
+        ): ExternalModelRecord = throw UnsupportedOperationException("not used in this test")
+
         override suspend fun importFromTreeUri(
             context: android.content.Context,
             treeUri: android.net.Uri,

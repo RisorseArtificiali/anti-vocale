@@ -156,6 +156,39 @@ object ModelBundleCodec {
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
+    /**
+     * TASK-742 review F2: the import-side record params, parsed HERE (one
+     * owner of the manifest vocabulary; the VM stays a 4-liner like its
+     * sibling import entries). An unknown family fails LOUDLY at parse
+     * time, not as a confusing transducer-shaped copy error later.
+     */
+    fun recordParams(manifest: JSONObject): RecordParams {
+        val familyName = manifest.optString("family").ifBlank { ModelFamily.TRANSDUCER.name }
+        val family = ModelFamily.entries.firstOrNull { it.name == familyName }
+            ?: throw IllegalArgumentException("unknown model family '$familyName' in bundle")
+        val optionsJson = manifest.optJSONObject("options")
+        val languagesJson = manifest.optJSONArray("languages")
+        return RecordParams(
+            displayName = manifest.optString("name").ifBlank { null },
+            modelType = manifest.optString("modelType").ifBlank { null },
+            family = family,
+            options = optionsJson?.let { o -> buildMap { o.keys().forEach { k -> put(k, o.getString(k)) } } }
+                ?: emptyMap(),
+            languages = languagesJson?.let { a -> (0 until a.length()).map { a.getString(it) } }
+                ?: emptyList(),
+            streaming = manifest.optBoolean("streaming", false),
+        )
+    }
+
+    data class RecordParams(
+        val displayName: String?,
+        val modelType: String?,
+        val family: ModelFamily,
+        val options: Map<String, String>,
+        val languages: List<String>,
+        val streaming: Boolean,
+    )
+
     /** The export-side metadata, from the registry descriptor or record. */
     data class BundleMetadata(
         val displayName: String,

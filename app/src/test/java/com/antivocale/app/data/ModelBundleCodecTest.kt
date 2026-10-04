@@ -111,6 +111,32 @@ class ModelBundleCodecTest {
     }
 
     @Test
+    fun `recordParams parses the manifest with the display name carried`() {
+        val dir = modelDir("m.onnx" to "x")
+        val out = ByteArrayOutputStream()
+        ModelBundleCodec.export(dir, out, metadata(name = "Nemotron 3.5"))
+        val target = File(tmp.newFolder(), "imported")
+        val manifest = ModelBundleCodec.import(ByteArrayInputStream(out.toByteArray()), target)
+        val params = ModelBundleCodec.recordParams(manifest)
+
+        assertEquals("Nemotron 3.5", params.displayName)
+        assertEquals("WHISPER", params.family.name)
+        assertEquals(listOf("he"), params.languages)
+        assertEquals("he", params.options["whisper.language"])
+    }
+
+    @Test
+    fun `recordParams fails loudly on an unknown family`() {
+        val manifest = org.json.JSONObject().put("family", "TELEPATHY")
+        try {
+            ModelBundleCodec.recordParams(manifest)
+            fail("unknown family must throw")
+        } catch (e: IllegalArgumentException) {
+            assertTrue(e.message!!.contains("TELEPATHY"))
+        }
+    }
+
+    @Test
     fun `a newer format version is rejected without side effects`() {
         val dir = modelDir("m.onnx" to "x")
         val out = ByteArrayOutputStream()

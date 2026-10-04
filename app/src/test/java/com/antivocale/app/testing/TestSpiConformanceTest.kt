@@ -24,6 +24,7 @@ class TestSpiConformanceTest {
 
     private fun ops(fake: FakePreferencesManager) =
         TestSpiOps(fake, ExternalModelStore(fake), object : ExternalModelImportOperations {
+            override suspend fun importFromDirectory(src: java.io.File, modelType: String?, family: ModelFamily, options: Map<String, String>, languages: List<String>, streaming: Boolean, displayName: String?): ExternalModelRecord = throw UnsupportedOperationException()
             override suspend fun importFromTreeUri(context: android.content.Context, treeUri: android.net.Uri, modelType: String?, family: ModelFamily, options: Map<String, String>, languages: List<String>, streaming: Boolean): ExternalModelRecord = throw UnsupportedOperationException()
             override suspend fun importFromUrl(url: String, modelType: String?, family: ModelFamily, options: Map<String, String>, languages: List<String>, streaming: Boolean, onProgress: com.antivocale.app.data.ExternalImportProgress): ExternalModelRecord = throw UnsupportedOperationException()
         })

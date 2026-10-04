@@ -8,6 +8,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.antivocale.app.data.ActiveModelRepository
+import com.antivocale.app.data.ModelBundleCodec
 import com.antivocale.app.data.HuggingFaceTokenManager
 import com.antivocale.app.BuildConfig
 import com.antivocale.app.data.ModelDownloader
@@ -1638,6 +1639,48 @@ class ModelViewModel @Inject constructor(
             modelType = ctcModelType(family, ctcModelType),
             family = family, options = options, languages = languages)
     }
+
+    /**
+     * TASK-742 (GH #124): the offline-transfer bundle import. The codec
+     * verifies every sha256 before anything is kept; the clean directory
+     * then registers through the SAME importFromDirectory core as a folder
+     * import, so residency/records stay coherent and the startup sweep
+     * cannot eat the result. A failure surfaces through the same error
+     * channel as every external import.
+     */
+    /**
+     * TASK-742 (GH #124): the offline-transfer bundle import. The codec
+     * verifies every sha256 into a staging dir under cacheDir (outside the
+     * orphan sweep's filesRoot), the parsed record params come from the
+     * codec (ONE owner of the manifest vocabulary), and registration rides
+     * the SAME importFromDirectory core as a folder import.
+     */
+    fun importExternalFromBundle(context: Context, bundleUri: Uri) =
+        runExternalImport("Bundle", onProgress = null) {
+            val staging = File(context.cacheDir, "bundle-import-${System.currentTimeMillis()}")
+            val params = try {
+                val manifest = context.contentResolver.openInputStream(bundleUri)?.use { input ->
+                    ModelBundleCodec.import(input, staging)
+                } ?: error("cannot open the selected bundle")
+                ModelBundleCodec.recordParams(manifest)
+            } catch (e: Exception) {
+                staging.deleteRecursively()
+                throw e
+            }
+            try {
+                externalModelImporter.importFromDirectory(
+                    src = staging,
+                    modelType = params.modelType,
+                    family = params.family,
+                    options = params.options,
+                    languages = params.languages,
+                    streaming = params.streaming,
+                    displayName = params.displayName,
+                )
+            } finally {
+                staging.deleteRecursively()
+            }
+        }
 
     /** URL import: a HuggingFace repo URL or a catalog-entry JSON URL. */
     fun importExternalFromUrl(

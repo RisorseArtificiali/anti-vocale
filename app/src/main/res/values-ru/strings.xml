@@ -1224,4 +1224,5 @@
     <string name="refinement_model_description">Модель второго прохода. Оставьте «наследовать», чтобы использовать активную модель.</string>
     <string name="refinement_model_inherit">Наследовать активную модель</string>
     <string name="export_model_bundle">Поделиться моделью для переноса без сети</string>
+    <string name="external_import_bundle">Импортировать пакет</string>
 </resources>

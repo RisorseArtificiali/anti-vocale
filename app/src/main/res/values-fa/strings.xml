@@ -1204,4 +1204,5 @@
     <string name="refinement_model_description">مدلی که مرحله دوم استفاده می‌کند. برای استفاده از مدل فعال روی ارث‌بردن بگذارید.</string>
     <string name="refinement_model_inherit">ارث‌بردن مدل فعال</string>
     <string name="export_model_bundle">اشتراک‌گذاری مدل برای انتقال آفلاین</string>
+    <string name="external_import_bundle">وارد کردن بسته</string>
 </resources>
