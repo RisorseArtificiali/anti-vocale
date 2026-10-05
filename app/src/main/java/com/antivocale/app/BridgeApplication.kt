@@ -59,11 +59,6 @@ class BridgeApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         com.antivocale.app.data.catalog.BundledCatalog.attach(this)
-        // TASK-684 review: the suspension sweep (below) posts a Retry
-        // notification pointing at files/shared_audio; this 24h cleanup must
-        // not delete the file BEFORE the offer (a freezer kill + reopen >24h
-        // would deterministically offer a re-run of a just-deleted file). The
-        // sweep itself guards on file existence, so this order is sufficient.
         runCatching {
             // TASK-684 review: ORDERING. The suspension sweep (further down)
         // posts a Retry notification pointing at files/shared_audio; this
