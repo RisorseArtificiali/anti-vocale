@@ -77,7 +77,7 @@ class BenchmarkActivity : ComponentActivity() {
                     putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
                     putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
                     putExtra(TaskerRequestReceiver.EXTRA_PROMPT, "")
-                    putExtra(EXTRA_SOURCE, "benchmark")
+                    putExtra(EXTRA_SOURCE, InferenceService.SOURCE_BENCHMARK)
                 }
                 // F6: unified enqueue (trampoline fallback on the API 31+ restriction)
                 when (com.antivocale.app.service.InferenceEnqueue.start(this@BenchmarkActivity, serviceIntent)) {

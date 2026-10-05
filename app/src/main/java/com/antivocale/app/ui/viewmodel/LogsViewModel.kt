@@ -806,7 +806,7 @@ class LogsViewModel @Inject constructor(
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
             putExtra(TaskerRequestReceiver.EXTRA_PROMPT, originalEntry.prompt)
             putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
-            putExtra(InferenceService.EXTRA_SOURCE, "retranscribe")
+            putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_RETRANSCRIBE)
             putExtra(InferenceService.EXTRA_BACKEND_OVERRIDE, backendId)
             languageOverride?.let {
                 putExtra(InferenceService.EXTRA_LANGUAGE_OVERRIDE, it)

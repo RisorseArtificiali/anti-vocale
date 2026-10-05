@@ -31,6 +31,7 @@ class BridgeApplication : Application(), Configuration.Provider {
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var externalModelStore: com.antivocale.app.data.ExternalModelStore
     @Inject lateinit var logDao: com.antivocale.app.data.local.LogDao
+    @Inject lateinit var scheduledFolderStore: com.antivocale.app.data.ScheduledFolderStore
 
     /**
      * Shared process-lifetime scope for startup work that must not block the
@@ -75,6 +76,21 @@ class BridgeApplication : Application(), Configuration.Provider {
             com.antivocale.app.util.SharedAudioHandler.cleanupOldFiles(this)
         }.onFailure { e ->
             android.util.Log.w("BridgeApplication", "shared_audio cleanup failed", e)
+        }
+        // TASK-741: reconcile the folder-watch schedules with the records at
+        // every process start (off the main thread; the DataStore read is
+        // disk IO). WorkManager persists periodic work itself, but a crash
+        // between a store write and its sync, or a backup/restore carrying
+        // the DataStore without the WorkManager database, would otherwise
+        // leave watched folders unscheduled until the next UI edit.
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            runCatching {
+                com.antivocale.app.work.ScheduledFolderScheduler.sync(
+                    this@BridgeApplication, scheduledFolderStore.folders(),
+                )
+            }.onFailure { e ->
+                android.util.Log.w("BridgeApplication", "Folder-watch schedule reconcile failed", e)
+            }
         }
         }.onFailure { Log.w("BridgeApplication", "shared_audio cleanup failed", it) }
         // BEFORE syncAll: a persisted "custom-transductor" id must already resolve to an

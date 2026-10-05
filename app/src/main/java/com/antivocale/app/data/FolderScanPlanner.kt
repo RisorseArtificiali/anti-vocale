@@ -37,9 +37,10 @@ import com.antivocale.app.util.SharedAudioHandler
  *    the store's snapshot sits OUTSIDE its mutation mutex, so two scans
  *    planning from one base snapshot both enqueue the same stable files
  *    and the second write erases the first's dedup facts (double
- *    transcription). Slice 3 serializes via ONE WorkManager unique name
- *    shared by the periodic run and the manual scan-now one-shot; the
- *    store dedupes nothing across the read-plan-write window.
+ *    transcription). The worker serializes per folder with an in-process
+ *    mutex (a periodic run and a manual scan-now cannot share a periodic
+ *    unique slot without replacing the schedule); the store dedupes
+ *    nothing across the read-plan-write window.
  *  - An EMPTY OR FAILED listing is scan-abandoned: keep the previous
  *    snapshot verbatim and retry later. Feeding a provider error in as an
  *    empty list would wipe the awaiting entries and force every file back

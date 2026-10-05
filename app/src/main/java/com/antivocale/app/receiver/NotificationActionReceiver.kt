@@ -165,7 +165,7 @@ class NotificationActionReceiver : BroadcastReceiver() {
             putExtra(TaskerRequestReceiver.EXTRA_REQUEST_TYPE, TaskerRequestReceiver.REQUEST_TYPE_AUDIO)
             putExtra(TaskerRequestReceiver.EXTRA_PROMPT, intent.getStringExtra(TaskerRequestReceiver.EXTRA_PROMPT) ?: "")
             putExtra(TaskerRequestReceiver.EXTRA_FILE_PATH, filePath)
-            putExtra(InferenceService.EXTRA_SOURCE, "retranscribe")
+            putExtra(InferenceService.EXTRA_SOURCE, InferenceService.SOURCE_RETRANSCRIBE)
             intent.getStringExtra(EXTRA_SOURCE_PACKAGE)?.let {
                 putExtra(InferenceService.EXTRA_SOURCE_PACKAGE, it)
             }

@@ -86,6 +86,26 @@ class InferenceService : Service(), TranscriptionListener {
         /** TASK-500: the History browse FAB; not a share request. */
         const val SOURCE_BROWSE = "browse"
 
+        /** TASK-741: the scheduled folder watch worker; not a share request. */
+        const val SOURCE_FOLDER_WATCH = "folder_watch"
+
+        /** The History re-run arm (chip and notification actions). */
+        const val SOURCE_RETRANSCRIBE = "retranscribe"
+
+        /** The on-device model benchmark screen. */
+        const val SOURCE_BENCHMARK = "benchmark"
+
+        /** Sources that never get a Tasker-style reply broadcast: every
+         *  in-app origin has no legitimate listener, so the reply would be
+         *  a world-visible broadcast carrying the full transcript (the
+         *  TASK-274(f) exfiltration argument, which holds for all of them).
+         *  Tasker requests carry NO source (null), which is why null still
+         *  replies: that is the one origin with a listener. */
+        private val NON_REPLY_SOURCES = setOf(
+            SOURCE_SHARE, SOURCE_BROWSE, SOURCE_FOLDER_WATCH,
+            SOURCE_RETRANSCRIBE, SOURCE_BENCHMARK,
+        )
+
         const val EXTRA_SHARED_URI = "shared_uri"
         const val EXTRA_MIME_TYPE = "mime_type"
         const val EXTRA_BACKEND_OVERRIDE = "backend_override"
@@ -706,7 +726,7 @@ class InferenceService : Service(), TranscriptionListener {
 
     private fun sendSuccessReply(taskId: String, resultText: String) {
         val request = requesterByTask[taskId]
-        if (request?.source == "share") return
+        if (request?.source in NON_REPLY_SOURCES) return
         val replyIntent = Intent(TaskerRequestReceiver.ACTION_TASKER_REPLY).apply {
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
             putExtra(TaskerRequestReceiver.EXTRA_STATUS, TaskerRequestReceiver.STATUS_SUCCESS)
@@ -718,7 +738,7 @@ class InferenceService : Service(), TranscriptionListener {
 
     private fun sendErrorReply(taskId: String, errorCode: String, errorMessage: String) {
         val request = requesterByTask[taskId]
-        if (request?.source == "share") return
+        if (request?.source in NON_REPLY_SOURCES) return
         val replyIntent = Intent(TaskerRequestReceiver.ACTION_TASKER_REPLY).apply {
             putExtra(TaskerRequestReceiver.EXTRA_TASK_ID, taskId)
             putExtra(TaskerRequestReceiver.EXTRA_STATUS, TaskerRequestReceiver.STATUS_ERROR)
