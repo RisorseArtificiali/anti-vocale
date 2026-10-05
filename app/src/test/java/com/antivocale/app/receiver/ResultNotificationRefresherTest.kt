@@ -57,6 +57,25 @@ class ResultNotificationRefresherTest {
     }
 
     @Test
+    fun `a repost keeps the status facts that rode the nav intent (TASK-758)`() = runBlocking {
+        val text = longText(3)
+        val intent = pageIntent(NotificationActionReceiver.ACTION_PAGE_NEXT, text, 0).apply {
+            putExtra(NotificationActionReceiver.EXTRA_REPETITION_SUSPECTED, true)
+            putExtra(NotificationActionReceiver.EXTRA_COPIED_TO_CLIPBOARD, true)
+            putExtra(NotificationActionReceiver.EXTRA_STREAMED_WITHOUT_VAD, true)
+            putExtra(NotificationActionReceiver.EXTRA_REFINED_FROM, "whisper")
+            putExtra(NotificationActionReceiver.EXTRA_NOT_REFINED, true)
+        }
+        ResultNotificationRefresher.refresh(context, intent)
+        val sub = requireNotNull(subTextOf(postedNotification(7))).lowercase()
+        // Every fact still renders after the page change; the read side of
+        // the round-trip is what drops them when a field goes unwired.
+        assertTrue(sub.contains("repetition"))
+        assertTrue(sub.contains("copied"))
+        assertTrue(sub.contains("refined"))
+    }
+
+    @Test
     fun `prev from page 0 stays at page 0`() = runBlocking {
         val text = longText(2)
         ResultNotificationRefresher.refresh(context, pageIntent(NotificationActionReceiver.ACTION_PAGE_PREV, text, 0))

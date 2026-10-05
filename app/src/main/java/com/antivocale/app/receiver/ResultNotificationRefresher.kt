@@ -83,8 +83,9 @@ object ResultNotificationRefresher {
             saveFailureReason = intent.getStringExtra(NotificationActionReceiver.EXTRA_SAVE_FAILURE),
             savedFolderName = intent.getStringExtra(NotificationActionReceiver.EXTRA_SAVED_FOLDER),
             // TASK-758: the status facts survive the page repost. The
-            // booleans default false for notifications posted before the
-            // extras existed (a repost sheds nothing that was not there).
+            // booleans default false, so a notification posted before the
+            // extras existed still sheds its facts on the FIRST repost
+            // after updating (accepted: one tap, once, at update time).
             repetitionSuspected = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_REPETITION_SUSPECTED, false),
             copiedToClipboard = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_COPIED_TO_CLIPBOARD, false),
             streamedWithoutVad = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_STREAMED_WITHOUT_VAD, false),

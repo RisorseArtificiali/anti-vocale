@@ -14,6 +14,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.transcription.DualRefinementPolicy
 import com.antivocale.app.transcription.TimedSegment
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.ClipboardWriter
@@ -123,9 +124,12 @@ class TranscriptionNotificationListener(
             coroutineScope.launch {
                 // TASK-598 review F3: same derivation as the notification Copy action.
                 val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
-                autoCopyIfEnabled(annotatedText, sourcePackage)
+                val copied = autoCopyIfEnabled(annotatedText, sourcePackage)
                 val saveResult = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
-                showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad, repetitionSuspected = repetitionSuspected, segments = segments, saveResult = saveResult)
+                // TASK-758 review: this route used to drop the clipboard
+                // note and the refinement verdicts the service route shows
+                // (the worker twin of the same facts).
+                showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED, repetitionSuspected = repetitionSuspected, segments = segments, saveResult = saveResult)
             }
         }
     }
@@ -145,7 +149,7 @@ class TranscriptionNotificationListener(
 
     // ---- Auto-Copy (ported from InferenceService to keep the service untouched) ----
 
-    private suspend fun autoCopyIfEnabled(transcriptionText: String, sourcePackage: String?) {
+    private suspend fun autoCopyIfEnabled(transcriptionText: String, sourcePackage: String?): Boolean {
         // Effective auto-copy = global toggle OR per-app preference (issue #13). Mirrors
         // InferenceService.autoCopyIfEnabled — keep the two paths in sync.
         val globalAutoCopy = preferencesManager.autoCopyEnabled.first()
@@ -175,7 +179,9 @@ class TranscriptionNotificationListener(
             Handler(Looper.getMainLooper()).post {
                 com.antivocale.app.util.ToastCompat.show(appContext, R.string.copied_to_clipboard)
             }
+            return true
         }
+        return false
     }
 
     // ---- Auto-save to folder (issue #14) ----
@@ -216,7 +222,10 @@ class TranscriptionNotificationListener(
         detectedLanguage: String?,
         isPartial: Boolean = false,
         failedChunkCount: Int = 0,
+        copiedToClipboard: Boolean = false,
         streamedWithoutVad: Boolean = false,
+        refinedFrom: String? = null,
+        notRefined: Boolean = false,
         repetitionSuspected: Boolean = false,
         segments: List<TimedSegment>,
         saveResult: TranscriptFileSaver.SaveResult,
@@ -250,7 +259,10 @@ class TranscriptionNotificationListener(
             isPartial = isPartial,
             failedChunkCount = failedChunkCount,
             notificationId = id,
+            copiedToClipboard = copiedToClipboard,
             streamedWithoutVad = streamedWithoutVad,
+            refinedFrom = refinedFrom,
+            notRefined = notRefined,
             repetitionSuspected = repetitionSuspected,
             saveFailureReason = saveResult.failureOrNull(),
             savedFolderName = saveResult.savedFolderOrNull(),
