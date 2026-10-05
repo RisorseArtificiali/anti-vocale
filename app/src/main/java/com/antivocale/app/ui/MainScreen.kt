@@ -10,6 +10,8 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Storage
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import com.antivocale.app.R
@@ -54,10 +56,17 @@ fun MainScreen(
         return
     }
 
-    var selectedTabIndex by remember {
+    // TASK-768 review: the index is saveable too (process death and the
+    // config changes the manifest does not handle must not strand the
+    // user on History with every other tab's state restored).
+    var selectedTabIndex by rememberSaveable {
         mutableIntStateOf(
             if (startOnModelTab) AppNavigation.TAB_INDEX_MODELS else AppNavigation.TAB_INDEX_HISTORY)
     }
+    // TASK-768 review: ONE shared holder, remembered ABOVE the PiP branch so
+    // a PiP round trip (which recomposes through the early return) keeps the
+    // per-tab saved maps; each tab's state lives under its TAB_KEYS identity.
+    val tabStateHolder = rememberSaveableStateHolder()
     val viewModel: LogsViewModel = hiltViewModel()
     val highlightTaskId by viewModel.highlightTaskId.collectAsState()
 
@@ -296,7 +305,11 @@ fun MainScreen(
                     targetState = selectedTabIndex,
                     animationSpec = tween(durationMillis = 150)
                 ) { index ->
-                    tabs[index].content()
+                    // TAB_KEYS identity, not position: a future tab insertion
+                    // must not swap saved state between tabs.
+                    tabStateHolder.SaveableStateProvider(AppNavigation.TAB_KEYS[index]) {
+                        tabs[index].content()
+                    }
                 }
             }
         }

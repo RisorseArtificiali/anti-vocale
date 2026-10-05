@@ -194,7 +194,7 @@ fun SettingsTab(
     var performanceFocusMemoryProtection by remember { mutableStateOf(false) }
 
     // TASK-542 (GH #98): live settings search. Blank = the normal tab.
-    var searchQuery by remember { mutableStateOf("") }
+    var searchQuery by rememberSaveable { mutableStateOf("") }
 
     // TASK-486: TEST_SPI navigation. Sub-pages flip their flag; a section
     // destination bumps that section's expand counter and scrolls to it via
