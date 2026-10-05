@@ -581,10 +581,12 @@
       "modelType": "qwen3_asr",
       "family": "ENCODER_ONLY_CTC",
       "display": {
-        "resourceKey": "qwen3_asr_title"
+        "resourceKey": "qwen3_asr_title",
+        "countPlaceholder": true
       },
       "description": {
-        "resourceKey": "qwen3_asr_description"
+        "resourceKey": "qwen3_asr_description",
+        "countPlaceholder": true
       },
       "shareAlias": "com.antivocale.app.ShareQwen3",
       "storageDir": "qwen3-asr",
@@ -663,7 +665,8 @@
             "resourceKey": "qwen3_asr_0_6b_title"
           },
           "description": {
-            "resourceKey": "qwen3_asr_0_6b_description"
+            "resourceKey": "qwen3_asr_0_6b_description",
+            "countPlaceholder": true
           },
           "dirName": "sherpa-onnx-qwen3-asr-0.6b-int8",
           "estimatedSizeMB": 938,

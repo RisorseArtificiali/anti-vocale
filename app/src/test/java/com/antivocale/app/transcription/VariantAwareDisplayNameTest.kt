@@ -38,6 +38,9 @@ class VariantAwareDisplayNameTest {
         every { getString(R.string.whisper_small_title) } returns "Whisper Small"
         every { getString(R.string.whisper_distil_large_v3_title) } returns "Distil Italian"
         every { getString(R.string.qwen3_asr_title) } returns "Qwen3-ASR (59 languages)"
+        // TASK-760: the countPlaceholder display renders through the format
+        // overload; the stub answers with the default-locale formatted form.
+        every { getString(R.string.qwen3_asr_title, 59) } returns "Qwen3-ASR (59 languages)"
         every { getString(R.string.nemotron_name) } returns "Nemotron 3.5"
         every { getString(R.string.gigaam_name) } returns "GigaAM v3"
         every { getString(R.string.llm_backend_name) } returns "Gemma (LiteRT-LM)"

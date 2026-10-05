@@ -260,7 +260,13 @@ object ModelCatalogJson {
         is String -> CatalogDisplay.Literal(raw)
         is JSONObject -> {
             val key = raw.optString("resourceKey", "")
-            if (key.isNotBlank()) CatalogDisplay.Resource(key)
+            if (key.isNotBlank()) CatalogDisplay.Resource(
+                key,
+                // TASK-760: the display string formats the entry's language
+                // COUNT (%1$d); the render sites derive it from the catalog
+                // instead of a hand-pinned literal that drifts on updates.
+                raw.optBoolean("countPlaceholder", false),
+            )
             else CatalogDisplay.Literal(raw.optString("text", ""))
         }
         null -> null
@@ -281,7 +287,7 @@ object ModelCatalogJson {
  * (the exact text from the user's JSON, shown regardless of locale).
  */
 sealed interface CatalogDisplay {
-    data class Resource(val key: String) : CatalogDisplay
+    data class Resource(val key: String, val countPlaceholder: Boolean = false) : CatalogDisplay
     data class Literal(val text: String) : CatalogDisplay
 }
 

@@ -1373,6 +1373,12 @@ private fun CatalogModelSection(
         ?.let { CatalogStringKeys.resolve(it) }
         ?: CatalogVariantUi.of(entry.id).titleResId
     val entryDescriptionResId = (entry.description as? CatalogDisplay.Resource)?.key?.let { CatalogStringKeys.resolve(it) }
+    // TASK-760: catalog displays may format the entry's language count; the
+    // value DERIVES from the catalog here instead of riding the string as a
+    // hand-pinned literal that drifts on model updates (the 52/53/59 split).
+    val entryLanguageCount = remember(entry) { entry.languages.size }
+    val entryTitleCounts = (entry.display as? CatalogDisplay.Resource)?.countPlaceholder == true
+    val entryDescriptionCounts = (entry.description as? CatalogDisplay.Resource)?.countPlaceholder == true
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1413,13 +1419,15 @@ private fun CatalogModelSection(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = stringResource(entryTitleResId),
+                            text = if (entryTitleCounts) stringResource(entryTitleResId, entryLanguageCount)
+                                   else stringResource(entryTitleResId),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         if (entryDescriptionResId != null) {
                             Text(
-                                text = stringResource(entryDescriptionResId),
+                                text = if (entryDescriptionCounts) stringResource(entryDescriptionResId, entryLanguageCount)
+                                       else stringResource(entryDescriptionResId),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -1540,7 +1548,8 @@ private fun CatalogModelSection(
     // Whisper tar prompts to extract instead of re-downloading).
     if (state.showDownloadDialog) {
         val selectedName = state.selectedVariant?.let { stringResource(CatalogVariantUi.of(entry.id, it).titleResId) }
-            ?: stringResource(entryTitleResId)
+            ?: if (entryTitleCounts) stringResource(entryTitleResId, entryLanguageCount)
+               else stringResource(entryTitleResId)
         val isExtract = state.selectedVariant != null && state.variantsNeedingExtraction.contains(state.selectedVariant)
         val sizeMb = state.selectedVariant?.let { CatalogVariantUi.of(entry.id, it).estimatedSizeMB.toInt() } ?: 0
         // TASK-427: advise before the download, from the same budget the
@@ -1572,7 +1581,9 @@ private fun CatalogModelSection(
     // Delete confirmation dialog
     if (state.showDeleteDialog) {
         val variant = state.variantToDelete?.let { CatalogVariantUi.of(entry.id, it) }
-        val variantDisplayName = variant?.let { stringResource(it.titleResId) } ?: stringResource(entryTitleResId)
+        val variantDisplayName = variant?.let { stringResource(it.titleResId) }
+            ?: if (entryTitleCounts) stringResource(entryTitleResId, entryLanguageCount)
+               else stringResource(entryTitleResId)
         val isVariantActive = isEntryActive && variant != null && savedPath?.endsWith(variant.dirName) == true
         DeleteConfirmationDialog(
             modelName = variantDisplayName,
@@ -2475,11 +2486,15 @@ private fun SpeedComparisonDialog(onDismiss: () -> Unit) {
                         )
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                         // Qwen3-ASR (broadest language coverage)
+                        val qwen3LanguageCount = BundledCatalog
+                            .byId(BuiltInBackendIds.QWEN3_ASR)?.languages?.size
+                            ?: error("bundled catalog is missing qwen3-asr")
                         ComparisonRow(
                             name = stringResource(R.string.speed_comparison_qwen3_name),
                             size = stringResource(R.string.speed_comparison_qwen3_size),
                             speed = stringResource(R.string.speed_comparison_qwen3_speed),
-                            quality = stringResource(R.string.speed_comparison_qwen3_quality)
+                            quality = stringResource(
+                                R.string.speed_comparison_qwen3_quality, qwen3LanguageCount)
                         )
                         // GigaAM v3 (Russian)
                         ComparisonRow(

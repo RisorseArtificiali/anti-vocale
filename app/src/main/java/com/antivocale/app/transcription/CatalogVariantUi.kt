@@ -24,6 +24,8 @@ data class CatalogVariantUi(
     override val descriptionResId: Int,
     override val estimatedSizeMB: Long,
     override val supportedLanguageCodes: Set<String>,
+    override val countPlaceholder: Boolean = false,
+    override val titleCountPlaceholder: Boolean = false,
     val badgeKey: String? = null,
 ) : ModelVariant {
 
@@ -45,6 +47,12 @@ data class CatalogVariantUi(
                 dirName = variant.dirName,
                 titleResId = resolveDisplay(variant.title ?: entry.display, "${entry.id}/${variant.name} title"),
                 descriptionResId = resolveDisplay(variant.description ?: entry.description, "${entry.id}/${variant.name} description"),
+                countPlaceholder = ((variant.description ?: entry.description) as? CatalogDisplay.Resource)?.countPlaceholder == true,
+                // TASK-761 review: a variant without its own title INHERITS
+                // the entry display (which may format the count); without
+                // this flag the inherited format string renders raw.
+                titleCountPlaceholder = variant.title == null &&
+                    (entry.display as? CatalogDisplay.Resource)?.countPlaceholder == true,
                 estimatedSizeMB = variant.estimatedSizeMB,
                 supportedLanguageCodes = entry.languagesFor(variant).toSet(),
                 badgeKey = variant.badgeKey,

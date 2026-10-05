@@ -151,7 +151,9 @@ fun ModelVariantCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = stringResource(state.variant.titleResId),
+                                text = if (state.variant.titleCountPlaceholder)
+                                    stringResource(state.variant.titleResId, state.variant.supportedLanguageCodes.size)
+                                else stringResource(state.variant.titleResId),
                                 style = MaterialTheme.typography.titleSmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -174,7 +176,9 @@ fun ModelVariantCard(
                             }
                         }
                         Text(
-                            text = stringResource(state.variant.descriptionResId),
+                            text = if (state.variant.countPlaceholder)
+                                stringResource(state.variant.descriptionResId, state.variant.supportedLanguageCodes.size)
+                            else stringResource(state.variant.descriptionResId),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

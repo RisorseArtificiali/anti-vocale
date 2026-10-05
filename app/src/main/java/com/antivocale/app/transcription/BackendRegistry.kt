@@ -150,9 +150,19 @@ internal fun variantAwareDisplayName(
     if (descriptor == null) return ""
     val familyResId = descriptor.displayNameResId
         ?: return descriptor.deriveDisplayName(context, savedPath ?: "")
-    val family = context.getString(familyResId)
-    val entry = BundledCatalog.byId(descriptor.backendId) ?: return family
-    if (entry.variants.size <= 1) return family
+    val entry = BundledCatalog.byId(descriptor.backendId)
+    // TASK-760: a countPlaceholder display formats the entry's language
+    // count (the same derivation the Model tab card uses). An entry without
+    // a catalog record keeps the ORIGINAL precedence: the family label wins
+    // (the llm backend's fixed localized name must not fall to the file
+    // name), so the entry checks below stay gated on it.
+    val family = when {
+        entry == null -> context.getString(familyResId)
+        (entry.display as? CatalogDisplay.Resource)?.countPlaceholder == true ->
+            context.getString(familyResId, entry.languages.size)
+        else -> context.getString(familyResId)
+    }
+    if (entry == null || entry.variants.size <= 1) return family
     val dirName = savedPath?.takeUnless { it.isBlank() }?.let { File(it).name } ?: return family
     // Strict dir-name match (SherpaModelManager.isValidModelDir's scan idiom):
     // variantForDirName's default-variant fallback would label an unresolvable

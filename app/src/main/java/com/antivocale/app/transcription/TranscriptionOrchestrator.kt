@@ -1620,7 +1620,10 @@ class TranscriptionOrchestrator @Inject constructor(
             preference = languagePref,
         )
         val label = when (val d = entry.display) {
-            is CatalogDisplay.Resource -> context.getString(CatalogStringKeys.resolve(d.key))
+            is CatalogDisplay.Resource ->
+                if (d.countPlaceholder) context.getString(
+                    CatalogStringKeys.resolve(d.key), entry.languages.size)
+                else context.getString(CatalogStringKeys.resolve(d.key))
             is CatalogDisplay.Literal -> d.text
         }
         val load = configureSherpaBackend(
