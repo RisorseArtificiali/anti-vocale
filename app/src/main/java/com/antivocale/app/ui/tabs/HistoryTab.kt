@@ -23,6 +23,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withTimeoutOrNull
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.Lifecycle
@@ -42,6 +43,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -88,11 +90,55 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import java.text.SimpleDateFormat
 import java.util.*
 
+/**
+ * TASK-737: the sender sub-group inside a conversation section. Rows the
+ * notification-identity cache matched at share time (TASK-736) nest under
+ * their sender; everything else stays directly under the app section, so
+ * pre-v13 rows and unmatched shares never meet an "Unknown" bucket.
+ */
+internal data class SenderGroup(
+    val senderName: String,
+    val logs: List<LogEntry>
+)
+
 internal data class ConversationGroup(
     val packageName: String?,
     val appName: String,
-    override val logs: List<LogEntry>
-) : LogGroup
+    override val logs: List<LogEntry>,
+    // Sender sub-groups (newest-first by their newest row) plus the rows
+    // with no sender label (which render directly under the section).
+    // Both are explicit on purpose: a defaulted unlabeledLogs == logs with
+    // non-empty senderGroups would render every labeled row twice, silently.
+    // The builder owns the invariant; the require turns a violation (a
+    // partition that drops or doubles rows) into a crash at construction
+    // instead of an invisible count/render mismatch (737 review F4).
+    val senderGroups: List<SenderGroup>,
+    val unlabeledLogs: List<LogEntry>
+) : LogGroup {
+    init {
+        require(logs.size == senderGroups.sumOf { it.logs.size } + unlabeledLogs.size) {
+            "partition mismatch: logs=${logs.size} vs senders=${senderGroups.sumOf { it.logs.size }} + unlabeled=${unlabeledLogs.size}"
+        }
+    }
+}
+
+/**
+ * TASK-737 review F1: within a section, whichever block holds the NEWEST
+ * row renders first, so a fresh unlabeled share never lands below older
+ * sender groups. With no unlabeled rows the senders lead (the messaging
+ * feel); with no labeled rows the single block's order is irrelevant.
+ * The render loop and the index math MUST agree on this, which is why it
+ * is one function next to both.
+ */
+private fun unlabeledBlockFirst(group: ConversationGroup): Boolean {
+    // Order-independent (737 review: deriving "newest" from list positions
+    // silently assumed the builder's sorts; maxOf drops the assumption).
+    val newestSender = group.senderGroups.maxOfOrNull { sg ->
+        sg.logs.maxOfOrNull { it.timestamp } ?: Long.MIN_VALUE
+    } ?: Long.MIN_VALUE
+    val newestUnlabeled = group.unlabeledLogs.maxOfOrNull { it.timestamp } ?: Long.MIN_VALUE
+    return newestUnlabeled > newestSender
+}
 
 internal interface LogGroup {
     val logs: List<LogEntry>
@@ -357,6 +403,9 @@ fun HistoryTab(
     // Lifted expanded state — tracks which taskIds are expanded
     var expandedTaskIds by remember { mutableStateOf<Set<String>>(emptySet()) }
     var expandedConversationGroups by remember { mutableStateOf<Set<String>>(emptySet()) }
+    // TASK-737: sender sub-section expansion, keyed "<pkg>|<sender>" so two
+    // apps can carry the same sender name without colliding.
+    var expandedSenderGroups by remember { mutableStateOf<Set<String>>(emptySet()) }
     var revealedLogId by remember { mutableStateOf<String?>(null) }
 
     var showClearDialog by remember { mutableStateOf(false) }
@@ -644,28 +693,95 @@ fun HistoryTab(
 
                 fun collapseAndScrollTo(taskId: String, groups: List<LogGroup>) {
                     expandedTaskIds = expandedTaskIds - taskId
-                    val idx = indexOfTaskIdInGroups(groups, taskId)
+                    val idx = indexOfTaskIdInGroups(
+                        groups,
+                        taskId,
+                        isSectionExpanded = { it in expandedConversationGroups },
+                        isSenderExpanded = { it in expandedSenderGroups },
+                    )
                     if (idx >= 0) listScope.launch { listState.animateScrollToItem(idx) }
+                }
+
+                // TASK-737: the row emission shared by the date sections, the
+                // conversation sections, and the sender sub-sections (three
+                // inline copies were drift bait; the swipe-collapse groups
+                // argument is the only per-site difference).
+                val renderLogRow: @Composable (LogEntry, List<LogGroup>) -> Unit = { log, groups ->
+                    LogEntryWithSwipe(
+                        log = log,
+                        searchQuery = searchQuery,
+                        isExpanded = log.taskId in expandedTaskIds,
+                        swipeActionMode = swipeActionMode,
+                        revealedLogId = revealedLogId,
+                        onRevealedLogIdChange = { revealedLogId = it },
+                        onExpandChange = { expanded ->
+                            expandedTaskIds = if (expanded) {
+                                expandedTaskIds + log.taskId
+                            } else {
+                                expandedTaskIds - log.taskId
+                            }
+                        },
+                        onSwipeCollapse = { collapseAndScrollTo(log.taskId, groups) },
+                        onDeleted = { entry -> recentlyDeletedEntry = entry },
+                        onDeleteLog = { id -> viewModel.deleteLog(id) },
+                        viewModel = viewModel,
+                        onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null,
+                        compactActions = compactActions,
+                        onNavigateToSettings = onNavigateToSettings,
+                        onOpenLanguageSetting = onOpenLanguageSetting,
+                    )
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
+                    )
                 }
 
                 // Scroll to and expand the highlighted entry
                 LaunchedEffect(highlightTaskId) {
                     val taskId = highlightTaskId ?: return@LaunchedEffect
-                    // Clear active search so entry is visible
+                    // Clear active search so entry is visible. The identity
+                    // lookup below deliberately reads the UNFILTERED list:
+                    // filteredLogs is stateIn, so first()-style waits return
+                    // the stale still-filtered snapshot (737 review F2: the
+                    // old "wait for propagation" line was a no-op), and the
+                    // post-clear layout equals the unfiltered one anyway.
                     if (searchQuery.isNotEmpty()) {
+                        val preClear = filteredLogs
                         viewModel.clearSearch()
-                        // Wait for clearSearch to propagate to filteredLogs
-                        viewModel.filteredLogs.first()
+                        // Deterministic-enough wait for the cleared layout
+                        // (737 review F3): the query state must land empty in
+                        // composition and the list must have moved off the
+                        // filtered snapshot; bounded, then best-effort like
+                        // the old immediate scroll.
+                        withTimeoutOrNull(250) {
+                            snapshotFlow { searchQuery.isEmpty() && filteredLogs != preClear }.first { it }
+                        }
                     }
                     expandedTaskIds = expandedTaskIds + taskId
+                    val allLogs = viewModel.logs.value
                     val flatIndex = if (groupByConversation) {
-                        val freshConversation = groupLogsByConversation(filteredLogs, context)
-                        val entry = filteredLogs.find { it.taskId == taskId }
-                        val groupKey = entry?.sourcePackageName ?: "__unknown__"
-                        expandedConversationGroups = expandedConversationGroups + groupKey
-                        indexOfTaskIdInGroups(freshConversation, taskId)
+                        val freshConversation = groupLogsByConversation(allLogs, context)
+                        val entry = allLogs.find { it.taskId == taskId }
+                        val groupKey = entry?.sourcePackageName ?: UNKNOWN_GROUP_KEY
+                        val updatedSections = expandedConversationGroups + groupKey
+                        expandedConversationGroups = updatedSections
+                        // TASK-737: the row hides inside its sender sub-section
+                        // until that sub-section opens too; the scroll index is
+                        // computed against the post-update expansion state of
+                        // BOTH collapsible dimensions (sections and senders).
+                        val senderKey = entry?.senderName?.takeIf { it.isNotBlank() }
+                            ?.let { senderGroupKey(groupKey, it) }
+                        // setOfNotNull(null) is empty: the addition is the identity
+                        val updatedSenders = expandedSenderGroups + setOfNotNull(senderKey)
+                        expandedSenderGroups = updatedSenders
+                        indexOfTaskIdInGroups(
+                            freshConversation,
+                            taskId,
+                            isSectionExpanded = { it in updatedSections },
+                            isSenderExpanded = { it in updatedSenders },
+                        )
                     } else {
-                        val freshGrouped = groupLogsByDate(filteredLogs, context)
+                        val freshGrouped = groupLogsByDate(allLogs, context)
                         indexOfTaskIdInGroups(freshGrouped, taskId)
                     }
                     if (flatIndex >= 0) {
@@ -692,7 +808,7 @@ fun HistoryTab(
                     }
                     if (groupByConversation && conversationGroups.isNotEmpty()) {
                         conversationGroups.forEach { group ->
-                            val groupKey = group.packageName ?: "__unknown__"
+                            val groupKey = group.packageName ?: UNKNOWN_GROUP_KEY
                             val isGroupExpanded = groupKey in expandedConversationGroups
                             item(key = "conv_$groupKey") {
                                 ConversationGroupHeader(
@@ -710,34 +826,50 @@ fun HistoryTab(
                                 )
                             }
                             if (isGroupExpanded) {
-                                items(group.logs, key = { it.id }) { log ->
-                                    LogEntryWithSwipe(
-                                        log = log,
-                                        searchQuery = searchQuery,
-                                        isExpanded = log.taskId in expandedTaskIds,
-                                        swipeActionMode = swipeActionMode,
-                                        revealedLogId = revealedLogId,
-                                        onRevealedLogIdChange = { revealedLogId = it },
-                                        onExpandChange = { expanded ->
-                                            expandedTaskIds = if (expanded) {
-                                                expandedTaskIds + log.taskId
-                                            } else {
-                                                expandedTaskIds - log.taskId
+                                // TASK-737: sender-labeled rows nest under their
+                                // sender (newest sender first); rows without the
+                                // fact stay directly under the app section.
+                                // Review F1: the block holding the NEWEST row
+                                // renders first (see unlabeledBlockFirst), so a
+                                // fresh unlabeled share never lands below older
+                                // sender groups.
+                                val emitUnlabeled: () -> Unit = {
+                                    items(group.unlabeledLogs, key = { it.id }) { log ->
+                                        renderLogRow(log, conversationGroups)
+                                    }
+                                }
+                                val emitSenders: () -> Unit = {
+                                    group.senderGroups.forEach { sender ->
+                                        val senderKey = senderGroupKey(groupKey, sender.senderName)
+                                        val isSenderExpanded = senderKey in expandedSenderGroups
+                                        item(key = "sender_$senderKey") {
+                                            SenderGroupHeader(
+                                                senderName = sender.senderName,
+                                                count = sender.logs.size,
+                                                lastTimestamp = sender.logs.maxOf { it.timestamp },
+                                                expanded = isSenderExpanded,
+                                                onToggle = {
+                                                    expandedSenderGroups = if (isSenderExpanded) {
+                                                        expandedSenderGroups - senderKey
+                                                    } else {
+                                                        expandedSenderGroups + senderKey
+                                                    }
+                                                }
+                                            )
+                                        }
+                                        if (isSenderExpanded) {
+                                            items(sender.logs, key = { it.id }) { log ->
+                                                renderLogRow(log, conversationGroups)
                                             }
-                                        },
-                                        onSwipeCollapse = { collapseAndScrollTo(log.taskId, conversationGroups) },
-                                        onDeleted = { entry -> recentlyDeletedEntry = entry },
-                                        onDeleteLog = { id -> viewModel.deleteLog(id) },
-                                        viewModel = viewModel,
-                                        onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null,
-                                        compactActions = compactActions,
-                                        onNavigateToSettings = onNavigateToSettings,
-                                        onOpenLanguageSetting = onOpenLanguageSetting,
-                                    )
-                                    HorizontalDivider(
-                                        modifier = Modifier.padding(horizontal = 16.dp),
-                                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                                    )
+                                        }
+                                    }
+                                }
+                                if (unlabeledBlockFirst(group)) {
+                                    emitUnlabeled()
+                                    emitSenders()
+                                } else {
+                                    emitSenders()
+                                    emitUnlabeled()
                                 }
                             }
                         }
@@ -750,33 +882,7 @@ fun HistoryTab(
 
                             // Logs for this date
                             items(dateLogs, key = { it.id }) { log ->
-                                LogEntryWithSwipe(
-                                    log = log,
-                                    searchQuery = searchQuery,
-                                    isExpanded = log.taskId in expandedTaskIds,
-                                    swipeActionMode = swipeActionMode,
-                                    revealedLogId = revealedLogId,
-                                    onRevealedLogIdChange = { revealedLogId = it },
-                                    onExpandChange = { expanded ->
-                                        expandedTaskIds = if (expanded) {
-                                            expandedTaskIds + log.taskId
-                                        } else {
-                                            expandedTaskIds - log.taskId
-                                        }
-                                    },
-                                    onSwipeCollapse = { collapseAndScrollTo(log.taskId, groupedLogs) },
-                                    onDeleted = { entry -> recentlyDeletedEntry = entry },
-                                    onDeleteLog = { id -> viewModel.deleteLog(id) },
-                                    viewModel = viewModel,
-                                    onRetranscribe = if (showRetranscribeButton && log.type == LogEntry.Type.AUDIO && log.filePath != null) {{ retranscribeTarget = log }} else null,
-                                    compactActions = compactActions,
-                                    onNavigateToSettings = onNavigateToSettings,
-                                    onOpenLanguageSetting = onOpenLanguageSetting,
-                                )
-                                HorizontalDivider(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)
-                                )
+                                renderLogRow(log, groupedLogs)
                             }
                         }
                     }
@@ -886,13 +992,69 @@ private fun startOfDay(timestamp: Long): Long {
  */
 private const val FIXED_ITEMS_ABOVE_GROUPS = 1
 
-internal fun indexOfTaskIdInGroups(groups: List<LogGroup>, taskId: String): Int {
+/** The expansion/index key for rows with no source app; render and index
+ *  math must agree on it or every scroll in that section lands one slot off. */
+private const val UNKNOWN_GROUP_KEY = "__unknown__"
+
+/** TASK-737: the one key builder for sender sub-sections (render, index math,
+ *  and the highlight auto-expand all derive the key here, so the format
+ *  cannot drift between the writers and the readers of the expansion set). */
+internal fun senderGroupKey(groupKey: String, senderName: String): String = "$groupKey|$senderName"
+
+internal fun indexOfTaskIdInGroups(
+    groups: List<LogGroup>,
+    taskId: String,
+    // TASK-737 review: BOTH collapsible dimensions hide rows from the list,
+    // so the flat index must skip them. isSectionExpanded receives the
+    // conversation group key, isSenderExpanded the senderGroupKey; the
+    // defaults treat all as expanded (the legacy math for flat call sites).
+    isSectionExpanded: (String) -> Boolean = { true },
+    isSenderExpanded: (String) -> Boolean = { true },
+): Int {
     var flatIndex = FIXED_ITEMS_ABOVE_GROUPS
     for (group in groups) {
         flatIndex++
-        for (log in group.logs) {
-            if (log.taskId == taskId) return flatIndex
-            flatIndex++
+        if (group is ConversationGroup) {
+            // Same block order as the render loop (see unlabeledBlockFirst):
+            // whichever block holds the newest row is counted first.
+            val groupKey = group.packageName ?: UNKNOWN_GROUP_KEY
+            // The section header always renders; its rows only when expanded
+            // (the render's if (isGroupExpanded), review finding 1).
+            if (!isSectionExpanded(groupKey)) continue
+            if (unlabeledBlockFirst(group)) {
+                for (log in group.unlabeledLogs) {
+                    if (log.taskId == taskId) return flatIndex
+                    flatIndex++
+                }
+                for (sender in group.senderGroups) {
+                    flatIndex++
+                    if (isSenderExpanded(senderGroupKey(groupKey, sender.senderName))) {
+                        for (log in sender.logs) {
+                            if (log.taskId == taskId) return flatIndex
+                            flatIndex++
+                        }
+                    }
+                }
+            } else {
+                for (sender in group.senderGroups) {
+                    flatIndex++
+                    if (isSenderExpanded(senderGroupKey(groupKey, sender.senderName))) {
+                        for (log in sender.logs) {
+                            if (log.taskId == taskId) return flatIndex
+                            flatIndex++
+                        }
+                    }
+                }
+                for (log in group.unlabeledLogs) {
+                    if (log.taskId == taskId) return flatIndex
+                    flatIndex++
+                }
+            }
+        } else {
+            for (log in group.logs) {
+                if (log.taskId == taskId) return flatIndex
+                flatIndex++
+            }
         }
     }
     return -1
@@ -1785,40 +1947,71 @@ private fun ConversationGroupHeader(
     expanded: Boolean,
     onToggle: () -> Unit
 ) {
+    // TASK-566 follow-up: the brand ramp step shared with the date
+    // headers, so a collapsed conversation group reads as a section.
+    CollapsibleGroupHeader(
+        title = appName.ifBlank { stringResource(R.string.conversation_group_unknown) },
+        count = count,
+        lastTimestamp = lastTimestamp,
+        expanded = expanded,
+        onToggle = onToggle,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        metaColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+    )
+}
+
+/**
+ * The shared collapsible section-header skeleton (737 review F5: the
+ * conversation and sender headers were two hand-maintained copies; the
+ * a11y contract and the TASK-345/TASK-507 layout rules live here once).
+ * The section and its sender sub-sections differ only in the container
+ * step, the meta tint, and the indent, which are explicit parameters.
+ */
+@Composable
+private fun CollapsibleGroupHeader(
+    title: String,
+    count: Int,
+    lastTimestamp: Long,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    containerColor: Color,
+    metaColor: Color,
+    modifier: Modifier = Modifier,
+    iconSize: Dp = 20.dp,
+    rowVerticalPadding: Dp = 8.dp,
+) {
     val context = LocalContext.current
     // TASK-384: clickable Surface has no role; announce expand/collapse state to talkback
     val toggleStateDescription = stringResource(
         if (expanded) R.string.a11y_collapse else R.string.a11y_expand
     )
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
             .semantics {
                 role = Role.Button
                 stateDescription = toggleStateDescription
             },
-        // TASK-566 follow-up: the brand ramp step shared with the date
-        // headers, so a collapsed conversation group reads as a section.
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        color = containerColor,
         shape = MaterialTheme.shapes.small,
         onClick = onToggle
     ) {
         Row(
             modifier = Modifier
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .padding(horizontal = 12.dp, vertical = rowVerticalPadding)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
                 if (expanded) Icons.Default.KeyboardArrowDown else Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = null,
-                modifier = Modifier.size(20.dp),
+                modifier = Modifier.size(iconSize),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = appName.ifBlank { stringResource(R.string.conversation_group_unknown) },
+                text = title,
                 style = MaterialTheme.typography.labelMedium,
                 // Locale-safe: ellipsize before the count/timestamp column (TASK-345).
                 // TASK-507: the ONLY weighted child. The previous pair (this
@@ -1836,17 +2029,44 @@ private fun ConversationGroupHeader(
             Text(
                 text = pluralStringResource(R.plurals.conversation_group_count, count, count),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                color = metaColor
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = formatRelativeTime(lastTimestamp, context),
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSecondaryContainer
+                color = metaColor
             )
             Spacer(modifier = Modifier.width(4.dp))
         }
     }
+}
+
+/**
+ * TASK-737: the sender sub-section header. One step lighter than the app
+ * section (surfaceContainer under its surfaceContainerHigh) and indented,
+ * so the nesting reads without a third color family.
+ */
+@Composable
+private fun SenderGroupHeader(
+    senderName: String,
+    count: Int,
+    lastTimestamp: Long,
+    expanded: Boolean,
+    onToggle: () -> Unit
+) {
+    CollapsibleGroupHeader(
+        title = senderName,
+        count = count,
+        lastTimestamp = lastTimestamp,
+        expanded = expanded,
+        onToggle = onToggle,
+        containerColor = MaterialTheme.colorScheme.surfaceContainer,
+        metaColor = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier = Modifier.padding(start = 24.dp, top = 2.dp, bottom = 2.dp, end = 8.dp),
+        iconSize = 18.dp,
+        rowVerticalPadding = 6.dp,
+    )
 }
 
 private fun groupLogsByConversation(
@@ -1857,11 +2077,21 @@ private fun groupLogsByConversation(
         .groupBy { it.sourcePackageName }
         .map { (packageName, entries) ->
             val sorted = entries.sortedByDescending { it.timestamp }
+            // TASK-737: split the section by the sender fact; `sorted` is
+            // newest-first, and groupBy preserves encounter order, so each
+            // sender's rows and the unlabeled remainder stay chronological.
+            val (labeled, unlabeled) = sorted.partition { !it.senderName.isNullOrBlank() }
+            val senderGroups = labeled
+                .groupBy { it.senderName!! }
+                .map { (sender, senderEntries) -> SenderGroup(sender, senderEntries) }
+                .sortedByDescending { it.logs.first().timestamp }
             ConversationGroup(
                 packageName = packageName,
                 appName = packageName?.let { AppInfoUtils.getAppName(context, it) }
                     ?: context.getString(R.string.conversation_group_unknown),
-                logs = sorted
+                logs = sorted,
+                senderGroups = senderGroups,
+                unlabeledLogs = unlabeled
             )
         }
         .sortedByDescending { it.logs.first().timestamp }
