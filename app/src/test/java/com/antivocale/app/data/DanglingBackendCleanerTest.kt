@@ -51,6 +51,24 @@ class DanglingBackendCleanerTest {
     }
 
     @Test
+    fun `dangling refinement pin is cleared to inherit (TASK-761)`() = runTest {
+        prefs._refinementModelBackendId.value = "external:gone-pin"
+        DanglingBackendCleaner(prefs, store).cleanIfNeeded()
+        assertEquals("", prefs._refinementModelBackendId.value)
+    }
+
+    @Test
+    fun `valid refinement pin is left in place (TASK-761)`() = runTest {
+        val dir = java.io.File(filesRoot, "pinned").apply { mkdirs() }
+        val saved = record("pinned-id", dir.absolutePath)
+        store.add(saved)
+        prefs._refinementModelBackendId.value = saved.backendId
+
+        DanglingBackendCleaner(prefs, store).cleanIfNeeded()
+        assertEquals(saved.backendId, prefs._refinementModelBackendId.value)
+    }
+
+    @Test
     fun `external id whose record exists but directory vanished is reset to default`() = runTest {
         val dir = java.io.File(filesRoot, "vanished")
         val saved = record("half-gone", dir.absolutePath)

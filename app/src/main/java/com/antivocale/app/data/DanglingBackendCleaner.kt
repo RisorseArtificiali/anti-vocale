@@ -23,17 +23,28 @@ class DanglingBackendCleaner(
 ) {
     suspend fun cleanIfNeeded() {
         val backend = preferencesManager.transcriptionBackend.first()
-        if (backend == RETIRED_GGUF_BACKEND_ID) {
+        if (backend == RETIRED_GGUF_BACKEND_ID || isDanglingExternal(backend)) {
             preferencesManager.saveTranscriptionBackend(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
-            return
         }
-        if (!backend.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX)) return
-        val id = backend.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX)
-        // byId resolves valid records only (dir must exist), matching what the
-        // orchestrator's loadExternalBackend can actually load.
-        if (externalModelStore.byId(id) != null) return
-        preferencesManager.saveTranscriptionBackend(PreferencesManager.DEFAULT_TRANSCRIPTION_BACKEND)
+        // TASK-761 (altitude F4): the refinement pin dangles through the
+        // same paths the active backend can (quarantine, files deleted
+        // under the record, a crash between store delete and the
+        // delete-time scrub): a dead pin silently degrades EVERY two-pass
+        // run, so it gets the same startup net. Blank = inherit active.
+        // EXTERNAL pins only: a built-in pin dangles through deletion
+        // (scrubbed at delete time in ModelViewModel) rather than record
+        // rot, and loadability of a built-in is not resolvable here.
+        val pin = preferencesManager.refinementModelBackendId.first()
+        if (isDanglingExternal(pin)) {
+            preferencesManager.saveRefinementModelBackendId("")
+        }
     }
+
+    /** byId resolves valid records only (dir must exist), matching what the
+     *  orchestrator's loadExternalBackend can actually load. */
+    private suspend fun isDanglingExternal(backendId: String): Boolean =
+        backendId.startsWith(ExternalModelRecord.BACKEND_ID_PREFIX) &&
+            externalModelStore.byId(backendId.removePrefix(ExternalModelRecord.BACKEND_ID_PREFIX)) == null
 
     private companion object {
         /** Backend id of the GGUF backend removed in TASK-639. */

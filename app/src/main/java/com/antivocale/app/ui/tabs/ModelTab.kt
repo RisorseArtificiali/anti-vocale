@@ -189,10 +189,9 @@ fun ModelTab(
         ActivityResultContracts.OpenDocument()
     ) { uri ->
         uri?.let { picked ->
-            // Some OEM pickers return a grant without the persistable flag
-            // (the folder picker's documented trap); the unguarded call
-            // would throw inside the callback.
-            com.antivocale.app.util.TreeUris.takePersistableReadGrant(context, picked)
+            // TASK-761: no persistable grant at all. The picker's transient
+            // grant covers this one-shot read (the old callback-side take
+            // was never released and burned grant slots).
             viewModel.importExternalFromBundle(context, picked)
         }
     }
@@ -208,7 +207,10 @@ fun ModelTab(
         if (uri != null && write != null) write(uri)
     }
     fun launchBundleExport(dir: java.io.File, entry: CatalogEntry, variant: CatalogVariantUi) {
-        pendingBundleWrite = { uri -> exportBundleTo(context, uri, dir, entry, variant) }
+        // TASK-761: the ViewModel owns the write (viewModelScope + IO);
+        // a compose scope would cancel a multi-hundred-MB zip mid-stream
+        // when the tab leaves composition.
+        pendingBundleWrite = { uri -> viewModel.exportBundle(uri, dir, entry, variant) }
         bundleExportPicker.launch(exportFileName(entry.id, variant.variantName))
     }
 
@@ -2578,41 +2580,3 @@ private fun entryDirFor(
 
 private fun exportFileName(entryId: String, variantName: String?): String =
     "antivocale-model-$entryId-${variantName ?: "default"}.zip"
-
-/** Streams the bundle into the SAF target; errors surface as a log and a
- *  toast-free no-op (the share can be retried; the model is untouched). */
-private fun exportBundleTo(
-    context: android.content.Context,
-    uri: android.net.Uri,
-    dir: java.io.File,
-    entry: CatalogEntry,
-    variant: CatalogVariantUi,
-) {
-    try {
-        val metadata = com.antivocale.app.data.ModelBundleCodec.BundleMetadata(
-            displayName = context.getString(variant.titleResId),
-            // The IMPORT family (the sherpa import taxonomy), NOT the
-            // entry's architecture string: the manifest round-trips into
-            // ModelFamily on the receiving device.
-            family = com.antivocale.app.data.ModelBundleCodec
-                .importFamilyForModelType(entry.modelType)?.name
-                // Unreachable for the button (it is gated on the same
-                // predicate); the loud fallback if a future call site
-                // forgets the gate.
-                ?: error("model type '${entry.modelType}' is not bundle-transferable"),
-            modelType = entry.modelType,
-            languages = com.antivocale.app.data.catalog.BundledCatalog
-                .byId(entry.id)?.variants
-                ?.firstOrNull { it.dirName == variant.variantName }?.languages ?: emptyList(),
-            streaming = entry.isStreaming,
-            options = emptyMap(),
-            appVersion = com.antivocale.app.BuildConfig.VERSION_NAME,
-        )
-        context.contentResolver.openOutputStream(uri)?.use { out ->
-            com.antivocale.app.data.ModelBundleCodec.export(dir, out, metadata)
-        } ?: error("cannot open export target $uri")
-        android.util.Log.i("ModelTab", "Model bundle exported: ${dir.name} -> $uri")
-    } catch (e: Exception) {
-        android.util.Log.w("ModelTab", "Model bundle export failed", e)
-    }
-}
