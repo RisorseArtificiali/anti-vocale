@@ -130,12 +130,12 @@
     <string name="whisper_download_confirm_message">Cela téléchargera environ %1$d Mo. Whisper offre un excellent support multilingue avec une ponctuation correcte.</string>
     <string name="whisper_extract_confirm_title">Extraire %1$s ?</string>
     <string name="whisper_extract_confirm_message">Le fichier du modèle est déjà téléchargé. Il sera extrait pour utilisation.</string>
-    <string name="qwen3_asr_title">Qwen3-ASR (52 langues)</string>
-    <string name="qwen3_asr_description">52 langues</string>
+    <string name="qwen3_asr_title">Qwen3-ASR (59 langues)</string>
+    <string name="qwen3_asr_description">59 langues</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0,6B</string>
-    <string name="qwen3_asr_0_6b_description">~938 Mo • 52 langues</string>
+    <string name="qwen3_asr_0_6b_description">~938 Mo • 59 langues</string>
     <string name="qwen3_asr_download_confirm_title">Télécharger %1$s ?</string>
-    <string name="qwen3_asr_download_confirm_message">Cela téléchargera ~%1$dMo. Qwen3-ASR prend en charge 52 langues.</string>
+    <string name="qwen3_asr_download_confirm_message">Cela téléchargera ~%1$dMo. Qwen3-ASR prend en charge 59 langues.</string>
     <string name="qwen3_asr_download">Télécharger Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">Supprimer le modèle Qwen3-ASR ?</string>
     <string name="qwen3_asr_downloaded">%1$s téléchargé</string>
@@ -637,7 +637,7 @@
     <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
     <string name="speed_comparison_qwen3_size">~938MB</string>
     <string name="speed_comparison_qwen3_speed">~2x</string>
-    <string name="speed_comparison_qwen3_quality">52 langues, variable</string>
+    <string name="speed_comparison_qwen3_quality">59 langues, variable</string>
     <string name="speed_comparison_gigaam_name">GigaAM v3</string>
     <string name="speed_comparison_gigaam_size">~326MB</string>
     <string name="speed_comparison_gigaam_speed">Fast</string>
@@ -795,7 +795,7 @@
     <string name="model_info_notes_whisper_medium">Bon équilibre entre précision et consommation de ressources.</string>
     <string name="model_info_best_for_distil_it">Meilleure précision italienne (4,3%% WER)</string>
     <string name="model_info_notes_distil_it">Italien uniquement. Précision maximale pour les messages vocaux italiens. Priorité à la précision plutôt qu\'à la vitesse.</string>
-    <string name="model_info_best_for_qwen3">Détection automatique en 52 langues</string>
+    <string name="model_info_best_for_qwen3">Détection automatique en 59 langues</string>
     <string name="model_info_notes_qwen3">Couverture linguistique la plus large. Note : tronque l\'audio de plus de 30 secondes. ARM64 uniquement.</string>
     <string name="model_info_best_for_parakeet">Transcription la plus rapide (17,6x plus rapide que Whisper, 5,4%% WER)</string>
     <string name="model_info_notes_parakeet">Aucune limite de durée. VAD inutile. Idéal si la vitesse est prioritaire.</string>

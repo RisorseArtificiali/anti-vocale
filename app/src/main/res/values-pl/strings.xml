@@ -172,12 +172,12 @@
     <string name="whisper_extract_confirm_message">Plik modelu jest już pobrany. To wyodrębni go do użycia.</string>
 
     <!-- Qwen3-ASR model -->
-    <string name="qwen3_asr_title">Qwen3-ASR (52 języki)</string>
-    <string name="qwen3_asr_description">52 języki</string>
+    <string name="qwen3_asr_title">Qwen3-ASR (59 języków)</string>
+    <string name="qwen3_asr_description">59 języków</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 języki</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 59 języków</string>
     <string name="qwen3_asr_download_confirm_title">Pobrać %1$s?</string>
-    <string name="qwen3_asr_download_confirm_message">To pobierze ~%1$dMB. Qwen3-ASR obsługuje 52 języki.</string>
+    <string name="qwen3_asr_download_confirm_message">To pobierze ~%1$dMB. Qwen3-ASR obsługuje 59 języków.</string>
     <string name="qwen3_asr_download">Pobierz Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">Usunąć model Qwen3-ASR?</string>
     <string name="qwen3_asr_downloaded">Pomyślnie pobrano %1$s</string>
@@ -761,7 +761,7 @@
     <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
     <string name="speed_comparison_qwen3_size">~938MB</string>
     <string name="speed_comparison_qwen3_speed">~2x</string>
-    <string name="speed_comparison_qwen3_quality">52 języki, zmienna</string>
+    <string name="speed_comparison_qwen3_quality">59 języków, zmienna</string>
     <string name="speed_comparison_gigaam_name">GigaAM v3</string>
     <string name="speed_comparison_gigaam_size">~326MB</string>
     <string name="speed_comparison_gigaam_speed">Szybki</string>
@@ -952,7 +952,7 @@
     <string name="model_info_notes_whisper_medium">Dobry balans między dokładnością a zużyciem zasobów.</string>
     <string name="model_info_best_for_distil_it">Najlepsza dokładność włoskiego (4.3%% WER)</string>
     <string name="model_info_notes_distil_it">Tylko włoski. Najwyższa dokładność dla włoskich wiadomości głosowych. Priorytet dokładności nad szybkością.</string>
-    <string name="model_info_best_for_qwen3">Autodetekcja 52 języków</string>
+    <string name="model_info_best_for_qwen3">Autodetekcja 59 języków</string>
     <string name="model_info_notes_qwen3">Najszersze pokrycie językowe. Uwaga: obcina audio dłuższe niż 30 sekund. Tylko urządzenia ARM64.</string>
     <string name="model_info_best_for_parakeet">Najszybsza transkrypcja (17,6x szybsza niż Whisper, 5.4%% WER)</string>
     <string name="model_info_notes_parakeet">Brak limitu długości audio. VAD niepotrzebny. Najlepszy dla użytkowników ceniących szybkość.</string>

@@ -156,12 +156,12 @@
     <string name="whisper_extract_confirm_message">Файл модели уже загружен. Сейчас он будет извлечён для использования.</string>
 
     <!-- Qwen3-ASR model -->
-    <string name="qwen3_asr_title">Qwen3-ASR (52 языка)</string>
-    <string name="qwen3_asr_description">52 языка • Низкая точность на итальянском</string>
+    <string name="qwen3_asr_title">Qwen3-ASR (59 языков)</string>
+    <string name="qwen3_asr_description">59 языков</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938 МБ • 52 языка • Низкая точность на итальянском</string>
+    <string name="qwen3_asr_0_6b_description">~938 МБ • 59 языков</string>
     <string name="qwen3_asr_download_confirm_title">Скачать %1$s?</string>
-    <string name="qwen3_asr_download_confirm_message">Будет загружено ~%1$dМБ. Qwen3-ASR поддерживает 52 языка.</string>
+    <string name="qwen3_asr_download_confirm_message">Будет загружено ~%1$dМБ. Qwen3-ASR поддерживает 59 языков.</string>
     <string name="qwen3_asr_download">Скачать Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">Удалить модель Qwen3-ASR?</string>
     <string name="qwen3_asr_downloaded">%1$s успешно загружена</string>
@@ -170,7 +170,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (потоковая)</string>
-    <string name="nemotron_description">~640 МБ • Потоковый преобразователь • Экспериментальное качество для итальянского</string>
+    <string name="nemotron_description">~640 МБ • Потоковый преобразователь</string>
     <string name="nemotron_download_confirm_title">Скачать %1$s?</string>
     <string name="nemotron_download_confirm_message">Будет загружено ~%1$d МБ. Nemotron 3.5, многоязычная потоковая модель распознавания речи.</string>
     <string name="nemotron_download">Скачать Nemotron</string>
@@ -743,7 +743,7 @@
     <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
     <string name="speed_comparison_qwen3_size">~938MB</string>
     <string name="speed_comparison_qwen3_speed">~2x</string>
-    <string name="speed_comparison_qwen3_quality">52 языка, нестабильное</string>
+    <string name="speed_comparison_qwen3_quality">59 языков, нестабильное</string>
     <string name="speed_comparison_gigaam_name">GigaAM v3</string>
     <string name="speed_comparison_gigaam_size">~326MB</string>
     <string name="speed_comparison_gigaam_speed">Быстрая</string>
@@ -934,7 +934,7 @@
     <string name="model_info_notes_whisper_medium">Хороший баланс между точностью и потреблением ресурсов.</string>
     <string name="model_info_best_for_distil_it">Лучшая точность для итальянского (WER 4.3%%)</string>
     <string name="model_info_notes_distil_it">Только итальянский. Максимальная точность для итальянских голосовых сообщений. Приоритет: точность, а не скорость.</string>
-    <string name="model_info_best_for_qwen3">Автоопределение для 52 языков</string>
+    <string name="model_info_best_for_qwen3">Автоопределение для 59 языков</string>
     <string name="model_info_notes_qwen3">Самое широкое покрытие языков. Внимание: обрезает аудио длиннее 30 секунд. Только устройства ARM64.</string>
     <string name="model_info_best_for_parakeet">Самое быстрое распознавание (в 17,6 раза быстрее Whisper, WER 5.4%%)</string>
     <string name="model_info_notes_parakeet">Без ограничения длительности аудио. VAD не требуется. Лучший выбор для тех, кому важна скорость.</string>

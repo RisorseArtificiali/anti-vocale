@@ -173,12 +173,12 @@
     <string name="whisper_extract_confirm_message">The model file is already downloaded. This will extract it for use.</string>
 
     <!-- Qwen3-ASR model -->
-    <string name="qwen3_asr_title">Qwen3-ASR (52 languages)</string>
-    <string name="qwen3_asr_description">53 languages incl. Hindi</string>
+    <string name="qwen3_asr_title">Qwen3-ASR (59 languages)</string>
+    <string name="qwen3_asr_description">59 languages</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 languages</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 59 languages</string>
     <string name="qwen3_asr_download_confirm_title">Download %1$s?</string>
-    <string name="qwen3_asr_download_confirm_message">This will download ~%1$dMB. Qwen3-ASR supports 52 languages.</string>
+    <string name="qwen3_asr_download_confirm_message">This will download ~%1$dMB. Qwen3-ASR supports 59 languages.</string>
     <string name="qwen3_asr_download">Download Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">Delete Qwen3-ASR model?</string>
     <string name="qwen3_asr_downloaded">%1$s downloaded successfully</string>
@@ -187,7 +187,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (streaming)</string>
-    <string name="nemotron_description">~640MB • Streaming transducer • Tuned for Italian</string>
+    <string name="nemotron_description">~640MB • Streaming transducer</string>
     <string name="nemotron_download_confirm_title">Download %1$s?</string>
     <string name="nemotron_download_confirm_message">This will download ~%1$dMB. Nemotron 3.5 is a streaming multilingual ASR model.</string>
     <string name="nemotron_download">Download Nemotron</string>
@@ -774,7 +774,7 @@
     <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
     <string name="speed_comparison_qwen3_size">~938MB</string>
     <string name="speed_comparison_qwen3_speed">~2x</string>
-    <string name="speed_comparison_qwen3_quality">52 langs, variable</string>
+    <string name="speed_comparison_qwen3_quality">59 langs, variable</string>
     <string name="speed_comparison_gigaam_name">GigaAM v3</string>
     <string name="speed_comparison_gigaam_size">~326MB</string>
     <string name="speed_comparison_gigaam_speed">Fast</string>
@@ -955,7 +955,7 @@
     <string name="model_info_notes_whisper_medium">Good balance between accuracy and resource usage.</string>
     <string name="model_info_best_for_distil_it">Best Italian accuracy (4.3%% WER)</string>
     <string name="model_info_notes_distil_it">Italian-only. Highest accuracy for Italian voice messages. Prioritize accuracy over speed.</string>
-    <string name="model_info_best_for_qwen3">52-language auto-detection</string>
+    <string name="model_info_best_for_qwen3">59-language auto-detection</string>
     <string name="model_info_notes_qwen3">Broadest language coverage. Note: truncates audio longer than 30 seconds. ARM64 devices only.</string>
     <string name="model_info_best_for_parakeet">Fastest transcription (17.6x faster than Whisper, 5.4%% WER)</string>
     <string name="model_info_notes_parakeet">No audio length limit. VAD not needed. Best for users who prioritize speed.</string>

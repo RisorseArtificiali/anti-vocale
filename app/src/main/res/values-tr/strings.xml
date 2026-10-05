@@ -170,12 +170,12 @@
     <string name="whisper_extract_confirm_message">Model dosyası zaten indirildi. Bu, kullanım için dosyayı ayıklar.</string>
 
     <!-- Qwen3-ASR model -->
-    <string name="qwen3_asr_title">Qwen3-ASR (52 dil)</string>
-    <string name="qwen3_asr_description">52 dil</string>
+    <string name="qwen3_asr_title">Qwen3-ASR (59 dil)</string>
+    <string name="qwen3_asr_description">59 dil</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 dil</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 59 dil</string>
     <string name="qwen3_asr_download_confirm_title">%1$s indirilsin mi?</string>
-    <string name="qwen3_asr_download_confirm_message">Bu, yaklaşık %1$dMB indirir. Qwen3-ASR 52 dili destekler.</string>
+    <string name="qwen3_asr_download_confirm_message">Bu, yaklaşık %1$dMB indirir. Qwen3-ASR 59 dili destekler.</string>
     <string name="qwen3_asr_download">Qwen3-ASR indir</string>
     <string name="qwen3_asr_delete_message">Qwen3-ASR modeli silinsin mi?</string>
     <string name="qwen3_asr_downloaded">%1$s başarıyla indirildi</string>
@@ -753,7 +753,7 @@
     <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
     <string name="speed_comparison_qwen3_size">~938MB</string>
     <string name="speed_comparison_qwen3_speed">~2x</string>
-    <string name="speed_comparison_qwen3_quality">52 dil, değişken</string>
+    <string name="speed_comparison_qwen3_quality">59 dil, değişken</string>
     <string name="speed_comparison_gigaam_name">GigaAM v3</string>
     <string name="speed_comparison_gigaam_size">~326MB</string>
     <string name="speed_comparison_gigaam_speed">Hızlı</string>
@@ -934,7 +934,7 @@
     <string name="model_info_notes_whisper_medium">Doğruluk ve kaynak kullanımı arasında iyi denge.</string>
     <string name="model_info_best_for_distil_it">En iyi İtalyanca doğruluk (4.3%% WER)</string>
     <string name="model_info_notes_distil_it">Yalnızca İtalyanca. İtalyanca sesli mesajlar için en yüksek doğruluk. Hızdan çok doğruluğa öncelik verin.</string>
-    <string name="model_info_best_for_qwen3">52 dilli otomatik algılama</string>
+    <string name="model_info_best_for_qwen3">59 dilli otomatik algılama</string>
     <string name="model_info_notes_qwen3">En geniş dil kapsamı. Not: 30 saniyeden uzun sesleri keser. Yalnızca ARM64 cihazlar.</string>
     <string name="model_info_best_for_parakeet">En hızlı metin çıkarma (Whisper\'dan 17,6 kat hızlı, 5.4%% WER)</string>
     <string name="model_info_notes_parakeet">Ses uzunluğu sınırı yok. VAD gerekmez. Hızı öncelik eden kullanıcılar için en iyisi.</string>

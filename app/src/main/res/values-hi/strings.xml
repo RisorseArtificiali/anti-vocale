@@ -148,12 +148,12 @@
     <string name="whisper_extract_confirm_message">मॉडल फ़ाइल पहले से डाउनलोड है। इससे इसे इस्तेमाल के लिए निकाला जाएगा।</string>
 
     <!-- Qwen3-ASR model -->
-    <string name="qwen3_asr_title">Qwen3-ASR (52 भाषाएं)</string>
-    <string name="qwen3_asr_description">52 भाषाएं</string>
+    <string name="qwen3_asr_title">Qwen3-ASR (59 भाषाएं)</string>
+    <string name="qwen3_asr_description">59 भाषाएं</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 भाषाएं</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 59 भाषाएं</string>
     <string name="qwen3_asr_download_confirm_title">%1$s डाउनलोड करें?</string>
-    <string name="qwen3_asr_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। Qwen3-ASR 52 भाषाओं का समर्थन करता है।</string>
+    <string name="qwen3_asr_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। Qwen3-ASR 59 भाषाओं का समर्थन करता है।</string>
     <string name="qwen3_asr_download">Qwen3-ASR डाउनलोड करें</string>
     <string name="qwen3_asr_delete_message">Qwen3-ASR मॉडल मिटाएं?</string>
     <string name="qwen3_asr_downloaded">%1$s सफलतापूर्वक डाउनलोड हुआ</string>
@@ -721,7 +721,7 @@
     <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
     <string name="speed_comparison_qwen3_size">~938MB</string>
     <string name="speed_comparison_qwen3_speed">~2x</string>
-    <string name="speed_comparison_qwen3_quality">52 भाषाएं, अनिश्चित</string>
+    <string name="speed_comparison_qwen3_quality">59 भाषाएं, अनिश्चित</string>
     <string name="speed_comparison_gigaam_name">GigaAM v3</string>
     <string name="speed_comparison_gigaam_size">~326MB</string>
     <string name="speed_comparison_gigaam_speed">तेज़</string>
@@ -890,7 +890,7 @@
     <string name="model_info_notes_whisper_medium">सटीकता और संसाधन इस्तेमाल का अच्छा संतुलन।</string>
     <string name="model_info_best_for_distil_it">सबसे बेहतर इतालवी सटीकता (4.3%% WER)</string>
     <string name="model_info_notes_distil_it">सिर्फ़ इतालवी। इतालवी वॉइस मैसेज के लिए सर्वोच्च सटीकता। गति से ज़्यादा सटीकता मायने रखती है।</string>
-    <string name="model_info_best_for_qwen3">52-भाषा ऑटो-डिटेक्शन</string>
+    <string name="model_info_best_for_qwen3">59-भाषा ऑटो-डिटेक्शन</string>
     <string name="model_info_notes_qwen3">सबसे व्यापक भाषा कवरेज। नोट: 30 सेकंड से लंबा ऑडियो काट देता है। सिर्फ़ ARM64 डिवाइस।</string>
     <string name="model_info_best_for_parakeet">सबसे तेज़ ट्रांसक्रिप्शन (Whisper से 17.6 गुना तेज़, 5.4%% WER)</string>
     <string name="model_info_notes_parakeet">ऑडियो लंबाई की कोई सीमा नहीं। VAD ज़रूरी नहीं। गति प्राथमिकता वाले उपयोगकर्ताओं के लिए सबसे बेहतर।</string>

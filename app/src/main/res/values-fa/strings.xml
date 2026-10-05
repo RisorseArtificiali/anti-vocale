@@ -167,12 +167,12 @@
     <string name="whisper_extract_confirm_message">فایل مدل قبلاً دانلود شده است. برای استفاده استخراج خواهد شد.</string>
 
     <!-- Qwen3-ASR -->
-    <string name="qwen3_asr_title">Qwen3-ASR (52 زبان)</string>
-    <string name="qwen3_asr_description">52 زبان</string>
+    <string name="qwen3_asr_title">Qwen3-ASR (59 زبان)</string>
+    <string name="qwen3_asr_description">59 زبان</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 زبان</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 59 زبان</string>
     <string name="qwen3_asr_download_confirm_title">%1$s دانلود شود؟</string>
-    <string name="qwen3_asr_download_confirm_message">حدود %1$d مگابایت دانلود می‌شود. Qwen3-ASR از 52 زبان پشتیبانی می‌کند.</string>
+    <string name="qwen3_asr_download_confirm_message">حدود %1$d مگابایت دانلود می‌شود. Qwen3-ASR از 59 زبان پشتیبانی می‌کند.</string>
     <string name="qwen3_asr_download">دانلود Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">مدل Qwen3-ASR حذف شود؟</string>
     <string name="qwen3_asr_downloaded">%1$s دانلود شد</string>
@@ -721,7 +721,7 @@
     <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
     <string name="speed_comparison_qwen3_size">~938MB</string>
     <string name="speed_comparison_qwen3_speed">~2x</string>
-    <string name="speed_comparison_qwen3_quality">52 زبان، متغیر</string>
+    <string name="speed_comparison_qwen3_quality">59 زبان، متغیر</string>
     <string name="speed_comparison_gigaam_name">GigaAM v3</string>
     <string name="speed_comparison_gigaam_size">~326MB</string>
     <string name="speed_comparison_gigaam_speed">سریع</string>
@@ -899,7 +899,7 @@
     <string name="model_info_notes_whisper_medium">تعادل خوب بین دقت و مصرف منابع.</string>
     <string name="model_info_best_for_distil_it">بهترین دقت ایتالیایی (4.3%% WER)</string>
     <string name="model_info_notes_distil_it">فقط ایتالیایی. بالاترین دقت برای پیام‌های صوتی ایتالیایی. دقت مهم‌تر از سرعت.</string>
-    <string name="model_info_best_for_qwen3">تشخیص خودکار در 52 زبان</string>
+    <string name="model_info_best_for_qwen3">تشخیص خودکار در 59 زبان</string>
     <string name="model_info_notes_qwen3">وسیع‌ترین پوشش زبانی. توجه: صداهای بلندتر از 30 ثانیه را قطع می‌کند. فقط دستگاه‌های ARM64.</string>
     <string name="model_info_best_for_parakeet">سریع‌ترین رونویسی (17.6x سریع‌تر از Whisper، 5.4%% WER)</string>
     <string name="model_info_notes_parakeet">بدون محدودیت طول صدا. VAD لازم نیست. برای کسانی که سرعت برایشان اولویت است.</string>

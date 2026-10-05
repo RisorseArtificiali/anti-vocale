@@ -168,12 +168,12 @@
     <string name="whisper_extract_confirm_message">קובץ המודל כבר הורד. פעולה זו תחלץ אותו לשימוש.</string>
 
     <!-- Qwen3-ASR model -->
-    <string name="qwen3_asr_title">Qwen3-ASR (52 שפות)</string>
-    <string name="qwen3_asr_description">52 שפות</string>
+    <string name="qwen3_asr_title">Qwen3-ASR (59 שפות)</string>
+    <string name="qwen3_asr_description">59 שפות</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 שפות</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 59 שפות</string>
     <string name="qwen3_asr_download_confirm_title">להוריד את %1$s?</string>
-    <string name="qwen3_asr_download_confirm_message">פעולה זו תוריד ~%1$dMB.‏ Qwen3-ASR תומך ב־52 שפות.</string>
+    <string name="qwen3_asr_download_confirm_message">פעולה זו תוריד ~%1$dMB.‏ Qwen3-ASR תומך ב־59 שפות.</string>
     <string name="qwen3_asr_download">הורדת Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">למחוק את מודל Qwen3-ASR?</string>
     <string name="qwen3_asr_downloaded">%1$s הורד בהצלחה</string>
@@ -754,7 +754,7 @@
     <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
     <string name="speed_comparison_qwen3_size">~938MB</string>
     <string name="speed_comparison_qwen3_speed">~2x</string>
-    <string name="speed_comparison_qwen3_quality">52 שפות, משתנה</string>
+    <string name="speed_comparison_qwen3_quality">59 שפות, משתנה</string>
     <string name="speed_comparison_gigaam_name">GigaAM v3</string>
     <string name="speed_comparison_gigaam_size">~326MB</string>
     <string name="speed_comparison_gigaam_speed">מהיר</string>
@@ -940,7 +940,7 @@
     <string name="model_info_notes_whisper_medium">איזון טוב בין דיוק לצריכת משאבים.</string>
     <string name="model_info_best_for_distil_it">דיוק האיטלקית הטוב ביותר (4.3%% WER)</string>
     <string name="model_info_notes_distil_it">איטלקית בלבד. הדיוק הגבוה ביותר להודעות קוליות באיטלקית. מעדיף דיוק על פני מהירות.</string>
-    <string name="model_info_best_for_qwen3">זיהוי אוטומטי ב-52 שפות</string>
+    <string name="model_info_best_for_qwen3">זיהוי אוטומטי ב-59 שפות</string>
     <string name="model_info_notes_qwen3">כיסוי השפות הרחב ביותר. שים לב: קוטע אודיו שאורכו מעל 30 שניות. למכשירי ARM64 בלבד.</string>
     <string name="model_info_best_for_parakeet">התמלול המהיר ביותר (פי 17.6 מהר יותר מ-Whisper, 5.4%% WER)</string>
     <string name="model_info_notes_parakeet">ללא מגבלת אורך אודיו. VAD אינו נחוץ. הטוב ביותר למי שמעדיף מהירות.</string>

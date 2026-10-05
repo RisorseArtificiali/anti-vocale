@@ -37,7 +37,7 @@ class VariantAwareDisplayNameTest {
         every { getString(R.string.whisper_medium_title) } returns "Whisper Medium"
         every { getString(R.string.whisper_small_title) } returns "Whisper Small"
         every { getString(R.string.whisper_distil_large_v3_title) } returns "Distil Italian"
-        every { getString(R.string.qwen3_asr_title) } returns "Qwen3-ASR (52 languages)"
+        every { getString(R.string.qwen3_asr_title) } returns "Qwen3-ASR (59 languages)"
         every { getString(R.string.nemotron_name) } returns "Nemotron 3.5"
         every { getString(R.string.gigaam_name) } returns "GigaAM v3"
         every { getString(R.string.llm_backend_name) } returns "Gemma (LiteRT-LM)"
@@ -85,7 +85,7 @@ class VariantAwareDisplayNameTest {
     fun `single-variant entries keep the plain family label`() {
         val context = context()
         assertEquals(
-            "Qwen3-ASR (52 languages)",
+            "Qwen3-ASR (59 languages)",
             variantAwareDisplayName(context, registry.byBackendId(BuiltInBackendIds.QWEN3_ASR)!!,
                 "/models/sherpa-onnx-qwen3-asr-0.6b-int8"))
         assertEquals(

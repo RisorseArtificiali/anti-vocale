@@ -65,7 +65,7 @@ class LogsViewModelRetranscribeNamesTest {
         assertEquals("Parakeet TDT", byId["sherpa-onnx"]?.displayName)
         assertEquals("Nemotron 3.5", byId["nemotron-streaming"]?.displayName)
         assertEquals("Whisper", byId["whisper"]?.displayName)
-        assertEquals("Qwen3-ASR (52 languages)", byId["qwen3-asr"]?.displayName)
+        assertEquals("Qwen3-ASR (59 languages)", byId["qwen3-asr"]?.displayName)
         assertEquals("GigaAM v3", byId["gigaam"]?.displayName)
     }
 
