@@ -726,7 +726,15 @@ fun ModelTab(
                 Text(
                     stringResource(R.string.external_section_title),
                     style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.padding(top = 12.dp, bottom = 4.dp)
+                    modifier = Modifier.padding(top = 12.dp, bottom = 2.dp)
+                )
+                // TASK-745: what "external" means, stated where the word
+                // appears (the maintainer's morning trial).
+                Text(
+                    stringResource(R.string.external_section_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp)
                 )
 
                 // LiteRT-LM (Gemma): same double-container structure as ONNX Sherpa.

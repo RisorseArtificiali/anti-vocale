@@ -1199,4 +1199,5 @@
     <string name="refinement_model_inherit">सक्रिय मॉडल इनहेरिट करें</string>
     <string name="export_model_bundle">ऑफ़लाइन ट्रांसफ़र के लिए मॉडल साझा करें</string>
     <string name="external_import_bundle">बंडल आयात करें</string>
+    <string name="external_section_subtitle">आपके अपने जोड़े हुए मॉडल फ़ाइलें, एक फ़ोल्डर, URL या ट्रांसफ़र बंडल से आयातित; बिल्ट-इन कैटलॉग के साथ चलती हैं।</string>
 </resources>

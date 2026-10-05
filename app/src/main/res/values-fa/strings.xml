@@ -1205,4 +1205,5 @@
     <string name="refinement_model_inherit">ارث‌بردن مدل فعال</string>
     <string name="export_model_bundle">اشتراک‌گذاری مدل برای انتقال آفلاین</string>
     <string name="external_import_bundle">وارد کردن بسته</string>
+    <string name="external_section_subtitle">فایل‌های مدلی که خودتان اضافه می‌کنید، از یک پوشه، نشانی یا بسته انتقال وارد شده؛ در کنار کاتالوگ داخلی اجرا می‌شوند.</string>
 </resources>

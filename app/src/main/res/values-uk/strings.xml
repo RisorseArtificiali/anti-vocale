@@ -1226,4 +1226,5 @@
     <string name="refinement_model_inherit">Успадкувати активну модель</string>
     <string name="export_model_bundle">Поділитися моделлю для перенесення без мережі</string>
     <string name="external_import_bundle">Імпортувати пакет</string>
+    <string name="external_section_subtitle">Файли моделей, які ви додаєте самі, імпортовані з теки, за URL або з пакета перенесення; працюють поруч із вбудованим каталогом.</string>
 </resources>

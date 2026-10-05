@@ -1068,4 +1068,5 @@
     <string name="refinement_model_inherit">Heredar modelo activo</string>
     <string name="export_model_bundle">Compartir modelo para transferencia sin conexión</string>
     <string name="external_import_bundle">Importar paquete</string>
+    <string name="external_section_subtitle">Archivos de modelo que añades tú, importados desde una carpeta, una URL o un paquete de transferencia; funcionan junto al catálogo integrado.</string>
 </resources>

@@ -1200,4 +1200,5 @@
     <string name="refinement_model_inherit">Etkin modeli devral</string>
     <string name="export_model_bundle">Modeli çevrimdışı aktarım için paylaş</string>
     <string name="external_import_bundle">Paket içe aktar</string>
+    <string name="external_section_subtitle">Kendinizin eklediği model dosyaları; bir klasörden, URL\'den veya aktarım paketinden içe aktarılır ve yerleşik kataloğun yanında çalışır.</string>
 </resources>
