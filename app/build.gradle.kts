@@ -253,8 +253,13 @@ dependencies {
     implementation(libs.compose.icons.extended)
 
     // TASK-491: coach-mark overlays for the first-install welcome tour.
-    // v3.2.x is the line built against OUR compose-bom (2025.01.00); v3.3+
-    // needs a BOM bump (see the task notes before upgrading).
+    // v3.2.x pulls jetbrains-compose 1.8.1 transitively: with the BOM BELOW
+    // that line, compile and runtime resolved DIFFERENT foundation versions
+    // and FlowRow's experimental-signature break crashed the icon page
+    // (TASK-753). The BOM now sits above it (2025.06.01 -> foundation 1.8.3,
+    // both classpaths converge). The split CAN return via any dependency
+    // pulling jetbrains-compose above the BOM: scripts/check-compose-parity.sh
+    // guards it (run it in the release preflight and after any toml edit).
     implementation(libs.reveal.core)
 
     // AndroidX Core
