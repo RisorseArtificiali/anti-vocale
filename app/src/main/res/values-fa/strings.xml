@@ -927,7 +927,7 @@
     <string name="external_none_imported">هیچ مدل خارجی وارد نشده است</string>
     <string name="external_section_title">مدل‌های خارجی</string>
     <string name="model_advanced_section">پیشرفته</string>
-    <string name="model_advanced_description">وارد کردن دستی فایل‌های مدل</string>
+    <string name="model_advanced_description">وارد کردن‌های خارجی و دانلودهای Gemma</string>
     <string name="external_import_folder">انتخاب پوشه</string>
     <string name="external_import_url">وارد کردن از نشانی</string>
     <string name="external_url_hint">نشانی مخزن HuggingFace یا نشانی JSON یک مدخل کاتالوگ</string>
@@ -1204,7 +1204,7 @@
     <string name="refinement_model_inherit">ارث‌بردن مدل فعال</string>
     <string name="export_model_bundle">اشتراک‌گذاری مدل برای انتقال آفلاین</string>
     <string name="external_import_bundle">وارد کردن بسته</string>
-    <string name="external_section_subtitle">فایل‌های مدلی که خودتان اضافه می‌کنید، از یک پوشه، نشانی یا بسته انتقال وارد شده؛ در کنار کاتالوگ داخلی اجرا می‌شوند.</string>
+    <string name="external_section_subtitle">فایل‌های مدلی که خودتان اضافه می‌کنید (پوشه، نشانی یا بسته انتقال) به‌همراه دانلودهای Gemma LiteRT-LM؛ در کنار کاتالوگ داخلی اجرا می‌شوند.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">پایش زمان‌بندی‌شده پوشه</string>

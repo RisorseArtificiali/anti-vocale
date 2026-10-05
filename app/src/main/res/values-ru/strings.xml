@@ -962,7 +962,7 @@
     <string name="external_none_imported">Внешние модели не импортированы</string>
     <string name="external_section_title">Внешние модели</string>
     <string name="model_advanced_section">Дополнительно</string>
-    <string name="model_advanced_description">Импортировать файлы моделей вручную</string>
+    <string name="model_advanced_description">Внешний импорт и загрузки Gemma</string>
     <string name="external_import_folder">Выбрать папку</string>
     <string name="external_import_url">Импорт по URL</string>
     <string name="external_url_hint">URL репозитория HuggingFace или JSON-записи каталога</string>
@@ -1224,7 +1224,7 @@
     <string name="refinement_model_inherit">Наследовать активную модель</string>
     <string name="export_model_bundle">Поделиться моделью для переноса без сети</string>
     <string name="external_import_bundle">Импортировать пакет</string>
-    <string name="external_section_subtitle">Файлы моделей, которые вы добавляете сами, импортированные из папки, по URL или из пакета переноса; работают alongside встроенного каталога.</string>
+    <string name="external_section_subtitle">Файлы моделей, которые вы добавляете сами (папка, URL или пакет переноса), а также загрузки Gemma LiteRT-LM; работают рядом со встроенным каталогом.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">Запланированное наблюдение за папками</string>

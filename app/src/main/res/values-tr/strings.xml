@@ -962,7 +962,7 @@
     <string name="external_none_imported">İçe aktarılan harici model yok</string>
     <string name="external_section_title">Harici modeller</string>
     <string name="model_advanced_section">Gelişmiş</string>
-    <string name="model_advanced_description">Model dosyalarını el ile içe aktar</string>
+    <string name="model_advanced_description">Harici içe aktarımlar ve Gemma indirmeleri</string>
     <string name="external_import_folder">Klasör seç</string>
     <string name="external_import_url">URL\'den içe aktar</string>
     <string name="external_url_hint">HuggingFace deposu veya katalog girdisi JSON URL\'si</string>
@@ -1199,7 +1199,7 @@
     <string name="refinement_model_inherit">Etkin modeli devral</string>
     <string name="export_model_bundle">Modeli çevrimdışı aktarım için paylaş</string>
     <string name="external_import_bundle">Paket içe aktar</string>
-    <string name="external_section_subtitle">Kendinizin eklediği model dosyaları; bir klasörden, URL\'den veya aktarım paketinden içe aktarılır ve yerleşik kataloğun yanında çalışır.</string>
+    <string name="external_section_subtitle">Kendinizin eklediği model dosyaları (klasör, URL veya aktarım paketi) ve Gemma LiteRT-LM indirmeleri; yerleşik kataloğun yanında çalışır.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">Zamanlanmış klasör izleme</string>

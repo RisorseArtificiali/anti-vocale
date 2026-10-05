@@ -640,19 +640,6 @@ fun ModelTab(
             }
         }
 
-        // Download models section - Gemma LLM models (advanced features)
-        if (!showCuratedSection && visibleGemmaVariants.isNotEmpty()) {
-            ModelDownloadSection(
-                viewModel = viewModel,
-                context = context,
-                onNavigateToSettings = onNavigateToSettings,
-                activeModelName = uiState.modelName,
-                visibleVariants = visibleGemmaVariants,
-                guardedModelSwitch = guardedSwitch,
-                onInfoClick = { modelInfoVariant = it }
-            )
-        }
-
         // TASK-681: the LAN-offload configured-service card. Not a catalog
         // entry and not downloadable: it exists only while the service is
         // enabled in Settings, and the endpoint line is its "model".
@@ -687,6 +674,17 @@ fun ModelTab(
             if (request.destination is AppNavigation.Destination.ModelTarget) {
                 advancedExpanded = true
             }
+        }
+        // TASK-746 (review F1): the Gemma downloads now live behind this
+        // collapse, so a download in flight (or failed) must expand it: the
+        // progress/cancel/error UI otherwise composes nowhere, and the
+        // error auto-scroll above scrolls to a collapsed button. Fires on
+        // the transition only; the user can collapse again freely.
+        val gemmaDownloadActive =
+            downloadUiState.variantDownloadStates.values.any { it.isDownloading } ||
+                downloadUiState.downloadError != null
+        LaunchedEffect(gemmaDownloadActive) {
+            if (gemmaDownloadActive) advancedExpanded = true
         }
         Column(modifier = Modifier.fillMaxWidth()) {
             OutlinedButton(
@@ -729,7 +727,10 @@ fun ModelTab(
 
                 // LiteRT-LM (Gemma): same double-container structure as ONNX Sherpa.
                 // SAF (OpenDocument) grants its own URI access, no storage permission
-                // needed (TASK-301).
+                // needed (TASK-301). TASK-746: the Gemma download section joins
+                // its ecosystem's card here (the maintainer's direction): the
+                // .litertlm downloads are not catalog entries, so the external
+                // group is where they live; the download machinery is unchanged.
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     colors = CardDefaults.cardColors(
@@ -779,6 +780,23 @@ fun ModelTab(
                             }
                         }
                     }
+                }
+
+                // Gemma downloads, hosted in the external group (TASK-746).
+                // Curated view shows them too (review F2): the Advanced area
+                // is opt-in and the toggle copy names them; the spacer rides
+                // inside so a hidden block leaves one 8dp gap, not two.
+                if (visibleGemmaVariants.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    ModelDownloadSection(
+                        viewModel = viewModel,
+                        context = context,
+                        onNavigateToSettings = onNavigateToSettings,
+                        activeModelName = uiState.modelName,
+                        visibleVariants = visibleGemmaVariants,
+                        guardedModelSwitch = guardedSwitch,
+                        onInfoClick = { modelInfoVariant = it }
+                    )
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -1909,6 +1927,7 @@ private fun ExternalModelsSection(
                         readOnly = true,
                         label = { Text(stringResource(R.string.external_ctc_subtype)) },
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = ctcExpanded) },
+                        singleLine = true,
                         modifier = Modifier.fillMaxWidth().menuAnchor()
                     )
                     ExposedDropdownMenu(expanded = ctcExpanded, onDismissRequest = { ctcExpanded = false }) {

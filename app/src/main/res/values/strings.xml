@@ -982,9 +982,9 @@
     <string name="share_shortcut_transcribe_with">Transcribe with %1$s</string>
     <string name="external_none_imported">No external models imported</string>
     <string name="external_section_title">External models</string>
-    <string name="external_section_subtitle">Model files you add yourself, imported from a folder, a URL, or a transfer bundle; they run alongside the built-in catalog.</string>
+    <string name="external_section_subtitle">Model files you add yourself (folder, URL, or transfer bundle) plus the Gemma LiteRT-LM downloads; they run alongside the built-in catalog.</string>
     <string name="model_advanced_section">Advanced</string>
-    <string name="model_advanced_description">Manually import model files</string>
+    <string name="model_advanced_description">External imports and Gemma downloads</string>
     <string name="external_import_folder">Select folder</string>
     <string name="external_import_bundle">Import bundle</string>
     <string name="external_import_url">Import from URL</string>

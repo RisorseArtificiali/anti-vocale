@@ -819,7 +819,7 @@
     <string name="external_none_imported">Nenhum modelo externo importado</string>
     <string name="external_section_title">Modelos externos</string>
     <string name="model_advanced_section">Avançado</string>
-    <string name="model_advanced_description">Importe manualmente arquivos de modelo</string>
+    <string name="model_advanced_description">Importações externas e downloads do Gemma</string>
     <string name="external_import_folder">Selecionar pasta</string>
     <string name="external_import_url">Importar de URL</string>
     <string name="external_url_hint">URL de repositório HuggingFace ou JSON de catálogo</string>
@@ -1067,7 +1067,7 @@
     <string name="refinement_model_inherit">Herdar modelo ativo</string>
     <string name="export_model_bundle">Compartilhar modelo para transferência offline</string>
     <string name="external_import_bundle">Importar pacote</string>
-    <string name="external_section_subtitle">Arquivos de modelo que você mesmo adiciona, importados de uma pasta, uma URL ou um pacote de transferência; funcionam ao lado do catálogo integrado.</string>
+    <string name="external_section_subtitle">Arquivos de modelo que você mesmo adiciona (pasta, URL ou pacote de transferência) além dos downloads do Gemma LiteRT-LM; funcionam ao lado do catálogo integrado.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">Monitoramento agendado de pastas</string>

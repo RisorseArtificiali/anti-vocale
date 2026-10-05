@@ -968,7 +968,7 @@
     <string name="external_none_imported">לא יובאו מודלים חיצוניים</string>
     <string name="external_section_title">מודלים חיצוניים</string>
     <string name="model_advanced_section">מתקדם</string>
-    <string name="model_advanced_description">ייבוא ידני של קובצי מודל</string>
+    <string name="model_advanced_description">ייבוא חיצוני והורדות Gemma</string>
     <string name="external_import_folder">בחירת תיקייה</string>
     <string name="external_import_url">ייבוא מכתובת URL</string>
     <string name="external_url_hint">מאגר HuggingFace או כתובת URL של רשומת קטלוג JSON</string>
@@ -1209,7 +1209,7 @@
     <string name="refinement_model_inherit">רשת מודל פעיל</string>
     <string name="export_model_bundle">שיתוף המודל להעברה ללא רשת</string>
     <string name="external_import_bundle">ייבוא חבילה</string>
-    <string name="external_section_subtitle">קובצי מודל שאתם מוסיפים בעצמכם, מיובאים מתיקייה, כתובת או חבילת העברה; פועלים לצד הקטלוג המובנה.</string>
+    <string name="external_section_subtitle">קובצי מודל שאתם מוסיפים בעצמכם (תיקייה, כתובת או חבילת העברה) בתוספת הורדות Gemma LiteRT-LM; פועלים לצד הקטלוג המובנה.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">מעקב מתוזמן אחר תיקיות</string>

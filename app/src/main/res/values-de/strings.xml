@@ -919,7 +919,7 @@
     <string name="external_none_imported">Keine externen Modelle importiert</string>
     <string name="external_section_title">Externe Modelle</string>
     <string name="model_advanced_section">Erweitert</string>
-    <string name="model_advanced_description">Modelldateien manuell importieren</string>
+    <string name="model_advanced_description">Externe Importe und Gemma-Downloads</string>
     <string name="external_import_folder">Ordner auswählen</string>
     <string name="external_import_url">Von URL importieren</string>
     <string name="external_url_hint">HuggingFace-Repo oder URL einer Katalog-Eintrag-JSON</string>
@@ -1199,7 +1199,7 @@
     <string name="refinement_model_inherit">Aktives Modell erben</string>
     <string name="export_model_bundle">Modell für Offline-Übertragung teilen</string>
     <string name="external_import_bundle">Bundle importieren</string>
-    <string name="external_section_subtitle">Modelldateien, die du selbst hinzufügst, importiert aus einem Ordner, einer URL oder einem Übertragungsbundle; sie laufen neben dem integrierten Katalog.</string>
+    <string name="external_section_subtitle">Modelldateien, die du selbst hinzufügst (Ordner, URL oder Übertragungsbundle), sowie die Gemma-LiteRT-LM-Downloads; sie laufen neben dem integrierten Katalog.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
     <string name="folder_watch_title">Geplante Ordnerüberwachung</string>
