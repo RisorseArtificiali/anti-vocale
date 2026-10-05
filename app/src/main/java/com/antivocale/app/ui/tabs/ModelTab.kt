@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -198,19 +199,37 @@ fun ModelTab(
 
     // TASK-742 (GH #124): the offline-transfer share. The remembered
     // pending write streams the bundle once the user picks a target.
-    var pendingBundleWrite by remember { mutableStateOf<((android.net.Uri) -> Unit)?>(null) }
+    // TASK-763: the pending export travels as SAVEABLE primitives, not a
+    // lambda (a config change while the picker is open used to null a
+    // remembered lambda and drop the picked target silently). The variant
+    // keys on its stable dirName; unresolvable state fails soft.
+    var pendingExportDir by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingExportEntryId by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingExportDirName by rememberSaveable { mutableStateOf<String?>(null) }
     val bundleExportPicker = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/zip")
     ) { uri ->
-        val write = pendingBundleWrite
-        pendingBundleWrite = null
-        if (uri != null && write != null) write(uri)
+        val dirPath = pendingExportDir
+        val entryId = pendingExportEntryId
+        val dirName = pendingExportDirName
+        pendingExportDir = null; pendingExportEntryId = null; pendingExportDirName = null
+        if (uri != null && dirPath != null && entryId != null && dirName != null) {
+            val entry = BundledCatalog.byId(entryId)
+            val variant = entry?.variants?.firstOrNull { it.dirName == dirName }
+            if (entry == null || variant == null) {
+                android.util.Log.w("ModelTab", "pending bundle export dropped: entry/variant no longer resolve")
+            } else {
+                viewModel.exportBundle(
+                    uri, java.io.File(dirPath), entry,
+                    CatalogVariantUi.of(entry.id, variant.name))
+            }
+        }
     }
     fun launchBundleExport(dir: java.io.File, entry: CatalogEntry, variant: CatalogVariantUi) {
-        // TASK-761: the ViewModel owns the write (viewModelScope + IO);
-        // a compose scope would cancel a multi-hundred-MB zip mid-stream
-        // when the tab leaves composition.
-        pendingBundleWrite = { uri -> viewModel.exportBundle(uri, dir, entry, variant) }
+        // TASK-761: the ViewModel owns the write (viewModelScope + IO).
+        pendingExportDir = dir.path
+        pendingExportEntryId = entry.id
+        pendingExportDirName = variant.dirName
         bundleExportPicker.launch(exportFileName(entry.id, variant.variantName))
     }
 
