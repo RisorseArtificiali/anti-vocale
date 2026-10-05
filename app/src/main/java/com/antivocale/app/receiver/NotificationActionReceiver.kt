@@ -51,6 +51,14 @@ class NotificationActionReceiver : BroadcastReceiver() {
         const val EXTRA_TASK_ID = "task_id"
         const val EXTRA_CONFIDENCE = "confidence"
         const val EXTRA_DETECTED_LANGUAGE = "detected_language"
+        /** TASK-758: the status facts ride the page-repost intents too, so
+         *  the rebuilt notification keeps its subtext instead of shedding
+         *  every fact but the save lines. */
+        const val EXTRA_REPETITION_SUSPECTED = "repetition_suspected"
+        const val EXTRA_COPIED_TO_CLIPBOARD = "copied_to_clipboard"
+        const val EXTRA_STREAMED_WITHOUT_VAD = "streamed_without_vad"
+        const val EXTRA_REFINED_FROM = "refined_from"
+        const val EXTRA_NOT_REFINED = "not_refined"
         const val EXTRA_IS_PARTIAL = "is_partial"
         const val EXTRA_FAILED_CHUNK_COUNT = "failed_chunk_count"
         /** TASK-722: the auto-save failure reason baked into nav intents so

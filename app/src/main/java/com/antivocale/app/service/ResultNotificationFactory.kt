@@ -480,6 +480,11 @@ class ResultNotificationFactory(private val context: Context) {
             putExtra(NotificationActionReceiver.EXTRA_SAVE_FAILURE, spec.saveFailureReason)
             putExtra(NotificationActionReceiver.EXTRA_IS_PARTIAL, spec.isPartial)
             putExtra(NotificationActionReceiver.EXTRA_FAILED_CHUNK_COUNT, spec.failedChunkCount)
+            putExtra(NotificationActionReceiver.EXTRA_REPETITION_SUSPECTED, spec.repetitionSuspected)
+            putExtra(NotificationActionReceiver.EXTRA_COPIED_TO_CLIPBOARD, spec.copiedToClipboard)
+            putExtra(NotificationActionReceiver.EXTRA_STREAMED_WITHOUT_VAD, spec.streamedWithoutVad)
+            spec.refinedFrom?.let { putExtra(NotificationActionReceiver.EXTRA_REFINED_FROM, it) }
+            putExtra(NotificationActionReceiver.EXTRA_NOT_REFINED, spec.notRefined)
             spec.taskId?.let { putExtra(NotificationActionReceiver.EXTRA_TASK_ID, it) }
             spec.sourcePackage?.let { putExtra(NotificationActionReceiver.EXTRA_SOURCE_PACKAGE, it) }
             spec.confidence?.let { putExtra(NotificationActionReceiver.EXTRA_CONFIDENCE, it) }

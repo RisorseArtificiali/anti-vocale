@@ -191,6 +191,27 @@ class ResultNotificationFactoryTest {
     }
 
     @Test
+    fun `the nav intent carries every status fact across a page repost (TASK-758)`() {
+        val n = factory.build(
+            spec(longText(3), page = 1).copy(
+                repetitionSuspected = true,
+                copiedToClipboard = true,
+                streamedWithoutVad = true,
+                refinedFrom = "whisper",
+                notRefined = true,
+                detectedLanguage = "it",
+            ), prefs)
+        val next = n.actions!!.first { it.title == "Next" }.actionIntent
+        val saved = Shadows.shadowOf(next).savedIntent
+        assertEquals(true, saved.getBooleanExtra(NotificationActionReceiver.EXTRA_REPETITION_SUSPECTED, false))
+        assertEquals(true, saved.getBooleanExtra(NotificationActionReceiver.EXTRA_COPIED_TO_CLIPBOARD, false))
+        assertEquals(true, saved.getBooleanExtra(NotificationActionReceiver.EXTRA_STREAMED_WITHOUT_VAD, false))
+        assertEquals(true, saved.getBooleanExtra(NotificationActionReceiver.EXTRA_NOT_REFINED, false))
+        assertEquals("whisper", saved.getStringExtra(NotificationActionReceiver.EXTRA_REFINED_FROM))
+        assertEquals("it", saved.getStringExtra(NotificationActionReceiver.EXTRA_DETECTED_LANGUAGE))
+    }
+
+    @Test
     fun `paged subtext shows page counter`() {
         val n = factory.build(spec(longText(3), page = 1), prefs)
         assertEquals("Page 2 of 3", n.subTextCompat())

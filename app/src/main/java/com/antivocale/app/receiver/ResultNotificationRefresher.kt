@@ -79,10 +79,17 @@ object ResultNotificationRefresher {
             detectedLanguage = intent.getStringExtra(NotificationActionReceiver.EXTRA_DETECTED_LANGUAGE),
             isPartial = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_IS_PARTIAL, false),
             failedChunkCount = intent.getIntExtra(NotificationActionReceiver.EXTRA_FAILED_CHUNK_COUNT, 0),
-            // TASK-722: keep the failure banner across page reposts (the
-            // other status facts predate this extra pattern).
+            // TASK-722: keep the failure banner across page reposts.
             saveFailureReason = intent.getStringExtra(NotificationActionReceiver.EXTRA_SAVE_FAILURE),
             savedFolderName = intent.getStringExtra(NotificationActionReceiver.EXTRA_SAVED_FOLDER),
+            // TASK-758: the status facts survive the page repost. The
+            // booleans default false for notifications posted before the
+            // extras existed (a repost sheds nothing that was not there).
+            repetitionSuspected = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_REPETITION_SUSPECTED, false),
+            copiedToClipboard = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_COPIED_TO_CLIPBOARD, false),
+            streamedWithoutVad = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_STREAMED_WITHOUT_VAD, false),
+            refinedFrom = intent.getStringExtra(NotificationActionReceiver.EXTRA_REFINED_FROM),
+            notRefined = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_NOT_REFINED, false),
             pageIndex = target,
             notificationId = notificationId,
             firstPostedAt = intent.getLongExtra(
