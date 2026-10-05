@@ -1,5 +1,13 @@
 package com.antivocale.app.service
 
+import com.antivocale.app.data.PerAppPreferencesManager
+import com.antivocale.app.data.prefsOrDefault
+import com.antivocale.app.data.PreferencesManager
+import com.antivocale.app.transcription.TimedSegment
+import com.antivocale.app.util.SubtitleFormatter
+import com.antivocale.app.util.TranscriptFileSaver
+import androidx.core.app.NotificationManagerCompat
+import android.util.Log
 import android.app.Notification
 import android.app.PendingIntent
 import android.content.Context
@@ -274,6 +282,84 @@ class ResultNotificationFactory(private val context: Context) {
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
 
+    /**
+     * TASK-757: the ONE owner of the completed-run posting. Both service
+     * routes (InferenceService and the TranscriptionNotificationListener
+     * worker fallback) called verbatim copies of this body; every new
+     * status fact meant editing two signatures and two spec blocks. The
+     * signature spec resolves ONCE here (the twins each resolved it twice,
+     * which could pair a fresh text with a stale position).
+     *
+     * [originTag] preserves the caller's historical log tag so device-trial
+     * logcat greps keep matching.
+     */
+    suspend fun postResult(
+        preferencesManager: PreferencesManager,
+        perAppPreferencesManager: PerAppPreferencesManager,
+        annotatedTranscript: String,
+        segments: List<TimedSegment>,
+        saveResult: TranscriptFileSaver.SaveResult,
+        sourcePackage: String?,
+        taskId: String,
+        confidence: Float?,
+        detectedLanguage: String?,
+        isPartial: Boolean,
+        failedChunkCount: Int,
+        copiedToClipboard: Boolean,
+        streamedWithoutVad: Boolean,
+        refinedFrom: String?,
+        notRefined: Boolean,
+        repetitionSuspected: Boolean,
+        originTag: String,
+    ) {
+        // TASK-598 F5 + TASK-757 review: the caller passes the ALREADY
+        // annotated form (it derives it for the auto-copy arm); re-running
+        // annotatedOrStored on it degraded polished diarized runs back to
+        // the pre-polish cue wording, violating the 598 contract that
+        // copy, share, and the notification body share one derivation.
+        val text = annotatedTranscript
+        val prefs = perAppPreferencesManager.prefsOrDefault(sourcePackage)
+        val sig = TranscriptSignature.effectiveSpec(
+            preferencesManager, context.getString(R.string.signature_default_text))
+        val id = nextNotificationId()
+        val spec = ResultNotificationSpec(
+            transcriptionText = text,
+            signatureText = sig.text,
+            signaturePosition = sig.position,
+            taskId = taskId,
+            sourcePackage = sourcePackage,
+            confidence = confidence,
+            detectedLanguage = detectedLanguage,
+            isPartial = isPartial,
+            failedChunkCount = failedChunkCount,
+            notificationId = id,
+            copiedToClipboard = copiedToClipboard,
+            streamedWithoutVad = streamedWithoutVad,
+            refinedFrom = refinedFrom,
+            notRefined = notRefined,
+            repetitionSuspected = repetitionSuspected,
+            saveFailureReason = saveResult.failureOrNull(),
+            savedFolderName = saveResult.savedFolderOrNull(),
+            firstPostedAt = System.currentTimeMillis()
+        )
+        postIfPermitted(id, build(spec, prefs))
+        Log.i(originTag, "Showed result notification (${text.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction} (id=$id)")
+    }
+
+    /**
+     * The guarded notify: the posting paths must not assume the
+     * POST_NOTIFICATIONS grant (lint is right even though a result
+     * notification's actions imply deliverability). The refresher and
+     * postResult share this ONE copy.
+     */
+    internal fun postIfPermitted(id: Int, notification: android.app.Notification) {
+        if (androidx.core.content.ContextCompat.checkSelfPermission(
+                context, android.Manifest.permission.POST_NOTIFICATIONS) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            NotificationManagerCompat.from(context).notify(id, notification)
+        }
+    }
+
     fun build(spec: ResultNotificationSpec, prefs: AppNotificationPreferences): Notification {
         val text = spec.transcriptionText
         // One split pass: skip it entirely for unpageable oversized texts.
@@ -517,6 +603,7 @@ class ResultNotificationFactory(private val context: Context) {
     }
 
     companion object {
+        private const val TAG = "ResultNotificationFactory"
         // Mirror the services' launch-band constants so the same intent shape
         // stays a single PendingIntent whichever builder produced it.
         private const val RC_ERROR_LAUNCH_DEFAULT = 0

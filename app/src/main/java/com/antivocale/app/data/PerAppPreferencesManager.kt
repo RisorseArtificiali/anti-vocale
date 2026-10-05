@@ -34,6 +34,23 @@ import kotlinx.coroutines.flow.map
 private val Context.perAppPreferencesDataStore: DataStore<Preferences> by
     preferencesDataStore(name = "per_app_notification_preferences")
 
+/**
+ * TASK-757: the ONE per-app-prefs-with-defaults read (postResult and the
+ * page-repost refresher shared verbatim duplicates). Cancellation is NOT
+ * swallowed: a cancelled caller must not continue posting.
+ */
+suspend fun PerAppPreferencesManager.prefsOrDefault(
+    sourcePackage: String?,
+): AppNotificationPreferences = try {
+    if (sourcePackage != null) getCurrentPreferences(sourcePackage)
+    else AppNotificationPreferences.default()
+} catch (e: kotlin.coroutines.cancellation.CancellationException) {
+    throw e
+} catch (e: Exception) {
+    android.util.Log.w("PerAppPreferences", "Failed to get per-app preferences for $sourcePackage, using defaults", e)
+    AppNotificationPreferences.default()
+}
+
 class PerAppPreferencesManager(private val context: Context) {
 
     companion object {

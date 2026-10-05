@@ -12,7 +12,6 @@ import android.os.IBinder
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.widget.Toast
 import androidx.core.app.NotificationCompat
 import com.antivocale.app.R
 import com.antivocale.app.MainActivity
@@ -75,7 +74,6 @@ class InferenceService : Service(), TranscriptionListener {
         // hash can land on a constant's value, and PendingIntent matching
         // ignores extras, so a collision silently overwrites the other intent
         // (the slot-band comment in InferenceEnqueue documents the same class).
-        private const val RC_HASH_BASE = 1000
 
         const val EXTRA_SOURCE = "source"
         const val EXTRA_SOURCE_PACKAGE = "source_package"
@@ -674,7 +672,18 @@ class InferenceService : Service(), TranscriptionListener {
                     val copied = autoCopyIfEnabled(annotatedText, sourcePackage)
                     val saveResult = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
                     val refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }
-                    showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED, repetitionSuspected = repetitionSuspected, segments = segments, saveResult = saveResult)
+                    resultNotificationFactory.postResult(
+                        preferencesManager, perAppPreferencesManager,
+                        annotatedText, segments, saveResult,
+                        sourcePackage, taskId, confidence, detectedLanguage,
+                        isPartial, failedChunkCount,
+                        copiedToClipboard = copied,
+                        streamedWithoutVad = streamedWithoutVad,
+                        refinedFrom = refinedFrom,
+                        notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED,
+                        repetitionSuspected = repetitionSuspected,
+                        originTag = "InferenceService",
+                    )
                 } finally {
                     pendingResultNotifications.remove(coroutineContext[Job])
                 }
@@ -948,66 +957,6 @@ class InferenceService : Service(), TranscriptionListener {
 
         notificationManager.notify(NOTIFICATION_ID, builder.build())
         Log.i(TAG, "Updated notification with queue hint: $queuedCount queued")
-    }
-
-    private suspend fun showResultNotification(
-        transcriptionText: String,
-        sourcePackage: String?,
-        taskId: String,
-        confidence: Float?,
-        detectedLanguage: String?,
-        isPartial: Boolean = false,
-        failedChunkCount: Int = 0,
-        copiedToClipboard: Boolean = false,
-        streamedWithoutVad: Boolean = false,
-        refinedFrom: String? = null,
-        notRefined: Boolean = false,
-        repetitionSuspected: Boolean = false,
-        segments: List<TimedSegment>,
-        saveResult: TranscriptFileSaver.SaveResult,
-    ) {
-        // TASK-598 F5: the notification's whole text (body, copy, share,
-        // page rebuilds) derives the speaker-annotated form when the run
-        // carries labels, the same derivation as the History surfaces and
-        // the auto-save TXT arm; raw transcript when it does not.
-        val text = SubtitleFormatter.annotatedOrStored(transcriptionText, segments)
-        val prefs = if (sourcePackage != null) {
-            try {
-                perAppPreferencesManager.getCurrentPreferences(sourcePackage)
-            } catch (e: Exception) {
-                Log.w(TAG, "Failed to get per-app preferences for $sourcePackage, using defaults", e)
-                com.antivocale.app.data.AppNotificationPreferences.default()
-            }
-        } else {
-            com.antivocale.app.data.AppNotificationPreferences.default()
-        }
-
-        val id = ResultNotificationFactory.nextNotificationId()
-        val spec = ResultNotificationSpec(
-            transcriptionText = text,
-            signatureText = TranscriptSignature.effectiveSpec(
-                preferencesManager, getString(R.string.signature_default_text)).let { it.text },
-            signaturePosition = TranscriptSignature.effectiveSpec(
-                preferencesManager, getString(R.string.signature_default_text)).position,
-            taskId = taskId,
-            sourcePackage = sourcePackage,
-            confidence = confidence,
-            detectedLanguage = detectedLanguage,
-            isPartial = isPartial,
-            failedChunkCount = failedChunkCount,
-            notificationId = id,
-            copiedToClipboard = copiedToClipboard,
-            streamedWithoutVad = streamedWithoutVad,
-            refinedFrom = refinedFrom,
-            notRefined = notRefined,
-            repetitionSuspected = repetitionSuspected,
-            saveFailureReason = saveResult.failureOrNull(),
-            savedFolderName = saveResult.savedFolderOrNull(),
-            firstPostedAt = System.currentTimeMillis()
-        )
-        val notification = resultNotificationFactory.build(spec, prefs)
-        notificationManager.notify(id, notification)
-        Log.i(TAG, "Showed result notification (${text.length} chars), source=$sourcePackage, showShare=${prefs.showShareAction} (id=$id)")
     }
 
     private fun showErrorNotification(errorMessage: String, isMemoryFailure: Boolean) {
