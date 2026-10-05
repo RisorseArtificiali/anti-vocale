@@ -1694,6 +1694,7 @@ private fun CanaryLanguageDropdown(
             readOnly = true,
             label = { Text(stringResource(R.string.external_decode_language)) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth().menuAnchor()
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -1741,6 +1742,7 @@ private fun LanguageEndonymDropdown(
             readOnly = true,
             label = { Text(label) },
             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            singleLine = true,
             modifier = Modifier.fillMaxWidth().menuAnchor()
         )
         ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
@@ -1829,6 +1831,10 @@ private fun ExternalModelsSection(
                     readOnly = true,
                     label = { Text(stringResource(R.string.external_family)) },
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
+                    // TASK-755: a wrapped value grew the field vertically
+                    // (the maintainer's report); every read-only dropdown in
+                    // this file carries the same one-line guard.
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth().menuAnchor()
                 )
                 ExposedDropdownMenu(expanded = dropdownExpanded, onDismissRequest = { dropdownExpanded = false }) {

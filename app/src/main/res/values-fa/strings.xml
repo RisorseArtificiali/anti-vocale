@@ -957,8 +957,8 @@
     <string name="external_decode_language">زبان رمزگشایی</string>
     <string name="external_decode_auto">تشخیص خودکار (بدون زبان ثابت)</string>
     <string name="external_family">خانواده مدل</string>
-    <string name="external_family_transducer">Transducer (NeMo/Zipformer آفلاین)</string>
-    <string name="external_family_transducer_help">فایل‌های encoder + decoder + joiner + tokens لازم دارد</string>
+    <string name="external_family_transducer">Transducer</string>
+    <string name="external_family_transducer_help">فایل‌های encoder + decoder + joiner + tokens لازم دارد (NeMo/Zipformer آفلاین)</string>
     <string name="external_family_whisper">Whisper</string>
     <string name="external_family_whisper_help">فایل‌های encoder + decoder + tokens لازم دارد</string>
     <string name="external_family_ctc">CTC</string>

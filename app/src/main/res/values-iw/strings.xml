@@ -998,8 +998,8 @@
     <string name="external_decode_language">שפת פענוח</string>
     <string name="external_decode_auto">זיהוי אוטומטי (בלי שפה קבועה)</string>
     <string name="external_family">משפחת מודל</string>
-    <string name="external_family_transducer">טרנסדוסר (NeMo/Zipformer לא מקוון)</string>
-    <string name="external_family_transducer_help">מצפה לקבצי encoder + decoder + joiner + tokens</string>
+    <string name="external_family_transducer">טרנסדוסר</string>
+    <string name="external_family_transducer_help">מצפה לקבצי encoder + decoder + joiner + tokens (NeMo/Zipformer לא מקוון)</string>
     <string name="external_family_whisper">Whisper</string>
     <string name="external_family_whisper_help">מצפה לקבצי encoder + decoder + tokens</string>
     <string name="external_family_ctc">CTC</string>
