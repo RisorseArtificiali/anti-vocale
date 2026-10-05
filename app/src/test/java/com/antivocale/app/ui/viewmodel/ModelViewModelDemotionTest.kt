@@ -137,9 +137,11 @@ class ModelViewModelDemotionTest {
         return dir
     }
 
-    /** Polls (real time) until the DataStore's own IO scope lands the expected backend. */
+    /** Polls (real time) until the DataStore's own IO scope lands the expected
+     *  backend. TASK-766: the deadline is generous on purpose; a parallel
+     *  gradle lint steals enough CPU to miss a 5s cap (measured 2026-10-05). */
     private fun awaitBackend(expected: String?) = runTest {
-        val deadline = System.currentTimeMillis() + 5_000
+        val deadline = System.currentTimeMillis() + 30_000
         while (dataStore.data.first()[backendKey] != expected &&
             System.currentTimeMillis() < deadline) {
             Thread.sleep(20)
@@ -154,7 +156,7 @@ class ModelViewModelDemotionTest {
      * when the backend write has landed.
      */
     private fun awaitDemotedContains(expected: Boolean) = runTest {
-        val deadline = System.currentTimeMillis() + 5_000
+        val deadline = System.currentTimeMillis() + 30_000
         while (prefs.demotedBackends.first().contains("whisper") != expected &&
             System.currentTimeMillis() < deadline) {
             Thread.sleep(20)
