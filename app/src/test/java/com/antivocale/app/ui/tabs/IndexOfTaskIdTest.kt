@@ -26,7 +26,7 @@ class IndexOfTaskIdTest {
                 makeEntry("c")
             ))
         )
-        // header=0, vad_advisory=1, "Today" header=2, a=3, b=4, c=5
+        // advisory=0, "Today" header=1, a=2, b=3, c=4
         assertEquals(2, indexOfTaskIdInGroups(groups, "a"))
         assertEquals(3, indexOfTaskIdInGroups(groups, "b"))
         assertEquals(4, indexOfTaskIdInGroups(groups, "c"))
@@ -51,7 +51,7 @@ class IndexOfTaskIdTest {
             DateGroup("Today", listOf(makeEntry("a"), makeEntry("b"))),
             DateGroup("Yesterday", listOf(makeEntry("c"), makeEntry("d")))
         )
-        // header=0, advisory=1, Today header=2, a=3, b=4, Yesterday header=5, c=6, d=7
+        // advisory=0, Today header=1, a=2, b=3, Yesterday header=4, c=5, d=6
         assertEquals(2, indexOfTaskIdInGroups(groups, "a"))
         assertEquals(3, indexOfTaskIdInGroups(groups, "b"))
         assertEquals(5, indexOfTaskIdInGroups(groups, "c"))
@@ -66,7 +66,7 @@ class IndexOfTaskIdTest {
             DateGroup("Group3", listOf(makeEntry("c"))),
             DateGroup("Group4", listOf(makeEntry("target")))
         )
-        // header=0, advisory=1; G1 header=2, a=3; G2 header=4, b=5; G3 header=6, c=7; G4 header=8, target=9
+        // advisory=0; G1 header=1, a=2; G2 header=3, b=4; G3 header=5, c=6; G4 header=7, target=8
         assertEquals(8, indexOfTaskIdInGroups(groups, "target"))
     }
 
