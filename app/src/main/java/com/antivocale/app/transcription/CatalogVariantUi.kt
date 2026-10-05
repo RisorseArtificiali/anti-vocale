@@ -7,6 +7,31 @@ import com.antivocale.app.data.catalog.CatalogStringKeys
 import com.antivocale.app.data.catalog.CatalogVariant
 
 /**
+ * TASK-767: the ONE owner of countPlaceholder rendering policy. A display
+ * that asks for the count gets the entry's language count as its format
+ * argument; every other display resolves plainly. The extensions live on
+ * the ENTRY (not the display) so a display/entry mismatch pair cannot be
+ * written; render sites pass the result to countAwareStringResource /
+ * countAwareString, which keeps the forgotten-arg bug unrepresentable.
+ */
+fun CatalogEntry.titleCountArg(): Int? =
+    (display as? CatalogDisplay.Resource)?.takeIf { it.countPlaceholder }?.let { languages.size }
+
+fun CatalogEntry.descriptionCountArg(): Int? =
+    (description as? CatalogDisplay.Resource)?.takeIf { it.countPlaceholder }?.let { languages.size }
+
+/** The variant-scoped member of the same family: a countPlaceholder
+ *  description counts the variant's OWN language set (the narrower truth
+ *  a variant can declare). */
+fun ModelVariant.descriptionFormatArg(): Int? =
+    if (countPlaceholder) supportedLanguageCodes.size else null
+
+/** The variant-scoped title twin (an inherited or own title may format). */
+fun ModelVariant.titleFormatArg(): Int? =
+    if (titleCountPlaceholder) supportedLanguageCodes.size else null
+
+
+/**
  * Catalog-driven variant metadata for a built-in model (the consolidated
  * replacement for the deleted per-model variant enums).
  *
@@ -48,11 +73,11 @@ data class CatalogVariantUi(
                 titleResId = resolveDisplay(variant.title ?: entry.display, "${entry.id}/${variant.name} title"),
                 descriptionResId = resolveDisplay(variant.description ?: entry.description, "${entry.id}/${variant.name} description"),
                 countPlaceholder = ((variant.description ?: entry.description) as? CatalogDisplay.Resource)?.countPlaceholder == true,
-                // TASK-761 review: a variant without its own title INHERITS
-                // the entry display (which may format the count); without
-                // this flag the inherited format string renders raw.
-                titleCountPlaceholder = variant.title == null &&
-                    (entry.display as? CatalogDisplay.Resource)?.countPlaceholder == true,
+                // TASK-767 review: symmetric with the description chain -
+                // the variant's OWN title when declared, the entry display
+                // otherwise; either may format the count.
+                titleCountPlaceholder = ((variant.title ?: entry.display)
+                    as? CatalogDisplay.Resource)?.countPlaceholder == true,
                 estimatedSizeMB = variant.estimatedSizeMB,
                 supportedLanguageCodes = entry.languagesFor(variant).toSet(),
                 badgeKey = variant.badgeKey,

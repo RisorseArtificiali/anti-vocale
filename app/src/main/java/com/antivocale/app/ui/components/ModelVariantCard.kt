@@ -15,6 +15,8 @@ import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
 import com.antivocale.app.data.download.DownloadState
 import com.antivocale.app.transcription.ModelVariant
+import com.antivocale.app.transcription.descriptionFormatArg
+import com.antivocale.app.transcription.titleFormatArg
 import com.antivocale.app.util.formatFileSize
 
 // ==================== Download Button State ====================
@@ -151,9 +153,8 @@ fun ModelVariantCard(
                             horizontalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Text(
-                                text = if (state.variant.titleCountPlaceholder)
-                                    stringResource(state.variant.titleResId, state.variant.supportedLanguageCodes.size)
-                                else stringResource(state.variant.titleResId),
+                                text = countAwareStringResource(
+                                    state.variant.titleResId, state.variant.titleFormatArg()),
                                 style = MaterialTheme.typography.titleSmall,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
@@ -176,9 +177,8 @@ fun ModelVariantCard(
                             }
                         }
                         Text(
-                            text = if (state.variant.countPlaceholder)
-                                stringResource(state.variant.descriptionResId, state.variant.supportedLanguageCodes.size)
-                            else stringResource(state.variant.descriptionResId),
+                            text = countAwareStringResource(
+                                state.variant.descriptionResId, state.variant.descriptionFormatArg()),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

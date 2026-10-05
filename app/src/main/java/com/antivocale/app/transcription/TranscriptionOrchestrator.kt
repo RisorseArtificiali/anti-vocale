@@ -40,6 +40,7 @@ import com.antivocale.app.service.ExtractionService
 import com.antivocale.app.service.InferenceService
 import com.antivocale.app.service.TranscriptionListener
 import com.antivocale.app.ui.viewmodel.LogEntry
+import com.antivocale.app.ui.components.countAwareString
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.first
@@ -1620,10 +1621,8 @@ class TranscriptionOrchestrator @Inject constructor(
             preference = languagePref,
         )
         val label = when (val d = entry.display) {
-            is CatalogDisplay.Resource ->
-                if (d.countPlaceholder) context.getString(
-                    CatalogStringKeys.resolve(d.key), entry.languages.size)
-                else context.getString(CatalogStringKeys.resolve(d.key))
+            is CatalogDisplay.Resource -> context.countAwareString(
+                CatalogStringKeys.resolve(d.key), entry.titleCountArg())
             is CatalogDisplay.Literal -> d.text
         }
         val load = configureSherpaBackend(
