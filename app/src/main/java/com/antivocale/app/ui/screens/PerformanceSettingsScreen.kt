@@ -14,14 +14,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,7 +33,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.antivocale.app.R
@@ -52,6 +49,7 @@ import com.antivocale.app.transcription.InferenceProvider
 import com.antivocale.app.data.TranscriptionCalibrator.CalibrationProfile
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import com.antivocale.app.ui.components.SettingsSubPageHeader
 
 /**
  * The performance-and-memory secondary page (maintainer decision
@@ -119,22 +117,7 @@ fun PerformanceSettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back)
-                )
-            }
-            Text(
-                text = stringResource(R.string.performance_settings_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        SettingsSubPageHeader(titleRes = R.string.performance_settings_title, onBack = onBack)
         val threadTitle = stringResource(R.string.thread_count_title)
         SectionCard(
             icon = Icons.Default.Memory,

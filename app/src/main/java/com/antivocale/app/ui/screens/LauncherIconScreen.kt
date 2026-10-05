@@ -9,23 +9,17 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.activity.compose.BackHandler
@@ -53,6 +47,7 @@ import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
 import com.antivocale.app.ui.appearance.LauncherIconVariant
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
+import com.antivocale.app.ui.components.SettingsSubPageHeader
 
 /** The adaptive-icon layer canvas, in dp (see any adaptive-icon XML). */
 private const val ADAPTIVE_CANVAS = 108f
@@ -111,26 +106,17 @@ fun LauncherIconScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .statusBarsPadding()
+                // No statusBarsPadding here (unlike pre-749): the host
+                // MainScreen Column already applies it, so the page was
+                // double-insetted at the top (749, flagged by the 748
+                // simplify round).
                 .navigationBarsPadding(),
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 4.dp, vertical = 8.dp),
-            ) {
-                IconButton(onClick = onBack) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back),
-                    )
-                }
-                Text(
-                    text = stringResource(R.string.app_icon_title),
-                    style = MaterialTheme.typography.titleLarge,
-                )
-            }
+            SettingsSubPageHeader(
+                titleRes = R.string.app_icon_title,
+                onBack = onBack,
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 8.dp),
+            )
 
             Column(
                 verticalArrangement = Arrangement.spacedBy(16.dp),

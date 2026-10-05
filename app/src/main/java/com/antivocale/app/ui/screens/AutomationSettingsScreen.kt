@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
@@ -26,7 +25,6 @@ import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material3.Card
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -37,12 +35,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -56,6 +52,7 @@ import com.antivocale.app.ui.tabs.AutomationGuideCard
 import com.antivocale.app.ui.tabs.RemoteOmnivoiceConfigCard
 import com.antivocale.app.ui.tabs.SettingsRowFocus
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
+import com.antivocale.app.ui.components.SettingsSubPageHeader
 
 /**
  * The automation-and-offload secondary page (maintainer decision
@@ -98,22 +95,7 @@ fun AutomationSettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back)
-                )
-            }
-            Text(
-                text = stringResource(R.string.automation_settings_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        SettingsSubPageHeader(titleRes = R.string.automation_settings_title, onBack = onBack)
         // TASK-274: consent gate for the exported automation receivers
         // (Tasker surface); while off they answer with the error that
         // names this toggle.

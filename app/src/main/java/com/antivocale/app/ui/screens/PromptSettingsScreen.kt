@@ -5,11 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -38,6 +36,7 @@ import com.antivocale.app.R
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.ui.viewmodel.SettingsViewModel
 import com.antivocale.app.util.ToastCompat
+import com.antivocale.app.ui.components.SettingsSubPageHeader
 
 @Composable
 fun PromptSettingsScreen(
@@ -60,23 +59,7 @@ fun PromptSettingsScreen(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Header with back button
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back)
-                )
-            }
-            Text(
-                text = stringResource(R.string.default_prompt_title),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
-        }
+        SettingsSubPageHeader(titleRes = R.string.default_prompt_title, onBack = onBack)
 
         // Description
         Text(

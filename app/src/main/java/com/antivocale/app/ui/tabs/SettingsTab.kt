@@ -35,7 +35,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.annotation.StringRes
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
@@ -104,6 +103,7 @@ import com.antivocale.app.ui.screens.LauncherIconScreen
 import com.antivocale.app.ui.screens.PerAppSettingsScreen
 import com.antivocale.app.ui.screens.PromptSettingsScreen
 import com.antivocale.app.ui.components.SettingsHubCard
+import com.antivocale.app.ui.components.SettingsSubPageHeader
 import com.antivocale.app.ui.screens.SpeakerSettingsScreen
 import com.antivocale.app.ui.screens.PerformanceSettingsScreen
 import com.antivocale.app.ui.screens.AutomationSettingsScreen
@@ -3740,26 +3740,11 @@ fun ExportSettingsScreen(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
     ) {
-        // Header with back
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-        ) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = stringResource(R.string.back),
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-            }
-            Text(
-                text = stringResource(R.string.export_settings_title),
-                style = MaterialTheme.typography.headlineSmall,
-            )
-        }
+        SettingsSubPageHeader(
+            titleRes = R.string.export_settings_title,
+            onBack = onBack,
+            modifier = Modifier.padding(vertical = 16.dp),
+        )
 
         // The two cards, verbatim from the inline transcription section
         OutputFolderSettingCard(
