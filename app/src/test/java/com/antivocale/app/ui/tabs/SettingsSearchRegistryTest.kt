@@ -388,12 +388,15 @@ class SettingsSearchRegistryTest {
     }
 
     @Test
-    fun `the automation hub carries all three children's vocabulary`() {
+    fun `the automation hub carries all the children's vocabulary`() {
         val hub = SETTINGS_SEARCH_CARDS.first { it.id == SettingsSearchId.AUTOMATION_HUB }
         val vocab = hub.res(state())
         assertTrue(vocab.contains(R.string.external_automation_title))
         assertTrue(vocab.contains(R.string.automation_guide_title))
         assertTrue(vocab.contains(R.string.remote_offload_title))
+        // TASK-741: the folder watch is the fourth child.
+        assertTrue(vocab.contains(R.string.folder_watch_title))
+        assertTrue(vocab.contains(R.string.folder_watch_description))
     }
 
     @Test

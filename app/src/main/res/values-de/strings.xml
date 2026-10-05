@@ -1200,4 +1200,18 @@
     <string name="export_model_bundle">Modell für Offline-Übertragung teilen</string>
     <string name="external_import_bundle">Bundle importieren</string>
     <string name="external_section_subtitle">Modelldateien, die du selbst hinzufügst, importiert aus einem Ordner, einer URL oder einem Übertragungsbundle; sie laufen neben dem integrierten Katalog.</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">Geplante Ordnerüberwachung</string>
+    <string name="folder_watch_description">Überwacht ausgewählte Ordner und transkribiert neue Audiodateien automatisch. Scans laufen, wenn das System es zulässt; aggressive Akkusparer können sie verzögern, der manuelle Scan funktioniert immer.</string>
+    <string name="folder_watch_add">Ordner überwachen</string>
+    <string name="folder_watch_empty">Noch keine Ordner überwacht.</string>
+    <string name="folder_watch_scan_now">Jetzt scannen</string>
+    <string name="folder_watch_remove">Entfernen</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">Jede Stunde</item>
+        <item quantity="other">Alle %1$d Std.</item>
+    </plurals>
+    <string name="folder_watch_period_label">Scan-Intervall</string>
+    <string name="folder_watch_grant_failed">Der Zugriff auf diesen Ordner konnte nicht dauerhaft gespeichert werden, er wurde daher nicht hinzugefügt. Bitte erneut auswählen.</string>
 </resources>

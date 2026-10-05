@@ -199,7 +199,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveCompactResultActions(enabled: Boolean) { _compactResultActions.value = enabled }
     override suspend fun saveLanguageChipEnabled(enabled: Boolean) { _languageChipEnabled.value = enabled }
     override suspend fun saveExternalModelsJson(json: String) { _externalModelsJson.value = json }
-    override suspend fun saveScheduledFoldersJson(json: String) { _scheduledFoldersJson.value = json }
+    override suspend fun saveScheduledFoldersJson(json: String?) { _scheduledFoldersJson.value = json }
     override suspend fun savePartialTranscriptionState(text: String) {
         _partialTranscriptionText.value = text
         _partialTranscriptionTimestamp.value = System.currentTimeMillis()

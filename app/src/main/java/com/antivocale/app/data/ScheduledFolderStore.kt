@@ -44,15 +44,16 @@ class ScheduledFolderStore @Inject constructor(
     suspend fun byUri(treeUri: String): WatchedFolder? =
         folders().firstOrNull { it.treeUri == treeUri }
 
-    suspend fun add(folder: WatchedFolder) = mutate { list ->
+    /** @return the resulting list (the added folder reflects idempotence). */
+    suspend fun add(folder: WatchedFolder): List<WatchedFolder> = mutate { list ->
         if (list.any { it.treeUri == folder.treeUri }) list else list + folder
     }
 
-    suspend fun remove(treeUri: String) = mutate { list ->
+    suspend fun remove(treeUri: String): List<WatchedFolder> = mutate { list ->
         list.filterNot { it.treeUri == treeUri }
     }
 
-    suspend fun updatePeriod(treeUri: String, periodHours: Int) = mutate { list ->
+    suspend fun updatePeriod(treeUri: String, periodHours: Int): List<WatchedFolder> = mutate { list ->
         require(periodHours in 1..24) { "periodHours must be 1..24 (was $periodHours)" }
         list.map { if (it.treeUri == treeUri) it.copy(periodHours = periodHours) else it }
     }
@@ -71,11 +72,10 @@ class ScheduledFolderStore @Inject constructor(
         list.map { if (it.treeUri == treeUri) it.copy(snapshot = snapshot) else it }
     }
 
-    private suspend fun mutate(block: (List<WatchedFolder>) -> List<WatchedFolder>) = mutateMutex.withLock {
-        val current = folders()
-        preferencesManager.saveScheduledFoldersJson(
-            ScheduledFoldersJson.encode(block(current))
-        )
+    private suspend fun mutate(block: (List<WatchedFolder>) -> List<WatchedFolder>): List<WatchedFolder> = mutateMutex.withLock {
+        val next = block(folders())
+        preferencesManager.saveScheduledFoldersJson(ScheduledFoldersJson.encode(next))
+        next
     }
 
     private val mutateMutex = Mutex()
@@ -90,6 +90,10 @@ data class WatchedFolder(
 ) {
     companion object {
         const val DEFAULT_PERIOD_HOURS = 6
+
+        /** The UI's preset intervals; a subset of the store's 1..24 envelope
+         *  (hand-seeded values outside it still render). */
+        val PERIOD_CHOICES = listOf(1, 3, 6, 12, 24)
     }
 }
 

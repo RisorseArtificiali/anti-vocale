@@ -1200,4 +1200,18 @@
     <string name="export_model_bundle">Modeli çevrimdışı aktarım için paylaş</string>
     <string name="external_import_bundle">Paket içe aktar</string>
     <string name="external_section_subtitle">Kendinizin eklediği model dosyaları; bir klasörden, URL\'den veya aktarım paketinden içe aktarılır ve yerleşik kataloğun yanında çalışır.</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">Zamanlanmış klasör izleme</string>
+    <string name="folder_watch_description">Seçtiğiniz klasörleri izler ve yeni ses dosyalarını otomatik olarak yazıya döker. Taramalar sistem izin verdiğinde çalışır; agresif pil tasarrufu onları geciktirebilir, manuel tarama her zaman işe yarar.</string>
+    <string name="folder_watch_add">Bir klasörü izle</string>
+    <string name="folder_watch_empty">Henüz izlenen klasör yok.</string>
+    <string name="folder_watch_scan_now">Şimdi tara</string>
+    <string name="folder_watch_remove">Kaldır</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">Her saat</item>
+        <item quantity="other">Her %1$d saat</item>
+    </plurals>
+    <string name="folder_watch_period_label">Tarama aralığı</string>
+    <string name="folder_watch_grant_failed">Bu klasöre erişim korunamadığı için eklenmedi. Lütfen yeniden seçin.</string>
 </resources>

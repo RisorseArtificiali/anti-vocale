@@ -1210,4 +1210,19 @@
     <string name="export_model_bundle">שיתוף המודל להעברה ללא רשת</string>
     <string name="external_import_bundle">ייבוא חבילה</string>
     <string name="external_section_subtitle">קובצי מודל שאתם מוסיפים בעצמכם, מיובאים מתיקייה, כתובת או חבילת העברה; פועלים לצד הקטלוג המובנה.</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">מעקב מתוזמן אחר תיקיות</string>
+    <string name="folder_watch_description">עוקב אחר תיקיות שתבחר ומתעתק קובצי שמע חדשים אוטומטית. הסריקות פועלות כשהמערכת מתירה; חיסכון סוללה אגרסיבי עלול לעכב אותן, והסריקה הידנית תמיד עובדת.</string>
+    <string name="folder_watch_add">עקוב אחר תיקייה</string>
+    <string name="folder_watch_empty">אין עדיין תיקיות במעקב.</string>
+    <string name="folder_watch_scan_now">סרוק עכשיו</string>
+    <string name="folder_watch_remove">הסר</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">כל שעה</item>
+        <item quantity="two">כל %1$d שעות</item>
+        <item quantity="other">כל %1$d שעות</item>
+    </plurals>
+    <string name="folder_watch_period_label">מרווח סריקה</string>
+    <string name="folder_watch_grant_failed">לא הייתה אפשרות לשמור על גישה לתיקייה, ולכן היא לא נוספה. נסו לבחור אותה שוב.</string>
 </resources>

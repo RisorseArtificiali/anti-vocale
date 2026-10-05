@@ -254,6 +254,11 @@ internal class TestSpiOps(
         },
         // An unset SAF folder is null, not "": blank clears.
         "output_folder" to { preferences.saveOutputFolderUri(it.ifBlank { null }) },
+        // TASK-741: the folder-watch records + snapshots, raw JSON (the get
+        // row's writable twin; a scripted trial seeds the store directly.
+        // The tree GRANT still needs one real picker pass: a seeded uri
+        // without a persisted permission is scan-abandoned by design).
+        "scheduled_folders" to { preferences.saveScheduledFoldersJson(it.ifBlank { null }) },
         "language" to preferences::saveTranscriptionLanguage,
         "model_path" to preferences::saveModelPath,
         // TASK-681: the LAN-offload config triple.

@@ -1205,4 +1205,18 @@
     <string name="export_model_bundle">اشتراک‌گذاری مدل برای انتقال آفلاین</string>
     <string name="external_import_bundle">وارد کردن بسته</string>
     <string name="external_section_subtitle">فایل‌های مدلی که خودتان اضافه می‌کنید، از یک پوشه، نشانی یا بسته انتقال وارد شده؛ در کنار کاتالوگ داخلی اجرا می‌شوند.</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">پایش زمان‌بندی‌شده پوشه</string>
+    <string name="folder_watch_description">پوشه‌هایی را که انتخاب می‌کنید زیر نظر دارد و فایل‌های صوتی جدید را خودکار پیاده‌سازی می‌کند. اسکن‌ها زمانی اجرا می‌شوند که سیستم اجازه دهد؛ ذخیره‌سازهای تهاجمی باتری ممکن است آن‌ها را به تأخیر بیندازند، و اسکن دستی همیشه کار می‌کند.</string>
+    <string name="folder_watch_add">پایش یک پوشه</string>
+    <string name="folder_watch_empty">هنوز پوشه‌ای زیر نظر نیست.</string>
+    <string name="folder_watch_scan_now">همین حالا اسکن کن</string>
+    <string name="folder_watch_remove">حذف</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">هر %1$d ساعت</item>
+        <item quantity="other">هر %1$d ساعت</item>
+    </plurals>
+    <string name="folder_watch_period_label">بازه اسکن</string>
+    <string name="folder_watch_grant_failed">دسترسی به آن پوشه قابل حفظ نبود، بنابراین اضافه نشد. دوباره انتخابش کنید.</string>
 </resources>

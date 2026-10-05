@@ -1205,4 +1205,18 @@
     <string name="export_model_bundle">Condividi il modello per il trasferimento offline</string>
     <string name="external_import_bundle">Importa bundle</string>
     <string name="external_section_subtitle">File di modelli che aggiungi tu, importati da una cartella, un URL o un bundle di trasferimento; girano accanto al catalogo integrato.</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">Controllo cartella programmato</string>
+    <string name="folder_watch_description">Osserva le cartelle che scegli e trascrive automaticamente i nuovi file audio. Le scansioni avvengono quando il sistema lo consente; i risparmiatori di batteria aggressivi possono rallentarle, e la scansione manuale funziona sempre.</string>
+    <string name="folder_watch_add">Osserva una cartella</string>
+    <string name="folder_watch_empty">Nessuna cartella osservata.</string>
+    <string name="folder_watch_scan_now">Scansiona ora</string>
+    <string name="folder_watch_remove">Rimuovi</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">Ogni ora</item>
+        <item quantity="other">Ogni %1$d h</item>
+    </plurals>
+    <string name="folder_watch_period_label">Intervallo di scansione</string>
+    <string name="folder_watch_grant_failed">Impossibile mantenere l\'accesso a quella cartella, quindi non è stata aggiunta. Riprova a selezionarla.</string>
 </resources>

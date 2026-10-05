@@ -1199,4 +1199,18 @@
     <string name="export_model_bundle">ऑफ़लाइन ट्रांसफ़र के लिए मॉडल साझा करें</string>
     <string name="external_import_bundle">बंडल आयात करें</string>
     <string name="external_section_subtitle">आपके अपने जोड़े हुए मॉडल फ़ाइलें, एक फ़ोल्डर, URL या ट्रांसफ़र बंडल से आयातित; बिल्ट-इन कैटलॉग के साथ चलती हैं।</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">शेड्यूल्ड फ़ोल्डर निगरानी</string>
+    <string name="folder_watch_description">आपके चुने फ़ोल्डरों पर नज़र रखता है और नई ऑडियो फ़ाइलों को स्वतः ट्रांसक्रिप्ट करता है। स्कैन तब चलते हैं जब सिस्टम अनुमति देता है; आक्रामक बैटरी सेवर उन्हें टाल सकते हैं, और मैनुअल स्कैन हमेशा काम करता है।</string>
+    <string name="folder_watch_add">फ़ोल्डर निगरानी शुरू करें</string>
+    <string name="folder_watch_empty">अभी कोई फ़ोल्डर निगरानी में नहीं है।</string>
+    <string name="folder_watch_scan_now">अभी स्कैन करें</string>
+    <string name="folder_watch_remove">हटाएँ</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">हर %1$d घंटा</item>
+        <item quantity="other">हर %1$d घंटे</item>
+    </plurals>
+    <string name="folder_watch_period_label">स्कैन अंतराल</string>
+    <string name="folder_watch_grant_failed">उस फ़ोल्डर तक पहुँच बनाए नहीं रखी जा सकी, इसलिए उसे जोड़ा नहीं गया। कृपया उसे फिर से चुनें।</string>
 </resources>

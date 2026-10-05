@@ -1068,4 +1068,18 @@
     <string name="export_model_bundle">Compartilhar modelo para transferência offline</string>
     <string name="external_import_bundle">Importar pacote</string>
     <string name="external_section_subtitle">Arquivos de modelo que você mesmo adiciona, importados de uma pasta, uma URL ou um pacote de transferência; funcionam ao lado do catálogo integrado.</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">Monitoramento agendado de pastas</string>
+    <string name="folder_watch_description">Observa as pastas que você escolher e transcreve automaticamente novos arquivos de áudio. As verificações ocorrem quando o sistema permite; economizadores agressivos de bateria podem atrasá-las, e a verificação manual sempre funciona.</string>
+    <string name="folder_watch_add">Observar uma pasta</string>
+    <string name="folder_watch_empty">Nenhuma pasta observada ainda.</string>
+    <string name="folder_watch_scan_now">Verificar agora</string>
+    <string name="folder_watch_remove">Remover</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">A cada %1$d h</item>
+        <item quantity="other">A cada %1$d h</item>
+    </plurals>
+    <string name="folder_watch_period_label">Intervalo de verificação</string>
+    <string name="folder_watch_grant_failed">Não foi possível manter o acesso a essa pasta, então ela não foi adicionada. Tente escolher novamente.</string>
 </resources>

@@ -1,26 +1,36 @@
 package com.antivocale.app.ui.screens
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material3.Card
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,9 +44,12 @@ import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.antivocale.app.R
+import com.antivocale.app.ui.components.SectionCard
+import com.antivocale.app.ui.components.SettingsDropdown
 import com.antivocale.app.ui.components.SettingsHubCard
 import com.antivocale.app.ui.components.ToggleSettingCard
 import com.antivocale.app.ui.tabs.AutomationGuideCard
@@ -59,7 +72,7 @@ import com.antivocale.app.ui.viewmodel.SettingsViewModel
  *
  * SEARCH COMPATIBILITY CONTRACT: the main-tree hub's registry
  * vocabulary is the static union of its own and all three children's
- * strings (the remote config card's strings ride the offload child).
+ * strings (the remote config card rides the offload child; the folder watch is the fourth child).
  */
 @Composable
 fun AutomationSettingsScreen(
@@ -146,8 +159,109 @@ fun AutomationSettingsScreen(
                 viewModel.saveRemoteOmnivoiceEnabled(enabled)
             }
         )
+
+        // TASK-741 (GH #125): the scheduled folder watch. The third
+        // automation input source; the honest ColorOS contract lives in the
+        // description (runs when the system allows; the manual scan is
+        // always available).
+        ScheduledFolderWatchCard(viewModel)
         if (remoteOffloadEnabled) {
             RemoteOmnivoiceConfigCard(viewModel)
+        }
+    }
+}
+
+
+/**
+ * TASK-741 (GH #125): the watched-folder list. One card on the automation
+ * page: pick folders (the persistable grant is taken at pick time, the
+ * same contract as the export folder), set each one's interval, scan now,
+ * or remove. Every mutation routes through the ViewModel, which pairs the
+ * store write with the scheduler reconcile.
+ */
+@Composable
+private fun ScheduledFolderWatchCard(viewModel: SettingsViewModel) {
+    val context = LocalContext.current
+    val folders by viewModel.scheduledFolders.collectAsStateWithLifecycle(initialValue = emptyList())
+    val picker = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocumentTree(),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        // The persistable grant is taken at pick time, the same contract as
+        // the export folder (it survives reboots; the worker checks it).
+        // A picker that returns a grant WITHOUT the persistable flag would
+        // leave a permanently dead watch (the worker's grantHeld check
+        // fails forever, silently), so the record is not added at all.
+        if (!com.antivocale.app.util.TreeUris.takePersistableReadGrant(context, uri)) {
+            com.antivocale.app.util.ToastCompat.show(context, R.string.folder_watch_grant_failed)
+            return@rememberLauncherForActivityResult
+        }
+        viewModel.addWatchedFolder(uri)
+    }
+
+    SectionCard(
+        icon = Icons.Default.FolderOpen,
+        title = stringResource(R.string.folder_watch_title),
+        description = stringResource(R.string.folder_watch_description),
+    ) {
+        if (folders.isEmpty()) {
+            Text(
+                text = stringResource(R.string.folder_watch_empty),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        folders.forEach { folder ->
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+            ) {
+                Text(
+                    text = folder.displayName,
+                    style = MaterialTheme.typography.labelLarge,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                // The interval owns the full row and the actions wrap to
+                // their own: beside two full-text buttons a weight(1f)
+                // dropdown starves to unreadable on narrow screens and long
+                // locale labels (review F8).
+                SettingsDropdown(
+                    currentValue = folder.periodHours,
+                    options = com.antivocale.app.data.WatchedFolder.PERIOD_CHOICES,
+                    currentValueDisplay = androidx.compose.ui.res.pluralStringResource(
+                        R.plurals.folder_watch_period_value, folder.periodHours, folder.periodHours,
+                    ),
+                    optionDisplay = { hours ->
+                        androidx.compose.ui.res.pluralStringResource(
+                            R.plurals.folder_watch_period_value, hours, hours,
+                        )
+                    },
+                    onOptionSelected = { hours -> viewModel.updateWatchedFolderPeriod(folder.treeUri, hours) },
+                    label = stringResource(R.string.folder_watch_period_label),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    TextButton(onClick = { viewModel.scanWatchedFolderNow(folder.treeUri) }) {
+                        Text(stringResource(R.string.folder_watch_scan_now))
+                    }
+                    TextButton(onClick = { viewModel.removeWatchedFolder(folder.treeUri) }) {
+                        Text(stringResource(R.string.folder_watch_remove))
+                    }
+                }
+            }
+        }
+        OutlinedButton(
+            onClick = { picker.launch(null) },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(stringResource(R.string.folder_watch_add))
         }
     }
 }

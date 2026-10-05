@@ -268,21 +268,8 @@ object ScheduledFolderScheduler {
     fun sync(context: Context, folders: List<com.antivocale.app.data.WatchedFolder>) {
         val wm = WorkManager.getInstance(context)
         val wanted = folders.associateBy { it.treeUri }
-        for ((treeUri, folder) in wanted) {
-            wm.enqueueUniquePeriodicWork(
-                uniqueName(treeUri),
-                ExistingPeriodicWorkPolicy.UPDATE,
-                PeriodicWorkRequestBuilder<ScheduledFolderWorker>(folder.periodHours.toLong(), TimeUnit.HOURS)
-                    // The family tag enumerates every folder-watch work for
-                    // the zombie sweep; the per-uri tag identifies WHICH
-                    // folder (WorkInfo 2.10 exposes tags but not input data).
-                    .addTag(TAG)
-                    .addTag("$URI_TAG_PREFIX$treeUri")
-                    .setInputData(
-                        Data.Builder().putString(ScheduledFolderWorker.KEY_TREE_URI, treeUri).build(),
-                    )
-                    .build(),
-            )
+        for (folder in wanted.values) {
+            enqueuePeriodic(wm, folder)
         }
         val infos: List<androidx.work.WorkInfo> = kotlinx.coroutines.runBlocking {
             wm.getWorkInfosByTag(TAG).get()
@@ -300,6 +287,41 @@ object ScheduledFolderScheduler {
     /** Cancels one folder's schedule when its record goes away. */
     fun cancel(context: Context, treeUri: String) {
         WorkManager.getInstance(context).cancelUniqueWork(uniqueName(treeUri))
+    }
+
+    /**
+     * The targeted reconcile for one mutation (TASK-741 slice 4): the caller
+     * holds the changed folder, so the full sync (every folder re-enqueued
+     * plus the zombie sweep) is strictly more work than the one enqueue.
+     * The sweep stays owned by remove (a direct cancel) and by the app-start
+     * self-heal.
+     */
+    fun enqueueFolder(context: Context, folder: com.antivocale.app.data.WatchedFolder) {
+        enqueuePeriodic(WorkManager.getInstance(context), folder)
+    }
+
+    /**
+     * The one enqueue arm [sync] and [enqueueFolder] share (review F3): the
+     * unique name, the UPDATE policy, both tags, and the input data are one
+     * contract with two callers - a future change landing in only one site
+     * would silently break the other (the zombie sweep enumerates by TAG,
+     * the worker resolves its folder from KEY_TREE_URI).
+     */
+    private fun enqueuePeriodic(wm: WorkManager, folder: com.antivocale.app.data.WatchedFolder) {
+        wm.enqueueUniquePeriodicWork(
+            uniqueName(folder.treeUri),
+            ExistingPeriodicWorkPolicy.UPDATE,
+            PeriodicWorkRequestBuilder<ScheduledFolderWorker>(folder.periodHours.toLong(), TimeUnit.HOURS)
+                // The family tag enumerates every folder-watch work for
+                // the zombie sweep; the per-uri tag identifies WHICH
+                // folder (WorkInfo 2.10 exposes tags but not input data).
+                .addTag(TAG)
+                .addTag("$URI_TAG_PREFIX${folder.treeUri}")
+                .setInputData(
+                    Data.Builder().putString(ScheduledFolderWorker.KEY_TREE_URI, folder.treeUri).build(),
+                )
+                .build(),
+        )
     }
 
     /**

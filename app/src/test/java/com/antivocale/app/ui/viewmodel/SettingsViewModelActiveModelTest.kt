@@ -70,6 +70,9 @@ class SettingsViewModelActiveModelTest {
             huggingFaceAuthManager = mockk(relaxed = true),
             huggingFaceApiClient = mockk(relaxed = true),
             perAppPreferencesManager = mockk(relaxed = true),
+            // TASK-741: the folder-watch store; these tests never watch.
+            scheduledFolderStore = com.antivocale.app.data.ScheduledFolderStore(
+                com.antivocale.app.data.FakePreferencesManager()),
             transcriptionCalibrator = mockk(relaxed = true),
             backendManager = mockk(relaxed = true),
             llmManager = mockk(relaxed = true),

@@ -2848,10 +2848,8 @@ private fun OutputFolderSettingCard(
     @SuppressLint("RememberReturnType")
     val displayName = remember(outputFolderUri) {
         outputFolderUri?.let { uriStr ->
-            runCatching {
-                val uri = Uri.parse(uriStr)
-                DocumentFile.fromTreeUri(context, uri)?.name ?: uri.lastPathSegment ?: uriStr
-            }.getOrNull() ?: uriStr
+            runCatching { com.antivocale.app.util.TreeUris.displayName(context, Uri.parse(uriStr)) }
+                .getOrNull() ?: uriStr
         }
     }
 
@@ -3334,15 +3332,17 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
     // Maintainer decision 2026-09-30: the automation-and-offload hub.
-    // Static union vocabulary: the hub's strings plus all three
-    // children's (the remote config card rides the offload child).
+    // Static union vocabulary: the hub's strings plus all children's (the
+    // remote config card rides the offload child; the folder watch is the
+    // TASK-741 fourth child).
     SettingsSearchCard(
         SettingsSearchId.AUTOMATION_HUB, SettingsSearchSection.ADVANCED,
         listOf(
             R.string.automation_settings_title, R.string.automation_settings_summary,
             R.string.external_automation_title, R.string.external_automation_description,
             R.string.automation_guide_title, R.string.automation_guide_description,
-            R.string.remote_offload_title, R.string.remote_offload_description),
+            R.string.remote_offload_title, R.string.remote_offload_description,
+            R.string.folder_watch_title, R.string.folder_watch_description),
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
     SettingsSearchCard(

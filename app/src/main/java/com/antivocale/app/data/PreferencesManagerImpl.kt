@@ -977,9 +977,10 @@ class PreferencesManagerImpl(
         cache.updateAndGet { it.copy(externalModelsJson = json) }
     }
 
-    override suspend fun saveScheduledFoldersJson(json: String) {
+    override suspend fun saveScheduledFoldersJson(json: String?) {
         dataStore.edit { preferences ->
-            preferences[SCHEDULED_FOLDERS_JSON] = json
+            if (json == null) preferences.remove(SCHEDULED_FOLDERS_JSON)
+            else preferences[SCHEDULED_FOLDERS_JSON] = json
         }
         cache.updateAndGet { it.copy(scheduledFoldersJson = json) }
     }

@@ -1214,4 +1214,18 @@
     <string name="model_switched_message">Active model: %1$s</string>
     <string name="model_switch_failed">Could not switch: the model is not on the device</string>
     <string name="model_shortcut_switch_label">Switch to %1$s</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">Scheduled folder watch</string>
+    <string name="folder_watch_description">Watches folders you choose and transcribes new audio files automatically. Scans run on a schedule the system allows; aggressive battery savers may delay them, and the manual scan always works.</string>
+    <string name="folder_watch_add">Watch a folder</string>
+    <string name="folder_watch_empty">No folders watched yet.</string>
+    <string name="folder_watch_scan_now">Scan now</string>
+    <string name="folder_watch_remove">Remove</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">Every hour</item>
+        <item quantity="other">Every %1$d h</item>
+    </plurals>
+    <string name="folder_watch_period_label">Scan interval</string>
+    <string name="folder_watch_grant_failed">Could not keep access to that folder, so it was not added. Try picking it again.</string>
 </resources>

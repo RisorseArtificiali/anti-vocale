@@ -1225,4 +1225,20 @@
     <string name="export_model_bundle">Поделиться моделью для переноса без сети</string>
     <string name="external_import_bundle">Импортировать пакет</string>
     <string name="external_section_subtitle">Файлы моделей, которые вы добавляете сами, импортированные из папки, по URL или из пакета переноса; работают alongside встроенного каталога.</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">Запланированное наблюдение за папками</string>
+    <string name="folder_watch_description">Следит за выбранными вами папками и автоматически расшифровывает новые аудиофайлы. Проверки выполняются, когда система позволяет; агрессивные экономители батареи могут их задержать, а ручная проверка работает всегда.</string>
+    <string name="folder_watch_add">Следить за папкой</string>
+    <string name="folder_watch_empty">Пока нет отслеживаемых папок.</string>
+    <string name="folder_watch_scan_now">Проверить сейчас</string>
+    <string name="folder_watch_remove">Убрать</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">Каждый %1$d ч</item>
+        <item quantity="few">Каждые %1$d ч</item>
+        <item quantity="many">Каждые %1$d ч</item>
+        <item quantity="other">Каждые %1$d ч</item>
+    </plurals>
+    <string name="folder_watch_period_label">Интервал проверки</string>
+    <string name="folder_watch_grant_failed">Не удалось сохранить доступ к этой папке, поэтому она не была добавлена. Выберите её ещё раз.</string>
 </resources>

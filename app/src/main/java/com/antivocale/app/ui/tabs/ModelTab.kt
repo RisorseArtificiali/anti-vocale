@@ -192,12 +192,7 @@ fun ModelTab(
             // Some OEM pickers return a grant without the persistable flag
             // (the folder picker's documented trap); the unguarded call
             // would throw inside the callback.
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    picked, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }.onFailure {
-                android.util.Log.w("ModelTab", "persistable grant failed for $picked", it)
-            }
+            com.antivocale.app.util.TreeUris.takePersistableReadGrant(context, picked)
             viewModel.importExternalFromBundle(context, picked)
         }
     }
@@ -224,12 +219,7 @@ fun ModelTab(
             // Some third-party/OEM pickers return a grant without the
             // persistable flag; the unguarded call would throw directly in
             // the callback (SettingsTab guards the identical call).
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    picked,
-                    android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-            }.onFailure { android.util.Log.w("ModelTab", "persistable grant failed for $picked", it) }
+            com.antivocale.app.util.TreeUris.takePersistableReadGrant(context, picked)
             detectedExternalFamily = null
             ambiguousPick = null
             // A rapid re-pick must not race the previous detect probe; the

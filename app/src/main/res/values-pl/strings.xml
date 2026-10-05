@@ -1224,4 +1224,20 @@
     <string name="export_model_bundle">Udostępnij model do transferu offline</string>
     <string name="external_import_bundle">Importuj pakiet</string>
     <string name="external_section_subtitle">Pliki modeli, które dodajesz sam, importowane z folderu, adresu URL lub pakietu transferowego; działają obok wbudowanego katalogu.</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">Zaplanowane obserwowanie folderów</string>
+    <string name="folder_watch_description">Obserwuje wybrane przez Ciebie foldery i automatycznie transkrybuje nowe pliki audio. Skanowanie odbywa się, gdy system na to pozwala; agresywne oszczędzanie baterii może je opóźnić, a skanowanie ręczne działa zawsze.</string>
+    <string name="folder_watch_add">Obserwuj folder</string>
+    <string name="folder_watch_empty">Nie obserwujesz jeszcze żadnych folderów.</string>
+    <string name="folder_watch_scan_now">Skanuj teraz</string>
+    <string name="folder_watch_remove">Usuń</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">Co godzinę</item>
+        <item quantity="few">Co %1$d godz.</item>
+        <item quantity="many">Co %1$d godz.</item>
+        <item quantity="other">Co %1$d godz.</item>
+    </plurals>
+    <string name="folder_watch_period_label">Interwał skanowania</string>
+    <string name="folder_watch_grant_failed">Nie udało się zachować dostępu do tego folderu, więc nie został dodany. Wybierz go ponownie.</string>
 </resources>

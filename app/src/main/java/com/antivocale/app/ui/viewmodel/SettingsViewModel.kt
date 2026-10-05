@@ -85,6 +85,8 @@ class SettingsViewModel @Inject constructor(
     val huggingFaceAuthManager: HuggingFaceAuthManager,
     private val huggingFaceApiClient: HuggingFaceApiClient,
     val perAppPreferencesManager: PerAppPreferencesManager,
+    // TASK-741: the scheduled folder watch (records + snapshots).
+    private val scheduledFolderStore: com.antivocale.app.data.ScheduledFolderStore,
     val transcriptionCalibrator: TranscriptionCalibrator,
     private val backendManager: TranscriptionBackendManager,
     private val llmManager: LlmManager,
@@ -973,6 +975,57 @@ class SettingsViewModel @Inject constructor(
             preferencesManager.saveOutputFolderUri(uri)
         }
     }
+
+    // ------------------------------------------------------------------
+    // TASK-741 (GH #125): the scheduled folder watch. Every mutation pairs
+    // the store write with the scheduler reconcile (the pairing the slice-3
+    // review demanded); a missed pairing self-heals at the next app start.
+    // ------------------------------------------------------------------
+
+    val scheduledFolders: StateFlow<List<com.antivocale.app.data.WatchedFolder>> =
+        scheduledFolderStore.foldersFlow.stateIn(
+            viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList(),
+        )
+
+    /** The one launch prologue every folder-watch mutation shares. */
+    private fun launchFolderWatch(block: suspend (android.app.Application) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) { block(getApplication()) }
+    }
+
+    fun addWatchedFolder(uri: Uri) = launchFolderWatch { app ->
+        val name = com.antivocale.app.util.TreeUris.displayName(app, uri)
+        // The targeted reconcile: enqueue the changed folder, not the full sync.
+        com.antivocale.app.work.ScheduledFolderScheduler.enqueueFolder(
+            app, scheduledFolderStore.add(
+                com.antivocale.app.data.WatchedFolder(treeUri = uri.toString(), displayName = name),
+            ).first { it.treeUri == uri.toString() },
+        )
+    }
+
+    fun removeWatchedFolder(treeUri: String) = launchFolderWatch { app ->
+        val remaining = scheduledFolderStore.remove(treeUri)
+        com.antivocale.app.work.ScheduledFolderScheduler.cancel(app, treeUri)
+        // Give the grant slot back (the platform caps persisted grants):
+        // only when no OTHER record still watches the same tree.
+        runCatching { android.net.Uri.parse(treeUri) }.getOrNull()?.let { uri ->
+            if (remaining.none { it.treeUri == treeUri }) {
+                com.antivocale.app.util.TreeUris.releasePersistableReadGrant(app, uri)
+            }
+        }
+    }
+
+    fun updateWatchedFolderPeriod(treeUri: String, periodHours: Int) = launchFolderWatch { app ->
+        runCatching { scheduledFolderStore.updatePeriod(treeUri, periodHours) }
+            .onFailure { Log.w(TAG, "Bad folder-watch period: $periodHours", it) }
+            .getOrNull()
+            ?.firstOrNull { it.treeUri == treeUri }
+            ?.let { com.antivocale.app.work.ScheduledFolderScheduler.enqueueFolder(app, it) }
+    }
+
+    fun scanWatchedFolderNow(treeUri: String) = launchFolderWatch { app ->
+        com.antivocale.app.work.ScheduledFolderScheduler.scanNow(app, treeUri)
+    }
+
 
     /**
      * GH #92: saves the auto-save file format (a [SubtitleFormatter.Format] name).
