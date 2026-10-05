@@ -4,6 +4,9 @@
 # Audio clips (the actual voice messages)
 clips/
 
+# TASK-669: synthetic-noise derivatives of the real clips (same speech)
+clips_noisy/
+
 # Manual transcripts (verbatim speech content)
 transcripts/
 
