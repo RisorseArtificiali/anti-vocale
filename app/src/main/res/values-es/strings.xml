@@ -944,7 +944,6 @@
     <string name="feedback_label_truncated">truncado</string>
     <string name="a11y_expand">expandir</string>
     <string name="a11y_collapse">contraer</string>
-    <string name="a11y_back">Atrás</string>
     <string name="litertlm_importing">Importando…</string>
     <string name="model_ram_warning">%1$s podría no tener memoria suficiente en este dispositivo. Podría fallar al cargar o cerrarse; los modelos más ligeros son más seguros.</string>
     <string name="error_oom_transcription">No hay memoria suficiente para transcribir este audio. Prueba un archivo más corto, un modelo más pequeño, o cierra otras apps. Para evitar el intento por completo, activa la protección de memoria en Ajustes > Avanzado.</string>

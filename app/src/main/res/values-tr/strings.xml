@@ -1076,7 +1076,6 @@
     <string name="feedback_label_truncated">kısaltılmış</string>
     <string name="a11y_expand">genişlet</string>
     <string name="a11y_collapse">daralt</string>
-    <string name="a11y_back">Geri</string>
     <string name="litertlm_importing">İçe aktarılıyor…</string>
     <string name="model_ram_warning">Bu cihazda %1$s için yeterli bellek olmayabilir. Yükleme başarısız olabilir; daha hafif modeller daha güvenli.</string>
     <string name="error_oom_transcription">Bu sesi transkribe etmek için yeterli bellek yok. Daha kısa bir dosya, daha küçük bir model deneyin veya diğer uygulamaları kapatın. Denemeyi tamamen önlemek için Ayarlar > Gelişmiş bölümünden bellek korumasını açın.</string>

@@ -1097,7 +1097,6 @@
     <string name="feedback_label_truncated">сокращено</string>
     <string name="a11y_expand">развернуть</string>
     <string name="a11y_collapse">свернуть</string>
-    <string name="a11y_back">Назад</string>
     <string name="litertlm_importing">Импорт…</string>
     <string name="model_ram_warning">У %1$s может не хватить памяти на этом устройстве. Загрузка может завершиться неудачей; более лёгкие модели надёжнее.</string>
     <string name="error_oom_transcription">Недостаточно памяти для распознавания этого аудио. Попробуйте более короткий файл, более лёгкую модель или закройте другие приложения. Чтобы вовсе избежать попытки, включите защиту памяти в Настройки > Дополнительно.</string>

@@ -1075,7 +1075,6 @@
     <string name="feedback_label_truncated">छोटा किया गया</string>
     <string name="a11y_expand">विस्तार</string>
     <string name="a11y_collapse">संकुचित</string>
-    <string name="a11y_back">पीछे</string>
     <string name="litertlm_importing">इंपोर्ट हो रहा है…</string>
     <string name="model_ram_warning">इस डिवाइस पर %1$s के लिए पर्याप्त मेमोरी नहीं हो सकती। लोड विफल हो सकता है; हल्के मॉडल सुरक्षित हैं।</string>
     <string name="error_oom_transcription">इस ऑडियो को ट्रांसक्रिप्ट करने के लिए पर्याप्त मेमोरी नहीं है। छोटी फ़ाइल, हल्का मॉडल आज़माएं, या अन्य ऐप बंद करें। यह कोशिश पूरी तरह टालने के लिए सेटिंग्स > उन्नत में मेमोरी सुरक्षा चालू करें।</string>

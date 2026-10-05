@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -16,13 +17,10 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Lan
 import androidx.compose.material3.Card
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -62,7 +61,6 @@ import com.antivocale.app.ui.viewmodel.SettingsViewModel
  * vocabulary is the static union of its own and all three children's
  * strings (the remote config card's strings ride the offload child).
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AutomationSettingsScreen(
     viewModel: SettingsViewModel,
@@ -76,79 +74,80 @@ fun AutomationSettingsScreen(
     val toggleFocus = remember { SettingsRowFocus() }
     var scrollContentRootY by remember { mutableStateOf(0) }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(R.string.automation_settings_title)) },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.back)
-                        )
-                    }
-                }
+    // TASK-748: the sub-pages' shared chrome (plain Column + back-header
+    // Row, no Scaffold); the host tab already applies the status-bar inset.
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+            .verticalScroll(scrollState)
+            .onGloballyPositioned { scrollContentRootY = it.positionInRoot().y.toInt() }
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringResource(R.string.back)
+                )
+            }
+            Text(
+                text = stringResource(R.string.automation_settings_title),
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold
             )
         }
-    ) { padding ->
-        Column(
+        // TASK-274: consent gate for the exported automation receivers
+        // (Tasker surface); while off they answer with the error that
+        // names this toggle.
+        ToggleSettingCard(
+            icon = Icons.Default.Build,
+            title = stringResource(R.string.external_automation_title),
+            description = stringResource(R.string.external_automation_description),
+            checked = externalAutomationEnabled,
+            onCheckedChange = { enabled ->
+                viewModel.saveExternalAutomationEnabled(enabled)
+            },
             modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .verticalScroll(scrollState)
-                .onGloballyPositioned { scrollContentRootY = it.positionInRoot().y.toInt() }
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            // TASK-274: consent gate for the exported automation receivers
-            // (Tasker surface); while off they answer with the error that
-            // names this toggle.
-            ToggleSettingCard(
-                icon = Icons.Default.Build,
-                title = stringResource(R.string.external_automation_title),
-                description = stringResource(R.string.external_automation_description),
-                checked = externalAutomationEnabled,
-                onCheckedChange = { enabled ->
-                    viewModel.saveExternalAutomationEnabled(enabled)
-                },
-                modifier = Modifier
-                    .onGloballyPositioned {
-                        toggleFocus.capture(it.positionInRoot().y.toInt())
-                    }
-                    .border(
-                        2.dp,
-                        toggleFocus.highlightColor("external_automation_highlight"),
-                        MaterialTheme.shapes.medium,
-                    )
-            )
-
-            // TASK-275: the explainer card; its onShowToggle converges on
-            // this page's own scroll state (the flash pattern unchanged).
-            AutomationGuideCard(
-                title = stringResource(R.string.automation_guide_title),
-                description = stringResource(R.string.automation_guide_description),
-                enabled = externalAutomationEnabled,
-                onShowToggle = {
-                    toggleFocus.flashIn(scope, scrollState) { scrollContentRootY }
-                },
-            )
-
-            // TASK-681: LAN offload (experimental); the supporting text IS
-            // the privacy contract and stays visible while off too.
-            ToggleSettingCard(
-                icon = Icons.Default.Lan,
-                title = stringResource(R.string.remote_offload_title),
-                description = stringResource(R.string.remote_offload_description),
-                supportingText = stringResource(R.string.remote_offload_disclosure),
-                checked = remoteOffloadEnabled,
-                onCheckedChange = { enabled ->
-                    viewModel.saveRemoteOmnivoiceEnabled(enabled)
+                .onGloballyPositioned {
+                    toggleFocus.capture(it.positionInRoot().y.toInt())
                 }
-            )
-            if (remoteOffloadEnabled) {
-                RemoteOmnivoiceConfigCard(viewModel)
+                .border(
+                    2.dp,
+                    toggleFocus.highlightColor("external_automation_highlight"),
+                    MaterialTheme.shapes.medium,
+                )
+        )
+
+        // TASK-275: the explainer card; its onShowToggle converges on
+        // this page's own scroll state (the flash pattern unchanged).
+        AutomationGuideCard(
+            title = stringResource(R.string.automation_guide_title),
+            description = stringResource(R.string.automation_guide_description),
+            enabled = externalAutomationEnabled,
+            onShowToggle = {
+                toggleFocus.flashIn(scope, scrollState) { scrollContentRootY }
+            },
+        )
+
+        // TASK-681: LAN offload (experimental); the supporting text IS
+        // the privacy contract and stays visible while off too.
+        ToggleSettingCard(
+            icon = Icons.Default.Lan,
+            title = stringResource(R.string.remote_offload_title),
+            description = stringResource(R.string.remote_offload_description),
+            supportingText = stringResource(R.string.remote_offload_disclosure),
+            checked = remoteOffloadEnabled,
+            onCheckedChange = { enabled ->
+                viewModel.saveRemoteOmnivoiceEnabled(enabled)
             }
+        )
+        if (remoteOffloadEnabled) {
+            RemoteOmnivoiceConfigCard(viewModel)
         }
     }
 }
-

@@ -1076,7 +1076,6 @@
     <string name="feedback_label_truncated">gekürzt</string>
     <string name="a11y_expand">ausklappen</string>
     <string name="a11y_collapse">einklappen</string>
-    <string name="a11y_back">Zurück</string>
     <string name="litertlm_importing">Import läuft…</string>
     <string name="model_ram_warning">%1$s hat auf diesem Gerät möglicherweise nicht genug Speicher. Das Laden könnte fehlschlagen oder abstürzen; leichtere Modelle sind sicherer.</string>
     <string name="error_oom_transcription">Nicht genug Speicher, um dieses Audio zu transkribieren. Versuche eine kürzere Datei, ein kleineres Modell, oder schließe andere Apps. Um den Versuch ganz zu vermeiden, aktiviere Speicherschutz in Einstellungen > Erweitert.</string>

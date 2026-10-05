@@ -1083,7 +1083,6 @@
     <string name="feedback_label_truncated">קוצר</string>
     <string name="a11y_expand">הרחבה</string>
     <string name="a11y_collapse">צמצום</string>
-    <string name="a11y_back">חזרה</string>
     <string name="litertlm_importing">מייבא…</string>
     <string name="model_ram_warning">ייתכן שאין ל%1$s מספיק זיכרון במכשיר זה. הטעינה עלולה להיכשל או לקרוס; מודלים קלים יותר בטוחים יותר.</string>
     <string name="error_oom_transcription">אין מספיק זיכרון לתמלל את האודיו הזה. נסה קובץ קצר יותר, מודל קטן יותר, או סגור אפליקציות אחרות. כדי להימנע מהניסיון לחלוטין, הפעל הגנת זיכרון בהגדרות > מתקדם.</string>

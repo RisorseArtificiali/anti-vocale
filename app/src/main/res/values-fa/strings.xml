@@ -1080,7 +1080,6 @@
     <string name="feedback_label_truncated">کوتاه‌شده</string>
     <string name="a11y_expand">باز کردن</string>
     <string name="a11y_collapse">جمع کردن</string>
-    <string name="a11y_back">بازگشت</string>
     <string name="litertlm_importing">در حال وارد کردن…</string>
     <string name="model_ram_warning">ممکن است %1$s روی این دستگاه حافظه کافی نداشته باشد. ممکن است بارگذاری نشود یا کرش کند؛ مدل‌های سبک‌تر مطمئن‌ترند.</string>
     <string name="error_oom_transcription">حافظه برای رونویسی این صدا کافی نیست. فایل کوتاه‌تر یا مدل کوچک‌تری را امتحان کنید، یا برنامه‌های دیگر را ببندید. برای اینکه این تلاش اصلاً انجام نشود، محافظت از حافظه را در تنظیمات > پیشرفته روشن کنید.</string>

@@ -1096,7 +1096,6 @@
     <string name="feedback_label_truncated">skrócony</string>
     <string name="a11y_expand">rozwiń</string>
     <string name="a11y_collapse">zwiń</string>
-    <string name="a11y_back">Wstecz</string>
     <string name="litertlm_importing">Importowanie…</string>
     <string name="model_ram_warning">%1$s może nie mieć wystarczającej pamięci na tym urządzeniu. Ładowanie może się nie powieść; lżejsze modele są bezpieczniejsze.</string>
     <string name="error_oom_transcription">Za mało pamięci, aby transkrybować to audio. Spróbuj krótszego pliku, mniejszego modelu lub zamknij inne aplikacje. Aby całkowicie uniknąć próby, włącz ochronę pamięci w Ustawienia > Zaawansowane.</string>
