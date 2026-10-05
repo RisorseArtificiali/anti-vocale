@@ -82,6 +82,7 @@ object ResultNotificationRefresher {
             // TASK-722: keep the failure banner across page reposts (the
             // other status facts predate this extra pattern).
             saveFailureReason = intent.getStringExtra(NotificationActionReceiver.EXTRA_SAVE_FAILURE),
+            savedFolderName = intent.getStringExtra(NotificationActionReceiver.EXTRA_SAVED_FOLDER),
             pageIndex = target,
             notificationId = notificationId,
             firstPostedAt = intent.getLongExtra(

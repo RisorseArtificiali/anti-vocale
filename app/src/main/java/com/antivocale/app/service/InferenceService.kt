@@ -672,9 +672,9 @@ class InferenceService : Service(), TranscriptionListener {
                     // form on diarized runs), not the raw stored transcript.
                     val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
                     val copied = autoCopyIfEnabled(annotatedText, sourcePackage)
-                    val saveFailure = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
+                    val saveResult = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
                     val refinedFrom = refinementOutcome?.takeIf { it != DualRefinementPolicy.NOT_REFINED }
-                    showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED, repetitionSuspected = repetitionSuspected, segments = segments, saveFailure = saveFailure)
+                    showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, copiedToClipboard = copied, streamedWithoutVad = streamedWithoutVad, refinedFrom = refinedFrom, notRefined = refinementOutcome == DualRefinementPolicy.NOT_REFINED, repetitionSuspected = repetitionSuspected, segments = segments, saveResult = saveResult)
                 } finally {
                     pendingResultNotifications.remove(coroutineContext[Job])
                 }
@@ -793,29 +793,29 @@ class InferenceService : Service(), TranscriptionListener {
 
     // ---- Auto-save to folder (issue #14) ----
 
-    /** @return the auto-save failure reason for the result notification
-     *  subtext, or null when saved/not configured (TASK-722: never silent). */
+    /** @return the auto-save [TranscriptFileSaver.SaveResult] for the result
+     *  notification (TASK-722's failure reason and GH #128's destination
+     *  folder ride it). */
     private suspend fun saveTranscriptToFileIfEnabled(
         text: String,
         sourcePackage: String?,
         segments: List<TimedSegment>,
         failedChunkCount: Int
-    ): String? {
-        val result = withContext(Dispatchers.IO) {
+    ): TranscriptFileSaver.SaveResult {
+        return withContext(Dispatchers.IO) {
+            // ONE resolution: two reads could pair a fresh signature text
+            // with a stale position when a preference edit lands between them.
+            val sig = TranscriptSignature.effectiveSpec(
+                preferencesManager, getString(R.string.signature_default_text))
             TranscriptFileSaver.saveAuto(
                 this@InferenceService,
                 preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
-                signature = TranscriptSignature.effectiveSpec(
-                    preferencesManager, getString(R.string.signature_default_text)).let { it.text },
-                signaturePosition = TranscriptSignature.effectiveSpec(
-                    preferencesManager, getString(R.string.signature_default_text)).position,
+                signature = sig.text,
+                signaturePosition = sig.position,
             )
         }
-        // TASK-722: the failure reason rides the result notification; the
-        // saver already logged the concrete failing step.
-        return result.failureOrNull()
     }
 
     // ---- Notifications ----
@@ -964,7 +964,7 @@ class InferenceService : Service(), TranscriptionListener {
         notRefined: Boolean = false,
         repetitionSuspected: Boolean = false,
         segments: List<TimedSegment>,
-        saveFailure: String? = null,
+        saveResult: TranscriptFileSaver.SaveResult,
     ) {
         // TASK-598 F5: the notification's whole text (body, copy, share,
         // page rebuilds) derives the speaker-annotated form when the run
@@ -1001,7 +1001,8 @@ class InferenceService : Service(), TranscriptionListener {
             refinedFrom = refinedFrom,
             notRefined = notRefined,
             repetitionSuspected = repetitionSuspected,
-            saveFailureReason = saveFailure,
+            saveFailureReason = saveResult.failureOrNull(),
+            savedFolderName = saveResult.savedFolderOrNull(),
             firstPostedAt = System.currentTimeMillis()
         )
         val notification = resultNotificationFactory.build(spec, prefs)

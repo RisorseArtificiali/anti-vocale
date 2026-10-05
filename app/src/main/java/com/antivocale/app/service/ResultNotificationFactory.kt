@@ -49,6 +49,9 @@ data class ResultNotificationSpec(
     /** TASK-722: the auto-save failure reason when the export could not be
      *  written; null when saved, not configured, or the run predates it. */
     val saveFailureReason: String? = null,
+    /** GH #128: the display name of the SAF folder the export landed in;
+     *  success says WHERE, so a twin-folder mismatch reads right here. */
+    val savedFolderName: String? = null,
     val firstPostedAt: Long = System.currentTimeMillis(),
     /** True when rebuilding after a prev/next tap: suppresses re-alerting. */
     val repost: Boolean = false
@@ -354,6 +357,11 @@ class ResultNotificationFactory(private val context: Context) {
             // warning that the text may be garbage leads the status facts).
             subTextParts.add(
                 context.getString(R.string.auto_save_failed, spec.saveFailureReason))
+        } else if (spec.savedFolderName != null) {
+            // GH #128: success names the destination folder, the fact that
+            // separates "written" from "written where you are not looking".
+            subTextParts.add(
+                context.getString(R.string.saved_to_folder, spec.savedFolderName))
         }
         val langLabel = spec.detectedLanguage?.let { lang ->
             LanguageNames.nativeLanguageName(lang)
@@ -466,6 +474,7 @@ class ResultNotificationFactory(private val context: Context) {
             putExtra(NotificationActionReceiver.EXTRA_SIGNATURE_TEXT, spec.signatureText)
             putExtra(NotificationActionReceiver.EXTRA_SIGNATURE_POSITION, spec.signaturePosition)
             putExtra(NotificationActionReceiver.EXTRA_PAGE_INDEX, pageIndex)
+            putExtra(NotificationActionReceiver.EXTRA_SAVED_FOLDER, spec.savedFolderName)
             putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, spec.notificationId)
             putExtra(NotificationActionReceiver.EXTRA_FIRST_POSTED_AT, spec.firstPostedAt)
             putExtra(NotificationActionReceiver.EXTRA_SAVE_FAILURE, spec.saveFailureReason)

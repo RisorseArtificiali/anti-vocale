@@ -178,6 +178,19 @@ class ResultNotificationFactoryTest {
     }
 
     @Test
+    fun `a successful auto-save names the destination folder (GH #128)`() {
+        val n = factory.build(
+            spec("ciao come stai").copy(savedFolderName = "rec"), prefs)
+        assertEquals("Saved to rec", n.subTextCompat())
+        // the destination is a SUCCESS fact: a failure, when present, wins the
+        // line instead (the two never ride together from one save).
+        val failed = factory.build(
+            spec("ciao come stai").copy(
+                saveFailureReason = "create_refused", savedFolderName = "rec"), prefs)
+        assertEquals("Auto-save failed (create_refused)", failed.subTextCompat())
+    }
+
+    @Test
     fun `paged subtext shows page counter`() {
         val n = factory.build(spec(longText(3), page = 1), prefs)
         assertEquals("Page 2 of 3", n.subTextCompat())

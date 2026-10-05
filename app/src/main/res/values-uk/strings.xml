@@ -582,6 +582,7 @@
     <string name="early_preview_badge">Попередній перегляд</string>
     <string name="early_preview_requires_progressive">Потрібен прогресивний показ</string>
     <string name="auto_save_failed">Не вдалося автозберегти (%1$s)</string>
+    <string name="saved_to_folder">Збережено в %1$s</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Типовий запит розшифровки</string>

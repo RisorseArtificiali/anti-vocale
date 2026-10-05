@@ -57,6 +57,9 @@ class NotificationActionReceiver : BroadcastReceiver() {
          *  the page-tap repost keeps the failure banner (the refresher
          *  rebuilds the spec from extras alone). */
         const val EXTRA_SAVE_FAILURE = "save_failure"
+        /** GH #128: the success twin of [EXTRA_SAVE_FAILURE]; the page-tap
+         *  repost keeps naming the destination folder. */
+        const val EXTRA_SAVED_FOLDER = "saved_folder"
     }
 
     override fun onReceive(context: Context, intent: Intent) {

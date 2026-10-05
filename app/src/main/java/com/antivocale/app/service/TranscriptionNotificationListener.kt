@@ -124,8 +124,8 @@ class TranscriptionNotificationListener(
                 // TASK-598 review F3: same derivation as the notification Copy action.
                 val annotatedText = SubtitleFormatter.annotatedOrStored(resultText, segments)
                 autoCopyIfEnabled(annotatedText, sourcePackage)
-                val saveFailure = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
-                showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad, repetitionSuspected = repetitionSuspected, segments = segments, saveFailure = saveFailure)
+                val saveResult = saveTranscriptToFileIfEnabled(resultText, sourcePackage, segments, failedChunkCount)
+                showResultNotification(annotatedText, sourcePackage, taskId, confidence, detectedLanguage, isPartial, failedChunkCount, streamedWithoutVad = streamedWithoutVad, repetitionSuspected = repetitionSuspected, segments = segments, saveResult = saveResult)
             }
         }
     }
@@ -183,29 +183,27 @@ class TranscriptionNotificationListener(
     // in sync (the format resolution itself lives in TranscriptFileSaver.saveAuto,
     // the single owner of the export fail-safe).
 
-    /** @return the auto-save failure reason for the result notification
-     *  subtext, or null when saved/not configured (TASK-722, service twin). */
+    /** @return the auto-save [TranscriptFileSaver.SaveResult] for the result
+     *  notification (the InferenceService twin's contract). */
     private suspend fun saveTranscriptToFileIfEnabled(
         text: String,
         sourcePackage: String?,
         segments: List<TimedSegment>,
         failedChunkCount: Int
-    ): String? {
-        val result = withContext(Dispatchers.IO) {
+    ): TranscriptFileSaver.SaveResult {
+        return withContext(Dispatchers.IO) {
+            // ONE resolution, same torn-read guard as the service twin.
+            val sig = TranscriptSignature.effectiveSpec(
+                preferencesManager, appContext.getString(R.string.signature_default_text))
             TranscriptFileSaver.saveAuto(
                 appContext,
                 preferencesManager.outputFolderUri.first(),
                 preferencesManager.transcriptExportFormat.first(),
                 text, segments, failedChunkCount, sourcePackage,
-                signature = TranscriptSignature.effectiveSpec(
-                    preferencesManager, appContext.getString(R.string.signature_default_text)).let { it.text },
-                signaturePosition = TranscriptSignature.effectiveSpec(
-                    preferencesManager, appContext.getString(R.string.signature_default_text)).position,
+                signature = sig.text,
+                signaturePosition = sig.position,
             )
         }
-        // TASK-722: the failure reason rides the result notification; the
-        // saver already logged the concrete failing step.
-        return result.failureOrNull()
     }
 
     // ---- Notifications (ported from InferenceService) ----
@@ -221,7 +219,7 @@ class TranscriptionNotificationListener(
         streamedWithoutVad: Boolean = false,
         repetitionSuspected: Boolean = false,
         segments: List<TimedSegment>,
-        saveFailure: String? = null,
+        saveResult: TranscriptFileSaver.SaveResult,
     ) {
         // TASK-598 F5: mirrors InferenceService.showResultNotification (keep
         // the two paths in sync): the notification's whole text derives the
@@ -254,7 +252,8 @@ class TranscriptionNotificationListener(
             notificationId = id,
             streamedWithoutVad = streamedWithoutVad,
             repetitionSuspected = repetitionSuspected,
-            saveFailureReason = saveFailure,
+            saveFailureReason = saveResult.failureOrNull(),
+            savedFolderName = saveResult.savedFolderOrNull(),
             firstPostedAt = System.currentTimeMillis()
         )
         val notification = resultNotificationFactory.build(spec, prefs)

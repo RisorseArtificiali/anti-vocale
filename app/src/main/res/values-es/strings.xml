@@ -488,6 +488,7 @@
     <string name="early_preview_badge">Vista previa</string>
     <string name="early_preview_requires_progressive">Requiere la visualización progresiva</string>
     <string name="auto_save_failed">Error al guardar automáticamente (%1$s)</string>
+    <string name="saved_to_folder">Guardado en %1$s</string>
     <string name="default_prompt_title">Prompt predeterminado</string>
     <string name="default_prompt_description">Instrucción para el modelo durante la transcripción. Si se deja vacío, se usa el prompt integrado.</string>
     <string name="default_prompt_placeholder">ej. Transcribe este discurso:</string>

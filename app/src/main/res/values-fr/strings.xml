@@ -488,6 +488,7 @@
     <string name="early_preview_badge">Aperçu</string>
     <string name="early_preview_requires_progressive">Requiert un affichage progressif</string>
     <string name="auto_save_failed">Échec de l\'enregistrement automatique (%1$s)</string>
+    <string name="saved_to_folder">Enregistré dans %1$s</string>
     <string name="default_prompt_title">Invite par défaut</string>
     <string name="default_prompt_description">Consigne donnée au modèle pendant la transcription. Laisser vide pour utiliser l\'invite intégrée.</string>
     <string name="default_prompt_placeholder">ex. Transcris ce discours :</string>

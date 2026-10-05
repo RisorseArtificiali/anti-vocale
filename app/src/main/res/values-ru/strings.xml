@@ -562,6 +562,7 @@
     <string name="early_preview_badge">Предпросмотр</string>
     <string name="early_preview_requires_progressive">Требуется прогрессивный показ</string>
     <string name="auto_save_failed">Не удалось автосохранить (%1$s)</string>
+    <string name="saved_to_folder">Сохранено в %1$s</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Запрос по умолчанию</string>

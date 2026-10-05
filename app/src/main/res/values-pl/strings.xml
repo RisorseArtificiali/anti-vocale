@@ -580,6 +580,7 @@
     <string name="early_preview_badge">Podgląd</string>
     <string name="early_preview_requires_progressive">Wymaga wyświetlania progresywnego</string>
     <string name="auto_save_failed">Automatyczny zapis nie powiódł się (%1$s)</string>
+    <string name="saved_to_folder">Zapisano w %1$s</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Domyślny prompt</string>

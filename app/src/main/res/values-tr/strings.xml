@@ -572,6 +572,7 @@
     <string name="early_preview_badge">Önizleme</string>
     <string name="early_preview_requires_progressive">Aşamalı görüntüleme gerektirir</string>
     <string name="auto_save_failed">Otomatik kaydetme başarısız (%1$s)</string>
+    <string name="saved_to_folder">Şuraya kaydedildi: %1$s</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Varsayılan Komut</string>

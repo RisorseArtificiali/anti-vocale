@@ -65,7 +65,11 @@ object TranscriptFileSaver {
      * the result notification subtext.
      */
     sealed class SaveResult {
-        data class Saved(val name: String) : SaveResult()
+        /** GH #128: [folderName] is the SAF tree's display name, the ONE
+         *  identity of the destination the platform exposes; it rides the
+         *  success notification so a file landing in a twin folder ("rec"
+         *  vs "rec (1)") is visible where the user reads the result. */
+        data class Saved(val folderName: String) : SaveResult()
         data class Failed(val failureReason: String) : SaveResult()
         data object NotConfigured : SaveResult()
 
@@ -85,6 +89,11 @@ object TranscriptFileSaver {
          *  one-line reduction both service save sites use (their duplicated
          *  when-blocks collapse to this). */
         fun failureOrNull(): String? = (this as? Failed)?.failureReason
+
+        /** The destination folder's display name when this is a [Saved]
+         *  (null when the provider gave none), null otherwise: the success
+         *  twin of [failureOrNull]. */
+        fun savedFolderOrNull(): String? = (this as? Saved)?.folderName
     }
 
     /** TASK-647: the disclaimer header for timed formats (a comment block
@@ -176,8 +185,12 @@ object TranscriptFileSaver {
             }
             // TASK-722 review: the affirmative success trace lives at the
             // single owner (both service twins collapsed their copies).
-            Log.i(TAG, "Saved transcript to output folder: ${file.name ?: name}")
-            SaveResult.Saved(file.name ?: name)
+            // GH #128 (review): the destination rides BOTH surfaces through
+            // the ONE owner (TreeUris.displayName, same derivation as the
+            // Settings export card), and the success log carries the tree
+            // itself so a twin-folder report pins to a concrete destination.
+            Log.i(TAG, "Saved transcript to output folder: ${file.name ?: name} (tree=$treeUri)")
+            SaveResult.Saved(TreeUris.displayName(context, treeUri))
         } catch (e: Exception) {
             Log.w(TAG, "Failed to save transcript to $treeUri", e)
             SaveResult.Failed(SaveResult.FAIL_EXCEPTION)
