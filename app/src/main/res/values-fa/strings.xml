@@ -168,11 +168,11 @@
 
     <!-- Qwen3-ASR -->
     <string name="qwen3_asr_title">Qwen3-ASR (52 زبان)</string>
-    <string name="qwen3_asr_description">52 زبان • دقت ضعیف برای ایتالیایی</string>
+    <string name="qwen3_asr_description">52 زبان</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 زبان • دقت ضعیف برای ایتالیایی</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 52 زبان</string>
     <string name="qwen3_asr_download_confirm_title">%1$s دانلود شود؟</string>
-    <string name="qwen3_asr_download_confirm_message">حدود %1$dMB دانلود خواهد شد. Qwen3-ASR از 52 زبان با دقت ضعیف برای ایتالیایی پشتیبانی می‌کند.</string>
+    <string name="qwen3_asr_download_confirm_message">حدود %1$d مگابایت دانلود می‌شود. Qwen3-ASR از 52 زبان پشتیبانی می‌کند.</string>
     <string name="qwen3_asr_download">دانلود Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">مدل Qwen3-ASR حذف شود؟</string>
     <string name="qwen3_asr_downloaded">%1$s دانلود شد</string>
@@ -181,7 +181,7 @@
     <!-- Nemotron 3.5 streaming -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (جریانی)</string>
-    <string name="nemotron_description">~640MB • ترنسدیوسر جریانی • کیفیت ایتالیایی آزمایشی</string>
+    <string name="nemotron_description">~640MB • ترنسدیوسر جریانی</string>
     <string name="nemotron_download_confirm_title">%1$s دانلود شود؟</string>
     <string name="nemotron_download_confirm_message">حدود %1$dMB دانلود خواهد شد. Nemotron 3.5 یک مدل ASR چندزبانه جریانی است.</string>
     <string name="nemotron_download">دانلود Nemotron</string>

@@ -150,11 +150,11 @@
 
     <!-- Qwen3-ASR model -->
     <string name="qwen3_asr_title">Qwen3-ASR (52 Sprachen)</string>
-    <string name="qwen3_asr_description">52 Sprachen • Schwache Genauigkeit für Italienisch</string>
+    <string name="qwen3_asr_description">52 Sprachen</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938 MB • 52 Sprachen • Schwache Genauigkeit für Italienisch</string>
+    <string name="qwen3_asr_0_6b_description">~938 MB • 52 Sprachen</string>
     <string name="qwen3_asr_download_confirm_title">%1$s herunterladen?</string>
-    <string name="qwen3_asr_download_confirm_message">Dies lädt etwa %1$d MB herunter. Qwen3-ASR unterstützt 52 Sprachen mit schwacher Genauigkeit für Italienisch.</string>
+    <string name="qwen3_asr_download_confirm_message">Dies lädt ~%1$dMB herunter. Qwen3-ASR unterstützt 52 Sprachen.</string>
     <string name="qwen3_asr_download">Qwen3-ASR herunterladen</string>
     <string name="qwen3_asr_delete_message">Qwen3-ASR-Modell löschen?</string>
     <string name="qwen3_asr_downloaded">%1$s erfolgreich heruntergeladen</string>
@@ -163,7 +163,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (Streaming)</string>
-    <string name="nemotron_description">~640 MB • Streaming-Transducer • Experimentelle Qualität für Italienisch</string>
+    <string name="nemotron_description">~640 MB • Streaming-Transducer</string>
     <string name="nemotron_download_confirm_title">%1$s herunterladen?</string>
     <string name="nemotron_download_confirm_message">Dies lädt etwa %1$d MB herunter. Nemotron 3.5 ist ein mehrsprachiges Streaming-ASR-Modell.</string>
     <string name="nemotron_download">Nemotron herunterladen</string>

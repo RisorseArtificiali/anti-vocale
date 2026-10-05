@@ -171,11 +171,11 @@
 
     <!-- Qwen3-ASR model -->
     <string name="qwen3_asr_title">Qwen3-ASR (52 dil)</string>
-    <string name="qwen3_asr_description">52 dil • Zayıf İtalyanca doğruluğu</string>
+    <string name="qwen3_asr_description">52 dil</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 dil • Zayıf İtalyanca doğruluğu</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 52 dil</string>
     <string name="qwen3_asr_download_confirm_title">%1$s indirilsin mi?</string>
-    <string name="qwen3_asr_download_confirm_message">Bu, yaklaşık %1$dMB indirir. Qwen3-ASR 52 dili destekler ancak İtalyanca doğruluğu zayıftır.</string>
+    <string name="qwen3_asr_download_confirm_message">Bu, yaklaşık %1$dMB indirir. Qwen3-ASR 52 dili destekler.</string>
     <string name="qwen3_asr_download">Qwen3-ASR indir</string>
     <string name="qwen3_asr_delete_message">Qwen3-ASR modeli silinsin mi?</string>
     <string name="qwen3_asr_downloaded">%1$s başarıyla indirildi</string>
@@ -184,7 +184,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (akış)</string>
-    <string name="nemotron_description">~640MB • Akış transdüseri • Deneysel İtalyanca kalitesi</string>
+    <string name="nemotron_description">~640MB • Akış transdüseri</string>
     <string name="nemotron_download_confirm_title">%1$s indirilsin mi?</string>
     <string name="nemotron_download_confirm_message">Bu, yaklaşık %1$dMB indirir. Nemotron 3.5, çok dilli bir akış ASR modelidir.</string>
     <string name="nemotron_download">Nemotron indir</string>

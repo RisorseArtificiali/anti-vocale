@@ -149,11 +149,11 @@
 
     <!-- Qwen3-ASR model -->
     <string name="qwen3_asr_title">Qwen3-ASR (52 भाषाएं)</string>
-    <string name="qwen3_asr_description">52 भाषाएं • इतालवी सटीकता कमज़ोर</string>
+    <string name="qwen3_asr_description">52 भाषाएं</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 भाषाएं • इतालवी सटीकता कमज़ोर</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 52 भाषाएं</string>
     <string name="qwen3_asr_download_confirm_title">%1$s डाउनलोड करें?</string>
-    <string name="qwen3_asr_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। Qwen3-ASR 52 भाषाओं को सपोर्ट करता है लेकिन इतालवी के लिए सटीकता कम है।</string>
+    <string name="qwen3_asr_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। Qwen3-ASR 52 भाषाओं का समर्थन करता है।</string>
     <string name="qwen3_asr_download">Qwen3-ASR डाउनलोड करें</string>
     <string name="qwen3_asr_delete_message">Qwen3-ASR मॉडल मिटाएं?</string>
     <string name="qwen3_asr_downloaded">%1$s सफलतापूर्वक डाउनलोड हुआ</string>
@@ -162,7 +162,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (स्ट्रीमिंग)</string>
-    <string name="nemotron_description">~640MB • स्ट्रीमिंग ट्रांसड्यूसर • प्रयोगात्मक इतालवी क्वालिटी</string>
+    <string name="nemotron_description">~640MB • स्ट्रीमिंग ट्रांसड्यूसर</string>
     <string name="nemotron_download_confirm_title">%1$s डाउनलोड करें?</string>
     <string name="nemotron_download_confirm_message">इससे ~%1$dMB डाउनलोड होगा। Nemotron 3.5 एक स्ट्रीमिंग बहुभाषी ASR मॉडल है।</string>
     <string name="nemotron_download">Nemotron डाउनलोड करें</string>

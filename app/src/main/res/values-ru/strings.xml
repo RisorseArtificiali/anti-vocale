@@ -161,7 +161,7 @@
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
     <string name="qwen3_asr_0_6b_description">~938 МБ • 52 языка • Низкая точность на итальянском</string>
     <string name="qwen3_asr_download_confirm_title">Скачать %1$s?</string>
-    <string name="qwen3_asr_download_confirm_message">Будет загружено ~%1$d МБ. Qwen3-ASR поддерживает 52 языка с невысокой точностью на итальянском.</string>
+    <string name="qwen3_asr_download_confirm_message">Будет загружено ~%1$dМБ. Qwen3-ASR поддерживает 52 языка.</string>
     <string name="qwen3_asr_download">Скачать Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">Удалить модель Qwen3-ASR?</string>
     <string name="qwen3_asr_downloaded">%1$s успешно загружена</string>

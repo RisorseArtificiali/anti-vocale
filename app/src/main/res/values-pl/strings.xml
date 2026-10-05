@@ -173,11 +173,11 @@
 
     <!-- Qwen3-ASR model -->
     <string name="qwen3_asr_title">Qwen3-ASR (52 języki)</string>
-    <string name="qwen3_asr_description">52 języki • Słaba dokładność włoskiego</string>
+    <string name="qwen3_asr_description">52 języki</string>
     <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
-    <string name="qwen3_asr_0_6b_description">~938MB • 52 języki • Słaba dokładność włoskiego</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • 52 języki</string>
     <string name="qwen3_asr_download_confirm_title">Pobrać %1$s?</string>
-    <string name="qwen3_asr_download_confirm_message">To pobierze ok. %1$dMB. Qwen3-ASR obsługuje 52 języki ze słabą dokładnością dla włoskiego.</string>
+    <string name="qwen3_asr_download_confirm_message">To pobierze ~%1$dMB. Qwen3-ASR obsługuje 52 języki.</string>
     <string name="qwen3_asr_download">Pobierz Qwen3-ASR</string>
     <string name="qwen3_asr_delete_message">Usunąć model Qwen3-ASR?</string>
     <string name="qwen3_asr_downloaded">Pomyślnie pobrano %1$s</string>
@@ -186,7 +186,7 @@
     <!-- Nemotron 3.5 streaming model -->
     <string name="nemotron_name">Nemotron 3.5</string>
     <string name="nemotron_title">Nemotron 3.5 (strumieniowanie)</string>
-    <string name="nemotron_description">~640MB • Transducer strumieniowy • Eksperymentalna jakość włoskiego</string>
+    <string name="nemotron_description">~640MB • Transducer strumieniowy</string>
     <string name="nemotron_download_confirm_title">Pobrać %1$s?</string>
     <string name="nemotron_download_confirm_message">To pobierze ok. %1$dMB. Nemotron 3.5 to wielojęzyczny strumieniowy model ASR.</string>
     <string name="nemotron_download">Pobierz Nemotron</string>
