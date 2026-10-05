@@ -193,6 +193,10 @@ interface PreferencesManager {
     val externalModelsJson: Flow<String?>
     suspend fun saveExternalModelsJson(json: String)
 
+    /** TASK-741: the scheduled folder watch records + snapshots, one JSON. */
+    val scheduledFoldersJson: Flow<String?>
+    suspend fun saveScheduledFoldersJson(json: String)
+
     /**
      * TASK-675: backend ids demoted for silent decodes (a model that loaded
      * but produced no text while speech was present, twice in one app

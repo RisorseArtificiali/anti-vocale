@@ -138,6 +138,16 @@ internal class TestSpiOps(
             // TASK-685: the seeded Models-filter favorite (null = untouched,
             // "" = cleared; device trials read the seed without UI scraping).
             .put("modelFilterLanguage", preferences.modelFilterLanguage.first() ?: JSONObject.NULL)
+            // TASK-741: the scheduled folder watch, raw JSON, read-only for
+            // now (verify a seeded state without UI scraping; the set/seed
+            // key lands with slice 3's worker trial). The conformance test
+            // pins this key by flow name. CAPPED like the clipboard payload:
+            // the store's size contract admits ~1MB snapshots, and an
+            // uncapped value would blow the Binder transaction buffer for
+            // EVERY get broadcast, not just this row.
+            .put("scheduledFoldersTruncated", (preferences.scheduledFoldersJson.first()?.length ?: 0) > SPI_STRING_CAP)
+            .put("scheduledFoldersJson", preferences.scheduledFoldersJson.first()
+                ?.let { it.take(SPI_STRING_CAP) } ?: JSONObject.NULL)
             .put("swipeActionMode", preferences.swipeActionMode.first())
             .put("themePreference", preferences.themePreference.first())
             .put("textScalePreference", preferences.textScalePreference.first())
@@ -665,6 +675,9 @@ internal class TestSpiOps(
 
         /** clipboard op cap: keeps the result string far under the binder limit (TASK-506 class). */
         const val CLIPBOARD_TEXT_CAP = 64 * 1024
+
+        /** Per-row string cap for large raw-JSON rows (binder rationale). */
+        const val SPI_STRING_CAP = 64 * 1024
 
         /** notifications op per-item cap, same binder rationale; generous for a paged transcript. */
         const val NOTIFICATION_TEXT_CAP = 64 * 1024

@@ -82,7 +82,9 @@ class TestSpiConformanceTest {
         val json = org.json.JSONObject(ops(fake).handle(TestSpiOps.OP_GET))
         val names = json.names() ?: org.json.JSONArray()
         val getKeys = (0 until names.length()).map { names.getString(it) }
-            .filter { it !in setOf("op", "paths") }
+            // "paths" is structural; scheduledFoldersTruncated is the cap
+            // meta-flag beside its capped row (binder-buffer rationale).
+            .filter { it !in setOf("op", "paths", "scheduledFoldersTruncated") }
 
         // Flows deliberately NOT in get: partial-transcription resume state
         // (write-path only), benchmark history, the one-shot external-migration

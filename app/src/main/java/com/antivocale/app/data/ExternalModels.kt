@@ -114,10 +114,44 @@ data class ExternalModelRecord(
                 quarantined = o.optBoolean("quarantined", false),
             )
         } catch (e: Exception) {
-            Log.w(TAG, "Malformed ExternalModelRecord; whole list will be rejected", e)
+            Log.w(TAG, "Malformed ExternalModelRecord; dropping this record only", e)
             null
         }
     }
+}
+
+
+/**
+ * The element-granularity list decode shared by the preference-backed JSON
+ * lists (external models, scheduled folders): a malformed element is
+ * dropped with a warning, the valid remainder survives. Whole-list
+ * rejection combined with a store's read-modify-write would destroy the
+ * surviving records on the next mutation.
+ */
+internal inline fun <T> decodeJsonList(
+    raw: String?,
+    tag: String,
+    what: String,
+    parse: (JSONObject) -> T?,
+): List<T> {
+    if (raw.isNullOrBlank()) return emptyList()
+    return runCatching {
+        val a = JSONArray(raw)
+        buildList {
+            for (i in 0 until a.length()) {
+                // Per-ELEMENT catching: a throwing element (a truncated
+                // object, a string where a record should be) drops that
+                // element alone. Escaping to the outer runCatching would
+                // reject the whole list, and the next mutate() would
+                // persist the empty list as data loss.
+                runCatching { parse(a.getJSONObject(i)) }
+                    .getOrNull()
+                    ?.let { add(it) }
+                    ?: Log.w(tag, "Dropping malformed $what at index $i")
+            }
+        }
+    }.onFailure { Log.w(tag, "Failed to decode $what JSON", it) }
+        .getOrDefault(emptyList())
 }
 
 object ExternalModelListJson {
@@ -126,21 +160,6 @@ object ExternalModelListJson {
     fun encode(records: List<ExternalModelRecord>): String =
         JSONArray(records.map { it.toJson() }).toString()
 
-    fun decode(raw: String?): List<ExternalModelRecord> {
-        if (raw.isNullOrBlank()) return emptyList()
-        return runCatching {
-            val a = JSONArray(raw)
-            // Element-granularity rejection: a malformed record is dropped, the
-            // valid remainder survives. Whole-list rejection combined with the
-            // store's read-modify-write would destroy the surviving records on
-            // the next mutation (data loss flagged by code review).
-            buildList {
-                for (i in 0 until a.length()) {
-                    ExternalModelRecord.fromJson(a.getJSONObject(i))?.let { add(it) }
-                        ?: Log.w(TAG, "Dropping malformed external model record at index $i")
-                }
-            }
-        }.onFailure { Log.w(TAG, "Failed to decode external models JSON", it) }
-         .getOrDefault(emptyList())
-    }
+    fun decode(raw: String?): List<ExternalModelRecord> =
+        decodeJsonList(raw, TAG, "external model record") { ExternalModelRecord.fromJson(it) }
 }

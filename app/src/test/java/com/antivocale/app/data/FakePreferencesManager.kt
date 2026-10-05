@@ -69,6 +69,7 @@ internal class FakePreferencesManager : PreferencesManager {
     val _compactResultActions = MutableStateFlow(PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS)
     val _languageChipEnabled = MutableStateFlow(PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED)
     val _externalModelsJson = MutableStateFlow<String?>(null)
+    val _scheduledFoldersJson = MutableStateFlow<String?>(null)
     val _partialTranscriptionText = MutableStateFlow<String?>(null)
     val _pendingBackendLoad = MutableStateFlow<String?>(null)
     override val pendingBackendLoad: Flow<String?> get() = _pendingBackendLoad
@@ -151,6 +152,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val compactResultActions: Flow<Boolean> get() = _compactResultActions
     override val languageChipEnabled: Flow<Boolean> get() = _languageChipEnabled
     override val externalModelsJson: Flow<String?> get() = _externalModelsJson
+    override val scheduledFoldersJson: Flow<String?> get() = _scheduledFoldersJson
     override val partialTranscriptionText: Flow<String?> get() = _partialTranscriptionText
     override val partialTranscriptionTimestamp: Flow<Long?> get() = _partialTranscriptionTimestamp
 
@@ -197,6 +199,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveCompactResultActions(enabled: Boolean) { _compactResultActions.value = enabled }
     override suspend fun saveLanguageChipEnabled(enabled: Boolean) { _languageChipEnabled.value = enabled }
     override suspend fun saveExternalModelsJson(json: String) { _externalModelsJson.value = json }
+    override suspend fun saveScheduledFoldersJson(json: String) { _scheduledFoldersJson.value = json }
     override suspend fun savePartialTranscriptionState(text: String) {
         _partialTranscriptionText.value = text
         _partialTranscriptionTimestamp.value = System.currentTimeMillis()

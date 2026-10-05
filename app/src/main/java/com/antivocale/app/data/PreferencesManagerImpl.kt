@@ -112,6 +112,8 @@ class PreferencesManagerImpl(
         private val PARTIAL_TRANSCRIPTION_TEXT = stringPreferencesKey("partial_transcription_text")
         private val PARTIAL_TRANSCRIPTION_TIMESTAMP = longPreferencesKey("partial_transcription_timestamp")
         private val EXTERNAL_MODELS_JSON = stringPreferencesKey("external_models_json")
+        // TASK-741: the scheduled folder watch (records + dedup snapshots).
+        private val SCHEDULED_FOLDERS_JSON = stringPreferencesKey("scheduled_folders_json")
         // TASK-675: silent-model demotion set (backend ids).
         private val DEMOTED_BACKENDS = stringSetPreferencesKey("demoted_backends")
         // TASK-685: the Models-filter favorite; key absence = untouched.
@@ -172,7 +174,8 @@ class PreferencesManagerImpl(
         val remoteOmnivoiceModel: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_MODEL,
         val compactResultActions: Boolean = PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         val languageChipEnabled: Boolean = PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
-        val externalModelsJson: String? = null
+        val externalModelsJson: String? = null,
+        val scheduledFoldersJson: String? = null
     )
 
     private fun Preferences.toCached() = CachedPreferences(
@@ -236,7 +239,8 @@ class PreferencesManagerImpl(
             ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_MODEL,
         compactResultActions = this[COMPACT_RESULT_ACTIONS] ?: PreferencesManager.DEFAULT_COMPACT_RESULT_ACTIONS,
         languageChipEnabled = this[LANGUAGE_CHIP_ENABLED] ?: PreferencesManager.DEFAULT_LANGUAGE_CHIP_ENABLED,
-        externalModelsJson = this[EXTERNAL_MODELS_JSON]
+        externalModelsJson = this[EXTERNAL_MODELS_JSON],
+        scheduledFoldersJson = this[SCHEDULED_FOLDERS_JSON]
     )
 
     fun initialize() {
@@ -962,11 +966,22 @@ class PreferencesManagerImpl(
         // same value, and every downstream consumer re-decodes it. Skip the duplicates.
         .distinctUntilChanged()
 
+    override val scheduledFoldersJson: Flow<String?> = dataStore.data.map { it[SCHEDULED_FOLDERS_JSON] }
+        .onStart { emit(cache.get().scheduledFoldersJson) }
+        .distinctUntilChanged()
+
     override suspend fun saveExternalModelsJson(json: String) {
         dataStore.edit { preferences ->
             preferences[EXTERNAL_MODELS_JSON] = json
         }
         cache.updateAndGet { it.copy(externalModelsJson = json) }
+    }
+
+    override suspend fun saveScheduledFoldersJson(json: String) {
+        dataStore.edit { preferences ->
+            preferences[SCHEDULED_FOLDERS_JSON] = json
+        }
+        cache.updateAndGet { it.copy(scheduledFoldersJson = json) }
     }
 
     // TASK-675: the demotion set is read-modify-written INSIDE the edit

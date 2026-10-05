@@ -33,6 +33,13 @@ import com.antivocale.app.util.SharedAudioHandler
  *
  * WORKER DUTIES the planner cannot enforce (slice 3 owns them; named here
  * so they are contract, not folklore):
+ *  - Overlapping scans of the SAME folder must not run: the read side of
+ *    the store's snapshot sits OUTSIDE its mutation mutex, so two scans
+ *    planning from one base snapshot both enqueue the same stable files
+ *    and the second write erases the first's dedup facts (double
+ *    transcription). Slice 3 serializes via ONE WorkManager unique name
+ *    shared by the periodic run and the manual scan-now one-shot; the
+ *    store dedupes nothing across the read-plan-write window.
  *  - An EMPTY OR FAILED listing is scan-abandoned: keep the previous
  *    snapshot verbatim and retry later. Feeding a provider error in as an
  *    empty list would wipe the awaiting entries and force every file back
