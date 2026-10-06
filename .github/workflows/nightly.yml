@@ -46,7 +46,7 @@ jobs:
     steps:
       # Always main: the nightly is "whatever main looks like right now".
       - name: Checkout main
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           ref: main
           # Full history is not needed, but the tag push below needs the origin
