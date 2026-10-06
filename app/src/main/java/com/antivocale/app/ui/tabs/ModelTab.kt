@@ -579,6 +579,7 @@ fun ModelTab(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
+    var showGemmaDownloads by remember { mutableStateOf(false) }
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -642,46 +643,6 @@ fun ModelTab(
                 onClick = { showUnloadDialog = true },
                 isTranscribing = isTranscribing
             )
-        }
-
-        // TASK-775: Gemma downloads live in their own sub-page.
-        var showGemmaDownloads by remember { mutableStateOf(false) }
-
-        // TASK-775: the Gemma downloads sub-page. A full-screen Surface
-        // replaces the tab content while open; BACK (the header's back
-        // arrow or the system back) returns to the Advanced section expanded.
-        if (showGemmaDownloads) {
-            androidx.activity.compose.BackHandler { showGemmaDownloads = false }
-            androidx.compose.material3.Surface(
-                modifier = Modifier.fillMaxSize(),
-                color = MaterialTheme.colorScheme.background,
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .navigationBarsPadding()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 16.dp),
-                ) {
-                    com.antivocale.app.ui.components.SettingsSubPageHeader(
-                        titleRes = R.string.download_models,
-                        onBack = { showGemmaDownloads = false },
-                    )
-                    if (visibleGemmaVariants.isNotEmpty()) {
-                        ModelDownloadSection(
-                            viewModel = viewModel,
-                            context = context,
-                            onNavigateToSettings = onNavigateToSettings,
-                            activeModelName = uiState.modelName,
-                            visibleVariants = visibleGemmaVariants,
-                            guardedModelSwitch = guardedSwitch,
-                            onInfoClick = { modelInfoVariant = it },
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(200.dp))
-                }
-            }
-            return
         }
 
         // Catalog-driven model sections (Parakeet, Whisper, Qwen3-ASR, Nemotron, GigaAM).
@@ -792,50 +753,6 @@ fun ModelTab(
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
 
-                // TASK-775: the Gemma downloads live in a sub-page; the
-                // entry card is the compact pointer (maintainer direction).
-                if (visibleGemmaVariants.isNotEmpty()) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        onClick = { showGemmaDownloads = true },
-                    ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Icon(
-                                Icons.Default.Memory,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp),
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.download_models),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                )
-                                if (gemmaDownloadActive) {
-                                    Text(
-                                        text = stringResource(R.string.downloading),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
-                                }
-                            }
-                            Icon(
-                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                    }
-                }
-
                 // LiteRT-LM (Gemma): same double-container structure as ONNX Sherpa.
                 // SAF (OpenDocument) grants its own URI access, no storage permission
                 // needed (TASK-301). TASK-746: the Gemma download section joins
@@ -889,6 +806,51 @@ fun ModelTab(
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }
+                        }
+                    }
+                }
+
+                // TASK-775: the Gemma downloads live in a sub-page; the
+                // entry card is the compact pointer (maintainer direction).
+                if (visibleGemmaVariants.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        onClick = { showGemmaDownloads = true },
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Default.Memory,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp),
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.download_models),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                if (gemmaDownloadActive) {
+                                    Text(
+                                        text = stringResource(R.string.downloading),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
                         }
                     }
                 }
@@ -960,9 +922,38 @@ fun ModelTab(
 
         // Extra spacer to ensure downloading card can be fully scrolled into view
         Spacer(modifier = Modifier.height(200.dp))
+
+        if (showGemmaDownloads) {
+            androidx.activity.compose.BackHandler { showGemmaDownloads = false }
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                        .padding(horizontal = 16.dp),
+                ) {
+                    com.antivocale.app.ui.components.SettingsSubPageHeader(
+                        titleRes = R.string.download_models,
+                        onBack = { showGemmaDownloads = false },
+                    )
+                    if (visibleGemmaVariants.isNotEmpty()) {
+                        ModelDownloadSection(
+                            viewModel = viewModel,
+                            context = context,
+                            onNavigateToSettings = onNavigateToSettings,
+                            activeModelName = uiState.modelName,
+                            visibleVariants = visibleGemmaVariants,
+                            guardedModelSwitch = guardedSwitch,
+                            onInfoClick = { modelInfoVariant = it },
+                        )
+                    }
+                }
+            }
         }
-
-
+        }
 
         SnackbarHost(
             hostState = snackbarHostState,
