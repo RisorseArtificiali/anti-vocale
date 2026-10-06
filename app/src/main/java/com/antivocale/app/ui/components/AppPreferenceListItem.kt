@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
+import androidx.compose.ui.graphics.Color
 
 /**
  * List item displaying an app with its current preference settings.
@@ -73,7 +74,8 @@ fun AppPreferenceListItem(
             } else {
                 // Fallback to generic app icon
                 Icon(
-                    imageVector = Icons.Default.CheckCircle,
+                    // TASK-752: a generic app glyph, not a status check
+                    imageVector = Icons.Default.Apps,
                     contentDescription = stringResource(R.string.app_icon, appName),
                     modifier = Modifier.size(40.dp),
                     tint = MaterialTheme.colorScheme.primary
@@ -87,6 +89,9 @@ fun AppPreferenceListItem(
                 tint = MaterialTheme.colorScheme.onSurfaceVariant
             )
         },
+        // TASK-752: ListItem defaults to its own surface color, covering
+        // the host Card's surfaceVariant; transparent lets the card show.
+        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
         modifier = Modifier.clickable(onClick = onClick)
     )
 
