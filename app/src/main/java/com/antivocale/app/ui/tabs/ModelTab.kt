@@ -19,6 +19,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import android.net.Uri
 import com.antivocale.app.transcription.ModelFamilyDetector
 import androidx.compose.material.icons.filled.Check
@@ -643,6 +644,46 @@ fun ModelTab(
             )
         }
 
+        // TASK-775: Gemma downloads live in their own sub-page.
+        var showGemmaDownloads by remember { mutableStateOf(false) }
+
+        // TASK-775: the Gemma downloads sub-page. A full-screen Surface
+        // replaces the tab content while open; BACK (the header's back
+        // arrow or the system back) returns to the Advanced section expanded.
+        if (showGemmaDownloads) {
+            androidx.activity.compose.BackHandler { showGemmaDownloads = false }
+            androidx.compose.material3.Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.background,
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .navigationBarsPadding()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp),
+                ) {
+                    com.antivocale.app.ui.components.SettingsSubPageHeader(
+                        titleRes = R.string.download_models,
+                        onBack = { showGemmaDownloads = false },
+                    )
+                    if (visibleGemmaVariants.isNotEmpty()) {
+                        ModelDownloadSection(
+                            viewModel = viewModel,
+                            context = context,
+                            onNavigateToSettings = onNavigateToSettings,
+                            activeModelName = uiState.modelName,
+                            visibleVariants = visibleGemmaVariants,
+                            guardedModelSwitch = guardedSwitch,
+                            onInfoClick = { modelInfoVariant = it },
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(200.dp))
+                }
+            }
+            return
+        }
+
         // Catalog-driven model sections (Parakeet, Whisper, Qwen3-ASR, Nemotron, GigaAM).
         // One generic section per catalog entry — all model-specific behavior lives in the
         // catalog, never in hard-coded per-model UI.
@@ -808,21 +849,48 @@ fun ModelTab(
                     }
                 }
 
-                // Gemma downloads, hosted in the external group (TASK-746).
-                // Curated view shows them too (review F2): the Advanced area
-                // is opt-in and the toggle copy names them; the spacer rides
-                // inside so a hidden block leaves one 8dp gap, not two.
+                // TASK-775: the Gemma downloads live in a sub-page; the
+                // entry card is the compact pointer (maintainer direction).
                 if (visibleGemmaVariants.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    ModelDownloadSection(
-                        viewModel = viewModel,
-                        context = context,
-                        onNavigateToSettings = onNavigateToSettings,
-                        activeModelName = uiState.modelName,
-                        visibleVariants = visibleGemmaVariants,
-                        guardedModelSwitch = guardedSwitch,
-                        onInfoClick = { modelInfoVariant = it }
-                    )
+                    Card(
+                        modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        ),
+                        onClick = { showGemmaDownloads = true },
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Icon(
+                                Icons.Default.Memory,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(24.dp),
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.download_models),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                )
+                                if (gemmaDownloadActive) {
+                                    Text(
+                                        text = stringResource(R.string.downloading),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.primary,
+                                    )
+                                }
+                            }
+                            Icon(
+                                Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -893,6 +961,8 @@ fun ModelTab(
         // Extra spacer to ensure downloading card can be fully scrolled into view
         Spacer(modifier = Modifier.height(200.dp))
         }
+
+
 
         SnackbarHost(
             hostState = snackbarHostState,
