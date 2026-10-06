@@ -25,7 +25,7 @@ jobs:
       - uses: actions/checkout@v5
 
       # TASK-683.9: v6 is the node24 major; the v6.0.0 breaking change is the runtime move alone.
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
 
