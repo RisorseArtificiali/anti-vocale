@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.dp
 import com.antivocale.app.R
 import com.antivocale.app.transcription.Language
 import com.antivocale.app.util.LanguageNames
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,16 +50,28 @@ fun LanguageFilterBar(
 
     val searchQuery = textFieldValue.text
 
+    // TASK-773: match against the native name AND the English name AND the
+    // code: searching "Hebrew" must find עברית, and "zh" must find 中文.
+    data class LangEntry(val code: String, val nativeName: String, val englishName: String)
+
     val allEntries = remember(Language.FILTER_ENTRIES) {
         Language.FILTER_ENTRIES
-            .map { it to LanguageNames.nativeLanguageName(it) }
-            .sortedBy { (_, name) -> name }
+            .map { code ->
+                val native = LanguageNames.nativeLanguageName(code)
+                val english = Locale.forLanguageTag(code)
+                    .getDisplayLanguage(Locale.ENGLISH)
+                    .replaceFirstChar { it.uppercase() }
+                LangEntry(code, native, english)
+            }
+            .sortedBy { it.nativeName }
     }
 
     val matchedEntries = remember(searchQuery) {
         if (searchQuery.isBlank()) allEntries
-        else allEntries.filter { (_, name) ->
-            name.contains(searchQuery, ignoreCase = true)
+        else allEntries.filter { e ->
+            e.nativeName.contains(searchQuery, ignoreCase = true) ||
+                e.englishName.contains(searchQuery, ignoreCase = true) ||
+                e.code.startsWith(searchQuery, ignoreCase = true)
         }
     }
 
@@ -151,13 +164,13 @@ fun LanguageFilterBar(
                     enabled = false
                 )
             } else {
-                matchedEntries.forEach { (entry, name) ->
+                matchedEntries.forEach { entry ->
                     DropdownMenuItem(
-                        text = { Text(name) },
+                        text = { Text(entry.nativeName) },
                         onClick = {
                             expanded = false
                             textFieldValue = TextFieldValue()
-                            onLanguageSelected(entry)
+                            onLanguageSelected(entry.code)
                         }
                     )
                 }
