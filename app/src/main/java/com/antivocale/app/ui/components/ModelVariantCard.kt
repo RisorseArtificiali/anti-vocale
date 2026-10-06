@@ -5,6 +5,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
@@ -225,7 +229,8 @@ fun ModelVariantCard(
             // edge. Equal shares keep all actions visible at any width.
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
             ) {
                 when (state.buttonState) {
                     is DownloadButtonState.Downloading -> {
@@ -239,8 +244,11 @@ fun ModelVariantCard(
                         }
                     }
                     is DownloadButtonState.Downloaded -> {
+                        // Maintainer direction (2026-10-06): Use and Benchmark
+                        // stay primary; Share (TASK-742) and Delete move into
+                        // a kebab overflow menu. This also solves the narrow-
+                        // screen clipping of the 4th icon (TASK-772).
                         if (!state.isActive) {
-                            // TASK-381: 48dp minimum touch target for icon-only button
                             Button(
                                 onClick = onUseClick,
                                 modifier = Modifier.weight(1f).heightIn(min = 48.dp),
@@ -252,7 +260,6 @@ fun ModelVariantCard(
                             }
                         }
                         if (onBenchmarkClick != null) {
-                            // TASK-381: 48dp minimum touch target for icon-only button
                             OutlinedButton(
                                 onClick = onBenchmarkClick,
                                 modifier = Modifier.weight(1f).heightIn(min = 48.dp)
@@ -260,25 +267,10 @@ fun ModelVariantCard(
                                 Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.benchmark_button))
                             }
                         }
-                        if (onExportClick != null) {
-                            // TASK-742 (GH #124): the offline-transfer share.
-                            OutlinedButton(
-                                onClick = onExportClick,
-                                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                            ) {
-                                Icon(Icons.Default.Share, contentDescription = stringResource(R.string.export_model_bundle))
-                            }
-                        }
-                        // TASK-381: 48dp minimum touch target for icon-only button
-                        OutlinedButton(
-                            onClick = onDeleteClick,
-                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                            colors = ButtonDefaults.outlinedButtonColors(
-                                contentColor = MaterialTheme.colorScheme.error
-                            )
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
-                        }
+                        VariantOverflowMenu(
+                            onExportClick = onExportClick,
+                            onDeleteClick = onDeleteClick,
+                        )
                     }
                     is DownloadButtonState.PartiallyDownloaded -> {
                         // PartialDownloadSection above already shows Resume/Clear buttons
@@ -572,5 +564,51 @@ fun InfoIconButton(onClick: () -> Unit) {
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(18.dp)
         )
+    }
+}
+
+/**
+ * The kebab overflow for the downloaded-variant actions (maintainer
+ * direction 2026-10-06): Share/Export and Delete live here instead of
+ * taking a button slot each on the action row. Keeps the row clean
+ * (Use + Benchmark + kebab) at any screen width.
+ */
+@Composable
+private fun VariantOverflowMenu(
+    onExportClick: (() -> Unit)?,
+    onDeleteClick: () -> Unit,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Icon(
+                Icons.Default.MoreVert,
+                contentDescription = stringResource(R.string.view_settings),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+        ) {
+            if (onExportClick != null) {
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.export_model_bundle)) },
+                    leadingIcon = {
+                        Icon(Icons.Default.Share, contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    },
+                    onClick = { expanded = false; onExportClick() },
+                )
+            }
+            DropdownMenuItem(
+                text = { Text(stringResource(R.string.delete)) },
+                leadingIcon = {
+                    Icon(Icons.Default.Delete, contentDescription = null,
+                        tint = MaterialTheme.colorScheme.error)
+                },
+                onClick = { expanded = false; onDeleteClick() },
+            )
+        }
     }
 }
