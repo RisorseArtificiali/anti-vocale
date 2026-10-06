@@ -224,6 +224,14 @@
       "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/arabic.json"
     },
     {
+      "name": "Whisper Small Arabic Dialectal v2 (sherpa int8)",
+      "languages": [
+        "ar"
+      ],
+      "family": "WHISPER",
+      "entryUrl": "https://raw.githubusercontent.com/RisorseArtificiali/anti-vocale/main/app/src/main/assets/external-catalog/arabic-small.json"
+    },
+    {
       "name": "Whisper Tiny multilingual (sherpa int8, low-RAM)",
       "languages": [
         "multilingual"

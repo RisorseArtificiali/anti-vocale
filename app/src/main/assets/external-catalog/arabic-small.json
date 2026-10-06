@@ -1,0 +1,29 @@
+{
+  "name": "Whisper Small Arabic Dialectal v2 (sherpa int8)",
+  "family": "WHISPER",
+  "modelType": "",
+  "languages": [
+    "ar"
+  ],
+  "options": {},
+  "files": [
+    {
+      "name": "encoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/sherpa-whisper-small-arabic-dialectal-v2/resolve/main/encoder.int8.onnx",
+      "sha256": "90c61176abb1ac46b98e90fcb0f797686953f44e7c5d9508f1f216c628ccb26c",
+      "size": 112154512
+    },
+    {
+      "name": "decoder.int8.onnx",
+      "url": "https://huggingface.co/pantinor/sherpa-whisper-small-arabic-dialectal-v2/resolve/main/decoder.int8.onnx",
+      "sha256": "146ea218d11eab066f0fad6a716f3d58d5b72252b5a1f88fec16209b269ed1af",
+      "size": 262708124
+    },
+    {
+      "name": "tokens.txt",
+      "url": "https://huggingface.co/pantinor/sherpa-whisper-small-arabic-dialectal-v2/resolve/main/tokens.txt",
+      "sha256": "b34b360dbb493e781e479794586d661700670d65564001f23024971d1f2fa126",
+      "size": 816730
+    }
+  ]
+}

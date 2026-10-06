@@ -120,11 +120,7 @@ np.frombuffer.
 - Entry JSON in `app/src/main/assets/external-catalog/<lang>.json` (mirror
   arabic.json exactly: family, per-file url/sha256/size; whisper options use
   the keys `"whisper.language"`/`"whisper.task"` from ModelFamilySupport).
-- the CURRENT versioned index (index-<versionName>.json, the highest-versioned index-*.json present; TASK-643): add the entry. NEVER the unsuffixed index.json (frozen legacy channel for <=1.13.x apps). **GOTCHA 3: the catalog matcher does substring
-  search over names; "Large" contains "ar" and breaks the arabic by-code
-  test in ExternalCatalogTest** (it asserts filter("ar") equals the arabic
-  entry alone). Name entries without "ar"-containing words (we used
-  "Whisper v3 Turbo Swiss German int8 ...").
+- the CURRENT versioned index (index-<versionName>.json, the highest-versioned index-*.json present; TASK-643): add the entry. NEVER the unsuffixed index.json (frozen legacy channel for <=1.13.x apps). **GOTCHA 3: the catalog matcher prefix-matches name WORDS and language codes, not raw substrings** ("ry" inside "Canary" stays silent; a name WORD starting with a code matches it). The by-code test pins filter("ar") == the arabic entries (TWO since TASK-770: the turbo quality pick and the small light option, both carrying the word "Arabic"). A name word starting with another entry's code ("Armenian" for "ar", "Farsi" for "fa") would surface that entry under the code and break the pin.
 - The entryUrl points at raw.githubusercontent.com main: push BEFORE any
   released client can use it, and curl the URL to 200 after push.
 - Full suite (test count asserts in ExternalCatalogTest), /review-local,

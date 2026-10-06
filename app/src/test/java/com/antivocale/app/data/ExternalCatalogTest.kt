@@ -167,7 +167,7 @@ class ExternalCatalogTest {
         // + moonshine base uk/es/vi (TASK-619, maintainer "tieni": the light
         // NC-licensed tier accepted for the external catalog; pins hashed
         // from the downloaded artifacts)
-        assertEquals(29, entries.size)
+        assertEquals(30, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
         // (the bundled asset); the unsuffixed index.json is the frozen legacy
@@ -251,15 +251,33 @@ class ExternalCatalogTest {
                 java.io.File("src/main/assets/external-catalog/$file").readText())
             assertEquals("$file language", lang, obj.getJSONArray("languages").getString(0))
         }
+        // TASK-770: TWO arabic entries now (the v1 turbo quality pick and
+        // the small v2 light option); both surface via "arabic" and "ar".
         val arabic = ExternalCatalog.filter(entries, "arabic")
-        assertEquals(1, arabic.size)
+        assertEquals(2, arabic.size)
         val byCode = ExternalCatalog.filter(entries, "ar")
         assertEquals(arabic, byCode)
         assertEquals(ModelFamily.WHISPER, arabic[0].family)
+        assertEquals(ModelFamily.WHISPER, arabic[1].family)
+        // TASK-770: the light arabic entry pins its own file too, like every
+        // entry above (a typo in family/modelType/sha must fail HERE, not at
+        // import time on a user device).
+        val arabicSmallJson = org.json.JSONObject(
+            java.io.File("src/main/assets/external-catalog/arabic-small.json").readText())
+        assertTrue(arabicSmallJson.getString("name").startsWith("Whisper Small Arabic Dialectal v2"))
+        assertEquals("WHISPER", arabicSmallJson.getString("family"))
+        assertEquals(3, arabicSmallJson.getJSONArray("files").length())
+        // every sha256 pin is 64 hex chars and every size is positive
+        for (i in 0 until arabicSmallJson.getJSONArray("files").length()) {
+            val f = arabicSmallJson.getJSONArray("files").getJSONObject(i)
+            assertTrue(f.getString("sha256").matches(Regex("[a-f0-9]{64}")))
+            assertTrue(f.getLong("size") > 0)
+        }
         // TASK-550: the fa code surfaces the Persian entry alone. The matcher
-        // prefix-matches name WORDS and language codes: no other entry may
-        // declare fa, and no name word here starts with "ar" or "fa"
-        // (matching "ar" would break the arabic isolation above).
+        // prefix-matches name WORDS and language codes: no OTHER entry may
+        // declare fa, and no name word OUTSIDE the two arabic entries starts
+        // with "ar" (the arabic pair matches "ar" BY DESIGN since TASK-770,
+        // so filter("ar") == filter("arabic") == both).
         val persian = ExternalCatalog.filter(entries, "fa")
         assertEquals(1, persian.size)
         assertEquals(ModelFamily.TRANSDUCER, persian[0].family)
