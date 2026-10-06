@@ -167,6 +167,7 @@ class ExternalCatalogTest {
         // + moonshine base uk/es/vi (TASK-619, maintainer "tieni": the light
         // NC-licensed tier accepted for the external catalog; pins hashed
         // from the downloaded artifacts)
+        // + arabic small v2 dialectal light option (TASK-770)
         assertEquals(30, entries.size)
 
         // TASK-635/643: the omnilingual entry ships in the VERSIONED index
@@ -215,6 +216,7 @@ class ExternalCatalogTest {
             Triple("moonshine-spanish.json", "MOONSHINE" to "", 3),
             Triple("moonshine-ukrainian.json", "MOONSHINE" to "", 3),
             Triple("moonshine-vietnamese.json", "MOONSHINE" to "", 3),
+            Triple("arabic-small.json", "WHISPER" to "", 3),
         ).forEach { (file, pin, fileCount) ->
             val obj = org.json.JSONObject(
                 java.io.File("src/main/assets/external-catalog/$file").readText())
@@ -259,20 +261,7 @@ class ExternalCatalogTest {
         assertEquals(arabic, byCode)
         assertEquals(ModelFamily.WHISPER, arabic[0].family)
         assertEquals(ModelFamily.WHISPER, arabic[1].family)
-        // TASK-770: the light arabic entry pins its own file too, like every
-        // entry above (a typo in family/modelType/sha must fail HERE, not at
-        // import time on a user device).
-        val arabicSmallJson = org.json.JSONObject(
-            java.io.File("src/main/assets/external-catalog/arabic-small.json").readText())
-        assertTrue(arabicSmallJson.getString("name").startsWith("Whisper Small Arabic Dialectal v2"))
-        assertEquals("WHISPER", arabicSmallJson.getString("family"))
-        assertEquals(3, arabicSmallJson.getJSONArray("files").length())
-        // every sha256 pin is 64 hex chars and every size is positive
-        for (i in 0 until arabicSmallJson.getJSONArray("files").length()) {
-            val f = arabicSmallJson.getJSONArray("files").getJSONObject(i)
-            assertTrue(f.getString("sha256").matches(Regex("[a-f0-9]{64}")))
-            assertTrue(f.getLong("size") > 0)
-        }
+
         // TASK-550: the fa code surfaces the Persian entry alone. The matcher
         // prefix-matches name WORDS and language codes: no OTHER entry may
         // declare fa, and no name word OUTSIDE the two arabic entries starts
