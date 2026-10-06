@@ -24,7 +24,7 @@ data class LanguageOption(val code: String, val displayName: String)
 // keeps its legacy values-iw name (that is what Android requires) and the
 // test maps the two.
 private val appLanguageCodes =
-    listOf("de", "en", "es", "fa", "fr", "he", "hi", "it", "pl", "pt-BR", "ru", "tr", "uk")
+    listOf("de", "en", "es", "fa", "fr", "he", "hi", "it", "pl", "pt-BR", "ru", "tr", "uk", "zh")
 
 private fun optionsFor(
     sentinelCodes: List<String>,
