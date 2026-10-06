@@ -578,8 +578,9 @@ fun ModelTab(
         )
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
     var showGemmaDownloads by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -825,32 +826,26 @@ fun ModelTab(
                             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            Icon(
-                                Icons.Default.Memory,
-                                contentDescription = null,
+                            Icon(Icons.Default.Memory, contentDescription = null,
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(24.dp),
-                            )
+                                modifier = Modifier.size(24.dp))
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
                                     text = stringResource(R.string.download_models),
                                     style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                )
+                                    fontWeight = FontWeight.Bold)
                                 if (gemmaDownloadActive) {
                                     Text(
                                         text = stringResource(R.string.downloading),
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.primary,
-                                    )
+                                        color = MaterialTheme.colorScheme.primary)
                                 }
                             }
                             Icon(
                                 Icons.AutoMirrored.Filled.KeyboardArrowRight,
                                 contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -922,7 +917,12 @@ fun ModelTab(
 
         // Extra spacer to ensure downloading card can be fully scrolled into view
         Spacer(modifier = Modifier.height(200.dp))
+        }
 
+        // TASK-775: the Gemma downloads sub-page. A sibling of the
+        // scrollable Column inside this Box: stacked on top (Box z-order),
+        // bounded constraints (no nested-scroll crash). The pass-through
+        // switch is a compromise: the guard stays on the main tab.
         if (showGemmaDownloads) {
             androidx.activity.compose.BackHandler { showGemmaDownloads = false }
             Surface(
@@ -933,6 +933,7 @@ fun ModelTab(
                     modifier = Modifier
                         .fillMaxSize()
                         .navigationBarsPadding()
+                        .verticalScroll(rememberScrollState())
                         .padding(horizontal = 16.dp),
                 ) {
                     com.antivocale.app.ui.components.SettingsSubPageHeader(
@@ -946,13 +947,13 @@ fun ModelTab(
                             onNavigateToSettings = onNavigateToSettings,
                             activeModelName = uiState.modelName,
                             visibleVariants = visibleGemmaVariants,
-                            guardedModelSwitch = guardedSwitch,
+                            guardedModelSwitch = { it() },
                             onInfoClick = { modelInfoVariant = it },
                         )
                     }
+                    Spacer(modifier = Modifier.height(200.dp))
                 }
             }
-        }
         }
 
         SnackbarHost(
