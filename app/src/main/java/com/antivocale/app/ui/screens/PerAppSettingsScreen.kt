@@ -38,6 +38,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import com.antivocale.app.ui.components.SettingsSubPageHeader
+import androidx.compose.ui.text.font.FontWeight
 
 /**
  * Screen for managing per-app notification preferences.
@@ -169,10 +170,12 @@ fun PerAppSettingsScreen(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     item {
+                        // TASK-752: surfaceVariant like every other settings
+                        // card; the old primaryContainer broke the family look.
                         Card(
                             modifier = Modifier.fillMaxWidth(),
                             colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.primaryContainer
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant
                             )
                         ) {
                             Column(
@@ -182,12 +185,13 @@ fun PerAppSettingsScreen(
                                 Text(
                                     text = stringResource(R.string.per_app_settings_title),
                                     style = MaterialTheme.typography.titleMedium,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                                 Text(
                                     text = stringResource(R.string.per_app_settings_info),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
@@ -224,12 +228,21 @@ fun PerAppSettingsScreen(
                                 }
                             }
 
-                            AppPreferenceListItem(
-                                packageName = packageName,
-                                appName = appName,
-                                settingsSummary = settingsSummary.ifEmpty { stringResource(R.string.per_app_settings_using_defaults) },
-                                onClick = { selectedApp = packageName to appName }
-                            )
+                            // TASK-752: the settings card idiom, not a flat
+                            // ListItem on the bare background
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant
+                                )
+                            ) {
+                                AppPreferenceListItem(
+                                    packageName = packageName,
+                                    appName = appName,
+                                    settingsSummary = settingsSummary.ifEmpty { stringResource(R.string.per_app_settings_using_defaults) },
+                                    onClick = { selectedApp = packageName to appName }
+                                )
+                            }
                         }
                     }
 
