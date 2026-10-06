@@ -546,12 +546,15 @@ fun SettingsTab(
                     stringResource(R.string.settings_search_no_results),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = if (matchedSections.isNotEmpty()) Modifier.clickable {
+                // maintainer report (2026-10-06): the count floated flush
+                // against the bar edge with no margin; align it with the
+                // content margin like everything below it.
+                modifier = (if (matchedSections.isNotEmpty()) Modifier.clickable {
                     val key = matchedSections[matchHop % matchedSections.size]
                     matchHop++
                     val target = sectionOffsets[key] ?: return@clickable
                     navScope.launch { scrollState.animateScrollTo(maxOf(0, target - scrollContentRootY + scrollState.value - 32)) }
-                } else Modifier
+                } else Modifier).padding(horizontal = 16.dp, vertical = 2.dp)
             )
         }
         }
