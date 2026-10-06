@@ -312,9 +312,9 @@
     <!-- TASK-681: remote offload (the user's own OmniVoice server). The
          disclosure string is the privacy contract: it must keep saying
          exactly where audio goes and that the feature is off by default. -->
-    <string name="remote_omnivoice_name">Remote offload (OmniVoice)</string>
+    <string name="remote_omnivoice_name">Remote offload</string>
     <string name="remote_offload_title">Remote offload (experimental)</string>
-    <string name="remote_offload_description">Delegate long or heavy transcriptions to an OmniVoice-compatible server you choose. When enabled, select it in the Model tab.</string>
+    <string name="remote_offload_description">Delegate long or heavy transcriptions to an OpenAI-compatible server you choose (any server speaking the /v1/audio/transcriptions API, such as OmniVoice or whisper.cpp server).</string>
     <string name="remote_offload_disclosure">When this is enabled and selected, the audio of those transcriptions is sent only to the server address you enter below, wherever that server is: it may be on your home network or anywhere on the internet. Everything else is transcribed on this device. It is disabled by default: nothing leaves your phone unless you turn this on.</string>
     <string name="remote_offload_endpoint_label">Server address</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

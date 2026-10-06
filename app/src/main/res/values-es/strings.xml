@@ -262,9 +262,9 @@
     <string name="faq_card_trouble_title">Algo ha fallado</string>
     <string name="faq_card_trouble_body">Si no llega un resultado, el fabricante puede haber congelado la app en segundo plano: sigue el consejo de batería de la notificación de error. Un resultado fallido conserva una entrada de informe.</string>
     <string name="no_app_to_open_link">No hay ninguna app para abrir el enlace</string>
-    <string name="remote_omnivoice_name">Descarga remota (OmniVoice)</string>
+    <string name="remote_omnivoice_name">Descarga remota</string>
     <string name="remote_offload_title">Descarga remota (experimental)</string>
-    <string name="remote_offload_description">Delega las transcripciones largas o pesadas a un servidor compatible con OmniVoice que elijas. Cuando está activado, selecciónalo en la pestaña Modelos.</string>
+    <string name="remote_offload_description">Delega las transcripciones largas o pesadas a un servidor compatible con OpenAI que elijas. Cuando está activado, selecciónalo en la pestaña Modelos.</string>
     <string name="remote_offload_disclosure">Cuando está activado y seleccionado, el audio de esas transcripciones se envía solo a la dirección del servidor que escribas abajo, esté donde esté: puede estar en tu red o en internet. Todo lo demás se transcribe en este dispositivo. Está desactivado por defecto: nada sale de tu teléfono hasta que lo actives.</string>
     <string name="remote_offload_endpoint_label">Dirección del servidor</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

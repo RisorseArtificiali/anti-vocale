@@ -1182,17 +1182,14 @@ private fun RemoteOmnivoiceServiceCard(
             containerColor = MaterialTheme.colorScheme.surfaceVariant
         )
     ) {
-        Row(
+        // TASK-774: the button gets its own row below the text; the old
+        // same-row layout stole horizontal space from the description.
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.weight(1f),
-            ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
                     imageVector = Icons.Default.Lan,
                     contentDescription = null,
@@ -1201,7 +1198,7 @@ private fun RemoteOmnivoiceServiceCard(
                     modifier = Modifier.size(24.dp)
                 )
                 Spacer(modifier = Modifier.width(12.dp))
-                Column {
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = stringResource(R.string.remote_omnivoice_name),
                         style = MaterialTheme.typography.titleMedium,
@@ -1212,21 +1209,28 @@ private fun RemoteOmnivoiceServiceCard(
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                }
+                if (isActive) {
                     Text(
-                        text = stringResource(R.string.remote_offload_description),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.active_badge),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
-            if (isActive) {
-                Text(
-                    text = stringResource(R.string.active_badge),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            } else {
-                OutlinedButton(onClick = onUse, enabled = !isTranscribing) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = stringResource(R.string.remote_offload_description),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (!isActive) {
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedButton(
+                    onClick = onUse,
+                    enabled = !isTranscribing,
+                    modifier = Modifier.align(Alignment.End),
+                ) {
                     Text(stringResource(R.string.use_model))
                 }
             }

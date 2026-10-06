@@ -302,9 +302,9 @@
     <string name="faq_card_trouble_title">Что-то пошло не так</string>
     <string name="faq_card_trouble_body">Если результат не приходит, производитель мог заморозить приложение в фоне: следуйте совету о батарее в уведомлении об ошибке. Неудавшийся результат сохраняет запись отчёта.</string>
     <string name="no_app_to_open_link">Не найдено приложение для открытия ссылки</string>
-    <string name="remote_omnivoice_name">Удалённая разгрузка (OmniVoice)</string>
+    <string name="remote_omnivoice_name">Удалённая разгрузка</string>
     <string name="remote_offload_title">Удалённая разгрузка (экспериментально)</string>
-    <string name="remote_offload_description">Делегируйте длинные или тяжёлые расшифровки совместимому с OmniVoice серверу по вашему выбору. Когда включено, выберите его на вкладке Модели.</string>
+    <string name="remote_offload_description">Делегируйте длинные или тяжёлые расшифровки совместимому с OpenAI серверу по вашему выбору. Когда включено, выберите его на вкладке Модели.</string>
     <string name="remote_offload_disclosure">Когда это включено и выбрано, аудио этих расшифровок отправляется только на адрес сервера, введённый ниже, где бы он ни находился: в вашей сети или где-то в интернете. Всё остальное расшифровывается на этом устройстве. По умолчанию выключено: ничего не покидает телефон, пока вы это не включите.</string>
     <string name="remote_offload_endpoint_label">Адрес сервера</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

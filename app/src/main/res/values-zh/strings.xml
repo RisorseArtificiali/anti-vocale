@@ -257,9 +257,9 @@
     <string name="automation_guide_open">完整指南</string>
     <string name="automation_guide_no_browser">未找到可打开指南的应用</string>
     <string name="no_app_to_open_link">未找到可打开链接的应用</string>
-    <string name="remote_omnivoice_name">远程卸载（OmniVoice）</string>
+    <string name="remote_omnivoice_name">远程卸载</string>
     <string name="remote_offload_title">远程卸载（实验性）</string>
-    <string name="remote_offload_description">把较长或较重的转写委托给您选择的 OmniVoice 兼容服务器。</string>
+    <string name="remote_offload_description">把较长或较重的转写委托给您选择的 OpenAI 兼容服务器。</string>
     <string name="remote_offload_disclosure">启用并选中后，这些转写的音频只会发送到该服务器。未选中时一切都在本地运行。</string>
     <string name="remote_offload_endpoint_label">服务器地址</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

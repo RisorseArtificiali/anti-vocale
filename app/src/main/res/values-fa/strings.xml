@@ -311,9 +311,9 @@
     <string name="faq_card_trouble_title">چیزی درست پیش نرفت</string>
     <string name="faq_card_trouble_body">اگر نتیجه‌ای نمی‌رسد، سازنده گوشی ممکن است اپ را در پس‌زمینه замرده باشد: توصیه باتری در اعلان خطا را دنبال کنید. نتیجه ناموفق یک ورودی گزارش نگه می‌دارد.</string>
     <string name="no_app_to_open_link">اپلیکیشنی برای باز کردن پیوند پیدا نشد</string>
-    <string name="remote_omnivoice_name">بارگذاری به سرور راه دور (OmniVoice)</string>
+    <string name="remote_omnivoice_name">بارگذاری به سرور راه دور</string>
     <string name="remote_offload_title">بارگذاری به سرور راه دور (آزمایشی)</string>
-    <string name="remote_offload_description">رونوشت‌های طولانی یا سنگین را به یک سرور سازگار با OmniVoice به انتخاب خودتان بسپارید. وقتی فعال است، آن را در برگه مدل‌ها انتخاب کنید.</string>
+    <string name="remote_offload_description">رونوشت‌های طولانی یا سنگین را به یک سرور سازگار با OpenAI به انتخاب خودتان بسپارید. وقتی فعال است، آن را در برگه مدل‌ها انتخاب کنید.</string>
     <string name="remote_offload_disclosure">وقتی این گزینه فعال و انتخاب شده باشد، صدای آن رونوشت‌ها فقط به نشانه سروری که در پایین وارد می‌کنید فرستاده می‌شود، هر جا که آن سرور باشد: در شبکه شما یا هرجای اینترنت. همه چیز دیگر روی همین دستگاه رونویسی می‌شود. به طور پیش‌فرض خاموش است: تا روشنش نکنید هیچ چیزی از گوشی خارج نمی‌شود.</string>
     <string name="remote_offload_endpoint_label">نشانی سرور</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

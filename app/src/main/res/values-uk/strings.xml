@@ -320,9 +320,9 @@
     <string name="faq_card_trouble_title">Щось пішло не так</string>
     <string name="faq_card_trouble_body">Якщо результат не надходить, виробник міг заморозити застосунок у фоні: дотримуйтеся поради про акумулятор у сповіщенні про помилку. Невдалий результат зберігає запис звіту.</string>
     <string name="no_app_to_open_link">Не знайдено застосунка для відкриття посилання</string>
-    <string name="remote_omnivoice_name">Віддалене розвантаження (OmniVoice)</string>
+    <string name="remote_omnivoice_name">Віддалене розвантаження</string>
     <string name="remote_offload_title">Віддалене розвантаження (експериментально)</string>
-    <string name="remote_offload_description">Делегуйте довгі чи важкі транскрипції сумісному з OmniVoice серверу на ваш вибір. Коли увімкнено, виберіть його на вкладці Моделі.</string>
+    <string name="remote_offload_description">Делегуйте довгі чи важкі транскрипції сумісному з OpenAI серверу на ваш вибір. Коли увімкнено, виберіть його на вкладці Моделі.</string>
     <string name="remote_offload_disclosure">Коли це увімкнено й вибрано, аудіо цих транскрипцій надсилається лише на адресу сервера, введену нижче, де б той сервер не був: у вашій мережі чи десь в інтернеті. Усе інше транскрибується на цьому пристрої. Типово вимкнено: нічого не залишає телефон, поки ви це не увімкнете.</string>
     <string name="remote_offload_endpoint_label">Адреса сервера</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

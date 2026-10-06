@@ -313,9 +313,9 @@
     <string name="faq_card_trouble_title">משהו השתבש</string>
     <string name="faq_card_trouble_body">אם תוצאה לא מגיעה, ייתכן שיצרן הטלפון הקפיא את האפליקציה ברקע: עקבו אחרי עצת הסוללה בהתראת השגיאה. תוצאה שנכשלה שומרת רשומת דיווח.</string>
     <string name="no_app_to_open_link">לא נמצאה אפליקציה לפתיחת הקישור</string>
-    <string name="remote_omnivoice_name">האצה מרחוק (OmniVoice)</string>
+    <string name="remote_omnivoice_name">האצה מרחוק</string>
     <string name="remote_offload_title">האצה מרחוק (ניסיוני)</string>
-    <string name="remote_offload_description">האצלת תמלילים ארוכים או כבדים לשרת תואם OmniVoice שתבחרו. כשמופעל, בחרו אותו בלשונית המודלים.</string>
+    <string name="remote_offload_description">האצלת תמלילים ארוכים או כבדים לשרת תואם OpenAI שתבחרו. כשמופעל, בחרו אותו בלשונית המודלים.</string>
     <string name="remote_offload_disclosure">כשהתכונה מופעלת ונבחרה, האודיו של אותם תמלילים נשלח רק אל כתובת השרת שתזינו למטה, בכל מקום שהשרת נמצא בו: ברשת הביתית או באינטרנט. כל השאר מתומלל במכשיר זה. כבוי כברירת מחדל: שום דבר לא עוזב את הטלפון עד שתפעילו.</string>
     <string name="remote_offload_endpoint_label">כתובת השרת</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

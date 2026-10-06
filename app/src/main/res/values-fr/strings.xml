@@ -262,9 +262,9 @@
     <string name="faq_card_trouble_title">Quelque chose a échoué</string>
     <string name="faq_card_trouble_body">Si un résultat n’arrive pas, le fabricant a peut-être gelé l’app en arrière-plan : suivez le conseil batterie de la notification d’erreur. Un échec conserve une entrée de rapport.</string>
     <string name="no_app_to_open_link">Aucune application trouvée pour ouvrir le lien</string>
-    <string name="remote_omnivoice_name">Déport distant (OmniVoice)</string>
+    <string name="remote_omnivoice_name">Déport distant</string>
     <string name="remote_offload_title">Déport distant (expérimental)</string>
-    <string name="remote_offload_description">Délègue les transcriptions longues ou lourdes à un serveur compatible OmniVoice de ton choix. Une fois activé, sélectionne-le dans l\'onglet Modèles.</string>
+    <string name="remote_offload_description">Délègue les transcriptions longues ou lourdes à un serveur compatible OpenAI de ton choix. Une fois activé, sélectionne-le dans l\'onglet Modèles.</string>
     <string name="remote_offload_disclosure">Quand c\'est activé et sélectionné, l\'audio de ces transcriptions part uniquement vers l\'adresse du serveur saisie ci-dessous, où que soit ce serveur : sur ton réseau ou n\'importe où sur internet. Tout le reste est transcrit sur cet appareil. Désactivé par défaut : rien ne quitte ton téléphone tant que tu ne l\'actives pas.</string>
     <string name="remote_offload_endpoint_label">Adresse du serveur</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

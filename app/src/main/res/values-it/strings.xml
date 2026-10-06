@@ -311,9 +311,9 @@
     <string name="faq_card_trouble_title">Qualcosa è andato storto</string>
     <string name="faq_card_trouble_body">Se un risultato non arriva, il produttore del telefono potrebbe aver congelato l\'app in background: segui il consiglio nelle impostazioni batteria che trovi nella notifica di errore. Un risultato fallito conserva una voce di report con tutto il necessario per diagnosticarlo.</string>
     <string name="no_app_to_open_link">Nessuna app trovata per aprire il link</string>
-    <string name="remote_omnivoice_name">Offload remoto (OmniVoice)</string>
+    <string name="remote_omnivoice_name">Offload remoto</string>
     <string name="remote_offload_title">Offload remoto (sperimentale)</string>
-    <string name="remote_offload_description">Delega le trascrizioni lunghe o pesanti a un server compatibile OmniVoice che scegli tu. Quando attivo, selezionalo nella scheda Modelli.</string>
+    <string name="remote_offload_description">Delega le trascrizioni lunghe o pesanti a un server compatibile OpenAI che scegli tu. Quando attivo, selezionalo nella scheda Modelli.</string>
     <string name="remote_offload_disclosure">Quando è attivo e selezionato, l\'audio di quelle trascrizioni viene inviato solo all\'indirizzo del server che inserisci sotto, ovunque si trovi: può essere nella tua rete o in internet. Tutto il resto viene trascritto su questo dispositivo. È disattivo per impostazione predefinita: nulla lascia il telefono finché non lo attivi.</string>
     <string name="remote_offload_endpoint_label">Indirizzo del server</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

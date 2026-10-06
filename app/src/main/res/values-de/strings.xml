@@ -293,9 +293,9 @@
     <string name="faq_card_trouble_title">Etwas ist schiefgelaufen</string>
     <string name="faq_card_trouble_body">Kommt kein Ergebnis, hat der Hersteller die App im Hintergrund eingefroren: folge dem Akku-Hinweis in der Fehlerbenachrichtigung. Ein fehlgeschlagene Ergebnis behält einen Report-Eintrag mit allen Diagnosedaten.</string>
     <string name="no_app_to_open_link">Keine App zum Öffnen des Links gefunden</string>
-    <string name="remote_omnivoice_name">Remote-Offload (OmniVoice)</string>
+    <string name="remote_omnivoice_name">Remote-Offload</string>
     <string name="remote_offload_title">Remote-Offload (experimentell)</string>
-    <string name="remote_offload_description">Lange oder schwere Transkriptionen an einen kompatiblen OmniVoice-Server deiner Wahl auslagern. Wenn aktiviert, im Tab Modelle auswählen.</string>
+    <string name="remote_offload_description">Lange oder schwere Transkriptionen an einen kompatiblen OpenAI-Server deiner Wahl auslagern. Wenn aktiviert, im Tab Modelle auswählen.</string>
     <string name="remote_offload_disclosure">Wenn dies aktiviert und ausgewählt ist, wird das Audio dieser Transkriptionen nur an die unten eingegebene Serveradresse gesendet, egal wo dieser Server läuft: im eigenen Netzwerk oder irgendwo im Internet. Alles andere wird auf diesem Gerät transkribiert. Standardmäßig deaktiviert: Nichts verlässt dein Telefon, bis du es aktivierst.</string>
     <string name="remote_offload_endpoint_label">Serveradresse</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

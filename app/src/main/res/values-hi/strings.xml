@@ -292,9 +292,9 @@
     <string name="faq_card_trouble_title">कुछ गड़बड़ हो गई</string>
     <string name="faq_card_trouble_body">परिणाम न आए तो फ़ोन निर्माता ने ऐप को बैकग्राउंड में फ़्रीज़ किया हो सकता है: ग़लती की नोटिफिकेशन में बैटरी सलाह देखें। असफल परिणाम रिपोर्ट प्रविष्टी रखता है।</string>
     <string name="no_app_to_open_link">लिंक खोलने के लिए कोई ऐप नहीं मिला</string>
-    <string name="remote_omnivoice_name">रिमोट ऑफ़लोड (OmniVoice)</string>
+    <string name="remote_omnivoice_name">रिमोट ऑफ़लोड</string>
     <string name="remote_offload_title">रिमोट ऑफ़लोड (प्रायोगिक)</string>
-    <string name="remote_offload_description">लंबी या भारी प्रतिलिपियाँ आपके चुने हुए OmniVoice-संगत सर्वर को सौंपें। सक्षम होने पर इसे मॉडल टैब में चुनें।</string>
+    <string name="remote_offload_description">लंबी या भारी प्रतिलिपियाँ आपके चुने हुए OpenAI-संगत सर्वर को सौंपें। सक्षम होने पर इसे मॉडल टैब में चुनें।</string>
     <string name="remote_offload_disclosure">जब यह सक्षम और चुना गया है, उन प्रतिलिपियों का ऑडियो केवल नीचे दर्ज किए गए सर्वर पते पर भेजा जाता है, वह सर्वर जहाँ भी हो: आपके नेटवर्क में या इंटरनेट पर। बाकी सब इसी डिवाइस पर लिप्यंतरित होता है। यह डिफ़ॉल्ट रूप से बंद है: जब तक आप चालू न करें, फ़ोन से कुछ भी बाहर नहीं जाता।</string>
     <string name="remote_offload_endpoint_label">सर्वर पता</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

@@ -318,9 +318,9 @@
     <string name="faq_card_trouble_title">Coś poszło nie tak</string>
     <string name="faq_card_trouble_body">Gdy wynik nie nadchodzi, producent mógł zamrozić aplikację w tle: skorzystaj z porady o baterii w powiadomieniu błędu. Nieudany wynik zachowuje wpis raportu.</string>
     <string name="no_app_to_open_link">Nie znaleziono aplikacji do otwarcia linku</string>
-    <string name="remote_omnivoice_name">Przekazywanie zdalne (OmniVoice)</string>
+    <string name="remote_omnivoice_name">Przekazywanie zdalne</string>
     <string name="remote_offload_title">Przekazywanie zdalne (eksperymentalne)</string>
-    <string name="remote_offload_description">Zlecaj długie lub wymagające transkrypcje wybranemu serwerowi zgodnemu z OmniVoice. Po włączeniu wybierz go w karcie Modele.</string>
+    <string name="remote_offload_description">Zlecaj długie lub wymagające transkrypcje wybranemu serwerowi zgodnemu z OpenAI. Po włączeniu wybierz go w karcie Modele.</string>
     <string name="remote_offload_disclosure">Gdy to jest włączone i wybrane, audio tych transkrypcji trafia wyłącznie na adres serwera wpisany poniżej, gdziekolwiek ten serwer jest: w Twojej sieci lub w internecie. Wszystko inne jest transkrybowane na tym urządzeniu. Domyślnie wyłączone: nic nie opuszcza telefonu, dopóki tego nie włączysz.</string>
     <string name="remote_offload_endpoint_label">Adres serwera</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>

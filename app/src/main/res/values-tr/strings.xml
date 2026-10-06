@@ -314,9 +314,9 @@
     <string name="faq_card_trouble_title">Bir şey ters gitti</string>
     <string name="faq_card_trouble_body">Sonuç gelmiyorsa üretici uygulamayı arka planda dondurmuş olabilir: hata bildirimindeki pil önerisini izleyin. Başarısız sonuç bir rapor kaydı tutar.</string>
     <string name="no_app_to_open_link">Bağlantıyı açmak için uygulama bulunamadı</string>
-    <string name="remote_omnivoice_name">Uzak aktarım (OmniVoice)</string>
+    <string name="remote_omnivoice_name">Uzak aktarım</string>
     <string name="remote_offload_title">Uzak aktarım (deneysel)</string>
-    <string name="remote_offload_description">Uzun veya ağır transkripsiyonları seçtiğin OmniVoice uyumlu bir sunucuya devret. Etkinleştirildiğinde Modeller sekmesinden seç.</string>
+    <string name="remote_offload_description">Uzun veya ağır transkripsiyonları seçtiğin OpenAI uyumlu bir sunucuya devret. Etkinleştirildiğinde Modeller sekmesinden seç.</string>
     <string name="remote_offload_disclosure">Bu etkin ve seçiliyken, o transkripsiyonların sesi yalnızca aşağıya girdiğin sunucu adresine gönderilir; sunucu nerede olursa olsun: kendi ağında ya da internette. Geri kalan her şey bu cihazda yazıya dökülür. Varsayılan olarak kapalı: sen açmadıkça telefonundan hiçbir şey çıkmaz.</string>
     <string name="remote_offload_endpoint_label">Sunucu adresi</string>
     <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
