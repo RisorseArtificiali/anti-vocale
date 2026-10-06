@@ -220,9 +220,12 @@ fun ModelVariantCard(
             // Action buttons
             Spacer(modifier = Modifier.height(8.dp))
 
+            // TASK-772: weight(1f) per button, not End-aligned free placement;
+            // on a narrow screen the fourth icon (Delete) fell off the right
+            // edge. Equal shares keep all actions visible at any width.
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 when (state.buttonState) {
                     is DownloadButtonState.Downloading -> {
@@ -240,7 +243,7 @@ fun ModelVariantCard(
                             // TASK-381: 48dp minimum touch target for icon-only button
                             Button(
                                 onClick = onUseClick,
-                                modifier = Modifier.heightIn(min = 48.dp),
+                                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = MaterialTheme.colorScheme.primary
                                 )
@@ -252,7 +255,7 @@ fun ModelVariantCard(
                             // TASK-381: 48dp minimum touch target for icon-only button
                             OutlinedButton(
                                 onClick = onBenchmarkClick,
-                                modifier = Modifier.heightIn(min = 48.dp)
+                                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                             ) {
                                 Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.benchmark_button))
                             }
@@ -261,7 +264,7 @@ fun ModelVariantCard(
                             // TASK-742 (GH #124): the offline-transfer share.
                             OutlinedButton(
                                 onClick = onExportClick,
-                                modifier = Modifier.heightIn(min = 48.dp)
+                                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                             ) {
                                 Icon(Icons.Default.Share, contentDescription = stringResource(R.string.export_model_bundle))
                             }
@@ -269,7 +272,7 @@ fun ModelVariantCard(
                         // TASK-381: 48dp minimum touch target for icon-only button
                         OutlinedButton(
                             onClick = onDeleteClick,
-                            modifier = Modifier.heightIn(min = 48.dp),
+                            modifier = Modifier.weight(1f).heightIn(min = 48.dp),
                             colors = ButtonDefaults.outlinedButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error
                             )
