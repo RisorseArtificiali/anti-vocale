@@ -2,7 +2,7 @@
 
 Anti-Vocale transkribiert Sprachnachrichten auf deinem Android-Gerät, komplett offline. Audio verlässt dein Telefon nie: Die Transkription läuft lokal mit offenen KI-Modellen, ohne Konto, ohne Cloud-Dienst, ohne Telemetrie.
 
-Handbuch aktualisiert für Version 1.11.
+Handbuch aktualisiert für Version 1.13.
 
 ## Inhalt
 
@@ -56,6 +56,7 @@ Faustregeln:
 - Jede Transkription landet im Tab **Verlauf**, mit verwendetem Modell, Dauer und Bearbeitungszeit. Halte einen Eintrag lange gedrückt, um erneut zu versuchen, zu kopieren, zu löschen oder ein schlechtes Ergebnis per E-Mail zu melden.
 - Mit einem **Whisper- oder SenseVoice-**Modell trägt jede aufgeklappte Transkript einen Sprach-Chip: die Flagge der vom Modell erkannten Sprache, mit einem Tipp zum Prüfen oder Festlegen, wenn die Schätzung falsch liegt (kleine Modelle raten manchmal daneben). Andere Modellfamilien melden keine erkannte Sprache, deshalb bleibt der Chip dort aus; der Schalter in den Einstellungen sagt das und bleibt deaktiviert.
 - Mit Automatischem Speichern im Ordner (Einstellungen) wird jede Transkription zusätzlich als .txt-Datei in einen von dir gewählten Ordner geschrieben.
+- **Absendererkennung für Sprachnachrichten** (optional, Einstellungen): Mit gewährtem Benachrichtigungszugriff kann die Verlauf-Zeile einer geteilten Sprachnachricht zeigen, wer sie wahrscheinlich gesendet hat. Der Name erscheint nur, wenn die Benachrichtigung der Nachricht eingegangen ist, während die Funktion an war UND die gemeldete Länge zum Audio passt; sonst kein Name, nie eine Vermutung.
 
 ## Lange Audios, Warteschlange und erneute Versuche
 
@@ -65,7 +66,7 @@ Faustregeln:
 
 ## Community-Modelle und Importe
 
-Der integrierte Katalog deckt nicht jede Sprache ab. Anti-Vocale bringt einen Community-Katalog zusätzlicher Modelle mit, die du mit zwei Tipps importierst: Tab Modell, Erweitert, ONNX Sherpa, Aus Katalog importieren, nach deiner Sprache filtern, Modell antippen, bestätigen. Community-Modelle gibt es aktuell für Arabisch (Dialekte), Russisch, Spanisch, Deutsch (Streaming) und Schweizerdeutsch.
+Der integrierte Katalog deckt nicht jede Sprache ab. Anti-Vocale bringt einen Community-Katalog zusätzlicher Modelle mit, die du mit zwei Tipps importierst: Tab Modell, Erweitert, ONNX Sherpa, Aus Katalog importieren, nach deiner Sprache filtern, Modell antippen, bestätigen. Der Katalog wächst laufend und umfasst heute über 30 geprüfte Einträge: Arabisch (dialektal, vollständig und leicht), Deutsch (Streaming und ein Whisper-Fine-Tune), Spanisch (Streaming und leichtes Moonshine), Schweizerdeutsch, Hebräisch, Persisch, Russisch, Vietnamesisch, Koreanisch, Ukrainisch, sechs indische Sprachen (Bengalisch, Gujarati, Hindi, Marathi, Tamil, Telugu), Canary Flash für Englisch und Französisch, SenseVoice, Dolphin, Orukeet (ein Parakeet-Fine-Tune mit 24 Sprachen inklusive Italienisch) und ein multilinguales Whisper Tiny mit wenig RAM. Fehlt deine Sprache, öffne ein Issue: So kommen neue Einträge in den Katalog.
 
 Fortgeschrittene Nutzer können zusätzlich:
 - ein Modell über die URL eines Hugging-Face-Repositorys oder über einen Link auf einen Katalog-Eintrag importieren (der erweiterte Zweig im selben Dialog);
@@ -85,6 +86,14 @@ Optional: backend_id=<model id> to pick the model for that request
 ```
 
 Das Ergebnis kommt als Antwort-Broadcast zurück. Die komplette Anleitung mit Beispielen steht im [Tasker-Guide](../../TASKER_GUIDE.md).
+
+## Geplante Ordnerüberwachung
+
+Anti-Vocale kann Ordner deiner Wahl überwachen und neue Audiodateien automatisch transkribieren: Einstellungen, Geplante Ordnerüberwachung, Ordner überwachen. Die Scans laufen in dem Takt, den das System erlaubt; aggressive Akkusparmodi können sie verzögern, und das manuelle Jetzt scannen funktioniert immer. Jede neue Audiodatei wird mit dem aktuell gewählten Modell transkribiert und landet wie jeder andere Lauf im Tab Verlauf. Ab Android 11 kann die Ordnerauswahl auch gemeinsame Speicherorte öffnen, etwa den Medienordner einer Messenger-App; so lassen sich die Sprachnachrichten eines Chats automatisch transkribieren, ohne jede einzelne zu teilen.
+
+## Remote-Offload (experimentell)
+
+Betreibst du einen eigenen Transkriptionsserver, kann Anti-Vocale lange oder schwere Transkriptionen an ihn auslagern: Einstellungen, Remote-Offload (experimentell). Jeder OpenAI-kompatible Server, der die API /v1/audio/transcriptions spricht, funktioniert (OmniVoice, der whisper.cpp-Server und andere). Der Hinweis in der App sagt es klar: Ist die Funktion aktiv, wird das Audio der ausgelagerten Transkriptionen nur an die Serveradresse gesendet, die du eingibst, wo auch immer dieser Server steht (dein Heimnetzwerk oder irgendwo im Internet); alles andere wird auf dem Gerät transkribiert, und die Funktion ist standardmäßig aus.
 
 ## App-spezifische Einstellungen
 
@@ -123,7 +132,7 @@ Jede App, die eine Audiodatei teilen kann. Die Aktion zum Zurücksenden zielt de
 Im Tab Verlauf und optional als .txt-Dateien in einem Ordner deiner Wahl. Nirgendwo sonst wird etwas gespeichert.
 
 **Werden Sprachnachrichten automatisch beim Eingang transkribiert?**
-Noch nicht. Es steht auf der Roadmap; heute braucht das Teilen nur einen Tipp.
+Für Chat-Apps nicht direkt, noch nicht: Es steht auf der Roadmap. Zwei Wege gibt es heute: Die Geplante Ordnerüberwachung kann den Medienordner einer Messenger-App überwachen (Android 11+) und neue Sprachnachrichten transkribieren, sobald sie ankommen, und die optionale Absendererkennung versieht die Verlauf-Zeile mit dem Hinweis, wer eine geteilte Nachricht wahrscheinlich gesendet hat.
 
 **Warum gibt es zwei Stores (Play und F-Droid)?**
 Dieselbe App, dieselben Funktionen. F-Droid baut sie aus dem Quellcode ohne proprietäre Komponenten; Play ergänzt automatische Absturzberichte.

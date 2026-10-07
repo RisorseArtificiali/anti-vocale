@@ -27,10 +27,12 @@ FEATURES
 - Silence stripping and parallel chunk processing for speed
 - Neural acceleration (NNAPI) on supported devices, with automatic CPU fallback
 - Tasker integration for automation
+- Scheduled folder watch: transcribe new audio files in folders you choose automatically (on Android 11+, even a messaging app's media folder)
+- Remote offload (experimental, off by default): delegate long transcriptions to your own OpenAI-compatible server
 
 PRIVACY
 
-No network needed after download, no accounts, no data collection, no ads, no tracking. The audio never leaves your phone.
+No network needed after download, no accounts, no data collection, no ads, no tracking. By default the audio never leaves your phone; the only exception is the optional Remote offload feature, which sends audio solely to the server address you configure and stays off unless you turn it on.
 
 OPEN SOURCE
 

@@ -27,10 +27,12 @@ FUNZIONALITÀ
 - Rimozione dei silenzi ed elaborazione a blocchi in parallelo per la velocità
 - Accelerazione neurale (NNAPI) sui dispositivi supportati, con ritorno automatico su CPU
 - Integrazione Tasker per l'automazione
+- Sorveglianza cartella programmata: trascrivi automaticamente i nuovi file audio nelle cartelle che scegli (su Android 11+, anche la cartella media di un'app di messaggistica)
+- Offload remoto (sperimentale, spento di default): delega le trascrizioni lunghe al tuo server compatibile OpenAI
 
 PRIVACY
 
-Nessuna connessione necessaria dopo il download, nessun account, nessuna raccolta dati, nessuna pubblicità, nessun tracciamento. L'audio non lascia mai il tuo telefono.
+Nessuna connessione necessaria dopo il download, nessun account, nessuna raccolta dati, nessuna pubblicità, nessun tracciamento. Di default l'audio non lascia mai il tuo telefono; l'unica eccezione è la funzione opzionale di offload remoto, che invia l'audio esclusivamente all'indirizzo del server che configuri e resta spenta se non la attivi.
 
 OPEN SOURCE
 

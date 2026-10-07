@@ -2,7 +2,7 @@
 
 Anti-Vocale transcrit les messages vocaux sur votre appareil Android, entièrement hors ligne. L'audio ne quitte jamais votre téléphone : la transcription s'exécute localement avec des modèles d'IA ouverts, sans compte, sans service cloud, sans télémétrie.
 
-Manuel mis à jour pour la version 1.11.
+Manuel mis à jour pour la version 1.13.
 
 ## Sommaire
 
@@ -56,6 +56,7 @@ Quelques repères :
 - Chaque transcription est conservée dans l'onglet **Historique**, avec le modèle utilisé, la durée et le temps de traitement. Un appui long sur une entrée permet de réessayer, de copier, de supprimer ou de signaler un mauvais résultat par e-mail.
 - Avec un modèle **Whisper ou SenseVoice**, chaque transcription dépliée porte une puce de langue : le drapeau de la langue détectée par le modèle, avec un appui pour vérifier ou épingler quand l'estimation est fausse (les petits modèles se trompent parfois). Les autres familles de modèles ne rapportent pas de langue détectée, la puce reste donc absente pour elles ; le réglage dans les Paramètres le dit et reste désactivé.
 - Avec l'Enregistrement automatique dans un dossier (Paramètres), chaque transcription est aussi écrite dans un fichier .txt, dans le dossier de votre choix.
+- **Reconnaissance de l'expéditeur des messages vocaux** (facultatif, Paramètres) : avec l'accès aux notifications accordé, la ligne d'Historique d'un message vocal partagé peut indiquer qui l'a probablement envoyé. Le nom n'apparaît que si la notification du message est arrivée pendant que la fonction était active ET que sa durée annoncée correspond à l'audio ; sinon, pas de nom, jamais une supposition.
 
 ## Audio long, file d'attente et nouvelles tentatives
 
@@ -65,7 +66,7 @@ Quelques repères :
 
 ## Modèles de la communauté et import
 
-Le catalogue intégré ne couvre pas toutes les langues. Anti-Vocale embarque un catalogue communautaire de modèles supplémentaires que vous importez en deux gestes : onglet Modèles, Avancé, ONNX Sherpa, Importer du catalogue, filtrez par votre langue, touchez le modèle, confirmez. Les modèles communautaires couvrent actuellement l'arabe (dialectal), le russe, l'espagnol, l'allemand (streaming) et le suisse allemand.
+Le catalogue intégré ne couvre pas toutes les langues. Anti-Vocale embarque un catalogue communautaire de modèles supplémentaires que vous importez en deux gestes : onglet Modèles, Avancé, ONNX Sherpa, Importer du catalogue, filtrez par votre langue, touchez le modèle, confirmez. Le catalogue grandit sans cesse et compte aujourd'hui plus de 30 entrées validées : l'arabe (dialectal, complet et léger), l'allemand (streaming et un fine-tune Whisper), l'espagnol (streaming et Moonshine léger), le suisse allemand, l'hébreu, le persan, le russe, le vietnamien, le coréen, l'ukrainien, six langues indiennes (bengali, gujarati, hindi, marathi, tamoul, télougou), Canary Flash pour l'anglais et le français, SenseVoice, Dolphin, Orukeet (un fine-tune de Parakeet couvrant 24 langues dont l'italien) et un Whisper Tiny multilingue à faible RAM. Si votre langue manque, ouvrez un ticket : c'est ainsi que les entrées sont ajoutées.
 
 Les utilisateurs avancés peuvent aussi :
 - importer un modèle depuis l'URL d'un dépôt Hugging Face ou depuis un lien d'entrée de catalogue (la partie avancée de la même boîte de dialogue) ;
@@ -85,6 +86,14 @@ Optional: backend_id=<model id> to pick the model for that request
 ```
 
 Le résultat revient sous forme de broadcast de réponse. Le guide complet avec exemples se trouve dans le [guide Tasker](../../TASKER_GUIDE.md).
+
+## Surveillance planifiée des dossiers
+
+Anti-Vocale peut surveiller les dossiers de votre choix et transcrire automatiquement les nouveaux fichiers audio : Paramètres, Surveillance planifiée des dossiers, Surveiller un dossier. Les analyses s'exécutent à la fréquence que le système accorde ; les économiseurs de batterie agressifs peuvent les retarder, et le bouton Analyser maintenant fonctionne toujours. Chaque nouveau fichier audio est transcrit avec le modèle actuellement sélectionné et aboutit dans l'onglet Historique comme toute autre exécution. À partir d'Android 11, le sélecteur de dossiers peut ouvrir des emplacements du stockage partagé, comme le dossier média d'une messagerie ; la transcription automatique des messages vocaux d'une conversation devient possible sans les partager un par un.
+
+## Déport distant (expérimental)
+
+Si vous exploitez votre propre serveur de transcription, Anti-Vocale peut lui confier les transcriptions longues ou lourdes : Paramètres, Déport distant (expérimental). Tout serveur compatible OpenAI parlant l'API /v1/audio/transcriptions fonctionne (OmniVoice, le serveur whisper.cpp, et d'autres). L'encart dans l'application le dit clairement : quand la fonction est activée, l'audio des transcriptions confiées n'est envoyé qu'à l'adresse du serveur que vous saisissez, où que ce serveur se trouve (votre réseau local ou n'importe où sur Internet) ; tout le reste est transcrit sur l'appareil, et la fonction est désactivée par défaut.
 
 ## Paramètres par application
 
@@ -123,7 +132,7 @@ N'importe quelle application capable de partager un fichier audio. L'action de r
 Dans l'onglet Historique et, en option, dans des fichiers .txt dans un dossier de votre choix. Rien n'est stocké ailleurs.
 
 **Peut-il transcrire les messages vocaux automatiquement dès leur arrivée ?**
-Pas encore. C'est au programme ; aujourd'hui, le partage ne demande qu'un appui.
+Pas directement pour les applications de chat, pas encore : c'est au programme. Deux voies existent aujourd'hui : la surveillance planifiée de dossiers peut surveiller le dossier média d'une messagerie (Android 11+) et transcrire les nouveaux messages vocaux dès qu'ils arrivent, et la reconnaissance facultative de l'expéditeur étiquette la ligne d'Historique avec qui a probablement envoyé un message que vous avez partagé.
 
 **Pourquoi deux magasins (Play et F-Droid) ?**
 La même application, les mêmes fonctions. F-Droid la compile depuis les sources sans composant propriétaire ; la version Play ajoute le rapport de plantages automatique.

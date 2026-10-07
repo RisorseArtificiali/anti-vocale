@@ -76,6 +76,14 @@ The Logs tab *is* the list: every transcription appears there with a status (pen
 
 Only if you turn on "Voice note sender recognition" in Settings (off by default), and only messaging notifications from WhatsApp. It reads the sender name and the voice note length from the notification, keeps them in memory while it waits for you to share that note, and writes the name on the History row when both the package and the length match. Limits worth knowing: WhatsApp only (Telegram and other apps are not recognized yet); the name appears only if the notification arrived while the setting was on (a note you open and share later gets no name); no name is written when the length cannot be matched (no guesses); the name stays on that row like the transcript itself, also after turning the setting off. Turning the setting off stops all reading and clears the in-memory list.
 
+## Automation
+
+### Can the app transcribe files automatically as they appear in a folder?
+Yes: the scheduled folder watch. You pick the folders (Settings, Scheduled folder watch), and periodic scans transcribe every new audio file with the currently selected model; on Android 11+ the picker can open shared-storage locations such as a messaging app's media folder. Scans run when the system allows them, so aggressive battery savers can delay them; the manual Scan now always works. Every run lands in the History tab like a normal transcription.
+
+### What is Remote offload, and where does my audio go?
+Remote offload (experimental, off by default) delegates long or heavy transcriptions to a server YOU configure: any OpenAI-compatible endpoint speaking the /v1/audio/transcriptions API (OmniVoice, the whisper.cpp server, and others). When enabled, the audio of the transcriptions you delegate is sent only to the server address you entered, wherever that server is (home network or internet); everything else stays on-device, and you can turn the feature off at any time.
+
 ## Results and metadata
 
 ### Where do I see which model was used and how long it took?

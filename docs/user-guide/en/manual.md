@@ -2,7 +2,7 @@
 
 Anti-Vocale transcribes voice messages on your Android device, entirely offline. Audio never leaves your phone: transcription runs locally with open AI models, no account, no cloud service, no telemetry.
 
-Manual updated for version 1.11.
+Manual updated for version 1.13.
 
 ## Contents
 
@@ -16,6 +16,8 @@ Manual updated for version 1.11.
 8. [Privacy](#privacy)
 9. [Troubleshooting](#troubleshooting)
 10. [FAQ](#faq)
+
+Sections 6a and 6b cover the automation surfaces: the scheduled folder watch and remote offload.
 
 ## Getting started
 
@@ -56,6 +58,7 @@ Rules of thumb:
 - Every transcription is kept in the **Logs** tab with the model used, duration, and processing time. Long-press an entry to retry, copy, delete, or report a bad result by email.
 - With a **Whisper or SenseVoice** model, each expanded transcript carries a language chip: the flag of the language the model detected, with a tap to check or pin it when the guess is wrong (small models misfire sometimes). Other model families do not report a detected language, so the chip stays off for them; the toggle in Settings says so and stays disabled.
 - With Auto-Save (Settings) every transcript is also written as a .txt file into a folder you choose.
+- **Voice-note sender recognition** (optional, Settings): with notification access granted, the History row of a shared voice note can show who likely sent it. The name appears only when the note's notification arrived while the feature was on AND its reported length matches the audio; otherwise no name is shown, never a guess.
 
 ## Long audio, queue, and retries
 
@@ -65,7 +68,7 @@ Rules of thumb:
 
 ## Community models and imports
 
-The built-in catalog does not cover every language. Anti-Vocale ships with a community catalog of extra models that you import with two taps: Model tab, Advanced, ONNX Sherpa, Import from catalog, filter by your language, tap the model, confirm. Community models currently include Arabic (dialectal), Russian, Spanish, German (streaming), and Swiss German.
+The built-in catalog does not cover every language. Anti-Vocale ships with a community catalog of extra models that you import with two taps: Model tab, Advanced, ONNX Sherpa, Import from catalog, filter by your language, tap the model, confirm. The catalog grows continuously and holds 30+ validated entries today: Arabic (dialectal, full-size and light), German (streaming and a Whisper fine-tune), Spanish (streaming and light Moonshine), Swiss German, Hebrew, Persian, Russian, Vietnamese, Korean, Ukrainian, six Indic languages (Bengali, Gujarati, Hindi, Marathi, Tamil, Telugu), English and French Canary Flash, SenseVoice, Dolphin, Orukeet (a Parakeet fine-tune covering 24 languages incl. Italian), and a low-RAM multilingual Whisper Tiny. If your language is missing, open an issue: that is how entries get added.
 
 Advanced users can also:
 - import a model from a Hugging Face repository URL or a catalog entry link (the advanced branch in the same dialog);
@@ -85,6 +88,14 @@ Optional: backend_id=<model id> to pick the model for that request
 ```
 
 The result comes back as a reply broadcast. The full walkthrough with examples is in the [Tasker guide](../../TASKER_GUIDE.md).
+
+## Scheduled folder watch
+
+Anti-Vocale can watch folders you choose and transcribe new audio files automatically: Settings, Scheduled folder watch, Watch a folder. Scans run on a schedule the system allows; aggressive battery savers can delay them, and the manual Scan now always works. Each new audio file is transcribed with the currently selected model and lands in the Logs tab like any other run. On Android 11 or newer the folder picker can open shared-storage locations such as a messaging app's media folder, which makes automatic transcription of a chat's voice notes possible without sharing each one.
+
+## Remote offload (experimental)
+
+If you run your own transcription server, Anti-Vocale can delegate long or heavy transcriptions to it: Settings, Remote offload (experimental). Any OpenAI-compatible server speaking the /v1/audio/transcriptions API works (OmniVoice, the whisper.cpp server, and others). The in-app disclosure says it plainly: when the feature is enabled, the audio of the transcriptions you delegate is sent only to the server address you enter, wherever that server is (your home network or anywhere on the internet); everything else is transcribed on the device, and the feature is off by default.
 
 ## Per-app settings
 
@@ -123,7 +134,7 @@ Any app that can share an audio file. The send-back action currently targets a s
 In the Logs tab, and optionally as .txt files in a folder you pick. Nothing is stored anywhere else.
 
 **Can it transcribe voice notes automatically as they arrive?**
-Not yet. It is on the roadmap; today sharing takes one tap.
+Not for chat apps directly, yet: it is on the roadmap. Two routes exist today: the scheduled folder watch can watch a messaging app's media folder (Android 11+) and transcribe new voice notes as they land, and the optional sender recognition labels the History row with who likely sent a note you shared.
 
 **Why are there two stores (Play and F-Droid)?**
 Same app, same features. F-Droid builds it from source with no proprietary components; Play adds automatic crash reporting.

@@ -2,7 +2,7 @@
 
 Anti-Vocale trascrive i messaggi vocali sul tuo dispositivo Android, interamente offline. L'audio non lascia mai il telefono: la trascrizione avviene in locale con modelli AI aperti, senza account, senza servizi cloud, senza telemetria.
 
-Manuale aggiornato alla versione 1.11.
+Manuale aggiornato alla versione 1.13.
 
 ## Indice
 
@@ -56,6 +56,7 @@ Regole pratiche:
 - Ogni trascrizione resta nella scheda **Cronologia** con modello usato, durata e tempo di elaborazione. Tieni premuta una voce per riprovare, copiare, eliminare o segnalare un risultato sbagliato via email.
 - Con un modello **Whisper o SenseVoice**, ogni trascrizione espansa porta un chip lingua: la bandiera della lingua che il modello ha rilevato, con un tocco per verificare o bloccare quando il tiro è sbagliato (i modelli piccoli ogni tanto sbagliano). Le altre famiglie di modelli non riportano una lingua rilevata, quindi il chip resta spento per loro; l'interruttore nelle Impostazioni lo dice e resta disattivato.
 - con Salvataggio automatico (Impostazioni) ogni trascrizione viene scritta anche come file .txt in una cartella a tua scelta.
+- **Riconoscimento del mittente dei vocali** (opzionale, Impostazioni): con l'accesso alle notifiche concesso, la riga della Cronologia di un vocale condiviso può mostrare chi lo ha probabilmente inviato. Il nome compare solo se la notifica del vocale era arrivata con la funzione accesa E la durata dichiarata corrisponde all'audio; altrimenti nessun nome, mai un'ipotesi.
 
 ## Audio lunghi, coda e ritentativi
 
@@ -65,7 +66,7 @@ Regole pratiche:
 
 ## Modelli community e importazioni
 
-Il catalogo integrato non copre tutte le lingue. Anti-Vocale include un catalogo community di modelli extra che si importano con due tocchi: scheda Modelli, Avanzate, ONNX Sherpa, Importa dal catalogo, filtra per la tua lingua, tocca il modello, conferma. I modelli community attuali includono arabo (dialettale), russo, spagnolo, tedesco (streaming) e svizzero tedesco.
+Il catalogo integrato non copre tutte le lingue. Anti-Vocale include un catalogo community di modelli extra che si importano con due tocchi: scheda Modelli, Avanzate, ONNX Sherpa, Importa dal catalogo, filtra per la tua lingua, tocca il modello, conferma. Il catalogo cresce di continuo e oggi conta oltre 30 voci validate: arabo (dialettale, completo e leggero), tedesco (streaming e un fine-tune Whisper), spagnolo (streaming e Moonshine leggero), svizzero tedesco, ebraico, persiano, russo, vietnamita, coreano, ucraino, sei lingue indiane (bengalese, gujarati, hindi, marathi, tamil, telugu), Canary Flash per inglese e francese, SenseVoice, Dolphin, Orukeet (un fine-tune di Parakeet che copre 24 lingue compreso l'italiano) e un Whisper Tiny multilingue a bassa RAM. Se la tua lingua manca, apri una issue: è così che le voci si aggiungono.
 
 Gli utenti avanzati possono inoltre:
 - importare un modello dall'URL di un repository Hugging Face o da un link a una voce di catalogo (ramo avanzato nello stesso dialogo);
@@ -85,6 +86,14 @@ Opzionale: backend_id=<id modello> per scegliere il modello per quella richiesta
 ```
 
 Il risultato torna con un broadcast di risposta. La guida completa con esempi è nella [guida Tasker](../../TASKER_GUIDE.md).
+
+## Controllo cartella programmato
+
+Anti-Vocale può sorvegliare le cartelle che scegli e trascrivere automaticamente i nuovi file audio: Impostazioni, Controllo cartella programmato, Osserva una cartella. Le scansioni girano con la frequenza che il sistema concede; i risparmiatori di batteria aggressivi possono ritardarle, e il pulsante Scansiona ora funziona sempre. Ogni nuovo file audio viene trascritto con il modello selezionato e finisce nella scheda Cronologia come qualsiasi altra esecuzione. Da Android 11 in poi il selettore cartelle può aprire posizioni dello storage condiviso come la cartella media di un'app di messaggistica, il che rende possibile la trascrizione automatica dei vocali di una chat senza condividerli uno a uno.
+
+## Offload remoto (sperimentale)
+
+Se gestisci un tuo server di trascrizione, Anti-Vocale può delegare ad esso le trascrizioni lunghe o pesanti: Impostazioni, Offload remoto (sperimentale). Funziona qualsiasi server compatibile OpenAI che parli l'API /v1/audio/transcriptions (OmniVoice, il server whisper.cpp e altri). L'informativa in app lo dice chiaramente: con la funzione attiva, l'audio delle trascrizioni che deleghi viene inviato solo all'indirizzo del server che inserisci, ovunque si trovi (la tua rete di casa o qualsiasi punto di internet); tutto il resto viene trascritto sul dispositivo, e la funzione è spenta di default.
 
 ## Impostazioni per app
 
@@ -123,7 +132,7 @@ Qualunque app possa condividere un file audio. L'azione di invio attualmente è 
 Nella scheda Cronologia e, a scelta, come file .txt in una cartella che scegli tu. Nulla è salvato altrove.
 
 **Può trascrivere i vocali automaticamente appena arrivano?**
-Non ancora. È in roadmap; oggi condividere richiede un tocco.
+Non direttamente per le app di chat, non ancora: è in roadmap. Oggi esistono due strade: il controllo cartella programmato può osservare la cartella media di un'app di messaggistica (Android 11+) e trascrivere i nuovi vocali appena arrivano, e il riconoscimento del mittente opzionale etichetta la riga della Cronologia con chi ha probabilmente inviato un vocale che hai condiviso.
 
 **Perché ci sono due store (Play e F-Droid)?**
 Stessa app, stesse funzioni. F-Droid la compila da sorgente senza componenti proprietari; Play aggiunge la segnalazione automatica dei crash.
