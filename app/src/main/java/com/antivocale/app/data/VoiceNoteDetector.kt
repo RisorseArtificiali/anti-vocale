@@ -10,10 +10,10 @@ import android.provider.MediaStore
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.asSharedFlow
 
 /**
  * One WhatsApp voice note as indexed by MediaStore.
@@ -21,7 +21,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
  * @property id MediaStore row id (stable dedup key).
  * @property dateAddedSeconds MediaStore DATE_ADDED, in unix seconds (second
  *   granularity: several notes in the same second share the value).
- * @property displayName File name, e.g. `PTT-20260107-WA0000.opus`.
+ * @property displayName File name, e.g. `PTT-20260107-WA0000.opus`; empty when
+ *   MediaStore indexed the row before a name was available (the payload rule
+ *   then leans on the mime).
  * @property path Absolute file path (DATA column), when resolvable.
  * @property relativePath Storage-relative directory (API 29+), e.g.
  *   `Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes/`.
@@ -58,6 +60,11 @@ data class VoiceNoteEntry(
  * that standard runtime grant is involved
  * (docs/research/2026-07-12-auto-transcription-feasibility.md, approach 2).
  *
+ * **Threading:** [subscribe] runs the baseline index query synchronously, so
+ * the TASK-271 lifecycle owner must call it off the main thread. [poll] runs
+ * one bounded MediaStore query per call. All state transitions ([subscribe],
+ * [dispose], [poll]) serialize on this detector's monitor.
+ *
  * **Battery impact:** push-only. No polling loop exists; the MediaStore query
  * runs only when the system reports a change (or when the TASK-271 lifecycle
  * owner explicitly calls [poll]), and it is bounded by `DATE_ADDED >= last
@@ -77,8 +84,8 @@ class VoiceNoteDetector @Inject constructor(
 ) {
     /**
      * A change event. MediaStore frequently fires several onChange calls for a
-     * single WhatsApp write; the CONFLATED channel collapses them into one
-     * pending signal, so one query covers a burst.
+     * single WhatsApp write; the DROP_OLDEST buffer of one collapses them into
+     * one pending signal, so one query covers a burst.
      */
     sealed interface ChangeSignal {
         data object MediaChanged : ChangeSignal
@@ -86,7 +93,12 @@ class VoiceNoteDetector @Inject constructor(
     }
 
     private val _detections = MutableSharedFlow<VoiceNoteEntry>(extraBufferCapacity = 64)
-    private val signals = Channel<ChangeSignal>(Channel.CONFLATED)
+    // SharedFlow, not a Channel: signals fan out to every collector, and a
+    // second (or restarted) collector must never steal the conflated signal.
+    private val _signals = MutableSharedFlow<ChangeSignal>(
+        extraBufferCapacity = 1,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
 
     private var handlerThread: HandlerThread? = null
     private var observer: ContentObserver? = null
@@ -108,19 +120,28 @@ class VoiceNoteDetector @Inject constructor(
         if (observer != null || disposed) return
         tracker = VoiceNoteFilter.IncrementalFilter()
         // Baseline first: absorb the existing index before anything can fire.
+        // Runs on the caller's thread (see Threading above).
         tracker.absorb(queryWhatsAppVoiceNotes())
         val thread = HandlerThread("VoiceNoteDetector").apply { start() }
         handlerThread = thread
-        observer = object : ContentObserver(Handler(thread.looper)) {
+        val registered = object : ContentObserver(Handler(thread.looper)) {
             override fun onChange(selfChange: Boolean, uri: Uri?) {
-                if (!disposed) signals.trySend(ChangeSignal.MediaChanged)
+                if (!disposed) _signals.tryEmit(ChangeSignal.MediaChanged)
             }
         }
-        context.contentResolver.registerContentObserver(
-            MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
-            /* notifyForDescendants = */ true,
-            observer!!,
-        )
+        try {
+            context.contentResolver.registerContentObserver(
+                MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                /* notifyForDescendants = */ true,
+                registered,
+            )
+        } catch (t: Throwable) {
+            // A failed registration must not strand the parked thread.
+            handlerThread = null
+            thread.quitSafely()
+            throw t
+        }
+        observer = registered
     }
 
     @Synchronized
@@ -131,24 +152,35 @@ class VoiceNoteDetector @Inject constructor(
         observer = null
         handlerThread?.quitSafely()
         handlerThread = null
-        signals.trySend(ChangeSignal.Disposed)
+        _signals.tryEmit(ChangeSignal.Disposed)
     }
 
     /**
-     * Coalesced change signals, exposed as a flow so the lifecycle owner
-     * (TASK-271) drives collection with its own scope; the detector owns no
-     * process-lifetime coroutine (the @ApplicationScope rule). A collector
-     * reacts to [ChangeSignal.MediaChanged] by calling [poll].
+     * Coalesced change signals, exposed as a shared flow so any number of
+     * collectors (the TASK-271 lifecycle owner drives collection with its own
+     * scope; the detector owns no process-lifetime coroutine, the
+     * @ApplicationScope rule) each see the events. A collector reacts to
+     * [ChangeSignal.MediaChanged] by calling [poll].
      */
-    fun changeSignals(): Flow<ChangeSignal> = signals.receiveAsFlow()
+    fun changeSignals(): Flow<ChangeSignal> = _signals.asSharedFlow()
 
     /**
-     * Run one detection pass: query MediaStore for rows newer than the last
+     * Run one detection pass: query MediaStore for rows at or after the last
      * seen DATE_ADDED, filter to WhatsApp voice notes, dedup, and emit the new
      * ones on [detections]. Returns the entries emitted this pass.
      */
     suspend fun poll(): List<VoiceNoteEntry> {
-        val fresh = tracker.filter(queryWhatsAppVoiceNotes(tracker.watermarkSeconds), selfPackage = context.packageName)
+        val fresh: List<VoiceNoteEntry>
+        synchronized(this) {
+            val candidates = queryWhatsAppVoiceNotes(tracker.watermarkSeconds)
+            val (voiceNotes, rejected) =
+                candidates.partition { VoiceNoteFilter.isWhatsAppVoiceNote(it) }
+            fresh = tracker.filter(voiceNotes, selfPackage = context.packageName)
+            // Candidates that failed the strict rule are still recorded: a
+            // MediaStore re-index that fills in a missing name or mime in the
+            // same second must not surface as a fresh detection.
+            tracker.absorb(rejected)
+        }
         fresh.forEach { _detections.emit(it) }
         return fresh
     }
@@ -194,23 +226,27 @@ class VoiceNoteDetector @Inject constructor(
             }
             while (cursor.moveToNext()) {
                 val relativePath = if (relPathCol >= 0) cursor.getString(relPathCol) else null
-                val displayName = cursor.getString(nameCol) ?: continue
-                // Cheap pre-filter against the full audio index: only rows that
-                // plausibly sit under a WhatsApp voice-note tree advance to the
-                // strict filter (which also checks the Opus payload).
-                val entry = VoiceNoteEntry(
-                    id = cursor.getLong(idCol),
-                    dateAddedSeconds = cursor.getLong(dateCol),
-                    displayName = displayName,
-                    path = if (dataCol >= 0) cursor.getString(dataCol) else null,
-                    relativePath = relativePath,
-                    mimeType = if (mimeCol >= 0) cursor.getString(mimeCol) else null,
-                    ownerPackage = if (ownerCol >= 0) cursor.getString(ownerCol) else null,
+                val path = if (dataCol >= 0) cursor.getString(dataCol) else null
+                // Cheap location pre-filter over the DIRECTORY components of
+                // the row: a display name like "WhatsApp Voice Notes - demo"
+                // must never confer WhatsApp-ness on a foreign folder. Rows
+                // that pass advance to the strict per-entry rule in [poll].
+                val directories = listOfNotNull(
+                    relativePath,
+                    path?.substringBeforeLast('/', missingDelimiterValue = ""),
                 )
-                // The strict rule (location AND Opus payload) is the real gate;
-                // the path-only pre-filter above merely spared the allocation.
-                if (!VoiceNoteFilter.isWhatsAppVoiceNote(entry)) continue
-                entries.add(entry)
+                if (directories.none { VoiceNoteFilter.isWhatsAppVoiceNoteDirectory(it) }) continue
+                entries.add(
+                    VoiceNoteEntry(
+                        id = cursor.getLong(idCol),
+                        dateAddedSeconds = cursor.getLong(dateCol),
+                        displayName = cursor.getString(nameCol) ?: "",
+                        path = path,
+                        relativePath = relativePath,
+                        mimeType = if (mimeCol >= 0) cursor.getString(mimeCol) else null,
+                        ownerPackage = if (ownerCol >= 0) cursor.getString(ownerCol) else null,
+                    ),
+                )
             }
         }
         return entries
@@ -223,17 +259,20 @@ class VoiceNoteDetector @Inject constructor(
  */
 object VoiceNoteFilter {
     /**
-     * Broad location pre-filter: the row must sit under a WhatsApp tree AND in
+     * Location rule: the row's DIRECTORY must sit under a WhatsApp tree AND in
      * a "Voice Notes" directory. Case-insensitive; matches both
      * `Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes/` and the
      * legacy external-storage layout (`WhatsApp/Media/WhatsApp Voice Notes/`),
      * plus localized WhatsApp folder names that keep the literal "Voice Notes"
-     * leaf.
+     * leaf. The file name is deliberately NOT part of the haystack: a podcast
+     * named "whatsapp-voice-notes-episode.opus" in Music/ is not a WhatsApp
+     * note.
      */
-    fun looksLikeWhatsAppVoiceNotePath(relativePath: String?, displayName: String): Boolean {
-        val haystack = "${relativePath ?: ""}/$displayName".replace('\\', '/')
-        return haystack.contains("whatsapp", ignoreCase = true) &&
-            haystack.contains("voice notes", ignoreCase = true)
+    fun isWhatsAppVoiceNoteDirectory(directory: String?): Boolean {
+        if (directory == null) return false
+        val normalized = directory.replace('\\', '/')
+        return normalized.contains("whatsapp", ignoreCase = true) &&
+            normalized.contains("voice notes", ignoreCase = true)
     }
 
     /**
@@ -244,11 +283,11 @@ object VoiceNoteFilter {
      * unclassified (null or something else entirely).
      */
     fun isWhatsAppVoiceNote(entry: VoiceNoteEntry): Boolean {
-        if (listOfNotNull(entry.relativePath, entry.path)
-                .none { looksLikeWhatsAppVoiceNotePath(it, entry.displayName) }
-        ) {
-            return false
-        }
+        val directories = listOfNotNull(
+            entry.relativePath,
+            entry.path?.substringBeforeLast('/', missingDelimiterValue = ""),
+        )
+        if (directories.none { isWhatsAppVoiceNoteDirectory(it) }) return false
         return when (entry.mimeType?.lowercase()) {
             "audio/opus", "audio/ogg" -> true
             else -> entry.displayName.endsWith(".opus", ignoreCase = true)
@@ -267,7 +306,9 @@ object VoiceNoteFilter {
      *   same DATE_ADDED second still gets through.
      *
      * Rows outside the watermark second never consult the id set, so it stays
-     * bounded.
+     * bounded. Every observed row (self-contributed, already seen, or
+     * rejected) still advances the watermark and the id set, keeping the poll
+     * query window tight.
      */
     class IncrementalFilter {
         private var lastSeenSeconds = Long.MIN_VALUE
@@ -276,7 +317,7 @@ object VoiceNoteFilter {
         /** The current watermark; queries can bound themselves with `DATE_ADDED >= this`. */
         val watermarkSeconds: Long get() = lastSeenSeconds
 
-        /** Record [entries] as already-known without emitting anything (baseline). */
+        /** Record [entries] as already-known without emitting anything (baseline, rejected candidates). */
         fun absorb(entries: List<VoiceNoteEntry>) {
             filter(entries, selfPackage = null)
         }
@@ -289,19 +330,14 @@ object VoiceNoteFilter {
         fun filter(entries: List<VoiceNoteEntry>, selfPackage: String?): List<VoiceNoteEntry> {
             val fresh = mutableListOf<VoiceNoteEntry>()
             for (entry in entries.sortedBy { it.dateAddedSeconds }) {
-                if (selfPackage != null && entry.ownerPackage == selfPackage) continue
-                val isNew = when {
-                    entry.dateAddedSeconds > lastSeenSeconds -> true
-                    entry.dateAddedSeconds == lastSeenSeconds -> entry.id !in seenIdsAtLastSecond
-                    else -> false
-                }
-                if (!isNew) continue
                 if (entry.dateAddedSeconds > lastSeenSeconds) {
                     lastSeenSeconds = entry.dateAddedSeconds
                     seenIdsAtLastSecond = mutableSetOf()
                 }
+                if (entry.dateAddedSeconds < lastSeenSeconds) continue
+                val isSelf = selfPackage != null && entry.ownerPackage == selfPackage
+                if (!isSelf && entry.id !in seenIdsAtLastSecond) fresh.add(entry)
                 seenIdsAtLastSecond.add(entry.id)
-                fresh.add(entry)
             }
             return fresh
         }

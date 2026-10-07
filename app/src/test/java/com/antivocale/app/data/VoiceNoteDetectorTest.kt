@@ -30,14 +30,13 @@ class VoiceNoteDetectorTest {
         ownerPackage = ownerPackage,
     )
 
-    // --- looksLikeWhatsAppVoiceNotePath ---
+    // --- isWhatsAppVoiceNoteDirectory ---
 
     @Test
     fun `matches the canonical WhatsApp voice note path`() {
         assertTrue(
-            VoiceNoteFilter.looksLikeWhatsAppVoiceNotePath(
+            VoiceNoteFilter.isWhatsAppVoiceNoteDirectory(
                 "Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Voice Notes/",
-                "PTT-20260107-WA0000.opus",
             ),
         )
     }
@@ -45,9 +44,8 @@ class VoiceNoteDetectorTest {
     @Test
     fun `matches the legacy external-storage layout`() {
         assertTrue(
-            VoiceNoteFilter.looksLikeWhatsAppVoiceNotePath(
+            VoiceNoteFilter.isWhatsAppVoiceNoteDirectory(
                 "WhatsApp/Media/WhatsApp Voice Notes/",
-                "PTT-20200101-WA0001.opus",
             ),
         )
     }
@@ -55,9 +53,8 @@ class VoiceNoteDetectorTest {
     @Test
     fun `is case-insensitive`() {
         assertTrue(
-            VoiceNoteFilter.looksLikeWhatsAppVoiceNotePath(
+            VoiceNoteFilter.isWhatsAppVoiceNoteDirectory(
                 "Android/media/com.whatsapp/WhatsApp/Media/whatsapp voice notes/",
-                "PTT.opus",
             ),
         )
     }
@@ -65,38 +62,25 @@ class VoiceNoteDetectorTest {
     @Test
     fun `rejects other WhatsApp media folders`() {
         assertFalse(
-            VoiceNoteFilter.looksLikeWhatsAppVoiceNotePath(
+            VoiceNoteFilter.isWhatsAppVoiceNoteDirectory(
                 "Android/media/com.whatsapp/WhatsApp/Media/WhatsApp Images/",
-                "IMG-20260107-WA0000.jpg",
             ),
         )
     }
 
     @Test
     fun `rejects non-WhatsApp audio locations`() {
+        assertFalse(VoiceNoteFilter.isWhatsAppVoiceNoteDirectory("Music/"))
         assertFalse(
-            VoiceNoteFilter.looksLikeWhatsAppVoiceNotePath("Music/", "recording.opus"),
-        )
-        assertFalse(
-            VoiceNoteFilter.looksLikeWhatsAppVoiceNotePath(
+            VoiceNoteFilter.isWhatsAppVoiceNoteDirectory(
                 "Android/media/org.telegram.messenger/Telegram/",
-                "voice.opus",
             ),
         )
     }
 
     @Test
-    fun `rejects a null relative path that the display name cannot rescue`() {
-        assertFalse(
-            VoiceNoteFilter.looksLikeWhatsAppVoiceNotePath(null, "PTT-20260107-WA0000.opus"),
-        )
-    }
-
-    @Test
-    fun `accepts when only the display name carries the markers`() {
-        assertTrue(
-            VoiceNoteFilter.looksLikeWhatsAppVoiceNotePath(null, "WhatsApp Voice Notes - PTT.opus"),
-        )
+    fun `rejects a null directory`() {
+        assertFalse(VoiceNoteFilter.isWhatsAppVoiceNoteDirectory(null))
     }
 
     // --- isWhatsAppVoiceNote ---
@@ -135,6 +119,18 @@ class VoiceNoteDetectorTest {
         val e = entry(
             relativePath = "Music/Recordings/",
             path = "/storage/emulated/0/Music/Recordings/PTT.opus",
+        )
+        assertFalse(VoiceNoteFilter.isWhatsAppVoiceNote(e))
+    }
+
+    @Test
+    fun `rejects markers carried only by the display name`() {
+        // Review F2: a podcast or demo file NAMED after the topic but stored
+        // in a foreign directory must not be detected.
+        val e = entry(
+            displayName = "whatsapp-voice-notes-episode.opus",
+            relativePath = "Podcasts/",
+            path = "/storage/emulated/0/Podcasts/whatsapp-voice-notes-episode.opus",
         )
         assertFalse(VoiceNoteFilter.isWhatsAppVoiceNote(e))
     }
@@ -246,5 +242,36 @@ class VoiceNoteDetectorTest {
             selfPackage = "com.antivocale.app",
         )
         assertEquals(listOf(1L), fresh.map { it.id })
+    }
+
+    @Test
+    fun `self-contributed rows still advance the watermark`() {
+        // Review F5: without this, app-owned audio at the newest seconds pins
+        // the watermark and every poll re-queries the whole window.
+        val f = VoiceNoteFilter.IncrementalFilter()
+        f.filter(
+            listOf(entry(id = 1, dateAddedSeconds = 900, ownerPackage = "com.antivocale.app")),
+            selfPackage = "com.antivocale.app",
+        )
+        assertEquals(900L, f.watermarkSeconds)
+    }
+
+    @Test
+    fun `absorbed rejected rows are suppressed when a later index pass fills their metadata`() {
+        // Review F8: same id, same second, richer fields after a MediaStore
+        // re-scan must not surface as a fresh detection.
+        val f = VoiceNoteFilter.IncrementalFilter()
+        f.absorb(
+            listOf(
+                entry(id = 7, dateAddedSeconds = 100, displayName = "", mimeType = null),
+            ),
+        )
+        val fresh = f.filter(
+            listOf(
+                entry(id = 7, dateAddedSeconds = 100, displayName = "PTT-1.opus", mimeType = "audio/opus"),
+            ),
+            selfPackage = "com.antivocale.app",
+        )
+        assertEquals(emptyList<Long>(), fresh.map { it.id })
     }
 }
