@@ -1,0 +1,7 @@
+Nuovo: sorveglianza cartella programmata: i nuovi file audio nelle cartelle che scegli vengono trascritti automaticamente
+Nuovo: offload remoto (sperimentale, spento di default): delega i lavori lunghi al tuo server
+Nuovo: esporta i modelli scaricati come bundle offline per un altro dispositivo
+Nuovo: interfaccia in cinese
+Nuovo: catalogo community oltre 30 modelli, filtrabile per lingua (arabo leggero, ebraico, persiano, coreano, lingue indiane e altri)
+Migliorato: sezione Avanzate compatta nel tab Modelli, download Gemma in pagina dedicata
+Corretto: fix di stabilità e interfaccia

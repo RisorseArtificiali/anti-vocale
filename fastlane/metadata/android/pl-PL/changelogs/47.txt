@@ -1,0 +1,7 @@
+Nowość: zaplanowane obserwowanie folderów: nowe pliki audio w wybranych folderach są transkrybowane automatycznie
+Nowość: zdalny offload (eksperymentalne, domyślnie wyłączone): przekazuj długie zadania własnemu serwerowi
+Nowość: eksport pobranych modeli jako pakiety offline na inne urządzenie
+Nowość: interfejs w języku chińskim
+Nowość: katalog społeczności ponad 30 modeli z filtrem według języka (lekki arabski, hebrajski, perski, koreański, języki indyjskie i więcej)
+Ulepszone: kompaktowa sekcja Zaawansowane w zakładce Modele, pobieranie Gemma na osobnej stronie
+Poprawione: poprawki stabilności i interfejsu

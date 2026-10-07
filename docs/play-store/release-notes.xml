@@ -1,4 +1,10 @@
 <en-US>
+What's new in 1.14.0:
+• New: folder watch: new audio files in folders you pick are transcribed automatically
+• New: remote offload (experimental, off by default): long jobs can go to your own server
+• New: export downloaded models as offline bundles for another device
+• New: Chinese interface; community catalog past 30 models, filterable by language
+• Improved: compact Advanced section in the Models tab, Gemma on its own page
 What's new in 1.13.2:
 • Fixed: a History search with no matches no longer leaves the view stuck; the search bar stays visible with its clear button
 What's new in 1.13.1:
@@ -31,6 +37,12 @@ What's new in 1.12.0:
 </en-US>
 
 <it-IT>
+Novità della versione 1.14.0:
+• Nuovo: sorveglianza cartella: i nuovi file audio nelle cartelle scelte si trascrivono da soli
+• Nuovo: offload remoto (sperimentale, spento di default): i lavori lunghi possono andare sul tuo server
+• Nuovo: esporta i modelli scaricati come bundle offline per un altro dispositivo
+• Nuovo: interfaccia in cinese; catalogo community oltre 30 modelli, filtrabile per lingua
+• Migliorato: sezione Avanzate compatta nel tab Modelli, Gemma in pagina dedicata
 Novità della versione 1.13.2:
 • Corretto: una ricerca nella Cronologia senza risultati non lascia più la schermata bloccata; la barra di ricerca resta visibile con il pulsante di cancellazione
 Novità della versione 1.13.1:
@@ -269,465 +281,186 @@ Novità dalla versione 1.0.3:
 </it-IT>
 
 <de-DE>
-Neuigkeiten in Version 1.13.2:
-• Behoben: Eine Verlaufs-Suche ohne Treffer blockiert die Ansicht nicht länger; das Suchfeld bleibt sichtbar, inklusive Löschen-Schaltfläche
-Neuigkeiten in Version 1.13.1:
-• Behoben: Warnungen bei wenig Speicher haben jetzt eine Aktion "Einstellung öffnen", die direkt zur passenden Zeile in den Einstellungen führt
-• Geändert: Modelle werden immer gestartet; der Speicherschutz blockiert standardmäßig nicht mehr und ist optional (Einstellungen > Erweitert)
-Neuigkeiten in Version 1.13.0:
-• Neu: Sprecher-Markierungen in Transkripten (zwei Sprecher automatisch)
-• Neu: Dual-Modus: schneller Erstdurchlauf, dann verfeinerter Text
-• Neu: Textgrößen-Einstellung für Transkripte
-• Neu: Schutz vor Endlosschleifen bei langen Aufnahmen
-• Verbessert: Gemma 0.17.1: Audio-Transkription stürzt nicht mehr ab
-• Verbessert: der Verlauf lädt lange Texte schneller
-• Behoben: Sprach-Chip nur bei Modellen mit Spracherkennung
-Neuigkeiten in Version 1.12.1:
-• Behoben: Von Anruf-Recorder-Apps geteiltes Audio wird jetzt erkannt
-• Importierte Modellordner werden automatisch erkannt; eine Auswahl erscheint nur bei Mehrdeutigkeit
-• Die Zeitlimit-Einstellung der Untertitel-Auswahl ist jetzt konfigurierbar (1-10 Minuten)
-• Abgelehnte zu lange Aufnahmen zeigen die echte Dauer
-• Schnelleres, sichereres Teilen; Drehen während des Teilens verdoppelt nichts mehr
-
-Neuigkeiten in Version 1.12.0:
-• Geführte Tour beim ersten Start (wiederholbar)
-• Audio- oder Videodateien im Verlauf auswählen
-• KI-Zusammenfassung langer Transkripte: kopierbar, wiederholbar, eigener Prompt
-• Symbol-Auswahl und hebräische Oberfläche
-• Einstellungen neu geordnet; Satzzeichen-Durchlauf ergänzt
-• Korrigiert: Dauer von Telegram-Sprachnachrichten
-• Korrigiert: Whisper übersetzte statt zu transkribieren
-• Klarere Meldungen bei wenig Speicher und defektem Modell
-
-Neuigkeiten in Version 1.11.3:
-
-• GigaAM v3 (Russisch): deutlich genauere Transkription bei Aufnahmen länger als eine Minute (Audio wird jetzt in 30-s-Abschnitten verarbeitet, passend zum Training des Modells)
-
-Neuigkeiten in Version 1.11.2:
-
-• Kein 10-Minuten-Limit mehr: lange Aufnahmen werden jetzt transkribiert (bis zu 2 Stunden mit segmentierten Modellen; sonst richtet sich das Limit nach dem Arbeitsspeicher des Geräts)
-• Fehlermeldungen nennen bei zu langen Dateien das echte Limit statt einer allgemeinen Meldung
-• Sehr lange Transkriptionen fragen in der App zuerst nach Bestätigung, mit Zeitangabe
-• GigaAM v3 (Russisch): Aufnahmen über ~3 Minuten schlagen nicht mehr fehl
-
-Neuigkeiten in Version 1.11.1:
-
-• Behoben: Abstürze bei der Transkription langer, hochwertiger Aufnahmen auf Geräten mit wenig Speicher
-• Community-Katalog: Canary-Einträge tragen jetzt NVIDIAs offizielle Canary-Flash-Namen
-• Aus 1.11.0: jede Audiolänge mit jedem Modell; sichtbare, abbrechbare Warteschlange mit Modell und Dauer; Community-Katalog in vielen Sprachen plus Canary-Stufe für leichte Geräte; native Sprachnamen; Downloads mit Integritätsprüfung; Qwen3-ASR-Ladefehler behoben
-
-Neuigkeiten in Version 1.11.0:
-
-• Audio beliebiger Länge mit jedem Modell: lange Aufnahmen werden automatisch geteilt und zusammengefügt
-• Sichtbare Warteschlange: Einträge sofort da, abbrechbar; jeder Eintrag zeigt Modell und Dauer
-• Community-Katalog, Import mit einem Tipp in vielen Sprachen, plus die neue Canary-Stufe (EN/DE/ES/FR) für leichtere Handys
-• Sprachen in einheimischen Namen; Downloads mit Integritätsprüfung
-• Behoben: Qwen3-ASR lud nicht
-
+Neu in Version 1.14.0:
+• Neu: Ordnerüberwachung: neue Audiodateien in gewählten Ordnern werden automatisch transkribiert
+• Neu: Remote-Offload (experimentell, standardmäßig aus): lange Aufträge können an deinen Server gehen
+• Neu: heruntergeladene Modelle als Offline-Bundles exportieren
+• Neu: chinesische Oberfläche; Community-Katalog über 30 Modelle, nach Sprache filterbar
+• Verbessert: kompakter Erweitert-Bereich, Gemma-Downloads auf eigener Seite
 </de-DE>
 
 <es-ES>
-Novedades de la versión 1.13.2:
-• Corregido: una búsqueda en el historial sin resultados ya no deja la vista bloqueada; la barra de búsqueda sigue visible con su botón de borrar
-Novedades de la versión 1.13.1:
-• Corregido: los avisos de memoria insuficiente ahora tienen una acción "Abrir ajuste" que lleva a la fila exacta en Ajustes
-• Cambiado: los modelos siempre intentan ejecutarse; la protección de memoria ya no bloquea por defecto y es opcional (Ajustes > Avanzado)
-Novedades de la versión 1.13.0:
-• Nuevo: etiquetas de hablante en las transcripciones (dos detectados)
-• Nuevo: modo dual: primera pasada rápida y luego texto refinado
-• Nuevo: ajuste de tamaño de texto para las transcripciones
-• Nuevo: protección contra bucles en grabaciones largas
-• Mejorado: Gemma 0.17.1: sin bloqueos al transcribir audio
-• Mejorado: historial más rápido con textos largos
-• Corregido: chip de idioma solo en modelos que detectan el idioma
-Novedades de la versión 1.12.1:
-• Corregido: el audio compartido por apps de grabación de llamadas ya se reconoce
-• Las carpetas de modelos importados se detectan automáticamente; el selector aparece solo si es ambiguo
-• El tiempo de espera del aviso de subtítulos ya es configurable (1-10 minutos)
-• Las grabaciones demasiado largas rechazadas muestran su duración real
-• Compartir más rápido y seguro; girar la pantalla al compartir ya no duplica el trabajo
-
-Novedades de la versión 1.12.0:
-• Tour guiado en el primer inicio (repetible en Ajustes)
-• Elegir archivos de audio o vídeo desde Historial
-• Resumen IA de transcripciones largas: copiable, reintentable, prompt propio
-• Selector de icono e interfaz en hebreo
-• Ajustes reorganizados; pase de puntuación añadido
-• Corregido: duración de los vocales de Telegram
-• Corregido: Whisper traducía en vez de transcribir
-• Mensajes más claros con poca memoria o modelo dañado
-
-Novedades de la versión 1.11.3:
-
-• GigaAM v3 (ruso): precisión mucho mejor en grabaciones de más de un minuto (el audio se divide ahora en pasadas de 30 s, como en el entrenamiento del modelo)
-
-Novedades de la versión 1.11.2:
-
-• Fuera el límite de 10 minutos: las grabaciones largas ya se pueden transcribir (hasta 2 horas con modelos por segmentos; en otros casos el límite depende de la memoria del dispositivo)
-• Los errores de archivos demasiado largos indican el límite real en lugar de un mensaje genérico
-• Iniciar una transcripción muy larga en la app pide confirmación primero, con una estimación del tiempo
-• GigaAM v3: arreglado el error en audios de más de 3 minutos
-
-Novedades de la versión 1.11.1:
-
-• Corregido: fallos al transcribir grabaciones largas o de alta calidad en móviles con poca memoria
-• Catálogo comunitario: entradas Canary renombradas a los nombres oficiales Canary Flash de NVIDIA
-• De 1.11.0: audio de cualquier duración con cualquier modelo; cola visible y cancelable; catálogo comunitario y nivel Canary para móviles ligeros; nombres de idiomas nativos; descargas verificadas; corregido Qwen3-ASR que no cargaba
-
-Novedades de la versión 1.11.0:
-
-• Audio de cualquier duración con cualquier modelo: las grabaciones largas se dividen y unen automáticamente
-• Cola visible: elementos al instante y anulables; cada entrada muestra modelo y duración
-• Catálogo comunitario, importación con un toque en muchos idiomas, más el nuevo nivel Canary (en/de/es/fr) para móviles ligeros
-• Idiomas con nombres nativos; descargas con verificación de integridad
-• Corregido: Qwen3-ASR no cargaba
-
+Novedades de la versión 1.14.0:
+• Nuevo: vigilancia de carpetas: los nuevos archivos de audio en las carpetas elegidas se transcriben solos
+• Nuevo: descarga remota (experimental, desactivada por defecto): los trabajos largos pueden ir a tu servidor
+• Nuevo: exporta los modelos descargados como paquetes sin conexión
+• Nuevo: interfaz en chino; catálogo comunitario de más de 30 modelos, filtrable por idioma
+• Mejorado: sección Avanzado compacta, descargas de Gemma en su propia página
 </es-ES>
 
 <fr-FR>
-Nouveautés de la version 1.13.2 :
-• Corrigé : une recherche dans l’historique sans résultat ne bloque plus l’écran ; la barre de recherche reste visible avec son bouton d’effacement
-Nouveautés de la version 1.13.1 :
-• Corrigé : les alertes de mémoire insuffisante proposent désormais une action "Ouvrir le réglage" qui mène à la ligne exacte dans les Paramètres
-• Modifié : les modèles tentent toujours de se lancer ; la protection mémoire ne bloque plus par défaut et est optionnelle (Paramètres > Avancé)
-Nouveautés de la version 1.13.0 :
-• Nouveau : étiquettes de locuteur (deux locuteurs détectés)
-• Nouveau : mode double : passe rapide puis texte affiné
-• Nouveau : réglage de la taille du texte
-• Nouveau : protection contre les boucles sur les longs enregistrements
-• Amélioré : Gemma 0.17.1 : les transcriptions audio ne plantent plus
-• Amélioré : historique plus rapide sur les longs textes
-• Corrigé : pastille de langue sur les modèles qui détectent la langue
-Nouveautés de la version 1.12.1 :
-• Corrigé : l'audio partagé par les applis d'enregistrement d'appels est reconnu
-• Les dossiers de modèles importés sont détectés automatiquement ; le sélecteur n'apparaît qu'en cas d'ambiguïté
-• Le délai du choix des sous-titres devient un réglage (1-10 minutes)
-• Les enregistrements trop longs refusés affichent leur durée réelle
-• Partage plus rapide et sûr ; pivoter l'écran pendant un partage ne duplique plus rien
-
-Nouveautés de la version 1.12.0 :
-• Visite guidée au premier lancement (rejouable dans les réglages)
-• Choisir des fichiers audio ou vidéo depuis l'onglet Historique
-• Résumé IA des longues transcriptions : copiable, relançable, prompt dédié
-• Choix d'icône et interface en hébreu
-• Réglages réorganisés ; ponctuation ajoutée
-• Corrigé : durée des vocaux Telegram
-• Corrigé : Whisper traduisait au lieu de transcrire
-• Messages plus clairs si mémoire insuffisante ou modèle corrompu
-
-Nouveautés de la version 1.11.3 :
-
-• GigaAM v3 (russe) : bien meilleure précision sur les enregistrements de plus d'une minute (l'audio est désormais découpé en passes de 30 s, comme pour l'entraînement du modèle)
-
-Nouveautés de la version 1.11.2 :
-
-• Fini la limite de 10 minutes : les enregistrements longs sont désormais transcrits (jusqu'à 2 heures avec les modèles segmentés ; sinon la limite dépend de la mémoire de l'appareil)
-• Les erreurs pour les fichiers trop longs indiquent la vraie limite au lieu d'un message générique
-• Une très longue transcription demande confirmation avant de démarrer, avec une estimation du temps
-• GigaAM v3 : erreur native corrigée après 3 minutes
-
-Nouveautés de la version 1.11.1 :
-
-• Corrigé : plantages lors de la transcription d'enregistrements longs ou haute qualité sur téléphones à faible mémoire
-• Catalogue communautaire : entrées Canary renommées aux noms officiels de NVIDIA
-• Depuis 1.11.0 : audio de toute durée avec tout modèle ; file visible et annulable ; catalogue communautaire et niveau Canary pour téléphones légers ; noms de langues natifs ; téléchargements vérifiés ; corrigé Qwen3-ASR qui ne se chargeait pas
-
-Nouveautés de la version 1.11.0 :
-
-• Audio de toute durée avec tout modèle : les enregistrements longs sont découpés et recousus automatiquement
-• File visible : éléments instantanés et annulables ; chaque entrée indique modèle et durée
-• Catalogue communautaire, import en un geste en plusieurs langues, plus le niveau Canary (en/de/es/fr) pour téléphones légers
-• Langues en noms natifs ; téléchargements avec vérification d'intégrité
-• Corrigé : Qwen3-ASR ne se chargeait pas
-
+Nouveautés de la 1.14.0 :
+• Nouveau : surveillance de dossiers : les nouveaux fichiers audio choisis se transcrivent seuls
+• Nouveau : déport distant (expérimental, désactivé par défaut) : les longues tâches peuvent partir sur votre serveur
+• Nouveau : exportez les modèles téléchargés en paquets hors ligne
+• Nouveau : interface en chinois ; catalogue communautaire de plus de 30 modèles, filtrable par langue
+• Amélioré : section Avancé compacte, téléchargements Gemma sur leur propre page
 </fr-FR>
 
 <pt-BR>
-Novidades da versão 1.13.2:
-• Corrigido: uma busca no histórico sem resultados não deixa mais a tela travada; a barra de busca continua visível com o botão de limpar
-Novidades da versão 1.13.1:
-• Corrigido: os avisos de memória insuficiente agora têm uma ação "Abrir configuração" que leva exatamente à linha certa em Configurações
-• Alterado: os modelos sempre tentam rodar; a proteção de memória não bloqueia mais por padrão e é opcional (Configurações > Avançado)
-Novidades da versão 1.13.0:
-• Novo: rótulos de falante nas transcrições (dois detectados)
-• Novo: modo duplo: primeira passada rápida e depois texto refinado
-• Novo: ajuste de tamanho de texto para as transcrições
-• Novo: proteção contra loops em gravações longas
-• Melhorado: Gemma 0.17.1: sem travamentos ao transcrever áudio
-• Melhorado: histórico mais rápido com textos longos
-• Corrigido: selo de idioma só em modelos que detectam o idioma
-Novidades da versão 1.12.1:
-• Corrigido: áudio compartilhado por gravadores de chamadas agora é reconhecido
-• Pastas de modelos importados são detectadas automaticamente; o seletor aparece só quando ambíguo
-• O tempo limite do aviso de legendas virou configuração (1-10 minutos)
-• Gravações longas demais rejeitadas mostram a duração real
-• Compartilhamento mais rápido e seguro; girar a tela não duplica mais a transcrição
-
-Novidades da versão 1.12.0:
-• Tour guiado na primeira abertura (repetível nos Ajustes)
-• Escolher áudio ou vídeo na aba Histórico
-• Resumo IA de transcrições longas: copiável, retomável, prompt próprio
-• Seletor de ícone e interface em hebraico
-• Ajustes reorganizados; passe de pontuação adicionado
-• Corrigido: duração dos áudios do Telegram
-• Corrigido: Whisper traduzia em vez de transcrever
-• Mensagens mais claras com pouca memória ou modelo corrompido
-
-Novidades da versão 1.11.3:
-
-• GigaAM v3 (russo): precisão muito melhor em gravações com mais de um minuto (o áudio agora é dividido em passagens de 30 s, como no treinamento do modelo)
-
-Novidades da versão 1.11.2:
-
-• Chega de limite de 10 minutos: gravações longas agora são transcritas (até 2 horas com modelos segmentados; nos demais casos o limite depende da memória do aparelho)
-• Os erros de arquivos longos demais indicam o limite real em vez de uma mensagem genérica
-• Iniciar uma transcrição muito longa no app pede confirmação antes, com estimativa de tempo
-• GigaAM v3: corrigido o erro nativo em áudios de mais de 3 minutos
-
-Novidades da versão 1.11.1:
-
-• Corrigido: travamentos ao transcrever gravações longas ou de alta qualidade em celulares com pouca memória
-• Catálogo da comunidade: entradas Canary renomeadas para os nomes oficiais Canary Flash da NVIDIA
-• Da 1.11.0: áudio de qualquer duração com qualquer modelo; fila visível e cancelável; catálogo da comunidade e o nível Canary para celulares leves; nomes de idiomas nativos; downloads verificados; corrigido Qwen3-ASR que não carregava
-
-Novidades da versão 1.11.0:
-
-• Áudio de qualquer duração com qualquer modelo: gravações longas são divididas e costuradas automaticamente
-• Fila visível: itens instantâneos e canceláveis; cada entrada mostra modelo e duração
-• Catálogo da comunidade, importação com um toque em vários idiomas, e o novo nível Canary (en/de/es/fr) para celulares leves
-• Idiomas com nomes nativos; downloads com verificação de integridade
-• Corrigido: o Qwen3-ASR não carregava
-
+Novidades da versão 1.14.0:
+• Novo: vigilância de pastas: os novos arquivos de áudio nas pastas escolhidas se transcrevem sozinhos
+• Novo: offload remoto (experimental, desligado por padrão): os trabalhos longos podem ir para o seu servidor
+• Novo: exporte os modelos baixados como pacotes offline
+• Novo: interface em chinês; catálogo da comunidade com mais de 30 modelos, filtrável por idioma
+• Melhorado: seção Avançada compacta, downloads do Gemma em página própria
 </pt-BR>
 
 <ru-RU>
-Что нового в версии 1.13.2:
-• Исправлено: поиск в журнале без совпадений больше не заблокировывает экран; строка поиска остаётся видимой, с кнопкой очистки
-Что нового в версии 1.13.1:
-• Исправлено: предупреждения о нехватке памяти теперь содержат действие «Открыть настройку», ведущее к нужной строке настроек
-• Изменено: модели всегда запускаются; защита памяти больше не блокирует по умолчанию и включается вручную (Настройки > Дополнительно)
-Что нового в версии 1.13.0:
-• Новое: метки дикторов в транскрипциях (до двух дикторов автоматически)
-• Новое: двухэтапный режим: быстрый черновик, затем уточнённый текст
-• Новое: настройка размера текста транскрипций
-• Новое: защита от зацикливания на длинных записях
-• Улучшено: обновлена Gemma (0.17.1): распознавание аудио больше не падает
-• Улучшено: история быстрее загружает длинные тексты
-• Исправлено: индикатор языка только для моделей с определением языка
-Что нового в версии 1.12.1:
-• Исправлено: аудио из приложений записи звонков теперь распознаётся
-• Папки импортированных моделей определяются автоматически; выбор появляется только при неоднозначности
-• Таймаут выбора субтитров теперь настраивается (1-10 минут)
-• Отклонённые слишком длинные записи показывают реальную длительность
-• Быстрая и надёжная отправка; поворот экрана при отправке больше не дублирует работу
-
-Что нового в версии 1.12.0:
-• Обучающий тур при первом запуске (повторяется в настройках)
-• Выбор аудио- или видеофайлов на вкладке истории
-• ИИ-резюме длинных расшифровок: копируется, свой промпт
-• Выбор значка и ивритский интерфейс
-• Настройки переработаны; добавлен проход пунктуации
-• Исправлено: длительность голосовых Telegram
-• Исправлено: Whisper переводил вместо расшифровки
-• Яснее сообщения о нехватке памяти и повреждённой модели
-
-Что нового в версии 1.11.3:
-
-• GigaAM v3 (русский): заметно выше точность на записях длиннее минуты (звук теперь обрабатывается отрезками по 30 с, как при обучении модели)
-
-Что нового в версии 1.11.2:
-
-• Лимит 10 минут убран: длинные записи теперь расшифровываются (до 2 часов с сегментированными моделями; иначе лимит зависит от памяти устройства)
-• Ошибки для слишком длинных файлов называют реальный лимит вместо общего сообщения
-• Запуск очень длинной расшифровки в приложении сначала спрашивает подтверждение с оценкой времени
-• GigaAM v3: исправлена ошибка на записях длиннее 3 минут
-
-Что нового в версии 1.11.1:
-
-• Исправлено: сбои при расшифровке длинных или качественных записей на телефонах с малым объёмом памяти
-• Каталог сообщества: модели Canary переименованы в официальные названия NVIDIA Canary Flash
-• Из 1.11.0: аудио любой длины с любой моделью; видимая очередь с отменой; каталог сообщества на многих языках и уровень Canary для лёгких телефонов; названия языков на самих языках; проверка целостности загрузок; исправлена загрузка Qwen3-ASR
-
-Что нового в версии 1.11.0:
-
-• Аудио любой длины с любой моделью: длинные записи автоматически разбиваются и сшиваются
-• Видимая очередь: элементы мгновенно, можно отменить; каждая запись показывает модель и время
-• Каталог сообщества, импорт одним касанием на многих языках, плюс уровень Canary (en/de/es/fr) для лёгких телефонов
-• Языки на родных названиях; загрузки с проверкой целостности
-• Исправлено: Qwen3-ASR не загружался
-
+Что нового в версии 1.14.0:
+• Новое: наблюдение за папками: новые аудиофайлы в выбранных папках расшифровываются автоматически
+• Новое: удалённая разгрузка (экспериментально, выключено): длинные задачи можно отправить на свой сервер
+• Новое: экспорт скачанных моделей офлайн-пакетами
+• Новое: интерфейс на китайском; каталог сообщества больше 30 моделей, с фильтром по языку
+• Улучшено: компактный раздел «Дополнительно», загрузки Gemma на отдельной странице
 </ru-RU>
 
 <tr-TR>
-Sürüm 1.13.2'deki yenilikler:
-• Düzeltildi: sonuç bulunamayan geçmiş araması artık ekranı kilitlemiyor; arama çubuğu temizle düğmesiyle görünür kalıyor
-Sürüm 1.13.1'deki yenilikler:
-• Düzeltildi: yetersiz bellek uyarıları artık tam doğru ayar satırına götüren "Ayarı aç" eylemi içeriyor
-• Değişti: modeller her zaman çalışmayı dener; bellek koruması varsayılan olarak engellemez ve isteğe bağlıdır (Ayarlar > Gelişmiş)
-Sürüm 1.13.0\'daki yenilikler:
-• Yeni: transkriptlerde konuşmacı etiketleri (iki konuşmacı otomatik)
-• Yeni: çift mod: hızlı ilk taslak, sonra rafine metin
-• Yeni: transkriptler için yazı boyutu ayarı
-• Yeni: uzun kayıtlarda döngü koruması
-• İyileştirme: Gemma güncellendi (0.17.1): sesli transkripsiyonda çökme yok
-• İyileştirme: geçmiş uzun metinleri daha hızlı yüklüyor
-• Düzeltme: dil simgesi yalnızca dili algılayan modellerde
-Sürüm 1.12.1'deki yenilikler:
-• Düzeltildi: çağrı kaydedici uygulamalardan paylaşılan ses artık tanınıyor
-• İçe aktarılan model klasörleri otomatik algılanır; seçici yalnızca belirsizse görünür
-• Altyazı seçimi zaman aşımı artık bir ayar (1-10 dakika)
-• Reddedilen çok uzun kayıtlar gerçek süreyi gösteriyor
-• Daha hızlı ve güvenli paylaşım; paylaşım sırasında ekranı döndürmek artık çoğaltmıyor
-
-Sürüm 1.12.0'deki yenilikler:
-• İlk açılışta rehberli tur (Ayarlar'dan yeniden oynatılabilir)
-• Geçmiş sekmesinden ses veya video seçme
-• Yapay zekâ özeti: kopyalanabilir, yeniden denenebilir, özel istem
-• Simge seçici ve İbranice arayüz
-• Ayarlar yeniden düzenlendi; noktalama eklendi
-• Düzeltildi: Telegram sesli mesaj süresi
-• Düzeltildi: Whisper transkript yerine çeviriyordu
-• Az bellek ve bozuk model uyarıları daha anlaşılır
-
-Sürüm 1.11.3'teki yenilikler:
-
-• GigaAM v3 (Rusça): bir dakikadan uzun kayıtlarda çok daha doğru transkripsiyon (ses artık modelin eğitimiyle uyumlu biçimde 30 s'lik bölümlerle işleniyor)
-
-Sürüm 1.11.2'deki yenilikler:
-
-• 10 dakika sınırı kalktı: uzun kayıtlar artık yazıya dökülüyor (bölümlenen modellerle 2 saate kadar; diğer durumlarda sınır cihazın belleğine bağlı)
-• Çok uzun dosyalardaki hatalar genel bir mesaj yerine gerçek sınırı belirtiyor
-• Uygulamada çok uzun bir yazıya dökme başlatırken önce onay isteniyor, süre tahminiyle
-• GigaAM v3: 3 dakikadan uzun kayıtlarda artık hata yok
-
-Sürüm 1.11.1'deki yenilikler:
-
-• Düzeltildi: düşük bellekli telefonlarda uzun kayıtların yazıya aktarılmasında çökmeler
-• Canary girdileri NVIDIA'nın resmî Canary Flash adlarını aldı
-• 1.11.0'dan: her ses her modelle her uzunlukta; görünür, iptal edilebilir kuyruk; birçok dilde topluluk kataloğu ve hafif telefonlar için Canary kademesi; Qwen3-ASR düzeltmesi
-
-Sürüm 1.11.0'daki yenilikler:
-
-• Her modelle her uzunlukta ses: uzun kayıtlar otomatik bölünüp birleştirilir
-• Görünür kuyruk: ögeler anında, iptal edilebilir; her kayıt modeli ve süreyi gösterir
-• Topluluk kataloğu, birçok dilde tek dokunuşla içe aktarma, ayrıca hafif telefonlar için Canary kademesi (en/de/es/fr)
-• Diller ana adlarıyla; bütünlük denetimli indirmeler
-• Düzeltildi: Qwen3-ASR açılmıyordu
-
+Sürüm 1.14.0'daki yenilikler:
+• Yeni: klasör izleme: seçtiğiniz klasörlerdeki yeni ses dosyaları kendiliğinden metne çıkar
+• Yeni: uzak aktarım (deneysel, kapalı): uzun işleri kendi sunucunuza gönderebilirsiniz
+• Yeni: indirilen modelleri çevrimdışı paket olarak dışa aktarın
+• Yeni: Çince arayüz; 30'dan fazla modelli topluluk kataloğu, dile göre filtrelenebilir
+• İyileştirildi: kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında
 </tr-TR>
 
 <pl-PL>
-Nowości w wersji 1.13.2:
-• Poprawka: wyszukiwanie w historii bez wyników nie blokuje już widoku; pasek wyszukiwania pozostaje widoczny wraz z przyciskiem czyszczenia
-Nowości w wersji 1.13.1:
-• Poprawiono: alerty o małej pamięci mają teraz działanie "Otwórz ustawienie", prowadzące dokładnie do właściwego wiersza w Ustawieniach
-• Zmieniono: modele zawsze próbują się uruchomić; ochrona pamięci domyślnie nie blokuje i jest opcjonalna (Ustawienia > Zaawansowane)
-Nowości w wersji 1.13.0:
-• Nowe: etykiety mówców w transkrypcjach (do dwóch mówców automatycznie)
-• Nowe: tryb podwójny: szybki wstęp, a potem dopracowany tekst
-• Nowe: ustawienie rozmiaru tekstu transkrypcji
-• Nowe: ochrona przed zapętleniem przy długich nagraniach
-• Poprawa: Gemma zaktualizowana (0.17.1): koniec awarii przy transkrypcji audio
-• Poprawa: historia szybciej ładuje długie teksty
-• Poprawka: plakietka języka tylko dla modeli wykrywających język
-Nowości w wersji 1.12.1:
-• Naprawiono: dźwięk udostępniany przez rejestratory rozmów jest teraz rozpoznawany
-• Zaimportowane foldery modeli są wykrywane automatycznie; wybór pojawia się tylko przy niejednoznaczności
-• Limit czasu wyboru napisów to teraz ustawienie (1-10 minut)
-• Odrzucone zbyt długie nagrania pokazują rzeczywisty czas trwania
-• Szybsze i bezpieczniejsze udostępnianie; obrót ekranu podczas udostępniania nie duplikuje pracy
-
-Nowości w wersji 1.12.0:
-• Przewodnik przy pierwszym uruchomieniu (do ponowienia w Ustawieniach)
-• Wybór plików audio lub wideo z karty Historia
-• Podsumowanie AI: do skopiowania, własny prompt
-• Wybór ikony i interfejs po hebrajsku
-• Ustawienia przeorganizowane; interpunkcja dodana
-• Naprawiono: długość wiadomości Telegrama
-• Naprawiono: Whisper tłumaczył zamiast transkrybować
-• Jaśniejsze komunikaty przy małej pamięci i uszkodzonym modelu
-
-Nowości w wersji 1.11.3:
-
-• GigaAM v3 (rosyjski): znacznie lepsza dokładność przy nagraniach dłuższych niż minuta (dźwięk jest teraz dzielony na fragmenty po 30 s, zgodnie z treningiem modelu)
-
-Nowości w wersji 1.11.2:
-
-• Koniec z limitem 10 minut: długie nagrania są teraz transkrybowane (do 2 godzin z modelami segmentowanymi; w pozostałych przypadkach limit zależy od pamięci urządzenia)
-• Błędy dla zbyt długich plików podają rzeczywisty limit zamiast ogólnej wiadomości
-• Uruchomienie bardzo długiej transkrypcji w aplikacji najpierw pyta o potwierdzenie, wraz z szacowanym czasem
-• GigaAM v3: naprawiono błąd natywny przy nagraniach ponad 3 minuty
-
-Nowości w wersji 1.11.1:
-
-• Naprawiono: awarie przy transkrypcji długich, wysokojakościowych nagrań na telefonach z małą pamięcią
-• Katalog społeczności: wpisy Canary przemianowane na oficjalne nazwy NVIDIA Canary Flash
-• Z 1.11.0: dowolna długość audio z dowolnym modelem; widoczna, anulowalna kolejka; katalog społeczności w wielu językach i poziom Canary dla lżejszych telefonów; natywne nazwy języków; pobieranie z kontrolą integralności; naprawione ładowanie Qwen3-ASR
-
-Nowości w wersji 1.11.0:
-
-• Dowolna długość nagrania z dowolnym modelem: długie nagrania są automatycznie dzielone i łączone
-• Widoczna kolejka: elementy natychmiast, można anulować; każdy wpis pokazuje model i czas
-• Katalog społeczności, import jednym dotknięciem w wielu językach, plus poziom Canary (en/de/es/fr) dla lżejszych telefonów
-• Języki w rodzimych nazwach; pobieranie ze sprawdzaniem integralności
-• Naprawiono: Qwen3-ASR się nie ładował
-
+Nowości w wersji 1.14.0:
+• Nowość: obserwowanie folderów: nowe pliki audio w wybranych folderach transkrybują się same
+• Nowość: zdalny offload (eksperymentalny, wyłączony): długie zadania mogą iść na własny serwer
+• Nowość: eksport pobranych modeli jako pakiety offline
+• Nowość: interfejs po chińsku; katalog społeczności ponad 30 modeli z filtrem języka
+• Ulepszone: kompaktowa sekcja Zaawansowane, pobieranie Gemma na osobnej stronie
 </pl-PL>
 
 <hi-IN>
-संस्करण 1.13.2 में नया क्या है:
-• सुधार: इतिहास में बिना परिणाम वाली खोज अब स्क्रीन को अटका नहीं रहती; खोज पट्टी दिखती रहती है और साफ़ करने का बटन भी रहता है
-संस्करण 1.13.1 में नया क्या है:
-• ठीक: कम मेमोरी वाले अलर्ट में अब "सेटिंग खोलें" कार्रवाई है जो सेटिंग्स की सही पंक्ति तक ले जाती है
-• बदलाव: मॉडल हमेशा चलने की कोशिश करते हैं; मेमोरी गार्ड अब डिफ़ॉल्ट रूप से रोकता नहीं और वैकल्पिक है (सेटिंग्स > उन्नत)
-संस्करण 1.13.0 में नया क्या है:
-• नया: प्रतिलेखों में वक्ता लेबल (दो वक्ताओं तक स्वतः पहचान)
-• नया: दोहरा मोड: तेज़ पहला पास, फिर परिष्कृत पाठ
-• नया: प्रतिलेखों के लिए टेक्स्ट आकार सेटिंग
-• नया: लंबे रन में दोहराव-लूप सुरक्षा
-• सुधरा: Gemma अपडेट (0.17.1): ऑडियो ट्रांसक्रिप्शन अब क्रैश नहीं
-• सुधरा: इतिहास लंबे टेक्स्ट तेज़ लोड करता है
-• ठीक: भाषा चिप केवल भाषा पहचानने वाले मॉडल पर
-संस्करण 1.12.1 में नया क्या है:
-• सुधार: कॉल-रिकॉर्डर ऐप्स से साझा किया गया ऑडियो अब पहचाना जाता है
-• इंपोर्ट किए गए मॉडल फ़ोल्डर अपने आप पहचाने जाते हैं; विकल्प केवल अस्पष्ट होने पर दिखता है
-• सबटाइटल चयन का टाइमआउट अब एक सेटिंग है (1-10 मिनट)
-• अस्वीकृत बहुत लंबी रिकॉर्डिंग अपनी असली अवधि दिखाती हैं
-• तेज़ और सुरक्षित शेयरिंग; शेयर के दौरान स्क्रीन घुमाने से काम दोबारा नहीं होता
-
-संस्करण 1.12.0 में नया क्या है:
-• पहली बार खोलने पर गाइडेड टूर (सेटिंग्स से दोबारा चलाएँ)
-• हिस्ट्री टैब से ऑडियो या वीडियो फ़ाइल चुनें
-• लंबे ट्रांसक्रिप्ट का AI सारांश: कॉपी, कस्टम प्रॉम्प्ट
-• ऐप आइकन चयनकर्ता और हिब्रू इंटरफ़ेस
-• सेटिंग्स पुनर्गठित; विराम-चिह्न पास जोड़ा गया
-• ठीक किया: Telegram वॉइस संदेश की अवधि
-• ठीक किया: Whisper अनुवाद कर रहा था, ट्रांसक्रिप्ट नहीं
-• कम मेमोरी और दूषित मॉडल के स्पष्ट संदेश
-
-संस्करण 1.11.3 में नया क्या है:
-
-• GigaAM v3 (रूसी): एक मिनट से लंबी रिकॉर्डिंग पर काफ़ी बेहतर सटीकता (ऑडियो अब मॉडल की ट्रेनिंग के अनुरूप 30 सेकंड के भागों में संसाधित होता है)
-
-संस्करण 1.11.2 में नया क्या है:
-
-• 10 मिनट की सीमा हटा दी गई: लंबी रिकॉर्डिंग अब ट्रांसक्रिप्ट होती हैं (सेगमेंटेड मॉडल के साथ 2 घंटे तक; अन्य स्थितियों में सीमा डिवाइस की मेमोरी पर निर्भर है)
-• बहुत लंबी फ़ाइलों की त्रुटियाँ सामान्य संदेश के बजाय असली सीमा बताती हैं
-• ऐप में बहुत लंबी ट्रांसक्रिप्शन शुरू करने पर पहले पुष्टि मांगी जाती है, समय के अनुमान के साथ
-• GigaAM v3: 3 मिनट से लंबी रिकॉर्डिंग की त्रुटि ठीक की गई
-
-संस्करण 1.11.1 में नया क्या है:
-
-• सुधार: कम मेमोरी वाले फ़ोन पर लंबी रिकॉर्डिंग ट्रांसक्रिप्ट करते समय क्रैश
-• Canary प्रविष्टियाँ अब NVIDIA के आधिकारिक Canary Flash नामों पर
-• 1.11.0 से: कोई भी मॉडल, कोई भी लंबाई; दिखने वाली कतार; कई भाषाओं में कैटलॉग और हल्के फ़ोन के लिए Canary स्तर; Qwen3-ASR सुधार
-
-संस्करण 1.11.0 में नया क्या है:
-
-• किसी भी मॉडल के साथ किसी भी लंबाई का ऑडियो: लंबी रिकॉर्डिंग अपने आप बाँटी और जोड़ी जाती हैं
-• दिखती कतार: आइटम तुरंत, रद्द कर सकते हैं; हर प्रविष्टि मॉडल और अवधि बताती है
-• समुदाय कैटलॉग, कई भाषाओं में एक टैप इंपोर्ट, साथ ही हल्के फ़ोन के लिए Canary स्तर (en/de/es/fr)
-• भाषाएँ मूल नामों में; अखंडता-जाँच वाले डाउनलोड
-• ठीक: Qwen3-ASR लोड नहीं होता था
-
+संस्करण 1.14.0 में नया:
+• नया: फ़ोल्डर निगरानी: चुनी फ़ोल्डरों की नई ऑडियो फ़ाइलें अपने आप ट्रांसक्राइब होती हैं
+• नया: रिमोट ऑफ़लोड (प्रायोगिक, बंद): लंबे काम अपने सर्वर पर भेजें
+• नया: डाउनलोड किए मॉडल ऑफ़लाइन बंडल के रूप में निर्यात करें
+• नया: चीनी इंटरफ़ेस; 30+ मॉडलों की कम्युनिटी कैटलॉग, भाषा से फ़िल्टर
+• बेहतर: कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अलग पेज पर
 </hi-IN>
+
+<de-DE>
+Neu in Version 1.14.0:
+• Neu: geplante Ordnerüberwachung: Neue Audiodateien in gewählten Ordnern werden automatisch transkribiert
+• Neu: Remote-Offload (experimentell, standardmäßig aus): lange Aufträge an deinen eigenen Server auslagern
+• Neu: heruntergeladene Modelle als Offline-Bundles für ein anderes Gerät exportieren
+• Neu: Oberfläche auf Chinesisch
+• Neu: Community-Katalog mit über 30 Modellen, nach Sprache filterbar (leichtes Arabisch, Hebräisch, Persisch, Koreanisch, indische Sprachen und mehr)
+• Verbessert: kompakter Erweitert-Bereich im Modell-Tab, Gemma-Downloads auf eigener Seite
+• Behoben: Stabilitäts- und Oberflächenkorrekturen
+</de-DE>
+<es-ES>
+Novedades de la versión 1.14.0:
+• Nuevo: vigilancia programada de carpetas: los nuevos archivos de audio de las carpetas que elijas se transcriben solos
+• Nuevo: descarga remota (experimental, desactivada por defecto): delega los trabajos largos a tu propio servidor
+• Nuevo: exporta los modelos descargados como paquetes sin conexión para otro dispositivo
+• Nuevo: interfaz en chino
+• Nuevo: catálogo comunitario con más de 30 modelos, filtrable por idioma (árabe ligero, hebreo, persa, coreano, lenguas indias y más)
+• Mejorado: sección Avanzado compacta en la pestaña Modelos, descargas de Gemma en su propia página
+• Corregido: correcciones de estabilidad e interfaz
+</es-ES>
+<fr-FR>
+Nouveautés de la 1.14.0 :
+• Nouveau : surveillance planifiée de dossiers : les nouveaux fichiers audio des dossiers choisis sont transcrits automatiquement
+• Nouveau : déport distant (expérimental, désactivé par défaut) : déléguez les longues tâches à votre propre serveur
+• Nouveau : exportez les modèles téléchargés en paquets hors ligne pour un autre appareil
+• Nouveau : interface en chinois
+• Nouveau : catalogue communautaire fort de plus de 30 modèles, filtrable par langue (arabe léger, hébreu, persan, coréen, langues indiennes et plus)
+• Amélioré : section Avancé compacte dans l'onglet Modèles, téléchargements Gemma sur leur propre page
+• Corrigé : correctifs de stabilité et d'interface
+</fr-FR>
+<ru-RU>
+Что нового в версии 1.14.0:
+• Новое: запланированное наблюдение за папками: новые аудиофайлы в выбранных папках расшифровываются автоматически
+• Новое: удалённая разгрузка (экспериментально, выключено по умолчанию): длинные задачи можно передать своему серверу
+• Новое: экспорт скачанных моделей как офлайн-пакетов для другого устройства
+• Новое: интерфейс на китайском
+• Новое: каталог сообщества больше 30 моделей с фильтром по языку (лёгкий арабский, иврит, персидский, корейский, индийские языки и другие)
+• Улучшено: компактный раздел «Дополнительно» во вкладке моделей, загрузки Gemma на отдельной странице
+• Исправлено: исправления стабильности и интерфейса
+</ru-RU>
+<pt-BR>
+Novidades da versão 1.14.0:
+• Novo: vigilância programada de pastas: os novos arquivos de áudio das pastas que você escolher são transcritos sozinhos
+• Novo: offload remoto (experimental, desligado por padrão): delegue os trabalhos longos ao seu próprio servidor
+• Novo: exporte os modelos baixados como pacotes offline para outro dispositivo
+• Novo: interface em chinês
+• Novo: catálogo da comunidade com mais de 30 modelos, filtrável por idioma (árabe leve, hebraico, persa, coreano, línguas indianas e mais)
+• Melhorado: seção Avançada compacta na aba Modelos, downloads do Gemma em página própria
+• Corrigido: correções de estabilidade e interface
+</pt-BR>
+<tr-TR>
+Sürüm 1.14.0'daki yenilikler:
+• Yeni: zamanlanmış klasör izleme: seçtiğiniz klasörlerdeki yeni ses dosyaları kendiliğinden metne çıkar
+• Yeni: uzak aktarım (deneysel, varsayılan olarak kapalı): uzun işleri kendi sunucunuza devredin
+• Yeni: indirilen modelleri başka bir cihaz için çevrimdışı paket olarak dışa aktarın
+• Yeni: Çince arayüz
+• Yeni: 30'dan fazla model içeren topluluk kataloğu, dile göre filtrelenebilir (hafif Arapça, İbranice, Farsça, Korece, Hint dilleri ve daha fazlası)
+• İyileştirildi: Modeller sekmesinde kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında
+• Düzeltildi: kararlılık ve arayüz düzeltmeleri
+</tr-TR>
+<pl-PL>
+Nowości w wersji 1.14.0:
+• Nowość: zaplanowane obserwowanie folderów: nowe pliki audio w wybranych folderach są transkrybowane automatycznie
+• Nowość: zdalny offload (eksperymentalne, domyślnie wyłączone): przekazuj długie zadania własnemu serwerowi
+• Nowość: eksport pobranych modeli jako pakiety offline na inne urządzenie
+• Nowość: interfejs w języku chińskim
+• Nowość: katalog społeczności ponad 30 modeli z filtrem według języka (lekki arabski, hebrajski, perski, koreański, języki indyjskie i więcej)
+• Ulepszone: kompaktowa sekcja Zaawansowane w zakładce Modele, pobieranie Gemma na osobnej stronie
+• Poprawione: poprawki stabilności i interfejsu
+</pl-PL>
+<uk>
+Новинки версії 1.14.0:
+• Нове: спостереження за папками: нові аудіофайли у вибраних папках транскрибуються самі
+• Нове: віддалене розвантаження (експериментально, вимкнено): довгі завдання можна відправити на свій сервер
+• Нове: експорт завантажених моделей офлайн-пакетами
+• Нове: інтерфейс китайською; каталог спільноти понад 30 моделей з фільтром мови
+• Покращено: компактний розділ «Додатково», завантаження Gemma на окремій сторінці
+</uk>
+<hi-IN>
+संस्करण 1.14.0 में नया क्या है:
+• नया: शेड्यूल्ड फ़ोल्डर निगरानी: आपकी चुनी फ़ोल्डरों की नई ऑडियो फ़ाइलें अपने आप ट्रांसक्राइब होती हैं
+• नया: रिमोट ऑफ़लोड (प्रायोगिक, डिफ़ॉल्ट रूप से बंद): लंबे काम अपने सर्वर को सौंपें
+• नया: डाउनलोड किए मॉडल दूसरे डिवाइस के लिए ऑफ़लाइन बंडल के रूप में निर्यात करें
+• नया: चीनी भाषा में इंटरफ़ेस
+• नया: 30 से ज़्यादा मॉडलों वाली कम्युनिटी कैटलॉग, भाषा के हिसाब से फ़िल्टर करें (हल्का अरबी, हिब्रू, फ़ारसी, कोरियाई, भारतीय भाषाएँ और भी)
+• बेहतर: मॉडल टैब में कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अपने पेज पर
+• सुधार: स्थिरता और इंटरफ़ेस सुधार
+</hi-IN>
+<he-IL>
+מה חדש בגרסה 1.14.0:
+• חדש: פיקוח תיקיות: קבצי אודיו חדשים בתיקיות שתבחרו מתומללים אוטומטית
+• חדש: היפרדות מרחוק (ניסיוני, כבוי): מטלות ארוכות יכולות לרוץ על השרת שלכם
+• חדש: ייצוא מודלים שהורדו כחבילות לא מקוונות
+• חדש: ממשק בסינית; קטלוג הקהילה מעל 30 מודלים, מסונן לפי שפה
+• שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן
+</he-IL>
+<fa-IR>
+چه چیز جدید‌های نسخه 1.14.0:
+• جدید: پایش پوشه: فایل‌های صوتی جدید در پوشه‌های انتخابی خودکار تبدیل می‌شوند
+• جدید: بارگذاری به سرور راه دور (آزمایشی، خاموش): کارهای طولانی را به سرور خودتان بفرستید
+• جدید: مدل‌های دانلودشده را بسته آفلاین خارج کنید
+• جدید: رابط چینی؛ کاتالوگ جامعه بالای 30 مدل، فیلتر زبان
+• بهبود: بخش پیشرفته فشرده، دانلودهای Gemma در صفحه خودشان
+</fa-IR>
+<zh-CN>
+1.14.0 版本更新：
+• 新增：文件夹监视：所选文件夹中的新音频自动转录
+• 新增：远程卸载（实验性，默认关）：长任务可交给自己的服务器
+• 新增：已下载模型可导出为离线包
+• 新增：中文界面；社区目录超 30 个模型，可按语言筛选
+• 改进：高级区更紧凑，Gemma 下载独立成页
+</zh-CN>

@@ -1,0 +1,7 @@
+Yeni: zamanlanmış klasör izleme: seçtiğiniz klasörlerdeki yeni ses dosyaları kendiliğinden metne çıkar
+Yeni: uzak aktarım (deneysel, varsayılan olarak kapalı): uzun işleri kendi sunucunuza devredin
+Yeni: indirilen modelleri başka bir cihaz için çevrimdışı paket olarak dışa aktarın
+Yeni: Çince arayüz
+Yeni: 30'dan fazla model içeren topluluk kataloğu, dile göre filtrelenebilir (hafif Arapça, İbranice, Farsça, Korece, Hint dilleri ve daha fazlası)
+İyileştirildi: Modeller sekmesinde kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında
+Düzeltildi: kararlılık ve arayüz düzeltmeleri

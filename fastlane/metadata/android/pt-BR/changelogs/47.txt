@@ -1,0 +1,7 @@
+Novo: vigilância programada de pastas: os novos arquivos de áudio das pastas que você escolher são transcritos sozinhos
+Novo: offload remoto (experimental, desligado por padrão): delegue os trabalhos longos ao seu próprio servidor
+Novo: exporte os modelos baixados como pacotes offline para outro dispositivo
+Novo: interface em chinês
+Novo: catálogo da comunidade com mais de 30 modelos, filtrável por idioma (árabe leve, hebraico, persa, coreano, línguas indianas e mais)
+Melhorado: seção Avançada compacta na aba Modelos, downloads do Gemma em página própria
+Corrigido: correções de estabilidade e interface

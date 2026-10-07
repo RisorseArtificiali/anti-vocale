@@ -1,0 +1,7 @@
+Nouveau : surveillance planifiée de dossiers : les nouveaux fichiers audio des dossiers choisis sont transcrits automatiquement
+Nouveau : déport distant (expérimental, désactivé par défaut) : déléguez les longues tâches à votre propre serveur
+Nouveau : exportez les modèles téléchargés en paquets hors ligne pour un autre appareil
+Nouveau : interface en chinois
+Nouveau : catalogue communautaire fort de plus de 30 modèles, filtrable par langue (arabe léger, hébreu, persan, coréen, langues indiennes et plus)
+Amélioré : section Avancé compacte dans l'onglet Modèles, téléchargements Gemma sur leur propre page
+Corrigé : correctifs de stabilité et d'interface
