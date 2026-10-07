@@ -733,6 +733,9 @@
     <string name="notification_channel_tasker_fallback">Автоматизація Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Торкніться, щоб розпочати розшифровку після запуску з фону</string>
     <string name="tasker_fallback_notification_text">Торкніться, щоб розпочати розшифровку</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">Сповіщення про голосові повідомлення</string>
+    <string name="voice_note_offer_channel_description">Пропонує транскрибувати нові голосові повідомлення WhatsApp</string>
 
     <!-- Dismiss -->
     <string name="dismiss">Відхилити</string>
@@ -1047,6 +1050,15 @@
     <string name="voice_note_identity_title">Розпізнавання відправника голосових</string>
     <string name="voice_note_identity_description">Записує в рядок історії ім\'я відправника поділеного голосового повідомлення. Поки лише WhatsApp. Ім\'я з\'являється лише якщо повідомлення прийшло, поки опція була увімкнена, і лише коли заявлена тривалість збігається з аудіо (без вгадувань). Ім\'я залишається в рядку і після вимкення; список живе лише в пам\'яті. Потрібен доступ до сповіщень.</string>
     <string name="voice_note_identity_grant_hint">Доступ до сповіщень вимкнено. Торкніться, щоб відкрити системне налаштування й увімкнути його для цього застосунку.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">Сповіщення про голосові повідомлення</string>
+    <string name="voice_note_detection_description">Показує сповіщення з кнопкою «Транскрибувати», коли приходить нове голосове повідомлення WhatsApp і застосунок запущений, щоб транскрибувати його одним дотиком замість пересилання. Виявлення читає лише список папки голосових повідомлень WhatsApp, і все залишається на цьому пристрої. Поки це вимкнено, нічого не читається. Потрібен дозвіл на доступ до музики й аудіо.</string>
+    <string name="voice_note_detection_grant_hint">Доступ до аудіо вимкнено. Торкніться, щоб відкрити налаштування застосунку та увімкнути його; сповіщення почнуться щойно його буде надано.</string>
+    <string name="voice_note_offer_title">Нове голосове повідомлення</string>
+    <string name="voice_note_offer_text_with_sender">Від %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">Голосове повідомлення (%1$s)</string>
+    <string name="voice_note_offer_text_plain">Голосове повідомлення</string>
+    <string name="voice_note_offer_action">Транскрибувати</string>
     <string name="share_targets_description">Показувати кожну завантажену модель окремим варіантом у меню надсилання Android. Коли ви надсилаєте аудіо через конкретну модель, вона використовується тимчасово лише для цієї розшифровки.</string>
     <string name="advanced_sharing_toggle">Показувати моделі в меню надсилання</string>
     <string name="share_targets_models_info">Кожна завантажена модель з\'явиться як окрема ціль надсилання. Видалення моделі прибирає її ціль надсилання.</string>

@@ -692,6 +692,9 @@
     <string name="notification_channel_tasker_fallback">Tasker-Automatisierung</string>
     <string name="notification_channel_tasker_fallback_description">Tippen, um die Transkription bei Auslösung im Hintergrund zu starten</string>
     <string name="tasker_fallback_notification_text">Tippen, um die Transkription zu starten</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">Hinweise zu Sprachnachrichten</string>
+    <string name="voice_note_offer_channel_description">Bietet an, neue WhatsApp-Sprachnachrichten zu transkribieren</string>
 
     <!-- Dismiss -->
     <string name="dismiss">Ausblenden</string>
@@ -984,6 +987,15 @@
     <string name="voice_note_identity_title">Erkennung des Absenders von Sprachnachrichten</string>
     <string name="voice_note_identity_description">Trägt den Namen des Absenders in die Verlaufszeile einer geteilten Sprachnachricht ein. Zurzeit nur WhatsApp. Der Name erscheint nur, wenn die Benachrichtigung der Nachricht eintraf, während dies aktiviert war, und nur wenn die gemeldete Länge zum Audio passt (keine geratenen Namen). Der Name bleibt auf der Zeile, auch nachdem du dies ausschaltest; die Warteliste liegt nur im Speicher. Benötigt Benachrichtigungszugriff.</string>
     <string name="voice_note_identity_grant_hint">Benachrichtigungszugriff ist aus. Tippe, um die Systemeinstellung zu öffnen und ihn für diese App zu aktivieren.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">Hinweise zu Sprachnachrichten</string>
+    <string name="voice_note_detection_description">Zeigt eine Benachrichtigung mit der Schaltfläche Transkribieren, wenn eine neue WhatsApp-Sprachnachricht eintrifft und die App läuft, sodass du sie mit einem Tipp transkribieren kannst, statt sie zu teilen. Die Erkennung liest nur die Ordnerliste der WhatsApp-Sprachnachrichten, und alles bleibt auf diesem Gerät. Solange dies aus ist, wird gar nichts gelesen. Erfordert die Berechtigung für Musik und Audio.</string>
+    <string name="voice_note_detection_grant_hint">Audiozugriff ist aus. Tippe, um die App-Einstellungen zu öffnen und ihn zu aktivieren; die Hinweise starten, sobald er erteilt ist.</string>
+    <string name="voice_note_offer_title">Neue Sprachnachricht</string>
+    <string name="voice_note_offer_text_with_sender">Von %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">Sprachnachricht (%1$s)</string>
+    <string name="voice_note_offer_text_plain">Sprachnachricht</string>
+    <string name="voice_note_offer_action">Transkribieren</string>
     <string name="share_targets_description">Jedes heruntergeladene Modell erscheint als eigener Eintrag im Systemmenü. Das Audio verarbeitet das ausgewählte Modell.</string>
     <string name="advanced_sharing_toggle">Heruntergeladene Modelle anzeigen</string>
     <string name="share_targets_models_info">Jedes heruntergeladene Modell erscheint als Eintrag im Teilen-Menü. Beim Löschen wird das Modell aus dem Menü entfernt.</string>

@@ -613,6 +613,9 @@
     <string name="notification_channel_tasker_fallback">Automatisation Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Appuyez pour lancer la transcription quand elle est déclenchée en arrière-plan</string>
     <string name="tasker_fallback_notification_text">Appuyez pour lancer la transcription</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">Alertes de notes vocales</string>
+    <string name="voice_note_offer_channel_description">Propose de transcrire les nouveaux messages vocaux WhatsApp</string>
     <string name="dismiss">Fermer</string>
     <string name="parakeet_downloaded">Modèle Parakeet téléchargé</string>
     <string name="whisper_downloaded">%1$s téléchargé</string>
@@ -882,6 +885,15 @@
     <string name="voice_note_identity_title">Reconnaissance de l\'expéditeur des notes vocales</string>
     <string name="voice_note_identity_description">Inscrit sur la ligne d\'historique le nom de l\'expéditeur de la note vocale partagée. Pour l\'instant WhatsApp uniquement. Le nom n\'apparaît que si la notification de la note est arrivée pendant que c\'était activé, et seulement si la durée annoncée correspond à l\'audio (aucun nom deviné). Le nom reste sur cette ligne même après désactivation ; la liste d\'attente vit uniquement en mémoire. Nécessite l\'accès aux notifications.</string>
     <string name="voice_note_identity_grant_hint">L\'accès aux notifications est désactivé. Touchez pour ouvrir le réglage système et l\'activer pour cette app.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">Alertes de notes vocales</string>
+    <string name="voice_note_detection_description">Affiche une notification avec le bouton Transcrire dès qu\'un nouveau message vocal WhatsApp arrive et que l\'app est en cours d\'exécution, pour le transcrire en un geste au lieu de le partager. La détection lit uniquement la liste du dossier des messages vocaux WhatsApp, et tout reste sur cet appareil. Tant que c\'est désactivé, rien n\'est lu. Nécessite l\'autorisation d\'accès à la musique et à l\'audio.</string>
+    <string name="voice_note_detection_grant_hint">L\'accès audio est désactivé. Touchez pour ouvrir les réglages de l\'app et l\'activer ; les alertes démarrent dès qu\'il est accordé.</string>
+    <string name="voice_note_offer_title">Nouveau message vocal</string>
+    <string name="voice_note_offer_text_with_sender">De %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">Message vocal (%1$s)</string>
+    <string name="voice_note_offer_text_plain">Message vocal</string>
+    <string name="voice_note_offer_action">Transcrire</string>
     <string name="share_targets_description">Chaque modèle téléchargé apparaît comme entrée distincte dans le menu système. L\'audio est traité par le modèle sélectionné.</string>
     <string name="advanced_sharing_toggle">Afficher les modèles téléchargés</string>
     <string name="share_targets_models_info">Chaque modèle téléchargé apparaîtra comme entrée dans le menu Partager. Supprimer un modèle le retire du menu.</string>

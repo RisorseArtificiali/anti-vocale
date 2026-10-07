@@ -990,6 +990,15 @@
     <string name="voice_note_identity_title">تشخیص فرستنده پیام صوتی</string>
     <string name="voice_note_identity_description">نام فرستندهٔ پیام صوتی به‌اشتراک‌گذاشته‌شده را در ردیف تاریخچه می‌نویسد. در حال حاضر فقط WhatsApp. نام تنها وقتی نمایش داده می‌شود که اعلان پیام در زمان روشن بودن این گزینه رسیده باشد و مدت اعلام‌شده با صدا مطابقت داشته باشد (هیچ نام حدسی ثبت نمی‌شود). نام پس از خاموش کردن هم در همان ردیف می‌ماند؛ فهرست انتظار فقط در حافظه است. نیاز به دسترسی اعلان‌ها دارد.</string>
     <string name="voice_note_identity_grant_hint">دسترسی به اعلان‌ها خاموش است. برای باز کردن تنظیم سیستم و روشن کردن آن برای این برنامه بزنید.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">هشدار پیام صوتی</string>
+    <string name="voice_note_detection_description">وقتی پیام صوتی جدید واتساپ می‌رسد و برنامه در حال اجراست، یک اعلان با دکمه رونویسی نشان می‌دهد تا به‌جای هم‌رسانی، با یک ضربه آن را رونویسی کنید. تشخیص فقط فهرست پوشه پیام‌های صوتی واتساپ را می‌خواند و همه چیز روی همین دستگاه می‌ماند. وقتی خاموش است هیچ چیزی خوانده نمی‌شود. نیاز به مجوز دسترسی به موسیقی و صدا دارد.</string>
+    <string name="voice_note_detection_grant_hint">دسترسی به صدا خاموش است. برای باز کردن تنظیمات برنامه و روشن کردن آن ضربه بزنید؛ هشدارها به‌محض داده شدن مجوز شروع می‌شوند.</string>
+    <string name="voice_note_offer_title">پیام صوتی جدید</string>
+    <string name="voice_note_offer_text_with_sender">از %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">پیام صوتی (%1$s)</string>
+    <string name="voice_note_offer_text_plain">پیام صوتی</string>
+    <string name="voice_note_offer_action">رونویسی</string>
     <string name="share_targets_description">هر مدل دانلودشده به شکل گزینه‌ای جدا در منوی سیستم ظاهر می‌شود. صدا توسط مدل انتخاب‌شده پردازش می‌شود.</string>
     <string name="advanced_sharing_toggle">نمایش مدل‌های دانلودشده</string>
     <string name="share_targets_models_info">هر مدل دانلودشده به شکل موردی در منوی هم‌رسانی ظاهر می‌شود. با حذف یک مدل، آن از منو برداشته می‌شود.</string>
@@ -1043,6 +1052,9 @@
     <string name="notification_channel_tasker_fallback">خودکارسازی Tasker</string>
     <string name="notification_channel_tasker_fallback_description">وقتی از پس‌زمینه فعال شد، برای شروع رونویسی بزنید</string>
     <string name="tasker_fallback_notification_text">برای شروع رونویسی بزنید</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">هشدار پیام صوتی</string>
+    <string name="voice_note_offer_channel_description">پیشنهاد رونویسی پیام‌های صوتی جدید واتساپ</string>
     <string name="transcription_interrupted_title">رونویسی قطع شد</string>
     <string name="interrupted_runs_title">رونویسی‌های متوقف‌شده</string>
     <plurals name="interrupted_runs_text">

@@ -613,6 +613,9 @@
     <string name="notification_channel_tasker_fallback">Automatización Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Toca para iniciar la transcripción cuando se activa en segundo plano</string>
     <string name="tasker_fallback_notification_text">Toca para iniciar la transcripción</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">Avisos de notas de voz</string>
+    <string name="voice_note_offer_channel_description">Ofrece transcribir las notas de voz nuevas de WhatsApp</string>
     <string name="dismiss">Descartar</string>
     <string name="parakeet_downloaded">Modelo Parakeet descargado</string>
     <string name="whisper_downloaded">%1$s descargado</string>
@@ -882,6 +885,15 @@
     <string name="voice_note_identity_title">Reconocimiento del remitente de notas de voz</string>
     <string name="voice_note_identity_description">Anota en la fila del historial el nombre de quien envió la nota de voz compartida. Por ahora solo WhatsApp. El nombre aparece solo si la notificación de la nota llegó con esto activado, y solo si la duración declarada coincide con el audio (nada de nombres adivinados). El nombre permanece en esa fila incluso tras apagar esto; la lista de espera vive solo en memoria. Requiere acceso a notificaciones.</string>
     <string name="voice_note_identity_grant_hint">El acceso a notificaciones está desactivado. Toca para abrir el ajuste del sistema y activarlo para esta app.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">Avisos de notas de voz</string>
+    <string name="voice_note_detection_description">Muestra una notificación con el botón Transcribir cuando llega una nota de voz nueva de WhatsApp y la aplicación está en ejecución, para transcribirla con un toque en lugar de compartirla. La detección lee solo el listado de la carpeta de notas de voz de WhatsApp, y todo permanece en este dispositivo. Mientras esté desactivado, no se lee nada. Requiere permiso de acceso a música y audio.</string>
+    <string name="voice_note_detection_grant_hint">El acceso al audio está desactivado. Toca para abrir los ajustes de la aplicación y activarlo; los avisos comienzan en cuanto se conceda.</string>
+    <string name="voice_note_offer_title">Nueva nota de voz</string>
+    <string name="voice_note_offer_text_with_sender">De %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">Mensaje de voz (%1$s)</string>
+    <string name="voice_note_offer_text_plain">Mensaje de voz</string>
+    <string name="voice_note_offer_action">Transcribir</string>
     <string name="share_targets_description">Cada modelo descargado aparece como opción separada en el menú del sistema. El audio lo procesa el modelo seleccionado.</string>
     <string name="advanced_sharing_toggle">Mostrar modelos descargados</string>
     <string name="share_targets_models_info">Cada modelo descargado aparecerá como opción en el menú Compartir. Al eliminar un modelo, desaparece del menú.</string>

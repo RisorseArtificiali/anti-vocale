@@ -105,6 +105,8 @@ class PreferencesManagerImpl(
         // TASK-785: consent gate for the Open Transcribe provider service.
         private val OPEN_TRANSCRIBE_ENABLED = booleanPreferencesKey("open_transcribe_enabled")
         private val VOICE_NOTE_IDENTITY_ENABLED = booleanPreferencesKey("voice_note_identity_enabled")
+        // TASK-271: the voice-note detection gate (offer notifications).
+        private val VOICE_NOTE_DETECTION_ENABLED = booleanPreferencesKey("voice_note_detection_enabled")
         // TASK-681: the LAN-offload (OmniVoice) consent gate and its config triple.
         private val REMOTE_OMNIVOICE_ENABLED = booleanPreferencesKey("remote_omnivoice_enabled")
         private val REMOTE_OMNIVOICE_ENDPOINT = stringPreferencesKey("remote_omnivoice_endpoint")
@@ -173,6 +175,7 @@ class PreferencesManagerImpl(
         val externalAutomationEnabled: Boolean = PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
         val openTranscribeEnabled: Boolean = PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED,
         val voiceNoteIdentityEnabled: Boolean = PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED,
+        val voiceNoteDetectionEnabled: Boolean = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
         val remoteOmnivoiceEnabled: Boolean = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
         val remoteOmnivoiceEndpoint: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT,
         val remoteOmnivoiceApiKey: String = PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY,
@@ -239,6 +242,7 @@ class PreferencesManagerImpl(
         externalAutomationEnabled = this[EXTERNAL_AUTOMATION_ENABLED] ?: PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED,
         openTranscribeEnabled = this[OPEN_TRANSCRIBE_ENABLED] ?: PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED,
         voiceNoteIdentityEnabled = this[VOICE_NOTE_IDENTITY_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED,
+        voiceNoteDetectionEnabled = this[VOICE_NOTE_DETECTION_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED,
         remoteOmnivoiceEnabled = this[REMOTE_OMNIVOICE_ENABLED] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED,
         remoteOmnivoiceEndpoint = this[REMOTE_OMNIVOICE_ENDPOINT] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENDPOINT,
         remoteOmnivoiceApiKey = this[REMOTE_OMNIVOICE_API_KEY] ?: PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_API_KEY,
@@ -856,6 +860,9 @@ class PreferencesManagerImpl(
     override val voiceNoteIdentityEnabled: Flow<Boolean> = dataStore.data.map { it[VOICE_NOTE_IDENTITY_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED }
         .onStart { emit(cache.get().voiceNoteIdentityEnabled) }
 
+    override val voiceNoteDetectionEnabled: Flow<Boolean> = dataStore.data.map { it[VOICE_NOTE_DETECTION_ENABLED] ?: PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED }
+        .onStart { emit(cache.get().voiceNoteDetectionEnabled) }
+
     // TASK-681: the LAN-offload gate and its config triple. Re-emits on
     // unrelated writes are fine here, like the siblings above: the
     // collectors only compare values.
@@ -985,6 +992,13 @@ class PreferencesManagerImpl(
             preferences[VOICE_NOTE_IDENTITY_ENABLED] = enabled
         }
         cache.updateAndGet { it.copy(voiceNoteIdentityEnabled = enabled) }
+    }
+
+    override suspend fun saveVoiceNoteDetectionEnabled(enabled: Boolean) {
+        dataStore.edit { preferences ->
+            preferences[VOICE_NOTE_DETECTION_ENABLED] = enabled
+        }
+        cache.updateAndGet { it.copy(voiceNoteDetectionEnabled = enabled) }
     }
 
     override val externalModelsJson: Flow<String?> = dataStore.data.map { it[EXTERNAL_MODELS_JSON] }

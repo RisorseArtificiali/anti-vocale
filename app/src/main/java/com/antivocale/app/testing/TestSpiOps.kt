@@ -120,6 +120,8 @@ internal class TestSpiOps(
             .put("externalAutomationEnabled", preferences.externalAutomationEnabled.first())
             .put("openTranscribeEnabled", preferences.openTranscribeEnabled.first())
             .put("voiceNoteIdentityEnabled", preferences.voiceNoteIdentityEnabled.first())
+            // TASK-271: the voice-note detection gate (offer notifications).
+            .put("voiceNoteDetectionEnabled", preferences.voiceNoteDetectionEnabled.first())
             // TASK-681: the LAN-offload config (endpoint visible for E2E
             // verification; the key is masked to its last 4 chars).
             .put("remoteOmnivoiceEnabled", preferences.remoteOmnivoiceEnabled.first())
@@ -201,6 +203,8 @@ internal class TestSpiOps(
         // TASK-670: the named-labels privacy gate.
         "speaker_id_enabled" to preferences::saveSpeakerIdEnabled,
         "voice_note_identity_enabled" to preferences::saveVoiceNoteIdentityEnabled,
+        // TASK-271: the voice-note detection gate (device trials flip it).
+        "voice_note_detection_enabled" to preferences::saveVoiceNoteDetectionEnabled,
         "auto_copy" to preferences::saveAutoCopyEnabled,
         "vad_advisory" to preferences::saveVadAdvisoryDismissed,
         "onboarding" to preferences::saveOnboardingCompleted,

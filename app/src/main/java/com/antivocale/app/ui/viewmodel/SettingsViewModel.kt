@@ -91,6 +91,9 @@ class SettingsViewModel @Inject constructor(
     private val backendManager: TranscriptionBackendManager,
     private val llmManager: LlmManager,
     private val shareTargetManager: ShareTargetManager,
+    // TASK-271: permission grants have no observable state, so the grant
+    // paths poke the coordinator for a re-evaluation.
+    private val voiceNoteDetectionCoordinator: com.antivocale.app.data.VoiceNoteDetectionCoordinator,
     private val shareShortcutManager: ShareShortcutManager,
     private val backendRegistry: BackendRegistry,
     private val shortcutIconStore: ShortcutIconStore,
@@ -606,6 +609,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED
         )
 
+    /** TASK-271: the voice-note detection gate (offer notifications). */
+    val voiceNoteDetectionEnabled: StateFlow<Boolean> = preferencesManager.voiceNoteDetectionEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_VOICE_NOTE_DETECTION_ENABLED
+        )
+
     fun saveExternalAutomationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveExternalAutomationEnabled(enabled)
@@ -628,6 +639,21 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             preferencesManager.saveVoiceNoteIdentityEnabled(enabled)
         }
+    }
+
+    /** TASK-271: see [voiceNoteDetectionEnabled]. */
+    fun saveVoiceNoteDetectionEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveVoiceNoteDetectionEnabled(enabled)
+        }
+    }
+
+    /** TASK-271: a grant may have happened outside the preference flow (the
+     *  runtime dialog, a return from the app-settings screen); the coordinator
+     *  re-evaluates its conjunction against the CURRENT preference value,
+     *  which re-arms detection when the value itself did not change. */
+    fun refreshVoiceNoteDetectionGate() {
+        voiceNoteDetectionCoordinator.pokePermissionState()
     }
 
     // ---- TASK-681: LAN offload (OmniVoice) ----

@@ -1922,18 +1922,9 @@ fun SettingsTab(
             // user comes back from the system screen (ON_RESUME), not on
             // every recomposition of the section.
             var notificationAccessGranted by remember { mutableStateOf(false) }
-            val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
-            DisposableEffect(lifecycleOwner) {
-                fun probe() {
-                    notificationAccessGranted = androidx.core.app.NotificationManagerCompat
-                        .getEnabledListenerPackages(context).contains(context.packageName)
-                }
-                val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
-                    if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) probe()
-                }
-                probe() // ON_RESUME alone never fires for an already-resumed activity
-                lifecycleOwner.lifecycle.addObserver(observer)
-                onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+            RecheckOnResume {
+                notificationAccessGranted = androidx.core.app.NotificationManagerCompat
+                    .getEnabledListenerPackages(context).contains(context.packageName)
             }
             SearchFilterRow(searchQuery, SettingsSearchId.VOICE_NOTE_IDENTITY, searchState) {
                 ToggleSettingCard(
@@ -1965,6 +1956,93 @@ fun SettingsTab(
                     }
                 }
             }
+
+            // TASK-271: the voice-note detection gate (offer notifications).
+            // The runtime read-media permission is the outer gate; while
+            // this toggle is off the coordinator reads nothing at all. The
+            // permission probe re-runs on ON_RESUME (a grant or revoke made
+            // in the system dialog must show on return), not on every
+            // recomposition. Android 10 is excluded (scoped storage blocks
+            // the tap path; TASK-777 tracks the content-URI arm that would
+            // lift this).
+            if (com.antivocale.app.data.VoiceNoteDetectionPermission.detectionAvailable()) {
+            val voiceNoteDetectionEnabled by viewModel.voiceNoteDetectionEnabled.collectAsState()
+            var voiceNoteAudioPermissionGranted by remember { mutableStateOf(false) }
+            RecheckOnResume {
+                val granted =
+                    com.antivocale.app.data.VoiceNoteDetectionPermission.granted(context)
+                if (granted != voiceNoteAudioPermissionGranted) {
+                    voiceNoteAudioPermissionGranted = granted
+                    // A grant or revoke made OUTSIDE this screen (the system
+                    // dialog answered by a launcher, the app-settings page)
+                    // changes no preference value, so the coordinator must
+                    // be poked to re-evaluate its conjunction.
+                    viewModel.refreshVoiceNoteDetectionGate()
+                }
+            }
+            val audioPermissionLauncher = rememberLauncherForActivityResult(
+                ActivityResultContracts.RequestPermission()
+            ) { granted ->
+                // The toggle turns on only on the actual grant: a denial
+                // leaves it off, which is what the coordinator would honor
+                // anyway (no dead-on toggle). Either way the gate is
+                // re-evaluated: a grant with an already-on preference must
+                // re-arm detection without a preference change.
+                viewModel.refreshVoiceNoteDetectionGate()
+                if (granted) viewModel.saveVoiceNoteDetectionEnabled(true)
+            }
+            fun requestAudioPermission() {
+                // After a double denial the system serves no dialog at all;
+                // the request returns instantly, so the runtime ask stays on
+                // the toggle and the hint below routes to the app-settings
+                // page where the permission can always be granted.
+                try {
+                    audioPermissionLauncher.launch(
+                        com.antivocale.app.data.VoiceNoteDetectionPermission.requiredPermission())
+                } catch (e: android.content.ActivityNotFoundException) {
+                    android.util.Log.w("SettingsTab", "permission request unavailable", e)
+                }
+            }
+            SearchFilterRow(searchQuery, SettingsSearchId.VOICE_NOTE_DETECTION, searchState) {
+                ToggleSettingCard(
+                    icon = Icons.Default.Notifications,
+                    title = stringResource(R.string.voice_note_detection_title),
+                    description = stringResource(R.string.voice_note_detection_description),
+                    descriptionMaxLinesCompact = Int.MAX_VALUE,
+                    checked = voiceNoteDetectionEnabled,
+                    onCheckedChange = { enabled ->
+                        when {
+                            !enabled -> viewModel.saveVoiceNoteDetectionEnabled(false)
+                            voiceNoteAudioPermissionGranted ->
+                                viewModel.saveVoiceNoteDetectionEnabled(true)
+                            // The runtime request rides the toggle
+                            // interaction itself, the one user gesture that
+                            // legitimizes it.
+                            else -> requestAudioPermission()
+                        }
+                    }
+                )
+                if (voiceNoteDetectionEnabled && !voiceNoteAudioPermissionGranted) {
+                    TextButton(onClick = {
+                        // The reliable grant path, not the runtime ask: this
+                        // button shows when the permission is missing, which
+                        // after a double denial is the only path left.
+                        runCatching {
+                            context.startActivity(
+                                Intent(
+                                    android.provider.Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                                    android.net.Uri.fromParts("package", context.packageName, null)))
+                        }
+                    }) {
+                        Text(
+                            text = stringResource(R.string.voice_note_detection_grant_hint),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
+            }
+            } // end detectionAvailable() gate
             SearchFilterRow(searchQuery, SettingsSearchId.SHARE_SHORTCUT_ICONS, searchState) {
                 ShareShortcutIconsCard(viewModel)
             }
@@ -2412,6 +2490,25 @@ private fun FeedbackSection(
  * license and version rows (TASK-459 extraction; the clickable rows above
  * have a different shape and stay inline).
  */
+/**
+ * Re-runs [probe] whenever the lifecycle resumes, plus once immediately at
+ * composition: ON_RESUME alone never fires for an already-resumed activity,
+ * so the immediate call covers entering the section without a pause, and
+ * the observer covers returning from a system grant screen.
+ */
+@Composable
+private fun RecheckOnResume(probe: () -> Unit) {
+    val lifecycleOwner = androidx.compose.ui.platform.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event == androidx.lifecycle.Lifecycle.Event.ON_RESUME) probe()
+        }
+        probe()
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+}
+
 @Composable
 private fun InfoRow(icon: ImageVector, title: String, value: String) {
     Row(
@@ -3082,7 +3179,7 @@ internal enum class SettingsSearchId {
     // Advanced
     BATTERY_EXEMPTION, HUGGINGFACE_AUTH, PERFORMANCE_HUB,
     SHARE_TARGETS, SUBTITLE_TIMEOUT, AUTOMATION_HUB, VOICE_NOTE_IDENTITY, PER_APP_SETTINGS,
-    SHARE_SHORTCUT_ICONS,
+    SHARE_SHORTCUT_ICONS, VOICE_NOTE_DETECTION,
     // Feedback
     FEEDBACK,
 }
@@ -3450,6 +3547,13 @@ internal val SETTINGS_SEARCH_CARDS: List<SettingsSearchCard> = listOf(
     SettingsSearchCard(
         SettingsSearchId.VOICE_NOTE_IDENTITY, SettingsSearchSection.ADVANCED,
         listOf(R.string.voice_note_identity_title, R.string.voice_note_identity_description),
+        group = SettingsSearchGroup.INTEGRATIONS,
+    ),
+    // TASK-271: the voice-note detection gate, next to the identity card
+    // it cooperates with (detection offers; identity labels the sender).
+    SettingsSearchCard(
+        SettingsSearchId.VOICE_NOTE_DETECTION, SettingsSearchSection.ADVANCED,
+        listOf(R.string.voice_note_detection_title, R.string.voice_note_detection_description),
         group = SettingsSearchGroup.INTEGRATIONS,
     ),
     SettingsSearchCard(

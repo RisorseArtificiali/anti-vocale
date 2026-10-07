@@ -111,6 +111,8 @@ class SettingsViewModelActiveModelTest {
             // tests never enroll, a mock enroller and an empty real store
             // keep the construction honest.
             speakerEnroller = mockk<com.antivocale.app.transcription.diarization.SpeakerEnroller>(),
+            // TASK-271: the permission-poke seam; never poked here.
+            voiceNoteDetectionCoordinator = mockk(relaxed = true),
             speakerIdentityStore = com.antivocale.app.transcription.diarization.SpeakerIdentityStore(
                 java.nio.file.Files.createTempDirectory("speaker-ids").toFile()),
         )

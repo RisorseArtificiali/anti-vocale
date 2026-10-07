@@ -89,7 +89,6 @@ class VoiceNoteDetector @Inject constructor(
      */
     sealed interface ChangeSignal {
         data object MediaChanged : ChangeSignal
-        data object Disposed : ChangeSignal
     }
 
     private val _detections = MutableSharedFlow<VoiceNoteEntry>(extraBufferCapacity = 64)
@@ -109,19 +108,22 @@ class VoiceNoteDetector @Inject constructor(
     val detections: Flow<VoiceNoteEntry> = _detections
 
     /**
-     * Registers the observer and establishes the baseline: everything already
-     * indexed is absorbed silently, so no pre-existing voice note is re-emitted
-     * on (re-)subscription. Idempotent while subscribed; a no-op after
-     * [dispose] (a disposed detector does not restart, matching the
-     * process-lifetime singleton shape).
+     * Registers the observer and establishes the baseline: everything not yet
+     * observed is absorbed silently, so nothing pre-existing is re-emitted on
+     * (re-)subscription. Idempotent while subscribed; after a [dispose] the
+     * detector re-arms, absorbing only the delta since the watermark
+     * (TASK-271's lifecycle: the preference toggle tears detection down and
+     * back up within one process).
      */
     @Synchronized
     fun subscribe() {
-        if (observer != null || disposed) return
-        tracker = VoiceNoteFilter.IncrementalFilter()
-        // Baseline first: absorb the existing index before anything can fire.
-        // Runs on the caller's thread (see Threading above).
-        tracker.absorb(queryWhatsAppVoiceNotes())
+        if (observer != null) return
+        // Baseline: absorb everything not yet observed before the observer
+        // registers. The tracker survives off/on cycles (the TASK-271
+        // toggle), so a re-arm absorbs only the delta since the watermark
+        // instead of rescanning the whole audio index; runs on the caller's
+        // thread (see Threading above).
+        tracker.absorb(queryWhatsAppVoiceNotes(tracker.watermarkSeconds))
         val thread = HandlerThread("VoiceNoteDetector").apply { start() }
         handlerThread = thread
         val registered = object : ContentObserver(Handler(thread.looper)) {
@@ -129,6 +131,10 @@ class VoiceNoteDetector @Inject constructor(
                 if (!disposed) _signals.tryEmit(ChangeSignal.MediaChanged)
             }
         }
+        // Before the registration, not after: an onChange delivered in the
+        // window between registering and re-arming the flag would otherwise
+        // be dropped (review F5), silently losing that note's only signal.
+        disposed = false
         try {
             context.contentResolver.registerContentObserver(
                 MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
@@ -144,15 +150,21 @@ class VoiceNoteDetector @Inject constructor(
         observer = registered
     }
 
+    /**
+     * Tears the active subscription down: unregisters the observer and parks
+     * the handler thread. A no-op when nothing is subscribed; a later
+     * [subscribe] re-arms detection. The lifecycle owner ends its collector
+     * itself (the signal flow is hot and never completes); unregistering here
+     * is what stops further MediaChanged emissions.
+     */
     @Synchronized
     fun dispose() {
-        if (disposed) return
+        if (observer == null && handlerThread == null) return
         disposed = true
         observer?.let { context.contentResolver.unregisterContentObserver(it) }
         observer = null
         handlerThread?.quitSafely()
         handlerThread = null
-        _signals.tryEmit(ChangeSignal.Disposed)
     }
 
     /**

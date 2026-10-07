@@ -613,6 +613,9 @@
     <string name="notification_channel_tasker_fallback">Automação Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Toque para iniciar a transcrição quando acionado em segundo plano</string>
     <string name="tasker_fallback_notification_text">Toque para iniciar a transcrição</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">Alertas de notas de voz</string>
+    <string name="voice_note_offer_channel_description">Oferece transcrever novas notas de voz do WhatsApp</string>
     <string name="dismiss">Dispensar</string>
     <string name="parakeet_downloaded">Modelo Parakeet baixado</string>
     <string name="whisper_downloaded">%1$s baixado</string>
@@ -882,6 +885,15 @@
     <string name="voice_note_identity_title">Reconhecimento do remetente de áudios</string>
     <string name="voice_note_identity_description">Anota na linha do histórico o nome de quem enviou o áudio compartilhado. Por enquanto só WhatsApp. O nome aparece somente se a notificação do áudio chegou com isto ativado, e somente se a duração informada bate com o áudio (nenhum nome chutado). O nome fica nessa linha mesmo depois de desativar; a lista de espera vive só na memória. Requer acesso às notificações.</string>
     <string name="voice_note_identity_grant_hint">O acesso às notificações está desativado. Toque para abrir a configuração do sistema e ativá-lo para este app.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">Alertas de notas de voz</string>
+    <string name="voice_note_detection_description">Mostra uma notificação com o botão Transcrever quando chega uma nova nota de voz do WhatsApp e o aplicativo está em execução, para transcrevê-la com um toque em vez de compartilhá-la. A detecção lê apenas a listagem da pasta de notas de voz do WhatsApp, e tudo fica neste dispositivo. Enquanto isto estiver desligado, nada é lido. Requer permissão de acesso a música e áudio.</string>
+    <string name="voice_note_detection_grant_hint">O acesso ao áudio está desativado. Toque para abrir as configurações do aplicativo e ativá-lo; os alertas começam assim que for concedido.</string>
+    <string name="voice_note_offer_title">Nova nota de voz</string>
+    <string name="voice_note_offer_text_with_sender">De %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">Mensagem de voz (%1$s)</string>
+    <string name="voice_note_offer_text_plain">Mensagem de voz</string>
+    <string name="voice_note_offer_action">Transcrever</string>
     <string name="share_targets_description">Cada modelo baixado aparece como item separado no menu do sistema. O áudio é processado pelo modelo selecionado.</string>
     <string name="advanced_sharing_toggle">Mostrar modelos baixados</string>
     <string name="share_targets_models_info">Cada modelo baixado aparecerá como item no menu Compartilhar. Excluir um modelo remove-o do menu.</string>

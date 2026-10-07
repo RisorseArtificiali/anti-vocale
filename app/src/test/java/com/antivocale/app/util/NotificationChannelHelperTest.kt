@@ -60,6 +60,13 @@ class NotificationChannelHelperTest {
     }
 
     @Test
+    fun `VOICE_NOTE_OFFER has correct id and properties`() {
+        assertEquals("voice_note_offer_channel", AppNotificationChannel.VOICE_NOTE_OFFER.id)
+        assertEquals(NotificationManager.IMPORTANCE_DEFAULT, AppNotificationChannel.VOICE_NOTE_OFFER.importance)
+        assertEquals(true, AppNotificationChannel.VOICE_NOTE_OFFER.showBadge)
+    }
+
+    @Test
     fun `all channel IDs are unique`() {
         val ids = AppNotificationChannel.entries.map { it.id }
         assertEquals(
@@ -70,10 +77,10 @@ class NotificationChannelHelperTest {
     }
 
     @Test
-    fun `enum has exactly 5 entries`() {
+    fun `enum has exactly 6 entries`() {
         assertEquals(
-            "AppNotificationChannel should have exactly 5 entries",
-            5,
+            "AppNotificationChannel should have exactly 6 entries",
+            6,
             AppNotificationChannel.entries.size
         )
     }

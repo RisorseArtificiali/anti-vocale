@@ -154,7 +154,8 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.ADVANCED_SHARE_FORMATS),
             SettingsSearchGroup.INTEGRATIONS to listOf(
                 SettingsSearchId.SHARE_TARGETS, SettingsSearchId.SUBTITLE_TIMEOUT, SettingsSearchId.AUTOMATION_HUB,
-                SettingsSearchId.VOICE_NOTE_IDENTITY, SettingsSearchId.SHARE_SHORTCUT_ICONS),
+                SettingsSearchId.VOICE_NOTE_IDENTITY, SettingsSearchId.VOICE_NOTE_DETECTION,
+                SettingsSearchId.SHARE_SHORTCUT_ICONS),
         )
         val registryOrder = SETTINGS_SEARCH_CARDS.map { it.id }
         SettingsSearchGroup.entries.forEach { g ->
@@ -356,7 +357,8 @@ class SettingsSearchRegistryTest {
         // The 2026-10-01 sub-grouping order: the kill-recovery offer, the
         // ungrouped head (performance, HuggingFace auth, per-app), then the
         // terminal Integrations cluster (share targets, subtitle choice,
-        // automation).
+        // automation; TASK-271 added the detection card after the identity
+        // one it cooperates with).
         val base = visibleIds(SettingsSearchSection.ADVANCED, state())
         assertEquals(
             listOf(
@@ -367,6 +369,7 @@ class SettingsSearchRegistryTest {
                 SettingsSearchId.SUBTITLE_TIMEOUT,
                 SettingsSearchId.AUTOMATION_HUB,
                 SettingsSearchId.VOICE_NOTE_IDENTITY,
+                SettingsSearchId.VOICE_NOTE_DETECTION,
                 SettingsSearchId.SHARE_SHORTCUT_ICONS,
             ),
             base,

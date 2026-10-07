@@ -991,6 +991,15 @@
     <string name="voice_note_identity_title">Riconoscimento del mittente delle note vocali</string>
     <string name="voice_note_identity_description">Scrive sulla riga della cronologia il nome del mittente della nota vocale condivisa. Per ora solo WhatsApp. Il nome compare solo se la notifica della nota è arrivata mentre l\'opzione era accesa, e solo se la durata dichiarata corrisponde all\'audio (nessun nome azzardato). Il nome resta su quella riga anche dopo aver spento l\'opzione; l\'elenco delle note in attesa sta solo in memoria. Richiede l\'accesso alle notifiche.</string>
     <string name="voice_note_identity_grant_hint">L\'accesso alle notifiche è disattivato. Tocca per aprire l\'impostazione di sistema e attivarlo per questa app.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">Avvisi note vocali</string>
+    <string name="voice_note_detection_description">Mostra una notifica con il pulsante Trascrivi quando arriva una nuova nota vocale WhatsApp e l\'app è in esecuzione, così la trascrivi con un tocco invece di condividerla. Il rilevamento legge solo l\'elenco della cartella delle note vocali WhatsApp, e tutto resta su questo dispositivo. Mentre l\'opzione è spenta non viene letto nulla. Richiede il permesso di accesso a musica e audio.</string>
+    <string name="voice_note_detection_grant_hint">L\'accesso all\'audio è disattivato. Tocca per aprire le impostazioni dell\'app e attivarlo; gli avvisi partono appena è concesso.</string>
+    <string name="voice_note_offer_title">Nuova nota vocale</string>
+    <string name="voice_note_offer_text_with_sender">Da %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">Messaggio vocale (%1$s)</string>
+    <string name="voice_note_offer_text_plain">Messaggio vocale</string>
+    <string name="voice_note_offer_action">Trascrivi</string>
     <string name="share_targets_description">Ogni modello scaricato appare come voce separata nel menu di sistema. L\'audio è elaborato dal modello selezionato.</string>
     <string name="advanced_sharing_toggle">Mostra modelli scaricati</string>
     <string name="share_targets_models_info">Ogni modello scaricato apparirà come voce nel menu Condividi. Eliminando un modello, questo viene rimosso dal menu.</string>
@@ -1044,6 +1053,9 @@
     <string name="notification_channel_tasker_fallback">Automazione Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Tocca per avviare la trascrizione quando attivata in background</string>
     <string name="tasker_fallback_notification_text">Tocca per avviare la trascrizione</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">Avvisi note vocali</string>
+    <string name="voice_note_offer_channel_description">Propone di trascrivere le nuove note vocali WhatsApp</string>
     <string name="transcription_interrupted_title">Trascrizione interrotta</string>
     <string name="interrupted_runs_title">Trascrizioni interrotte</string>
     <plurals name="interrupted_runs_text">

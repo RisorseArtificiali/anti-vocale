@@ -731,6 +731,9 @@
     <string name="notification_channel_tasker_fallback">Automatyzacja Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Dotknij, aby rozpocząć transkrypcję po wyzwoleniu z tła</string>
     <string name="tasker_fallback_notification_text">Dotknij, aby rozpocząć transkrypcję</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">Powiadomienia o notatkach głosowych</string>
+    <string name="voice_note_offer_channel_description">Proponuje transkrypcję nowych notatek głosowych WhatsApp</string>
 
     <!-- Dismiss -->
     <string name="dismiss">Odrzuć</string>
@@ -1045,6 +1048,15 @@
     <string name="voice_note_identity_title">Rozpoznawanie nadawcy notatek głosowych</string>
     <string name="voice_note_identity_description">Zapisuje w wierszu historii imię nadawcy udostępnionej wiadomości głosowej. Na razie tylko WhatsApp. Imię pojawia się tylko wtedy, gdy powiadomienie przyszło przy włączonej opcji, i tylko gdy zadeklarowany czas zgadza się z audio (żadnych strzałów). Imię zostaje w tym wierszu także po wyłączeniu opcji; lista oczekujących żyje tylko w pamięci. Wymaga dostępu do powiadomień.</string>
     <string name="voice_note_identity_grant_hint">Dostęp do powiadomień jest wyłączony. Dotknij, aby otworzyć ustawienie systemu i włączyć go dla tej aplikacji.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">Powiadomienia o notatkach głosowych</string>
+    <string name="voice_note_detection_description">Pokazuje powiadomienie z przyciskiem Transkrybuj, gdy przychodzi nowa notatka głosowa WhatsApp, a aplikacja jest uruchomiona, dzięki czemu transkrybujesz ją jednym dotknięciem zamiast udostępniać. Wykrywanie czyta tylko listę folderu notatek głosowych WhatsApp, a wszystko zostaje na tym urządzeniu. Gdy to jest wyłączone, nic nie jest czytane. Wymaga uprawnienia dostępu do muzyki i audio.</string>
+    <string name="voice_note_detection_grant_hint">Dostęp do audio jest wyłączony. Dotknij, aby otworzyć ustawienia aplikacji i go włączyć; powiadomienia rozpoczną się po jego przyznaniu.</string>
+    <string name="voice_note_offer_title">Nowa notatka głosowa</string>
+    <string name="voice_note_offer_text_with_sender">Od %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">Wiadomość głosowa (%1$s)</string>
+    <string name="voice_note_offer_text_plain">Wiadomość głosowa</string>
+    <string name="voice_note_offer_action">Transkrybuj</string>
     <string name="share_targets_description">Każdy pobrany model pojawia się jako osobna pozycja w menu systemowym. Audio przetwarza wybrany model.</string>
     <string name="advanced_sharing_toggle">Pokazuj pobrane modele</string>
     <string name="share_targets_models_info">Każdy pobrany model pojawi się jako pozycja w menu udostępniania. Usunięcie modelu usuwa go z menu.</string>

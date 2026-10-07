@@ -80,6 +80,21 @@ enum class AppNotificationChannel(
         descriptionResId = R.string.notification_channel_tasker_fallback_description,
         importance = NotificationManager.IMPORTANCE_HIGH,
         showBadge = true
+    ),
+    /**
+     * TASK-271: the voice-note offer. IMPORTANCE_DEFAULT, a step down from
+     * the result and fallback channels: the offer is a prompt the user
+     * answers at their own pace, not an outcome or a blocked request, so
+     * it lands as a shade entry without a heads-up. Its own channel gives
+     * the user a system-level toggle separate from results (the in-app
+     * preference gates it too, default off).
+     */
+    VOICE_NOTE_OFFER(
+        id = "voice_note_offer_channel",
+        nameResId = R.string.voice_note_offer_channel,
+        descriptionResId = R.string.voice_note_offer_channel_description,
+        importance = NotificationManager.IMPORTANCE_DEFAULT,
+        showBadge = true
     );
 
     /**

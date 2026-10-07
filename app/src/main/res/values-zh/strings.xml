@@ -612,6 +612,9 @@
     <string name="notification_channel_tasker_fallback">Tasker 自动化</string>
     <string name="notification_channel_tasker_fallback_description">从后台触发时点按以开始转写</string>
     <string name="tasker_fallback_notification_text">点按开始转写</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">语音消息提醒</string>
+    <string name="voice_note_offer_channel_description">提议转录新的 WhatsApp 语音消息</string>
     <string name="dismiss">关闭</string>
     <string name="parakeet_downloaded">Parakeet 模型下载成功</string>
     <string name="whisper_downloaded">%1$s 下载成功</string>
@@ -871,6 +874,15 @@
     <string name="voice_note_identity_title">语音消息发送者识别</string>
     <string name="voice_note_identity_description">在历史记录行标注分享语音消息的发送者。目前仅支持 WhatsApp。</string>
     <string name="voice_note_identity_grant_hint">通知访问权限已关闭。点按打开系统设置并为此应用启用。</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">语音消息提醒</string>
+    <string name="voice_note_detection_description">收到新的 WhatsApp 语音消息且应用正在运行时，显示带转录按钮的通知，一键转录而无需分享。检测只读取 WhatsApp 语音消息文件夹的列表，一切都保留在本设备上。关闭时不读取任何内容。需要音乐和音频访问权限。</string>
+    <string name="voice_note_detection_grant_hint">音频访问已关闭。点按打开应用设置并启用；获得权限后提醒即会开始。</string>
+    <string name="voice_note_offer_title">新语音消息</string>
+    <string name="voice_note_offer_text_with_sender">来自 %1$s（%2$s）</string>
+    <string name="voice_note_offer_text_duration">语音消息（%1$s）</string>
+    <string name="voice_note_offer_text_plain">语音消息</string>
+    <string name="voice_note_offer_action">转录</string>
     <string name="share_targets_description">每个已下载的模型都会在系统菜单中显示为单独选项。音频仍在此设备上处理。</string>
     <string name="advanced_sharing_toggle">显示已下载的模型</string>
     <string name="share_targets_models_info">每个已下载的模型都会出现在分享菜单中。删除模型会移除对应项。</string>

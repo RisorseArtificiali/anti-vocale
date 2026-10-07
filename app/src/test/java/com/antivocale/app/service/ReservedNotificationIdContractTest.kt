@@ -55,6 +55,8 @@ class ReservedNotificationIdContractTest {
         assertTrue(ShareReceiverActivity.CHOICE_ID_BAND_BASE + ShareReceiverActivity.CHOICE_ID_BAND_RANGE - 1 < base)
         assertTrue(ShareReceiverActivity.ERROR_ID_BAND_BASE + ShareReceiverActivity.ERROR_ID_BAND_RANGE - 1 < base)
         assertTrue(TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_BASE + TaskerRequestReceiver.FALLBACK_NOTIFICATION_ID_RANGE - 1 < base)
+        // TASK-271: the single voice-note offer slot.
+        assertTrue(com.antivocale.app.service.VoiceNoteOfferNotifier.OFFER_NOTIFICATION_ID < base)
     }
 
     /**
@@ -97,6 +99,9 @@ class ReservedNotificationIdContractTest {
             // suspension id, same documented-headroom rule.
             "interrupted-runs-fixed" to (SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID..
                 SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID),
+            // TASK-271: the single voice-note offer slot, same rule.
+            "voice-note-offer-fixed" to (com.antivocale.app.service.VoiceNoteOfferNotifier.OFFER_NOTIFICATION_ID..
+                com.antivocale.app.service.VoiceNoteOfferNotifier.OFFER_NOTIFICATION_ID),
         )
         for (i in intervals.indices) for (j in i + 1 until intervals.size) {
             val (nameA, a) = intervals[i]

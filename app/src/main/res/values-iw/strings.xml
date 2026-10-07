@@ -724,6 +724,9 @@
     <string name="notification_channel_tasker_fallback">אוטומציה של Tasker</string>
     <string name="notification_channel_tasker_fallback_description">הקש כדי להתחיל תמלול כשהוא מופעל מהרקע</string>
     <string name="tasker_fallback_notification_text">הקש כדי להתחיל תמלול</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">התראות הודעות קוליות</string>
+    <string name="voice_note_offer_channel_description">מציע לתמלל הודעות קוליות חדשות של WhatsApp</string>
 
     <!-- Dismiss -->
     <string name="dismiss">סגירה</string>
@@ -1033,6 +1036,15 @@
     <string name="voice_note_identity_title">זיהוי שולח ההודעות הקוליות</string>
     <string name="voice_note_identity_description">כותב בשורת ההיסטוריה את שם השולח של הודעת הקול ששותפה. לעת עתה רק WhatsApp. השם מופיע רק אם ההתראה של ההודעה הגיעה בעת שהאפשרות היתה פעילה, ורק אם האוך שדווח תואם לשמע (בלי שמות מנוחשים). השם נשאר בשורה גם לאחר כיבוי; רשימת ההמתנה מוחזרת רק בזכרון. דורש הרשאת גישה להתראות.</string>
     <string name="voice_note_identity_grant_hint">גישה להתראות כבויה. הקש כדי לפתוח את הגדרת המערכת ולהפעיל אותה ליישום הזה.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">התראות הודעות קוליות</string>
+    <string name="voice_note_detection_description">כשמגיעה הודעה קולית חדשה של WhatsApp והאפליקציה פועלת, מוצגת התראה עם כפתור תמלול, כדי שתוכל לתמלל אותה בנגיעה אחת במקום לשתף אותה. הזיהוי קורא רק את רישום תיקיית ההודעות הקוליות של WhatsApp, והכול נשאר במכשיר הזה. כשזה כבוי לא נקרא דבר. דורש הרשאת גישה למוזיקה ולאודיו.</string>
+    <string name="voice_note_detection_grant_hint">גישת האודיו כבויה. הקש כדי לפתוח את הגדרות האפליקציה ולהפעיל אותה; ההתראות יתחילו ברגע שתינתן.</string>
+    <string name="voice_note_offer_title">הודעה קולית חדשה</string>
+    <string name="voice_note_offer_text_with_sender">מאת %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">הודעה קולית (%1$s)</string>
+    <string name="voice_note_offer_text_plain">הודעה קולית</string>
+    <string name="voice_note_offer_action">תמלל</string>
     <string name="share_targets_description">כל מודל שהורד מופיע כאפשרות נפרדת בתפריט המערכת. האודיו מעובד על ידי המודל שנבחר.</string>
     <string name="advanced_sharing_toggle">הצגת מודלים שהורדו</string>
     <string name="share_targets_models_info">כל מודל שהורד יופיע כפריט בתפריט השיתוף. מחיקת מודל מסירה אותו מהתפריט.</string>

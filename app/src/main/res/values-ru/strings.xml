@@ -713,6 +713,9 @@
     <string name="notification_channel_tasker_fallback">Автоматизация Tasker</string>
     <string name="notification_channel_tasker_fallback_description">Нажмите, чтобы начать распознавание при запуске из фонового режима</string>
     <string name="tasker_fallback_notification_text">Нажмите, чтобы начать распознавание</string>
+    <!-- TASK-271: voice-note offer notification channel -->
+    <string name="voice_note_offer_channel">Оповещения о голосовых сообщениях</string>
+    <string name="voice_note_offer_channel_description">Предлагает транскрибировать новые голосовые сообщения WhatsApp</string>
 
     <!-- Dismiss -->
     <string name="dismiss">Отклонить</string>
@@ -1027,6 +1030,15 @@
     <string name="voice_note_identity_title">Распознавание отправителя голосовых</string>
     <string name="voice_note_identity_description">Записывает в строку истории имя отправителя общего голосового сообщения. Пока только WhatsApp. Имя появится только если уведомление пришло, пока опция была включена, и только при совпадении заявленной длительности с аудио (без угадывания). Имя остаётся в строке и после выключения; список живёт только в памяти. Требуется доступ к уведомлениям.</string>
     <string name="voice_note_identity_grant_hint">Доступ к уведомлениям выключен. Нажмите, чтобы открыть системную настройку и включить его для этого приложения.</string>
+    <!-- TASK-271: voice-note detection (offer notifications) -->
+    <string name="voice_note_detection_title">Оповещения о голосовых сообщениях</string>
+    <string name="voice_note_detection_description">Показывает уведомление с кнопкой «Транскрибировать», когда приходит новое голосовое сообщение WhatsApp и приложение запущено, чтобы транскрибировать его одним нажатием, а не пересылать. Обнаружение читает только список папки голосовых сообщений WhatsApp, и всё остаётся на этом устройстве. Пока переключатель выключен, ничего не читается. Требуется разрешение на доступ к музыке и аудио.</string>
+    <string name="voice_note_detection_grant_hint">Доступ к аудио выключен. Нажмите, чтобы открыть настройки приложения и включить его; оповещения начнутся сразу после предоставления.</string>
+    <string name="voice_note_offer_title">Новое голосовое сообщение</string>
+    <string name="voice_note_offer_text_with_sender">От %1$s (%2$s)</string>
+    <string name="voice_note_offer_text_duration">Голосовое сообщение (%1$s)</string>
+    <string name="voice_note_offer_text_plain">Голосовое сообщение</string>
+    <string name="voice_note_offer_action">Транскрибировать</string>
     <string name="share_targets_description">Каждая скачанная модель отображается отдельным пунктом системного меню. Аудио обрабатывает выбранная модель</string>
     <string name="advanced_sharing_toggle">Показывать скачанные модели</string>
     <string name="share_targets_models_info">Каждая скачанная модель появится отдельным пунктом в меню «Поделиться». Удаление модели уберёт её из меню</string>
