@@ -9,7 +9,7 @@
 
     <!-- Model selection -->
     <string name="select_model">Modelldatei auswählen</string>
-    <string name="select_model_from_device">Datei auswählen</string>
+    <string name="select_model_from_device">.litertlm-Datei auswählen</string>
 
     <!-- Custom transducer model (sideload) -->
     <string name="load_model">Modell laden</string>
@@ -104,7 +104,7 @@
     <string name="transcript_capped_autosave_hint">Vollständiges Transkript per Auto-Speichern: Einstellungen → Automatisch speichern</string>
     <string name="transcript_capped_autosave_saved">Vollständiges Transkript automatisch in Ihrem Ordner gespeichert</string>
     <string name="export_settings_title">Auto-Speichern &amp; Export</string>
-    <string name="export_settings_description">Ordner und Dateiformat für gespeicherte Transkripte wählen</string>
+    <string name="export_settings_description">Optional: jede Transkription wird zusätzlich in den gewählten Ordner im gewählten Format gespeichert. Alles bleibt immer auch im Verlauf-Tab.</string>
     <string name="error_folder_not_writable">Dieser Ordner kann keine Dateien empfangen. Wählen Sie einen Ordner vom Gerätespeicher (nicht den Downloads-Kurzlink).</string>
     <string name="language_phone_option">Telefonsprache (%1$s)</string>
     <string name="today">Heute</string>
@@ -474,7 +474,7 @@
 
     <!-- Settings Tab - Timeout -->
     <string name="auto_unload_timeout">Automatisches Entladen</string>
-    <string name="timeout_description">Das Modell wird nach Inaktivität entladen und bei der nächsten Nutzung automatisch neu geladen.</string>
+    <string name="timeout_description">Gibt im Leerlauf Speicher frei und macht es unwahrscheinlicher, dass das System die App beendet; das Modell lädt bei der nächsten Nutzung neu.</string>
     <string name="timeout_1_minute">1 Minute</string>
     <string name="timeout_1_hour">1 Stunde</string>
 
@@ -920,8 +920,8 @@
     <string name="external_section_title">Externe Modelle</string>
     <string name="model_advanced_section">Erweitert</string>
     <string name="model_advanced_description">Externe Importe und Gemma-Downloads</string>
-    <string name="external_import_folder">Ordner auswählen</string>
-    <string name="external_import_url">Von URL importieren</string>
+    <string name="external_import_folder">Aus einem Ordner importieren</string>
+    <string name="external_import_url">Über einen Link importieren</string>
     <string name="external_url_hint">HuggingFace-Repo oder URL einer Katalog-Eintrag-JSON</string>
     <string name="external_import">Importieren</string>
     <string name="external_importing">Modell wird importiert…</string>
@@ -1198,7 +1198,11 @@
     <string name="refinement_model_description">Das Modell des zweiten Durchlaufs. Auf erben lassen, um das aktive Modell zu verwenden.</string>
     <string name="refinement_model_inherit">Aktives Modell erben</string>
     <string name="export_model_bundle">Modell für Offline-Übertragung teilen</string>
-    <string name="external_import_bundle">Bundle importieren</string>
+    <string name="external_import_bundle">Übertragungspaket importieren</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">Gemma-Modell hinzufügen (LiteRT)</string>
+    <string name="gemma_entry_title">Gemma-Downloads</string>
+    <string name="gemma_entry_subtitle">Offizielle Gemma-Modelle durchsuchen und herunterladen</string>
     <string name="external_section_subtitle">Modelldateien, die du selbst hinzufügst (Ordner, URL oder Übertragungsbundle), sowie die Gemma-LiteRT-LM-Downloads; sie laufen neben dem integrierten Katalog.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->

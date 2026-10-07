@@ -14,7 +14,7 @@
 
     <!-- Model selection -->
     <string name="select_model">Вибрати файл моделі</string>
-    <string name="select_model_from_device">Вибрати файл</string>
+    <string name="select_model_from_device">Вибрати файл .litertlm</string>
 
     <!-- Custom transducer model (sideload) -->
     <string name="load_model">Завантажити модель</string>
@@ -129,7 +129,7 @@
     <string name="transcript_capped_autosave_hint">Повна розшифровка в автозбереженні: Налаштування → Зберегти в папку</string>
     <string name="transcript_capped_autosave_saved">Повна розшифровка автоматично збережена у вашій папці</string>
     <string name="export_settings_title">Автозбереження та експорт</string>
-    <string name="export_settings_description">Виберіть папку та формат файлів для збережених розшифровок</string>
+    <string name="export_settings_description">Необов\'язково: також записує кожну розшифровку у вибрану папку у вибраному форматі. Усе завжди залишається й у вкладці «Історія».</string>
     <string name="error_folder_not_writable">Ця папка не може отримувати файли. Виберіть папку зі сховища пристрою (не ярлик Завантажень).</string>
     <string name="language_phone_option">Мова телефону (%1$s)</string>
     <string name="today">Сьогодні</string>
@@ -509,7 +509,7 @@
 
     <!-- Settings Tab - Timeout -->
     <string name="auto_unload_timeout">Тайм-аут автовивантаження</string>
-    <string name="timeout_description">Автоматично вивантажує модель після періоду бездіяльності, щоб звільнити пам\'ять. Модель буде автоматично завантажена знову за потреби.</string>
+    <string name="timeout_description">Звільняє пам\'ять, коли застосунок неактивний, і зменшує ймовірність, що система його закриє; модель перезавантажиться під час наступного використання.</string>
     <string name="timeout_1_minute">1 хвилина</string>
     <string name="timeout_1_hour">1 година</string>
     <plurals name="timeout_minutes">
@@ -983,8 +983,8 @@
     <string name="external_section_title">Зовнішні моделі</string>
     <string name="model_advanced_section">Розширені</string>
     <string name="model_advanced_description">Зовнішній імпорт і завантаження Gemma</string>
-    <string name="external_import_folder">Вибрати папку</string>
-    <string name="external_import_url">Імпортувати з URL</string>
+    <string name="external_import_folder">Імпорт із папки</string>
+    <string name="external_import_url">Імпорт за посиланням</string>
     <string name="external_url_hint">URL репозиторію HuggingFace або JSON запису каталогу</string>
     <string name="external_import">Імпортувати</string>
     <string name="external_importing">Імпортування моделі…</string>
@@ -1224,7 +1224,11 @@
     <string name="refinement_model_description">Модель другого проходу. Залиште «успадкувати», щоб використовувати активну модель.</string>
     <string name="refinement_model_inherit">Успадкувати активну модель</string>
     <string name="export_model_bundle">Поділитися моделлю для перенесення без мережі</string>
-    <string name="external_import_bundle">Імпортувати пакет</string>
+    <string name="external_import_bundle">Імпорт пакета перенесення</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">Додати модель Gemma (LiteRT)</string>
+    <string name="gemma_entry_title">Завантаження Gemma</string>
+    <string name="gemma_entry_subtitle">Перегляд і завантаження офіційних моделей Gemma</string>
     <string name="external_section_subtitle">Файли моделей, які ви додаєте самі (тека, URL або пакет перенесення), а також завантаження Gemma LiteRT-LM; працюють поруч із вбудованим каталогом.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->

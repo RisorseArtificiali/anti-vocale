@@ -5,7 +5,7 @@
     <string name="logs_tab">Histórico</string>
     <string name="settings_tab">Configurações</string>
     <string name="select_model">Selecionar arquivo de modelo</string>
-    <string name="select_model_from_device">Selecionar arquivo</string>
+    <string name="select_model_from_device">Escolher um arquivo .litertlm</string>
     <string name="load_model">Carregar modelo</string>
     <string name="unload_model">Descarregar modelo</string>
     <string name="model_status">Estado: %1$s</string>
@@ -93,7 +93,7 @@
     <string name="transcript_capped_autosave_hint">Transcrição completa no salvamento automático: Configurações → Salvar na pasta</string>
     <string name="transcript_capped_autosave_saved">Transcrição completa salva automaticamente na sua pasta</string>
     <string name="export_settings_title">Salvamento automático e exportação</string>
-    <string name="export_settings_description">Escolher a pasta e o formato dos arquivos salvos</string>
+    <string name="export_settings_description">Opcional: também grava cada transcrição numa pasta que você escolher, no formato que preferir. Tudo continua sempre na aba Histórico.</string>
     <string name="error_folder_not_writable">Esta pasta não pode receber arquivos. Escolha uma pasta do armazenamento do dispositivo (não o atalho de Downloads).</string>
     <string name="language_phone_option">Idioma do telefone (%1$s)</string>
     <string name="today">Hoje</string>
@@ -428,7 +428,7 @@
     <string name="validate_and_save">Validar e salvar</string>
     <string name="validating_token">Validando token…</string>
     <string name="auto_unload_timeout">Descarregamento automático</string>
-    <string name="timeout_description">O modelo é descarregado após inatividade e volta no próximo uso.</string>
+    <string name="timeout_description">Libera memória com o app inativo e torna menos provável que o sistema o encerre; o modelo recarrega no próximo uso.</string>
     <string name="timeout_1_minute">1 minuto</string>
     <string name="timeout_1_hour">1 hora</string>
     <plurals name="timeout_minutes">
@@ -820,8 +820,8 @@
     <string name="external_section_title">Modelos externos</string>
     <string name="model_advanced_section">Avançado</string>
     <string name="model_advanced_description">Importações externas e downloads do Gemma</string>
-    <string name="external_import_folder">Selecionar pasta</string>
-    <string name="external_import_url">Importar de URL</string>
+    <string name="external_import_folder">Importar de uma pasta</string>
+    <string name="external_import_url">Importar de um link</string>
     <string name="external_url_hint">URL de repositório HuggingFace ou JSON de catálogo</string>
     <string name="external_import">Importar</string>
     <string name="external_importing">Importando modelo…</string>
@@ -1066,7 +1066,11 @@
     <string name="refinement_model_description">O modelo usado pela segunda passagem. Deixe em herdar para usar o modelo ativo.</string>
     <string name="refinement_model_inherit">Herdar modelo ativo</string>
     <string name="export_model_bundle">Compartilhar modelo para transferência offline</string>
-    <string name="external_import_bundle">Importar pacote</string>
+    <string name="external_import_bundle">Importar um pacote de transferência</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">Adicionar um modelo Gemma (LiteRT)</string>
+    <string name="gemma_entry_title">Downloads do Gemma</string>
+    <string name="gemma_entry_subtitle">Explore e baixe os modelos Gemma oficiais</string>
     <string name="external_section_subtitle">Arquivos de modelo que você mesmo adiciona (pasta, URL ou pacote de transferência) além dos downloads do Gemma LiteRT-LM; funcionam ao lado do catálogo integrado.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->

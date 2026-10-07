@@ -12,7 +12,7 @@
 
     <!-- Model selection -->
     <string name="select_model">Wybierz plik modelu</string>
-    <string name="select_model_from_device">Wybierz plik</string>
+    <string name="select_model_from_device">Wybierz plik .litertlm</string>
 
     <!-- Custom transducer model (sideload) -->
     <string name="load_model">Wczytaj model</string>
@@ -127,7 +127,7 @@
     <string name="transcript_capped_autosave_hint">Pełna transkrypcja w autozapisie: Ustawienia → Zapisz do folderu</string>
     <string name="transcript_capped_autosave_saved">Pełna transkrypcja zapisana automatycznie do folderu</string>
     <string name="export_settings_title">Autozapis i eksport</string>
-    <string name="export_settings_description">Wybierz folder i format pliku zapisanych transkrypcji</string>
+    <string name="export_settings_description">Opcjonalnie: zapisuje też każdą transkrypcję do wybranego folderu, w wybranym formacie. Wszystko zawsze zostaje też w zakładce Historia.</string>
     <string name="error_folder_not_writable">Ten folder nie może odbierać plików. Wybierz folder z pamięci urządzenia (nie skrót Pobrane).</string>
     <string name="language_phone_option">Język telefonu (%1$s)</string>
     <string name="today">Dzisiaj</string>
@@ -507,7 +507,7 @@
 
     <!-- Settings Tab - Timeout -->
     <string name="auto_unload_timeout">Automatyczne zwalnianie</string>
-    <string name="timeout_description">Model jest zwalniany po bezczynności i wraca przy kolejnym użyciu.</string>
+    <string name="timeout_description">Zwalnia pamięć, gdy aplikacja jest bezczynna, i zmniejsza szansę, że system ją zamknie; model wczyta się ponownie przy kolejnym użyciu.</string>
     <string name="timeout_1_minute">1 minuta</string>
     <string name="timeout_1_hour">1 godzina</string>
     <plurals name="timeout_minutes">
@@ -981,8 +981,8 @@
     <string name="external_section_title">Modele zewnętrzne</string>
     <string name="model_advanced_section">Zaawansowane</string>
     <string name="model_advanced_description">Importy zewnętrzne i modele Gemma</string>
-    <string name="external_import_folder">Wybierz folder</string>
-    <string name="external_import_url">Importuj z URL</string>
+    <string name="external_import_folder">Importuj z folderu</string>
+    <string name="external_import_url">Importuj z linku</string>
     <string name="external_url_hint">URL repozytorium HuggingFace lub JSON wpisu katalogu</string>
     <string name="external_import">Importuj</string>
     <string name="external_importing">Importowanie modelu…</string>
@@ -1222,7 +1222,11 @@
     <string name="refinement_model_description">Model używany przez drugie przejście. Zostaw na dziedzicz, aby używać aktywnego modelu.</string>
     <string name="refinement_model_inherit">Dziedzicz aktywny model</string>
     <string name="export_model_bundle">Udostępnij model do transferu offline</string>
-    <string name="external_import_bundle">Importuj pakiet</string>
+    <string name="external_import_bundle">Importuj pakiet przenoszenia</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">Dodaj model Gemma (LiteRT)</string>
+    <string name="gemma_entry_title">Pobieranie Gemma</string>
+    <string name="gemma_entry_subtitle">Przeglądaj i pobieraj oficjalne modele Gemma</string>
     <string name="external_section_subtitle">Pliki modeli, które dodajesz sam (folder, adres URL lub pakiet transferowy) oraz modele Gemma LiteRT-LM do pobrania; działają obok wbudowanego katalogu.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->

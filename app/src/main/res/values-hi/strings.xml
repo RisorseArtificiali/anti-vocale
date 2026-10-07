@@ -9,7 +9,7 @@
 
     <!-- Model selection -->
     <string name="select_model">मॉडल फ़ाइल चुनें</string>
-    <string name="select_model_from_device">फ़ाइल चुनें</string>
+    <string name="select_model_from_device">.litertlm फ़ाइल चुनें</string>
 
     <!-- Custom transducer model (sideload) -->
     <string name="load_model">मॉडल लोड करें</string>
@@ -103,7 +103,7 @@
     <string name="transcript_capped_autosave_hint">पूरा ट्रांसक्रिप्ट ऑटो-सेव में: सेटिंग्स → फ़ोल्डर में सहेजें</string>
     <string name="transcript_capped_autosave_saved">पूरा ट्रांसक्रिप्ट आपके फ़ोल्डर में स्वतः सहेजा गया</string>
     <string name="export_settings_title">ऑटो-सेव और एक्सपोर्ट</string>
-    <string name="export_settings_description">सहेजी गई ट्रांसक्रिप्ट के लिए फ़ोल्डर और फ़ाइल स्वरूप चुनें</string>
+    <string name="export_settings_description">वैकल्पिक: हर ट्रांसक्रिप्शन आपकी चुनी फ़ोल्डर में, आपके चुने फ़ॉर्मैट में भी लिखता है। सब कुछ हमेशा इतिहास टैब में भी रहता है।</string>
     <string name="error_folder_not_writable">यह फ़ोल्डर फ़ाइलें प्राप्त नहीं कर सकता। डिवाइस स्टोरेज से फ़ोल्डर चुनें (Downloads शॉर्टकट नहीं)।</string>
     <string name="language_phone_option">फ़ोन भाषा (%1$s)</string>
     <string name="today">आज</string>
@@ -473,7 +473,7 @@
 
     <!-- Settings Tab - Timeout -->
     <string name="auto_unload_timeout">ऑटो-अनलोड</string>
-    <string name="timeout_description">निष्क्रियता पर मॉडल अनलोड हो जाता है और अगली बार इस्तेमाल पर अपने आप वापस आ जाता है।</string>
+    <string name="timeout_description">ऐप निष्क्रिय होने पर मेमोरी खाली करता है और सिस्टम के ऐप को बंद करने की संभावना घटाता है; अगली बार उपयोग पर मॉडल फिर लोड होता है।</string>
     <string name="timeout_1_minute">1 मिनट</string>
     <string name="timeout_1_hour">1 घंटा</string>
 
@@ -919,8 +919,8 @@
     <string name="external_section_title">बाहरी मॉडल</string>
     <string name="model_advanced_section">अतिरिक्त सेटिंग</string>
     <string name="model_advanced_description">बाहरी इंपोर्ट और Gemma डाउनलोड</string>
-    <string name="external_import_folder">फ़ोल्डर चुनें</string>
-    <string name="external_import_url">URL से इंपोर्ट करें</string>
+    <string name="external_import_folder">फ़ोल्डर से आयात करें</string>
+    <string name="external_import_url">लिंक से आयात करें</string>
     <string name="external_url_hint">HuggingFace रेपो या कैटलॉग-एंट्री JSON URL</string>
     <string name="external_import">इंपोर्ट करें</string>
     <string name="external_importing">मॉडल इंपोर्ट हो रहा है…</string>
@@ -1197,7 +1197,11 @@
     <string name="refinement_model_description">दूसरे चरण द्वारा उपयोग किया जाने वाला मॉडल। सक्रिय मॉडल का उपयोग करने के लिए इनहेरिट पर छोड़ें।</string>
     <string name="refinement_model_inherit">सक्रिय मॉडल इनहेरिट करें</string>
     <string name="export_model_bundle">ऑफ़लाइन ट्रांसफ़र के लिए मॉडल साझा करें</string>
-    <string name="external_import_bundle">बंडल आयात करें</string>
+    <string name="external_import_bundle">ट्रांसफ़र बंडल आयात करें</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">Gemma मॉडल जोड़ें (LiteRT)</string>
+    <string name="gemma_entry_title">Gemma डाउनलोड</string>
+    <string name="gemma_entry_subtitle">आधिकारिक Gemma मॉडल देखें और डाउनलोड करें</string>
     <string name="external_section_subtitle">आपके अपने जोड़े हुए मॉडल फ़ाइलें (फ़ोल्डर, URL या ट्रांसफ़र बंडल) और Gemma LiteRT-LM डाउनलोड; बिल्ट-इन कैटलॉग के साथ चलती हैं।</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->

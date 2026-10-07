@@ -12,7 +12,7 @@
 
     <!-- Model selection -->
     <string name="select_model">Model Dosyası Seç</string>
-    <string name="select_model_from_device">Dosya seç</string>
+    <string name="select_model_from_device">Bir .litertlm dosyası seç</string>
 
     <!-- Custom transducer model (sideload) -->
     <string name="load_model">Modeli Yükle</string>
@@ -125,7 +125,7 @@
     <string name="transcript_capped_autosave_hint">Tam transkript otomatik kayıtta: Ayarlar → Klasöre kaydet</string>
     <string name="transcript_capped_autosave_saved">Tam transkript otomatik olarak klasörünüze kaydedildi</string>
     <string name="export_settings_title">Otomatik kaydet ve dışa aktar</string>
-    <string name="export_settings_description">Kaydedilen transkriptler için klasör ve dosya biçimi seçin</string>
+    <string name="export_settings_description">İsteğe bağlı: her transkripsiyonu seçtiğiniz klasöre, seçtiğiniz biçimde yazar. Her şey her zaman Geçmiş sekmesinde de kalır.</string>
     <string name="error_folder_not_writable">Bu klasör dosya alamaz. Cihaz depolama alanından bir klasör seçin (Downloads kısayolu değil).</string>
     <string name="language_phone_option">Telefon dili (%1$s)</string>
     <string name="today">Bugün</string>
@@ -501,7 +501,7 @@
 
     <!-- Settings Tab - Timeout -->
     <string name="auto_unload_timeout">Otomatik Kaldırma</string>
-    <string name="timeout_description">Model boşta kaldığında kaldırılır ve bir sonraki kullanımda otomatik olarak geri yüklenir.</string>
+    <string name="timeout_description">Uygulama boştayken belleği boşaltır ve sistemi uygulamanın kapatma olasılığını düşürür; model sonraki kullanımda yeniden yüklenir.</string>
     <string name="timeout_1_minute">1 dakika</string>
     <string name="timeout_1_hour">1 saat</string>
     <plurals name="timeout_minutes">
@@ -963,8 +963,8 @@
     <string name="external_section_title">Harici modeller</string>
     <string name="model_advanced_section">Gelişmiş</string>
     <string name="model_advanced_description">Harici içe aktarımlar ve Gemma indirmeleri</string>
-    <string name="external_import_folder">Klasör seç</string>
-    <string name="external_import_url">URL\'den içe aktar</string>
+    <string name="external_import_folder">Klasörden içe aktar</string>
+    <string name="external_import_url">Bağlantıdan içe aktar</string>
     <string name="external_url_hint">HuggingFace deposu veya katalog girdisi JSON URL\'si</string>
     <string name="external_import">İçe Aktar</string>
     <string name="external_importing">Model içe aktarılıyor…</string>
@@ -1198,7 +1198,11 @@
     <string name="refinement_model_description">İkinci geçişin kullandığı model. Etkin modeli kullanmak için devral\'da bırakın.</string>
     <string name="refinement_model_inherit">Etkin modeli devral</string>
     <string name="export_model_bundle">Modeli çevrimdışı aktarım için paylaş</string>
-    <string name="external_import_bundle">Paket içe aktar</string>
+    <string name="external_import_bundle">Aktarım paketi içe aktar</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">Gemma modeli ekle (LiteRT)</string>
+    <string name="gemma_entry_title">Gemma indirmeleri</string>
+    <string name="gemma_entry_subtitle">Resmî Gemma modellerine göz at ve indir</string>
     <string name="external_section_subtitle">Kendinizin eklediği model dosyaları (klasör, URL veya aktarım paketi) ve Gemma LiteRT-LM indirmeleri; yerleşik kataloğun yanında çalışır.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->

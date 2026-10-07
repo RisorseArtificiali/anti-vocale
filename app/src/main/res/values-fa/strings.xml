@@ -9,7 +9,7 @@
 
     <!-- Model selection -->
     <string name="select_model">انتخاب فایل مدل</string>
-    <string name="select_model_from_device">انتخاب فایل</string>
+    <string name="select_model_from_device">انتخاب فایل .litertlm</string>
 
     <!-- Custom transducer model (sideload) -->
     <string name="load_model">بارگذاری مدل</string>
@@ -122,7 +122,7 @@
     <string name="transcript_capped_autosave_hint">متن کامل رونویسی در ذخیره خودکار: تنظیمات ← ذخیره خودکار در پوشه</string>
     <string name="transcript_capped_autosave_saved">متن کامل رونویسی به‌طور خودکار در پوشه شما ذخیره شد</string>
     <string name="export_settings_title">ذخیره خودکار و برون‌بری</string>
-    <string name="export_settings_description">پوشه و قالب فایل رونویسی‌های ذخیره‌شده را انتخاب کنید</string>
+    <string name="export_settings_description">اختیاری: هر متن تبدیل‌شده را در پوشه انتخابی شما و با قالب دلخواه هم می‌نویسد. همه چیز همیشه در زبانه تاریخچه می‌ماند.</string>
     <string name="error_folder_not_writable">نوشتن در این پوشه ممکن نیست. یک پوشه از حافظه دستگاه انتخاب کنید (نه میان‌بر دانلودها).</string>
     <string name="language_phone_option">زبان گوشی (%1$s)</string>
     <string name="today">امروز</string>
@@ -495,7 +495,7 @@
 
     <!-- Settings Tab - Timeout -->
     <string name="auto_unload_timeout">تخلیه خودکار</string>
-    <string name="timeout_description">مدل پس از مدت بی‌کاری تخلیه می‌شود و با استفاده بعدی برمی‌گردد.</string>
+    <string name="timeout_description">وقتی برنامه غیرفعال است حافظه را آزاد می‌کند و احتمال بسته‌شدن برنامه توسط سیستم را کم می‌کند؛ مدل در استفاده بعدی دوباره بارگذاری می‌شود.</string>
     <string name="timeout_1_minute">1 دقیقه</string>
     <string name="timeout_1_hour">1 ساعت</string>
     <plurals name="timeout_minutes">
@@ -928,8 +928,8 @@
     <string name="external_section_title">مدل‌های خارجی</string>
     <string name="model_advanced_section">پیشرفته</string>
     <string name="model_advanced_description">وارد کردن‌های خارجی و دانلودهای Gemma</string>
-    <string name="external_import_folder">انتخاب پوشه</string>
-    <string name="external_import_url">وارد کردن از نشانی</string>
+    <string name="external_import_folder">وارد کردن از پوشه</string>
+    <string name="external_import_url">وارد کردن از پیوند</string>
     <string name="external_url_hint">نشانی مخزن HuggingFace یا نشانی JSON یک مدخل کاتالوگ</string>
     <string name="external_import">وارد کردن</string>
     <string name="external_importing">در حال وارد کردن مدل…</string>
@@ -1203,7 +1203,11 @@
     <string name="refinement_model_description">مدلی که مرحله دوم استفاده می‌کند. برای استفاده از مدل فعال روی ارث‌بردن بگذارید.</string>
     <string name="refinement_model_inherit">ارث‌بردن مدل فعال</string>
     <string name="export_model_bundle">اشتراک‌گذاری مدل برای انتقال آفلاین</string>
-    <string name="external_import_bundle">وارد کردن بسته</string>
+    <string name="external_import_bundle">وارد کردن بسته انتقال</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">افزودن مدل Gemma (LiteRT)</string>
+    <string name="gemma_entry_title">دانلودهای Gemma</string>
+    <string name="gemma_entry_subtitle">مرور و دانلود مدل‌های رسمی Gemma</string>
     <string name="external_section_subtitle">فایل‌های مدلی که خودتان اضافه می‌کنید (پوشه، نشانی یا بسته انتقال) به‌همراه دانلودهای Gemma LiteRT-LM؛ در کنار کاتالوگ داخلی اجرا می‌شوند.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->

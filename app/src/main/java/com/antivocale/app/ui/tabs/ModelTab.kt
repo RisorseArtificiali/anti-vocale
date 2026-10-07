@@ -37,6 +37,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -775,9 +776,14 @@ fun ModelTab(
                             Spacer(modifier = Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = stringResource(R.string.download_models),
+                                    text = stringResource(R.string.gemma_entry_title),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold)
+                                // TASK-779: the entry says what it opens.
+                                Text(
+                                    text = stringResource(R.string.gemma_entry_subtitle),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 if (gemmaDownloadActive) {
                                     Text(
                                         text = stringResource(R.string.downloading),
@@ -808,7 +814,9 @@ fun ModelTab(
                     Column(modifier = Modifier.padding(16.dp)) {
                         CardTitleRow(
                             icon = Icons.Default.Memory,
-                            title = "LiteRT-LM",
+                            // TASK-779: was the hardcoded "LiteRT-LM", jargon
+                            // to anyone outside the project.
+                            title = stringResource(R.string.litert_card_title),
                             iconTint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
 
@@ -817,18 +825,14 @@ fun ModelTab(
                             onClick = { viewModel.openFilePicker() },
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(Icons.Default.FolderOpen, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.select_model_from_device))
+                            ImportActionLabel(Icons.Default.FolderOpen, R.string.select_model_from_device)
                         }
                         OutlinedButton(
                             onClick = { showLitertLmUrlDialog = true },
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                             enabled = !uiState.litertLmImporting
                         ) {
-                            Icon(Icons.Default.CloudDownload, contentDescription = null)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.litertlm_import_from_url))
+                            ImportActionLabel(Icons.Default.CloudDownload, R.string.litertlm_import_from_url)
                         }
                         if (uiState.litertLmImporting) {
                             Spacer(modifier = Modifier.height(8.dp))
@@ -937,7 +941,10 @@ fun ModelTab(
                         .padding(horizontal = 16.dp),
                 ) {
                     com.antivocale.app.ui.components.SettingsSubPageHeader(
-                        titleRes = R.string.download_models,
+                        // TASK-779: matches the entry card that opens this
+                        // page ("Gemma downloads"); the inner section card
+                        // keeps its own "Gemma Models" title.
+                        titleRes = R.string.gemma_entry_title,
                         onBack = { showGemmaDownloads = false },
                     )
                     if (visibleGemmaVariants.isNotEmpty()) {
@@ -1886,6 +1893,15 @@ private fun LanguageEndonymDropdown(
  * shared family selector with its conditional options panel. The two standing notices
  * (single-pass risk, wrong-family crash) ride along every card.
  */
+/** TASK-779: the icon + 8dp + label content every import action button
+ *  shares (one owner of the spacing idiom, five former inline copies). */
+@Composable
+private fun ImportActionLabel(icon: ImageVector, labelRes: Int) {
+    Icon(icon, contentDescription = null)
+    Spacer(modifier = Modifier.width(8.dp))
+    Text(stringResource(labelRes))
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ExternalModelsSection(
@@ -2075,38 +2091,33 @@ private fun ExternalModelsSection(
                 }
             }
 
-            // TASK-744: two per row, never three - localized labels up to
-            // 23 chars wrapped in a 3-way split and the buttons grew
-            // vertically (the maintainer's report). The bundle import
-            // (TASK-742) takes its own full-width row below.
-            Row(modifier = Modifier.fillMaxWidth()) {
+            // TASK-779 (maintainer road test): the import actions stack
+            // vertically, one full-width row each, with task-oriented
+            // labels; the 744 two-per-row split still ellipsized the
+            // labels on narrow screens and named nothing the user does.
             Button(
                 onClick = folderPicker,
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth(),
             ) {
-                Icon(Icons.Default.FolderOpen, contentDescription = null)
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(stringResource(R.string.external_import_folder),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                ImportActionLabel(Icons.Default.FolderOpen, R.string.external_import_folder)
             }
-            Spacer(modifier = Modifier.width(8.dp))
             OutlinedButton(
                 onClick = { urlDialogOpen = true },
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
             ) {
-                Text(stringResource(R.string.external_import_url),
-                    maxLines = 1, overflow = TextOverflow.Ellipsis)
+                ImportActionLabel(Icons.Default.Link, R.string.external_import_url)
             }
-            }
-            // TASK-742 (GH #124): the offline-transfer bundle import,
-            // full-width (TASK-744: sharing the row wrapped it).
+            // TASK-742 (GH #124): the offline-transfer bundle import
+            // (a bundle another device exported through Share/Export).
             OutlinedButton(
                 onClick = onImportBundle,
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-            ) { Text(stringResource(R.string.external_import_bundle)) }
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+            ) {
+                ImportActionLabel(Icons.Default.Inventory2, R.string.external_import_bundle)
+            }
 
 
         ExternalImportStateView(importState)

@@ -9,7 +9,7 @@
 
     <!-- Model selection -->
     <string name="select_model">Select Model File</string>
-    <string name="select_model_from_device">Select file</string>
+    <string name="select_model_from_device">Choose a .litertlm file</string>
 
     <!-- Custom transducer model (sideload) -->
     <string name="load_model">Load Model</string>
@@ -128,7 +128,7 @@
     <string name="transcript_capped_autosave_hint">Full transcript available via auto-save: Settings → Auto-Save to Folder</string>
     <string name="transcript_capped_autosave_saved">Full transcript auto-saved to your folder</string>
     <string name="export_settings_title">Auto-Save &amp; Export</string>
-    <string name="export_settings_description">Choose the folder and file format for saved transcripts</string>
+    <string name="export_settings_description">Optional: also write each transcript to a folder you choose, in the format you pick. Everything always stays in the History tab too.</string>
     <string name="error_folder_not_writable">This folder cannot receive files. Pick a folder from the device storage (not the Downloads shortcut).</string>
     <string name="language_phone_option">Phone language (%1$s)</string>
     <string name="today">Today</string>
@@ -516,7 +516,7 @@
 
     <!-- Settings Tab - Timeout -->
     <string name="auto_unload_timeout">Auto-Unload</string>
-    <string name="timeout_description">The model unloads after idle time and returns on next use.</string>
+    <string name="timeout_description">Frees memory while the app is idle and makes the system less likely to kill it; the model reloads on the next use.</string>
     <string name="timeout_1_minute">1 minute</string>
     <string name="timeout_1_hour">1 hour</string>
     <plurals name="timeout_minutes">
@@ -985,9 +985,13 @@
     <string name="external_section_subtitle">Model files you add yourself (folder, URL, or transfer bundle) plus the Gemma LiteRT-LM downloads; they run alongside the built-in catalog.</string>
     <string name="model_advanced_section">Advanced</string>
     <string name="model_advanced_description">External imports and Gemma downloads</string>
-    <string name="external_import_folder">Select folder</string>
-    <string name="external_import_bundle">Import bundle</string>
-    <string name="external_import_url">Import from URL</string>
+    <string name="external_import_folder">Import from a folder</string>
+    <string name="external_import_bundle">Import a transfer bundle</string>
+    <!-- TASK-779: task-oriented labels for the import actions and the Gemma entry (maintainer road test) -->
+    <string name="litert_card_title">Add a Gemma model (LiteRT)</string>
+    <string name="gemma_entry_title">Gemma downloads</string>
+    <string name="gemma_entry_subtitle">Browse and download the official Gemma models</string>
+    <string name="external_import_url">Import from a link</string>
     <string name="external_url_hint">HuggingFace repo or catalog-entry JSON URL</string>
     <string name="external_import">Import</string>
     <string name="external_importing">Importing model…</string>

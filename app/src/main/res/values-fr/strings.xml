@@ -5,7 +5,7 @@
     <string name="logs_tab">Historique</string>
     <string name="settings_tab">Paramètres</string>
     <string name="select_model">Sélectionner un fichier de modèle</string>
-    <string name="select_model_from_device">Sélectionner un fichier</string>
+    <string name="select_model_from_device">Choisir un fichier .litertlm</string>
     <string name="load_model">Charger le modèle</string>
     <string name="unload_model">Décharger le modèle</string>
     <string name="model_status">État : %1$s</string>
@@ -93,7 +93,7 @@
     <string name="transcript_capped_autosave_hint">Transcription complète via sauvegarde auto: Paramètres → Dossier de sauvegarde</string>
     <string name="transcript_capped_autosave_saved">Transcription complète sauvegardée automatiquement dans votre dossier</string>
     <string name="export_settings_title">Sauvegarde auto et export</string>
-    <string name="export_settings_description">Choisir le dossier et le format des fichiers sauvegardés</string>
+    <string name="export_settings_description">Facultatif : écrit aussi chaque transcription dans un dossier de votre choix, au format choisi. Tout reste toujours dans l\'onglet Historique.</string>
     <string name="error_folder_not_writable">Ce dossier ne peut pas recevoir de fichiers. Choisissez un dossier du stockage de l\'appareil (pas le raccourci Téléchargements).</string>
     <string name="language_phone_option">Langue du téléphone (%1$s)</string>
     <string name="today">Aujourd\'hui</string>
@@ -428,7 +428,7 @@
     <string name="validate_and_save">Valider &amp; enregistrer</string>
     <string name="validating_token">Validation du jeton…</string>
     <string name="auto_unload_timeout">Déchargement automatique</string>
-    <string name="timeout_description">Le modèle est déchargé après une période d\'inactivité et revient à la prochaine utilisation.</string>
+    <string name="timeout_description">Libère de la mémoire quand l\'app est inactive et rend moins probable que le système la ferme ; le modèle se recharge à la prochaine utilisation.</string>
     <string name="timeout_1_minute">1 minute</string>
     <string name="timeout_1_hour">1 heure</string>
     <plurals name="timeout_minutes">
@@ -820,8 +820,8 @@
     <string name="external_section_title">Modèles externes</string>
     <string name="model_advanced_section">Avancé</string>
     <string name="model_advanced_description">Importations externes et téléchargements Gemma</string>
-    <string name="external_import_folder">Sélectionner un dossier</string>
-    <string name="external_import_url">Importer depuis une URL</string>
+    <string name="external_import_folder">Importer depuis un dossier</string>
+    <string name="external_import_url">Importer depuis un lien</string>
     <string name="external_url_hint">URL de dépôt HuggingFace ou JSON de catalogue</string>
     <string name="external_import">Importer</string>
     <string name="external_importing">Importation du modèle…</string>
@@ -1066,7 +1066,11 @@
     <string name="refinement_model_description">Le modèle utilisé par la seconde passe. Laissez sur hériter pour utiliser le modèle actif.</string>
     <string name="refinement_model_inherit">Hériter du modèle actif</string>
     <string name="export_model_bundle">Partager le modèle pour un transfert hors ligne</string>
-    <string name="external_import_bundle">Importer un paquet</string>
+    <string name="external_import_bundle">Importer un paquet de transfert</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">Ajouter un modèle Gemma (LiteRT)</string>
+    <string name="gemma_entry_title">Téléchargements Gemma</string>
+    <string name="gemma_entry_subtitle">Parcourir et télécharger les modèles Gemma officiels</string>
     <string name="external_section_subtitle">Fichiers de modèles que tu ajoutes toi-même (dossier, URL ou paquet de transfert) ainsi que les téléchargements Gemma LiteRT-LM ; ils tournent à côté du catalogue intégré.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->

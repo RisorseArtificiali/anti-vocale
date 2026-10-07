@@ -5,7 +5,7 @@
     <string name="logs_tab">历史</string>
     <string name="settings_tab">设置</string>
     <string name="select_model">选择模型文件</string>
-    <string name="select_model_from_device">选择文件</string>
+    <string name="select_model_from_device">选择 .litertlm 文件</string>
     <string name="load_model">加载模型</string>
     <string name="unload_model">卸载模型</string>
     <string name="model_status">状态：%1$s</string>
@@ -106,7 +106,7 @@
     <string name="transcript_capped_autosave_hint">完整转写可通过自动保存获取：设置 → 自动保存到文件夹</string>
     <string name="transcript_capped_autosave_saved">完整转写已自动保存到您的文件夹</string>
     <string name="export_settings_title">自动保存与导出</string>
-    <string name="export_settings_description">选择转写文本的保存文件夹和文件格式</string>
+    <string name="export_settings_description">可选：按你选择的格式，把每份转录也写入你选择的文件夹。所有内容始终保留在历史页中。</string>
     <string name="error_folder_not_writable">此文件夹无法接收文件。请选择设备存储中的文件夹（而不是“下载”的近期视图）。</string>
     <string name="language_phone_option">手机语言（%1$s）</string>
     <string name="today">今天</string>
@@ -432,7 +432,7 @@
     <string name="validate_and_save">验证并保存</string>
     <string name="validating_token">正在验证令牌…</string>
     <string name="auto_unload_timeout">自动卸载</string>
-    <string name="timeout_description">模型在闲置一段时间后卸载，下次使用时恢复。</string>
+    <string name="timeout_description">在应用空闲时释放内存，降低系统结束应用的可能；下次使用时模型会重新加载。</string>
     <string name="timeout_1_minute">1 分钟</string>
     <string name="timeout_1_hour">1 小时</string>
     <string name="thread_count_title">推理线程</string>
@@ -800,9 +800,13 @@
     <string name="external_section_subtitle">您自行添加的模型文件（文件夹、URL 或传输包）以及 Gemma LiteRT-LM 下载。</string>
     <string name="model_advanced_section">高级</string>
     <string name="model_advanced_description">外部导入和 Gemma 下载</string>
-    <string name="external_import_folder">选择文件夹</string>
+    <string name="external_import_folder">从文件夹导入</string>
     <string name="external_import_bundle">导入传输包</string>
-    <string name="external_import_url">从 URL 导入</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">添加 Gemma 模型（LiteRT）</string>
+    <string name="gemma_entry_title">Gemma 下载</string>
+    <string name="gemma_entry_subtitle">浏览并下载官方 Gemma 模型</string>
+    <string name="external_import_url">从链接导入</string>
     <string name="external_url_hint">HuggingFace 仓库或目录条目 JSON URL</string>
     <string name="external_import">导入</string>
     <string name="external_importing">正在导入模型…</string>

@@ -23,6 +23,7 @@ import androidx.compose.ui.layout.layout
 import kotlin.math.roundToInt
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.draw.clip
@@ -904,16 +905,20 @@ fun SettingsTab(
                     it.section == SettingsSearchSection.TRANSCRIPTION &&
                     it.outerSectionGate(searchState)
             } }
-            if (!searchActive) {
-                AdvancedRevealCard(
-                    count = advancedCount,
-                    expanded = transcriptionAdvancedExpanded,
-                    onToggle = {
-                        viewModel.setTranscriptionAdvancedExpanded(!transcriptionAdvancedExpanded)
-                    }
-                )
-            }
-            if (transcriptionAdvancedExpanded || searchActive) {
+            // TASK-780 (road test): the reveal component owns the whole
+            // advanced-subsection unit, header and bounded content, so the
+            // group has a visible start AND end (the maintainer's report).
+            AdvancedRevealCard(
+                count = advancedCount,
+                mode = when {
+                    searchActive -> AdvancedRevealMode.SearchContent
+                    transcriptionAdvancedExpanded -> AdvancedRevealMode.Expanded
+                    else -> AdvancedRevealMode.Collapsed
+                },
+                onToggle = {
+                    viewModel.setTranscriptionAdvancedExpanded(!transcriptionAdvancedExpanded)
+                },
+            ) {
                 SettingsGroupLabel(SettingsSearchGroup.DECODING, searchState)
                 // Progressive Transcription Display Setting
                 val progressiveTitle = stringResource(R.string.progressive_title)
@@ -1044,7 +1049,7 @@ fun SettingsTab(
 
                     SettingsGroupLabel(SettingsSearchGroup.OUTPUT, searchState)
 
-            // TASK-647: the AI-disclaimer signature. Applies to what LEAVES
+                // TASK-647: the AI-disclaimer signature. Applies to what LEAVES
                 // the app (copy, share, export); the in-app screens stay raw.
                 SearchFilterRow(searchQuery, SettingsSearchId.SIGNATURE, searchState) {
                     ToggleSettingCard(
@@ -1123,7 +1128,7 @@ fun SettingsTab(
                         errorMessage = uiState.errorMessage,
                     )
                 }
-            } // TASK-588.2: the advanced reveal block
+            } // TASK-588.2: the advanced reveal block (content slot)
         }
 
         CollapsibleSection(
@@ -2579,55 +2584,108 @@ private fun SettingsGroupLabel(group: SettingsSearchGroup, state: SettingsSearch
 }
 
 /**
- * TASK-588.1: the progressive-disclosure reveal row for the TRANSCRIPTION
+ * TASK-588.1: the progressive-disclosure reveal unit for the TRANSCRIPTION
  * section's advanced block. De-emphasize, never hide: the count names what
- * is folded away; a tap expands in place (persisted). Never rendered during
- * an active search; the search path opens the block by itself so every
- * card stays findable (the design note's one new behavior).
+ * is folded away; a tap expands in place (persisted). During an active
+ * search the content renders headerless with all corners rounded
+ * ([AdvancedRevealMode.SearchContent]) so every card stays findable (the
+ * design note's one new behavior). TASK-780: the unit owns the header AND
+ * the bounded content container, merged flush (one corner radius, zero
+ * seam spacing), so the subsection has a visible start and end.
  */
 @Composable
 private fun AdvancedRevealCard(
     count: Int,
-    expanded: Boolean,
+    mode: AdvancedRevealMode,
     onToggle: () -> Unit,
+    content: @Composable () -> Unit = {},
 ) {
+    val expanded = mode == AdvancedRevealMode.Expanded
+    val flushUnderHeader = mode == AdvancedRevealMode.Expanded
     // TASK-382 contract (as CollapsibleSection): the row is the accessible
     // toggle; stateDescription conveys the state, the chevron announces
     // the action.
     val stateDescriptionText = stringResource(
         if (expanded) R.string.a11y_collapse else R.string.a11y_expand)
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(role = Role.Button, onClick = onToggle)
-            .semantics { stateDescription = stateDescriptionText },
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-    ) {
-        Row(
+    // One zero-spacing column: the caller nests this component inside
+    // spacedBy(12.dp) columns, and a gap at the seam would break the
+    // flush merge between header and content (review finding).
+    Column(verticalArrangement = Arrangement.spacedBy(0.dp)) {
+    if (mode != AdvancedRevealMode.SearchContent) {
+        Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 14.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
+                .clickable(role = Role.Button, onClick = onToggle)
+                .semantics { stateDescription = stateDescriptionText },
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            ),
+            // TASK-780 (road test): expanded, the bottom corners square off
+            // so the header merges flush into the content container below.
+            shape = if (flushUnderHeader) {
+                RoundedCornerShape(topStart = AdvancedRevealRadius, topEnd = AdvancedRevealRadius)
+            } else {
+                RoundedCornerShape(AdvancedRevealRadius)
+            },
         ) {
-            Text(
-                text = stringResource(R.string.settings_advanced_reveal, count),
-                style = MaterialTheme.typography.titleSmall,
-                color = MaterialTheme.colorScheme.primary,
-            )
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = stateDescriptionText,
-                tint = MaterialTheme.colorScheme.primary,
+            Row(
                 modifier = Modifier
-                    .size(24.dp)
-                    .graphicsLayer { rotationZ = if (expanded) 180f else 0f },
-            )
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = stringResource(R.string.settings_advanced_reveal, count),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.primary,
+                )
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = stateDescriptionText,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .size(24.dp)
+                        .graphicsLayer { rotationZ = if (expanded) 180f else 0f },
+                )
+            }
         }
     }
+    if (mode != AdvancedRevealMode.Collapsed) {
+        // The bounded body of the subsection: flush under the header when
+        // one is showing (square top corners), free-standing during search
+        // (all corners rounded).
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant,
+            shape = if (flushUnderHeader) {
+                RoundedCornerShape(bottomStart = AdvancedRevealRadius, bottomEnd = AdvancedRevealRadius)
+            } else {
+                RoundedCornerShape(AdvancedRevealRadius)
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Column(
+                modifier = Modifier.padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                content()
+            }
+        }
+    }
+    }
 }
+
+/** The one corner radius of the advanced-reveal unit (header + body). */
+private val AdvancedRevealRadius = 12.dp
+
+/**
+ * The three renderable states of the advanced reveal: collapsed (header
+ * only), expanded (header merged flush into the bounded content), and the
+ * settings-search shape (content only, all corners rounded, nothing above
+ * it). An enum, not two booleans, so the invalid combinations cannot be
+ * expressed (review finding).
+ */
+private enum class AdvancedRevealMode { Collapsed, Expanded, SearchContent }
 
 /**
  * TASK-542: card-level gate for the settings search. Renders [content] only

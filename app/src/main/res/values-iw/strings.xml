@@ -9,7 +9,7 @@
 
     <!-- Model selection -->
     <string name="select_model">בחירת קובץ מודל</string>
-    <string name="select_model_from_device">בחירת קובץ</string>
+    <string name="select_model_from_device">בחירת קובץ .litertlm</string>
 
     <!-- Custom transducer model (sideload) -->
     <string name="load_model">טעינת מודל</string>
@@ -123,7 +123,7 @@
     <string name="transcript_capped_autosave_hint">תמליל מלא בשמירה אוטומטית: הגדרות → שמור לתיקייה</string>
     <string name="transcript_capped_autosave_saved">התמליל המלא נשמר אוטומטית לתיקייה שלך</string>
     <string name="export_settings_title">שמירה אוטומטית וייצוא</string>
-    <string name="export_settings_description">בחר תיקייה ופורמט קובץ לתמלילים שמורים</string>
+    <string name="export_settings_description">אופציונלי: כותב גם כל תמליל לתיקייה שתבחרו, בפורמט שתבחרו. הכול נשאר תמיד גם בלשונית ההיסטוריה.</string>
     <string name="error_folder_not_writable">תיקייה זו לא יכולה לקבל קבצים. בחר תיקייה מאחסון המכשיר (לא מקיצור הדרך של הורדות).</string>
     <string name="language_phone_option">שפת הטלפון (%1$s)</string>
     <string name="today">היום</string>
@@ -501,7 +501,7 @@
 
     <!-- Settings Tab - Timeout -->
     <string name="auto_unload_timeout">פריקה אוטומטית</string>
-    <string name="timeout_description">המודל נפרק לאחר זמן חוסר פעילות וחוזר בשימוש הבא.</string>
+    <string name="timeout_description">משחרר זיכרון כשהאפליקציה לא פעילה ומקטין את הסיכוי שהמערכת תסגור אותה; המודל ייטען מחדש בשימוש הבא.</string>
     <string name="timeout_1_minute">דקה אחת</string>
     <string name="timeout_1_hour">שעה אחת</string>
     <plurals name="timeout_minutes">
@@ -969,8 +969,8 @@
     <string name="external_section_title">מודלים חיצוניים</string>
     <string name="model_advanced_section">מתקדם</string>
     <string name="model_advanced_description">ייבוא חיצוני והורדות Gemma</string>
-    <string name="external_import_folder">בחירת תיקייה</string>
-    <string name="external_import_url">ייבוא מכתובת URL</string>
+    <string name="external_import_folder">ייבוא מתיקייה</string>
+    <string name="external_import_url">ייבוא מקישור</string>
     <string name="external_url_hint">מאגר HuggingFace או כתובת URL של רשומת קטלוג JSON</string>
     <string name="external_import">ייבוא</string>
     <string name="external_importing">מייבא מודל…</string>
@@ -1208,7 +1208,11 @@
     <string name="refinement_model_description">המודל ששלב השני משתמש בו. השאר על ירושה כדי להשתמש במודל הפעיל.</string>
     <string name="refinement_model_inherit">רשת מודל פעיל</string>
     <string name="export_model_bundle">שיתוף המודל להעברה ללא רשת</string>
-    <string name="external_import_bundle">ייבוא חבילה</string>
+    <string name="external_import_bundle">ייבוא חבילת העברה</string>
+    <!-- TASK-779 + road-test copy fixes -->
+    <string name="litert_card_title">הוספת מודל Gemma (LiteRT)</string>
+    <string name="gemma_entry_title">הורדות Gemma</string>
+    <string name="gemma_entry_subtitle">עיינו והורידו את מודלי Gemma הרשמיים</string>
     <string name="external_section_subtitle">קובצי מודל שאתם מוסיפים בעצמכם (תיקייה, כתובת או חבילת העברה) בתוספת הורדות Gemma LiteRT-LM; פועלים לצד הקטלוג המובנה.</string>
 
     <!-- TASK-741 (GH #125): the scheduled folder watch -->
