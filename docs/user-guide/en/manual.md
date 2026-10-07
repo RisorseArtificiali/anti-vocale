@@ -2,7 +2,7 @@
 
 Anti-Vocale transcribes voice messages on your Android device, entirely offline. Audio never leaves your phone: transcription runs locally with open AI models, no account, no cloud service, no telemetry.
 
-Manual updated for version 1.13.
+Manual updated for version 1.14.
 
 ## Contents
 

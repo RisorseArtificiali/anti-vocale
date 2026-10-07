@@ -2,7 +2,7 @@
 
 Anti-Vocale trascrive i messaggi vocali sul tuo dispositivo Android, interamente offline. L'audio non lascia mai il telefono: la trascrizione avviene in locale con modelli AI aperti, senza account, senza servizi cloud, senza telemetria.
 
-Manuale aggiornato alla versione 1.13.
+Manuale aggiornato alla versione 1.14.
 
 ## Indice
 

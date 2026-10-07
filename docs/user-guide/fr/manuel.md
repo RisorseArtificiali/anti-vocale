@@ -2,7 +2,7 @@
 
 Anti-Vocale transcrit les messages vocaux sur votre appareil Android, entièrement hors ligne. L'audio ne quitte jamais votre téléphone : la transcription s'exécute localement avec des modèles d'IA ouverts, sans compte, sans service cloud, sans télémétrie.
 
-Manuel mis à jour pour la version 1.13.
+Manuel mis à jour pour la version 1.14.
 
 ## Sommaire
 

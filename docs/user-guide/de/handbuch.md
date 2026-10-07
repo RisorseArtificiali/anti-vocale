@@ -2,7 +2,7 @@
 
 Anti-Vocale transkribiert Sprachnachrichten auf deinem Android-Gerät, komplett offline. Audio verlässt dein Telefon nie: Die Transkription läuft lokal mit offenen KI-Modellen, ohne Konto, ohne Cloud-Dienst, ohne Telemetrie.
 
-Handbuch aktualisiert für Version 1.13.
+Handbuch aktualisiert für Version 1.14.
 
 ## Inhalt
 
