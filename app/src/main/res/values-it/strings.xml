@@ -387,6 +387,7 @@
     <string name="model_use_missing_files">I file del modello %1$s sono mancanti o incompleti. Scarica di nuovo la variante dalla scheda Modello.</string>
     <string name="model_demoted_notice">Non viene scelto automaticamente: questo modello non ha prodotto testo pur in presenza di parlato. Selezionalo di nuovo per dargli un\'altra possibilità.</string>
     <string name="delete">Elimina</string>
+    <string name="variant_more_actions">Altre azioni</string>
     <string name="download">Scarica</string>
     <string name="model_update_button">Aggiorna</string>
     <string name="gemma_update_confirm_title">Aggiorna %1$s</string>
@@ -1204,6 +1205,7 @@
     <string name="refinement_model_inherit">Eredita modello attivo</string>
     <string name="export_model_bundle">Condividi il modello per il trasferimento offline</string>
     <string name="external_import_bundle">Importa un bundle di trasferimento</string>
+    <string name="external_models_intro">Questa sezione raccoglie modelli alternativi: versioni piccole per telefoni con poca memoria, e modelli ottimizzati per lingue specifiche. Molti arrivano dal catalogo community che curiamo noi, ma puoi anche puntare l\'app a un catalogo di terze parti o ospitarne uno tuo.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">Aggiungi un modello Gemma (LiteRT)</string>
     <string name="gemma_entry_title">Download Gemma</string>

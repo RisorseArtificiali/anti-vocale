@@ -36,7 +36,7 @@ class TranscriptFileSaverSaveResultTest {
 
     @Test
     fun `savedFolderOrNull carries the destination name only on Saved (GH #128)`() {
-        // non-null by construction: TreeUris.displayName's fallback chain
+        // non-null by construction: TreeUris.displayPath's fallback chain
         // ends at the raw URI, so a nameless provider still yields a label
         assertEquals("rec",
             TranscriptFileSaver.SaveResult.Saved("rec").savedFolderOrNull())

@@ -393,6 +393,7 @@
     <string name="model_use_missing_files">%1$s için model dosyaları eksik veya tamamlanmamış. Model sekmesinden varyantı yeniden indirin.</string>
     <string name="model_demoted_notice">Otomatik olarak seçilmez: bu model konuşma varken metin üretmedi. Ona bir şans daha vermek için yeniden seçin.</string>
     <string name="delete">Sil</string>
+    <string name="variant_more_actions">Diğer eylemler</string>
     <string name="download">İndir</string>
     <string name="model_update_button">Güncelle</string>
     <string name="gemma_update_confirm_title">%1$s güncelle</string>
@@ -1199,6 +1200,7 @@
     <string name="refinement_model_inherit">Etkin modeli devral</string>
     <string name="export_model_bundle">Modeli çevrimdışı aktarım için paylaş</string>
     <string name="external_import_bundle">Aktarım paketi içe aktar</string>
+    <string name="external_models_intro">Bu bölümde alternatif modeller bulunur: az bellekli telefonlar için küçük sürümler ve belirli dillere göre optimize edilmiş modeller. Birçoğu bizim sürdürdüğümüz topluluk kataloğundan gelir; ama uygulamayı üçüncü taraf bir kataloğa yönlendirebilir veya kendi kataloğunuzu barındırabilirsiniz.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">Gemma modeli ekle (LiteRT)</string>
     <string name="gemma_entry_title">Gemma indirmeleri</string>

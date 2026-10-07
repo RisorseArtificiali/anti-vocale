@@ -396,6 +396,7 @@
     <!-- TASK-675: honest one-line reason on a demoted model card. -->
     <string name="model_demoted_notice">Not chosen automatically: this model produced no text while speech was present. Pick it again to give it another chance.</string>
     <string name="delete">Delete</string>
+    <string name="variant_more_actions">More actions</string>
     <string name="download">Download</string>
     <string name="model_update_button">Update</string>
     <string name="gemma_update_confirm_title">Update %1$s</string>
@@ -987,6 +988,7 @@
     <string name="model_advanced_description">External imports and Gemma downloads</string>
     <string name="external_import_folder">Import from a folder</string>
     <string name="external_import_bundle">Import a transfer bundle</string>
+    <string name="external_models_intro">This section holds alternative models: small ones for phones with little memory, and models tuned for specific languages. Many come from the community catalog we curate, and you can also point the app at a third-party catalog or host your own.</string>
     <!-- TASK-779: task-oriented labels for the import actions and the Gemma entry (maintainer road test) -->
     <string name="litert_card_title">Add a Gemma model (LiteRT)</string>
     <string name="gemma_entry_title">Gemma downloads</string>

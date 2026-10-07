@@ -13,6 +13,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -224,12 +226,9 @@ fun ModelVariantCard(
             // Action buttons
             Spacer(modifier = Modifier.height(8.dp))
 
-            // TASK-772: weight(1f) per button, not End-aligned free placement;
-            // on a narrow screen the fourth icon (Delete) fell off the right
-            // edge. Equal shares keep all actions visible at any width.
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = if (state.isActive) Arrangement.End else Arrangement.spacedBy(4.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 when (state.buttonState) {
@@ -244,10 +243,11 @@ fun ModelVariantCard(
                         }
                     }
                     is DownloadButtonState.Downloaded -> {
-                        // Maintainer direction (2026-10-06): Use and Benchmark
-                        // stay primary; Share (TASK-742) and Delete move into
-                        // a kebab overflow menu. This also solves the narrow-
-                        // screen clipping of the 4th icon (TASK-772).
+                        // Maintainer direction evolution: 2026-10-06 kept Use
+                        // and Benchmark primary with Share/Delete in the
+                        // kebab; the 2026-10-07 road test moved Benchmark
+                        // into the kebab too (with Use hidden on the active
+                        // card, the weighted Benchmark swallowed the row).
                         if (!state.isActive) {
                             Button(
                                 onClick = onUseClick,
@@ -259,15 +259,8 @@ fun ModelVariantCard(
                                 Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
                             }
                         }
-                        if (onBenchmarkClick != null) {
-                            OutlinedButton(
-                                onClick = onBenchmarkClick,
-                                modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                            ) {
-                                Icon(Icons.Default.Speed, contentDescription = stringResource(R.string.benchmark_button))
-                            }
-                        }
                         VariantOverflowMenu(
+                            onBenchmarkClick = onBenchmarkClick,
                             onExportClick = onExportClick,
                             onDeleteClick = onDeleteClick,
                         )
@@ -567,14 +560,30 @@ fun InfoIconButton(onClick: () -> Unit) {
     }
 }
 
+/** One icon + label row of the variant overflow menu. */
+@Composable
+private fun MenuEntry(
+    labelRes: Int,
+    icon: ImageVector,
+    tint: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+    onClick: () -> Unit,
+) {
+    DropdownMenuItem(
+        text = { Text(stringResource(labelRes)) },
+        leadingIcon = { Icon(icon, contentDescription = null, tint = tint) },
+        onClick = onClick,
+    )
+}
+
 /**
  * The kebab overflow for the downloaded-variant actions (maintainer
- * direction 2026-10-06): Share/Export and Delete live here instead of
- * taking a button slot each on the action row. Keeps the row clean
- * (Use + Benchmark + kebab) at any screen width.
+ * direction 2026-10-06, extended 2026-10-07): Benchmark (when provided),
+ * Share/Export and Delete live here instead of taking a button slot each
+ * on the action row. Keeps the row clean (Use + kebab) at any width.
  */
 @Composable
 private fun VariantOverflowMenu(
+    onBenchmarkClick: (() -> Unit)?,
     onExportClick: (() -> Unit)?,
     onDeleteClick: () -> Unit,
 ) {
@@ -583,7 +592,7 @@ private fun VariantOverflowMenu(
         IconButton(onClick = { expanded = true }) {
             Icon(
                 Icons.Default.MoreVert,
-                contentDescription = stringResource(R.string.view_settings),
+                contentDescription = stringResource(R.string.variant_more_actions),
                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -591,24 +600,19 @@ private fun VariantOverflowMenu(
             expanded = expanded,
             onDismissRequest = { expanded = false },
         ) {
-            if (onExportClick != null) {
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.export_model_bundle)) },
-                    leadingIcon = {
-                        Icon(Icons.Default.Share, contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    },
-                    onClick = { expanded = false; onExportClick() },
-                )
+            onBenchmarkClick?.let { benchmark ->
+                MenuEntry(R.string.benchmark_button, Icons.Default.Speed) {
+                    expanded = false; benchmark()
+                }
             }
-            DropdownMenuItem(
-                text = { Text(stringResource(R.string.delete)) },
-                leadingIcon = {
-                    Icon(Icons.Default.Delete, contentDescription = null,
-                        tint = MaterialTheme.colorScheme.error)
-                },
-                onClick = { expanded = false; onDeleteClick() },
-            )
+            onExportClick?.let { export ->
+                MenuEntry(R.string.export_model_bundle, Icons.Default.Share) {
+                    expanded = false; export()
+                }
+            }
+            MenuEntry(R.string.delete, Icons.Default.Delete, tint = MaterialTheme.colorScheme.error) {
+                expanded = false; onDeleteClick()
+            }
         }
     }
 }

@@ -387,6 +387,7 @@
     <string name="model_use_missing_files">فایل‌های مدل %1$s مفقود یا ناقص‌اند. این نسخه را از زبانه مدل دوباره دانلود کنید.</string>
     <string name="model_demoted_notice">به‌طور خودکار انتخاب نمی‌شود: این مدل با وجود گفتار متن تولید نکرد. دوباره انتخابش کنید تا فرصت دیگری به آن بدهید.</string>
     <string name="delete">حذف</string>
+    <string name="variant_more_actions">اقدامات بیشتر</string>
     <string name="download">دانلود</string>
     <string name="model_update_button">به‌روزرسانی</string>
     <string name="gemma_update_confirm_title">به‌روزرسانی %1$s</string>
@@ -1204,6 +1205,7 @@
     <string name="refinement_model_inherit">ارث‌بردن مدل فعال</string>
     <string name="export_model_bundle">اشتراک‌گذاری مدل برای انتقال آفلاین</string>
     <string name="external_import_bundle">وارد کردن بسته انتقال</string>
+    <string name="external_models_intro">این بخش مدل‌های جایگزین را در بر دارد: نسخه‌های کوچک برای گوشی‌های با حافظه کم، و مدل‌های بهینه‌شده برای زبان‌های مشخص. بسیاری از آن‌ها از کاتالوگ جامعه‌ای که ما سرپرستی می‌کنیم می‌آیند، اما می‌توانید برنامه را به کاتالوگ شخص ثالث هم اشاره دهید یا کاتالوگ خودتان را میزبانی کنید.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">افزودن مدل Gemma (LiteRT)</string>
     <string name="gemma_entry_title">دانلودهای Gemma</string>

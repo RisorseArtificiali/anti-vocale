@@ -365,6 +365,7 @@
     <string name="model_use_missing_files">%1$s की मॉडल फ़ाइलें ग़ायब या अधूरी हैं। मॉडल टैब से उस वैरिएंट को फिर से डाउनलोड करें।</string>
     <string name="model_demoted_notice">अब यह मॉडल अपने आप नहीं चुना जाता: भाषण मौजूद होने पर भी इसने कोई टेक्स्ट नहीं बनाया। इसे फिर से चुनकर इसे एक और मौका दें।</string>
     <string name="delete">मिटाएं</string>
+    <string name="variant_more_actions">और कार्य</string>
     <string name="download">डाउनलोड करें</string>
     <string name="model_update_button">अपडेट करें</string>
     <string name="gemma_update_confirm_title">%1$s अपडेट करें</string>
@@ -1198,6 +1199,7 @@
     <string name="refinement_model_inherit">सक्रिय मॉडल इनहेरिट करें</string>
     <string name="export_model_bundle">ऑफ़लाइन ट्रांसफ़र के लिए मॉडल साझा करें</string>
     <string name="external_import_bundle">ट्रांसफ़र बंडल आयात करें</string>
+    <string name="external_models_intro">इस सेक्शन में वैकल्पिक मॉडल हैं: कम मेमोरी वाले फ़ोन के लिए छोटे संस्करण, और खास भाषाओं के लिए अनुकूलित मॉडल। कई हमारे संचालित कम्युनिटी कैटलॉग से आते हैं, लेकिन आप ऐप को किसी तृतीय-पक्ष कैटलॉग पर भी इशारा कर सकते हैं या अपना कैटलॉग होस्ट कर सकते हैं।</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">Gemma मॉडल जोड़ें (LiteRT)</string>
     <string name="gemma_entry_title">Gemma डाउनलोड</string>

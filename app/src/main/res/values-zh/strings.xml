@@ -329,6 +329,7 @@
     <string name="model_use_missing_files">%1$s 的模型文件缺失或不完整。请在“模型”标签页重新下载该版本。</string>
     <string name="model_demoted_notice">不再自动选用：此模型在有语音时没有产出文本。请手动选择以重试。</string>
     <string name="delete">删除</string>
+    <string name="variant_more_actions">更多操作</string>
     <string name="download">下载</string>
     <string name="model_update_button">更新</string>
     <string name="gemma_update_confirm_title">更新 %1$s</string>
@@ -802,6 +803,7 @@
     <string name="model_advanced_description">外部导入和 Gemma 下载</string>
     <string name="external_import_folder">从文件夹导入</string>
     <string name="external_import_bundle">导入传输包</string>
+    <string name="external_models_intro">本区块是备选模型：适合内存较小手机的小体积版本，以及针对特定语言优化的模型。其中许多来自我们维护的社区目录，但你也可以让应用指向第三方目录，或自建目录。</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">添加 Gemma 模型（LiteRT）</string>
     <string name="gemma_entry_title">Gemma 下载</string>

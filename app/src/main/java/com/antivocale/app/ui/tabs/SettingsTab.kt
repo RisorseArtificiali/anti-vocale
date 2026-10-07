@@ -2907,9 +2907,12 @@ private fun OutputFolderSettingCard(
     val context = LocalContext.current
     // returns String?; lint misresolves the elvis chain
     @SuppressLint("RememberReturnType")
-    val displayName = remember(outputFolderUri) {
+    // Full path when the tree URI carries one (road test 2026-10-07: the
+    // bare folder name does not say where the file lands); cloud picks
+    // degrade to the display name inside TreeUris.
+    val folderLabel = remember(outputFolderUri) {
         outputFolderUri?.let { uriStr ->
-            runCatching { com.antivocale.app.util.TreeUris.displayName(context, Uri.parse(uriStr)) }
+            runCatching { com.antivocale.app.util.TreeUris.displayPath(context, Uri.parse(uriStr)) }
                 .getOrNull() ?: uriStr
         }
     }
@@ -2933,10 +2936,10 @@ private fun OutputFolderSettingCard(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                if (displayName != null) {
+                if (folderLabel != null) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = displayName,
+                        text = folderLabel,
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.primary
                     )

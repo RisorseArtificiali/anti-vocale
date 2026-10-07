@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.res.stringResource
+import com.antivocale.app.util.TreeUris
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -142,14 +143,18 @@ fun AutomationSettingsScreen(
             }
         )
 
+        // The offload configuration sits contextually under its own
+        // toggle (maintainer road test 2026-10-07: it used to appear after
+        // the folder-watch card, detached from the switch that reveals it).
+        if (remoteOffloadEnabled) {
+            RemoteOmnivoiceConfigCard(viewModel)
+        }
+
         // TASK-741 (GH #125): the scheduled folder watch. The third
         // automation input source; the honest ColorOS contract lives in the
         // description (runs when the system allows; the manual scan is
         // always available).
         ScheduledFolderWatchCard(viewModel)
-        if (remoteOffloadEnabled) {
-            RemoteOmnivoiceConfigCard(viewModel)
-        }
     }
 }
 
@@ -161,6 +166,18 @@ fun AutomationSettingsScreen(
  * or remove. Every mutation routes through the ViewModel, which pairs the
  * store write with the scheduler reconcile.
  */
+/** Road test 2026-10-07: watched folders show the FULL path (two folders can
+ *  share a name on different volumes); cloud picks degrade to the stored
+ *  display name inside TreeUris.displayPath. */
+@Composable
+private fun rememberFolderLabel(folder: com.antivocale.app.data.WatchedFolder): String {
+    val context = LocalContext.current
+    return remember(folder.treeUri) {
+        runCatching { TreeUris.displayPath(context, android.net.Uri.parse(folder.treeUri)) }
+            .getOrNull() ?: folder.displayName
+    }
+}
+
 @Composable
 private fun ScheduledFolderWatchCard(viewModel: SettingsViewModel) {
     val context = LocalContext.current
@@ -200,7 +217,7 @@ private fun ScheduledFolderWatchCard(viewModel: SettingsViewModel) {
                     .padding(vertical = 8.dp),
             ) {
                 Text(
-                    text = folder.displayName,
+                    text = rememberFolderLabel(folder),
                     style = MaterialTheme.typography.labelLarge,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,

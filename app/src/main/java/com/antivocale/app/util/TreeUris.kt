@@ -3,6 +3,7 @@ package com.antivocale.app.util
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.provider.DocumentsContract
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
 
@@ -52,4 +53,38 @@ object TreeUris {
     fun displayName(context: Context, uri: Uri): String =
         DocumentFile.fromTreeUri(context, uri)?.name
             ?: uri.lastPathSegment ?: uri.toString()
+
+    /**
+     * The FULL path of a picked tree when the URI carries one: local
+     * providers encode it in the document id ("raw:/storage/..." or
+     * "primary:Download/sub"). Cloud providers use opaque ids, where a
+     * path does not exist; there the display name is the honest answer.
+     * Maintainer direction (road test 2026-10-07): the folder shown by
+     * name alone does not say WHERE it is.
+     */
+    fun displayPath(context: Context, uri: Uri): String {
+        // Path synthesis is honest ONLY for the local providers whose docIds
+        // ARE paths; a colon inside a cloud provider's opaque id would
+        // fabricate a nonexistent directory (code review F1).
+        val authority = uri.authority
+        if (authority != "com.android.externalstorage.documents" &&
+            authority != "com.android.providers.downloads.documents"
+        ) {
+            return displayName(context, uri)
+        }
+        val docId = runCatching { DocumentsContract.getTreeDocumentId(uri) }.getOrNull()
+        if (docId != null) {
+            if (docId.startsWith("raw:")) {
+                return docId.removePrefix("raw:").ifBlank { displayName(context, uri) }
+            }
+            val sep = docId.indexOf(':')
+            if (sep > 0) {
+                val volume = docId.substring(0, sep)
+                val rest = docId.substring(sep + 1)
+                val root = if (volume == "primary") "/storage/emulated/0" else "/storage/$volume"
+                return if (rest.isBlank()) root else "$root/$rest"
+            }
+        }
+        return displayName(context, uri)
+    }
 }

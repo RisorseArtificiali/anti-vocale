@@ -393,6 +393,7 @@
     <string name="model_use_missing_files">קבצי המודל של %1$s חסרים או חלקיים. הורד מחדש את הגרסה מהלשונית מודלים.</string>
     <string name="model_demoted_notice">לא נבחר אוטומטית: המודל הזה לא הניב טקסט למרות שהיה דיבור. בחרו בו שוב כדי לתת לו הזדמנות נוספת.</string>
     <string name="delete">מחיקה</string>
+    <string name="variant_more_actions">פעולות נוספות</string>
     <string name="download">הורדה</string>
     <string name="model_update_button">עדכון</string>
     <string name="gemma_update_confirm_title">עדכון %1$s</string>
@@ -1209,6 +1210,7 @@
     <string name="refinement_model_inherit">רשת מודל פעיל</string>
     <string name="export_model_bundle">שיתוף המודל להעברה ללא רשת</string>
     <string name="external_import_bundle">ייבוא חבילת העברה</string>
+    <string name="external_models_intro">המדור הזה מכיל מודלים חלופיים: גרסאות קטנות לטלפונים עם זיכרון מועט ומודלים הממוטבים לשפות ספציפיות. רבים מגיעים מקטלוג הקהילה שאנחנו מנהלים, אבל אפשר גם להפנות את האפליקציה לקטלוג של ספק חיצוני או לארח קטלוג משלכם.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">הוספת מודל Gemma (LiteRT)</string>
     <string name="gemma_entry_title">הורדות Gemma</string>

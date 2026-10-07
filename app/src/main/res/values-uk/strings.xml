@@ -401,6 +401,7 @@
     <string name="model_use_missing_files">Файли моделі %1$s відсутні або неповні. Завантажте варіант знову на вкладці «Модель».</string>
     <string name="model_demoted_notice">Не вибирається автоматично: ця модель не видала тексту за наявності мовлення. Виберіть її знову, щоб дати їй ще один шанс.</string>
     <string name="delete">Видалити</string>
+    <string name="variant_more_actions">Більше дій</string>
     <string name="download">Завантажити</string>
     <string name="model_update_button">Оновити</string>
     <string name="gemma_update_confirm_title">Оновити %1$s</string>
@@ -1225,6 +1226,7 @@
     <string name="refinement_model_inherit">Успадкувати активну модель</string>
     <string name="export_model_bundle">Поділитися моделлю для перенесення без мережі</string>
     <string name="external_import_bundle">Імпорт пакета перенесення</string>
+    <string name="external_models_intro">Цей розділ містить альтернативні моделі: невеликі для телефонів із малою пам\'яттю та моделі, оптимізовані під конкретні мови. Багато з них беруться з кураторського каталогу спільноти, але застосунок можна спрямувати й на сторонній каталог або власний.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">Додати модель Gemma (LiteRT)</string>
     <string name="gemma_entry_title">Завантаження Gemma</string>

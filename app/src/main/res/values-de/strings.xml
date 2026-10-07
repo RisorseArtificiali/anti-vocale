@@ -366,6 +366,7 @@
     <string name="model_use_missing_files">Die Modelldateien für %1$s fehlen oder sind unvollständig. Lade die Variante im Tab \"Modell\" erneut herunter.</string>
     <string name="model_demoted_notice">Wird nicht automatisch gewählt: Dieses Modell hat bei vorhandener Sprache keinen Text geliefert. Wähle es erneut, um ihm eine neue Chance zu geben.</string>
     <string name="delete">Löschen</string>
+    <string name="variant_more_actions">Weitere Aktionen</string>
     <string name="download">Herunterladen</string>
     <string name="model_update_button">Aktualisieren</string>
     <string name="gemma_update_confirm_title">%1$s aktualisieren</string>
@@ -1199,6 +1200,7 @@
     <string name="refinement_model_inherit">Aktives Modell erben</string>
     <string name="export_model_bundle">Modell für Offline-Übertragung teilen</string>
     <string name="external_import_bundle">Übertragungspaket importieren</string>
+    <string name="external_models_intro">Dieser Bereich enthält alternative Modelle: kleine für Telefone mit wenig Speicher und Modelle, die auf einzelne Sprachen optimiert sind. Viele stammen aus dem von uns gepflegten Community-Katalog; du kannst die App aber auch auf einen Katalog von Drittanbietern richten oder einen eigenen hosten.</string>
     <!-- TASK-779 + road-test copy fixes -->
     <string name="litert_card_title">Gemma-Modell hinzufügen (LiteRT)</string>
     <string name="gemma_entry_title">Gemma-Downloads</string>

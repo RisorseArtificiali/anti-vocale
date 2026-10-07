@@ -186,11 +186,13 @@ object TranscriptFileSaver {
             // TASK-722 review: the affirmative success trace lives at the
             // single owner (both service twins collapsed their copies).
             // GH #128 (review): the destination rides BOTH surfaces through
-            // the ONE owner (TreeUris.displayName, same derivation as the
-            // Settings export card), and the success log carries the tree
-            // itself so a twin-folder report pins to a concrete destination.
+            // the ONE owner (TreeUris.displayPath since the 2026-10-07 road
+            // test: the full path where the URI carries one, the display
+            // name otherwise, SAME derivation as the Settings export card),
+            // and the success log carries the tree itself so a twin-folder
+            // report pins to a concrete destination.
             Log.i(TAG, "Saved transcript to output folder: ${file.name ?: name} (tree=$treeUri)")
-            SaveResult.Saved(TreeUris.displayName(context, treeUri))
+            SaveResult.Saved(TreeUris.displayPath(context, treeUri))
         } catch (e: Exception) {
             Log.w(TAG, "Failed to save transcript to $treeUri", e)
             SaveResult.Failed(SaveResult.FAIL_EXCEPTION)

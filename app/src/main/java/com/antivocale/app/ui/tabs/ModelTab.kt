@@ -754,6 +754,17 @@ fun ModelTab(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(bottom = 4.dp)
                 )
+                // Maintainer direction (2026-10-07 road test): a section
+                // lead-in, ABOVE the import flows, so "the list below"
+                // covers them, the imported models, and the catalog dialog
+                // the link import opens (as a list caption under the
+                // buttons it described a dialog that sits above it).
+                Text(
+                    text = stringResource(R.string.external_models_intro),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
 
                 // TASK-775: the Gemma downloads live in a sub-page; the
                 // entry card is the compact pointer (maintainer direction).
@@ -856,6 +867,19 @@ fun ModelTab(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
+                // Maintainer direction (2026-10-07 road test): the intro text
+                // leads the sherpa block itself (above the family selector
+                // and import actions), so "this section" covers the
+                // imports, the imported models, and the catalog dialog the
+                // link import opens. As the whole section's caption it sat
+                // above the Gemma entry, which is neither small nor
+                // language-specific.
+                Text(
+                    text = stringResource(R.string.external_models_intro),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
                 // ONNX (sherpa): the section Card carries the header; no
                 // separate label needed here.
                 ExternalModelsSection(
