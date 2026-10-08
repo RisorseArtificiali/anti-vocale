@@ -255,7 +255,9 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         assertTrue(wrapped is TranscriptionOrchestrator.PipelineFailure)
         assertTrue((wrapped as TranscriptionOrchestrator.PipelineFailure).cause is PreprocessingError.FileNotFound)
         verify {
-            listener.onError(eq("test-1"), eq("INFERENCE_ERROR"), any(), eq(false), eq(false), any())
+            // TASK-785: a PreprocessingError cause is decode-family, the
+            // flag the Open Transcribe bridge maps to DECODE_FAILED.
+            listener.onError(eq("test-1"), eq("INFERENCE_ERROR"), any(), eq(false), eq(false), any(), any(), eq(true))
         }
     }
 
@@ -353,7 +355,8 @@ class TranscriptionOrchestratorAudioTest : TranscriptionOrchestratorTestBase() {
         assertTrue(error is TranscriptionOrchestrator.PipelineFailure)
         assertTrue((error as TranscriptionOrchestrator.PipelineFailure).cause is PreprocessingError.FileNotFound)
         verify {
-            listener.onError(eq("test-1"), eq("INFERENCE_ERROR"), any(), eq(false), eq(false), any())
+            // TASK-785: decode-family (see the single-chunk test above).
+            listener.onError(eq("test-1"), eq("INFERENCE_ERROR"), any(), eq(false), eq(false), any(), any(), eq(true))
         }
     }
 

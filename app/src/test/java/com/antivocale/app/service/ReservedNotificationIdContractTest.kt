@@ -42,6 +42,8 @@ class ReservedNotificationIdContractTest {
     fun `reserved base sits above every fixed and banded notification id`() {
         val base = ResultNotificationFactory.RESULT_NOTIFICATION_ID_BASE
         assertTrue(InferenceService.NOTIFICATION_ID < base)
+        // TASK-785: the Open Transcribe provider's foreground notification.
+        assertTrue(OpenTranscribeProviderService.NOTIFICATION_ID < base)
         assertTrue(CrashQuarantineCheck.NOTIFICATION_ID < base)
         assertTrue(SuspendedRunRecovery.NOTIFICATION_ID < base)
         assertTrue(SuspendedRunRecovery.INTERRUPTED_NOTIFICATION_ID < base)
@@ -65,6 +67,8 @@ class ReservedNotificationIdContractTest {
     fun `every notification id band is pairwise disjoint`() {
         val intervals = listOf(
             "inference-foreground" to (InferenceService.NOTIFICATION_ID..InferenceService.NOTIFICATION_ID),
+            // TASK-785: the Open Transcribe provider's foreground notification.
+            "opentranscribe-foreground" to (OpenTranscribeProviderService.NOTIFICATION_ID..OpenTranscribeProviderService.NOTIFICATION_ID),
             "crash-quarantine-fixed" to (CrashQuarantineCheck.NOTIFICATION_ID..CrashQuarantineCheck.NOTIFICATION_ID),
             "memory-margin-warning-fixed" to (TranscriptionOrchestrator.MEMORY_MARGIN_WARNING_ID..TranscriptionOrchestrator.MEMORY_MARGIN_WARNING_ID),
             // TASK-426: the previous-process memory-kill advisory, one above

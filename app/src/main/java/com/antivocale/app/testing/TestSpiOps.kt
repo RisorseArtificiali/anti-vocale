@@ -114,6 +114,11 @@ internal class TestSpiOps(
             .put("signaturePosition", preferences.signaturePosition.first())
             .put("memoryProtection", preferences.memoryProtection.first())
             .put("externalAutomationEnabled", preferences.externalAutomationEnabled.first())
+            // TASK-785: read-only on the SPI on purpose; a setter would
+            // flip the preference WITHOUT flipping the manifest component,
+            // leaving provider discovery stale until a process restart
+            // (the Settings toggle owns the paired write).
+            .put("openTranscribeEnabled", preferences.openTranscribeEnabled.first())
             .put("voiceNoteIdentityEnabled", preferences.voiceNoteIdentityEnabled.first())
             // TASK-681: the LAN-offload config (endpoint visible for E2E
             // verification; the key is masked to its last 4 chars).
