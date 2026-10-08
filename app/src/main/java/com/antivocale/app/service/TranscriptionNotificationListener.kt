@@ -146,7 +146,8 @@ class TranscriptionNotificationListener(
         isShareRequest: Boolean,
         isNoModelError: Boolean,
         durationMs: Long,
-        isMemoryFailure: Boolean
+        isMemoryFailure: Boolean,
+        isDecodeError: Boolean
     ) {
         if (!isShareRequest) return
         if (isNoModelError) showNoModelNotification() else showErrorNotification(errorMessage, isMemoryFailure)

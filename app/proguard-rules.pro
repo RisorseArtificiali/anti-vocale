@@ -52,3 +52,8 @@
 -keep @androidx.annotation.Keep class * { *; }
 -keepclassmembers class * { @androidx.annotation.Keep *; }
 
+
+# TASK-785: the Open Transcribe contract surface. The framework (and the
+# client app across the binder) resolves each Parcelable's CREATOR
+# reflectively, so the generated classes must survive R8 untouched.
+-keep class org.opentranscribe.api.** { *; }

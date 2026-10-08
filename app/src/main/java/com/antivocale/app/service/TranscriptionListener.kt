@@ -92,6 +92,13 @@ interface TranscriptionListener {
         /** TASK-625: a memory-class failure (typed, see
          * [com.antivocale.app.transcription.isMemoryClassFailure]); the error
          * notification offers the Memory-protection action for these. */
-        isMemoryFailure: Boolean = false
+        isMemoryFailure: Boolean = false,
+        /** TASK-785: the audio itself failed to decode (a
+         * [com.antivocale.app.audio.AudioPreprocessor.PreprocessingError],
+         * directly or as a PipelineFailure cause). The errorCode vocabulary
+         * cannot express this (decode failures ride INFERENCE_ERROR like
+         * every other inference failure), and the Open Transcribe contract
+         * needs DECODE_FAILED separated from UNEXPECTED. */
+        isDecodeError: Boolean = false
     )
 }

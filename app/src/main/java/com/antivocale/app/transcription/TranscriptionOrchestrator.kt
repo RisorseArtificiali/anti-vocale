@@ -115,6 +115,19 @@ class TranscriptionOrchestrator @Inject constructor(
         }
 
         /**
+         * TASK-785: the failure class the Open Transcribe bridge maps to
+         * DECODE_FAILED. The audio decode stage fails typed
+         * ([AudioPreprocessor.PreprocessingError]: no decoder, no audio
+         * track, invalid format, conversion and chunk failures), and the
+         * streaming pipeline wraps the same errors in [PipelineFailure]
+         * keeping the original as the cause.
+         */
+        internal fun isDecodeFamilyError(error: Throwable): Boolean {
+            return error is PreprocessingError ||
+                (error is PipelineFailure && error.cause is PreprocessingError)
+        }
+
+        /**
          * Maps a [TranscriptionException] to a user-facing localized message via the given [context].
          * Non-TranscriptionException errors fall back to the generic [R.string.transcription_failed].
          */
@@ -686,7 +699,8 @@ class TranscriptionOrchestrator @Inject constructor(
                     }
                     val isNoModel = isNoModelConfiguredError(error)
                     listener.onError(taskId, "INFERENCE_ERROR", userMsg, isShareRequest, isNoModel, duration,
-                        isMemoryFailure = isMemoryClassFailure(error))
+                        isMemoryFailure = isMemoryClassFailure(error),
+                        isDecodeError = isDecodeFamilyError(error))
                 }
             )
 
@@ -739,7 +753,8 @@ class TranscriptionOrchestrator @Inject constructor(
             } else {
                 errorMsg
             }
-            listener.onError(taskId, "PROCESSING_ERROR", userMsg, isShareRequest, false, duration)
+            listener.onError(taskId, "PROCESSING_ERROR", userMsg, isShareRequest, false, duration,
+                isDecodeError = isDecodeFamilyError(e))
             return Result.failure(e)
         } finally {
             if (backendOverride != null) {

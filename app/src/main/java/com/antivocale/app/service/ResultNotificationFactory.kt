@@ -636,6 +636,8 @@ class ResultNotificationFactory(private val context: Context) {
          *   process killed by memory enforcement, once per kill)
          * - 1009: ModelShortcutActivity.SWITCH_NOTIFICATION_ID (TASK-552 the
          *   model-switch confirmation, self-replacing)
+         * - 1011: OpenTranscribeProviderService.NOTIFICATION_ID (TASK-785
+         *   the Open Transcribe provider's foreground notification)
          * - 2001..2100: ExtractionService download-progress band (per-jobKey hash)
          * - 2201..2300: TaskerRequestReceiver fallback band (sequential slots)
          * - 2401..2500: ShareReceiverActivity choice + share-error band

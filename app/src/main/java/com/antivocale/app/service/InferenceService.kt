@@ -698,7 +698,8 @@ class InferenceService : Service(), TranscriptionListener {
         isShareRequest: Boolean,
         isNoModelError: Boolean,
         durationMs: Long,
-        isMemoryFailure: Boolean
+        isMemoryFailure: Boolean,
+        isDecodeError: Boolean
     ) {
         sendErrorReply(taskId, errorCode, errorMessage)
         forgetRequester(taskId)
