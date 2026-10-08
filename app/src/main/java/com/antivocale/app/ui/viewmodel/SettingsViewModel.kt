@@ -386,6 +386,9 @@ class SettingsViewModel @Inject constructor(
             // null means strictly "tour never completed". The replay hole
             // closes (a replayed tour after a locale switch cannot silently
             // filter) and the guard becomes immune to default-value drift.
+            // Maintainer direction (2026-10-08): this PHONE-LANGUAGE seed
+            // stays (certain information); only the first-note DETECTION
+            // seed was removed from the orchestrator.
             if (preferencesManager.modelFilterLanguage.first() == null) {
                 preferencesManager.saveModelFilterLanguage(
                     Language.onboardingFavoriteSeed(interfaceLanguage) ?: "")

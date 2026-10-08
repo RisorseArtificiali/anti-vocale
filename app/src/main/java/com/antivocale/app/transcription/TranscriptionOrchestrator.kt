@@ -4149,23 +4149,10 @@ class TranscriptionOrchestrator @Inject constructor(
         seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
         lastPartialSaveMs = 0L
         lastInterimRoomWriteMs.remove(taskId)
-        // TASK-713 (GH #112 second half): seed a received-note language into
-        // the Models filter favorites on the first qualifying arrival. Guard
-        // chain: a genuine SHARE-origin run (isShareRequest: browse,
-        // retranscribe and benchmark runs must not seed; review F1), a
-        // detected language covered by the filter's offered set, and the
-        // preference still NULL (the untouched tri-state: "" is an explicit
-        // user clear or an uncovered tour seed, never re-seeded). Two
-        // near-simultaneous qualifying shares can both pass the null read
-        // (last writer wins the favorite): accepted, one write either way;
-        // favorites never force a decode language (TASK-457).
-        if (detectedLanguage != null && isShareRequest) {
-            val seed = Language.onboardingFavoriteSeed(detectedLanguage)
-            if (seed != null && preferencesManager.modelFilterLanguage.first() == null) {
-                preferencesManager.saveModelFilterLanguage(seed)
-                Log.i(TAG, "Seeded Models filter favorite from first received note: $seed (TASK-713)")
-            }
-        }
+        // TASK-713's first-note seeding (GH #112 second half) was REMOVED by
+        // maintainer direction (2026-10-08 road test): the Models filter
+        // default is "All languages" and only an explicit user pick changes
+        // it. The tour-completion seed went with it.
     }
 
     private suspend fun logError(taskId: String, errorMessage: String, durationMs: Long = 0) {
