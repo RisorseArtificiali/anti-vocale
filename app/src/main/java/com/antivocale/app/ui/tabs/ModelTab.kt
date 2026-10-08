@@ -2174,9 +2174,11 @@ private fun ExternalModelsSection(
                 demoted = record.backendId in demotedBackendIds,
                 onUse = { viewModel.useExternalModel(record) },
                 onDelete = { onDeleteRequest(record) },
-                // A quarantined record or a deleted dir can never resolve a
-                // benchmark: hide the entry instead of erroring on tap.
-                onBenchmark = onBenchmark?.takeIf { !record.quarantined && java.io.File(record.dir).exists() }
+                // A quarantined record can never resolve a benchmark: hide
+                // the entry instead of erroring on tap. (A dir-missing
+                // record still shows it: the loader fails with a readable
+                // "directory not found" reason.)
+                onBenchmark = onBenchmark?.takeIf { !record.quarantined }
                     ?.let { cb -> { cb(record) } },
                 onEditLanguages = { langs ->
                     viewModel.updateExternalModelLanguages(record, langs)
