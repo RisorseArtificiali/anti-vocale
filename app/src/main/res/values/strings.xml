@@ -585,7 +585,7 @@
     <string name="summarize_status">Summarizing with AI…</string>
     <string name="summary_default_prompt">Summarize this transcription in 2-3 sentences, in the language of the transcript. Keep names and numbers. Output only the summary.</string>
     <string name="vad_title">Strip Silence (VAD)</string>
-    <string name="vad_description">Remove silent portions from voice messages before transcription. Reduces processing time and improves accuracy.</string>
+    <string name="vad_description">Cuts silent stretches before transcription. Usually faster; the effect on accuracy depends on the model.</string>
     <string name="progressive_title">Progressive Display</string>
     <string name="progressive_description">Show text as transcription progresses instead of waiting for the recording to finish.</string>
     <string name="early_preview_title">Early Preview</string>

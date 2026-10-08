@@ -481,7 +481,7 @@
     <string name="summarize_status">正在用 AI 摘要…</string>
     <string name="summary_default_prompt">用转写文本的语言在 2-3 句话内总结这份转写。保留原意，不添加新信息。</string>
     <string name="vad_title">去除静音（VAD）</string>
-    <string name="vad_description">转写前移除语音消息中的静音部分。缩短处理时间；在嘈杂音频上可能丢失轻声语音。</string>
+    <string name="vad_description">转写前切除静音部分。通常更快；对准确率的影响取决于模型。</string>
     <string name="progressive_title">渐进显示</string>
     <string name="progressive_description">转写进行时逐步显示文本，而不是等待录音结束。最后一屏在完成时替换。</string>
     <string name="early_preview_title">早期预览</string>

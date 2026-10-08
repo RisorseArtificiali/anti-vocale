@@ -552,7 +552,7 @@
     <string name="summarize_status">Riassunto con IA…</string>
     <string name="summary_default_prompt">Riassumi questa trascrizione in 2-3 frasi, nella lingua della trascrizione. Mantieni nomi e numeri. Restituisci solo il riassunto.</string>
     <string name="vad_title">Rimuovi Silenzio (VAD)</string>
-    <string name="vad_description">Rimuovi le parti silenti dai messaggi vocali prima della trascrizione. Riduce il tempo di elaborazione e migliora la precisione.</string>
+    <string name="vad_description">Taglia i silenzi prima della trascrizione. Quasi sempre più veloce; l\'effetto sull\'accuratezza dipende dal modello.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">Prompt predefinito</string>

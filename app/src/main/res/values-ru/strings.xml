@@ -554,7 +554,7 @@
     <string name="summarize_status">Резюмирую с помощью ИИ…</string>
     <string name="summary_default_prompt">Сделай краткое содержание этой расшифровки в 2-3 предложениях, на языке расшифровки. Сохрани имена и числа. Выведи только краткое содержание.</string>
     <string name="vad_title">Удаление тишины (VAD)</string>
-    <string name="vad_description">Удалять беззвучные участки из голосовых сообщений перед распознаванием. Сокращает время обработки и повышает точность.</string>
+    <string name="vad_description">Вырезает беззвучные участки перед распознаванием. Почти всегда быстрее; влияние на точность зависит от модели.</string>
     <string name="progressive_title">Прогрессивный показ</string>
     <string name="progressive_description">Показывать текст по мере распознавания, не дожидаясь окончания записи</string>
     <string name="early_preview_title">Ранний предпросмотр</string>

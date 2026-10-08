@@ -574,7 +574,7 @@
     <string name="summarize_status">Резюмування зі ШІ…</string>
     <string name="summary_default_prompt">Зроби короткий виклад цієї розшифровки у 2-3 реченнях, мовою розшифровки. Збережи імена та числа. Виведи лише короткий виклад.</string>
     <string name="vad_title">Прибирати тишу (VAD)</string>
-    <string name="vad_description">Видаляє тихі частини з голосових повідомлень перед розшифровкою. Зменшує час обробки та покращує точність.</string>
+    <string name="vad_description">Вирізає тихі частини перед розшифровкою. Майже завжди швидше; вплив на точність залежить від моделі.</string>
     <string name="progressive_title">Поступове відображення</string>
     <string name="progressive_description">Показує текст розшифровки після завершення кожного сегмента мовлення, замість очікування повного результату.</string>
     <string name="early_preview_title">Ранній перегляд</string>

@@ -533,7 +533,7 @@
     <string name="summarize_status">Wird mit KI zusammengefasst…</string>
     <string name="summary_default_prompt">Fasse diese Transkription in 2-3 Sätzen zusammen, in der Sprache der Transkription. Behalte Namen und Zahlen. Gib nur die Zusammenfassung aus.</string>
     <string name="vad_title">Stille entfernen (VAD)</string>
-    <string name="vad_description">Entfernt stille Abschnitte aus Sprachnachrichten vor der Transkription. Reduziert die Verarbeitungszeit und verbessert die Genauigkeit.</string>
+    <string name="vad_description">Entfernt stille Abschnitte vor der Transkription. Meist schneller; die Wirkung auf die Genauigkeit hängt vom Modell ab.</string>
     <string name="progressive_title">Progressive Anzeige</string>
     <string name="progressive_description">Zeigt den Text schon während der Transkription an, statt auf das Ende der Aufnahme zu warten.</string>
     <string name="early_preview_title">Frühe Vorschau</string>

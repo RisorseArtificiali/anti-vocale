@@ -564,7 +564,7 @@
     <string name="summarize_status">Yapay zekâ ile özetleniyor…</string>
     <string name="summary_default_prompt">Bu transkripti 2-3 cümleyle, transkriptin dilinde özetle. İsimleri ve sayıları koru. Sadece özeti yaz.</string>
     <string name="vad_title">Sessizliği Kırp (VAD)</string>
-    <string name="vad_description">Metin çıkarmadan önce sesli mesajlardaki sessiz kısımları kaldırır. İşleme süresini azaltır ve doğruluğu artırır.</string>
+    <string name="vad_description">Metin çıkarmadan önce sessiz bölümleri keser. Genellikle daha hızlıdır; doğruluk üzerindeki etkisi modele bağlıdır.</string>
     <string name="progressive_title">Aşamalı Görüntüleme</string>
     <string name="progressive_description">Kaydın bitmesini beklemeden, metin çıkarma ilerledikçe metni gösterir.</string>
     <string name="early_preview_title">Erken Önizleme</string>

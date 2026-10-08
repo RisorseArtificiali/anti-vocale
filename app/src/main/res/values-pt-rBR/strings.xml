@@ -480,7 +480,7 @@
     <string name="summarize_status">Resumindo com IA…</string>
     <string name="summary_default_prompt">Resuma esta transcrição em 2-3 frases, no idioma da transcrição. Mantenha nomes e números. Retorne apenas o resumo.</string>
     <string name="vad_title">Remover silêncios (VAD)</string>
-    <string name="vad_description">Remove trechos de silêncio das mensagens de voz antes da transcrição. Reduz o tempo de processamento e melhora a precisão.</string>
+    <string name="vad_description">Remove os silêncios antes da transcrição. Quase sempre mais rápido; o efeito na precisão depende do modelo.</string>
     <string name="progressive_title">Exibição progressiva</string>
     <string name="progressive_description">Mostra o texto conforme a transcrição avança, sem esperar o fim da gravação.</string>
     <string name="early_preview_title">Prévia antecipada</string>

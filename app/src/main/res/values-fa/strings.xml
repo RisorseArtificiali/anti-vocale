@@ -552,7 +552,7 @@
     <string name="summarize_status">در حال خلاصه‌سازی با هوش مصنوعی…</string>
     <string name="summary_default_prompt">این رونویسی را در 2 تا 3 جمله، به زبان خودِ رونویسی خلاصه کنید. نام‌ها و اعداد را حفظ کنید. فقط خلاصه را برگردانید.</string>
     <string name="vad_title">حذف سکوت (VAD)</string>
-    <string name="vad_description">بخش‌های ساکت پیام‌های صوتی را پیش از رونویسی حذف می‌کند. زمان پردازش را کم و دقت را بهتر می‌کند.</string>
+    <string name="vad_description">بخش‌های ساکت را پیش از رونویسی برمی‌دارد. تقریباً همیشه سریع‌تر؛ اثر آن بر دقت به مدل بستگی دارد.</string>
 
     <!-- Settings Tab - Default Prompt -->
     <string name="default_prompt_title">دستور پیش‌فرض</string>

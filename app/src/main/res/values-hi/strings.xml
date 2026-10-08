@@ -532,7 +532,7 @@
     <string name="summarize_status">AI से सारांश बन रहा है…</string>
     <string name="summary_default_prompt">इस ट्रांसक्रिप्शन का सारांश 2-3 वाक्यों में दें, ट्रांसक्रिप्शन की भाषा में। नाम और संख्याएँ बनाए रखें। केवल सारांश ही लिखें।</string>
     <string name="vad_title">मौन हटाएं (VAD)</string>
-    <string name="vad_description">ट्रांसक्रिप्शन से पहले वॉइस मैसेज के ख़ामोश हिस्से हटाएं। प्रोसेसिंग समय घटता है और सटीकता बेहतर होती है।</string>
+    <string name="vad_description">ट्रांसक्रिप्शन से पहले ख़ामोश हिस्से काटता है। लगभग हमेशा तेज़; सटीकता पर असर मॉडल पर निर्भर करता है।</string>
     <string name="progressive_title">प्रगतिशील डिस्प्ले</string>
     <string name="progressive_description">रिकॉर्डिंग खत्म होने का इंतज़ार किए बिना, ट्रांसक्रिप्शन के साथ-साथ टेक्स्ट दिखाएं।</string>
     <string name="early_preview_title">शीघ्र पूर्वावलोकन</string>

@@ -565,7 +565,7 @@
     <string name="summarize_status">מסכם עם AI…</string>
     <string name="summary_default_prompt">סכם את התמלול הזה בשניים עד שלושה משפטים, בשפת התמליל. שמור על שמות ומספרים. החזר רק את הסיכום.</string>
     <string name="vad_title">הסרת שקט (VAD)</string>
-    <string name="vad_description">מסיר קטעי שקט מהודעות קוליות לפני התמלול. מקצר את זמן העיבוד ומשפר את הדיוק.</string>
+    <string name="vad_description">חותך קטעי שקט לפני התמלול. כמעט תמיד מהיר יותר; ההשפעה על הדיוק תלויה במודל.</string>
     <string name="progressive_title">הצגה מדורגת</string>
     <string name="progressive_description">מציג טקסט בזמן שהתמלול מתקדם, במקום לחכות שההקלטה תסתיים.</string>
     <string name="early_preview_title">תצוגה מקדימה מוקדמת</string>
