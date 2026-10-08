@@ -576,6 +576,14 @@ class SettingsViewModel @Inject constructor(
             initialValue = PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED
         )
 
+    /** TASK-785: the Open Transcribe provider gate. */
+    val openTranscribeEnabled: StateFlow<Boolean> = preferencesManager.openTranscribeEnabled
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED
+        )
+
     /** TASK-735: the voice-note identity listener's app-level gate. */
     val voiceNoteIdentityEnabled: StateFlow<Boolean> = preferencesManager.voiceNoteIdentityEnabled
         .stateIn(
@@ -587,6 +595,20 @@ class SettingsViewModel @Inject constructor(
     fun saveExternalAutomationEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveExternalAutomationEnabled(enabled)
+        }
+    }
+
+    /**
+     * TASK-785: the preference write and the component flip are one action:
+     * the manifest service is the picker-facing surface, and leaving it
+     * stale until the next process start would keep the app listed (or
+     * missing) in client provider pickers against the user's choice.
+     */
+    fun saveOpenTranscribeEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            preferencesManager.saveOpenTranscribeEnabled(enabled)
+            com.antivocale.app.service.OpenTranscribeComponentSync
+                .setEnabled(getApplication(), enabled)
         }
     }
 

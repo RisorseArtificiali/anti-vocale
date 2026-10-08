@@ -19,6 +19,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Api
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.FolderOpen
 import androidx.compose.material.icons.filled.Lan
@@ -78,6 +79,7 @@ fun AutomationSettingsScreen(
     onBack: () -> Unit,
 ) {
     val externalAutomationEnabled by viewModel.externalAutomationEnabled.collectAsStateWithLifecycle()
+    val openTranscribeEnabled by viewModel.openTranscribeEnabled.collectAsStateWithLifecycle()
     val remoteOffloadEnabled by viewModel.remoteOmnivoiceEnabled.collectAsStateWithLifecycle()
 
     val scrollState = rememberScrollState()
@@ -128,6 +130,20 @@ fun AutomationSettingsScreen(
             onShowToggle = {
                 toggleFocus.flashIn(scope, scrollState) { scrollContentRootY }
             },
+        )
+
+        // TASK-785 (GH #144): the Open Transcribe provider gate, the third
+        // external surface on this page. While off the bound service is
+        // disabled at the component level, so contract clients never list
+        // the app as a transcriber.
+        ToggleSettingCard(
+            icon = Icons.Default.Api,
+            title = stringResource(R.string.open_transcribe_title),
+            description = stringResource(R.string.open_transcribe_description),
+            checked = openTranscribeEnabled,
+            onCheckedChange = { enabled ->
+                viewModel.saveOpenTranscribeEnabled(enabled)
+            }
         )
 
         // TASK-681: LAN offload (experimental); the supporting text IS

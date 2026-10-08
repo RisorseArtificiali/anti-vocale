@@ -165,6 +165,9 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+        // AGP 9 ships AIDL off by default; the Open Transcribe contract
+        // (TASK-785) is the first AIDL surface in the app.
+        aidl = true
     }
 
     packaging {

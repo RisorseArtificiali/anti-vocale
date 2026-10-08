@@ -289,6 +289,9 @@
     <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
     <string name="external_automation_title">אוטומציה חיצונית (Tasker)</string>
     <string name="external_automation_description">מאפשר לאפליקציות אחרות להתחיל תמלול דרך API האוטומציה (למשל Tasker). כבוי כברירת מחדל.</string>
+    <string name="open_transcribe_title">‏API של Open Transcribe (ניסיוני)‏</string>
+    <string name="open_transcribe_description">מאפשר לאפליקציות אחרות, כמו Forkgram, להשתמש ב-Anti-Vocale כמתמלל לא מקוון. כבוי כברירת מחדל.</string>
+    <string name="opentranscribe_notification_text">תמלול אודיו עבור אפליקציה אחרת</string>
     <string name="external_automation_disabled">אוטומציה חיצונית כבויה. הפעל אותה בהגדרות > מתקדם > אוטומציה חיצונית.</string>
     <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
     <string name="automation_guide_title">מדריך אוטומציה</string>

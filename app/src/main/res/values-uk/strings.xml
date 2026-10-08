@@ -296,6 +296,9 @@
     <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
     <string name="external_automation_title">Зовнішня автоматизація (Tasker)</string>
     <string name="external_automation_description">Дозволяє іншим додаткам запускати транскрипцію через API автоматизації (наприклад, Tasker). Типово вимкнено.</string>
+    <string name="open_transcribe_title">API Open Transcribe (експериментально)</string>
+    <string name="open_transcribe_description">Дозволяє іншим застосункам, як-от Forkgram, використовувати Anti-Vocale як офлайн-розшифрувальник. Типово вимкнено.</string>
+    <string name="opentranscribe_notification_text">Розшифровка звуку для іншого застосунку</string>
     <string name="external_automation_disabled">Зовнішня автоматизація вимкнена. Увімкніть її в розділі Налаштування > Розширені > Зовнішня автоматизація.</string>
     <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
     <string name="automation_guide_title">Посібник з автоматизації</string>

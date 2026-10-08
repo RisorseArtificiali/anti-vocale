@@ -293,6 +293,10 @@
     <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
     <string name="external_automation_title">External automation (Tasker)</string>
     <string name="external_automation_description">Lets other apps start transcriptions through the automation API (e.g. Tasker). Off by default.</string>
+    <!-- TASK-785: the Open Transcribe provider toggle, beside the automation gate. -->
+    <string name="open_transcribe_title">Open Transcribe API (experimental)</string>
+    <string name="open_transcribe_description">Let other apps, like Forkgram, use Anti-Vocale as their offline transcriber. Off by default.</string>
+    <string name="opentranscribe_notification_text">Transcribing audio for another app</string>
     <string name="external_automation_disabled">External automation is disabled. Enable it in Settings > Advanced > External automation.</string>
     <!-- TASK-275: the Automation guide card (Settings > Advanced). The
          Tasker profile XML export was evaluated and rejected for v1: the

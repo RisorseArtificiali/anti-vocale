@@ -32,6 +32,7 @@
              this block if the false errors are gone. -->
         <service android:name=".service.InferenceService" android:foregroundServiceType="specialUse" tools:node="merge" tools:replace="android:foregroundServiceType" />
         <service android:name=".service.ExtractionService" android:foregroundServiceType="specialUse" tools:node="merge" tools:replace="android:foregroundServiceType" />
+        <service android:name=".service.OpenTranscribeProviderService" android:foregroundServiceType="specialUse" tools:node="merge" tools:replace="android:foregroundServiceType" />
 
     </application>
 

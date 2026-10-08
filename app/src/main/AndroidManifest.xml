@@ -629,6 +629,25 @@
                 android:value="model_download" />
         </service>
 
+        <!-- TASK-785 (GH #144): the Open Transcribe provider. Ships DISABLED
+             like the notification-listener above: until the user turns the
+             in-app toggle on, the component is invisible to client
+             queryIntentServices sweeps (Forkgram and friends), so the app
+             never appears in their transcriber pickers uninvited. The toggle
+             and the startup sync flip this component (OpenTranscribeComponentSync). -->
+        <service
+            android:name=".service.OpenTranscribeProviderService"
+            android:enabled="false"
+            android:exported="true"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="ai_inference" />
+            <intent-filter>
+                <action android:name="org.opentranscribe.api.ITranscriptionService" />
+            </intent-filter>
+        </service>
+
         <!-- Per-app language service for backward compatibility (API 21-32) -->
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"

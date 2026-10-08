@@ -287,6 +287,9 @@
     <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
     <string name="external_automation_title">اتوماسیون خارجی (Tasker)</string>
     <string name="external_automation_description">به دیگر برنامه‌ها اجازه می‌دهد از طریق API اتوماسیون (مثلاً Tasker) رونویسی را شروع کنند. به طور پیش‌فرض خاموش است.</string>
+    <string name="open_transcribe_title">رابط Open Transcribe (آزمایشی)</string>
+    <string name="open_transcribe_description">به دیگر برنامه‌ها مانند فورکگرم اجازه می‌دهد از Anti-Vocale به عنوان رونویسی‌کننده آفلاین استفاده کنند. به طور پیش‌فرض خاموش است.</string>
+    <string name="opentranscribe_notification_text">رونویسی صوت برای برنامهٔ دیگر</string>
     <string name="external_automation_disabled">اتوماسیون خارجی خاموش است. آن را در تنظیمات > پیشرفته > اتوماسیون خارجی روشن کنید.</string>
     <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
     <string name="automation_guide_title">راهنمای اتوماسیون</string>

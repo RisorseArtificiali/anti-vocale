@@ -257,6 +257,16 @@ class BridgeApplication : Application(), Configuration.Provider {
             // after the alias sync so the components the shortcut intents launch
             // are already in their persisted state.
             shareShortcutManager.refresh()
+            // TASK-785: the Open Transcribe provider component follows its
+            // preference the same way (disabled by default; the Settings
+            // toggle also flips it directly so the change lands without a
+            // process restart).
+            runCatching {
+                com.antivocale.app.service.OpenTranscribeComponentSync
+                    .syncFromPreference(this@BridgeApplication, preferencesManager)
+            }.onFailure { e ->
+                android.util.Log.w("BridgeApplication", "Open Transcribe component sync failed", e)
+            }
         }
         migrateLanguagePreference()
         installGlobalExceptionHandler()

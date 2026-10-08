@@ -19,7 +19,13 @@ import org.junit.Test
  */
 class ManifestFgsMirrorTest {
 
-    private val services = listOf(".service.InferenceService", ".service.ExtractionService")
+    private val services = listOf(
+        ".service.InferenceService",
+        ".service.ExtractionService",
+        // TASK-785: the Open Transcribe provider calls startForeground on a
+        // bound service, so its type rides the same overlay/lint fence.
+        ".service.OpenTranscribeProviderService",
+    )
     private val overlays = listOf(
         "debug build-type overlay" to "src/debug/AndroidManifest.xml",
         "playStore flavor manifest" to "src/playStore/AndroidManifest.xml",

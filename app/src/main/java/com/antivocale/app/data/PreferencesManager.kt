@@ -156,6 +156,13 @@ interface PreferencesManager {
     /** TASK-274: consent gate for the exported automation receivers (Tasker surface). */
     val externalAutomationEnabled: Flow<Boolean>
 
+    /**
+     * TASK-785 (GH #144): consent gate for the Open Transcribe provider
+     * service. While off, the service component stays disabled (invisible
+     * to client provider sweeps) and onBind refuses work.
+     */
+    val openTranscribeEnabled: Flow<Boolean>
+
     /** TASK-735: the identity listener's app-level gate; the privacy contract lives on the listener. */
     val voiceNoteIdentityEnabled: Flow<Boolean>
 
@@ -269,6 +276,9 @@ interface PreferencesManager {
 
     /** TASK-274: see [externalAutomationEnabled]. */
     suspend fun saveExternalAutomationEnabled(enabled: Boolean)
+
+    /** TASK-785: see [openTranscribeEnabled]. */
+    suspend fun saveOpenTranscribeEnabled(enabled: Boolean)
 
     /** TASK-735: see [voiceNoteIdentityEnabled]. */
     suspend fun saveVoiceNoteIdentityEnabled(enabled: Boolean)
@@ -400,6 +410,9 @@ interface PreferencesManager {
 
         /** TASK-735: the identity listener ships off; both gates must be on. */
         const val DEFAULT_VOICE_NOTE_IDENTITY_ENABLED = false
+        /** TASK-785: the Open Transcribe provider ships off; on, it is an
+         *  experimental external surface for contract clients. */
+        const val DEFAULT_OPEN_TRANSCRIBE_ENABLED = false
         /** TASK-681: LAN offload is opt-in; off, no audio ever leaves the device. */
         const val DEFAULT_REMOTE_OMNIVOICE_ENABLED = false
         /** TASK-670: speaker identities are off until the maintainer signs the

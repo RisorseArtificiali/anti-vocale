@@ -290,6 +290,9 @@
     <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
     <string name="external_automation_title">Harici otomasyon (Tasker)</string>
     <string name="external_automation_description">Diğer uygulamaların otomasyon API\'si (örnek: Tasker) aracılığıyla transkripsiyon başlatmasına izin verir. Varsayılan olarak kapalıdır.</string>
+    <string name="open_transcribe_title">Open Transcribe API (deneysel)</string>
+    <string name="open_transcribe_description">Forkgram gibi diğer uygulamaların Anti-Vocale\'i çevrimdışı transkript aracı olarak kullanmasına izin verir. Varsayılan olarak kapalıdır.</string>
+    <string name="opentranscribe_notification_text">Başka bir uygulama için ses transkripsiyonu</string>
     <string name="external_automation_disabled">Harici otomasyon devre dışı. Ayarlar > Gelişmiş > Harici otomasyon bölümünden etkinleştirin.</string>
     <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
     <string name="automation_guide_title">Otomasyon kılavuzu</string>

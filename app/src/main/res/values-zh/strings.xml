@@ -246,6 +246,9 @@
     <string name="memory_protection_desc">当空闲内存看起来不足时阻止加载模型，以避免应用静默崩溃。</string>
     <string name="external_automation_title">外部自动化（Tasker）</string>
     <string name="external_automation_description">允许其他应用通过自动化 API（例如 Tasker）启动转写。默认关闭。</string>
+    <string name="open_transcribe_title">Open Transcribe API（实验性）</string>
+    <string name="open_transcribe_description">允许其他应用（如 Forkgram）将 Anti-Vocale 用作离线转写器。默认关闭。</string>
+    <string name="opentranscribe_notification_text">正在为其他应用转写音频</string>
     <string name="external_automation_disabled">外部自动化已禁用。请在设置 → 高级 → 外部自动化中启用。</string>
     <string name="automation_guide_title">自动化指南</string>
     <string name="automation_guide_description">通过向应用发送广播，从 Tasker 或 adb 启动转写。一切都在本地运行。</string>

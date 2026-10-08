@@ -60,6 +60,8 @@ internal class FakePreferencesManager : PreferencesManager {
     val _memoryProtection = MutableStateFlow(false)
     // TASK-274: consent gate for the exported automation receivers.
     val _externalAutomationEnabled = MutableStateFlow(PreferencesManager.DEFAULT_EXTERNAL_AUTOMATION_ENABLED)
+    // TASK-785: consent gate for the Open Transcribe provider service.
+    val _openTranscribeEnabled = MutableStateFlow(PreferencesManager.DEFAULT_OPEN_TRANSCRIBE_ENABLED)
     val _voiceNoteIdentityEnabled = MutableStateFlow(PreferencesManager.DEFAULT_VOICE_NOTE_IDENTITY_ENABLED)
     // TASK-681: the LAN-offload (OmniVoice) gate and its config triple.
     val _remoteOmnivoiceEnabled = MutableStateFlow(PreferencesManager.DEFAULT_REMOTE_OMNIVOICE_ENABLED)
@@ -126,6 +128,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override val showRetranscribeButton: Flow<Boolean> get() = _showRetranscribeButton
     override val memoryProtection: Flow<Boolean> get() = _memoryProtection
     override val externalAutomationEnabled: Flow<Boolean> get() = _externalAutomationEnabled
+    override val openTranscribeEnabled: Flow<Boolean> get() = _openTranscribeEnabled
     override val voiceNoteIdentityEnabled: Flow<Boolean> get() = _voiceNoteIdentityEnabled
     override val remoteOmnivoiceEnabled: Flow<Boolean> get() = _remoteOmnivoiceEnabled
     override val remoteOmnivoiceEndpoint: Flow<String> get() = _remoteOmnivoiceEndpoint
@@ -195,6 +198,7 @@ internal class FakePreferencesManager : PreferencesManager {
     override suspend fun saveShowRetranscribeButton(enabled: Boolean) { _showRetranscribeButton.value = enabled }
     override suspend fun saveMemoryProtection(enabled: Boolean) { _memoryProtection.value = enabled }
     override suspend fun saveExternalAutomationEnabled(enabled: Boolean) { _externalAutomationEnabled.value = enabled }
+    override suspend fun saveOpenTranscribeEnabled(enabled: Boolean) { _openTranscribeEnabled.value = enabled }
     override suspend fun saveVoiceNoteIdentityEnabled(enabled: Boolean) { _voiceNoteIdentityEnabled.value = enabled }
     override suspend fun saveCompactResultActions(enabled: Boolean) { _compactResultActions.value = enabled }
     override suspend fun saveLanguageChipEnabled(enabled: Boolean) { _languageChipEnabled.value = enabled }

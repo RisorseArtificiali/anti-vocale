@@ -268,6 +268,9 @@
     <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
     <string name="external_automation_title">बाहरी ऑटोमेशन (Tasker)</string>
     <string name="external_automation_description">दूसरे ऐप्स को ऑटोमेशन API (जैसे Tasker) से ट्रांसक्रिप्शन शुरू करने देता है। डिफ़ॉल्ट रूप से बंद है।</string>
+    <string name="open_transcribe_title">Open Transcribe API (प्रयोगात्मक)</string>
+    <string name="open_transcribe_description">Forkgram जैसे अन्य ऐप्स को Anti-Vocale को ऑफ़लाइन ट्रांसक्राइबर के रूप में उपयोग करने देता है। डिफ़ॉल्ट रूप से बंद है।</string>
+    <string name="opentranscribe_notification_text">दूसरे ऐप के लिए ऑडियो ट्रांसक्रिप्शन</string>
     <string name="external_automation_disabled">बाहरी ऑटोमेशन बंद है। इसे सेटिंग > अतिरिक्त सेटिंग > बाहरी ऑटोमेशन में चालू करें।</string>
     <!-- TASK-275: the Automation guide card (Settings > Advanced). -->
     <string name="automation_guide_title">ऑटोमेशन गाइड</string>
