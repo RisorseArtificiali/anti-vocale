@@ -104,6 +104,17 @@ class BridgeApplication : Application(), Configuration.Provider {
                 preferencesManager.saveExternalMigrationDone(false)
             }
         }
+        // Road test 2026-10-08: backfill of name-derived languages for
+        // records imported before the derivation existed (paraformer-zh and
+        // friends). Runs at EVERY app start, idempotently (writes only when
+        // something changes): import paths that still pass no languages
+        // rely on the repeated pass. Must stay OUTSIDE the identity
+        // collector above: that collect never completes, so code placed
+        // after it inside the same coroutine never runs (code review).
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.IO) {
+            runCatching { externalModelStore.backfillDerivedLanguages() }
+                .onFailure { android.util.Log.w("BridgeApplication", "language backfill failed", it) }
+        }
         // TASK-736 hardening: the identity listener's COMPONENT follows the
         // preference (ships disabled; the toggle, TEST_SPI, or any other
         // writer flips it here, one owner). distinctUntilChanged: the flow

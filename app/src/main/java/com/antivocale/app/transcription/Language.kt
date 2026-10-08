@@ -21,6 +21,43 @@ object Language {
     )
 
     /**
+     * Road test 2026-10-08 (maintainer direction): the languages a repo-URL
+     * import supports, derived from the model/repo NAME when nothing else
+     * declares them. Whole-token matches only, against the filter's code
+     * set and each code's English display name: "paraformer-zh" -> zh,
+     * "moonshine-base-uk" -> uk, "whisper-small-english" -> en. Substrings
+     * never match ("decoder" is not de); unknown names yield an empty list
+     * and the card honestly shows no languages.
+     */
+    private val filterCodes: Set<String> by lazy { FILTER_ENTRIES.toSet() }
+
+    private val codeByEnglishName: Map<String, String> by lazy {
+        FILTER_ENTRIES.associateBy {
+            java.util.Locale.forLanguageTag(it).getDisplayLanguage(java.util.Locale.ENGLISH).lowercase()
+        }
+    }
+
+    /**
+     * Two-letter codes that are ordinary English words: matched as bare
+     * tokens they fire on names like "hi-res" or "asr-no-vad" and pin a
+     * language the model does not speak (code review F3). These languages
+     * still derive through their English names ("hindi", "norwegian").
+     */
+    private val wordlikeCodes: Set<String> = setOf("be", "hi", "id", "mr", "no")
+
+    fun deriveLanguageHintsFromName(name: String): List<String> {
+        val tokens = name.lowercase().split('_', '-', '.', ' ', '+')
+        val found = LinkedHashSet<String>()
+        for (token in tokens) {
+            when {
+                token in filterCodes && token !in wordlikeCodes -> found.add(token)
+                codeByEnglishName.containsKey(token) -> found.add(codeByEnglishName.getValue(token))
+            }
+        }
+        return found.toList()
+    }
+
+    /**
      * TASK-685 (GH #112): the first-run favorite seed. The interface
      * language becomes the initial Models-filter favorite when the filter
      * itself offers it: [FILTER_ENTRIES] is the exact set the dropdown

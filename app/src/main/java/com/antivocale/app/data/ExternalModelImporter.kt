@@ -4,6 +4,8 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import androidx.documentfile.provider.DocumentFile
+
+import com.antivocale.app.transcription.Language
 import com.antivocale.app.data.download.DownloadConfig
 import com.antivocale.app.data.download.DownloadedModelIntegrity
 import com.antivocale.app.data.download.details
@@ -568,6 +570,14 @@ class ExternalModelImporter(
         // copy instead (otherwise the re-import would "succeed" while leaving the
         // record pointing at nothing, and the fresh copy would be deleted).
         val sizeBytes = targetDir.walkBottomUp().filter { it.isFile }.sumOf { it.length() }
+        // Road test 2026-10-08: EVERY import path (repo URL, folder, entry
+        // JSON with no languages field) derives its languages from the
+        // record's own display name when nothing declares them; one choke
+        // point, on the same trimmed name the record carries (code review:
+        // wiring only the repo branch left folder imports of the same model
+        // forever blank).
+        val effectiveLanguages =
+            languages.ifEmpty { Language.deriveLanguageHintsFromName(displayName.trim()) }
         val existing = store.records().firstOrNull { it.files == pins }
         if (existing != null) {
             val existingDirValid = File(existing.dir).exists()
@@ -578,7 +588,7 @@ class ExternalModelImporter(
                 displayName = displayName.trim(),
                 family = family,
                 modelType = modelType,
-                languages = languages,
+                languages = effectiveLanguages,
                 options = options,
                 // Refresh the URL only when the re-import CARRIES one: a folder
                 // re-import over a URL-imported record must not erase its
@@ -598,7 +608,7 @@ class ExternalModelImporter(
             dir = targetDir.absolutePath,
             family = family,
             modelType = modelType,
-            languages = languages,
+            languages = effectiveLanguages,
             source = source,
             sourceUrl = sourceUrl,
             options = options,

@@ -366,8 +366,6 @@
     <string name="model_demoted_notice">अब यह मॉडल अपने आप नहीं चुना जाता: भाषण मौजूद होने पर भी इसने कोई टेक्स्ट नहीं बनाया। इसे फिर से चुनकर इसे एक और मौका दें।</string>
     <string name="delete">मिटाएं</string>
     <string name="variant_more_actions">और कार्य</string>
-    <string name="external_languages_hint">भाषा कोड, कॉमा से अलग (जैसे it, en)</string>
-    <string name="external_edit_languages">भाषाएँ संपादित करें</string>
     <string name="download">डाउनलोड करें</string>
     <string name="model_update_button">अपडेट करें</string>
     <string name="gemma_update_confirm_title">%1$s अपडेट करें</string>

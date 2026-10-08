@@ -388,8 +388,6 @@
     <string name="model_demoted_notice">به‌طور خودکار انتخاب نمی‌شود: این مدل با وجود گفتار متن تولید نکرد. دوباره انتخابش کنید تا فرصت دیگری به آن بدهید.</string>
     <string name="delete">حذف</string>
     <string name="variant_more_actions">اقدامات بیشتر</string>
-    <string name="external_languages_hint">کدهای زبان، با ویرگول جدا کنید (مثلاً it, en)</string>
-    <string name="external_edit_languages">ویرایش زبان‌ها</string>
     <string name="download">دانلود</string>
     <string name="model_update_button">به‌روزرسانی</string>
     <string name="gemma_update_confirm_title">به‌روزرسانی %1$s</string>

@@ -33,6 +33,27 @@ class ExternalModelStore(
 
     suspend fun records(): List<ExternalModelRecord> = recordsFlow.first()
 
+    /**
+     * Road test 2026-10-08: records imported before the name-derived
+     * languages existed carry none. Runs at EVERY app start, idempotently
+     * (a record with languages already set is untouched; nothing is written
+     * while nothing changes). The every-start pass is load-bearing: import
+     * paths that still pass no languages, and records whose names derive
+     * nothing today, are picked up as the derivation improves. Never called
+     * from [records], whose callers include [mutate]: hooking it there
+     * deadlocked the first derivable record under the mutation mutex.
+     */
+    suspend fun backfillDerivedLanguages() {
+        val updates = recordsFlow.first().filter { it.languages.isEmpty() }
+            .mapNotNull { record ->
+                com.antivocale.app.transcription.Language.deriveLanguageHintsFromName(record.displayName)
+                    .takeIf { it.isNotEmpty() }
+                    ?.let { derived -> record.id to derived }
+            }.toMap()
+        if (updates.isEmpty()) return
+        mutate { list -> list.map { updates[it.id]?.let { langs -> it.copy(languages = langs) } ?: it } }
+    }
+
     /** Loadable records only (see [validRecordsFlow]). */
     suspend fun validRecords(): List<ExternalModelRecord> =
         records().filter { isLoadable(it) }
@@ -45,12 +66,6 @@ class ExternalModelStore(
 
     suspend fun add(record: ExternalModelRecord) = mutate { it + record }
 
-    /** 2026-10-08 road test: the user can set/fix the languages of an
-     *  imported record (repo-URL imports and legacy records carry none).
-     *  Targeted like [updateDir]: concurrent field edits survive. */
-    suspend fun updateLanguages(id: String, languages: List<String>) = mutate { list ->
-        list.map { if (it.id == id) it.copy(languages = languages) else it }
-    }
     suspend fun update(record: ExternalModelRecord) = mutate { list -> list.map { if (it.id == record.id) record else it } }
 
     /**

@@ -585,8 +585,6 @@ private fun MenuEntry(
 @Composable
 internal fun VariantOverflowMenu(
     onBenchmarkClick: (() -> Unit)? = null,
-    /** External cards only (2026-10-08): opens the record's languages editor. */
-    onEditLanguagesClick: (() -> Unit)? = null,
     onExportClick: (() -> Unit)? = null,
     onDeleteClick: () -> Unit,
 ) {
@@ -606,11 +604,6 @@ internal fun VariantOverflowMenu(
             onBenchmarkClick?.let { benchmark ->
                 MenuEntry(R.string.benchmark_button, Icons.Default.Speed) {
                     expanded = false; benchmark()
-                }
-            }
-            onEditLanguagesClick?.let { editLanguages ->
-                MenuEntry(R.string.external_edit_languages, Icons.Default.Translate) {
-                    expanded = false; editLanguages()
                 }
             }
             onExportClick?.let { export ->

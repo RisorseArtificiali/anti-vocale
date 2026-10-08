@@ -394,8 +394,6 @@
     <string name="model_demoted_notice">לא נבחר אוטומטית: המודל הזה לא הניב טקסט למרות שהיה דיבור. בחרו בו שוב כדי לתת לו הזדמנות נוספת.</string>
     <string name="delete">מחיקה</string>
     <string name="variant_more_actions">פעולות נוספות</string>
-    <string name="external_languages_hint">קודי שפה, מופרדים בפסיקים (למשל it, en)</string>
-    <string name="external_edit_languages">עריכת שפות</string>
     <string name="download">הורדה</string>
     <string name="model_update_button">עדכון</string>
     <string name="gemma_update_confirm_title">עדכון %1$s</string>

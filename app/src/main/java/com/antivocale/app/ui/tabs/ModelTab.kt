@@ -2180,9 +2180,6 @@ private fun ExternalModelsSection(
                 // "directory not found" reason.)
                 onBenchmark = onBenchmark?.takeIf { !record.quarantined }
                     ?.let { cb -> { cb(record) } },
-                onEditLanguages = { langs ->
-                    viewModel.updateExternalModelLanguages(record, langs)
-                },
             )
         }
 
@@ -2444,47 +2441,7 @@ private fun ExternalModelCard(
     onUse: () -> Unit,
     onDelete: () -> Unit,
     onBenchmark: (() -> Unit)? = null,
-    onEditLanguages: (List<String>) -> Unit = {},
 ) {
-    // 2026-10-08: the languages editor is card-local state (open flag +
-    // draft text); the record update goes through the viewModel callback.
-    var languagesEditorOpen by remember { mutableStateOf(false) }
-    var languagesDraft by remember(record.id, record.languages) {
-        mutableStateOf(record.languages.joinToString(", "))
-    }
-    if (languagesEditorOpen) {
-        AlertDialog(
-            onDismissRequest = { languagesEditorOpen = false },
-            title = { Text(stringResource(R.string.external_edit_languages)) },
-            text = {
-                OutlinedTextField(
-                    value = languagesDraft,
-                    onValueChange = { languagesDraft = it },
-                    singleLine = true,
-                    label = { Text(stringResource(R.string.external_languages_hint)) },
-                )
-            },
-            confirmButton = {
-                androidx.compose.material3.TextButton(onClick = {
-                    // Codes feed engine config (Whisper forced decoding,
-                    // SenseVoice language, the Settings offered set): they
-                    // must be single lowercase tokens, deduped in order.
-                    onEditLanguages(
-                        languagesDraft.split(',', ';', ' ', '\t', '\n')
-                            .map { it.trim().lowercase() }
-                            .filter { it.isNotEmpty() }
-                            .distinct()
-                    )
-                    languagesEditorOpen = false
-                }) { Text(stringResource(R.string.save)) }
-            },
-            dismissButton = {
-                TextButton(onClick = { languagesEditorOpen = false }) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-            },
-        )
-    }
     // Same container, padding, and button-row pattern as ModelVariantCard:
     // surface color, 12dp inner padding, buttons aligned End with 8dp spacing.
     Card(
@@ -2520,7 +2477,12 @@ private fun ExternalModelCard(
                             // then the family, then languages when known.
                             (listOf(com.antivocale.app.util.formatFileSize(record.sizeBytes),
                                 record.typeLabel) +
-                                listOfNotNull(record.languages.joinToString(", ").takeIf { it.isNotEmpty() }))
+                                listOfNotNull(record.languages.joinToString(", ") { code ->
+                                    // Display names like every other language
+                                    // surface (the filter dropdown; code
+                                    // review F7).
+                                    com.antivocale.app.util.LanguageNames.nativeLanguageName(code)
+                                }.takeIf { record.languages.isNotEmpty() }))
                                 .joinToString(", "),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -2565,7 +2527,6 @@ private fun ExternalModelCard(
                 }
                 VariantOverflowMenu(
                     onBenchmarkClick = onBenchmark,
-                    onEditLanguagesClick = { languagesEditorOpen = true },
                     onDeleteClick = onDelete,
                 )
             }
