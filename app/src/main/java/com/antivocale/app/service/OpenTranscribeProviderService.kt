@@ -193,6 +193,19 @@ class OpenTranscribeProviderService : Service() {
                                 isMemoryFailure = false, isDecodeError = true)
                             return@withLock
                         }
+                        // TASK-526 lesson (the SubtitleChoiceTimeoutWorker
+                        // precedent): processRequest's terminal writes are
+                        // row-conditional, and a run without a QUEUED row
+                        // leaves the partial-transcription seed uncleared
+                        // (a false "was interrupted" offer on the next app
+                        // open). Create the row ourselves, like every
+                        // direct caller must.
+                        orchestrator.logQueued(
+                            taskId = taskId,
+                            requestType = REQUEST_TYPE_AUDIO,
+                            filePath = spoolFile.absolutePath,
+                            sourcePackageName = callingPackage,
+                        )
                         orchestrator.processRequest(
                             taskId = taskId,
                             requestType = REQUEST_TYPE_AUDIO,

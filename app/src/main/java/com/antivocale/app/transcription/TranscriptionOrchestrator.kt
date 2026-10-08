@@ -195,6 +195,22 @@ class TranscriptionOrchestrator @Inject constructor(
     private var lastPartialSaveMs: Long = 0L
 
     /**
+     * TASK-785: ONE engine, ONE run at a time, across every execution
+     * site. InferenceService serialized its own queue but nothing
+     * serialized the SITES against each other; the Open Transcribe
+     * provider (a bound service an external client can drive at any
+     * moment) is the first site that can genuinely overlap an in-app run,
+     * and two concurrent runs would interleave native decodes on one
+     * recognizer, double-count the memory ceilings and fight over the
+     * single partial-transcription seed. Existing callers never contend
+     * (each already serializes its own requests), so the lock is invisible
+     * to them; a request that arrives while another runs waits here,
+     * BEFORE its heartbeat span arms, so an idle wait never reads as a
+     * live run to the freezer classifier.
+     */
+    private val runMutex = Mutex()
+
+    /**
      * TASK-699 stage 2 (code-review F1/F2): whether THIS run has written a
      * seed. The run-level heartbeat ticks only when this is set, so a run
      * that never seeds (subtitle import/extract, text LLM) costs no ticks,
@@ -277,11 +293,13 @@ class TranscriptionOrchestrator @Inject constructor(
         // everything between, which the per-stretch chase kept missing. The
         // subtitle arms never seed (verified: no savePartial in their
         // scopes) so their stay inside the span is a no-op.
-        return withSeedHeartbeat {
-            processRequestInner(
-                taskId, requestType, prompt, filePath, source, sourcePackage,
-                backendOverride, languageOverride, trackIndex, queuePosition,
-                queueTotal, context, cacheDir, listener, coroutineScope)
+        return runMutex.withLock {
+            withSeedHeartbeat {
+                processRequestInner(
+                    taskId, requestType, prompt, filePath, source, sourcePackage,
+                    backendOverride, languageOverride, trackIndex, queuePosition,
+                    queueTotal, context, cacheDir, listener, coroutineScope)
+            }
         }
     }
 
