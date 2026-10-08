@@ -394,6 +394,8 @@
     <string name="model_demoted_notice">Otomatik olarak seçilmez: bu model konuşma varken metin üretmedi. Ona bir şans daha vermek için yeniden seçin.</string>
     <string name="delete">Sil</string>
     <string name="variant_more_actions">Diğer eylemler</string>
+    <string name="external_languages_hint">Dil kodları, virgülle ayrılmış (örn. it, en)</string>
+    <string name="external_edit_languages">Dilleri düzenle</string>
     <string name="download">İndir</string>
     <string name="model_update_button">Güncelle</string>
     <string name="gemma_update_confirm_title">%1$s güncelle</string>

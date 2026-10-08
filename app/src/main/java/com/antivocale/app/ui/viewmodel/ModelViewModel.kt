@@ -1803,7 +1803,18 @@ class ModelViewModel @Inject constructor(
         }
     }
 
-    /** Selects an imported model as the active transcription backend. */
+    /** 2026-10-08 road test: set/fix the languages shown on an imported
+     *  model's card (repo-URL imports and legacy records carry none). */
+    fun updateExternalModelLanguages(record: ExternalModelRecord, languages: List<String>) {
+        // Dispatchers.IO like the sibling deleteExternalModel: the store's
+        // JSON persist is disk I/O; a failed write must not crash the app
+        // (the dialog is already closed), so the error is contained.
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching { externalModelStore.updateLanguages(record.id, languages) }
+                .onFailure { Log.e(TAG, "failed to update languages for ${record.id}", it) }
+        }
+    }
+
     fun useExternalModel(record: ExternalModelRecord) {
         viewModelScope.launch { activateExternalModel(record) }
     }

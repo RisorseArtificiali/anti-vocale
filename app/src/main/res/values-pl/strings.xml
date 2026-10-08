@@ -400,6 +400,8 @@
     <string name="model_demoted_notice">Nie jest wybierany automatycznie: ten model nie wygenerował tekstu, choć była mowa. Wybierz go ponownie, aby dać mu jeszcze jedną szansę.</string>
     <string name="delete">Usuń</string>
     <string name="variant_more_actions">Więcej działań</string>
+    <string name="external_languages_hint">Kody języków, oddzielone przecinkami (np. it, en)</string>
+    <string name="external_edit_languages">Edytuj języki</string>
     <string name="download">Pobierz</string>
     <string name="model_update_button">Zaktualizuj</string>
     <string name="gemma_update_confirm_title">Zaktualizuj %1$s</string>

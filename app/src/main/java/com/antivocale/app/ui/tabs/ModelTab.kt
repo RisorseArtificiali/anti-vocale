@@ -894,6 +894,10 @@ fun ModelTab(
                     onSelectionChange = { externalImport = it; detectedExternalFamily = null },
                     onDeleteRequest = { externalToDelete = it },
                     onImportBundle = { bundleImportPicker.launch(arrayOf("application/zip")) },
+                    onBenchmark = { record ->
+                        benchmarkViewModel.startBenchmark(
+                            record.backendId, record.dir, record.displayName)
+                    },
                 )
 
                 if (ambiguousPick != null) {
@@ -1943,10 +1947,8 @@ private fun ExternalModelsSection(
     onDeleteRequest: (ExternalModelRecord) -> Unit,
     /** TASK-742: opens the bundle (.zip) import picker. */
     onImportBundle: () -> Unit = {},
-    /** 2026-10-08 road test: external cards get the kebab. Benchmark is NOT
-     *  offered yet: BenchmarkViewModel resolves only bundled-catalog backends,
-     *  so an external entry would open straight into the error state (the
-     *  support task is filed); the kebab carries Delete until then. */
+    /** 2026-10-08: benchmark rides the kebab (the BenchmarkViewModel now
+     *  has an external-record branch building ExternalConfig). */
     onBenchmark: ((ExternalModelRecord) -> Unit)? = null,
 ) {
     val records by viewModel.externalModels.collectAsState()
@@ -2172,7 +2174,13 @@ private fun ExternalModelsSection(
                 demoted = record.backendId in demotedBackendIds,
                 onUse = { viewModel.useExternalModel(record) },
                 onDelete = { onDeleteRequest(record) },
-                onBenchmark = onBenchmark?.let { cb -> { cb(record) } },
+                // A quarantined record or a deleted dir can never resolve a
+                // benchmark: hide the entry instead of erroring on tap.
+                onBenchmark = onBenchmark?.takeIf { !record.quarantined && java.io.File(record.dir).exists() }
+                    ?.let { cb -> { cb(record) } },
+                onEditLanguages = { langs ->
+                    viewModel.updateExternalModelLanguages(record, langs)
+                },
             )
         }
 
@@ -2434,7 +2442,47 @@ private fun ExternalModelCard(
     onUse: () -> Unit,
     onDelete: () -> Unit,
     onBenchmark: (() -> Unit)? = null,
+    onEditLanguages: (List<String>) -> Unit = {},
 ) {
+    // 2026-10-08: the languages editor is card-local state (open flag +
+    // draft text); the record update goes through the viewModel callback.
+    var languagesEditorOpen by remember { mutableStateOf(false) }
+    var languagesDraft by remember(record.id, record.languages) {
+        mutableStateOf(record.languages.joinToString(", "))
+    }
+    if (languagesEditorOpen) {
+        AlertDialog(
+            onDismissRequest = { languagesEditorOpen = false },
+            title = { Text(stringResource(R.string.external_edit_languages)) },
+            text = {
+                OutlinedTextField(
+                    value = languagesDraft,
+                    onValueChange = { languagesDraft = it },
+                    singleLine = true,
+                    label = { Text(stringResource(R.string.external_languages_hint)) },
+                )
+            },
+            confirmButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    // Codes feed engine config (Whisper forced decoding,
+                    // SenseVoice language, the Settings offered set): they
+                    // must be single lowercase tokens, deduped in order.
+                    onEditLanguages(
+                        languagesDraft.split(',', ';', ' ', '\t', '\n')
+                            .map { it.trim().lowercase() }
+                            .filter { it.isNotEmpty() }
+                            .distinct()
+                    )
+                    languagesEditorOpen = false
+                }) { Text(stringResource(R.string.save)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { languagesEditorOpen = false }) {
+                    Text(stringResource(android.R.string.cancel))
+                }
+            },
+        )
+    }
     // Same container, padding, and button-row pattern as ModelVariantCard:
     // surface color, 12dp inner padding, buttons aligned End with 8dp spacing.
     Card(
@@ -2503,20 +2551,21 @@ private fun ExternalModelCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
             ) {
                 if (!isActive) {
-                    // TASK-381: 48dp minimum touch target for icon-only button
+                    // TASK-381: 48dp minimum touch target for icon-only button.
+                    // 2026-10-08 road test: weight(1f) like the base cards' Use,
+                    // so the button shape matches across the two card families.
                     Button(
                         onClick = onUse,
-                        modifier = Modifier.heightIn(min = 48.dp)
+                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
                     ) {
                         Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
                     }
                 }
                 VariantOverflowMenu(
                     onBenchmarkClick = onBenchmark,
+                    onEditLanguagesClick = { languagesEditorOpen = true },
                     onDeleteClick = onDelete,
                 )
-                // (Benchmark joins this menu when the benchmark supports
-                // external records; see the 2026-10-08 note above.)
             }
 
             Spacer(modifier = Modifier.height(8.dp))

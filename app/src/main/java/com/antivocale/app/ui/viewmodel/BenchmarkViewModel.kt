@@ -32,6 +32,9 @@ class BenchmarkViewModel @Inject constructor(
     private val benchmarkManager: BenchmarkManager,
     private val backendManager: TranscriptionBackendManager,
     private val preferencesManager: PreferencesManager,
+    // 2026-10-08: the external-record benchmark branch resolves the record
+    // from the store the same way the orchestrator's load path does.
+    private val externalModelStore: com.antivocale.app.data.ExternalModelStore,
     // TASK-547: the phone-locale pin needs the DEVICE locale; the benchmark
     // must resolve it exactly like the orchestrator load path does.
     @dagger.hilt.android.qualifiers.ApplicationContext private val appContext: android.content.Context,
@@ -68,26 +71,52 @@ class BenchmarkViewModel @Inject constructor(
             val providerPref = preferencesManager.inferenceProvider.first()
             val resolvedProvider = InferenceProvider.resolve(providerPref)
 
-            val entry = BundledCatalog.byId(backendId) ?: run {
-                _benchmarkState.value = BenchmarkState.Error("Unsupported backend for benchmark")
-                return@launch
-            }
-
             val lang = preferencesManager.transcriptionLanguage.first()
             // Same language resolution as the orchestrator's load path: the
             // benchmark must measure what transcription would actually run
             // with, and the "system" default must never reach the recognizer
             // as a literal language code.
-            val config = BackendConfig.SherpaOnnxConfig(
-                modelDir = modelPath,
-                numThreads = threadCount,
-                language = TranscriptionLanguagePolicy.resolveForEntry(
-                    phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(appContext),
-                    entry = entry,
-                    preference = lang,
-                ),
-                provider = resolvedProvider
-            )
+            val config = if (backendId.startsWith(com.antivocale.app.data.ExternalModelRecord.BACKEND_ID_PREFIX)) {
+                // 2026-10-08: external records load through ExternalConfig
+                // (the record carries family/modelType/options); the old
+                // SherpaOnnxConfig path only resolved bundled-catalog ids.
+                val record = externalModelStore.byId(
+                    backendId.removePrefix(com.antivocale.app.data.ExternalModelRecord.BACKEND_ID_PREFIX))
+                    ?: run {
+                        _benchmarkState.value =
+                            BenchmarkState.Error("Model folder missing for $backendId")
+                        return@launch
+                    }
+                // KEEP IN SYNC with the orchestrator's loadExternalBackend
+                // config assembly (same prefix strip, byId, language
+                // resolution): the benchmark must measure what transcription
+                // would actually run with.
+                BackendConfig.ExternalConfig(
+                    record = record,
+                    numThreads = threadCount,
+                    languageOverride = TranscriptionLanguagePolicy.externalOverride(
+                        record,
+                        preference = lang,
+                        phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(appContext),
+                    ),
+                    provider = resolvedProvider,
+                )
+            } else {
+                val entry = BundledCatalog.byId(backendId) ?: run {
+                    _benchmarkState.value = BenchmarkState.Error("Unsupported backend for benchmark")
+                    return@launch
+                }
+                BackendConfig.SherpaOnnxConfig(
+                    modelDir = modelPath,
+                    numThreads = threadCount,
+                    language = TranscriptionLanguagePolicy.resolveForEntry(
+                        phoneLanguage = com.antivocale.app.util.LocaleManager.phoneLanguage(appContext),
+                        entry = entry,
+                        preference = lang,
+                    ),
+                    provider = resolvedProvider
+                )
+            }
 
             val result = benchmarkManager.runBenchmark(backend, config) { progress ->
                 _benchmarkState.value = BenchmarkState.Running(progress)

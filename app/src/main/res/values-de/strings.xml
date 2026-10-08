@@ -367,6 +367,8 @@
     <string name="model_demoted_notice">Wird nicht automatisch gewählt: Dieses Modell hat bei vorhandener Sprache keinen Text geliefert. Wähle es erneut, um ihm eine neue Chance zu geben.</string>
     <string name="delete">Löschen</string>
     <string name="variant_more_actions">Weitere Aktionen</string>
+    <string name="external_languages_hint">Sprachcodes, durch Komma getrennt (z. B. it, en)</string>
+    <string name="external_edit_languages">Sprachen bearbeiten</string>
     <string name="download">Herunterladen</string>
     <string name="model_update_button">Aktualisieren</string>
     <string name="gemma_update_confirm_title">%1$s aktualisieren</string>

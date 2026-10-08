@@ -330,6 +330,8 @@
     <string name="model_demoted_notice">不再自动选用：此模型在有语音时没有产出文本。请手动选择以重试。</string>
     <string name="delete">删除</string>
     <string name="variant_more_actions">更多操作</string>
+    <string name="external_languages_hint">语言代码，逗号分隔（如 it, en）</string>
+    <string name="external_edit_languages">编辑语言</string>
     <string name="download">下载</string>
     <string name="model_update_button">更新</string>
     <string name="gemma_update_confirm_title">更新 %1$s</string>

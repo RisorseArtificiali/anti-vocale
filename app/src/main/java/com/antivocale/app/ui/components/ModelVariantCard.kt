@@ -576,15 +576,17 @@ private fun MenuEntry(
 }
 
 /**
- * The kebab overflow for the downloaded-variant actions (maintainer
- * direction 2026-10-06, extended 2026-10-07): Benchmark (when provided),
- * Share/Export and Delete live here instead of taking a button slot each
- * on the action row. Keeps the row clean (Use + kebab) at any width.
- * The external-model cards ride it too (2026-10-08) with export omitted.
+ * The kebab overflow for model cards (maintainer direction 2026-10-06,
+ * extended 2026-10-07/08): Benchmark (when provided), Edit languages
+ * (external cards only), Share/Export, and Delete live here instead of
+ * taking a button slot each on the action row. Keeps the row clean
+ * (Use + kebab) at any width.
  */
 @Composable
 internal fun VariantOverflowMenu(
     onBenchmarkClick: (() -> Unit)? = null,
+    /** External cards only (2026-10-08): opens the record's languages editor. */
+    onEditLanguagesClick: (() -> Unit)? = null,
     onExportClick: (() -> Unit)? = null,
     onDeleteClick: () -> Unit,
 ) {
@@ -604,6 +606,11 @@ internal fun VariantOverflowMenu(
             onBenchmarkClick?.let { benchmark ->
                 MenuEntry(R.string.benchmark_button, Icons.Default.Speed) {
                     expanded = false; benchmark()
+                }
+            }
+            onEditLanguagesClick?.let { editLanguages ->
+                MenuEntry(R.string.external_edit_languages, Icons.Default.Translate) {
+                    expanded = false; editLanguages()
                 }
             }
             onExportClick?.let { export ->

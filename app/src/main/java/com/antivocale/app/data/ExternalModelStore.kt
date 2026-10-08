@@ -44,6 +44,13 @@ class ExternalModelStore(
         validRecords().firstOrNull { it.id == id }
 
     suspend fun add(record: ExternalModelRecord) = mutate { it + record }
+
+    /** 2026-10-08 road test: the user can set/fix the languages of an
+     *  imported record (repo-URL imports and legacy records carry none).
+     *  Targeted like [updateDir]: concurrent field edits survive. */
+    suspend fun updateLanguages(id: String, languages: List<String>) = mutate { list ->
+        list.map { if (it.id == id) it.copy(languages = languages) else it }
+    }
     suspend fun update(record: ExternalModelRecord) = mutate { list -> list.map { if (it.id == record.id) record else it } }
 
     /**

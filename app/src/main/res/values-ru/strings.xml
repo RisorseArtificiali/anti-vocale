@@ -382,6 +382,8 @@
     <string name="model_demoted_notice">Не выбирается автоматически: эта модель не выдала текст при наличии речи. Выберите её снова, чтобы дать ей ещё один шанс.</string>
     <string name="delete">Удалить</string>
     <string name="variant_more_actions">Ещё действия</string>
+    <string name="external_languages_hint">Коды языков через запятую (напр. it, en)</string>
+    <string name="external_edit_languages">Изменить языки</string>
     <string name="download">Скачать</string>
     <string name="model_update_button">Обновить</string>
     <string name="gemma_update_confirm_title">Обновить %1$s</string>

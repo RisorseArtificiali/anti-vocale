@@ -402,6 +402,8 @@
     <string name="model_demoted_notice">Не вибирається автоматично: ця модель не видала тексту за наявності мовлення. Виберіть її знову, щоб дати їй ще один шанс.</string>
     <string name="delete">Видалити</string>
     <string name="variant_more_actions">Більше дій</string>
+    <string name="external_languages_hint">Коди мов через кому (напр. it, en)</string>
+    <string name="external_edit_languages">Змінити мови</string>
     <string name="download">Завантажити</string>
     <string name="model_update_button">Оновити</string>
     <string name="gemma_update_confirm_title">Оновити %1$s</string>

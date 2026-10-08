@@ -338,6 +338,8 @@
     <string name="model_demoted_notice">Non choisi automatiquement : ce modèle n\'a produit aucun texte alors que de la voix était présente. Sélectionne-le à nouveau pour lui donner une autre chance.</string>
     <string name="delete">Supprimer</string>
     <string name="variant_more_actions">Plus d\'actions</string>
+    <string name="external_languages_hint">Codes de langue, séparés par des virgules (p. ex. it, en)</string>
+    <string name="external_edit_languages">Modifier les langues</string>
     <string name="download">Télécharger</string>
     <string name="model_update_button">Mettre à jour</string>
     <string name="gemma_update_confirm_title">Mettre à jour %1$s</string>
