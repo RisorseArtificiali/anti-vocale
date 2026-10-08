@@ -78,6 +78,9 @@ Only if you turn on "Voice note sender recognition" in Settings (off by default)
 
 ## Automation
 
+### Can another app use Anti-Vocale as its transcriber?
+Yes, if the app supports the open Open Transcribe contract (Forkgram and Forkgram Classic do today): enable Settings, Automation, Open Transcribe API (experimental, off by default), then pick Anti-Vocale as the offline transcriber in that app's settings. The voice message is transcribed in place with Anti-Vocale's models, the audio never leaves the device, and disabling the toggle removes the app from those pickers again. The feature request and discussion live in [issue #144](https://github.com/RisorseArtificiali/anti-vocale/issues/144).
+
 ### Can the app transcribe files automatically as they appear in a folder?
 Yes: the scheduled folder watch. You pick the folders (Settings, Scheduled folder watch), and periodic scans transcribe every new audio file with the currently selected model; on Android 11+ the picker can open shared-storage locations such as a messaging app's media folder. Scans run when the system allows them, so aggressive battery savers can delay them; the manual Scan now always works. Every run lands in the History tab like a normal transcription.
 

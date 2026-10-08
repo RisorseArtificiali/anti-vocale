@@ -81,6 +81,7 @@ Everything the app can transcribe with, on one page: bundled models with sizes, 
 - **Direct file picker** - Pick any audio or video file from storage in the app, no messaging app needed
 - **Model-specific share targets** - Pick a specific model directly from the Android share sheet
 - **Tasker/automation support** - Trigger transcription via broadcast intents
+- **Open Transcribe provider (experimental)** - Apps that speak the open [Open Transcribe](https://github.com/23rd/Scrib/blob/master/CONTRACT.md) contract, like [Forkgram](https://github.com/forkgram/TelegramAndroid), can turn Anti-Vocale into their inline voice-message transcriber; off by default (Settings, Automation, Open Transcribe API), and the audio never leaves the device
 - **Scheduled folder watch** - Watch folders you choose and transcribe new audio files automatically; on Android 11+ the watched folder can be a messaging app's media folder, so incoming voice notes transcribe themselves (scans adapt to what the system allows; a manual scan is always available)
 - **Remote offload (experimental)** - Delegate long or heavy transcriptions to your own OpenAI-compatible server (OmniVoice, whisper.cpp server, ...); off by default, and the audio of delegated runs goes only to the server address you configure
 - **HuggingFace login** - Authenticate (token or OAuth) for gated model downloads

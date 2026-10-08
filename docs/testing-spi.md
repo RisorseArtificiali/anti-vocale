@@ -79,6 +79,7 @@ Set keys and value formats:
 | `language_chip` | `saveLanguageChipEnabled` | `true` or `false` (strict); TASK-546: gates the detected-language chip on results |
 | `memory_protection` | `saveMemoryProtection` | `true` or `false` (strict) |
 | `external_automation` | `saveExternalAutomationEnabled` | `true` or `false` (strict); TASK-274: consent gate for the exported automation receivers (Tasker surface) |
+| `open_transcribe` | `saveOpenTranscribeEnabled` | `true` or `false` (strict); TASK-785: Open Transcribe provider gate; the BridgeApplication collector flips the manifest component off any write |
 | `remote_enabled` | `saveRemoteOmnivoiceEnabled` | `true` or `false` (strict); TASK-681: LAN-offload consent gate; disabling while it is the selected backend resets the backend to the default |
 | `remote_endpoint` | `saveRemoteOmnivoiceEndpoint` | OmniVoice base URL, e.g. `http://192.168.1.10:3900`; TASK-681 |
 | `remote_api_key` | `saveRemoteOmnivoiceApiKey` | the server's OMNIVOICE_API_KEY; TASK-681 |
