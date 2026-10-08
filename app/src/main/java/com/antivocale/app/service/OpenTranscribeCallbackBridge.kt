@@ -50,6 +50,14 @@ class OpenTranscribeCallbackBridge(private val emitter: OpenTranscribeEmitter) :
     /** Insertion-ordered chunk texts; see the class KDoc for the shapes. */
     private val chunkTexts = LinkedHashMap<Int, String>()
 
+    /**
+     * The cumulative progress string. A new chunk appends (the dominant
+     * shape); only a revision of an already-recorded chunk rebuilds from
+     * the map, so the per-emission cost stays linear in the delta, not in
+     * the accumulated transcript.
+     */
+    private val cumulative = StringBuilder()
+
     override fun onStatusUpdate(message: String) = Unit
 
     override fun onIndeterminateProgress(message: String) = Unit
@@ -74,8 +82,15 @@ class OpenTranscribeCallbackBridge(private val emitter: OpenTranscribeEmitter) :
         val text = bigText.takeUnless { it.isBlank() } ?: contentText
         if (text.isBlank()) return
         if (chunkIndex >= 0) {
-            chunkTexts[chunkIndex] = text
-            emitter.onProgress(chunkTexts.values.joinToString(" "))
+            val previous = chunkTexts.put(chunkIndex, text)
+            if (previous == null) {
+                if (cumulative.isNotEmpty()) cumulative.append(' ')
+                cumulative.append(text)
+            } else {
+                cumulative.clear()
+                chunkTexts.values.joinTo(cumulative, " ")
+            }
+            emitter.onProgress(cumulative.toString())
         } else {
             // No chunk identity (no current emit site sends this): the text
             // cannot be attributed to a chunk, so it passes through as-is.
@@ -123,13 +138,13 @@ class OpenTranscribeCallbackBridge(private val emitter: OpenTranscribeEmitter) :
             isDecodeError -> ErrorType.DECODE_FAILED
             else -> ErrorType.UNEXPECTED
         }
-        emitter.onError(type, null, errorMessage)
+        emitter.onError(type, errorMessage)
     }
 
     /** The cancellation terminal, delivered by the job owner on cancel. */
     fun deliverCancelled() {
         if (!terminalDelivered.compareAndSet(false, true)) return
-        emitter.onError(ErrorType.CANCELLED, null, null)
+        emitter.onError(ErrorType.CANCELLED, null)
     }
 }
 
@@ -138,5 +153,11 @@ interface OpenTranscribeEmitter {
     fun onProgress(text: String)
     fun onSegment(startMs: Long, endMs: Long, text: String)
     fun onResult(text: String)
-    fun onError(type: Byte, language: String?, message: String?)
+
+    /**
+     * The AIDL error's language field stays null (the AIDL default): this
+     * provider never reports UNSUPPORTED_LANGUAGE, so the seam carries no
+     * language at all until that changes.
+     */
+    fun onError(type: Byte, message: String?)
 }

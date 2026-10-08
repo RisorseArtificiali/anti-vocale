@@ -1,7 +1,6 @@
 package com.antivocale.app.transcription
 
 import com.antivocale.app.data.catalog.CatalogEntry
-import java.io.File
 
 /**
  * Maps the saved transcription-language preference to the language string a
@@ -100,10 +99,7 @@ object TranscriptionLanguagePolicy {
         entry == null -> emptySet()
         entry.flags.languageOption -> entry.languagesFor(entry.defaultVariant).toSet()
         entry.flags.passLanguage -> {
-            val variant = modelPath
-                ?.let { entry.variantForDirName(File(it).name) }
-                ?: entry.defaultVariant
-            entry.languagesFor(variant).toSet()
+            entry.languagesFor(entry.variantForSavedPath(modelPath)).toSet()
         }
         else -> emptySet()
     }

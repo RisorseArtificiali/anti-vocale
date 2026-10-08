@@ -212,58 +212,7 @@ object SharedAudioHandler {
      */
     private fun resolveExtension(uri: Uri, mimeType: String?): String? {
         // Try MIME type first
-        if (!mimeType.isNullOrBlank()) {
-            // Strip parameters like "; codecs=opus" from MIME type
-            // e.g., "audio/ogg; codecs=opus" -> "audio/ogg"
-            val baseMimeType = mimeType.split(";").first().trim()
-
-            // Try MimeTypeMap first. "bin" is its generic-binary answer for
-            // application/octet-stream on modern Android, not a real format
-            // signal; accepting it made the TASK-519 sniffer unreachable
-            // (ACR Phone shares were named ".bin" without the magic bytes
-            // ever being read). Treat it as unresolved so the URI path and
-            // the sniffer get their turn.
-            val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(baseMimeType)
-            if (!ext.isNullOrBlank() && ext.lowercase() != GENERIC_BINARY_EXTENSION) {
-                return ext.lowercase()
-            }
-
-            // Fallback: manual mapping for common audio and video container types.
-            // Covers MIME types that MimeTypeMap does not resolve and the
-            // application/* misclassification some senders apply to video shares.
-            val manualExt = when (baseMimeType.lowercase()) {
-                // Audio
-                "audio/mpeg", "audio/mp3" -> "mp3"
-                "audio/mp4", "audio/m4a" -> "m4a"
-                "audio/ogg", "application/ogg" -> "ogg"
-                "audio/wav", "audio/x-wav" -> "wav"
-                "audio/aac" -> "aac"
-                "audio/flac" -> "flac"
-                "audio/3gpp" -> "3gp"
-                "audio/amr" -> "amr"
-                "audio/opus" -> "opus"
-                // Video (audio container only). Keep in sync with VIDEO_EXTENSIONS above.
-                "video/mp4" -> "mp4"
-                "video/m4v" -> "m4v"
-                "video/x-matroska", "application/x-matroska" -> "mkv"
-                "video/webm" -> "webm"
-                "video/quicktime" -> "mov"
-                "video/3gpp2" -> "3g2"
-                // Some senders tag .mp4 shares as application/mp4; without this the
-                // file resolves to null and is rejected despite valid bytes.
-                "application/mp4" -> "mp4"
-                // TASK-677 (GH #92 import half): subtitle MIMEs keep their
-                // extension so the share flow can route the file to the
-                // subtitle import instead of the audio path.
-                in com.antivocale.app.transcription.SubtitleExtractor.SHARE_SUBTITLE_MIME_TO_EXTENSION ->
-                    com.antivocale.app.transcription.SubtitleExtractor
-                        .SHARE_SUBTITLE_MIME_TO_EXTENSION.getValue(baseMimeType.lowercase())
-                else -> null
-            }
-            if (!manualExt.isNullOrBlank()) {
-                return manualExt.lowercase()
-            }
-        }
+        extensionForMimeType(mimeType)?.let { return it }
 
         // Fall back to URI path. A ".bin" suffix is the same generic-binary
         // non-signal as the MIME answer above: the sniffer decides.
@@ -277,6 +226,77 @@ object SharedAudioHandler {
         }
 
         return null
+    }
+
+    /**
+     * TASK-785: extension resolution for caller-supplied descriptors (the
+     * Open Transcribe provider receives a mime type and a file name, no
+     * Uri). One vocabulary with the share path, same rules: parameters
+     * stripped, generic "bin" treated as unresolved, file name consulted
+     * only when the mime type says nothing.
+     */
+    fun resolveAudioExtension(mimeType: String?, fileName: String?): String? {
+        extensionForMimeType(mimeType)?.let { return it }
+        if (!fileName.isNullOrBlank()) {
+            val lastDot = fileName.lastIndexOf('.')
+            if (lastDot >= 0 && lastDot < fileName.length - 1) {
+                val ext = fileName.substring(lastDot + 1).lowercase()
+                if (ext != GENERIC_BINARY_EXTENSION) return ext
+            }
+        }
+        return null
+    }
+
+    private fun extensionForMimeType(mimeType: String?): String? {
+        if (mimeType.isNullOrBlank()) return null
+        // Strip parameters like "; codecs=opus" from MIME type
+        // e.g., "audio/ogg; codecs=opus" -> "audio/ogg"
+        val baseMimeType = mimeType.split(";").first().trim()
+
+        // Try MimeTypeMap first. "bin" is its generic-binary answer for
+        // application/octet-stream on modern Android, not a real format
+        // signal; accepting it made the TASK-519 sniffer unreachable
+        // (ACR Phone shares were named ".bin" without the magic bytes
+        // ever being read). Treat it as unresolved so the URI path and
+        // the sniffer get their turn.
+        val ext = MimeTypeMap.getSingleton().getExtensionFromMimeType(baseMimeType)
+        if (!ext.isNullOrBlank() && ext.lowercase() != GENERIC_BINARY_EXTENSION) {
+            return ext.lowercase()
+        }
+
+        // Fallback: manual mapping for common audio and video container types.
+        // Covers MIME types that MimeTypeMap does not resolve and the
+        // application/* misclassification some senders apply to video shares.
+        val manualExt = when (baseMimeType.lowercase()) {
+            // Audio
+            "audio/mpeg", "audio/mp3" -> "mp3"
+            "audio/mp4", "audio/m4a" -> "m4a"
+            "audio/ogg", "application/ogg" -> "ogg"
+            "audio/wav", "audio/x-wav" -> "wav"
+            "audio/aac" -> "aac"
+            "audio/flac" -> "flac"
+            "audio/3gpp" -> "3gp"
+            "audio/amr" -> "amr"
+            "audio/opus" -> "opus"
+            // Video (audio container only). Keep in sync with VIDEO_EXTENSIONS above.
+            "video/mp4" -> "mp4"
+            "video/m4v" -> "m4v"
+            "video/x-matroska", "application/x-matroska" -> "mkv"
+            "video/webm" -> "webm"
+            "video/quicktime" -> "mov"
+            "video/3gpp2" -> "3g2"
+            // Some senders tag .mp4 shares as application/mp4; without this the
+            // file resolves to null and is rejected despite valid bytes.
+            "application/mp4" -> "mp4"
+            // TASK-677 (GH #92 import half): subtitle MIMEs keep their
+            // extension so the share flow can route the file to the
+            // subtitle import instead of the audio path.
+            in com.antivocale.app.transcription.SubtitleExtractor.SHARE_SUBTITLE_MIME_TO_EXTENSION ->
+                com.antivocale.app.transcription.SubtitleExtractor
+                    .SHARE_SUBTITLE_MIME_TO_EXTENSION.getValue(baseMimeType.lowercase())
+            else -> null
+        }
+        return manualExt?.lowercase()
     }
 
     /**

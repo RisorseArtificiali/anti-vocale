@@ -131,6 +131,19 @@ class BridgeApplication : Application(), Configuration.Provider {
             }
         }
 
+        // TASK-785: the Open Transcribe provider component follows its gate
+        // the same one-owner way. The flow replays its cached value at
+        // startup, so this collector subsumes the former startup-only sync
+        // and covers every writer of the preference (the Settings toggle,
+        // TEST_SPI, any future one); setEnabled reads first, so the replay
+        // never churns package state for the default-off case.
+        applicationScope.launch(kotlinx.coroutines.Dispatchers.Default) {
+            preferencesManager.openTranscribeEnabled.distinctUntilChanged().collect { enabled ->
+                com.antivocale.app.service.OpenTranscribeComponentSync
+                    .setEnabled(this@BridgeApplication, enabled)
+            }
+        }
+
         // TASK-643: builds <=1.13.x persisted the unsuffixed catalog URL on
         // "Restore"; that literal is now the FROZEN legacy index and would
         // read as a phantom override (custom-source badge, no asset fallback,
@@ -257,16 +270,6 @@ class BridgeApplication : Application(), Configuration.Provider {
             // after the alias sync so the components the shortcut intents launch
             // are already in their persisted state.
             shareShortcutManager.refresh()
-            // TASK-785: the Open Transcribe provider component follows its
-            // preference the same way (disabled by default; the Settings
-            // toggle also flips it directly so the change lands without a
-            // process restart).
-            runCatching {
-                com.antivocale.app.service.OpenTranscribeComponentSync
-                    .syncFromPreference(this@BridgeApplication, preferencesManager)
-            }.onFailure { e ->
-                android.util.Log.w("BridgeApplication", "Open Transcribe component sync failed", e)
-            }
         }
         migrateLanguagePreference()
         installGlobalExceptionHandler()

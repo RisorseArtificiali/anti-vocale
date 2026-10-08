@@ -2,7 +2,6 @@ package com.antivocale.app.service
 
 import java.io.File
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -33,7 +32,10 @@ class OpenTranscribeManifestContractTest {
     @Test
     fun `the contract action is declared in the service's intent filter`() {
         val node = serviceNode()
-        assertNotNull("the intent-filter action is missing", node.indexOf("org.opentranscribe.api.ITranscriptionService"))
+        assertTrue(
+            "the intent-filter action is missing",
+            node.contains("org.opentranscribe.api.ITranscriptionService"),
+        )
         assertTrue(
             "the action must sit inside an intent-filter",
             node.contains("<intent-filter>"),

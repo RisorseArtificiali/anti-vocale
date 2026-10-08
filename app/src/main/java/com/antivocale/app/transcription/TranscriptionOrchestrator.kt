@@ -115,19 +115,6 @@ class TranscriptionOrchestrator @Inject constructor(
         }
 
         /**
-         * TASK-785: the failure class the Open Transcribe bridge maps to
-         * DECODE_FAILED. The audio decode stage fails typed
-         * ([AudioPreprocessor.PreprocessingError]: no decoder, no audio
-         * track, invalid format, conversion and chunk failures), and the
-         * streaming pipeline wraps the same errors in [PipelineFailure]
-         * keeping the original as the cause.
-         */
-        internal fun isDecodeFamilyError(error: Throwable): Boolean {
-            return error is PreprocessingError ||
-                (error is PipelineFailure && error.cause is PreprocessingError)
-        }
-
-        /**
          * Maps a [TranscriptionException] to a user-facing localized message via the given [context].
          * Non-TranscriptionException errors fall back to the generic [R.string.transcription_failed].
          */
@@ -4161,6 +4148,21 @@ class TranscriptionOrchestrator @Inject constructor(
          *  a two-pass run refined it (null on single-model runs). */
         firstPassTranscript: String? = null,
     ) {
+        // TASK-785: the run-terminal cleanup is UNCONDITIONAL; only the row
+        // write below stays row-conditional (a user-deleted row stays
+        // deleted, no resurrect). Gating the cleanup on the row left a
+        // rowless caller (the Open Transcribe provider, or a delete mid
+        // flight) with a stale partial seed that surfaced much later as a
+        // false "was interrupted" recovery offer, and forced every direct
+        // caller into a logQueued pre-flight ritual.
+        // TASK-699: the clear rides the SAME mutex as the heartbeat tick's
+        // read+write, making clear-vs-tick atomic: a tick either completed
+        // before the clear (mutex) or starts after it (the seed is already
+        // null, the isNullOrBlank guard no-ops). No join, no field, no
+        // ordering hazard - and no resurrection window (TASK-692 class).
+        seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
+        lastPartialSaveMs = 0L
+        lastInterimRoomWriteMs.remove(taskId)
         val entity = logDao.getByTaskId(taskId) ?: return
         logDao.update(entity.toLogEntry().copy(
             status = LogEntry.Status.SUCCESS, result = result, durationMs = durationMs,
@@ -4174,14 +4176,6 @@ class TranscriptionOrchestrator @Inject constructor(
             detectedLanguage = detectedLanguage,
             languagePin = languagePin
         ).toEntity())
-        // TASK-699: the clear rides the SAME mutex as the heartbeat tick's
-        // read+write, making clear-vs-tick atomic: a tick either completed
-        // before the clear (mutex) or starts after it (the seed is already
-        // null, the isNullOrBlank guard no-ops). No join, no field, no
-        // ordering hazard - and no resurrection window (TASK-692 class).
-        seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
-        lastPartialSaveMs = 0L
-        lastInterimRoomWriteMs.remove(taskId)
         // TASK-713's first-note seeding (GH #112 second half) was REMOVED by
         // maintainer direction (2026-10-08 road test): the Models filter
         // default is "All languages" and only an explicit user pick changes
@@ -4189,6 +4183,13 @@ class TranscriptionOrchestrator @Inject constructor(
     }
 
     private suspend fun logError(taskId: String, errorMessage: String, durationMs: Long = 0) {
+        // TASK-785: unconditional run-terminal cleanup, mirroring logSuccess.
+        // TASK-699: same mutex discipline as logSuccess (see there); the
+        // error path is the WORSE resurrection case (persistPipelineFailure
+        // writes the seed right before this clear on mid-stream failures).
+        seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
+        lastPartialSaveMs = 0L
+        lastInterimRoomWriteMs.remove(taskId)
         val entity = logDao.getByTaskId(taskId) ?: return
         // TASK-568: durationMs on an ERROR row is the decoded-at-failure
         // seconds written by the streaming catches (updateFailureDecodedMs),
@@ -4200,15 +4201,9 @@ class TranscriptionOrchestrator @Inject constructor(
             status = LogEntry.Status.ERROR, errorMessage = errorMessage,
             durationMs = if (durationMs > 0) durationMs else entity.durationMs
         ).toEntity())
-        // TASK-699: same mutex discipline as logSuccess (see there); the
-        // error path is the WORSE resurrection case (persistPipelineFailure
-        // writes the seed right before this clear on mid-stream failures).
-        seedSaveMutex.withLock { preferencesManager.clearPartialTranscriptionState() }
-        lastPartialSaveMs = 0L
-        lastInterimRoomWriteMs.remove(taskId)
     }
 
-    private suspend fun cancelIfPending(taskId: String, errorMessage: String, durationMs: Long) {
+    internal suspend fun cancelIfPending(taskId: String, errorMessage: String, durationMs: Long) {
         lastInterimRoomWriteMs.remove(taskId)
         logDao.failNonTerminal(taskId, errorMessage, durationMs)
     }

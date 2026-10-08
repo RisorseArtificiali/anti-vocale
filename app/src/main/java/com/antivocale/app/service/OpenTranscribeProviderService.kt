@@ -15,10 +15,12 @@ import com.antivocale.app.data.ExternalModelRecord
 import com.antivocale.app.data.ExternalModelStore
 import com.antivocale.app.data.PreferencesManager
 import com.antivocale.app.data.catalog.BundledCatalog
+import com.antivocale.app.receiver.TaskerRequestReceiver
 import com.antivocale.app.transcription.OpenTranscribeCapabilities
 import com.antivocale.app.transcription.TranscriptionOrchestrator
 import com.antivocale.app.util.AppNotificationChannel
 import com.antivocale.app.util.CrashReporter
+import com.antivocale.app.util.SharedAudioHandler
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -29,9 +31,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.withTimeoutOrNull
 import org.opentranscribe.api.ErrorType
 import org.opentranscribe.api.ITranscriptionCallback
 import org.opentranscribe.api.ITranscriptionService
@@ -63,12 +62,13 @@ import javax.inject.Inject
  * client gates on contractVersion anyway. capabilities.streaming=false is
  * the honest report; the live-stream path is tracked separately.
  *
- * Jobs serialize through one Mutex: a second request waits instead of
- * racing the engine (the InferenceService queue, collapsed to the API's
- * one-at-a-time reality). Session.cancel cancels the job and the client
- * receives ErrorType.CANCELLED; a dead client binder cancels the job too
- * (the contract's crashed-client rule), because every callback delivery
- * is a guarded binder call whose failure is the death signal.
+ * Run serialization is the orchestrator's own lock (one engine, one run at
+ * a time, across every execution site), so a second client request waits
+ * there like an in-app one; this service brackets only the foreground
+ * lifetime. Session.cancel cancels the job and the client receives
+ * ErrorType.CANCELLED; a dead client binder cancels the job too (the
+ * contract's crashed-client rule), because every callback delivery is a
+ * guarded binder call whose failure is the death signal.
  */
 @AndroidEntryPoint
 class OpenTranscribeProviderService : Service() {
@@ -79,9 +79,6 @@ class OpenTranscribeProviderService : Service() {
     @Inject lateinit var externalModelStore: ExternalModelStore
 
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob() + CrashReporter.handler)
-
-    /** One transcription at a time; a second request waits here. */
-    private val jobMutex = Mutex()
 
     /** Jobs started but not finished; foreground drops when it reaches zero. */
     private val liveJobs = AtomicInteger(0)
@@ -94,13 +91,10 @@ class OpenTranscribeProviderService : Service() {
     override fun onBind(intent: Intent?): IBinder? {
         // Defense in depth behind the component gate: a stale component
         // state (or a direct explicit-intent bind) must not reach the API.
+        // The flow is cache-seeded, so this reads no disk.
         val enabled = runCatching {
-            runBlocking {
-                withTimeoutOrNull(PREF_READ_TIMEOUT_MS) {
-                    preferencesManager.openTranscribeEnabled.first()
-                }
-            }
-        }.getOrDefault(null) ?: false
+            runBlocking { preferencesManager.openTranscribeEnabled.first() }
+        }.getOrDefault(false)
         if (!enabled) return null
         return binder
     }
@@ -114,13 +108,11 @@ class OpenTranscribeProviderService : Service() {
     private val binder = object : ITranscriptionService.Stub() {
 
         override fun getCapabilities(): TranscriberCapabilities {
-            // Bounded synchronous read on the binder thread: the flows are
-            // cache-seeded, so this is normally instant; the timeout keeps
-            // a wedged DataStore from hanging the client.
+            // Synchronous read on the binder thread; every flow involved is
+            // cache-seeded, so this touches no disk. Any surprise degrades
+            // instead of throwing across the binder.
             return runCatching {
-                runBlocking {
-                    withTimeoutOrNull(PREF_READ_TIMEOUT_MS) { readCapabilities() }
-                } ?: degradedCapabilities()
+                runBlocking { readCapabilities() }
             }.getOrDefault(degradedCapabilities())
         }
 
@@ -133,12 +125,32 @@ class OpenTranscribeProviderService : Service() {
                 runCatching { audio?.close() }
                 return null
             }
+            // Consent re-check on the same cache-seeded read onBind uses:
+            // disabling the component does not unbind a client that bound
+            // while the gate was open, so consent must hold per request,
+            // not per binding.
+            val enabled = runCatching {
+                runBlocking { preferencesManager.openTranscribeEnabled.first() }
+            }.getOrDefault(false)
+            if (!enabled) {
+                deliverError(callback, ErrorType.UNEXPECTED, "The provider is disabled")
+                runCatching { audio.close() }
+                return null
+            }
             // Binder.getCallingUid is only valid during this transaction.
             val callingPackage = callingPackageName()
             val taskId = "opentranscribe-${UUID.randomUUID()}"
             liveJobs.incrementAndGet()
             val job = serviceScope.launch {
                 runJob(this, audio, request, callback, callingPackage, taskId)
+            }
+            if (job.isCancelled) {
+                // The service was destroyed between bind and this call, so
+                // the launch produced an already-dead coroutine: the body
+                // never runs, and the terminal plus the liveJobs bracket
+                // are ours to deliver here.
+                liveJobs.decrementAndGet()
+                deliverError(callback, ErrorType.CANCELLED, null)
             }
             return object : ITranscriptionSession.Stub() {
                 override fun cancel() {
@@ -178,57 +190,89 @@ class OpenTranscribeProviderService : Service() {
     ) {
         val bridge = OpenTranscribeCallbackBridge(RemoteEmitter(callback) { jobScope.cancel() })
         val spoolFile = File(cacheDir, "$taskId${spoolExtension(request)}")
+        // Every provider-initiated failure carries the same false/0 flags;
+        // only the decode classification varies.
+        fun fail(errorCode: String, message: String, decode: Boolean = false) {
+            bridge.onError(taskId, errorCode, message,
+                isShareRequest = false, isNoModelError = false, durationMs = 0,
+                isMemoryFailure = false, isDecodeError = decode)
+        }
         try {
-            try {
-                // The cancel terminal must fire no matter WHERE cancellation
-                // lands: waiting on the mutex, spooling, or inside the run.
-                jobMutex.withLock {
-                    startForeground(NOTIFICATION_ID, buildNotification())
-                    try {
-                        if (!runCatching { spool(audio, spoolFile) }.getOrDefault(false)) {
-                            // The descriptor could not be read (client died
-                            // or handed garbage): closest contract meaning.
-                            bridge.onError(taskId, "SPOOL_FAILED", "Reading the audio failed",
-                                isShareRequest = false, isNoModelError = false, durationMs = 0,
-                                isMemoryFailure = false, isDecodeError = true)
-                            return@withLock
-                        }
-                        // TASK-526 lesson (the SubtitleChoiceTimeoutWorker
-                        // precedent): processRequest's terminal writes are
-                        // row-conditional, and a run without a QUEUED row
-                        // leaves the partial-transcription seed uncleared
-                        // (a false "was interrupted" offer on the next app
-                        // open). Create the row ourselves, like every
-                        // direct caller must.
-                        orchestrator.logQueued(
-                            taskId = taskId,
-                            requestType = REQUEST_TYPE_AUDIO,
-                            filePath = spoolFile.absolutePath,
-                            sourcePackageName = callingPackage,
-                        )
-                        orchestrator.processRequest(
-                            taskId = taskId,
-                            requestType = REQUEST_TYPE_AUDIO,
-                            filePath = spoolFile.absolutePath,
-                            source = SOURCE_OPENTRANSCRIBE,
-                            sourcePackage = callingPackage,
-                            languageOverride = request.languageHint?.takeIf { it.isNotBlank() },
-                            queuePosition = 1,
-                            queueTotal = 1,
-                            context = applicationContext,
-                            cacheDir = cacheDir,
-                            listener = bridge,
-                            coroutineScope = jobScope,
-                        )
-                    } finally {
-                        runCatching { spoolFile.delete() }
-                    }
-                }
-            } catch (e: CancellationException) {
-                bridge.deliverCancelled()
-                throw e
+            // Foreground promotion is best-effort: a client that bound from
+            // the background can make startForeground throw (API 31+). The
+            // bound job still runs, it only loses the foreground shield, so
+            // the throw must not kill the request. Serialization is the
+            // orchestrator's runMutex (one engine, one run at a time, every
+            // execution site); liveJobs brackets only the foreground life.
+            runCatching { startForeground(NOTIFICATION_ID, buildNotification()) }
+            // The TASK-432 pre-copy gate, the share path's rule: never fill
+            // the target storage with a client's audio. A statSize of 0
+            // means the size is unknown (a pipe): the gate stays open.
+            val statSize = audio.statSize
+            if (statSize > 0 && !SharedAudioHandler.hasFreeSpace(cacheDir.usableSpace, statSize)) {
+                fail("OUT_OF_SPACE", "Not enough free storage to receive the audio")
+                return
             }
+            if (!spool(audio, spoolFile)) {
+                // The descriptor could not be read (client died or handed
+                // garbage): closest contract meaning.
+                fail("SPOOL_FAILED", "Reading the audio failed", decode = true)
+                return
+            }
+            // The API run gets a History row like a Tasker run (source and
+            // calling package land on it); the orchestrator's run-terminal
+            // cleanup no longer depends on the row existing.
+            orchestrator.logQueued(
+                taskId = taskId,
+                requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
+                filePath = spoolFile.absolutePath,
+                sourcePackageName = callingPackage,
+            )
+            orchestrator.processRequest(
+                taskId = taskId,
+                requestType = TaskerRequestReceiver.REQUEST_TYPE_AUDIO,
+                filePath = spoolFile.absolutePath,
+                source = SOURCE_OPENTRANSCRIBE,
+                sourcePackage = callingPackage,
+                // Clients speak BCP-47 ("en-US"); the language policy's
+                // vocabulary is a bare 639-1 code, so the primary subtag
+                // is the pin and anything that normalizes to blank falls
+                // back to the untouched auto default.
+                languageOverride = request.languageHint
+                    ?.substringBefore('-')
+                    ?.trim()
+                    ?.lowercase()
+                    ?.takeIf { it.isNotBlank() },
+                queuePosition = 1,
+                queueTotal = 1,
+                context = applicationContext,
+                cacheDir = cacheDir,
+                listener = bridge,
+                coroutineScope = jobScope,
+            )
+        } catch (e: CancellationException) {
+            // The cancel terminal must fire no matter WHERE cancellation
+            // lands: waiting on the engine lock, spooling, or mid-run.
+            bridge.deliverCancelled()
+            // The spool file dies with this request, so an interrupted row
+            // must not survive to offer a resume on a vanished input.
+            runCatching { orchestrator.cancelIfPending(taskId, "Cancelled by the client", 0) }
+            throw e
+        } catch (e: Exception) {
+            // Safety net for the exactly-one-terminal guarantee: any
+            // unexpected throw between spool and the orchestrator's own
+            // error delivery ends here instead of hanging the client until
+            // its idle timeout; the bridge drops this when a terminal
+            // already fired. The row is failed the same way, so no
+            // eternally-processing opentranscribe row outlives the throw.
+            fail("UNEXPECTED", e.message ?: e.javaClass.simpleName)
+            runCatching { orchestrator.cancelIfPending(taskId, e.message ?: e.javaClass.simpleName, 0) }
         } finally {
+            runCatching { spoolFile.delete() }
+            // The binder handed us OUR dup of the descriptor; the client's
+            // close cannot reach it, so the request settles with ours
+            // closed (one fd per request, never leaked to finalization).
+            runCatching { audio.close() }
             if (liveJobs.decrementAndGet() == 0) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
             }
@@ -236,23 +280,38 @@ class OpenTranscribeProviderService : Service() {
     }
 
     /**
-     * Copies the client's descriptor into our cache. The stream is
-     * deliberately NOT closed: the client owns the descriptor and closes
-     * it once the request settles (closing here would race its close).
+     * A direct terminal delivery outside the job lifecycle (the disabled
+     * refusal, the dead-scope case): NOT used by the bridge's transport,
+     * whose guarded delivery must see the binder failure to detect a dead
+     * client; swallowing the exception here would hide exactly that.
+     */
+    private fun deliverError(callback: ITranscriptionCallback, type: Byte, message: String?) {
+        runCatching {
+            val error = TranscriptionError()
+            error.type = type
+            error.message = message
+            callback.onTranscriptionError(error)
+        }
+    }
+
+    /**
+     * Copies the client's descriptor into our cache. The streams are not
+     * closed here: the authoritative close is the PFD's, in runJob's
+     * finally (the binder handed us OUR dup; the client's close cannot
+     * reach it).
      */
     private fun spool(audio: ParcelFileDescriptor, target: File): Boolean {
         val input = FileInputStream(audio.fileDescriptor)
         val output = FileOutputStream(target)
-        var ok = true
-        try {
+        return try {
             input.copyTo(output, SPOOL_BUFFER_BYTES)
+            true
         } catch (e: Exception) {
             Log.w(TAG, "Spooling the client audio failed", e)
-            ok = false
+            false
         } finally {
             runCatching { output.close() }
         }
-        return ok
     }
 
     private fun buildNotification(): Notification =
@@ -270,21 +329,11 @@ class OpenTranscribeProviderService : Service() {
     }.getOrNull()
 
     private fun spoolExtension(request: TranscriptionRequest): String {
-        val fromName = request.fileName
-            ?.substringAfterLast('.', "")
-            ?.lowercase()
-            ?.takeIf { it in KNOWN_AUDIO_EXTENSIONS }
-        if (fromName != null) return ".$fromName"
-        val fromMime = when (request.mimeType?.lowercase()) {
-            "audio/ogg", "application/ogg" -> "ogg"
-            "audio/opus", "audio/ogg;codecs=opus" -> "opus"
-            "audio/mp4", "video/mp4", "audio/m4a", "audio/x-m4a" -> "m4a"
-            "audio/mpeg", "audio/mp3" -> "mp3"
-            "audio/wav", "audio/x-wav" -> "wav"
-            "audio/flac", "audio/x-flac" -> "flac"
-            else -> null
-        }
-        return fromMime?.let { ".$it" } ?: DEFAULT_EXTENSION
+        // SharedAudioHandler owns the audio-format vocabulary (MimeMap plus
+        // the manual table, parameter stripping, generic-"bin" rejection);
+        // a private second table here would drift from the share path.
+        val ext = SharedAudioHandler.resolveAudioExtension(request.mimeType, request.fileName)
+        return ".${ext ?: "bin"}"
     }
 
     /**
@@ -309,11 +358,10 @@ class OpenTranscribeProviderService : Service() {
             guarded { callback.onTranscriptionResult(text) }
         }
 
-        override fun onError(type: Byte, language: String?, message: String?) {
+        override fun onError(type: Byte, message: String?) {
             guarded {
                 val error = TranscriptionError()
                 error.type = type
-                error.language = language
                 error.message = message
                 callback.onTranscriptionError(error)
             }
@@ -334,15 +382,9 @@ class OpenTranscribeProviderService : Service() {
          */
         const val NOTIFICATION_ID = 1011
 
-        /** Mirrors the Tasker audio vocabulary (TaskerRequestReceiver.REQUEST_TYPE_AUDIO). */
-        private const val REQUEST_TYPE_AUDIO = "audio"
-
         /** The API's source label for rows and logs; never "share", so no share UX applies. */
-        const val SOURCE_OPENTRANSCRIBE = "opentranscribe"
+        private const val SOURCE_OPENTRANSCRIBE = "opentranscribe"
 
-        private const val PREF_READ_TIMEOUT_MS = 2_000L
         private const val SPOOL_BUFFER_BYTES = 64 * 1024
-        private const val DEFAULT_EXTENSION = ".audio.bin"
-        private val KNOWN_AUDIO_EXTENSIONS = setOf("ogg", "opus", "m4a", "mp3", "wav", "flac")
     }
 }

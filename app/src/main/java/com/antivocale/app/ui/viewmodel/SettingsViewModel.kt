@@ -599,16 +599,13 @@ class SettingsViewModel @Inject constructor(
     }
 
     /**
-     * TASK-785: the preference write and the component flip are one action:
-     * the manifest service is the picker-facing surface, and leaving it
-     * stale until the next process start would keep the app listed (or
-     * missing) in client provider pickers against the user's choice.
+     * TASK-785: a plain preference write; the BridgeApplication collector
+     * on the flow flips the provider component, so every writer of the
+     * gate is covered without paired-write discipline.
      */
     fun saveOpenTranscribeEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesManager.saveOpenTranscribeEnabled(enabled)
-            com.antivocale.app.service.OpenTranscribeComponentSync
-                .setEnabled(getApplication(), enabled)
         }
     }
 

@@ -20,7 +20,7 @@ class OpenTranscribeCallbackBridgeTest {
         val progress = mutableListOf<String>()
         val segments = mutableListOf<Triple<Long, Long, String>>()
         var result: String? = null
-        var error: Triple<Byte, String?, String?>? = null
+        var error: Pair<Byte, String?>? = null
         var resultBeforeAnySegment = false
 
         override fun onProgress(text: String) {
@@ -38,8 +38,8 @@ class OpenTranscribeCallbackBridgeTest {
             result = text
         }
 
-        override fun onError(type: Byte, language: String?, message: String?) {
-            error = Triple(type, language, message)
+        override fun onError(type: Byte, message: String?) {
+            error = type to message
         }
     }
 
@@ -143,8 +143,7 @@ class OpenTranscribeCallbackBridgeTest {
         bridge(emitter).onError("t", "INFERENCE_ERROR", "no decoder", false, false, 5, false, true)
         val error = emitter.error!!
         assertEquals(ErrorType.DECODE_FAILED, error.first)
-        assertEquals("no decoder", error.third)
-        assertNull(error.second)
+        assertEquals("no decoder", error.second)
     }
 
     @Test
@@ -184,7 +183,6 @@ class OpenTranscribeCallbackBridgeTest {
         bridge.deliverCancelled()
         assertEquals(ErrorType.CANCELLED, emitter.error!!.first)
         assertNull(emitter.error!!.second)
-        assertNull(emitter.error!!.third)
         assertNull(emitter.result)
     }
 }

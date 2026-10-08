@@ -337,6 +337,19 @@ fun isMemoryClassFailure(error: Throwable): Boolean =
     error is TranscriptionException.InsufficientMemory || error is OutOfMemoryError
 
 /**
+ * TASK-785: the failure class the Open Transcribe bridge maps to
+ * DECODE_FAILED. The audio decode stage fails typed
+ * ([com.antivocale.app.audio.AudioPreprocessor.PreprocessingError]: no
+ * decoder, no audio track, invalid format, conversion and chunk failures),
+ * and the streaming pipeline wraps the same errors in
+ * [PipelineFailure] keeping the original as the cause.
+ */
+fun isDecodeFamilyError(error: Throwable): Boolean =
+    error is com.antivocale.app.audio.AudioPreprocessor.PreprocessingError ||
+        (error is TranscriptionOrchestrator.PipelineFailure &&
+            error.cause is com.antivocale.app.audio.AudioPreprocessor.PreprocessingError)
+
+/**
  * TASK-631: the load pre-flight refusal. Protection is OPT-IN (off by default:
  * the app never refuses a model on its own), and an unreadable memory value
  * (0) fails open rather than blocking on an unknown figure.

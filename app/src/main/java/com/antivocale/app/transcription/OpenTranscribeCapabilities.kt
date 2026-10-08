@@ -46,9 +46,7 @@ object OpenTranscribeCapabilities {
         val languages: Array<String>? = when {
             externalRecord != null -> externalRecord.languages.takeIf { it.isNotEmpty() }?.toTypedArray()
             catalogEntry != null -> {
-                val variant = modelPath
-                    ?.let { catalogEntry.variantForDirName(File(it).name) }
-                    ?: catalogEntry.defaultVariant
+                val variant = catalogEntry.variantForSavedPath(modelPath)
                 catalogEntry.languagesFor(variant).takeIf { it.isNotEmpty() }?.toTypedArray()
             }
             else -> null
@@ -58,7 +56,10 @@ object OpenTranscribeCapabilities {
             engineId = ENGINE_ID
             engineVersion = versionName
             supportedLanguages = languages
-            autoDetectLanguage = true
+            // Honest like streaming: a single-language variant (Distil-IT)
+            // never runs detection, so a client trusting the flag must not
+            // send it hint-less foreign audio expecting a sane result.
+            autoDetectLanguage = languages == null || languages.size > 1
             cancellable = true
             modelReady = ready
             streaming = false

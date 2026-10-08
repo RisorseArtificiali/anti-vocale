@@ -87,6 +87,19 @@ class OpenTranscribeCapabilitiesTest {
     }
 
     @Test
+    fun `a single-language variant cannot claim auto-detection`() {
+        val entry = entry(
+            "whisper",
+            listOf("en"),
+            listOf(variant("multilingual", listOf("en", "fr", "de")), variant("distil-it", listOf("it"))),
+        )
+        val single = OpenTranscribeCapabilities.derive("1.0", "/models/whisper/distil-it", null, entry) { true }
+        assertFalse(single.autoDetectLanguage)
+        val multi = OpenTranscribeCapabilities.derive("1.0", "/models/whisper/multilingual", null, entry) { true }
+        assertTrue(multi.autoDetectLanguage)
+    }
+
+    @Test
     fun `an external record is the ready state and contributes its own languages`() {
         val caps = OpenTranscribeCapabilities.derive(
             versionName = "1.0",

@@ -431,6 +431,16 @@ data class CatalogEntry(
     fun variantForDirName(dirName: String): CatalogVariant =
         variants.firstOrNull { it.dirName == dirName } ?: defaultVariant
 
+    /**
+     * TASK-785: the variant resolved from a SAVED model path (its last
+     * segment is the model dir, named after the variant), falling back to
+     * the default when the path is null or names no declared variant. The
+     * saved-path couplet the language policy and the Open Transcribe
+     * capabilities derivation share.
+     */
+    fun variantForSavedPath(modelPath: String?): CatalogVariant =
+        modelPath?.let { variantForDirName(java.io.File(it).name) } ?: defaultVariant
+
     /** The default variant: flags.defaultVariant if declared, else the first. */
     val defaultVariant: CatalogVariant get() = flags.defaultVariant?.let(::variant) ?: variants.first()
 

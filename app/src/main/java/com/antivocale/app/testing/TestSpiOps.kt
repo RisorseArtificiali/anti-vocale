@@ -114,10 +114,6 @@ internal class TestSpiOps(
             .put("signaturePosition", preferences.signaturePosition.first())
             .put("memoryProtection", preferences.memoryProtection.first())
             .put("externalAutomationEnabled", preferences.externalAutomationEnabled.first())
-            // TASK-785: read-only on the SPI on purpose; a setter would
-            // flip the preference WITHOUT flipping the manifest component,
-            // leaving provider discovery stale until a process restart
-            // (the Settings toggle owns the paired write).
             .put("openTranscribeEnabled", preferences.openTranscribeEnabled.first())
             .put("voiceNoteIdentityEnabled", preferences.voiceNoteIdentityEnabled.first())
             // TASK-681: the LAN-offload config (endpoint visible for E2E
@@ -209,6 +205,9 @@ internal class TestSpiOps(
         "memory_protection" to preferences::saveMemoryProtection,
         // TASK-274: consent gate for the exported automation receivers.
         "external_automation" to preferences::saveExternalAutomationEnabled,
+        // TASK-785: symmetric with the sibling gates; the BridgeApplication
+        // collector flips the provider component off any write, SPI included.
+        "open_transcribe" to preferences::saveOpenTranscribeEnabled,
         // TASK-681: the LAN-offload gate (device E2E drives the whole
         // enable + configure + select sequence over the SPI).
         "remote_enabled" to preferences::saveRemoteOmnivoiceEnabled,
