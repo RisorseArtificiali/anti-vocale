@@ -82,6 +82,7 @@ import com.antivocale.app.ui.components.CardTitleRow
 import com.antivocale.app.ui.components.DownloadButtonState
 import com.antivocale.app.ui.components.DownloadProgressView
 import com.antivocale.app.ui.components.InfoIconButton
+import com.antivocale.app.ui.components.VariantOverflowMenu
 import com.antivocale.app.ui.components.LanguageFilterBar
 import com.antivocale.app.ui.components.ModelVariantCard
 import com.antivocale.app.ui.components.ModelVariantCardState
@@ -892,7 +893,7 @@ fun ModelTab(
                     selection = externalImport,
                     onSelectionChange = { externalImport = it; detectedExternalFamily = null },
                     onDeleteRequest = { externalToDelete = it },
-                    onImportBundle = { bundleImportPicker.launch(arrayOf("application/zip")) }
+                    onImportBundle = { bundleImportPicker.launch(arrayOf("application/zip")) },
                 )
 
                 if (ambiguousPick != null) {
@@ -1243,6 +1244,8 @@ private fun CuratedCommunityCard(
             )
             Spacer(modifier = Modifier.height(8.dp))
             Button(
+                // NOTE: languages ride the entry JSON itself (importFromEntryJson
+                // reads entry.languages); these params only reach repo imports.
                 onClick = { viewModel.importExternalFromUrl(entry.entryUrl, entry.family) },
                 enabled = importState !is ModelViewModel.ExternalImportState.Importing,
             ) {
@@ -1940,6 +1943,11 @@ private fun ExternalModelsSection(
     onDeleteRequest: (ExternalModelRecord) -> Unit,
     /** TASK-742: opens the bundle (.zip) import picker. */
     onImportBundle: () -> Unit = {},
+    /** 2026-10-08 road test: external cards get the kebab. Benchmark is NOT
+     *  offered yet: BenchmarkViewModel resolves only bundled-catalog backends,
+     *  so an external entry would open straight into the error state (the
+     *  support task is filed); the kebab carries Delete until then. */
+    onBenchmark: ((ExternalModelRecord) -> Unit)? = null,
 ) {
     val records by viewModel.externalModels.collectAsState()
     // TASK-675: the honest one-line reason travels to external cards too.
@@ -2149,7 +2157,14 @@ private fun ExternalModelsSection(
         // Gap between the import buttons/state and the first card
         if (records.isNotEmpty()) Spacer(modifier = Modifier.height(8.dp))
 
-        records.forEachIndexed { index, record ->
+        // Maintainer direction (2026-10-08): the imported list reads in
+        // alphabetical order, like a catalog, not in import order.
+        // Case-insensitive (mixed-case names would split at the capitals)
+        // and remembered (the section recomposes on unrelated state).
+        val sortedRecords = remember(records) {
+            records.sortedBy { it.displayName.lowercase() }
+        }
+        sortedRecords.forEachIndexed { index, record ->
             if (index > 0) Spacer(modifier = Modifier.height(8.dp))
             ExternalModelCard(
                 record = record,
@@ -2157,6 +2172,7 @@ private fun ExternalModelsSection(
                 demoted = record.backendId in demotedBackendIds,
                 onUse = { viewModel.useExternalModel(record) },
                 onDelete = { onDeleteRequest(record) },
+                onBenchmark = onBenchmark?.let { cb -> { cb(record) } },
             )
         }
 
@@ -2417,6 +2433,7 @@ private fun ExternalModelCard(
     demoted: Boolean = false,
     onUse: () -> Unit,
     onDelete: () -> Unit,
+    onBenchmark: (() -> Unit)? = null,
 ) {
     // Same container, padding, and button-row pattern as ModelVariantCard:
     // surface color, 12dp inner padding, buttons aligned End with 8dp spacing.
@@ -2448,8 +2465,11 @@ private fun ExternalModelCard(
                         // TASK-386: plain comma join instead of the middot chain:
                         // " · " was announced as "middle dot" by TalkBack in some locales.
                         Text(
-                            (listOf(record.typeLabel,
-                                com.antivocale.app.util.formatFileSize(record.sizeBytes)) +
+                            // Maintainer direction (2026-10-08): size first
+                            // (the deciding fact before a download/use),
+                            // then the family, then languages when known.
+                            (listOf(com.antivocale.app.util.formatFileSize(record.sizeBytes),
+                                record.typeLabel) +
                                 listOfNotNull(record.languages.joinToString(", ").takeIf { it.isNotEmpty() }))
                                 .joinToString(", "),
                             style = MaterialTheme.typography.bodySmall,
@@ -2475,7 +2495,8 @@ private fun ExternalModelCard(
                 )
             }
 
-            // Action buttons: same arrangement as ModelVariantCard
+            // Action buttons: same arrangement as ModelVariantCard since the
+            // 2026-10-08 road test (Use primary, the rest behind the kebab).
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -2490,16 +2511,12 @@ private fun ExternalModelCard(
                         Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
                     }
                 }
-                // TASK-381: 48dp minimum touch target for icon-only button
-                OutlinedButton(
-                    onClick = onDelete,
-                    modifier = Modifier.heightIn(min = 48.dp),
-                    colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
-                ) {
-                    Icon(Icons.Default.Delete, contentDescription = stringResource(R.string.delete))
-                }
+                VariantOverflowMenu(
+                    onBenchmarkClick = onBenchmark,
+                    onDeleteClick = onDelete,
+                )
+                // (Benchmark joins this menu when the benchmark supports
+                // external records; see the 2026-10-08 note above.)
             }
 
             Spacer(modifier = Modifier.height(8.dp))

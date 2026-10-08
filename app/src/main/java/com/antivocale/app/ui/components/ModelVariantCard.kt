@@ -560,7 +560,7 @@ fun InfoIconButton(onClick: () -> Unit) {
     }
 }
 
-/** One icon + label row of the variant overflow menu. */
+/** One icon + label row of an overflow menu. */
 @Composable
 private fun MenuEntry(
     labelRes: Int,
@@ -580,11 +580,12 @@ private fun MenuEntry(
  * direction 2026-10-06, extended 2026-10-07): Benchmark (when provided),
  * Share/Export and Delete live here instead of taking a button slot each
  * on the action row. Keeps the row clean (Use + kebab) at any width.
+ * The external-model cards ride it too (2026-10-08) with export omitted.
  */
 @Composable
-private fun VariantOverflowMenu(
-    onBenchmarkClick: (() -> Unit)?,
-    onExportClick: (() -> Unit)?,
+internal fun VariantOverflowMenu(
+    onBenchmarkClick: (() -> Unit)? = null,
+    onExportClick: (() -> Unit)? = null,
     onDeleteClick: () -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
