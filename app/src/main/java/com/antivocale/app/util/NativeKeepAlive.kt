@@ -140,6 +140,53 @@ class NativeKeepAlive(
     /** TASK-451: in-flight generation count, for the bracket tests. */
     fun workInFlightForTest(): Int = workInFlight.get()
 
+    // TASK-789 (the 1.13.2 FORTIFY crash): a manual unload requested the
+    // native release while work was in flight; the callback below runs once,
+    // under [lock], when the in-flight bracket drains to zero. Null means no
+    // drain is pending (job/idleDeadline discipline: plain fields under the
+    // monitor; only the fields read outside it stay atomic).
+    private var drainRelease: (() -> Unit)? = null
+
+    /**
+     * TASK-789: run [onDrained] once the in-flight work bracket drains.
+     * Immediately when none is in flight; otherwise at the last [endWork],
+     * under [lock] (the same discipline as the idle-unload fire: a beginWork
+     * arriving meanwhile blocks at the monitor and observes the post-release
+     * state). The manual-unload path uses this instead of releasing native
+     * state under a live decode.
+     */
+    fun requestDrainRelease(onDrained: () -> Unit) {
+        synchronized(lock) {
+            // A second request while one is pending must not drop the first
+            // release (its native bytes would leak); run both at the drain.
+            val previous = drainRelease
+            drainRelease = if (previous == null) onDrained else ({ previous(); onDrained() })
+            if (workInFlight.get() > 0) {
+                android.util.Log.w(tag, "Native work in flight; deferring the requested release to the drain")
+            } else {
+                tryDrainReleaseLocked()
+            }
+        }
+    }
+
+    private fun tryDrainReleaseLocked() {
+        val callback = drainRelease ?: return
+        if (workInFlight.get() == 0) {
+            drainRelease = null
+            try {
+                callback()
+            } catch (t: Throwable) {
+                // A throwing native release must not escape through endWork
+                // (it runs inside the withWork finally and would mask the
+                // bracketed work's own result, and it would skip the timer
+                // re-arm below). Logged and swallowed; the residual (a
+                // chained second release not running) is accepted: sherpa's
+                // release() guards ptr == 0 and effectively cannot throw.
+                android.util.Log.e(tag, "Drain-release callback threw", t)
+            }
+        }
+    }
+
     /** Stops the timer and forgets it (call on the owning backend's unload). */
     fun stop() {
         synchronized(lock) {
@@ -180,7 +227,10 @@ class NativeKeepAlive(
 
     fun endWork() {
         synchronized(lock) {
-            workInFlight.decrementAndGet()
+            // TASK-789: the last bracket member leaving runs a pending drain
+            // release BEFORE anything re-arms (a drain release disarms the
+            // timer anyway; unload() calls stop() first).
+            if (workInFlight.decrementAndGet() == 0) tryDrainReleaseLocked()
             if (timerActive.get()) restartLocked()
         }
     }

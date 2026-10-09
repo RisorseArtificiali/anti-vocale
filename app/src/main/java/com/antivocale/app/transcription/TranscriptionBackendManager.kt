@@ -202,7 +202,11 @@ class TranscriptionBackendManager @Inject constructor(
 
     /**
      * Unloads all loaded models (both LLM and transcription backends).
-     * Synchronous — safe to call from any thread.
+     * Thread-safe from any thread. TASK-789: for the sherpa engines the
+     * LOGICAL unload (state flip, bookkeeping) is synchronous, but if a
+     * native call is still in flight the native memory frees when that call
+     * drains (seconds on a long decode); callers must not read resident
+     * memory right after this and conclude the arena is already returned.
      */
     fun unloadAll() {
         if (llmManager.isReady()) {

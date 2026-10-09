@@ -777,6 +777,9 @@ class SherpaBackend(
 
         keepAlive.beginWork()
         try {
+            // TASK-789 review T1: unload() resets the language field
+            // mid-bracket; capture it with the recognizer local.
+            val lang = language
             val rec = onlineRecognizer
                 ?: return Result.failure(TranscriptionException.NotInitialized())
             return withContext(Dispatchers.IO) {
@@ -788,7 +791,7 @@ class SherpaBackend(
                 // non-empty value triggers contextual biasing, which sherpa aborts on (exit 255).
                 stream = rec.createStream("")
                 // AC #3: condition the multilingual model on the user's language ("auto" = auto-detect).
-                stream.setOption("language", language)
+                stream.setOption("language", lang)
                 // Tail padding: a second acceptWaveform of one shared zero buffer so the
                 // streaming encoder gets a complete final chunk to flush trailing tokens,
                 // with no per-chunk padded copy (TASK-340 Fix 1b). The original length
@@ -873,15 +876,38 @@ class SherpaBackend(
     override fun unload() {
         Log.i(TAG, "Unloading '$entryId' backend")
         keepAlive.stop()
-        offlineRecognizer?.release()
+        // TASK-789 (the 1.13.2 FORTIFY crash): a decode may be live inside the
+        // beginWork/endWork bracket; releasing the ORT session now would
+        // destroy mutexes that decode still holds. State flips immediately
+        // and the recognizer FIELDS null now: every transcribe path reads the
+        // field into a local AFTER beginWork, so the in-flight decode keeps
+        // its local while any work arriving after the flip fails
+        // NotInitialized. The captured stale objects release once, at once
+        // when idle and otherwise when the bracket drains (requestDrainRelease).
+        // Capturing matters because a re-initialize landing on this instance
+        // before the drain must not have its fresh recognizer released. May
+        // run under the keep-alive monitor (drain fire and idle fire share
+        // the discipline); must not call back into NativeKeepAlive beyond
+        // the reentrant stop()/requestDrainRelease pattern.
+        releaseBackendState()
+        val staleOffline = offlineRecognizer
+        val staleOnline = onlineRecognizer
         offlineRecognizer = null
-        onlineRecognizer?.release()
         onlineRecognizer = null
+        keepAlive.requestDrainRelease {
+            staleOffline?.release()
+            staleOnline?.release()
+        }
+        // Notify the manager/UI after the unload is booked; on the drain path
+        // the native bytes follow the in-flight decode's return (seconds).
+        onAutoUnloadCallback.get()?.invoke()
+    }
+
+    /** TASK-789: the unload's non-native half (the flip callers observe). */
+    private fun releaseBackendState() {
         modelDir = null
         language = "auto"
         isInitialized = false
-        // Notify the manager/UI after the native memory is actually freed.
-        onAutoUnloadCallback.get()?.invoke()
     }
 
     override fun setKeepAliveTimeout(minutes: Int) {
