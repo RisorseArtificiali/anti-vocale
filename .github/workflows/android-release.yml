@@ -415,9 +415,15 @@ jobs:
   reproducible-skip-decision:
     name: Decide whether the reproducible rebuild is needed
     runs-on: ubuntu-24.04
+    # Run on EVERY dispatch, not only tag-carrying ones (2026-10-09, found at
+    # 1.14.0): a skipped need skips its dependents regardless of their if, so
+    # gating the decision to tag inputs silently skipped the reproducible job
+    # on every build-first (commit-only) dispatch; the release-day "success"
+    # carried no signed APKs. The decision itself is harmless when no release
+    # exists: assets_ok=false -> skip=false -> the rebuild runs.
     if: >-
       github.event_name == 'release' ||
-      (github.event_name == 'workflow_dispatch' && github.event.inputs.tag != '')
+      github.event_name == 'workflow_dispatch' 
     outputs:
       skip: ${{ steps.decide.outputs.skip }}
     steps:
