@@ -714,7 +714,7 @@ jobs:
           # (~8-17 min each; expect ~45-60 min total for the trio).
           chown -R vagrant:vagrant /home/vagrant
           sudo -u vagrant -E env PATH="$PATH" PYTHONPATH="$PYTHONPATH" HOME=/home/vagrant \
-            bash -c 'cd /home/vagrant && VERCODES=$(python3 -c "import re; meta=open(\"build/fdroiddata/metadata/com.antivocale.app.yml\").read(); pairs=re.findall(r\"- versionName: ([0-9.]+)\n    versionCode: (\d+)\", meta); newest=max((tuple(map(int,v.split(chr(46)))),v) for v,_ in pairs)[1]; print(chr(32).join(vc for v,vc in pairs if v==newest))") && echo "building vercodes: $VERCODES" && fdroid build $(for vc in $VERCODES; do echo com.antivocale.app:$vc; done) --no-tarball'
+            bash -c 'cd /home/vagrant && VERCODES=$(python3 -c "import re; meta=open(\"fdroiddata/metadata/com.antivocale.app.yml\").read(); pairs=re.findall(r\"- versionName: ([0-9.]+)\n    versionCode: (\d+)\", meta); newest=max((tuple(map(int,v.split(chr(46)))),v) for v,_ in pairs)[1]; print(chr(32).join(vc for v,vc in pairs if v==newest))") && echo "building vercodes: $VERCODES" && fdroid build $(for vc in $VERCODES; do echo com.antivocale.app:$vc; done) --no-tarball'
       - name: Debug - locate built APK
         if: always()
         run: |
