@@ -85,7 +85,9 @@ GRADLE_ABI_MAP="$(sed -n '/val abiCode = when/,/else -> 0/p' \
 [ -n "$GRADLE_ABI_MAP" ] || fail "cannot parse the abiCode when-map from $SRC_DESC (the vercode single owner)"
 ABI_NAMES="$(awk -F'"' '{print $2}' <<<"$GRADLE_ABI_MAP")"
 ABI_CODES="$(awk -F' -> ' '{print $2}' <<<"$GRADLE_ABI_MAP")"
-ABI_COUNT="$(wc -l <<<"$GRADLE_ABI_MAP")"
+# tr -d: BSD wc (macOS) pads the count with spaces, GNU wc (bird) does not;
+# the string compare below must hold on both hosts
+ABI_COUNT="$(wc -l <<<"$GRADLE_ABI_MAP" | tr -d "[:space:]")"
 MAX_ABI_CODE=0
 for C in $ABI_CODES; do
   if [ "$C" -gt "$MAX_ABI_CODE" ]; then MAX_ABI_CODE=$C; fi
