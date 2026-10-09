@@ -289,10 +289,14 @@ project hook `block-raw-release-dispatch.py` now blocks hand-typed
 `gh workflow run android-release.yml` in agent sessions (escape marker
 `#release-script-escape` records a justified exception).
 
-Proof: `gh run view <id> --json jobs` shows `reproducible-fdroid` = success and
-the three artifacts present; NOTE the run id (`gh run list --event
-workflow_dispatch --limit 1`) for Step 5b. `gh release view vX.Y.Z` still 404s:
-nothing is public yet.
+Proof: `scripts/release-run-verdict.sh <id>` prints VERDICT OK (the signing
+job's verdict, not the run's: a green run can carry a SKIPPED signing job and
+`gh run watch --exit-status` exits 0 on it; run 37921765037 at 1.14.0 did
+exactly that until c4d43dbb fixed the cause and this script closed the
+detection gap; prepare now runs it automatically ~5 min after dispatch), and
+the three artifacts are present. NOTE the run id (`gh run list --event
+workflow_dispatch --limit 1`) for Step 5b. `gh release view vX.Y.Z` still
+404s: nothing is public yet.
 
 ## Step 5b. Publish: tag + release + all binaries in one act
 
