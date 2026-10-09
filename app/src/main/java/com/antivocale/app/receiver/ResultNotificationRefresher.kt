@@ -4,11 +4,10 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import androidx.core.app.NotificationManagerCompat
-import com.antivocale.app.data.AppNotificationPreferences
 import com.antivocale.app.data.PerAppPreferencesManager
 import com.antivocale.app.data.prefsOrDefault
 import com.antivocale.app.service.ResultNotificationFactory
-import com.antivocale.app.service.ResultNotificationSpec
+import com.antivocale.app.service.ResultNotificationSpecNav
 import com.antivocale.app.service.TranscriptPager
 
 /**
@@ -24,73 +23,42 @@ object ResultNotificationRefresher {
     private const val TAG = "ResultNotificationRefresher"
 
     suspend fun refresh(appContext: Context, intent: Intent) {
-        val text = intent.getStringExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT)
-        val notificationId = intent.getIntExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, -1)
-        if (text.isNullOrBlank() || notificationId == -1 ||
-            text.length > TranscriptPager.MAX_PAGED_LENGTH
-        ) {
-            Log.w(TAG, "Page action with unusable extras (id=$notificationId, ${text?.length ?: 0} chars); ignoring")
+        // TASK-764: the ONE read side of the round trip.
+        val baked = ResultNotificationSpecNav.readFrom(intent)
+        if (baked == null || baked.transcriptionText.length > TranscriptPager.MAX_PAGED_LENGTH) {
+            Log.w(TAG, "Page action with unusable extras (id=${baked?.notificationId}, " +
+                "${baked?.transcriptionText?.length ?: 0} chars); ignoring")
             return
         }
-        // One split pass; the guards above already ruled out the unpageable cases.
-        val pageCount = TranscriptPager.pagesFor(text).size
+        // One split pass; the guard above already ruled out the unpageable case.
+        val pageCount = TranscriptPager.pagesFor(baked.transcriptionText).size
         if (pageCount < 2) {
-            Log.w(TAG, "Page action for an unpaged text (${text.length} chars); ignoring")
+            Log.w(TAG, "Page action for an unpaged text (${baked.transcriptionText.length} chars); ignoring")
             return
         }
-        val current = intent.getIntExtra(NotificationActionReceiver.EXTRA_PAGE_INDEX, 0)
-            .coerceIn(0, pageCount - 1)
+        val current = baked.pageIndex.coerceIn(0, pageCount - 1)
         val target = if (intent.action == NotificationActionReceiver.ACTION_PAGE_PREV) {
             (current - 1).coerceAtLeast(0)
         } else {
             (current + 1).coerceAtMost(pageCount - 1)
         }
-        val sourcePackage = intent.getStringExtra(NotificationActionReceiver.EXTRA_SOURCE_PACKAGE)
         // TASK-757: the ONE per-app-prefs-with-defaults read (the data-layer
         // extension postResult also uses).
-        val prefs = PerAppPreferencesManager(appContext).prefsOrDefault(sourcePackage)
-        val spec = ResultNotificationSpec(
-            transcriptionText = text,
-            // TASK-650 F7: while this process has resolved the signature at
-            // least once, the LIVE preference wins over the values baked at
-            // post time (an edit or disabling mid-notification must apply);
-            // in a fresh process the baked extras are the best knowledge.
-            signatureText = if (com.antivocale.app.util.TranscriptSignature.lastResolvedIsLive) {
-                com.antivocale.app.util.TranscriptSignature.lastResolved.text
-            } else {
-                intent.getStringExtra(NotificationActionReceiver.EXTRA_SIGNATURE_TEXT) ?: ""
-            },
-            signaturePosition = if (com.antivocale.app.util.TranscriptSignature.lastResolvedIsLive) {
-                com.antivocale.app.util.TranscriptSignature.lastResolved.position
-            } else {
-                intent.getStringExtra(NotificationActionReceiver.EXTRA_SIGNATURE_POSITION) ?: "append"
-            },
-            taskId = intent.getStringExtra(NotificationActionReceiver.EXTRA_TASK_ID),
-            sourcePackage = sourcePackage,
-            confidence = if (intent.hasExtra(NotificationActionReceiver.EXTRA_CONFIDENCE)) {
-                intent.getFloatExtra(NotificationActionReceiver.EXTRA_CONFIDENCE, 0f)
-            } else null,
-            detectedLanguage = intent.getStringExtra(NotificationActionReceiver.EXTRA_DETECTED_LANGUAGE),
-            isPartial = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_IS_PARTIAL, false),
-            failedChunkCount = intent.getIntExtra(NotificationActionReceiver.EXTRA_FAILED_CHUNK_COUNT, 0),
-            // TASK-722: keep the failure banner across page reposts.
-            saveFailureReason = intent.getStringExtra(NotificationActionReceiver.EXTRA_SAVE_FAILURE),
-            savedFolderName = intent.getStringExtra(NotificationActionReceiver.EXTRA_SAVED_FOLDER),
-            // TASK-758: the status facts survive the page repost. The
-            // booleans default false, so a notification posted before the
-            // extras existed still sheds its facts on the FIRST repost
-            // after updating (accepted: one tap, once, at update time).
-            repetitionSuspected = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_REPETITION_SUSPECTED, false),
-            copiedToClipboard = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_COPIED_TO_CLIPBOARD, false),
-            streamedWithoutVad = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_STREAMED_WITHOUT_VAD, false),
-            refinedFrom = intent.getStringExtra(NotificationActionReceiver.EXTRA_REFINED_FROM),
-            notRefined = intent.getBooleanExtra(NotificationActionReceiver.EXTRA_NOT_REFINED, false),
+        val prefs = PerAppPreferencesManager(appContext).prefsOrDefault(baked.sourcePackage)
+        // TASK-650 F7: while this process has resolved the signature at
+        // least once, the LIVE preference wins over the values baked at
+        // post time (an edit or disabling mid-notification must apply);
+        // in a fresh process the baked extras are the best knowledge.
+        val live = com.antivocale.app.util.TranscriptSignature.lastResolvedIsLive
+        val sigText = if (live) com.antivocale.app.util.TranscriptSignature.lastResolved.text else baked.signatureText
+        val sigPos = if (live) com.antivocale.app.util.TranscriptSignature.lastResolved.position else baked.signaturePosition
+        // TASK-722/758: every status fact survives the page repost through
+        // the round trip; a notification posted before a field's extra
+        // existed reposts with that field at its default (once, at update).
+        val spec = baked.copy(
+            signatureText = sigText,
+            signaturePosition = sigPos,
             pageIndex = target,
-            notificationId = notificationId,
-            firstPostedAt = intent.getLongExtra(
-                NotificationActionReceiver.EXTRA_FIRST_POSTED_AT,
-                System.currentTimeMillis()
-            ),
             repost = true
         )
         val notification = ResultNotificationFactory(appContext).build(spec, prefs)
@@ -98,7 +66,7 @@ object ResultNotificationRefresher {
         // explicitly: the receiver only fires from a notification action tap
         // (implying notifications were deliverable), but lint is right that the
         // code path itself must not assume the grant.
-        ResultNotificationFactory(appContext).postIfPermitted(notificationId, notification)
-        Log.i(TAG, "Paged result notification to page ${target + 1}/$pageCount (id=$notificationId)")
+        ResultNotificationFactory(appContext).postIfPermitted(baked.notificationId, notification)
+        Log.i(TAG, "Paged result notification to page ${target + 1}/$pageCount (id=${baked.notificationId})")
     }
 }

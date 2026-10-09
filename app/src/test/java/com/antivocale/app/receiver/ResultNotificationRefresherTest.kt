@@ -5,6 +5,8 @@ import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
+import com.antivocale.app.service.ResultNotificationSpec
+import com.antivocale.app.service.ResultNotificationSpecNav
 import com.antivocale.app.service.TranscriptPager
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
@@ -28,15 +30,31 @@ class ResultNotificationRefresherTest {
         return List(pages * perPage) { "parola" }.joinToString(" ")
     }
 
-    private fun pageIntent(action: String, text: String, page: Int, id: Int = 7): Intent =
-        Intent(context, NotificationActionReceiver::class.java).apply {
+    /** TASK-764: nav intents are built through the ONE round-trip owner,
+     *  so the tests pin the owner's contract instead of raw extra keys. */
+    private fun pageIntent(
+        action: String,
+        text: String,
+        page: Int,
+        id: Int = 7,
+        configure: (ResultNotificationSpec) -> ResultNotificationSpec = { it },
+    ): Intent {
+        val spec = configure(
+            ResultNotificationSpec(
+                transcriptionText = text,
+                taskId = null,
+                sourcePackage = "org.telegram.messenger",
+                confidence = null,
+                detectedLanguage = null,
+                notificationId = id,
+                firstPostedAt = 123_456L,
+            )
+        )
+        return Intent(context, NotificationActionReceiver::class.java).apply {
             this.action = action
-            putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, text)
-            putExtra(NotificationActionReceiver.EXTRA_PAGE_INDEX, page)
-            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, id)
-            putExtra(NotificationActionReceiver.EXTRA_SOURCE_PACKAGE, "org.telegram.messenger")
-            putExtra(NotificationActionReceiver.EXTRA_FIRST_POSTED_AT, 123_456L)
+            ResultNotificationSpecNav.writeTo(this, spec, currentPage = page)
         }
+    }
 
     private fun shadowNm() =
         Shadows.shadowOf(context.getSystemService(NotificationManager::class.java))
@@ -59,12 +77,14 @@ class ResultNotificationRefresherTest {
     @Test
     fun `a repost keeps the status facts that rode the nav intent (TASK-758)`() = runBlocking {
         val text = longText(3)
-        val intent = pageIntent(NotificationActionReceiver.ACTION_PAGE_NEXT, text, 0).apply {
-            putExtra(NotificationActionReceiver.EXTRA_REPETITION_SUSPECTED, true)
-            putExtra(NotificationActionReceiver.EXTRA_COPIED_TO_CLIPBOARD, true)
-            putExtra(NotificationActionReceiver.EXTRA_STREAMED_WITHOUT_VAD, true)
-            putExtra(NotificationActionReceiver.EXTRA_REFINED_FROM, "whisper")
-            putExtra(NotificationActionReceiver.EXTRA_NOT_REFINED, true)
+        val intent = pageIntent(NotificationActionReceiver.ACTION_PAGE_NEXT, text, 0) {
+            it.copy(
+                repetitionSuspected = true,
+                copiedToClipboard = true,
+                streamedWithoutVad = true,
+                refinedFrom = "whisper",
+                notRefined = true,
+            )
         }
         ResultNotificationRefresher.refresh(context, intent)
         val sub = requireNotNull(subTextOf(postedNotification(7))).lowercase()
@@ -98,10 +118,10 @@ class ResultNotificationRefresherTest {
 
     @Test
     fun `missing text is a no-op`() = runBlocking {
-        val intent = Intent(context, NotificationActionReceiver::class.java).apply {
-            action = NotificationActionReceiver.ACTION_PAGE_NEXT
-            putExtra(NotificationActionReceiver.EXTRA_PAGE_INDEX, 0)
-            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, 7)
+        // A foreign or malformed intent: built through the owner, then the
+        // one shared-key extra the guard needs is stripped.
+        val intent = pageIntent(NotificationActionReceiver.ACTION_PAGE_NEXT, longText(2), 0).apply {
+            removeExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT)
         }
         ResultNotificationRefresher.refresh(context, intent)
         assertEquals(0, shadowNm().allNotifications.size)

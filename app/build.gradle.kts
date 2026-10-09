@@ -327,6 +327,10 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.org.json)
     testImplementation(libs.mockk)
+    // TASK-764: the round-trip symmetry test enumerates the spec's
+    // constructor by reflection; it sat on the classpath transitively via
+    // robolectric/mockk, but a direct pin keeps that from being an accident.
+    testImplementation(kotlin("reflect"))
     testImplementation(libs.coroutines.test)
     testImplementation(libs.mockwebserver)
     testImplementation(libs.androidx.test.core.ktx)

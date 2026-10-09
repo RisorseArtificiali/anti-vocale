@@ -545,7 +545,8 @@ class ResultNotificationFactory(private val context: Context) {
      * Nav intents carry everything needed to rebuild the neighbor page. The
      * request code is distinct per (notification, page, direction): PendingIntent
      * equality ignores extras, so shared codes would collapse distinct pages
-     * into one cached intent.
+     * into one cached intent. The extras themselves are the ONE round trip
+     * in [ResultNotificationSpecNav] (TASK-764).
      */
     private fun navPendingIntent(spec: ResultNotificationSpec, pageIndex: Int, isPrev: Boolean): PendingIntent {
         val intent = Intent(context, NotificationActionReceiver::class.java).apply {
@@ -554,28 +555,8 @@ class ResultNotificationFactory(private val context: Context) {
             } else {
                 NotificationActionReceiver.ACTION_PAGE_NEXT
             }
-            putExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT, spec.transcriptionText)
-            // TASK-647: the rebuilt notification's copy/share actions must
-            // keep signing; the body stays raw.
-            putExtra(NotificationActionReceiver.EXTRA_SIGNATURE_TEXT, spec.signatureText)
-            putExtra(NotificationActionReceiver.EXTRA_SIGNATURE_POSITION, spec.signaturePosition)
-            putExtra(NotificationActionReceiver.EXTRA_PAGE_INDEX, pageIndex)
-            putExtra(NotificationActionReceiver.EXTRA_SAVED_FOLDER, spec.savedFolderName)
-            putExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, spec.notificationId)
-            putExtra(NotificationActionReceiver.EXTRA_FIRST_POSTED_AT, spec.firstPostedAt)
-            putExtra(NotificationActionReceiver.EXTRA_SAVE_FAILURE, spec.saveFailureReason)
-            putExtra(NotificationActionReceiver.EXTRA_IS_PARTIAL, spec.isPartial)
-            putExtra(NotificationActionReceiver.EXTRA_FAILED_CHUNK_COUNT, spec.failedChunkCount)
-            putExtra(NotificationActionReceiver.EXTRA_REPETITION_SUSPECTED, spec.repetitionSuspected)
-            putExtra(NotificationActionReceiver.EXTRA_COPIED_TO_CLIPBOARD, spec.copiedToClipboard)
-            putExtra(NotificationActionReceiver.EXTRA_STREAMED_WITHOUT_VAD, spec.streamedWithoutVad)
-            spec.refinedFrom?.let { putExtra(NotificationActionReceiver.EXTRA_REFINED_FROM, it) }
-            putExtra(NotificationActionReceiver.EXTRA_NOT_REFINED, spec.notRefined)
-            spec.taskId?.let { putExtra(NotificationActionReceiver.EXTRA_TASK_ID, it) }
-            spec.sourcePackage?.let { putExtra(NotificationActionReceiver.EXTRA_SOURCE_PACKAGE, it) }
-            spec.confidence?.let { putExtra(NotificationActionReceiver.EXTRA_CONFIDENCE, it) }
-            spec.detectedLanguage?.let { putExtra(NotificationActionReceiver.EXTRA_DETECTED_LANGUAGE, it) }
         }
+        ResultNotificationSpecNav.writeTo(intent, spec, currentPage = pageIndex)
         val requestCode = spec.notificationId * 1000 + pageIndex * 2 + if (isPrev) 0 else 1
         return PendingIntent.getBroadcast(
             context,

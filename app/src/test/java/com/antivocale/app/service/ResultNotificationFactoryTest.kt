@@ -203,12 +203,15 @@ class ResultNotificationFactoryTest {
             ), prefs)
         val next = n.actions!!.first { it.title == "Next" }.actionIntent
         val saved = Shadows.shadowOf(next).savedIntent
-        assertEquals(true, saved.getBooleanExtra(NotificationActionReceiver.EXTRA_REPETITION_SUSPECTED, false))
-        assertEquals(true, saved.getBooleanExtra(NotificationActionReceiver.EXTRA_COPIED_TO_CLIPBOARD, false))
-        assertEquals(true, saved.getBooleanExtra(NotificationActionReceiver.EXTRA_STREAMED_WITHOUT_VAD, false))
-        assertEquals(true, saved.getBooleanExtra(NotificationActionReceiver.EXTRA_NOT_REFINED, false))
-        assertEquals("whisper", saved.getStringExtra(NotificationActionReceiver.EXTRA_REFINED_FROM))
-        assertEquals("it", saved.getStringExtra(NotificationActionReceiver.EXTRA_DETECTED_LANGUAGE))
+        // TASK-764: assert through the ONE round-trip owner (read side),
+        // which exercises both directions instead of raw keys.
+        val roundTripped = ResultNotificationSpecNav.readFrom(saved)!!
+        assertEquals(true, roundTripped.repetitionSuspected)
+        assertEquals(true, roundTripped.copiedToClipboard)
+        assertEquals(true, roundTripped.streamedWithoutVad)
+        assertEquals(true, roundTripped.notRefined)
+        assertEquals("whisper", roundTripped.refinedFrom)
+        assertEquals("it", roundTripped.detectedLanguage)
     }
 
     @Test
@@ -232,10 +235,12 @@ class ResultNotificationFactoryTest {
         val n = factory.build(spec(text), prefs)
         val intent = Shadows.shadowOf(n.actions!!.first { it.title == "Next" }.actionIntent).savedIntent
         assertEquals(NotificationActionReceiver.ACTION_PAGE_NEXT, intent.action)
-        assertEquals(text, intent.getStringExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT))
-        assertEquals(0, intent.getIntExtra(NotificationActionReceiver.EXTRA_PAGE_INDEX, -1))
-        assertEquals(5_000, intent.getIntExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, -1))
-        assertEquals(1_000L, intent.getLongExtra(NotificationActionReceiver.EXTRA_FIRST_POSTED_AT, -1L))
+        // TASK-764: read through the one round-trip owner.
+        val back = ResultNotificationSpecNav.readFrom(intent)!!
+        assertEquals(text, back.transcriptionText)
+        assertEquals(0, back.pageIndex)
+        assertEquals(5_000, back.notificationId)
+        assertEquals(1_000L, back.firstPostedAt)
     }
 
     @Test
@@ -244,10 +249,11 @@ class ResultNotificationFactoryTest {
         val n = factory.build(spec(text, page = 1), prefs)
         val intent = Shadows.shadowOf(n.actions!!.first { it.title == "Previous" }.actionIntent).savedIntent
         assertEquals(NotificationActionReceiver.ACTION_PAGE_PREV, intent.action)
-        assertEquals(text, intent.getStringExtra(NotificationActionReceiver.EXTRA_TRANSCRIPTION_TEXT))
-        assertEquals(1, intent.getIntExtra(NotificationActionReceiver.EXTRA_PAGE_INDEX, -1))
-        assertEquals(5_000, intent.getIntExtra(NotificationActionReceiver.EXTRA_NOTIFICATION_ID, -1))
-        assertEquals(1_000L, intent.getLongExtra(NotificationActionReceiver.EXTRA_FIRST_POSTED_AT, -1L))
+        val back = ResultNotificationSpecNav.readFrom(intent)!!
+        assertEquals(text, back.transcriptionText)
+        assertEquals(1, back.pageIndex)
+        assertEquals(5_000, back.notificationId)
+        assertEquals(1_000L, back.firstPostedAt)
     }
 
     @Test
