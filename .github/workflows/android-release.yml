@@ -702,12 +702,19 @@ jobs:
           export PATH="/opt/fdroidserver:/opt/android-sdk/cmdline-tools/latest/bin:/opt/android-sdk/platform-tools:$PATH"
           # Build as the vagrant user from /home/vagrant, mirroring F-Droid's --on-server layout,
           # so the srclib build lands at /home/vagrant/build/srclib/sherpa_onnx (matching path embedding).
-          # Per-ABI split: build all versionCodes declared in the recipe (no hardcoding,
-          # so a version bump does not require editing this workflow).
-          # Each compiles its own ABI's sherpa .so from source (~8-10 min each).
+          # Per-ABI split: build ONLY the newest versionName's versionCodes,
+          # DERIVED from the cloned recipe (still no hardcoding: a version bump
+          # does not require editing this workflow). The bare `fdroid build
+          # com.antivocale.app` used until 2026-10-09 builds EVERY block in the
+          # recipe: 12 blocks were ~3h at v1.12.0 (the runbook's "~3h" figure),
+          # and the bot-grown recipe reached 36 blocks = a ~9h sweep that looked
+          # like a loop and never reached the new trio in 4h (run 37923023195,
+          # cancelled: 18 old vercodes built, 471/472/474 never started).
+          # Each pinned block compiles its ABI's sherpa .so from source
+          # (~8-17 min each; expect ~45-60 min total for the trio).
           chown -R vagrant:vagrant /home/vagrant
           sudo -u vagrant -E env PATH="$PATH" PYTHONPATH="$PYTHONPATH" HOME=/home/vagrant \
-            bash -c 'cd /home/vagrant && fdroid build com.antivocale.app --no-tarball'
+            bash -c 'cd /home/vagrant && VERCODES=$(python3 -c "import re; meta=open(\"build/fdroiddata/metadata/com.antivocale.app.yml\").read(); pairs=re.findall(r\"- versionName: ([0-9.]+)\n    versionCode: (\d+)\", meta); newest=max((tuple(map(int,v.split(chr(46)))),v) for v,_ in pairs)[1]; print(chr(32).join(vc for v,vc in pairs if v==newest))") && echo "building vercodes: $VERCODES" && fdroid build $(for vc in $VERCODES; do echo com.antivocale.app:$vc; done) --no-tarball'
       - name: Debug - locate built APK
         if: always()
         run: |
