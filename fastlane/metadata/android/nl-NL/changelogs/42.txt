@@ -1,0 +1,9 @@
+Nieuw in 1.12.0:
+• Nieuw: begeleide tour bij de eerste start (opnieuw af te spelen via Instellingen)
+• Nieuw: audio- of videobestanden kiezen vanuit het tabblad Geschiedenis
+• Nieuw: AI-samenvatting van lange transcripties: kopieerbaar, opnieuw te proberen, eigen prompt
+• Nieuw: app-pictogramkiezer en Hebreeuwse interface
+• Instellingen geherorganiseerd; interpunctiestap toegevoegd
+• Opgelost: duur van Telegram-spraakberichten
+• Opgelost: Whisper vertaalde in plaats van te transcriberen
+• Opgelost: duidelijkere fouten bij weinig geheugen en corrupte modellen

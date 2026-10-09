@@ -1,0 +1,5 @@
+Nieuw: transcripties in een map opslaan: elke transcriptie automatisch als .txt in een map naar keuze (Drive, Syncthing, Dropbox)
+Opgelost: de globale schakelaar Automatisch kopiëren werkt nu voor alle apps, niet alleen WhatsApp
+Opgelost: het valse dialoog Transcriptie onderbroken verschijnt niet meer bij een normale afronding
+Opgelost: Nemotron kapte het einde van korte berichten niet langer af
+Bijgewerkte inference-engine (sherpa-onnx 1.13.4) met schonere transcriptie-uitvoer

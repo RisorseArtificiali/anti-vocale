@@ -1,0 +1,1 @@
+GigaAM v3 (Russisch): veel betere nauwkeurigheid bij opnames langer dan een minuut. Lange audio wordt nu gesplitst in passages van 30 s, zoals het model getraind is (WER bij lange opnames daalde van ~65% naar ~11% in onze tests).

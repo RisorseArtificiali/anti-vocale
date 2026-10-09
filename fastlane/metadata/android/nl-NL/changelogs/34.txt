@@ -1,0 +1,1 @@
+Onderhoudsrelease: verbeterde reproduceerbaarheid van de build voor F-Droid. Geen gebruikersgerichte wijzigingen.

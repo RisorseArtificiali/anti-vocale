@@ -1,0 +1,5 @@
+Opgelost: het model Parakeet (quantized) crashte stilletjes; modelbestanden worden nu gevalideerd vóór het laden
+Getypte foutafhandeling: specifieke meldingen voor corrupt model, interne fout, geen model geladen
+Crashpreventie: ongeldige modelbestanden worden vóór het laden gedetecteerd
+Crashherstel: detectie van native crashes wijst de gebruiker op het opnieuw downloaden van het model
+Standaardbackend gewijzigd naar Parakeet TDT (sherpa-onnx)

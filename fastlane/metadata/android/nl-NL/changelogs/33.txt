@@ -1,0 +1,6 @@
+Opgelost: het model Parakeet (quantized) crashte stilletjes; modelbestanden worden nu vóór het laden gevalideerd, zodat een gebroken download wordt opgepakt in plaats van te crashen
+Duidelijkere, specifieke foutmeldingen: de echte reden (corrupt model, interne fout, geen model geladen) in plaats van een generieke melding Transcriptie mislukt
+Crashherstel: bij een crash heropent de app het tabblad Modellen en wijst hij op het opnieuw downloaden van het getroffen model
+De standaardtranscriptie-engine is nu Parakeet TDT (was Gemma), passend bij het meest gedownloade model
+Verwijderd: ongebruikte opslagrechten (READ_MEDIA_AUDIO, READ_EXTERNAL_STORAGE); alle bestandstoegang gebruikt de systeembestandskiezer
+Duidelijkere foutmelding wanneer een niet-ondersteund audioformaat wordt gedeeld

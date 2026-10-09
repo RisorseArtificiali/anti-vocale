@@ -1,0 +1,2 @@
+Verwijderd: ongebruikte opslagrechten (READ_MEDIA_AUDIO, READ_EXTERNAL_STORAGE): de app heeft ze nooit nodig gehad, alle bestandstoegang loopt via de systeembestandskiezer
+Duidelijkere foutmelding wanneer een niet-ondersteund audioformaat wordt gedeeld

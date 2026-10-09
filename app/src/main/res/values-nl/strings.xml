@@ -1,0 +1,1242 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Anti-Vocale</string>
+
+    <!-- Tab names -->
+    <string name="model_tab">Modellen</string>
+    <string name="logs_tab">Geschiedenis</string>
+    <string name="settings_tab">Instellingen</string>
+
+    <!-- Model selection -->
+    <string name="select_model">Modelbestand selecteren</string>
+    <string name="select_model_from_device">Kies een .litertlm-bestand</string>
+
+    <!-- Custom transducer model (sideload) -->
+    <string name="load_model">Model laden</string>
+    <string name="unload_model">Model ontladen</string>
+
+    <!-- Model status -->
+    <string name="model_status">Status: %1$s</string>
+    <string name="model_path">Pad: %1$s</string>
+    <string name="no_model_selected">Geen model geselecteerd</string>
+    <string name="status_ready">Gereed</string>
+    <string name="status_loading">Model laden…</string>
+    <string name="status_error">Fout</string>
+    <string name="status_unloaded">Ontladen</string>
+    <string name="status_model_selected">Model geselecteerd</string>
+    <string name="status_no_model">Geen model</string>
+
+    <!-- ViewModel status messages -->
+    <string name="parakeet_name">Parakeet TDT</string>
+    <string name="llm_backend_name">Gemma (LiteRT-LM)</string>
+    <string name="backend_model_ready">%1$s gereed</string>
+    <string name="backend_model_not_found">Model %1$s niet gevonden</string>
+    <string name="saved_model_found">Opgeslagen model gevonden</string>
+    <string name="saved_model_not_found">Opgeslagen model niet gevonden</string>
+    <string name="model_selected">Model geselecteerd: %1$s</string>
+    <string name="model_import_invalid_file">Het gekozen bestand lijkt geen bruikbaar LiteRT-LM-modelbestand (%1$s)</string>
+    <string name="model_copy_failed">Modelbestand kopiëren mislukt</string>
+    <string name="model_file_not_found">Modelbestand niet gevonden op: %1$s</string>
+    <string name="model_loading">Model in geheugen laden…</string>
+    <string name="model_ready_inference">Model gereed voor gebruik</string>
+    <string name="model_load_failed">Laden mislukt: %1$s</string>
+    <string name="device_incompatible_title">Niet-ondersteund apparaat</string>
+    <string name="device_incompatible_arch">Deze app vereist een ARM64-apparaat. Hij werkt niet op emulators of x86-apparaten.</string>
+    <string name="device_incompatible_ram">Dit apparaat heeft mogelijk niet genoeg geheugen voor AI-modellen die op het apparaat draaien. De lichtere modellen (Parakeet) zouden moeten werken; grotere kunnen problemen krijgen.</string>
+    <string name="model_unloaded">Model ontladen</string>
+    <string name="model_auto_unloaded">Model ontladen wegens inactiviteit</string>
+    <string name="model_externally_loaded">Model gereed (van buitenaf geladen)</string>
+    <string name="model_deleted_status">Model verwijderd</string>
+    <string name="downloaded_model_selected">Gedownload model geselecteerd</string>
+
+    <!-- Settings error messages -->
+    <string name="error_save_settings">Instellingen opslaan mislukt</string>
+    <string name="error_save_language">Taalvoorkeur opslaan mislukt</string>
+    <string name="error_save_theme">Thema opslaan mislukt</string>
+    <string name="error_token_empty">Token mag niet leeg zijn</string>
+    <string name="error_auth_cancelled">Aanmelden geannuleerd</string>
+
+    <!-- Logs -->
+    <string name="logs_empty">Nog geen verzoeken</string>
+    <string name="request_text">Tekstverzoek</string>
+    <string name="request_audio">Audioverzoek</string>
+    <string name="logs_clear">Wissen</string>
+    <string name="logs_delete_entry">Log verwijderen</string>
+    <string name="logs_delete_confirmation">Dit geschiedenisitem verwijderen?</string>
+    <string name="logs_delete_selected">Selectie verwijderen</string>
+    <string name="logs_clear_confirmation">Hele geschiedenis wissen? Dit kan niet ongedaan worden gemaakt.</string>
+    <string name="logs_select_all">Alles selecteren</string>
+    <string name="logs_deselect_all">Selectie opheffen</string>
+    <string name="logs_entries_selected">%d geselecteerd</string>
+    <string name="logs_no_entries_selected">Geen items geselecteerd</string>
+    <string name="logs_cleared">Geschiedenis gewist</string>
+    <string name="logs_entry_deleted">Logitem verwijderd</string>
+    <plurals name="logs_entries_deleted">
+        <item quantity="one">%d item verwijderd</item>
+        <item quantity="other">%d items verwijderd</item>
+    </plurals>
+    <string name="logs_undo">Ongedaan maken</string>
+    <string name="logs_cancel">Annuleren</string>
+    <string name="logs_confirm">Bevestigen</string>
+    <string name="logs_empty_hint">Deel een spraakbericht vanuit een messenger en de tekst verschijnt hier</string>
+    <string name="logs_prompt_label">Prompt:</string>
+    <string name="logs_result_label">Resultaat:</string>
+    <string name="logs_error_label">Fout:</string>
+    <string name="logs_unknown_error">Onbekende fout</string>
+    <string name="logs_status_queued">In wachtrij</string>
+    <string name="logs_status_success">Geslaagd</string>
+    <string name="logs_status_error">Fout</string>
+    <string name="logs_status_processing">Verwerken</string>
+    <string name="logs_original_label">Origineel (vóór interpunctie):</string>
+    <string name="logs_summary_label">Samenvatting:</string>
+    <string name="summary_skipped_context">Samenvatting overgeslagen: de transcriptie is langer dan de samenvattingsstap aankan.</string>
+    <string name="summary_skipped_no_model">Samenvatting overgeslagen: geen Gemma-model ingesteld. Download het via het tabblad Modellen om samenvattingen mogelijk te maken.</string>
+    <string name="summary_skipped_failed">Samenvatting mislukt tijdens het genereren; de transcriptie is intact.</string>
+    <string name="summary_skipped_timeout">Samenvatting kreeg niet genoeg tijd; de transcriptie is intact.</string>
+    <string name="summary_skipped_guard">Samenvatting overgeslagen: de gegenereerde samenvatting viel buiten de lengtegrenzen (te kort of te lang om een samenvatting te zijn).</string>
+    <string name="summary_partial_note">(sommige delen van de transcriptie konden niet worden samengevat)</string>
+    <string name="copy_summary">Samenvatting kopiëren</string>
+    <string name="copy_original">Origineel kopiëren</string>
+    <string name="logs_model_label">Model: %1$s</string>
+    <string name="logs_transcription_cancelled">Transcriptie geannuleerd</string>
+    <string name="logs_search_placeholder">Items zoeken…</string>
+    <string name="logs_search_no_results">Geen overeenkomende items</string>
+    <string name="logs_search_no_results_hint">Probeer een andere zoekterm</string>
+    <string name="browse_audio_content_description">Kies een audiobestand om te transcriberen</string>
+    <string name="settings_search_hint">Instellingen zoeken…</string>
+    <plurals name="settings_search_matches">
+        <item quantity="one">%1$d overeenkomst</item>
+        <item quantity="other">%1$d overeenkomsten</item>
+    </plurals>
+    <string name="settings_search_no_results">Geen overeenkomende instellingen</string>
+    <string name="settings_replay_tour">Welkomsttour opnieuw afspelen</string>
+    <string name="tour_done">Begrepen</string>
+    <string name="tour_skip">Overslaan</string>
+    <string name="tour_next">Volgende</string>
+    <string name="tour_body_browse">Geen spraakbericht bij de hand? Kies met deze knop elk audiobestand uit je opslag.</string>
+    <string name="tour_title_browse">Of kies een bestand</string>
+    <string name="tour_body_history">Deel een spraakbericht vanuit een willekeurige messenger. De transcriptie verschijnt hier, met een melding zodra hij klaar is.</string>
+    <string name="tour_title_history">Stuur een spraakbericht</string>
+    <string name="tour_body_models">Download eerst een transcriptiemodel via het tabblad Modellen. Parakeet is de aanbevolen standaard. Modellen zijn groot, tot enkele GB, maar elk wordt maar één keer gedownload. App-updates vragen nooit om ze opnieuw te downloaden.</string>
+    <string name="tour_title_models">Haal een model op</string>
+    <string name="tour_body_welcome">Transcriptie draait volledig op deze telefoon; je audio verlaat hem nooit. Drie korte aanwijzingen voordat je begint.</string>
+    <string name="tour_title_welcome">Welkom bij Anti-Vocale</string>
+    <string name="voice_message_duration">spraakbericht</string>
+    <string name="source_was_video">Bron: videobestand</string>
+    <string name="processed_in">Verwerkt in %1$s</string>
+    <string name="transcript_render_capped">Eerste %1$d tekens getoond, %2$d meer. Gebruik Kopiëren voor de volledige tekst.</string>
+    <string name="transcript_capped_autosave_hint">Volledige transcriptie beschikbaar via automatisch opslaan: Instellingen → Automatisch opslaan in map</string>
+    <string name="transcript_capped_autosave_saved">Volledige transcriptie automatisch in je map opgeslagen</string>
+    <string name="export_settings_title">Automatisch opslaan &amp; exporteren</string>
+    <string name="export_settings_description">Optioneel: schrijf elke transcriptie ook naar een map die je kiest, in het formaat dat je kiest. Alles blijft altijd ook in het tabblad Geschiedenis staan.</string>
+    <string name="error_folder_not_writable">Deze map kan geen bestanden ontvangen. Kies een map uit de opslag van het apparaat (niet de snelkoppeling Downloads).</string>
+    <string name="language_phone_option">Telefoontaal (%1$s)</string>
+    <string name="today">Vandaag</string>
+    <string name="yesterday">Gisteren, %1$s</string>
+    <string name="yesterday_label">Gisteren</string>
+    <string name="time_seconds_ago">%1$ds geleden</string>
+    <string name="time_minutes_ago">%1$dm geleden</string>
+    <string name="time_hours_ago">%1$du geleden</string>
+
+    <!-- Model descriptions -->
+    <string name="model_desc_gemma_4_e2b">2,6 GB - Multimodaal (tekst + audio), nieuwste generatie, het beste voor de meeste apparaten</string>
+    <string name="model_desc_gemma_4_e4b">3,7 GB - Multimodaal (tekst + audio), nieuwste generatie, hogere kwaliteit</string>
+    <string name="model_desc_gemma_3n_e2b">3,3 GB - Multimodaal (tekst + audio), het beste voor de meeste apparaten</string>
+    <string name="model_desc_gemma_3n_e4b">4,2 GB - Multimodaal (tekst + audio), hogere kwaliteit</string>
+
+    <!-- Parakeet model -->
+    <string name="parakeet_title">Parakeet TDT</string>
+    <string name="parakeet_description">25 talen • Snel • Aanbevolen</string>
+    <string name="parakeet_download">Parakeet TDT downloaden</string>
+    <string name="parakeet_download_confirm_title">Parakeet TDT downloaden?</string>
+    <string name="parakeet_download_confirm_message">Dit downloadt ~%1$dMB. Parakeet is sneller maar minder nauwkeurig dan Gemma voor transcriptie.</string>
+    <string name="parakeet_smoothquant_title">Parakeet TDT (SmoothQuant)</string>
+    <string name="parakeet_smoothquant_description">~862MB • 25 talen • Alternatief voor de standaard</string>
+    <string name="parakeet_stock_title">Parakeet TDT (Stock int8)</string>
+    <string name="parakeet_stock_description">~640MB • 25 talen • De standaard: beste gemeten kwaliteit op het apparaat</string>
+
+    <!-- Whisper model -->
+    <string name="whisper_title">Whisper</string>
+    <string name="whisper_description">Meertalige spraakherkenning</string>
+    <string name="whisper_small_title">Whisper Small</string>
+    <string name="whisper_small_description">~358MB • Lagere nauwkeurigheid, vooral bij rumoerige audio • Onbetrouwbare automatische taaldetectie (valt terug op je app-taal) • Alleen voor eenvoudige apparaten</string>
+    <string name="whisper_turbo_title">Whisper Turbo</string>
+    <string name="whisper_turbo_description">~988MB • Kwaliteit bijna op large-v3-niveau • Gebalanceerd meertalig</string>
+    <string name="whisper_medium_title">Whisper Medium</string>
+    <string name="whisper_medium_description">~903MB • Goede nauwkeurigheid • Meertalig</string>
+    <string name="whisper_distil_large_v3_title">Distil Italian</string>
+    <string name="whisper_distil_large_v3_description">~939MB • 2 decoderlagen • Snelst • Geoptimaliseerd voor Italiaans</string>
+    <string name="whisper_download">Whisper downloaden</string>
+    <string name="whisper_download_confirm_title">%1$s downloaden?</string>
+    <string name="whisper_download_confirm_message">Dit downloadt ~%1$dMB. Whisper biedt uitstekende meertalige ondersteuning met juiste interpunctie.</string>
+    <string name="whisper_extract_confirm_title">%1$s uitpakken?</string>
+    <string name="whisper_extract_confirm_message">Het modelbestand is al gedownload. Dit pakt het uit voor gebruik.</string>
+
+    <!-- Qwen3-ASR model -->
+    <string name="qwen3_asr_title">Qwen3-ASR (%1$d talen)</string>
+    <string name="qwen3_asr_description">%1$d talen</string>
+    <string name="qwen3_asr_0_6b_title">Qwen3-ASR 0.6B</string>
+    <string name="qwen3_asr_0_6b_description">~938MB • %1$d talen</string>
+    <string name="qwen3_asr_download_confirm_title">%1$s downloaden?</string>
+    <string name="qwen3_asr_download">Qwen3-ASR downloaden</string>
+    <string name="qwen3_asr_delete_message">Qwen3-ASR-model verwijderen?</string>
+    <string name="qwen3_asr_downloaded">%1$s succesvol gedownload</string>
+    <string name="qwen3_asr_deleted">%1$s verwijderd</string>
+
+    <!-- Nemotron 3.5 streaming model -->
+    <string name="nemotron_name">Nemotron 3.5</string>
+    <string name="nemotron_title">Nemotron 3.5 (streaming)</string>
+    <string name="nemotron_description">~640MB • Streaming-transducer</string>
+    <string name="nemotron_download_confirm_title">%1$s downloaden?</string>
+    <string name="nemotron_download_confirm_message">Dit downloadt ~%1$dMB. Nemotron 3.5 is een streaming meertalig ASR-model.</string>
+    <string name="nemotron_download">Nemotron downloaden</string>
+    <string name="nemotron_delete_message">Nemotron 3.5-model verwijderen?</string>
+    <string name="nemotron_downloaded">%1$s succesvol gedownload</string>
+    <string name="nemotron_deleted">%1$s verwijderd</string>
+
+    <!-- GigaAM v3 model -->
+    <string name="gigaam_title">GigaAM v3</string>
+    <string name="gigaam_description">~326MB • Snel • Russische ASR met interpunctie</string>
+    <string name="gigaam_name">GigaAM v3</string>
+    <string name="gigaam_download_confirm_title">GigaAM v3 downloaden?</string>
+    <string name="gigaam_download_confirm_message">Dit downloadt ~%1$dMB. GigaAM v3 is een uitsluitend Russisch ASR-model van Sber met sterke Russische nauwkeurigheid.</string>
+    <string name="gigaam_download">GigaAM downloaden</string>
+    <string name="gigaam_downloaded">%1$s succesvol gedownload</string>
+    <string name="gigaam_deleted">%1$s verwijderd</string>
+
+    <!-- Generic catalog section (catalog-driven sherpa-onnx models) -->
+    <string name="catalog_model_downloaded">%1$s succesvol gedownload</string>
+    <string name="catalog_model_deleted">%1$s verwijderd</string>
+    <string name="catalog_download_confirm_title">%1$s downloaden?</string>
+    <string name="catalog_download_confirm_message">Dit downloadt ~%1$dMB.</string>
+    <string name="model_fit_no_fit">Dit model draait waarschijnlijk niet op dit apparaat: het RAM ligt onder wat het model nodig heeft.</string>
+    <string name="model_fit_tight">Let op: dit model past maar net in het RAM van dit apparaat; bij geheugendruk kan het mislukken.</string>
+    <string name="catalog_extract_confirm_title">%1$s uitpakken?</string>
+    <string name="catalog_extract_confirm_message">Het modelbestand is al gedownload. Dit pakt het uit voor gebruik.</string>
+
+    <!-- Download status -->
+    <string name="download_status_downloading">Downloaden…</string>
+    <string name="download_status_extracting">%1$s uitpakken…</string>
+    <string name="download_status_extracting_files">Bestanden uitpakken…</string>
+    <string name="download_status_copying_file">%1$s kopiëren…</string>
+    <string name="download_status_copying_files">Bestanden kopiëren…</string>
+    <string name="download_status_connecting">Verbinding maken…</string>
+    <string name="download_status_file_progress">%1$d/%2$d</string>
+    <string name="download_status_checking_access">Toegang controleren…</string>
+    <string name="download_status_retrying">Opnieuw proberen (%1$d/%2$d)…</string>
+    <string name="download_status_resuming">Download hervatten…</string>
+    <string name="model_requires_auth">Dit model vereist een HuggingFace-account</string>
+    <string name="settings_action">Instellingen</string>
+
+    <!-- Download rate/ETA/partial -->
+    <string name="download_rate">%1$s/s</string>
+    <string name="download_eta">%1$s resterend</string>
+    <string name="download_eta_less_than_minute">Minder dan 1 min resterend</string>
+    <string name="download_partial">Download onderbroken bij %1$d%% (%2$s / %3$s)</string>
+    <string name="download_resume">Download hervatten</string>
+    <string name="download_clear_partial">Wissen</string>
+    <string name="download_partial_detected">Gedeeltelijke download gevonden</string>
+    <string name="gemma_download_confirm_title">%1$s downloaden?</string>
+    <string name="gemma_download_confirm_message">Dit downloadt ~%1$dMB. Gemma-modellen zijn volledige LLMs met geavanceerde functies, maar gebruiken meer opslag.</string>
+
+    <!-- Transcription -->
+    <string name="share_transcription">Delen</string>
+    <string name="copy_transcription">Naar klembord kopiëren</string>
+    <string name="copied_to_clipboard">Gekopieerd naar klembord</string>
+    <string name="transcription_streamed_without_vad">Zonder stilte verwijderen</string>
+    <string name="warning_repetition_suspected">Mogelijke herhalingslus in deze transcriptie; controleer de tekst</string>
+    <string name="audio_received_for_transcription">Audio ontvangen voor transcriptie</string>
+    <string name="transcription_complete">Transcriptie voltooid</string>
+    <plurals name="transcription_partial">
+        <item quantity="one">Transcriptie onvolledig (%1$d chunk mislukt)</item>
+        <item quantity="other">Transcriptie onvolledig (%1$d chunks mislukt)</item>
+    </plurals>
+    <string name="transcription_partial_chip">Onvolledig</string>
+    <string name="transcription_failed">Transcriptie mislukt</string>
+    <string name="error_model_load">Het modelbestand is mogelijk beschadigd of heeft het verkeerde formaat. Download het opnieuw via het tabblad Modellen.</string>
+    <string name="error_model_external_corrupt">De bestanden van het geïmporteerde model zijn beschadigd. Verwijder het via het tabblad Modellen en importeer het opnieuw.</string>
+    <string name="error_model_corrupt_healed">Sommige modelbestanden waren beschadigd en zijn door de app verwijderd. Open het tabblad Modellen en download het model opnieuw.</string>
+    <string name="error_native">Er trad een interne fout op tijdens de transcriptie. Blijft dit gebeuren, probeer dan een ander model.</string>
+    <string name="error_not_initialized">Er is geen model geladen. Open het tabblad Modellen om er een te downloaden of te selecteren.</string>
+    <string name="error_model_unavailable">Het geselecteerde model is niet meer beschikbaar. Open het tabblad Modellen en kies een ander.</string>
+    <string name="error_audio_too_long_streaming">Audio langer dan 2 uur wordt niet ondersteund.</string>
+    <string name="error_audio_too_long_whole_file">Deze audio is langer dan de limiet van %1$d minuten die dit apparaat in één keer kan verwerken (de limiet hangt af van het beschikbare geheugen). Gebruik voor lange opnames een model waarvan de app de audio automatisch splitst, met VAD uit.</string>
+    <string name="error_file_too_large">Audiobestanden groter dan 2 GB worden niet ondersteund.</string>
+    <string name="error_file_not_found">Audiobestand niet gevonden</string>
+    <string name="error_invalid_format">Audioformaat kon niet worden vastgesteld</string>
+    <string name="error_no_audio_track">Geen audiospoor in het bestand gevonden</string>
+    <string name="error_no_decoder">Dit apparaat heeft geen decoder voor deze audio: %1$s</string>
+    <string name="error_duration_unknown">Duur van de audio kon niet worden vastgesteld</string>
+    <string name="error_conversion_failed">Converteren mislukt: %1$s</string>
+    <string name="error_chunk_failed">Chunk %1$d mislukt: %2$s</string>
+    <string name="error_storage_full">Niet genoeg vrije ruimte om dit bestand te importeren (ongeveer %1$d MB nodig).</string>
+    <string name="dialog_long_audio_title">Lange audio</string>
+    <string name="dialog_long_audio_message">Deze audio duurt %1$d minuten. Met %2$s duurt het ongeveer %3$d minuten. Je krijgt een melding zodra hij klaar is.</string>
+    <string name="dialog_long_audio_roughly">Ruwe schatting: dit apparaat is nog aan het kalibreren voor het gekozen model.</string>
+    <string name="dialog_long_audio_continue">Doorgaan</string>
+    <string name="dialog_long_audio_cancel">Annuleren</string>
+    <string name="native_crash_model_warning">De app is onverwacht gesloten tijdens de laatste transcriptie. Gebeurde dit tijdens het laden van een model, dan kan het bestand beschadigd zijn. Download het opnieuw via het tabblad Modellen.</string>
+    <string name="oom_crash_title">App gesloten wegens te weinig geheugen</string>
+    <string name="oom_crash_warning">De app is gesloten omdat het geheugen van het apparaat bijna op was. Sluit andere apps of gebruik een kleiner model voordat je opnieuw transcribeert.</string>
+    <string name="native_crash_title">App onverwacht gesloten</string>
+    <string name="native_crash_go_to_model">Naar het tabblad Modellen</string>
+    <string name="model_load_low_memory">Niet genoeg vrij geheugen voor dit model (%1$s beschikbaar, ongeveer %2$s nodig). Geheugenbescherming staat aan: sluit andere apps, gebruik een kleiner model, of zet het in Instellingen uit om het toch te proberen.</string>
+    <string name="memory_margin_warning_title">Model bijna op de geheugenlimiet van deze telefoon</string>
+    <string name="memory_kill_warning_title">Het systeem sloot de app om geheugen vrij te maken</string>
+    <string name="memory_kill_warning_body">De laatste transcriptie kan zijn afgebroken. Een kleiner model of een korter audiobestand vraagt minder geheugen.</string>
+    <string name="memory_margin_warning_body">Het model %1$s zit mogelijk dicht bij wat deze telefoon aan kan. De transcriptie gaat gewoon door; je kunt geheugenbescherming in Instellingen inschakelen om dit soort laden te blokkeren.</string>
+    <string name="transcribe_low_memory">Niet genoeg vrij geheugen om met dit model te transcriberen (ongeveer %1$s vrij, %2$s nodig). Geheugenbescherming staat aan: sluit andere apps en probeer het opnieuw, of zet het in Instellingen uit om het toch te proberen.</string>
+    <string name="external_model_quarantined_title">Extern model uitgeschakeld na een crash</string>
+    <string name="external_model_quarantined_text">Het laden van \"%1$s\" crashte de app, daarom is het uitgeschakeld om herhaalde crashes te voorkomen. Verwijder het model op het tabblad Modellen en importeer het opnieuw om het opnieuw te proberen.</string>
+    <string name="memory_protection">Geheugenbescherming</string>
+    <string name="memory_protection_desc">Blokkeer het laden van een model wanneer het vrije geheugen onvoldoende lijkt, om stille app-crashes te vermijden. Standaard uit: normaal gesproken probeert de app het model altijd te draaien.</string>
+    <!-- TASK-274: consent gate for the exported automation receivers (Tasker surface). -->
+    <string name="external_automation_title">Externe automatisering (Tasker)</string>
+    <string name="external_automation_description">Laat andere apps transcripties starten via de automatiserings-API (bijv. Tasker). Standaard uit.</string>
+    <!-- TASK-785: the Open Transcribe provider toggle, beside the automation gate. -->
+    <string name="open_transcribe_title">Open Transcribe API (experimenteel)</string>
+    <string name="open_transcribe_description">Laat andere apps, zoals Forkgram, Anti-Vocale als hun offline transcriptieprogramma gebruiken. Standaard uit.</string>
+    <string name="opentranscribe_notification_text">Audio transcriberen voor een andere app</string>
+    <string name="external_automation_disabled">Externe automatisering staat uit. Zet het aan in Instellingen > Geavanceerd > Externe automatisering.</string>
+    <!-- TASK-275: the Automation guide card (Settings > Advanced). The
+         Tasker profile XML export was evaluated and rejected for v1: the
+         arg-level .prf.xml schema is undocumented and version-drifted, and
+         a minimal WhatsApp profile cannot work without root because
+         PROCESS_REQUEST rejects paths outside the app staging dir. -->
+    <string name="automation_guide_title">Automatiseringshandleiding</string>
+    <string name="automation_guide_description">Start transcripties vanuit Tasker of adb door een broadcast naar de app te sturen. Alles blijft op het apparaat.</string>
+    <string name="automation_guide_status_on">Automatisering staat aan: de app beantwoordt request- en preload-broadcasts.</string>
+    <string name="automation_guide_status_off">Automatisering staat uit: elke broadcast wordt geweigerd tot de schakelaar Externe automatisering hierboven aan staat.</string>
+    <string name="automation_guide_show_toggle">Schakelaar tonen</string>
+    <string name="automation_guide_body">Twee broadcasts: PROCESS_REQUEST transcribeert een tekstprompt of een audiobestand dat in de privémap van de app klaarstaat (sdcard-paden worden geweigerd als onleesbaar), en PRELOAD_MODEL verwarmt het model vooraf.</string>
+    <string name="automation_guide_copy">Testcommando kopiëren</string>
+    <string name="automation_guide_open">Volledige handleiding</string>
+    <string name="automation_guide_no_browser">Geen app gevonden om de handleiding te openen</string>
+    <string name="no_app_to_open_link">Geen app gevonden om de link te openen</string>
+    <!-- TASK-681: remote offload (the user's own OmniVoice server). The
+         disclosure string is the privacy contract: it must keep saying
+         exactly where audio goes and that the feature is off by default. -->
+    <string name="remote_omnivoice_name">Extern laten draaien</string>
+    <string name="remote_offload_title">Extern laten draaien (experimenteel)</string>
+    <string name="remote_offload_description">Langere of zware transcripties uitbesteden aan een OpenAI-compatibele server die jij kiest (elke server die de /v1/audio/transcriptions-API spreekt, zoals OmniVoice of de whisper.cpp-server).</string>
+    <string name="remote_offload_disclosure">Als dit aan staat en geselecteerd is, wordt de audio van die transcripties alleen naar het serveradres hieronder gestuurd, waar die server zich ook bevindt: in je thuisnetwerk of waar dan ook op internet. Alles andere wordt op dit apparaat getranscribeerd. Het staat standaard uit: niets verlaat je telefoon tenzij je dit aanzet.</string>
+    <string name="remote_offload_endpoint_label">Serveradres</string>
+    <string name="remote_offload_endpoint_placeholder">http://192.168.1.10:3900</string>
+    <string name="remote_offload_key_label">API-sleutel</string>
+    <string name="remote_offload_model_label">Modelnaam</string>
+    <string name="remote_offload_model_hint">De modelnaam die je OmniVoice-server oplost; de standaard is whisper-1.</string>
+    <string name="remote_offload_save">Opslaan</string>
+    <string name="remote_offload_test">Verbinding testen</string>
+    <string name="remote_offload_test_running">Testen…</string>
+    <string name="remote_offload_test_success">Verbinding werkt.</string>
+    <string name="remote_test_reason_unreachable">Server niet bereikbaar. Controleer het adres en of OmniVoice draait.</string>
+    <string name="remote_test_reason_auth">De server wees de API-sleutel af.</string>
+    <string name="remote_test_reason_timeout">Geen antwoord binnen %1$d seconden; de server is mogelijk druk.</string>
+    <string name="remote_test_reason_server">De server gaf een fout terug (HTTP %1$d).</string>
+    <string name="error_remote_timeout">De transcriptie op je OmniVoice-server was niet klaar binnen %1$d minuten en is gestopt.</string>
+    <string name="error_remote_unreachable">Je OmniVoice-server is niet bereikbaar. Controleer of hij draait en of het adres in Instellingen klopt.</string>
+    <string name="error_remote_server">De OmniVoice-server weigerde het verzoek (HTTP %1$d).</string>
+    <string name="remote_offload_status">Transcriberen op je OmniVoice-server…</string>
+    <!-- TASK-679: the resident-models memory panel (Settings > Advanced) and
+         the post-OOM breadcrumb it shows. The scrub note is the privacy
+         contract of the Copy action: model identities and memory numbers
+         only, never transcript text or file paths. -->
+    <string name="memory_diagnostics_title">Geheugen op het apparaat</string>
+    <string name="memory_diagnostics_subtitle">Nu geladen modellen, vrije RAM en de laatste registratie van te weinig geheugen.</string>
+    <string name="memory_diagnostics_resident_label">Aanwezige modellen</string>
+    <string name="memory_diagnostics_resident_none">Er is nu geen model geladen</string>
+    <string name="memory_diagnostics_ram_label">Vrije RAM</string>
+    <string name="memory_diagnostics_ram_value">%1$s vrij van %2$s</string>
+    <string name="memory_diagnostics_ram_unknown">Niet afleesbaar op dit apparaat</string>
+    <string name="memory_diagnostics_heap_label">Geheugenlimiet van de app</string>
+    <string name="memory_diagnostics_breadcrumb_label">Laatste gebeurtenis van te weinig geheugen</string>
+    <string name="memory_diagnostics_breadcrumb_none">Niets vastgelegd</string>
+    <string name="memory_diagnostics_breadcrumb_hint">Als een transcriptie wegens geheugen mislukt, legt één regel vast welke modellen geladen waren en waarmee het verzoek bezig was.</string>
+    <string name="memory_diagnostics_scrub_note">Diagnostiek bevat alleen modelnamen en geheugengetallen: nooit transcriptietekst of bestandspaden.</string>
+    <string name="memory_diagnostics_copy">Diagnostiek kopiëren</string>
+    <string name="copy">Kopiëren</string>
+    <string name="share">Delen</string>
+    <string name="char_counter">%1$d van %2$d tekens</string>
+    <string name="page_counter">Pagina %1$d van %2$d</string>
+    <string name="detected_language">Gedetecteerd: %1$s</string>
+    <string name="confidence_low">Lage betrouwbaarheid</string>
+    <string name="no_audio_file">Geen audiobestand ontvangen</string>
+    <string name="failed_to_process_audio">Audiobestand verwerken mislukt</string>
+    <string name="transcription_started">Transcriptie gestart…</string>
+    <string name="processing_segment_progress">Segment %1$d van %2$d…</string>
+    <string name="progressive_initial">Tekst wordt voorbereid; het eindresultaat volgt na afronding</string>
+    <string name="added_to_queue">Aan wachtrij toegevoegd…</string>
+    <string name="processing_chunk">Chunk %1$d/%2$d verwerken…</string>
+    <string name="processing_audio">Audio verwerken…</string>
+    <string name="processing_request">%1$s-verzoek verwerken…</string>
+    <string name="processing_queue_item">%1$d van %2$d verwerken…</string>
+    <string name="processing_queue_item_audio">Audio verwerken (%1$d van %2$d)…</string>
+    <string name="processing_queue_chunk">Chunk %1$d/%2$d verwerken (%3$d van %4$d)…</string>
+    <plurals name="queued_count">
+        <item quantity="one">%1$d in wachtrij</item>
+        <item quantity="other">%1$d in wachtrij</item>
+    </plurals>
+    <string name="generating_text">Tekstantwoord genereren…</string>
+
+    <!-- Model Tab - Download section -->
+    <string name="download_models">Gemma-modellen</string>
+    <string name="gemma_advanced_features_description">Volledige multimodale LLMs met geavanceerde functies: transcriptie, teksttransformatie en verrijking.</string>
+    <!-- GH #49: audio-length capability, shown in the model list BEFORE download -->
+    <string name="model_limit_chunked">Elke lengte: langere audio wordt automatisch gesplitst</string>
+    <string name="requires_huggingface_token">Vereist een HuggingFace-token.</string>
+    <string name="add_in_settings">Toevoegen in Instellingen</string>
+    <string name="recommended">Aanbevolen</string>
+    <string name="best_italian_badge">Beste Italiaans</string>
+    <string name="downloading">Downloaden…</string>
+    <string name="connecting_to_huggingface">Verbinding maken met HuggingFace…</string>
+    <string name="cancel_download">Download annuleren</string>
+    <string name="cancel_extract">Uitpakken annuleren</string>
+    <string name="extract_model">Uitpakken</string>
+    <string name="export_model_bundle">Model delen voor offline overdracht</string>
+    <string name="use_model">Model gebruiken</string>
+    <string name="models_active_model_line">In gebruik: %1$s</string>
+    <string name="active_badge">Actief</string>
+    <string name="model_selected_message">%1$s geselecteerd</string>
+    <string name="model_use_missing_files">De modelbestanden van %1$s ontbreken of zijn onvolledig. Download de variant opnieuw via het tabblad Modellen.</string>
+    <!-- TASK-675: honest one-line reason on a demoted model card. -->
+    <string name="model_demoted_notice">Niet automatisch gekozen: dit model gaf geen tekst terwijl er spraak was. Kies het opnieuw om het nog een kans te geven.</string>
+    <string name="delete">Verwijderen</string>
+    <string name="variant_more_actions">Meer acties</string>
+    <string name="download">Downloaden</string>
+    <string name="model_update_button">Bijwerken</string>
+    <string name="gemma_update_confirm_title">%1$s bijwerken</string>
+    <string name="gemma_update_confirm_message">Er is een snellere versie met speculative decoding beschikbaar. Opnieuw downloaden (~%1$d MB)?</string>
+    <string name="view">Weergeven</string>
+
+    <!-- Model Tab - Info labels -->
+    <string name="label_filename">Bestandsnaam</string>
+    <string name="label_supports_audio">Ondersteunt audio</string>
+    <string name="label_yes_multimodal">Ja (multimodaal)</string>
+    <string name="label_no_text_only">Nee (alleen tekst)</string>
+    <string name="label_huggingface">HuggingFace</string>
+    <string name="label_ai_gallery_name">AI Gallery-naam</string>
+    <string name="show_less">Minder tonen</string>
+    <string name="show_more">Meer tonen</string>
+
+    <!-- Model Tab - Delete dialog -->
+    <string name="dialog_delete_title">Model verwijderen?</string>
+    <string name="dialog_delete_message">Dit verwijdert \'%1$s\' permanent van je apparaat. Je kunt het later opnieuw downloaden.</string>
+    <string name="action_delete">Verwijderen</string>
+    <string name="action_cancel">Annuleren</string>
+    <!-- Chunk navigation in the in-progress notification (TASK-242) -->
+    <string name="chunk_nav_prev">Vorige</string>
+    <string name="chunk_nav_next">Volgende</string>
+    <string name="clear_search">Zoekopdracht wissen</string>
+    <string name="chunk_nav_live">Nieuwste</string>
+    <string name="chunk_nav_pinned_subtext">Chunk %1$d van %2$d · live %3$d van %2$d</string>
+    <string name="chunk_nav_live_subtext">Live · chunk %1$d van %2$d</string>
+    <string name="chunk_nav_empty">Geen tekst voor deze chunk</string>
+
+    <!-- Settings Tab - Section Titles -->
+    <string name="settings_section_transcription">Transcriptie</string>
+    <string name="settings_section_appearance">Uiterlijk</string>
+    <string name="settings_section_advanced">Systeem &amp; integraties</string>
+    <string name="settings_section_feedback">Feedback &amp; over</string>
+    <string name="settings_feedback_send_title">Feedback sturen / probleem melden</string>
+    <string name="settings_feedback_send_description">Opent je mail-app met de details al ingevuld</string>
+    <string name="settings_feedback_translation_title">Foute vertaling melden</string>
+    <string name="settings_feedback_translation_description">Vertelt ons welke app-taal je gebruikt</string>
+    <string name="settings_feedback_source_title">Broncode</string>
+    <string name="settings_feedback_license_title">Licentie</string>
+    <string name="settings_feedback_license_value">Apache 2.0</string>
+    <string name="settings_feedback_version_title">Versie</string>
+    <string name="settings_feedback_privacy_note">Er wordt niets verstuurd zonder jouw actie; je mail-app verstuurt deze e-mail.</string>
+    <string name="faq_section_title">Veelgestelde vragen</string>
+    <string name="faq_full_link">Lees de volledige FAQ op GitHub</string>
+    <string name="faq_card_calls_title">Kunnen gesprekken of vergaderingen worden getranscribeerd?</string>
+    <string name="faq_card_calls_body">Nee. Android blokkeert het opnemen van de oproepaudio van andere apps, en Anti-Vocale ontvangt alleen wat je met hem deelt. Neem voor vergaderingen de audio op met een willekeurige recorder en deel het bestand daarna.</string>
+    <string name="faq_card_models_title">Welk model moet ik gebruiken?</string>
+    <string name="faq_card_models_body">Parakeet is de standaard: snel en nauwkeurig bij schone spraakberichten. Kies voor andere talen een model dat de jouwe dekt op het tabblad Modellen; grotere modellen zijn trager op oudere telefoons.</string>
+    <string name="faq_card_queue_title">Hoe werkt de wachtrij?</string>
+    <string name="faq_card_queue_body">Verzoeken worden één voor één uitgevoerd in volgorde van aankomst. Deel nog een spraakbericht terwijl er een verwerkt wordt, en het wacht zijn beurt af; de melding toont de positie in de wachtrij.</string>
+    <string name="faq_card_results_title">Wat betekenen de resultaatdetails?</string>
+    <string name="faq_card_results_body">Elk item bewaart het gebruikte model, de duur en de verwerkingstijd. Houd een item lang ingedrukt om opnieuw te proberen, kopiëren, verwijderen of een slecht resultaat per e-mail te melden.</string>
+    <string name="faq_card_trouble_title">Er ging iets mis</string>
+    <string name="faq_card_trouble_body">Komt er nooit een resultaat, dan heeft de telefoonfabrikant de app mogelijk in de achtergrond bevroren: bekijk het batterij-instellingenadvies in de foutmelding. Een mislukt resultaat bewaart een rapportitem met alles wat nodig is om het te diagnosticeren.</string>
+    <string name="settings_feedback_address_copied">Geen mail-app gevonden. Adres gekopieerd naar klembord: %1$s</string>
+    <string name="settings_feedback_body_version">App-versie</string>
+    <string name="settings_feedback_body_android">Android</string>
+    <string name="settings_feedback_body_device">Apparaat</string>
+    <string name="settings_feedback_body_locale">Taal</string>
+    <string name="settings_feedback_body_model">Actief model</string>
+    <string name="settings_feedback_body_your_message">Je bericht:</string>
+    <string name="settings_feedback_body_note">Je kunt de technische details hierboven verwijderen als je dat liever hebt.</string>
+    <string name="oauth_connected">OAuth verbonden</string>
+
+    <!-- Settings Tab - Model status -->
+    <string name="model_loaded">Model geladen</string>
+    <string name="model_not_loaded">Model ontladen (laadt automatisch bij gebruik)</string>
+    <string name="auto_unload_in">Automatisch ontladen over: %1$dm %2$ds</string>
+    <string name="load_model_from_tab">Model laadt automatisch wanneer nodig. Ontladen bespaart geheugen.</string>
+
+    <!-- Settings Tab - Active Model -->
+    <string name="active_model">Actief model</string>
+    <string name="no_model_selected_error">Geen model geselecteerd</string>
+    <string name="available_models">Beschikbare modellen:</string>
+    <string name="no_models_found">Geen modellen gevonden. Download een model of voeg er een toe via het tabblad Modellen.</string>
+    <string name="manage_models">Modellen beheren</string>
+    <string name="source_hf">HF</string>
+    <string name="source_gallery">Galerij</string>
+
+    <!-- Settings Tab - HuggingFace Authentication -->
+    <string name="huggingface_auth">HuggingFace-authenticatie</string>
+    <string name="huggingface_auth_description">Alleen nodig om modellen van HuggingFace te downloaden. Lokale modellen werken zonder inloggen.</string>
+    <string name="setup_guide">Handleiding</string>
+    <string name="setup_step1">1. Tik hieronder op \'Inloggen met HuggingFace\'</string>
+    <string name="setup_step2">2. Log in op je HuggingFace-account</string>
+    <string name="setup_step3">3. Geef de app toestemming</string>
+    <string name="setup_step4">4. Je wordt automatisch teruggeleid</string>
+    <string name="token_valid">Token geldig</string>
+    <string name="username_label">Gebruikersnaam: %1$s</string>
+    <string name="token_label">Token: %1$s</string>
+    <string name="expires_label">Verloopt: %1$s</string>
+    <string name="expired">Verlopen</string>
+    <string name="login_with_huggingface">Inloggen met HuggingFace</string>
+    <string name="oauth_login_description">Snel inloggen via je browser. Ben je al bij HuggingFace ingelogd, dan duurt het bevestigen enkele seconden.</string>
+    <string name="create_account_link">Geen account? Maak er een aan op huggingface.co</string>
+    <string name="authenticating">Aanmelden bij HuggingFace…</string>
+    <string name="logged_in_as">Ingelogd als %1$s</string>
+    <string name="logout">Uitloggen</string>
+    <string name="clear_token">Token wissen</string>
+
+    <!-- Settings Tab - Manual Token -->
+    <string name="advanced_manual_token">Geavanceerd: handmatige tokeninvoer</string>
+    <string name="hide_advanced">Verbergen: handmatige tokeninvoer</string>
+    <string name="manual_token_scope_info">Voor handmatige tokens is de scope \'read\' nodig om modellen te downloaden.</string>
+    <string name="huggingface_token_label">HuggingFace-token</string>
+    <string name="token_placeholder">hf_…</string>
+    <string name="paste_from_clipboard">Plakken vanaf klembord</string>
+    <string name="show_token">Token tonen</string>
+    <string name="hide_token">Token verbergen</string>
+    <string name="create_token">Token aanmaken</string>
+    <string name="get_token">Token ophalen</string>
+    <string name="retry">Opnieuw proberen</string>
+    <string name="validating">Valideren…</string>
+    <string name="validate_and_save">Valideren &amp; opslaan</string>
+    <string name="validating_token">Token valideren…</string>
+
+    <!-- Settings Tab - Timeout -->
+    <string name="auto_unload_timeout">Automatisch ontladen</string>
+    <string name="timeout_description">Maakt geheugen vrij terwijl de app inactief is en maakt het minder waarschijnlijk dat het systeem hem afsluit; het model laadt opnieuw bij het volgende gebruik.</string>
+    <string name="timeout_1_minute">1 minuut</string>
+    <string name="timeout_1_hour">1 uur</string>
+    <plurals name="timeout_minutes">
+        <item quantity="one">%1$d minuut</item>
+        <item quantity="other">%1$d minuten</item>
+    </plurals>
+
+    <!-- Settings Tab - Thread Count -->
+    <string name="thread_count_title">Rekenthreads</string>
+    <string name="thread_count_description">Aantal CPU-threads voor transcriptie. Hogere waarden versnellen de verwerking en verhogen de belasting.</string>
+    <string name="thread_count_auto">%1$d (automatisch bepaald)</string>
+    <string name="thread_count_value">%1$d</string>
+
+    <string name="inference_provider_title">Inference-provider</string>
+    <string name="inference_provider_description">Uitvoeringsbackend voor ONNX-inference. NNAPI kan de NPU/GPU van het apparaat gebruiken, maar kan voor sommige modellen langzamer zijn dan CPU.</string>
+    <string name="inference_provider_auto">Automatisch (CPU)</string>
+    <string name="inference_provider_nnapi">NNAPI (hardwareversnelling)</string>
+    <string name="inference_provider_cpu">Alleen CPU</string>
+
+    <string name="saving">Opslaan…</string>
+    <string name="settings_saved">Instellingen opgeslagen</string>
+    <string name="save">Opslaan</string>
+
+    <!-- Settings Tab - Auto-Copy -->
+    <string name="auto_copy_title">Automatisch kopiëren</string>
+    <string name="auto_copy_description">Kopieert de afgeronde tekst naar het klembord. Handmatig kopiëren vanuit de melding blijft mogelijk.</string>
+
+    <!-- Settings Tab - Output Folder -->
+    <string name="output_folder_title">Automatisch opslaan in map</string>
+    <string name="output_folder_description">Elke transcriptie wordt als apart .txt-bestand opgeslagen in de map die je kiest (bijv. Drive of Syncthing).</string>
+    <string name="output_folder_choose">Map kiezen</string>
+    <string name="output_folder_clear">Map wissen</string>
+
+    <!-- Settings Tab - VAD -->
+    <!-- TASK-588: the TRANSCRIPTION section's advanced-block reveal. -->
+    <string name="settings_advanced_reveal">Geavanceerde opties (%1$d)</string>
+
+    <!-- Settings Tab - Punctuation (TASK-276) -->
+    <string name="punctuation_status">Opmaken met AI…</string>
+    <string name="punctuation_mode_title">Interpunctie en opmaak</string>
+    <string name="punctuation_mode_description">Herschrijf transcripties met het Gemma-model. Automatisch draait alleen voor modellen die zelf geen interpunctie zetten; Altijd normaliseert ook interpunctie; Conservatief voegt alinea-indeling toe en verandert nooit de woorden (vereist een gedownload Gemma-model).</string>
+    <string name="punctuation_mode_off">Uit</string>
+    <string name="punctuation_mode_auto">Automatisch</string>
+    <string name="punctuation_mode_always">Altijd</string>
+    <!-- TASK-666: the bounded-cleanup mode of the cleanup contract. -->
+    <string name="punctuation_mode_conservative">Conservatief (alleen interpunctie en alinea\'s)</string>
+    <string name="punctuation_prompt_title">Interpunctieprompt</string>
+    <string name="punctuation_prompt_description">Instructie voor de interpunctiestap. Laat leeg om de ingebouwde prompt te gebruiken.</string>
+    <string name="punctuation_prompt_placeholder">Ingebouwde prompt</string>
+    <string name="summary_prompt_title">Samenvattingsprompt</string>
+    <string name="signature_setting_title">Transcriptiehandtekening (AI-vermelding)</string>
+    <string name="signature_setting_description">Voegt een handtekeningregel toe aan elke transcriptie die de app verlaat: kopieën, shares en geëxporteerde bestanden. De eigen schermen van de app houden de kale tekst.</string>
+    <string name="signature_text_title">Handtekeningtekst</string>
+    <string name="signature_text_description">Laat leeg om de standaardvermelding te gebruiken.</string>
+    <string name="signature_position_title">Positie</string>
+    <string name="signature_position_prepend">Vóór de transcriptie</string>
+    <string name="signature_position_append">Na de transcriptie</string>
+    <string name="summary_prompt_description">Vervang de AI-samenvattingsinstructie. Leeg gebruikt de ingebouwde prompt van twee tot drie zinnen.</string>
+    <string name="punctuation_default_prompt">Voeg interpunctie en hoofdletters toe aan deze transcriptie. Houd elk woord precies zoals geschreven; corrigeer niets, vertaal niet, voeg niets toe en verwijder niets. Geef alleen de gecorrigeerde transcriptie als uitvoer.</string>
+    <!-- TASK-666: the fenced conservative prompt; the strict token validation backs the fences. -->
+    <string name="punctuation_default_prompt_conservative">Voeg interpunctie, hoofdletters en alinea-indeling toe aan deze transcriptie. Vertaal niet, vat niet samen en voeg geen woorden toe, verwijder of herorder ze niet en corrigeer ze niet: de woordvolgorde moet exact zo blijven als geschreven. Geef alleen de opgemaakte transcriptie als uitvoer.</string>
+    <!-- Settings Tab - Smart Summary (TASK-121.4) -->
+    <string name="summarize_title">Lange transcripties samenvatten</string>
+    <string name="summarize_description">Voeg met het Gemma-model een korte AI-samenvatting toe aan lange transcripties (vereist een gedownload Gemma-model).</string>
+    <string name="summarize_status">Samenvatten met AI…</string>
+    <string name="summary_default_prompt">Vat deze transcriptie samen in 2-3 zinnen, in de taal van de transcriptie. Behoud namen en getallen. Geef alleen de samenvatting als uitvoer.</string>
+    <string name="vad_title">Stilte verwijderen (VAD)</string>
+    <string name="vad_description">Knijpt stille passages weg vóór de transcriptie. Meestal sneller; het effect op nauwkeurigheid hangt af van het model.</string>
+    <string name="progressive_title">Progressieve weergave</string>
+    <string name="progressive_description">Toon tekst terwijl de transcriptie vordert, in plaats van te wachten tot de opname klaar is.</string>
+    <string name="early_preview_title">Vroege voorbeeldweergave</string>
+    <string name="early_preview_description">Toon een ruwe eerste tekst terwijl een lange clip nog aan het decoden is. Hij wordt vervangen zodra het volledige eerste segment klaar is.</string>
+    <string name="early_preview_badge">Voorbeeld</string>
+    <string name="early_preview_requires_progressive">Vereist progressieve weergave</string>
+    <string name="auto_save_failed">Automatisch opslaan mislukt (%1$s)</string>
+    <string name="saved_to_folder">Opgeslagen in %1$s</string>
+
+    <!-- Settings Tab - Default Prompt -->
+    <string name="default_prompt_title">Standaardprompt</string>
+    <string name="default_prompt_description">Instructie die het model tijdens de transcriptie meekrijgt. Laat leeg om de ingebouwde prompt te gebruiken.</string>
+    <string name="default_prompt_placeholder">bijv. Transcribeer deze spraak:</string>
+    <string name="default_prompt_chars">%1$d / 500</string>
+    <string name="default_prompt_compatibility_info">Geldt alleen voor LLM-modellen (Gemma). Whisper- en Parakeet-modellen negeren deze instelling.</string>
+    <string name="current_default_prompt_label">Nu in gebruik:</string>
+    <string name="default_system_prompt">Transcribeer deze spraak:</string>
+    <string name="builtin_default_prompt">Transcribeer deze spraak: (ingebouwde standaard)</string>
+    <string name="example_prompts_title">Voorbeeldprompts</string>
+    <string name="example_prompts_description">Tik op een prompt om hem te gebruiken</string>
+    <string name="example_prompt_transcribe">Transcribeer deze audio nauwkeurig, in de oorspronkelijke taal.</string>
+    <string name="example_prompt_summarize">Transcribeer deze audio en vat de kernpunten kort samen.</string>
+    <string name="example_prompt_formal">Transcribeer deze audio in een formele, verzorgde stijl. Haal stopwoorden en valse starts weg.</string>
+    <string name="example_prompt_translate_en">Transcribeer deze audio en vertaal hem naar het Engels.</string>
+    <string name="example_prompt_translate_it">Trascrivi e traduci questo audio in italiano.</string>
+    <string name="example_prompt_notes">Transcribeer deze audio en formatteer hem als notities met opsommingstekens.</string>
+    <string name="prompt_applied">Prompt toegepast</string>
+
+    <!-- Settings Tab - Preload Info -->
+    <string name="preload_title">Automatisch laden &amp; vooraf laden</string>
+    <string name="preload_description">Het model laadt automatisch wanneer een verzoek binnenkomt en het model niet in het geheugen staat. Je kunt het model ook expliciet vooraf laden:</string>
+    <string name="via_tasker">Via Tasker:</string>
+    <string name="via_adb">Via ADB:</string>
+
+    <!-- Settings Tab - Language -->
+    <string name="language_title">Taal</string>
+    <string name="language_description">Kies de weergavetaal van de app.</string>
+    <string name="language_system">Systeemstandaard</string>
+
+    <!-- Settings Tab - Transcription Language -->
+    <string name="transcription_language_title">Transcriptietaal</string>
+    <string name="transcription_language_auto">Automatisch detecteren</string>
+    <string name="transcription_language_no_conditioning">Het actieve model detecteert de taal automatisch. Deze instelling geldt voor Whisper-modellen en het streamingmodel.</string>
+    <string name="transcription_language_unsupported_pin">Het actieve model ondersteunt deze taal niet. Kies een ondersteunde taal of Automatisch detecteren; je keuze blijft staan tot je haar wijzigt.</string>
+    <string name="transcription_language_forced_hint">Forceert deze taal: audio in een andere taal kan verslechterd of vertaald uitkomen. Gebruik bij voorkeur Automatisch detecteren, tenzij detectie mist.</string>
+
+    <!-- Settings Tab - Theme -->
+    <string name="theme_title">Thema</string>
+    <string name="theme_description">Kies het kleurthema van de app.</string>
+    <string name="theme_mode_title">Themamodus</string>
+    <string name="theme_mode_description">Volg de systeeminstelling, of forceer donker of licht.</string>
+    <string name="theme_default">Standaard (indigo)</string>
+    <string name="theme_whatsapp">WhatsApp</string>
+    <string name="theme_telegram">Telegram</string>
+
+    <!-- Settings Tab - App icon (TASK-392) -->
+    <string name="app_icon_title">App-pictogram</string>
+    <string name="app_icon_note">Wisselen kan het pictogram op sommige launchers kort verbergen; de storevermelding houdt het standaardpictogram.</string>
+    <string name="app_icon_variant_default">Standaard</string>
+    <string name="app_icon_variant_wavecut">Onderbroken golfvorm</string>
+    <string name="app_icon_variant_crossed">Doorgestrepen golfvorm</string>
+    <string name="app_icon_variant_textblock">Golfvorm naar tekst</string>
+    <string name="app_icon_variant_monogram">AV-monogram</string>
+    <string name="app_icon_variant_capsule">Gebroken spraakbericht</string>
+    <string name="app_icon_variant_mutebar">Dempenbalk</string>
+
+    <!-- Per-App Settings -->
+    <string name="per_app_settings_title">Per-app-instellingen</string>
+    <string name="per_app_settings_description">Pas het meldingsgedrag per app aan</string>
+    <string name="per_app_settings_info">Tik op een app om haar meldingen in te stellen.</string>
+    <string name="per_app_settings_loading">Voorkeuren laden…</string>
+    <string name="per_app_settings_manually_added">Handmatig toegevoegd</string>
+    <string name="per_app_settings_add_app">App toevoegen</string>
+    <string name="per_app_settings_search">Apps zoeken…</string>
+    <string name="per_app_settings_no_apps">Geen apps gevonden</string>
+    <string name="per_app_settings_no_matching_apps">Geen overeenkomende apps</string>
+    <string name="per_app_settings_using_defaults">Standaardwaarden in gebruik</string>
+    <string name="per_app_settings_auto_copy_on">Automatisch kopiëren aan</string>
+    <string name="per_app_settings_auto_copy_off">Automatisch kopiëren uit</string>
+    <string name="per_app_settings_share_on">Deelknop aan</string>
+    <string name="per_app_settings_share_off">Deelknop uit</string>
+    <string name="per_app_settings_sound">Geluid: %1$s</string>
+    <string name="per_app_settings_dialog_title">Instellingen voor %1$s</string>
+    <string name="per_app_settings_auto_copy_title">Automatisch kopiëren</string>
+    <string name="per_app_settings_auto_copy_description">Kopieer de berichttekst naar het klembord</string>
+    <string name="per_app_settings_show_share_title">Deelknop tonen</string>
+    <string name="per_app_settings_show_share_description">Toon de deelknop in de melding</string>
+    <string name="per_app_settings_notification_sound">Meldingsgeluid</string>
+    <string name="per_app_settings_sound_label">Geluid</string>
+    <string name="per_app_settings_close">Sluiten</string>
+    <string name="per_app_settings_sound_default">Standaard</string>
+    <string name="per_app_settings_sound_silent">Stil</string>
+    <string name="per_app_settings_sound_chime">Geluidje</string>
+    <string name="per_app_settings_sound_bell">Bel</string>
+    <string name="per_app_settings_quick_share_back_title">Snel terugdelen</string>
+    <string name="per_app_settings_quick_share_back_description">Met één tik transcripties naar deze app terugsturen</string>
+
+    <!-- Per-App Reset -->
+    <string name="per_app_settings_reset_all">Alles terugzetten op standaard</string>
+    <string name="per_app_settings_reset_all_confirm_title">Alle instellingen terugzetten?</string>
+    <string name="per_app_settings_reset_all_confirm_message">De meldingsvoorkeuren van alle apps worden teruggezet op hun standaardwaarden.</string>
+    <string name="per_app_settings_reset_app">Terugzetten op standaard</string>
+    <string name="per_app_settings_reset_app_confirm_title">Instellingen van %1$s terugzetten?</string>
+    <string name="per_app_settings_reset_app_confirm_message">De meldingsvoorkeuren van deze app worden teruggezet op standaard.</string>
+    <string name="per_app_settings_reset_done">Instellingen teruggezet op standaard</string>
+
+    <!-- Per-App Onboarding Tooltip -->
+    <string name="per_app_onboarding_title">Gedrag per app aanpassen</string>
+    <string name="per_app_onboarding_message">Tik op een app om automatisch kopiëren, deelacties en meldingsgeluiden voor precies die app in te stellen.</string>
+    <string name="per_app_onboarding_got_it">Begrepen</string>
+
+    <!-- VAD Advisory (shown in Log tab when Parakeet is active with VAD enabled) -->
+    <string name="vad_advisory_title">VAD is niet nodig bij Parakeet</string>
+    <string name="vad_advisory_description">Bij Parakeet voegt stilte verwijderen alleen verwerkingstijd toe. Je kunt het uitzetten in Instellingen.</string>
+    <string name="vad_advisory_dismiss">Begrepen</string>
+
+    <!-- Share Back -->
+    <string name="share_back">Terugdelen</string>
+    <string name="send_to_app">Versturen naar %1$s</string>
+
+    <!-- Notification Channels -->
+    <string name="notification_channel_extraction">Modeldownload</string>
+    <string name="notification_channel_extraction_description">Downloadt en pakt ML-modellen op de achtergrond uit</string>
+    <string name="notification_downloading_progress">Downloaden… %1$d%%</string>
+    <string name="notification_extracting_progress">Bestanden uitpakken… %1$d/%2$d</string>
+    <string name="notification_copying_progress">Bestanden kopiëren… %1$d/%2$d</string>
+    <string name="notification_extracting_hint">Dit kan meer dan 5 minuten duren</string>
+    <string name="notification_download_complete">Download voltooid</string>
+    <string name="notification_channel_inference">Transcriptiedienst</string>
+    <string name="notification_channel_inference_description">Audiotranscriptie op de achtergrond</string>
+    <string name="notification_channel_result">Transcriptieresultaat</string>
+    <string name="notification_channel_result_description">Afgeronde tekst en acties</string>
+    <string name="notification_channel_interrupted_runs">Onderbroken transcripties</string>
+    <string name="notification_channel_interrupted_runs_description">De samenvatting die bij de volgende start wordt getoond voor runs die door een herstart onderbroken werden.</string>
+    <string name="notification_cancelling">Annuleren…</string>
+
+    <!-- No-model notification -->
+    <string name="notification_no_model_title">Model niet geïnstalleerd</string>
+    <string name="notification_no_model_message">Open de app en download een model</string>
+    <string name="notification_no_model_action">App openen</string>
+    <string name="error_open_memory_protection_setting">Instelling openen</string>
+
+    <!-- Tasker fallback notification -->
+    <string name="notification_channel_tasker_fallback">Tasker-automatisering</string>
+    <string name="notification_channel_tasker_fallback_description">Tik om de transcriptie te starten wanneer die vanuit de achtergrond wordt geactiveerd</string>
+    <string name="tasker_fallback_notification_text">Tik om de transcriptie te starten</string>
+
+    <!-- Dismiss -->
+    <string name="dismiss">Sluiten</string>
+
+    <!-- Download completion messages -->
+    <string name="parakeet_downloaded">Parakeet-model succesvol gedownload</string>
+    <string name="whisper_downloaded">%1$s succesvol gedownload</string>
+    <string name="parakeet_deleted">Parakeet-model verwijderd</string>
+    <string name="whisper_deleted">%1$s verwijderd</string>
+
+    <!-- Speed comparison -->
+    <string name="speed_comparison_title">Snelheidsvergelijking</string>
+    <string name="speed_comparison_subtitle">Relatieve prestatie bij typische spraakberichten (CPU)</string>
+    <string name="speed_comparison_header_model">Model</string>
+    <string name="speed_comparison_header_size">Grootte</string>
+    <string name="speed_comparison_header_speed">Snelheid</string>
+    <string name="speed_comparison_header_quality">Italiaanse kwaliteit</string>
+    <string name="speed_comparison_small_name">Whisper Small</string>
+    <string name="speed_comparison_small_size">~358MB</string>
+    <string name="speed_comparison_small_speed">1.0x</string>
+    <string name="speed_comparison_small_quality">Redelijk</string>
+    <string name="speed_comparison_turbo_name">Whisper Turbo</string>
+    <string name="speed_comparison_turbo_size">~988MB</string>
+    <string name="speed_comparison_turbo_speed">1.3x</string>
+    <string name="speed_comparison_turbo_quality">Goed</string>
+    <string name="speed_comparison_medium_name">Whisper Medium</string>
+    <string name="speed_comparison_medium_size">~903MB</string>
+    <string name="speed_comparison_medium_speed">0.5x</string>
+    <string name="speed_comparison_medium_quality">Goed</string>
+    <string name="speed_comparison_distil_it_name">Distil Italian</string>
+    <string name="speed_comparison_distil_it_size">~939MB</string>
+    <string name="speed_comparison_distil_it_speed">~1.8x</string>
+    <string name="speed_comparison_distil_it_quality">Beste Italiaans</string>
+    <string name="speed_comparison_distil_it_note">Beste Italiaans</string>
+    <string name="speed_comparison_parakeet_name">Parakeet TDT</string>
+    <string name="speed_comparison_parakeet_size">~640MB</string>
+    <string name="speed_comparison_parakeet_speed">~17x</string>
+    <string name="speed_comparison_parakeet_quality">Zeer goed</string>
+    <string name="speed_comparison_parakeet_note">Aanbevolen</string>
+    <string name="speed_comparison_qwen3_name">Qwen3-ASR</string>
+    <string name="speed_comparison_qwen3_size">~938MB</string>
+    <string name="speed_comparison_qwen3_speed">~2x</string>
+    <string name="speed_comparison_qwen3_quality">%1$d talen, wisselend</string>
+    <string name="speed_comparison_gigaam_name">GigaAM v3</string>
+    <string name="speed_comparison_gigaam_size">~326MB</string>
+    <string name="speed_comparison_gigaam_speed">Snel</string>
+    <string name="speed_comparison_gigaam_quality">Alleen Russisch</string>
+    <string name="speed_comparison_nemotron_name">Nemotron 3.5</string>
+    <string name="speed_comparison_nemotron_size">~600MB</string>
+    <string name="speed_comparison_nemotron_speed">Streaming</string>
+    <string name="speed_comparison_nemotron_quality">Experimenteel</string>
+    <string name="fastest_badge">Snelste</string>
+    <string name="coming_soon_badge">Binnenkort</string>
+
+    <!-- Transcription ETA -->
+    <string name="transcription_eta_calibrating">Snelheid kalibreren…</string>
+    <string name="transcription_eta_seconds">~%1$ds resterend</string>
+    <string name="transcription_eta_minutes">~%1$dm %2$ds resterend</string>
+    <string name="transcription_eta_hours">~%1$du %2$dm resterend</string>
+    <string name="transcription_eta_estimating">Schatten… ~%1$dm %2$ds resterend</string>
+
+    <!-- Performance Stats -->
+    <string name="performance_stats_title">Prestatiestatistieken</string>
+    <string name="performance_stats_subtitle">Echte transcriptsiesnelheid van jouw apparaat</string>
+    <string name="performance_stats_empty">Nog geen gegevens. Transcribeer wat audio om statistieken te zien.</string>
+    <string name="performance_stats_speed">%1$.0fms/s</string>
+    <plurals name="performance_stats_samples_count">
+        <item quantity="one">%1$d monster</item>
+        <item quantity="other">%1$d monsters</item>
+    </plurals>
+    <string name="performance_stats_fastest_badge">Snelste</string>
+    <string name="performance_stats_clear">Statistieken wissen</string>
+    <string name="performance_stats_clear_confirm">Alle prestatiegegevens wissen?</string>
+    <string name="performance_stats_just_now">Zojuist</string>
+    <string name="performance_stats_minutes_ago">%1$dm geleden</string>
+    <string name="performance_stats_hours_ago">%1$du geleden</string>
+    <string name="performance_stats_days_ago">%1$dd geleden</string>
+    <string name="performance_stats_total_audio">Totaal: %1$s audio verwerkt</string>
+    <string name="performance_stats_accuracy_title">Nauwkeurigheid</string>
+    <string name="performance_stats_accuracy_footnote">Gemeten op onze testsets met echte berichten en schone opnames, FLEURS-klasse voorbeelden, of community-benchmarks; wat niet vermeld staat is ongemeten.</string>
+
+    <!-- Transcription active protection -->
+    <string name="dialog_transcription_active_title">Transcriptie bezig</string>
+    <string name="dialog_delete_active_model_message">Kan \'%1$s\' niet verwijderen: het model wordt gebruikt voor transcriptie. Wacht tot die klaar is.</string>
+    <string name="dialog_delete_inactive_model_message">Er loopt een transcriptie. Verwijderen van \'%1$s\' heeft daar geen invloed op, maar wees voorzichtig.</string>
+    <string name="dialog_switch_model_message">Er loopt nu een transcriptie. Van model wisselen kan die verstoren. Weet je het zeker?</string>
+    <string name="action_understood">Begrepen</string>
+    <string name="action_switch_anyway">Toch wisselen</string>
+    <string name="warn_reset_stats_during_transcription">Er loopt een transcriptie: statistieken blijven bewaard, maar timinggegevens kunnen onvolledig zijn.</string>
+    <string name="cannot_unload_during_transcription">Kan niet ontladen: het model wordt gebruikt voor een actieve transcriptie</string>
+    <string name="dialog_unload_title">Model ontladen?</string>
+    <string name="dialog_unload_message">Model \'%1$s\' wordt uit het geheugen ontladen. Het laadt automatisch opnieuw bij de volgende transcriptie.</string>
+    <string name="action_unload">Ontladen</string>
+
+    <!-- Swipe Action Mode -->
+    <string name="swipe_action_title">Veegactie</string>
+    <string name="swipe_action_description">Kies de actie bij het naar links vegen van een item</string>
+    <string name="swipe_action_reveal">Acties tonen</string>
+    <string name="swipe_action_immediate_delete">Direct verwijderen</string>
+    <string name="swipe_action_copy_description">Transcriptie kopiëren</string>
+    <string name="swipe_action_share_description">Transcriptie delen</string>
+    <string name="swipe_action_delete_description">Log verwijderen</string>
+    <string name="swipe_action_copied">Transcriptie gekopieerd</string>
+
+    <!-- Content descriptions (accessibility) -->
+    <string name="back">Terug</string>
+    <string name="add_app">App toevoegen</string>
+    <string name="view_settings">Instellingen weergeven</string>
+    <string name="app_icon">%1$s-pictogram</string>
+
+    <!-- InferenceService strings -->
+    <string name="error_load_backend">Backend laden mislukt: %1$s</string>
+    <string name="error_no_active_backend">Geen actieve backend</string>
+    <string name="error_no_file_path">Geen bestandspad opgegeven voor het audioverzoek</string>
+    <string name="error_backend_no_audio_support">%1$s ondersteunt geen audiotranscriptie. Schakel in Instellingen over op een spraak-naar-tekstmodel.</string>
+    <string name="error_no_llm_model">Geen LLM-model ingesteld. Open de app om een model te downloaden.</string>
+    <string name="error_no_model_configured">Geen %1$s-model ingesteld. Open de app om een model te downloaden.</string>
+    <string name="loading_model">%1$s-model laden…</string>
+    <string name="preprocessing_audio">Audio voorbereiden…</string>
+    <string name="clipboard_label_transcription">Transcriptie</string>
+    <string name="signature_default_text">Getranscribeerd op het apparaat met een AI-model.</string>
+
+    <!-- Settings accessibility -->
+    <string name="open_prompt_settings">Promptinstellingen openen</string>
+    <string name="open_per_app_settings">Per-app-instellingen openen</string>
+    <string name="open_performance_stats">Prestatiestatistieken openen</string>
+    <string name="hide_details">Details verbergen</string>
+    <string name="show_details">Details tonen</string>
+    <string name="model_unknown">Onbekend</string>
+
+    <!-- Picture-in-Picture -->
+    <string name="pip_transcribing">Transcriberen…</string>
+    <string name="pip_waiting">Wachten op transcriptie…</string>
+    <string name="pip_enter_button">PiP</string>
+    <string name="pip_enter_description">Tonen in picture-in-picturevenster</string>
+
+    <string name="model_title_gemma_4_e2b">Gemma 4 E2B</string>
+    <string name="model_title_gemma_4_e4b">Gemma 4 E4B</string>
+    <string name="model_title_gemma_3n_e2b">Gemma 3n E2B</string>
+    <string name="model_title_gemma_3n_e4b">Gemma 3n E4B</string>
+
+    <!-- Language filter -->
+    <string name="lang_filter_label">Op taal filteren</string>
+    <string name="lang_filter_all">Alle talen</string>
+    <string name="lang_filter_no_results">Geen overeenkomende taal</string>
+    <string name="lang_filter_clear">Zoekopdracht wissen</string>
+
+    <!-- Model Benchmark -->
+    <string name="benchmark_title">Benchmark van %1$s</string>
+    <string name="benchmark_preparing">Benchmark voorbereiden…</string>
+    <string name="benchmark_running">Benchmark draait…</string>
+    <string name="benchmark_progress">%1$d%% voltooid</string>
+    <string name="benchmark_cancel">Annuleren</string>
+    <string name="benchmark_rerun">Opnieuw uitvoeren</string>
+    <string name="benchmark_retry">Opnieuw proberen</string>
+    <string name="benchmark_speed_label">Tijd per audiominuut</string>
+    <string name="benchmark_speed_value">%1$.1f s/min audio</string>
+    <string name="benchmark_time_label">Inferencetijd</string>
+    <string name="benchmark_time_value">%1$d ms</string>
+    <string name="benchmark_memory_label">Piekgeheugen</string>
+    <string name="benchmark_memory_value">%1$.0f MB</string>
+    <string name="benchmark_duration_label">Duur van het voorbeeld</string>
+    <string name="benchmark_duration_value">%1$.0f s</string>
+    <string name="benchmark_rating_fast">Snel</string>
+    <string name="benchmark_rating_good">Goed</string>
+    <string name="benchmark_rating_moderate">Gemiddeld</string>
+    <string name="benchmark_rating_slow">Traag</string>
+    <string name="benchmark_disclaimer">Resultaten kunnen variëren afhankelijk van apparaatbelasting en temperatuur.</string>
+    <string name="benchmark_button">Benchmark</string>
+    <string name="benchmark_cached_result">Laatste benchmark: %1$s</string>
+    <string name="benchmark_provider_label">Provider</string>
+    <string name="benchmark_provider_value">%1$s</string>
+    <string name="transcription_interrupted_title">Transcriptie werd onderbroken</string>
+    <string name="interrupted_runs_title">Onderbroken transcripties</string>
+    <plurals name="interrupted_runs_text">
+        <item quantity="one">%1$d transcriptie werd onderbroken voor hij af was. Zie Geschiedenis voor details.</item>
+        <item quantity="other">%1$d transcripties werden onderbroken voor ze af waren. Zie Geschiedenis voor details.</item>
+    </plurals>
+    <plurals name="interrupted_runs_oom_text">
+        <item quantity="one">%1$d transcriptie werd onderbroken voor hij af was: het geheugen van de app raakte op. Probeer een korter bestand, een kleiner model, of sluit andere apps. Zie Geschiedenis voor details.</item>
+        <item quantity="other">%1$d transcripties werden onderbroken voor ze af waren: het geheugen van de app raakte op. Probeer een korter bestand, een kleiner model, of sluit andere apps. Zie Geschiedenis voor details.</item>
+    </plurals>
+    <string name="interrupted_run_notifications_title">Meldingen over onderbroken runs</string>
+    <string name="interrupted_run_notifications_description">Toon een melding wanneer runs die door een app-herstart onderbroken werden, bij de volgende start worden afgerond.</string>
+    <string name="action_dismiss">Sluiten</string>
+
+    <!-- Model Info Overlay -->
+    <string name="model_info_title">Modelinformatie</string>
+    <string name="model_info_section_languages">Ondersteunde talen</string>
+    <string name="model_info_section_recommendations">Aanbevelingen</string>
+    <string name="model_info_section_technical">Technische details</string>
+    <string name="model_info_section_performance">Prestatietips</string>
+    <plurals name="model_info_languages_count">
+        <item quantity="one">%d taal</item>
+        <item quantity="other">%d talen</item>
+    </plurals>
+    <string name="model_info_no_languages">Taalondersteuning onbekend</string>
+    <string name="model_info_architecture">Architectuur</string>
+    <string name="model_info_arch_encoder_decoder">Encoder-decoder (Whisper)</string>
+    <string name="model_info_arch_transducer">Transducer (TDT)</string>
+    <string name="model_info_arch_ctc">CTC (Connectionist Temporal Classification)</string>
+    <string name="model_info_arch_llm">Groot taalmodel</string>
+    <string name="model_info_model_size">Modelgrootte</string>
+    <string name="model_info_max_audio">Maximale audiolengte</string>
+    <string name="model_info_max_audio_unlimited">Onbeperkt</string>
+    <plurals name="model_info_max_audio_seconds">
+        <item quantity="one">%d seconde</item>
+        <item quantity="other">%d seconden</item>
+    </plurals>
+    <string name="model_info_quantization">Kwantisatie</string>
+    <string name="model_info_recommended_threads">Aanbevolen threads</string>
+    <string name="model_info_threads_range">%1$d – %2$d</string>
+    <string name="model_info_arm64_only">Alleen ARM64-apparaten</string>
+    <string name="model_info_progressive">Progressieve transcriptie</string>
+    <string name="model_info_vad_recommended">VAD-voorverwerking aanbevolen</string>
+    <string name="model_info_best_for_whisper_small">Compact meertalig model voor snelle tests</string>
+    <string name="model_info_notes_whisper_small">Goed beginpunt. Beperkte nauwkeurigheid vergeleken met grotere modellen. Automatische taaldetectie is onbetrouwbaar; standaard wordt je app-taal gebruikt.</string>
+    <string name="model_info_best_for_whisper_turbo">Gebalanceerde meertalige ASR met autodetectie</string>
+    <string name="model_info_notes_whisper_turbo">Kwaliteit bijna op large-v3-niveau bij gematigde snelheid. Goed voor meertalige gebruikers.</string>
+    <string name="model_info_best_for_whisper_medium">Meertalig model van middelgrote klasse</string>
+    <string name="model_info_notes_whisper_medium">Goede balans tussen nauwkeurigheid en verbruik.</string>
+    <string name="model_info_best_for_distil_it">Beste Italiaanse nauwkeurigheid (4,3%% WER)</string>
+    <string name="model_info_notes_distil_it">Alleen Italiaans. Hoogste nauwkeurigheid voor Italiaanse spraakberichten. Kies voor nauwkeurigheid boven snelheid.</string>
+    <string name="model_info_best_for_qwen3">Autodetectie in 59 talen</string>
+    <string name="model_info_notes_qwen3">Breedste talendekking. Let op: audio langer dan 30 seconden wordt afgekapt. Alleen ARM64-apparaten.</string>
+    <string name="model_info_best_for_parakeet">Snelste transcriptie (17,6x sneller dan Whisper, 5,4%% WER)</string>
+    <string name="model_info_notes_parakeet">Geen limiet op audiolengte. VAD niet nodig. Het beste voor wie snelheid vooropstelt.</string>
+<string name="model_info_best_for_gigaam">Beste Russische nauwkeurigheid op het apparaat</string>
+<string name="model_info_notes_gigaam">Alleen Russisch. Eigen interpunctie en hoofdletters.</string>
+<string name="model_info_best_for_nemotron">Streamingtranscriptie voor lange audio</string>
+<string name="model_info_notes_nemotron">Streaming-transducer met lage vertraging. Meertalige autodetectie met taalkeuze per stream.</string>
+    <string name="model_info_best_for_gemma">Multimodaal LLM voor tekst- en audiotaken</string>
+    <string name="model_info_notes_gemma">Niet geoptimaliseerd voor pure ASR. Gebruik het voor geavanceerde functies zoals audiobegrip gecombineerd met tekstgeneratie.</string>
+    <string name="model_info_benchmark_wer">Woordfoutpercentage (Italiaans): %.1f%%</string>
+    <string name="model_info_relative_speed">Snelheid: %s</string>
+    <string name="model_info_close">Sluiten</string>
+
+    <!-- Skeleton loading -->
+    <string name="skeleton_loading_content_description">Transcriptie laden</string>
+
+    <!-- Share target profiles (appear as separate entries in Android share sheet) -->
+    <string name="share_target_parakeet">Anti-Vocale (Parakeet)</string>
+    <string name="share_target_whisper">Anti-Vocale (Whisper)</string>
+    <string name="share_target_qwen3">Anti-Vocale (Qwen3)</string>
+    <string name="share_target_gemma">Anti-Vocale (Gemma)</string>
+    <string name="share_target_nemotron">Anti-Vocale (Nemotron)</string>
+    <string name="share_target_gigaam">Anti-Vocale (GigaAM)</string>
+    <string name="share_target_external">Anti-Vocale (Extern)</string>
+    <string name="share_shortcut_transcribe_with">Transcriberen met %1$s</string>
+    <string name="external_none_imported">Geen externe modellen geïmporteerd</string>
+    <string name="external_section_title">Externe modellen</string>
+    <string name="external_section_subtitle">Modelbestanden die je zelf toevoegt (map, URL of overdrachtsbundel) plus de Gemma LiteRT-LM-downloads; ze draaien naast de ingebouwde catalogus.</string>
+    <string name="model_advanced_section">Geavanceerd</string>
+    <string name="model_advanced_description">Externe imports en Gemma-downloads</string>
+    <string name="external_import_folder">Importeren vanuit een map</string>
+    <string name="external_import_bundle">Overdrachtsbundel importeren</string>
+    <string name="external_models_intro">Deze sectie bevat alternatieve modellen: kleine voor telefoons met weinig geheugen, en modellen afgestemd op specifieke talen. Velen komen uit de communitycatalogus die wij beheren, en je kunt de app ook naar een catalogus van derden wijzen of er zelf een hosten.</string>
+    <!-- TASK-779: task-oriented labels for the import actions and the Gemma entry (maintainer road test) -->
+    <string name="litert_card_title">Gemma-model toevoegen (LiteRT)</string>
+    <string name="gemma_entry_title">Gemma-downloads</string>
+    <string name="gemma_entry_subtitle">De officiële Gemma-modellen bekijken en downloaden</string>
+    <string name="external_import_url">Importeren vanuit een link</string>
+    <string name="external_url_hint">HuggingFace-repo of URL van een catalogusitem-JSON</string>
+    <string name="external_import">Importeren</string>
+    <string name="external_importing">Model importeren…</string>
+    <string name="external_importing_file">%1$s importeren (%2$d van %3$d)…</string>
+    <string name="external_import_failed">Importeren mislukt: %1$s</string>
+    <string name="external_imported">%1$s geïmporteerd</string>
+    <string name="external_delete_confirm">Extern model %1$s verwijderen?</string>
+    <string name="external_deleted">%1$s verwijderd</string>
+        <string name="external_catalog_all">Alle talen</string>
+        <string name="external_catalog_dialog_title">Importeren vanuit catalogus</string>
+    <string name="external_catalog_loading">Catalogus laden…</string>
+    <string name="external_catalog_error">Catalogus kon niet geladen worden: %1$s</string>
+    <string name="external_catalog_retry">Opnieuw proberen</string>
+    <string name="external_catalog_source">Catalogus</string>
+    <string name="external_catalog_official">Community (officieel)</string>
+    <string name="external_catalog_custom">Eigen bron</string>
+    <string name="external_catalog_offline">offline</string>
+    <string name="external_catalog_change">wijzigen</string>
+    <string name="external_catalog_url">URL van de catalogusindex</string>
+    <string name="external_catalog_apply">Toepassen</string>
+    <string name="external_catalog_restore">Officiële catalogus herstellen</string>
+    <string name="external_link_advanced">Ik heb al een link (geavanceerd)</string>
+    <string name="external_catalog_language">Taal</string>
+    <string name="external_catalog_other">Andere talen</string>
+    <string name="external_decode_language">Decodetaal</string>
+    <string name="external_decode_auto">Automatisch detecteren (geen vaste taal)</string>
+    <string name="external_family">Modelfamilie</string>
+    <string name="external_family_transducer">Transducer</string>
+    <string name="external_family_transducer_help">Offline NeMo/Zipformer. Verwacht encoder- + decoder- + joiner- + tokensbestanden</string>
+    <string name="external_family_whisper">Whisper</string>
+    <string name="external_family_whisper_help">Verwacht encoder- + decoder- + tokensbestanden</string>
+    <string name="external_family_ctc">CTC</string>
+    <string name="external_family_ctc_help">Verwacht encoder- + tokensbestanden</string>
+    <string name="external_family_sense_voice">SenseVoice</string>
+    <string name="external_family_canary">Canary (NeMo)</string>
+    <string name="external_family_sense_voice_help">Verwacht model- + tokensbestanden</string>
+    <string name="external_family_canary_help">Verwacht encoder- + decoder- + tokensbestanden; alleen en/es/de/fr; vereist op stilte afgestemde chunking (VAD staat automatisch aan)</string>
+    <string name="external_option_itn">Inverse tekstnormalisatie</string>
+    <string name="external_ctc_subtype">CTC-subtype</string>
+    <string name="external_ctc_subtype_nemo">NeMo CTC</string>
+    <string name="external_ctc_subtype_omnilingual">Omnilingual CTC (1600+ talen, experimenteel)</string>
+    <string name="external_ctc_subtype_zipformer">Zipformer CTC</string>
+    <string name="external_ctc_subtype_paraformer">Paraformer (FunASR)</string>
+    <string name="external_notice_single_pass">Zeer lange audio kan door grote modellen in één keer niet verwerkt worden. Knip de audio bij of kies een kleiner model.</string>
+    <string name="external_notice_family">Crasht de transcriptie zonder foutmelding, dan kan de architectuur verkeerd zijn: verwijder het model, kies een andere architectuur en importeer het opnieuw.</string>
+
+    <!-- Advanced sharing settings -->
+    <string name="share_targets_title">Modellen in het deelmenu</string>
+    <string name="voice_note_identity_title">Afzenderherkenning van spraakberichten</string>
+    <string name="voice_note_identity_description">Voorziet de geschiedenisrij van een gedeeld spraakbericht van de naam van de afzender. Voorlopig alleen WhatsApp. De naam verschijnt alleen als de melding van het bericht binnenkwam terwijl dit aan stond, en alleen wanneer de gemelde lengte overeenkomt met de audio (geen geraden namen). De naam blijft op die rij staan, ook nadat je dit uitzet; de wachtrij leeft alleen in het geheugen. Vereist toegang tot meldingen.</string>
+    <string name="voice_note_identity_grant_hint">Meldingstoegang staat uit. Tik om de systeeminstelling te openen en deze voor de app in te schakelen.</string>
+    <string name="share_targets_description">Elk gedownload model verschijnt als aparte optie in het systeemmenu. De audio wordt verwerkt door het gekozen model.</string>
+    <string name="advanced_sharing_toggle">Gedownloade modellen tonen</string>
+    <string name="share_targets_models_info">Elk gedownload model verschijnt als item in het deelmenu. Een model verwijderen haalt het uit het menu.</string>
+
+    <!-- Conversation Grouping -->
+    <string name="conversation_grouping_title">Per gesprek groeperen</string>
+    <string name="compact_result_actions_title">Compacte actieknoppen</string>
+    <string name="compact_result_actions_description">Toon transcriptieacties als alleen pictogrammen, weggevouwen in de hoek van de resultaatkaart. Zet uit voor knoppen met tekst.</string>
+    <string name="conversation_grouping_description">Groepeer transcripties per bron-app (WhatsApp, Telegram, enz.) in inklapbare secties.</string>
+    <plurals name="conversation_group_count">
+        <item quantity="one">%1$d bericht</item>
+        <item quantity="other">%1$d berichten</item>
+    </plurals>
+    <string name="conversation_group_unknown">Overig</string>
+
+    <!-- Re-transcribe -->
+    <string name="retranscribe">Opnieuw proberen</string>
+    <string name="retranscribe_title">Opnieuw transcriberen met…</string>
+    <string name="retranscribe_subtitle">Kies een model om deze audio opnieuw te transcriberen</string>
+    <string name="retranscribe_confirm">Transcriberen</string>
+    <string name="retranscribe_no_models">Geen audiomodellen ingesteld. Download eerst een model via het tabblad Modellen.</string>
+    <string name="retranscribe_file_not_found">Audiobestand niet meer beschikbaar</string>
+    <string name="retranscribe_active_badge">Actief</string>
+    <string name="retranscribe_setting_title">Knop Opnieuw transcriberen</string>
+    <string name="retranscribe_setting_description">Toon op audiotranscripties een knop om het met een ander model opnieuw te proberen.</string>
+
+    <!-- Subtitle extraction choice (TASK-228) -->
+    <string name="subtitles_found_title">Ondertitels gevonden</string>
+    <string name="subtitles_found_text">De ingebakken ondertitels gebruiken (%1$s) of de audio transcriberen? Kies je niet, dan begint de transcriptie na %2$s.</string>
+    <string name="subtitles_language_unknown">onbekend</string>
+    <string name="action_use_subtitles">Ondertitels gebruiken</string>
+    <string name="action_transcribe_audio">Audio transcriberen</string>
+    <string name="subtitle_fallback_status">Ondertitels konden niet uitgelezen worden; audio wordt getranscribeerd</string>
+    <string name="subtitle_choice_notification_text">Wachten op je keuze…</string>
+    <!-- TASK-677 (GH #92 import half): subtitle-file ingest -->
+    <string name="subtitle_import_failed">Ondertitelbestand kon niet gelezen worden</string>
+    <string name="logs_subtitle_sourced">Uit ondertitels (niet getranscribeerd)</string>
+    <!-- TASK-336: background-kill remediation card -->
+    <string name="battery_exemption_title">Achtergrondwerking toestaan</string>
+    <string name="battery_exemption_description">Het systeem stopte de herkenning terwijl de app op de achtergrond was. Sta Anti-Vocale achtergrondwerking toe zodat de herkenning niet onderbroken wordt.</string>
+    <string name="battery_exemption_action">Instelling openen</string>
+    <!-- TASK-684 (GH #109): OEM-freezer suspension outcome -->
+    <string name="suspension_notification_title">Transcriptie opgeschort</string>
+    <string name="suspension_notification_text">Het systeem schortte de app %1$s op tijdens het transcriberen, waardoor hij niet afmaakte.</string>
+    <!-- TASK-373: litert-lm HF url import -->
+    <string name="litertlm_import_from_url">Importeren vanuit Hugging Face-URL</string>
+    <string name="litertlm_url_hint">https://huggingface.co/eigenaar/repo</string>
+    <string name="litertlm_pick_file">Modelbestand kiezen</string>
+    <string name="litertlm_no_models">Geen .litertlm-bestand gevonden in deze repository</string>
+    <!-- TASK-374: per-transcription feedback -->
+    <string name="feedback_report_transcription">Transcriptie melden</string>
+    <string name="feedback_label_task">Taak</string>
+    <string name="feedback_label_model">Model</string>
+    <string name="feedback_label_duration">Audiolengte</string>
+    <string name="feedback_label_time">Verwerkingstijd</string>
+    <string name="feedback_label_status">Status</string>
+    <string name="feedback_label_excerpt">Uittreksel van de transcriptie</string>
+    <string name="feedback_label_truncated">afgekapt</string>
+    <string name="a11y_expand">Uitvouwen</string>
+    <string name="a11y_collapse">Invouwen</string>
+    <string name="litertlm_importing">Importeren…</string>
+    <string name="model_ram_warning">%1$s heeft op dit apparaat mogelijk niet genoeg geheugen. Laden kan mislukken of crashen; lichtere modellen zijn veiliger.</string>
+    <string name="error_oom_transcription">Niet genoeg geheugen om deze audio te transcriberen. Probeer een korter bestand, een kleiner model, of sluit andere apps. Wil je de poging helemaal vermijden, zet dan Geheugenbescherming aan in Instellingen > Geavanceerd.</string>
+    <string name="error_oom_transcription_protected">Niet genoeg geheugen om deze audio te transcriberen, zelfs niet met geheugenbescherming aan. Probeer een korter bestand, een kleiner model, of sluit andere apps.</string>
+    <string name="external_family_detected">Gedetecteerd: %1$s</string>
+    <string name="external_family_pick_title">Tot welke familie behoort dit model?</string>
+    <string name="subtitle_timeout_title">Time-out van automatische keuze</string>
+    <string name="subtitle_timeout_description">Hoe lang de keuzemelding voor een video met ondertitels wacht voordat de transcriptie uit zichzelf begint.</string>
+    <string name="transcript_export_format_title">Bestandsformaat voor automatisch opslaan</string>
+    <string name="transcript_export_format_description">Formaat van de bestanden in de map voor automatisch opslaan. Formaten met tijdstempels worden alleen geschreven wanneer de transcriptie timinggegevens opleverde.</string>
+    <string name="transcript_export_format_txt">Platte tekst</string>
+    <string name="transcript_export_format_txt_timed">Tekst met tijdstempels (experimenteel)</string>
+    <string name="transcript_export_format_srt">SRT-ondertitels (experimenteel)</string>
+    <string name="transcript_export_format_vtt">WebVTT-ondertitels (experimenteel)</string>
+
+    <string name="partial_transcript_label">Gedeeltelijke transcriptie</string>
+
+    <string name="decoded_of_total">%1$s van %2$s gedecodeerd</string>
+
+    <string name="decoded_so_far">%1$s gedecodeerd</string>
+    <string name="language_chip_setting_title">Taalkaartje op resultaten</string>
+    <string name="language_chip_setting_description">Toon de gedetecteerde taal op elke transcriptie; tik erop om de transcriptietaal te controleren of te wijzigen</string>
+    <string name="language_chip_dialog_title">Taal</string>
+    <string name="language_chip_detected_body">Automatisch gedetecteerd: %1$s. Verkeerde taal? Wijzig de transcriptietaal en transcribeer de audio opnieuw.</string>
+    <string name="language_chip_pinned_body">Vastgezet: %1$s. Om te wijzigen, open je de instelling voor de transcriptietaal.</string>
+    <string name="language_chip_open_setting">Taalinstelling openen</string>
+    <string name="language_chip_re_run">Opnieuw draaien met een taal</string>
+    <!-- Curated Model-tab profiles (GH #70): per-language recommendation copy -->
+    <string name="curated_section_title">Voor jouw taal</string>
+    <string name="curated_browse_all">Alle talen bekijken</string>
+    <string name="curated_suggest_model">Draag een model aan voor jouw taal</string>
+    <string name="curated_why_distil_it">Fijngetraind voor Italiaans: de nauwkeurigste keuze</string>
+    <string name="curated_why_parakeet">Zeer snel (ongeveer 17x) en nog steeds zeer nauwkeurig</string>
+    <string name="curated_why_german_whisper">Fijngetraind voor Duits: de nauwkeurigste optie</string>
+    <string name="curated_why_canary">Compact: kleine download, snel resultaat</string>
+    <string name="curated_why_swiss_german">Voor Zwitsers-Duitse dialecten</string>
+    <string name="curated_why_kroko">Streaming: tekst verschijnt terwijl je praat</string>
+    <string name="text_size_title">Tekstgrootte</string>
+    <string name="text_size_description">Maak de app-tekst groter of kleiner, bovenop de systeemlettergrootte</string>
+    <string name="text_scale_system">Systeem</string>
+    <string name="text_scale_small">Klein</string>
+    <string name="text_scale_large">Groot</string>
+    <string name="text_scale_xlarge">Extra groot</string>
+    <string name="logs_first_pass_label">Eerste ronde (%1$s)</string>
+    <string name="copy_first_pass">Eerste ronde kopiëren</string>
+    <string name="refining_status">Verfijnen met %1$s…</string>
+    <string name="speaker_labels_status">Sprekers identificeren…</string>
+    <string name="speaker_labels_title">Sprekers identificeren</string>
+    <string name="speaker_labels_description">Voegt een sprekerlabel toe aan elke zin. Downloadt ~47 MB aan sprekermodellen bij eerste gebruik; kost extra verwerkingstijd.</string>
+    <!-- TASK-670 (GH #83): speaker identities. Voiceprints are biometric-adjacent:
+         the wording states plainly that they never leave the phone. -->
+    <string name="speaker_id_title">Sprekeridentiteiten</string>
+    <string name="speaker_id_description">Vergelijkt de stemmen in je transcripties met opnames die jij inspreekt, en benoemt de sprekerlabels met de overeenkomende naam. Opnames en stemafdrukken blijven op deze telefoon en verlaten hem nooit.</string>
+    <string name="speaker_id_empty">Nog niemand ingeschreven.</string>
+    <string name="speaker_id_add">Een stem toevoegen</string>
+    <string name="speaker_id_sample_seconds">%1$d s voorbeeld</string>
+    <string name="speaker_id_replay">Voorbeeld afspelen</string>
+    <string name="speaker_id_delete">Stem verwijderen</string>
+    <string name="speaker_id_name_title">Benoem deze stem</string>
+    <string name="speaker_id_name_label">Naam</string>
+    <string name="speaker_id_name_confirm">Opslaan</string>
+    <string name="speaker_id_name_cancel">Annuleren</string>
+    <string name="speaker_id_error_too_short">Fragment te kort: kies minstens 3 s stem van die persoon.</string>
+    <string name="speaker_id_error_too_long">Fragment te lang: houd het onder de 30 s.</string>
+    <string name="speaker_id_error_decode">Dat audiofragment kon niet gelezen worden.</string>
+    <string name="speaker_id_error_extract">Er kon geen stemafdruk uit dat fragment gehaald worden.</string>
+    <string name="speaker_id_error_save">De identiteit kon niet opgeslagen worden. Controleer de vrije opslagruimte en probeer opnieuw.</string>
+    <string name="speaker_id_error_model">Downloaden van het sprekermodel mislukt. Controleer de verbinding en probeer opnieuw.</string>
+    <string name="transcription_not_refined">Niet verfijnd (directe voorbeeldweergave)</string>
+    <string name="transcription_refined_from">Verfijnd vanuit %1$s</string>
+    <string name="refinement_title">Tweerondetranscriptie</string>
+    <string name="refinement_model_title">Verfijningsmodel</string>
+    <string name="refinement_model_description">Het model van de tweede ronde. Laat op Overnemen staan om je actieve model te gebruiken.</string>
+    <string name="refinement_model_inherit">Actief model overnemen</string>
+    <string name="refinement_description">Stream een directe voorbeeldweergave met het snelle model en verfijn die daarna op de achtergrond met het gekozen model</string>
+    <string name="language_chip_setting_note">Alleen de modellen Whisper en SenseVoice kunnen de taal detecteren.</string>
+    <string name="technical_details_title">Technische details tonen</string>
+    <string name="technical_details_description">Toon de technische verwerkingsregel (decodepad, chunks, VAD, geheugen) onder elk transcriptie-item. Standaard uit; de details zitten altijd in feedbackrapporten.</string>
+    <string name="external_family_moonshine">Moonshine</string>
+    <string name="external_family_moonshine_help">Verwacht preprocess + encode + uncached/cached decode + tokens (v1) of encoder_model.ort + decoder_model_merged.ort + tokens (v2); Engels en enkele exports uit 2026</string>
+    <string name="external_family_dolphin">Dolphin</string>
+    <string name="external_family_dolphin_help">Verwacht model- + tokensbestanden; meertalig (zh/en-basis)</string>
+  <plurals name="subtitle_import_skipped_cues">
+    <item quantity="one">%1$d cue overgeslagen</item>
+    <item quantity="other">%1$d cues overgeslagen</item>
+  </plurals>
+    <string name="speaker_settings_title">Diarisatie</string>
+    <string name="speaker_settings_summary">Sprekerlabels en benoemde identiteiten</string>
+    <string name="performance_settings_title">Prestatie en geheugen</string>
+    <string name="performance_settings_summary">Threads, provider, geheugenbescherming en diagnostiek</string>
+    <string name="automation_settings_title">Automatisering en uitbesteding</string>
+    <string name="automation_settings_summary">Tasker-ontvangers, de broadcasthandleiding en extern laten draaien</string>
+    <string name="settings_group_appearance">Uiterlijk en bediening</string>
+    <string name="settings_group_history">Geschiedenis</string>
+    <string name="settings_group_decoding">Decoderen en voorbeeld</string>
+    <string name="settings_group_gemma">Tekstverwerking (Gemma)</string>
+    <string name="settings_group_output">Uitvoer</string>
+    <string name="settings_group_integrations">Integraties</string>
+    <!-- TASK-490: user-chosen share-shortcut icons -->
+    <string name="share_shortcut_icons_title">Pictogrammen van deelsnelkoppelingen</string>
+    <string name="share_shortcut_icons_description">Kies voor elke deelsnelkoppeling een eigen afbeelding, of ga terug naar het gegenereerde pictogram</string>
+    <string name="shortcut_icon_choose">Afbeelding kiezen</string>
+    <string name="shortcut_icon_reset">Terugzetten</string>
+    <string name="shortcut_icon_custom">Eigen afbeelding</string>
+    <string name="shortcut_icon_saved">Snelkoppelingspictogram opgeslagen</string>
+    <string name="shortcut_icon_error">Afbeelding kon niet geladen worden</string>
+    <!-- TASK-552: app icon shortcuts (dynamic model switch + static tabs) -->
+    <string name="shortcut_history_short">Geschiedenis</string>
+    <string name="shortcut_history_long">Geschiedenis openen</string>
+    <string name="shortcut_models_short">Modellen</string>
+    <string name="shortcut_models_long">Modellen openen</string>
+    <string name="model_switched_title">Model gewisseld</string>
+    <string name="model_switched_message">Actief model: %1$s</string>
+    <string name="model_switch_failed">Wisselen mislukt: het model staat niet op het apparaat</string>
+    <string name="model_shortcut_switch_label">Overschakelen naar %1$s</string>
+
+    <!-- TASK-741 (GH #125): the scheduled folder watch -->
+    <string name="folder_watch_title">Geplande mapcontrole</string>
+    <string name="folder_watch_description">Houdt mappen die je kiest in de gaten en transcribeert nieuwe audiobestanden automatisch. Scans draaien op een planning die het systeem toestaat; agressieve batterijbespaarders kunnen ze vertragen, en de handmatige scan werkt altijd.</string>
+    <string name="folder_watch_add">Een map in de gaten houden</string>
+    <string name="folder_watch_empty">Nog geen mappen in de gaten gehouden.</string>
+    <string name="folder_watch_scan_now">Nu scannen</string>
+    <string name="folder_watch_remove">Verwijderen</string>
+    <plurals name="folder_watch_period_value">
+        <item quantity="one">Elk uur</item>
+        <item quantity="other">Elke %1$d u</item>
+    </plurals>
+    <string name="folder_watch_period_label">Scaninterval</string>
+    <string name="folder_watch_grant_failed">De toegang tot die map kon niet behouden worden, dus hij is niet toegevoegd. Kies hem opnieuw.</string>
+</resources>

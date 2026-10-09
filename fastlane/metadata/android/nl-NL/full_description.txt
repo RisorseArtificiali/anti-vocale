@@ -1,0 +1,46 @@
+Anti-Vocale transcribeert spraakberichten van WhatsApp, Telegram en andere chat-apps rechtstreeks op je Android-apparaat. Alle verwerking gebeurt op het apparaat: je audio verlaat je telefoon nooit. Het werkt ook op opgenomen gesprekken en vergaderingen: opnames van elke lengte worden automatisch gesplitst en samengevoegd (tot twee uur op het streamingpad), een mislukte run bewaart de transcriptie die hij al had, en lange transcripties kunnen worden geëxporteerd als ondertitels (SRT, VTT) of tekst met tijdstempels, met zinsniveau-timing op streamingmodellen.
+
+INGEBOUWDE MODELLEN
+
+- Parakeet TDT (aanbevolen): snel, 25 Europese talen. Twee varianten: hoge kwaliteit (862MB) of compact (464MB)
+- Whisper Turbo: 99 talen, gebalanceerde snelheid en kwaliteit
+- Whisper Distil Italian: beste Italiaanse kwaliteit, afgestemd op spraakberichten
+- Whisper Medium / Small: meer nauwkeurigheid of kleinere download
+- Nemotron 3.5 streaming: tekst verschijnt in realtime terwijl hij decodeert, 45 talen
+- Qwen3-ASR: compact, 59 talen
+- GigaAM v3: Russisch, heel klein en snel
+- Gemma 4 / 3n (LiteRT): multimodale AI met aanpasbare prompts
+
+BRENG JE EIGEN MODELLEN MEE
+
+Importeer aangepaste transcriptiemodellen vanuit een map op je telefoon of vanuit een link: Whisper-finetunes, CTC-modellen, SenseVoice en andere sherpa-onnx-architecturen. Bestanden worden bij import gecontroleerd op integriteit, modellen in meerdere bestanden worden ondersteund, en elk geïmporteerd model krijgt een eigen deeldoel. Ideaal voor talen die de ingebouwde modellen niet dekken.
+
+FUNCTIES
+
+- Deel spraakberichten vanuit elke app via het deelsheet van Android
+- Slimme meldingen: kopiëren in een tik, terugdelen, door lange transcripties bladeren zonder de app te openen
+- Automatisch naar klembord kopiëren en transcripties automatisch opslaan in een map die je kiest (Drive, Syncthing, ...)
+- Transcriptie van videobestanden (audiospoor eruit gehaald)
+- Realtime progressieve tekst met streamingmodellen
+- Meldingsvoorkeuren per app
+- Transcripelogboek met zoeken en veegacties
+- Stilte verwijderen en parallelle chunkverwerking voor snelheid
+- Neurale versnelling (NNAPI) op ondersteunde apparaten, met automatische terugval op CPU
+- Tasker-integratie voor automatisering
+- Geplande mapcontrole: nieuwe audiobestanden in mappen die je kiest worden automatisch getranscribeerd (op Android 11+ zelfs de mediemap van een chat-app)
+- Extern laten draaien (experimenteel, standaard uit): lange transcripties uitbesteden aan je eigen OpenAI-compatibele server
+
+PRIVACY
+
+Geen netwerk nodig na de download, geen accounts, geen gegevensverzameling, geen advertenties, geen tracking. Standaard verlaat de audio je telefoon nooit; de enige uitzondering is de optionele functie Extern laten draaien, die audio uitsluitend stuurt naar het serveradres dat je instelt en uit blijft tenzij je hem aanzet.
+
+OPEN BRON
+
+Apache 2.0. Broncode: https://github.com/RisorseArtificiali/anti-vocale
+
+
+VEREISTEN
+
+Android 8.0+ | 4GB+ RAM aanbevolen | 326MB-1GB opslag per model
+
+LET OP: op sommige telefoons met agressieve batterijbespaarders (Realme, OnePlus, Vivo), open de app één keer na het delen van audio zodat de transcriptie kan afmaken.

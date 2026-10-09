@@ -1,0 +1,7 @@
+Nieuw: geplande mapcontrole: nieuwe audiobestanden in mappen die je kiest worden automatisch getranscribeerd
+Nieuw: extern laten draaien (experimenteel, standaard uit): lange taken uitbesteden aan je eigen server
+Nieuw: gedownloade modellen exporteren als offline bundels voor een ander apparaat
+Nieuw: interface in het Chinees
+Nieuw: communitycatalogus voorbij 30 modellen, filterbaar op taal (licht Arabisch, Hebreeuws, Perzisch, Koreaans, Indische talen en meer)
+Verbeterd: compacte sectie Geavanceerd in het tabblad Modellen, Gemma-downloads op een eigen pagina
+Opgelost: reparaties aan interface en stabiliteit

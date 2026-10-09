@@ -1,0 +1,8 @@
+Nieuw in 1.13.0:
+• Nieuw: sprekerlabels in transcripties (twee sprekers automatisch gedetecteerd)
+• Nieuw: dubbelmodelmodus: een snelle eerste ronde, daarna een verfijnde transcriptie
+• Nieuw: tekstgrootte-instelling voor transcripties
+• Nieuw: bewaking van herhalingslussen bij lange runs
+• Verbeterd: Gemma-engine bijgewerkt (0.17.1); audiotranscriptie crasht niet meer
+• Verbeterd: Geschiedenis laadt lange transcripties sneller
+• Opgelost: het taalkaartje verschijnt alleen bij modellen die taal detecteren

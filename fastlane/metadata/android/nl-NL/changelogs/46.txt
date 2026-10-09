@@ -1,0 +1,1 @@
+Opgelost: een geschiedeniszoekopdracht zonder resultaten laat de weergave niet meer vastzitten; de zoekbalk blijft zichtbaar met zijn wis-knop (TASK-662).

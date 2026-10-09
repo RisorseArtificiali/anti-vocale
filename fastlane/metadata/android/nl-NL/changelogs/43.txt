@@ -1,0 +1,6 @@
+Nieuw in 1.12.1:
+• Opgelost: audio gedeeld door oproeprecorder-apps wordt nu herkend
+• Nieuw: geïmporteerde modelmappen worden automatisch gedetecteerd; een keuzemenu verschijnt alleen bij dubbelzinnigheid
+• Nieuw: de time-out van de ondertitelkeuzeprompt is nu een instelling (1-10 minuten)
+• Opgelost: geweigerde te lange opnames tonen hun echte duur
+• Opgelost: sneller, veiliger delen; roteren tijdens een share dupliceert het werk niet meer
