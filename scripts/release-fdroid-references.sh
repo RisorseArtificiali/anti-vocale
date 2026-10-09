@@ -313,6 +313,15 @@ else
   GUARD_BRANCH="$BR"; GUARD_RECIPE="$RECIPE_REL" fossil_guard
       fail "origin/$BR's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py; pushing now would discard it"
   fi
+  # FULL-TREE INVARIANT (2026-10-09, the 5e43eee2e7 incident): the branch
+  # being pushed must be upstream/master + the recipe commit. GitLab creates
+  # NO pipeline for the mirror's slim tree (config/metadata/srclibs only, no
+  # .gitlab-ci.yml), so a slim push silently skips reproducibility
+  # verification while looking successful. Refuse to push a tree without
+  # the CI file.
+  if ! git -C "$FORK_CHECKOUT" cat-file -e "$BR:.gitlab-ci.yml" 2>/dev/null; then
+    fail "$BR carries no .gitlab-ci.yml (slim mirror tree?): a fork push without the CI file starts NO pipeline. Rebuild the branch as upstream/master + the recipe commit (runbook Step 4 + new-fdroid-version.py) and push that."
+  fi
   run git -C "$FORK_CHECKOUT" push --force-with-lease origin "$BR"
   if [ "${DRY_RUN:-0}" = "1" ]; then
     say "DRY: push skipped; the pipeline state below is PRE-PUSH"

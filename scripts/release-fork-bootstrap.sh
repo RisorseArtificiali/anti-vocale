@@ -34,7 +34,11 @@ set -euo pipefail
 FORK_CHECKOUT="${FORK_CHECKOUT:-$HOME/data/repo/personal/fdroid-data}"
 MIRROR_CHECKOUT="${MIRROR_CHECKOUT:-$HOME/data/repo/personal/fdroid-data-mirror}"
 APP_REPO="${APP_REPO:-$HOME/data/repo/personal/anti-vocale}"
-FORK_URL="https://gitlab.com/paoloantinori/fdroiddata.git"
+# The fork is fdroid-data (HYPHENATED; 2026-10-09: paoloantinori/fdroiddata
+# without the hyphen is a different, near-empty duplicate whose default
+# branch is a 1.8.1-era fossil - cloning it put the whole release on the
+# wrong remote and cost an hour of archaeology)
+FORK_URL="https://gitlab.com/paoloantinori/fdroid-data.git"
 UPSTREAM_URL="https://gitlab.com/fdroid/fdroiddata.git"
 MIRROR_SSH_URL="git@github.com:paoloantinori/fdroid-data-mirror.git"
 RECIPE_REL="metadata/com.antivocale.app.yml"
