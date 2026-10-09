@@ -154,19 +154,43 @@ if [ "$PHASE" = "prepare" ]; then
     # listing can lag the dispatch; if the poll misses, the manual gh run
     # list below is the fallback. Skipped under DRY_RUN: no dispatch happened,
     # so the listing would return the PREVIOUS release's run id.
+    RUN_ID=""
     if [ "${DRY_RUN:-0}" = "1" ]; then
-      say "DRY: would poll for the dispatch run id (gh run list --event workflow_dispatch --limit 1)"
+      say "DRY: would poll for the dispatch run id pinned to $COMMIT"
     else
-      RUN_ID=""
+      # Pin the id in TIME, not by --commit: gh run list --commit filters on
+      # headSha (the main tip at dispatch time, which for a build-first
+      # dispatch is NOT the anchor: empirically it returned the PREVIOUS
+      # no-op run at 1.14.0). The first run created at/after the dispatch
+      # moment is ours; older entries are previous releases (2026-10-09).
+      DISPATCH_T0="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
       for _ in 1 2 3 4 5; do
         sleep 3
         RUN_ID=$(gh run list --workflow=android-release.yml --event workflow_dispatch \
-          --limit 1 --json databaseId --jq '.[0].databaseId' 2>/dev/null || true)
+          --limit 5 --json databaseId,createdAt \
+          --jq --arg t0 "$DISPATCH_T0" '[.[] | select(.createdAt >= $t0)][0].databaseId // empty' 2>/dev/null || true)
         [ -n "$RUN_ID" ] && break
       done
-      say "dispatch run id: ${RUN_ID:-NOT CAPTURED (gh run list --event workflow_dispatch --limit 1)}"
+      say "dispatch run id: ${RUN_ID:-NOT CAPTURED (gh run list --event workflow_dispatch, first run created after $DISPATCH_T0)}"
+      # Early no-op detection (2026-10-09, run 37921765037): a skipped signing
+      # job keeps the RUN green, and gh run watch --exit-status exits 0 on it.
+      # The verdict asserts the JOB verdict, not the run verdict: a skip is
+      # caught ~2 min after dispatch instead of at the publish act.
+      if [ -n "$RUN_ID" ]; then
+        verdict=0
+        "$HERE/release-run-verdict.sh" "$RUN_ID" --wait 5 || verdict=$?
+        case "$verdict" in
+          0) say "signing job confirmed; ~3h to green" ;;
+          2) say "signing job not yet decided after 5 min; check the run manually" ;;
+          3) say "WARN: could not read the run to verify the signing job (gh error); verify manually before the ~3h window matters" ;;
+          *) fail "the dispatched run will NOT sign the reference APKs (see the verdict above); fix the workflow before burning the ~3h window" ;;
+        esac
+      else
+        say "WARN: run id not captured; verify the signing job manually: scripts/release-run-verdict.sh <id>"
+      fi
     fi
     say "when green: scripts/release-create.sh $TAG --run-id <id> --commit $COMMIT"
+    say "before create: scripts/release-run-verdict.sh <id> must print VERDICT OK"
     say "then: scripts/release-fdroid-references.sh finalize $TAG"
   else
     say "when green: scripts/release-fdroid-references.sh finalize $TAG"
