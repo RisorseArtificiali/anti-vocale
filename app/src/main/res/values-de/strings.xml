@@ -364,6 +364,7 @@
     <string name="cancel_extract">Entpacken abbrechen</string>
     <string name="extract_model">Entpacken</string>
     <string name="use_model">Modell verwenden</string>
+    <string name="models_active_model_line">Aktiv: %1$s</string>
     <string name="active_badge">Aktiv</string>
     <string name="model_selected_message">%1$s ausgewählt</string>
     <string name="model_use_missing_files">Die Modelldateien für %1$s fehlen oder sind unvollständig. Lade die Variante im Tab \"Modell\" erneut herunter.</string>

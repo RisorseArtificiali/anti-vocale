@@ -391,6 +391,7 @@
     <string name="cancel_extract">ביטול חילוץ</string>
     <string name="extract_model">חילוץ</string>
     <string name="use_model">שימוש במודל</string>
+    <string name="models_active_model_line">בשימוש: %1$s</string>
     <string name="active_badge">פעיל</string>
     <string name="model_selected_message">%1$s נבחר</string>
     <string name="model_use_missing_files">קבצי המודל של %1$s חסרים או חלקיים. הורד מחדש את הגרסה מהלשונית מודלים.</string>

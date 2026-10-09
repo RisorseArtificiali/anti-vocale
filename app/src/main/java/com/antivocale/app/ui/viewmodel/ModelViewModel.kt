@@ -239,6 +239,18 @@ class ModelViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    /**
+     * TASK-786: the active model's display name, for the "in use" line under
+     * the Models tab's language filter. Published by the SAME repository
+     * collector that maintains the saved path (one pipeline, no second
+     * subscription); null while nothing is active or the saved path fails
+     * the collector's file-existence validation (the line must never claim a
+     * model is in use that cannot load). Deliberately not
+     * [UiState.modelName], which other flows write optimistically.
+     */
+    private val _activeModelLabel = MutableStateFlow<String?>(null)
+    val activeModelLabel: StateFlow<String?> = _activeModelLabel.asStateFlow()
+
     private val _filePickerEvent = MutableSharedFlow<Unit>()
     val filePickerEvent: SharedFlow<Unit> = _filePickerEvent.asSharedFlow()
 
@@ -744,6 +756,7 @@ class ModelViewModel @Inject constructor(
                     // No model selected for this backend: clear the active model display.
                     // Also clear statusMessage so a stale "ready" message from the previously
                     // active backend does not linger after a backend switch.
+                    _activeModelLabel.value = null
                     _uiState.update { it.copy(modelPath = "", modelName = "", statusMessage = "") }
                 } else {
                     // File-existence validation is backend-specific (directory vs file vs custom
@@ -763,6 +776,10 @@ class ModelViewModel @Inject constructor(
                     }
                     val displayName = name ?: path.substringAfterLast("/")
                     val isLlm = BuiltInBackendIds.isLlm(active.backendId)
+                    // The "in use" line only claims a model the files back:
+                    // a saved path whose directory is gone must not assert
+                    // itself above the very cards reporting it missing.
+                    _activeModelLabel.value = if (isValid) displayName else null
                     _uiState.update {
                         it.copy(
                             modelPath = path,

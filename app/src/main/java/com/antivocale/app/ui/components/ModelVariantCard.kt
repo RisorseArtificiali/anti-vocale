@@ -140,7 +140,10 @@ fun ModelVariantCard(
                 ) {
                     Icon(
                         imageVector = when {
-                            state.isDownloaded -> Icons.Default.CheckCircle
+                            // TASK-786: a download glyph for the on-disk
+                            // state; never a check (the radio dot alone
+                            // marks the active model).
+                            state.isDownloaded -> Icons.Default.DownloadDone
                             state.isDownloading -> Icons.Default.CloudDownload
                             else -> Icons.Default.Storage
                         },
@@ -249,15 +252,7 @@ fun ModelVariantCard(
                         // into the kebab too (with Use hidden on the active
                         // card, the weighted Benchmark swallowed the row).
                         if (!state.isActive) {
-                            Button(
-                                onClick = onUseClick,
-                                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
-                            }
+                            UseModelButton(onClick = onUseClick, modifier = Modifier.weight(1f))
                         }
                         VariantOverflowMenu(
                             onBenchmarkClick = onBenchmarkClick,
@@ -290,16 +285,10 @@ fun ModelVariantCard(
                     }
                     is DownloadButtonState.UpdateAvailable -> {
                         if (!state.isActive) {
-                            // TASK-381: 48dp minimum touch target for icon-only button
-                            Button(
-                                onClick = onUseClick,
-                                modifier = Modifier.heightIn(min = 48.dp),
-                                colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary
-                                )
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
-                            }
+                            // weight(1f): the labelled Use shares this row
+                            // with Update and Delete and must not push them
+                            // off the card in long locales (it ellipsizes).
+                            UseModelButton(onClick = onUseClick, modifier = Modifier.weight(1f))
                         }
                         OutlinedButton(
                             onClick = onUpdateClick,

@@ -399,6 +399,7 @@
     <string name="cancel_extract">Скасувати розпакування</string>
     <string name="extract_model">Розпакувати</string>
     <string name="use_model">Використати модель</string>
+    <string name="models_active_model_line">Використовується: %1$s</string>
     <string name="active_badge">Активна</string>
     <string name="model_selected_message">Вибрано %1$s</string>
     <string name="model_use_missing_files">Файли моделі %1$s відсутні або неповні. Завантажте варіант знову на вкладці «Модель».</string>

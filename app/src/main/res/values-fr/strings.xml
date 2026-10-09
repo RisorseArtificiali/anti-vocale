@@ -335,6 +335,7 @@
     <string name="cancel_extract">Annuler l\'extraction</string>
     <string name="extract_model">Extraire</string>
     <string name="use_model">Utiliser le modèle</string>
+    <string name="models_active_model_line">Modèle actif : %1$s</string>
     <string name="active_badge">Actif</string>
     <string name="model_selected_message">%1$s sélectionné</string>
     <string name="model_use_missing_files">Les fichiers du modèle %1$s sont manquants ou incomplets. Re-téléchargez la variante depuis l\'onglet Modèle.</string>

@@ -391,6 +391,7 @@
     <string name="cancel_extract">Ayıklamayı İptal Et</string>
     <string name="extract_model">Ayıkla</string>
     <string name="use_model">Modeli Kullan</string>
+    <string name="models_active_model_line">Kullanımda: %1$s</string>
     <string name="active_badge">Etkin</string>
     <string name="model_selected_message">%1$s seçildi</string>
     <string name="model_use_missing_files">%1$s için model dosyaları eksik veya tamamlanmamış. Model sekmesinden varyantı yeniden indirin.</string>

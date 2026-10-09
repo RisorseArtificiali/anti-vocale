@@ -327,6 +327,7 @@
     <string name="extract_model">解压</string>
     <string name="export_model_bundle">分享模型用于离线传输</string>
     <string name="use_model">使用模型</string>
+    <string name="models_active_model_line">使用中：%1$s</string>
     <string name="active_badge">使用中</string>
     <string name="model_selected_message">已选择 %1$s</string>
     <string name="model_use_missing_files">%1$s 的模型文件缺失或不完整。请在“模型”标签页重新下载该版本。</string>

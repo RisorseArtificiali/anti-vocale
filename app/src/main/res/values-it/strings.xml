@@ -386,6 +386,7 @@
     <string name="cancel_extract">Annulla Estrazione</string>
     <string name="extract_model">Estrai</string>
     <string name="use_model">Usa Modello</string>
+    <string name="models_active_model_line">In uso: %1$s</string>
     <string name="active_badge">Attivo</string>
     <string name="model_selected_message">%1$s selezionato</string>
     <string name="model_use_missing_files">I file del modello %1$s sono mancanti o incompleti. Scarica di nuovo la variante dalla scheda Modello.</string>

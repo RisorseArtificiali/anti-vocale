@@ -363,6 +363,7 @@
     <string name="cancel_extract">निकालना रद्द करें</string>
     <string name="extract_model">निकालें</string>
     <string name="use_model">मॉडल इस्तेमाल करें</string>
+    <string name="models_active_model_line">उपयोग में: %1$s</string>
     <string name="active_badge">सक्रिय</string>
     <string name="model_selected_message">%1$s चुना गया</string>
     <string name="model_use_missing_files">%1$s की मॉडल फ़ाइलें ग़ायब या अधूरी हैं। मॉडल टैब से उस वैरिएंट को फिर से डाउनलोड करें।</string>

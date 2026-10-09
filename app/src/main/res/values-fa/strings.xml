@@ -385,6 +385,7 @@
     <string name="cancel_extract">لغو استخراج</string>
     <string name="extract_model">استخراج</string>
     <string name="use_model">استفاده از مدل</string>
+    <string name="models_active_model_line">در حال استفاده: %1$s</string>
     <string name="active_badge">فعال</string>
     <string name="model_selected_message">%1$s انتخاب شد</string>
     <string name="model_use_missing_files">فایل‌های مدل %1$s مفقود یا ناقص‌اند. این نسخه را از زبانه مدل دوباره دانلود کنید.</string>

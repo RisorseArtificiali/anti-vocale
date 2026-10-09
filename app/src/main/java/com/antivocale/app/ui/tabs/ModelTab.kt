@@ -22,6 +22,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import android.net.Uri
 import com.antivocale.app.transcription.ModelFamilyDetector
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -87,6 +88,7 @@ import com.antivocale.app.ui.components.LanguageFilterBar
 import com.antivocale.app.ui.components.ModelVariantCard
 import com.antivocale.app.ui.components.ModelVariantCardState
 import com.antivocale.app.ui.components.UnloadModelButton
+import com.antivocale.app.ui.components.UseModelButton
 import com.antivocale.app.ui.components.BenchmarkDialog
 import com.antivocale.app.ui.components.DeleteConfirmationDialog
 import com.antivocale.app.ui.components.DownloadConfirmationDialog
@@ -133,6 +135,7 @@ fun ModelTab(
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
     val activeBackendId by viewModel.activeBackendId.collectAsState()
+    val activeModelLabel by viewModel.activeModelLabel.collectAsState()
     val downloadUiState by viewModel.downloadUiState.collectAsState()
     val catalogStates by viewModel.catalogStates.collectAsState()
 
@@ -606,6 +609,33 @@ fun ModelTab(
             selectedLanguageCode = filterLanguageCode,
             onLanguageSelected = { viewModel.setModelFilterLanguage(it) }
         )
+
+        // TASK-786: states the active model once, right under the filter;
+        // the dot pairs with the external cards' badge (catalog cards carry
+        // the "Active" pill).
+        activeModelLabel?.let { name ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                Icon(
+                    Icons.Default.RadioButtonChecked,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(14.dp),
+                )
+                Text(
+                    text = stringResource(R.string.models_active_model_line, name),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
 
         // GH #70: curated "For your language" elevation. The language comes
         // from the UI configuration (the per-app locale when one is set, else
@@ -1533,7 +1563,11 @@ private fun CatalogModelSection(
                 ) {
                     Icon(
                         imageVector = when {
-                            state.downloadedVariants.isNotEmpty() -> Icons.Default.CheckCircle
+                            // TASK-786: a shelf reads "models live here";
+                            // never a check (the radio dot is the only
+                            // selection mark in the tab). AutoMirrored: the
+                            // spines must flip for RTL locales.
+                            state.downloadedVariants.isNotEmpty() -> Icons.AutoMirrored.Filled.LibraryBooks
                             state.isAnyDownloading -> Icons.Default.CloudDownload
                             else -> if (entry.isStreaming) Icons.Default.GraphicEq else Icons.Default.Translate
                         },
@@ -2490,8 +2524,11 @@ private fun ExternalModelCard(
                     }
                 }
                 if (isActive) {
+                    // TASK-786: the radio dot marks the active external
+                    // model and the in-use line; catalog cards carry the
+                    // "Active" pill instead (text wins where there is room).
                     Icon(
-                        Icons.Default.CheckCircle,
+                        Icons.Default.RadioButtonChecked,
                         contentDescription = stringResource(R.string.active_badge),
                         tint = MaterialTheme.colorScheme.primary
                     )
@@ -2515,15 +2552,9 @@ private fun ExternalModelCard(
                 horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.End)
             ) {
                 if (!isActive) {
-                    // TASK-381: 48dp minimum touch target for icon-only button.
                     // 2026-10-08 road test: weight(1f) like the base cards' Use,
                     // so the button shape matches across the two card families.
-                    Button(
-                        onClick = onUse,
-                        modifier = Modifier.weight(1f).heightIn(min = 48.dp)
-                    ) {
-                        Icon(Icons.Default.Check, contentDescription = stringResource(R.string.use_model))
-                    }
+                    UseModelButton(onClick = onUse, modifier = Modifier.weight(1f))
                 }
                 VariantOverflowMenu(
                     onBenchmarkClick = onBenchmark,

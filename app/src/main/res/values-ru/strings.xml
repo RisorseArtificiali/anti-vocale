@@ -379,6 +379,7 @@
     <string name="cancel_extract">Отменить извлечение</string>
     <string name="extract_model">Извлечь</string>
     <string name="use_model">Использовать модель</string>
+    <string name="models_active_model_line">Используется: %1$s</string>
     <string name="active_badge">Активна</string>
     <string name="model_selected_message">Выбрано: %1$s</string>
     <string name="model_use_missing_files">Файлы модели %1$s отсутствуют или неполные. Скачайте этот вариант заново на вкладке «Модель».</string>

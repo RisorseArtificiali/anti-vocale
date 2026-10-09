@@ -335,6 +335,7 @@
     <string name="cancel_extract">Cancelar extracción</string>
     <string name="extract_model">Extraer</string>
     <string name="use_model">Usar modelo</string>
+    <string name="models_active_model_line">En uso: %1$s</string>
     <string name="active_badge">Activo</string>
     <string name="model_selected_message">%1$s seleccionado</string>
     <string name="model_use_missing_files">Faltan archivos del modelo %1$s o están incompletos. Vuelve a descargar la variante desde la pestaña Modelo.</string>
