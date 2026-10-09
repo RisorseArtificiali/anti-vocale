@@ -1022,7 +1022,7 @@
     <string name="external_catalog_restore">Officiële catalogus herstellen</string>
     <string name="external_link_advanced">Ik heb al een link (geavanceerd)</string>
     <string name="external_catalog_language">Taal</string>
-    <string name="external_catalog_other">Andere talen</string>
+    <string name="external_catalog_no_matches">Nog geen modellen voor deze taal</string>
     <string name="external_decode_language">Decodetaal</string>
     <string name="external_decode_auto">Automatisch detecteren (geen vaste taal)</string>
     <string name="external_family">Modelfamilie</string>

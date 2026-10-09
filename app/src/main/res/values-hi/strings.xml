@@ -949,7 +949,7 @@
     <string name="external_catalog_restore">आधिकारिक कैटलॉग बहाल करें</string>
     <string name="external_link_advanced">मेरे पास पहले से लिंक है (उन्नत)</string>
     <string name="external_catalog_language">भाषा</string>
-    <string name="external_catalog_other">अन्य भाषाएँ</string>
+    <string name="external_catalog_no_matches">इस भाषा के लिए अभी कोई मॉडल नहीं है</string>
     <string name="external_decode_language">डिकोड भाषा</string>
     <string name="external_decode_auto">स्वतः पहचान</string>
     <string name="external_family">मॉडल फ़ैमिली</string>

@@ -42,19 +42,20 @@ object ExternalCatalog {
     }
 
     /**
-     * TASK-401: partitions [entries] by whether they declare [language]. A blank
-     * language matches everything (all entries in the first list). Used by the
-     * URL dialog's language-driven discovery: matching entries first, the rest
-     * rendered under the "other" separator.
+     * TASK-401, reworked 2026-10-09 (TASK-790): entries declaring [language],
+     * in index order; non-matching entries are hidden, not sorted below a
+     * separator. The reorder form read as a no-op (a filter that only sorts
+     * never narrows the list). A blank language matches everything.
      */
-    fun partitionByLanguage(
+    fun filterByLanguage(
         entries: List<CatalogEntry>,
         language: String,
-    ): Pair<List<CatalogEntry>, List<CatalogEntry>> {
-        if (language.isBlank()) return entries to emptyList()
+    ): List<CatalogEntry> {
+        if (language.isBlank()) return entries
         val code = language.lowercase()
-        return entries.partition { e ->
-            e.languages.any { it.equals(code, ignoreCase = true) || it.startsWith("$code-", ignoreCase = true) }
+        val regionalPrefix = "$code-"
+        return entries.filter { e ->
+            e.languages.any { it.equals(code, ignoreCase = true) || it.startsWith(regionalPrefix, ignoreCase = true) }
         }
     }
 

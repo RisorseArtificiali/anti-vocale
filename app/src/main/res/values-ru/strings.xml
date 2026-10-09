@@ -993,7 +993,7 @@
     <string name="external_catalog_restore">Восстановить официальный каталог</string>
     <string name="external_link_advanced">У меня уже есть ссылка (доп.)</string>
     <string name="external_catalog_language">Язык</string>
-    <string name="external_catalog_other">Другие языки</string>
+    <string name="external_catalog_no_matches">Для этого языка пока нет моделей</string>
     <string name="external_decode_language">Язык распознавания</string>
     <string name="external_decode_auto">Автоопределение</string>
     <string name="external_family">Семейство моделей</string>

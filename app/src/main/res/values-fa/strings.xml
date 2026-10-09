@@ -958,7 +958,7 @@
     <string name="external_catalog_restore">بازگردانی کاتالوگ رسمی</string>
     <string name="external_link_advanced">از قبل لینک دارم (پیشرفته)</string>
     <string name="external_catalog_language">زبان</string>
-    <string name="external_catalog_other">سایر زبان‌ها</string>
+    <string name="external_catalog_no_matches">هنوز مدلی برای این زبان نیست</string>
     <string name="external_decode_language">زبان رمزگشایی</string>
     <string name="external_decode_auto">تشخیص خودکار (بدون زبان ثابت)</string>
     <string name="external_family">خانواده مدل</string>

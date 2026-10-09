@@ -993,7 +993,7 @@
     <string name="external_catalog_restore">Resmi katalogu geri yükle</string>
     <string name="external_link_advanced">Zaten bir linkim var (gelişmiş)</string>
     <string name="external_catalog_language">Dil</string>
-    <string name="external_catalog_other">Diğer diller</string>
+    <string name="external_catalog_no_matches">Bu dil için henüz model yok</string>
     <string name="external_decode_language">Kod çözme dili</string>
     <string name="external_decode_auto">Otomatik algıla</string>
     <string name="external_family">Model ailesi</string>

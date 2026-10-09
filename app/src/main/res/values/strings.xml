@@ -1022,7 +1022,7 @@
     <string name="external_catalog_restore">Restore the official catalog</string>
     <string name="external_link_advanced">I already have a link (advanced)</string>
     <string name="external_catalog_language">Language</string>
-    <string name="external_catalog_other">Other languages</string>
+    <string name="external_catalog_no_matches">No models for this language yet</string>
     <string name="external_decode_language">Decode language</string>
     <string name="external_decode_auto">Auto-detect (no fixed language)</string>
     <string name="external_family">Model family</string>

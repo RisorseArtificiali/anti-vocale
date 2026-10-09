@@ -850,7 +850,7 @@
     <string name="external_catalog_restore">Restaurar o catálogo oficial</string>
     <string name="external_link_advanced">Já tenho um link (avançado)</string>
     <string name="external_catalog_language">Idioma</string>
-    <string name="external_catalog_other">Outros idiomas</string>
+    <string name="external_catalog_no_matches">Ainda não há modelos para este idioma</string>
     <string name="external_decode_language">Idioma de decodificação</string>
     <string name="external_decode_auto">Detecção automática</string>
     <string name="external_family">Família de modelo</string>

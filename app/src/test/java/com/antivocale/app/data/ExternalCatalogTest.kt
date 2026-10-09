@@ -118,7 +118,7 @@ class ExternalCatalogTest {
     }
 
     @Test
-    fun `partitionByLanguage puts declaring entries first and the rest under other`() {
+    fun `filterByLanguage keeps only declaring entries, blank keeps everything`() {
         val entries = listOf(
             ExternalCatalog.CatalogEntry("Swiss German", listOf("de", "gsw"), "u1", ModelFamily.WHISPER),
             ExternalCatalog.CatalogEntry("Russian", listOf("ru"), "u2", ModelFamily.TRANSDUCER),
@@ -126,14 +126,12 @@ class ExternalCatalogTest {
         // regional prefix match: de-CH declared, de selected
         val regional = listOf(
             ExternalCatalog.CatalogEntry("Regional", listOf("de-CH"), "u3", ModelFamily.WHISPER))
-        val (m1, o1) = ExternalCatalog.partitionByLanguage(entries, "de")
-        assertEquals(listOf("u1"), m1.map { it.entryUrl })
-        assertEquals(listOf("u2"), o1.map { it.entryUrl })
-        assertEquals(listOf("u3"), ExternalCatalog.partitionByLanguage(regional, "de").first.map { it.entryUrl })
-        // blank language = everything matches, nothing under other
-        val (all, none) = ExternalCatalog.partitionByLanguage(entries, "")
-        assertEquals(2, all.size)
-        assertTrue(none.isEmpty())
+        // TASK-790: a true filter hides non-matching entries (the former
+        // partition-below-separator form read as a no-op)
+        assertEquals(listOf("u1"), ExternalCatalog.filterByLanguage(entries, "de").map { it.entryUrl })
+        assertEquals(listOf("u3"), ExternalCatalog.filterByLanguage(regional, "de").map { it.entryUrl })
+        assertEquals(entries, ExternalCatalog.filterByLanguage(entries, ""))
+        assertEquals(emptyList<ExternalCatalog.CatalogEntry>(), ExternalCatalog.filterByLanguage(entries, "ja"))
     }
 
     @Test

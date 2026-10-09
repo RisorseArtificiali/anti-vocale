@@ -959,7 +959,7 @@
     <string name="external_catalog_restore">Ripristina il catalogo ufficiale</string>
     <string name="external_link_advanced">Ho già un link (avanzato)</string>
     <string name="external_catalog_language">Lingua</string>
-    <string name="external_catalog_other">Altre lingue</string>
+    <string name="external_catalog_no_matches">Ancora nessun modello per questa lingua</string>
     <string name="external_decode_language">Lingua di decodifica</string>
     <string name="external_decode_auto">Rilevamento automatico</string>
     <string name="external_family">Famiglia del modello</string>

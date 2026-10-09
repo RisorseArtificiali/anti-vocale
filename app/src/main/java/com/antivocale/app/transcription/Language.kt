@@ -21,6 +21,23 @@ object Language {
     )
 
     /**
+     * TASK-790: [FILTER_ENTRIES] ordered by the endonym the user reads, not
+     * by code (code order rendered "Suomi" beside the F codes). One order
+     * shared by every picker that renders endonyms: the Models-tab filter
+     * bar and the import dialogs' language dropdowns. Collated at READ time
+     * with the ACTIVE APP locale (the LanguageOptions precedent, TASK-353:
+     * the app switches locale without a restart, so a per-process lazy would
+     * freeze the first locale's order). PRIMARY strength: case- and
+     * diacritic-insensitive, script-aware.
+     */
+    fun entriesByEndonym(locale: java.util.Locale): List<String> {
+        val collator = java.text.Collator.getInstance(locale)
+        collator.strength = java.text.Collator.PRIMARY
+        return FILTER_ENTRIES.sortedWith(
+            compareBy(collator) { com.antivocale.app.util.LanguageNames.nativeLanguageName(it) })
+    }
+
+    /**
      * Road test 2026-10-08 (maintainer direction): the languages a repo-URL
      * import supports, derived from the model/repo NAME when nothing else
      * declares them. Whole-token matches only, against the filter's code

@@ -950,7 +950,7 @@
     <string name="external_catalog_restore">Offiziellen Katalog wiederherstellen</string>
     <string name="external_link_advanced">Ich habe bereits einen Link (erweitert)</string>
     <string name="external_catalog_language">Sprache</string>
-    <string name="external_catalog_other">Weitere Sprachen</string>
+    <string name="external_catalog_no_matches">Noch keine Modelle für diese Sprache</string>
     <string name="external_decode_language">Dekodierungssprache</string>
     <string name="external_decode_auto">Automatisch erkennen</string>
     <string name="external_family">Modellfamilie</string>

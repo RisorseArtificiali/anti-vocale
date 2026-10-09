@@ -999,7 +999,7 @@
     <string name="external_catalog_restore">שחזור הקטלוג הרשמי</string>
     <string name="external_link_advanced">יש לי כבר קישור (מתקדם)</string>
     <string name="external_catalog_language">שפה</string>
-    <string name="external_catalog_other">שפות אחרות</string>
+    <string name="external_catalog_no_matches">אין עדיין מודלים לשפה זו</string>
     <string name="external_decode_language">שפת פענוח</string>
     <string name="external_decode_auto">זיהוי אוטומטי (בלי שפה קבועה)</string>
     <string name="external_family">משפחת מודל</string>

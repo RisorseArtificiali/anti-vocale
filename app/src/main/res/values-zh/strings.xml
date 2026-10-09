@@ -836,7 +836,7 @@
     <string name="external_catalog_restore">恢复官方目录</string>
     <string name="external_link_advanced">我已有链接（高级）</string>
     <string name="external_catalog_language">语言</string>
-    <string name="external_catalog_other">其他语言</string>
+    <string name="external_catalog_no_matches">此语言暂无模型</string>
     <string name="external_decode_language">解码语言</string>
     <string name="external_decode_auto">自动检测（不固定语言）</string>
     <string name="external_family">模型家族</string>

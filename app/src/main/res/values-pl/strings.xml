@@ -1011,7 +1011,7 @@
     <string name="external_catalog_restore">Przywróć oficjalny katalog</string>
     <string name="external_link_advanced">Mam już link (zaawansowane)</string>
     <string name="external_catalog_language">Język</string>
-    <string name="external_catalog_other">Inne języki</string>
+    <string name="external_catalog_no_matches">Brak jeszcze modeli dla tego języka</string>
     <string name="external_decode_language">Język dekodowania</string>
     <string name="external_decode_auto">Wykrywanie automatyczne</string>
     <string name="external_family">Rodzina modelu</string>

@@ -1013,7 +1013,7 @@
     <string name="external_catalog_restore">Відновити офіційний каталог</string>
     <string name="external_link_advanced">В мене вже є посилання (додатково)</string>
     <string name="external_catalog_language">Мова</string>
-    <string name="external_catalog_other">Інші мови</string>
+    <string name="external_catalog_no_matches">Для цієї мови ще немає моделей</string>
     <string name="external_decode_language">Мова розпізнавання</string>
     <string name="external_decode_auto">Автовизначення</string>
     <string name="external_family">Родина моделі</string>

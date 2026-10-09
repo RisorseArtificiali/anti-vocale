@@ -1943,7 +1943,12 @@ private fun LanguageEndonymDropdown(
                 text = { Text(blankText) },
                 onClick = { onSelect(""); expanded = false }
             )
-            Language.FILTER_ENTRIES.forEach { code ->
+            // TASK-790: endonym order, one shared sort at read time with
+            // the active app locale (Language.entriesByEndonym); remember it
+            // like LanguageFilterBar does, the menu recomposes per open.
+            val appLocale = LocalConfiguration.current.locales[0]
+            val sortedEntries = remember(appLocale) { Language.entriesByEndonym(appLocale) }
+            sortedEntries.forEach { code ->
                 DropdownMenuItem(
                     text = { Text(LanguageNames.nativeLanguageName(code)) },
                     onClick = { onSelect(code); expanded = false }
@@ -2311,26 +2316,27 @@ private fun ExternalModelsSection(
                                 modifier = Modifier.fillMaxWidth(),
                                 blankText = stringResource(R.string.external_catalog_all)
                             )
-                            val (matching, other) = ExternalCatalog.partitionByLanguage(
-                                ExternalCatalog.filter(ready.entries, ""), catalogLanguage)
+                            // TASK-790: a real filter, not a sort. The selected
+                            // language's entries only; everything else hidden
+                            // (remember: recomposition on every row tap).
+                            val shown = remember(ready, catalogLanguage) {
+                                ExternalCatalog.filterByLanguage(ready.entries, catalogLanguage)
+                            }
                             LazyColumn(modifier = Modifier.heightIn(max = 220.dp)) {
-                                items(matching) { entry ->
+                                items(shown) { entry ->
                                     CatalogPickRow(entry, entry.entryUrl == selectedEntry?.entryUrl) {
                                         selectedEntry = entry
                                     }
                                 }
-                                if (other.isNotEmpty() && catalogLanguage.isNotBlank()) {
+                                if (shown.isEmpty() && catalogLanguage.isNotBlank()) {
+                                    // Blank-language emptiness is an empty
+                                    // catalog, not a language miss (review F6).
                                     item {
                                         Text(
-                                            stringResource(R.string.external_catalog_other),
-                                            style = MaterialTheme.typography.labelSmall,
+                                            stringResource(R.string.external_catalog_no_matches),
+                                            style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             modifier = Modifier.padding(top = 6.dp))
-                                    }
-                                    items(other) { entry ->
-                                        CatalogPickRow(entry, entry.entryUrl == selectedEntry?.entryUrl) {
-                                            selectedEntry = entry
-                                        }
                                     }
                                 }
                             }

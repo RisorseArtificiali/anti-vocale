@@ -20,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -54,8 +55,12 @@ fun LanguageFilterBar(
     // code: searching "Hebrew" must find עברית, and "zh" must find 中文.
     data class LangEntry(val code: String, val nativeName: String, val englishName: String)
 
-    val allEntries = remember(Language.FILTER_ENTRIES) {
-        Language.FILTER_ENTRIES
+    // TASK-790: one shared endonym order, collated at read time with the
+    // active app locale (Language.entriesByEndonym); the import dialogs'
+    // language dropdowns sort the same way.
+    val appLocale = LocalConfiguration.current.locales[0]
+    val allEntries = remember(appLocale) {
+        Language.entriesByEndonym(appLocale)
             .map { code ->
                 val native = LanguageNames.nativeLanguageName(code)
                 val english = Locale.forLanguageTag(code)
@@ -63,7 +68,6 @@ fun LanguageFilterBar(
                     .replaceFirstChar { it.uppercase() }
                 LangEntry(code, native, english)
             }
-            .sortedBy { it.nativeName }
     }
 
     val matchedEntries = remember(searchQuery) {
