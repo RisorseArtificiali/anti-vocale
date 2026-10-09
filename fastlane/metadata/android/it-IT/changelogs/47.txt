@@ -3,5 +3,3 @@ Nuovo: offload remoto (sperimentale, spento di default): delega i lavori lunghi 
 Nuovo: esporta i modelli scaricati come bundle offline per un altro dispositivo
 Nuovo: interfaccia in cinese
 Nuovo: catalogo community oltre 30 modelli, filtrabile per lingua (arabo leggero, ebraico, persiano, coreano, lingue indiane e altri)
-Migliorato: sezione Avanzate compatta nel tab Modelli, download Gemma in pagina dedicata
-Corretto: fix di stabilità e interfaccia

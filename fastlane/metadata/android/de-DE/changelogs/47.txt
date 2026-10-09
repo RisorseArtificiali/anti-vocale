@@ -3,5 +3,3 @@ Neu: Remote-Offload (experimentell, standardmäßig aus): lange Aufträge an dei
 Neu: heruntergeladene Modelle als Offline-Bundles für ein anderes Gerät exportieren
 Neu: Oberfläche auf Chinesisch
 Neu: Community-Katalog mit über 30 Modellen, nach Sprache filterbar (leichtes Arabisch, Hebräisch, Persisch, Koreanisch, indische Sprachen und mehr)
-Verbessert: kompakter Erweitert-Bereich im Modell-Tab, Gemma-Downloads auf eigener Seite
-Behoben: Stabilitäts- und Oberflächenkorrekturen

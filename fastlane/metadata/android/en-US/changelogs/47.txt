@@ -3,5 +3,3 @@ New: remote offload (experimental, off by default): delegate long jobs to your o
 New: export downloaded models as offline bundles for another device
 New: interface in Chinese
 New: community catalog past 30 models, filterable by language (light Arabic, Hebrew, Persian, Korean, Indic languages and more)
-Improved: compact Advanced section in the Models tab, Gemma downloads on their own page
-Fixed: interface and stability fixes

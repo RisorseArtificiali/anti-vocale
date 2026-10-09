@@ -3,5 +3,3 @@ Nuevo: descarga remota (experimental, desactivada por defecto): delega los traba
 Nuevo: exporta los modelos descargados como paquetes sin conexión para otro dispositivo
 Nuevo: interfaz en chino
 Nuevo: catálogo comunitario con más de 30 modelos, filtrable por idioma (árabe ligero, hebreo, persa, coreano, lenguas indias y más)
-Mejorado: sección Avanzado compacta en la pestaña Modelos, descargas de Gemma en su propia página
-Corregido: correcciones de estabilidad e interfaz

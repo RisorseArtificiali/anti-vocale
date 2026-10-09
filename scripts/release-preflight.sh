@@ -109,8 +109,11 @@ else
 fi
 
 # --- 3. fastlane changelogs ---------------------------------------------------
-for loc in en-US it-IT; do
-  f="$REPO_DIR/fastlane/metadata/android/$loc/changelogs/$base.txt"
+# every locale dir with a changelogs/ tree, not just en-US/it-IT: F-Droid
+# truncates at 500 for ALL of them, and 1.14.0 shipped 16 over-length files
+# that a two-locale check never saw (2026-10-09, caught by the prepare dry-run)
+for f in "$REPO_DIR"/fastlane/metadata/android/*/changelogs/"$base.txt"; do
+  loc="$(basename "$(dirname "$(dirname "$f")")")"
   if [ -f "$f" ]; then
     n=$(python3 -c "print(len(open('$f').read()))")
     [ "$n" -le 500 ] && ok "fastlane $loc/$base.txt: $n chars" \
@@ -161,7 +164,8 @@ if [ "$OFFLINE" -eq 0 ] && [ -n "$TAG" ]; then
     abi_map=$(sed -n '/val abiCode = when/,/else -> 0/p' "$REPO_DIR/app/build.gradle.kts" | grep -oE '"[^"]+" -> [0-9]+' || true)
     [ -n "$abi_map" ] || fail "cannot parse the abiCode when-map from app/build.gradle.kts (the vercode single owner)"
     abi_codes=$(awk -F' -> ' '{print $2}' <<<"$abi_map")
-    abi_count=$(wc -l <<<"$abi_map")
+    # tr -d: BSD wc (macOS) pads the count; GNU wc (bird) does not
+    abi_count=$(wc -l <<<"$abi_map" | tr -d "[:space:]")
     max_abi=0
     for c in $abi_codes; do
       if [ "$c" -gt "$max_abi" ]; then max_abi=$c; fi
