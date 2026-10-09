@@ -18,6 +18,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.io.File
 import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -78,8 +80,14 @@ open class LlmManager @Inject constructor(
      * one recovery action that plausibly unwedges the engine.
      */
     @VisibleForTesting
-    @Volatile
-    internal var engineWedged: Boolean = false
+    internal var engineWedged: Boolean
+        get() = engineWedgedFlag.get()
+        set(value) { engineWedgedFlag.set(value) }
+
+    /** TASK-791 review F2: atomic backing so the teardown can clear by
+     *  compareAndSet(SNAPSHOT) and a latch landing between its read and its
+     *  clear survives instead of being clobbered. */
+    private val engineWedgedFlag = AtomicBoolean(false)
 
     /** TASK-606 F9: the deadline for one native cancelProcess attempt.
      *  Injectable for the unit test (the generationTimeoutMs precedent). */
@@ -87,10 +95,11 @@ open class LlmManager @Inject constructor(
     @Volatile
     internal var nativeCancelTimeoutMs: Long = DEFAULT_NATIVE_CANCEL_TIMEOUT_MS
 
-    /** TASK-606 (round 15): wedged engines leaked by teardownNative this
-     *  process; surfaced in the wedge message because the remedy (restart)
-     *  is a user action. */
-    private var wedgedLeaks: Int = 0
+    /** TASK-606 (round 15): wedged engines leaked by the teardown's
+     *  skip-close this process; surfaced in the wedge message because the
+     *  remedy (restart) is a user action. TASK-791: atomic because the
+     *  drain-window skip-close increments off the manager monitor. */
+    private val wedgedLeaks = java.util.concurrent.atomic.AtomicInteger(0)
 
     companion object {
         private const val TAG = "LlmManager"
@@ -285,6 +294,12 @@ open class LlmManager @Inject constructor(
             // manager-side residency-token follow-up recorded in TASK-644.
             if (path != modelPath) {
                 Log.i(TAG, "Model path changed while initialized ($modelPath -> $path); re-initializing")
+                // TASK-791 accepted cost (same as the sherpa swap): with a
+                // generation in flight the old engine stays open until the
+                // DRAIN while the new multi-GB engine constructs here,
+                // doubling peak native memory; the drain needs a true idle
+                // instant, so sustained back-to-back generations on the new
+                // engine can defer it well past one generation.
                 unload()
             } else if (engineWedged) {
                 // TASK-606 F3: the advertised recovery must be reachable. A
@@ -481,8 +496,17 @@ open class LlmManager @Inject constructor(
         // honored here (join() throws at entry); run the cancel unbounded
         // and surface a native Error as suppressed (TASK-594 F1: it must
         // not vanish under a user or service cancellation).
+        // TASK-791 review W1: the SAME TASK-606 F2 discrimination as the
+        // timeout arm below applies here. A cancel that did NOT come back
+        // is not a routine cancel: an abandoned cancelProcess is still
+        // inside the native engine, and without latching the wedge the
+        // drain release would close it underneath (use-after-close).
+        // Routine caller cancels return promptly and stay non-wedging.
         runCatching { cancelWithDeadline(cancel, "caller cancellation") }
-            .getOrNull()?.error?.let { e.addSuppressed(it) }
+            .getOrNull()?.let { outcome ->
+                if (!outcome.returned) engineWedged = true
+                outcome.error?.let { e.addSuppressed(it) }
+            }
         throw e
     }.also {
         if (it == null) {
@@ -500,7 +524,7 @@ open class LlmManager @Inject constructor(
     /** TASK-606 F8: the fail-fast failure every wedged entry returns. */
     private fun wedgedFailure(): EngineWedgeTimeoutException = EngineWedgeTimeoutException(
         "LLM engine is wedged after a generation timeout; re-initialize the model to retry" +
-            if (wedgedLeaks > 0) " ($wedgedLeaks leaked engine(s) this process; restart the app)" else "")
+            wedgedLeaks.get().takeIf { it > 0 }?.let { " ($it leaked engine(s) this process; restart the app)" }.orEmpty())
 
     /**
      * TASK-606 F9 + F2: one native cancel under a deadline. Returns TRUE when
@@ -533,7 +557,18 @@ open class LlmManager @Inject constructor(
                 Log.w(TAG, "native generation cancel after $cause failed", e)
             }
         }
-        val done = withTimeoutOrNull(nativeCancelTimeoutMs) { job.join() }
+        // TASK-791 review F1 (probe-proven): on a GENUINE caller
+        // cancellation the invoking coroutine's Job is already cancelled, so
+        // withTimeoutOrNull { job.join() } threw CancellationException at
+        // ENTRY and this outcome never came back (the wedge latch and the
+        // TASK-594 F1 suppress were dead code on the primary cancel path).
+        // The bound runs NonCancellable: a cancelling caller waits up to the
+        // deadline (this is the cancel path, not the generation path), and
+        // the returned/dropped discrimination below finally holds for real
+        // cancels too.
+        val done = withContext(NonCancellable) {
+            withTimeoutOrNull(nativeCancelTimeoutMs) { job.join() }
+        }
         if (done == null) {
             Log.w(TAG, "native generation cancel after $cause did not return in " +
                 "${nativeCancelTimeoutMs}ms; abandoning it (thread leaks, caller proceeds)")
@@ -835,52 +870,96 @@ open class LlmManager @Inject constructor(
 
     /**
      * Unloads the model from memory.
+     *
+     * TASK-791 (the same class as the 789 FORTIFY crash): a generation may
+     * be live inside the keepAlive.withWork bracket, and every generation
+     * path reads the engine fields into a local inside it, so the flip
+     * happens now and the close waits for the bracket drain. TASK-606 F5:
+     * an engine WEDGED at either edge of that window (at unload, or during
+     * it: the abandoned cancelProcess lives OUTSIDE the bracket, so the
+     * bracket still drains) leaks instead of closing, with its counter and
+     * message. Idempotent, except a half-constructed engine (fields
+     * non-null, isInitialized false after a failed initialize) still tears
+     * down. Accepted cost (the 789 swap tradeoff, both sites that open it:
+     * initialize()'s path-change branch and TranscriptionBackendManager
+     * .unloadAll during a backend switch): with a generation in flight the
+     * old engine stays resident until the DRAIN, and the drain needs a true
+     * idle instant (workInFlight back to zero), so back-to-back generations
+     * on the new engine can defer it well past one generation - doubled
+     * peak native memory for that whole stretch (sustained-load follow-up
+     * tracked as its own task).
      */
     @Synchronized
     open fun unload() {
+        if (!isInitialized && litertEngine == null && mediapipeInference == null) return
         Log.i(TAG, "Unloading model")
 
         keepAlive.stop()
-
-        // TASK-606 F5: on a WEDGED engine the native close is skipped on
-        // purpose: an abandoned cancel or generateResponse may still be
-        // inside the native objects, and the close paths carry no in-flight
-        // drain (a native use-after-close crash). The wedged engine's memory
-        // leaks until the process restarts; a leak beats a native crash on
-        // an engine that is unusable anyway.
-        teardownNative()
+        teardownWithDrain()
     }
 
     /**
-     * TASK-606 F5 + R7 (round 15): the one teardown for unload() and
-     * performAutoUnload(). On a WEDGED engine every native close is skipped
-     * on purpose: an abandoned cancelProcess or generateResponse may still
-     * be inside the objects, and the close paths carry no in-flight drain
-     * (native use-after-close). The wedged engine's memory then leaks until
-     * the process restarts; the leak counter surfaces the stacking in the
-     * wedge message so the "restart the app" advice is visible.
+     * TASK-791: the one teardown, deliberately unsynchronized. The public
+     * [unload] wraps it in the manager monitor; [performAutoUnload] calls
+     * it directly because the keep-alive fire already holds the keep-alive
+     * monitor, and acquiring the manager monitor there (which routing
+     * through [unload] would do) inverts against initialize()'s
+     * manager -> keep-alive order and deadlocks the fire against a manual
+     * unload. TASK-606 F5: an engine WEDGED here keeps the deliberate
+     * skip-close leak with its counter and message.
      */
-    private fun teardownNative() {
-        val skipNativeClose = engineWedged
-        if (skipNativeClose) {
-            wedgedLeaks++
-            Log.w(TAG, "Engine is wedged: skipping native close (leak #$wedgedLeaks " +
-                "this process; restart the app to reclaim it)")
-        }
-
-        // Close LiteRT resources (use safe helper, never throws on double-close)
-        if (!skipNativeClose) litertEngine?.close()
+    private fun teardownWithDrain() {
+        val wedgedAtUnload = engineWedged
+        val staleEngine = litertEngine
+        val staleInference = mediapipeInference
         litertEngine = null
-
-        // Close MediaPipe inference
-        if (!skipNativeClose) mediapipeInference?.close()
         mediapipeInference = null
-
         modelPath = null
         isInitialized = false
-        engineWedged = false
+        // F2: clear by compareAndSet(SNAPSHOT): a latch landing between the
+        // read above and this clear survives (the drain re-check below sees
+        // it and leaks instead of closing under the abandoned cancel).
+        engineWedgedFlag.compareAndSet(wedgedAtUnload, false)
         _isReady.value = false
         currentBackend = null
+        if (wedgedAtUnload) {
+            leakWedgedEngine("at unload")
+        } else {
+            keepAlive.requestDrainRelease {
+                // Re-check: a wedge can land INSIDE the drain window (the
+                // abandoned cancelProcess lives outside the bracket, so the
+                // bracket still drains). Visibility across the coroutine's
+                // IO-thread hop rests on engineWedged being @Volatile (the
+                // write precedes endWork in program order but possibly on
+                // another thread); do not drop the annotation. Closing under
+                // that abandoned native call is the use-after-close class
+                // TASK-606 exists to prevent: leak instead. The flag is
+                // manager-global: a wedge latched by a RE-INITIALIZED
+                // engine inside this window also leaks the old one (safe
+                // direction; the per-engine token is the TASK-644 follow-up).
+                if (engineWedged) {
+                    leakWedgedEngine("during the drain window")
+                } else {
+                    // One catch per close: Engine.close() carries no
+                    // non-throwing guarantee, and a throwing first close
+                    // must not skip the second (run close on the generation
+                    // thread under the keep-alive monitor: the accepted
+                    // sherpa-789 discipline, it blocks this bracket's result
+                    // delivery for the free's duration).
+                    staleEngine?.let { runCatching { it.close() }
+                        .onFailure { Log.e(TAG, "LiteRT engine close threw", it) } }
+                    staleInference?.let { runCatching { it.close() }
+                        .onFailure { Log.e(TAG, "MediaPipe inference close threw", it) } }
+                }
+            }
+        }
+    }
+
+    /** TASK-606 F5: the deliberate skip-close, with its counter and message. */
+    private fun leakWedgedEngine(whenText: String) {
+        val leak = wedgedLeaks.incrementAndGet()
+        Log.w(TAG, "Engine wedged $whenText: skipping native close (leak #$leak " +
+            "this process; restart the app to reclaim it)")
     }
 
     /**
@@ -898,7 +977,13 @@ open class LlmManager @Inject constructor(
         // the documented re-arm race (work queued during the unload window)
         // can fire a second time on already-unloaded state. Idempotent no-op.
         if (!isInitialized) return
-        teardownNative()
+        // TASK-791: teardownWithDrain directly, NOT through unload(): the
+        // fire thread already holds the keep-alive monitor, and taking the
+        // manager monitor here would invert against initialize()'s
+        // manager -> keep-alive order (deadlock). The fire already disarmed
+        // the timer; the drain is the immediate path at an empty bracket,
+        // under the keep-alive monitor alone (the sherpa idle discipline).
+        teardownWithDrain()
 
         onAutoUnloadCallback.get()?.let { callback ->
             managerScope.launch(Dispatchers.Main) {
@@ -918,7 +1003,9 @@ open class LlmManager @Inject constructor(
      * the two Main-dispatcher callback dispatches are momentary fire-and-forget.
      */
     fun shutdown() {
-        unload()
+        // TASK-791: unload is idempotent now; the historical double call
+        // (a defensive double-close) collapsed to one. No production caller
+        // today (TASK-793 may delete the method outright).
         unload()
     }
 }
