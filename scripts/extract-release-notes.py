@@ -49,7 +49,8 @@ def extract_latest_version(notes: str) -> str:
         r"^(?:What's new in|Novità della versione|Novità dalla versione|"
         r"Neuigkeiten in Version|Novedades de la versión|Nouveautés de la version|"
         r"Novidades da versão|Что нового в версии|Sürüm \S+ yenilikler|"
-        r"Nowości w wersji|Новинки версії|संस्करण \S+ में नया क्या है):?\s",
+        r"Nowości w wersji|Новинки версії|संस्करण \S+ में नया क्या है|"
+        r"چه چیز جدید‌های نسخه \S+|\S+ 版本更新)：?\s",
         re.MULTILINE,
     )
     headings = list(version_heading.finditer(notes))

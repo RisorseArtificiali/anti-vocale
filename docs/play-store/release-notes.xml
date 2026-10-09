@@ -1,5 +1,4 @@
-<en-US>
-What's new in 1.14.0:
+<en-US>What's new in 1.14.0:
 • New: folder watch: new audio files in folders you pick are transcribed automatically
 • New: remote offload (experimental, off by default): long jobs can go to your own server
 • New: export downloaded models as offline bundles for another device
@@ -33,11 +32,9 @@ What's new in 1.12.0:
 • Settings reorganized; punctuation pass added
 • Fixed: Telegram voice-note duration
 • Fixed: Whisper translating instead of transcribing
-• Fixed: clearer low-memory and corrupt-model errors
-</en-US>
+• Fixed: clearer low-memory and corrupt-model errors</en-US>
 
-<it-IT>
-Novità della versione 1.14.0:
+<it-IT>Novità della versione 1.14.0:
 • Nuovo: sorveglianza cartella: i nuovi file audio nelle cartelle scelte si trascrivono da soli
 • Nuovo: offload remoto (sperimentale, spento di default): i lavori lunghi possono andare sul tuo server
 • Nuovo: esporta i modelli scaricati come bundle offline per un altro dispositivo
@@ -277,190 +274,142 @@ Novità dalla versione 1.0.3:
 • ExtractionService per download resilienti dei modelli con tracciamento del progresso
 • Autenticazione HuggingFace con resume e retry dei download
 • ETA di progresso basato su calibrazione e statistiche di prestazione
-• Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)
-</it-IT>
+• Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)</it-IT>
 
-<de-DE>
-Neu in Version 1.14.0:
+<de-DE>Neu in Version 1.14.0:
 • Neu: Ordnerüberwachung: neue Audiodateien in gewählten Ordnern werden automatisch transkribiert
 • Neu: Remote-Offload (experimentell, standardmäßig aus): lange Aufträge können an deinen Server gehen
 • Neu: heruntergeladene Modelle als Offline-Bundles exportieren
 • Neu: chinesische Oberfläche; Community-Katalog über 30 Modelle, nach Sprache filterbar
-• Verbessert: kompakter Erweitert-Bereich, Gemma-Downloads auf eigener Seite
-</de-DE>
+• Verbessert: kompakter Erweitert-Bereich, Gemma-Downloads auf eigener Seite</de-DE>
 
-<es-ES>
-Novedades de la versión 1.14.0:
+<es-ES>Novedades de la versión 1.14.0:
 • Nuevo: vigilancia de carpetas: los nuevos archivos de audio en las carpetas elegidas se transcriben solos
 • Nuevo: descarga remota (experimental, desactivada por defecto): los trabajos largos pueden ir a tu servidor
 • Nuevo: exporta los modelos descargados como paquetes sin conexión
 • Nuevo: interfaz en chino; catálogo comunitario de más de 30 modelos, filtrable por idioma
-• Mejorado: sección Avanzado compacta, descargas de Gemma en su propia página
-</es-ES>
+• Mejorado: sección Avanzado compacta, descargas de Gemma en su propia página</es-ES>
 
-<fr-FR>
-Nouveautés de la 1.14.0 :
+<fr-FR>Nouveautés de la 1.14.0 :
 • Nouveau : surveillance de dossiers : les nouveaux fichiers audio choisis se transcrivent seuls
 • Nouveau : déport distant (expérimental, désactivé par défaut) : les longues tâches peuvent partir sur votre serveur
 • Nouveau : exportez les modèles téléchargés en paquets hors ligne
 • Nouveau : interface en chinois ; catalogue communautaire de plus de 30 modèles, filtrable par langue
-• Amélioré : section Avancé compacte, téléchargements Gemma sur leur propre page
-</fr-FR>
+• Amélioré : section Avancé compacte, téléchargements Gemma sur leur propre page</fr-FR>
 
-<pt-BR>
-Novidades da versão 1.14.0:
+<pt-BR>Novidades da versão 1.14.0:
 • Novo: vigilância de pastas: os novos arquivos de áudio nas pastas escolhidas se transcrevem sozinhos
 • Novo: offload remoto (experimental, desligado por padrão): os trabalhos longos podem ir para o seu servidor
 • Novo: exporte os modelos baixados como pacotes offline
 • Novo: interface em chinês; catálogo da comunidade com mais de 30 modelos, filtrável por idioma
-• Melhorado: seção Avançada compacta, downloads do Gemma em página própria
-</pt-BR>
+• Melhorado: seção Avançada compacta, downloads do Gemma em página própria</pt-BR>
 
-<ru-RU>
-Что нового в версии 1.14.0:
+<ru-RU>Что нового в версии 1.14.0:
 • Новое: наблюдение за папками: новые аудиофайлы в выбранных папках расшифровываются автоматически
 • Новое: удалённая разгрузка (экспериментально, выключено): длинные задачи можно отправить на свой сервер
 • Новое: экспорт скачанных моделей офлайн-пакетами
 • Новое: интерфейс на китайском; каталог сообщества больше 30 моделей, с фильтром по языку
-• Улучшено: компактный раздел «Дополнительно», загрузки Gemma на отдельной странице
-</ru-RU>
+• Улучшено: компактный раздел «Дополнительно», загрузки Gemma на отдельной странице</ru-RU>
 
-<tr-TR>
-Sürüm 1.14.0'daki yenilikler:
+<tr-TR>Sürüm 1.14.0'daki yenilikler:
 • Yeni: klasör izleme: seçtiğiniz klasörlerdeki yeni ses dosyaları kendiliğinden metne çıkar
 • Yeni: uzak aktarım (deneysel, kapalı): uzun işleri kendi sunucunuza gönderebilirsiniz
 • Yeni: indirilen modelleri çevrimdışı paket olarak dışa aktarın
 • Yeni: Çince arayüz; 30'dan fazla modelli topluluk kataloğu, dile göre filtrelenebilir
-• İyileştirildi: kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında
-</tr-TR>
+• İyileştirildi: kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında</tr-TR>
 
-<pl-PL>
-Nowości w wersji 1.14.0:
+<pl-PL>Nowości w wersji 1.14.0:
 • Nowość: obserwowanie folderów: nowe pliki audio w wybranych folderach transkrybują się same
 • Nowość: zdalny offload (eksperymentalny, wyłączony): długie zadania mogą iść na własny serwer
 • Nowość: eksport pobranych modeli jako pakiety offline
 • Nowość: interfejs po chińsku; katalog społeczności ponad 30 modeli z filtrem języka
-• Ulepszone: kompaktowa sekcja Zaawansowane, pobieranie Gemma na osobnej stronie
-</pl-PL>
+• Ulepszone: kompaktowa sekcja Zaawansowane, pobieranie Gemma na osobnej stronie</pl-PL>
 
-<hi-IN>
-संस्करण 1.14.0 में नया:
+<hi-IN>संस्करण 1.14.0 में नया:
 • नया: फ़ोल्डर निगरानी: चुनी फ़ोल्डरों की नई ऑडियो फ़ाइलें अपने आप ट्रांसक्राइब होती हैं
 • नया: रिमोट ऑफ़लोड (प्रायोगिक, बंद): लंबे काम अपने सर्वर पर भेजें
 • नया: डाउनलोड किए मॉडल ऑफ़लाइन बंडल के रूप में निर्यात करें
 • नया: चीनी इंटरफ़ेस; 30+ मॉडलों की कम्युनिटी कैटलॉग, भाषा से फ़िल्टर
-• बेहतर: कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अलग पेज पर
-</hi-IN>
+• बेहतर: कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अलग पेज पर</hi-IN>
 
-<de-DE>
-Neu in Version 1.14.0:
-• Neu: geplante Ordnerüberwachung: Neue Audiodateien in gewählten Ordnern werden automatisch transkribiert
+<de-DE>Neu in Version 1.14.0:
+• Neu: geplante Ordnerüberwachung: neue Audiodateien in gewählten Ordnern werden automatisch transkribiert
 • Neu: Remote-Offload (experimentell, standardmäßig aus): lange Aufträge an deinen eigenen Server auslagern
-• Neu: heruntergeladene Modelle als Offline-Bundles für ein anderes Gerät exportieren
-• Neu: Oberfläche auf Chinesisch
-• Neu: Community-Katalog mit über 30 Modellen, nach Sprache filterbar (leichtes Arabisch, Hebräisch, Persisch, Koreanisch, indische Sprachen und mehr)
+• Neu: heruntergeladene Modelle als Offline-Bundles exportieren
+• Neu: Oberfläche auf Chinesisch; Community-Katalog mit über 30 Modellen, nach Sprache filterbar
 • Verbessert: kompakter Erweitert-Bereich im Modell-Tab, Gemma-Downloads auf eigener Seite
-• Behoben: Stabilitäts- und Oberflächenkorrekturen
 </de-DE>
-<es-ES>
-Novedades de la versión 1.14.0:
-• Nuevo: vigilancia programada de carpetas: los nuevos archivos de audio de las carpetas que elijas se transcriben solos
-• Nuevo: descarga remota (experimental, desactivada por defecto): delega los trabajos largos a tu propio servidor
-• Nuevo: exporta los modelos descargados como paquetes sin conexión para otro dispositivo
-• Nuevo: interfaz en chino
-• Nuevo: catálogo comunitario con más de 30 modelos, filtrable por idioma (árabe ligero, hebreo, persa, coreano, lenguas indias y más)
+<es-ES>Novedades de la versión 1.14.0:
+• Nuevo: vigilancia programada de carpetas: los audios nuevos se transcriben solos
+• Nuevo: descarga remota (experimental, desactivada por defecto): delega trabajos largos a tu servidor
+• Nuevo: exporta los modelos descargados como paquetes sin conexión
+• Nuevo: interfaz en chino; catálogo comunitario con más de 30 modelos, filtrable por idioma
 • Mejorado: sección Avanzado compacta en la pestaña Modelos, descargas de Gemma en su propia página
-• Corregido: correcciones de estabilidad e interfaz
 </es-ES>
-<fr-FR>
-Nouveautés de la 1.14.0 :
-• Nouveau : surveillance planifiée de dossiers : les nouveaux fichiers audio des dossiers choisis sont transcrits automatiquement
-• Nouveau : déport distant (expérimental, désactivé par défaut) : déléguez les longues tâches à votre propre serveur
-• Nouveau : exportez les modèles téléchargés en paquets hors ligne pour un autre appareil
-• Nouveau : interface en chinois
-• Nouveau : catalogue communautaire fort de plus de 30 modèles, filtrable par langue (arabe léger, hébreu, persan, coréen, langues indiennes et plus)
-• Amélioré : section Avancé compacte dans l'onglet Modèles, téléchargements Gemma sur leur propre page
-• Corrigé : correctifs de stabilité et d'interface
+<fr-FR>Nouveautés de la 1.14.0 :
+Nouveau : dossier surveillé : les nouveaux fichiers audio se transcrivent seuls
+Nouveau : déport distant (expérimental, désactivé par défaut) : longues tâches sur votre serveur
+Nouveau : export des modèles téléchargés en paquets hors ligne
+Nouveau : interface en chinois ; catalogue de plus de 30 modèles, filtrable par langue
+Amélioré : section Avancé compacte dans l'onglet Modèles, Gemma sur sa page
+
 </fr-FR>
-<ru-RU>
-Что нового в версии 1.14.0:
-• Новое: запланированное наблюдение за папками: новые аудиофайлы в выбранных папках расшифровываются автоматически
+<ru-RU>Что нового в версии 1.14.0:
+• Новое: запланированное наблюдение за папками: новые аудиофайлы расшифровываются автоматически
 • Новое: удалённая разгрузка (экспериментально, выключено по умолчанию): длинные задачи можно передать своему серверу
-• Новое: экспорт скачанных моделей как офлайн-пакетов для другого устройства
-• Новое: интерфейс на китайском
-• Новое: каталог сообщества больше 30 моделей с фильтром по языку (лёгкий арабский, иврит, персидский, корейский, индийские языки и другие)
+• Новое: экспорт скачанных моделей как офлайн-пакеты
+• Новое: интерфейс на китайском; каталог сообщества больше 30 моделей с фильтром по языку
 • Улучшено: компактный раздел «Дополнительно» во вкладке моделей, загрузки Gemma на отдельной странице
-• Исправлено: исправления стабильности и интерфейса
 </ru-RU>
-<pt-BR>
-Novidades da versão 1.14.0:
-• Novo: vigilância programada de pastas: os novos arquivos de áudio das pastas que você escolher são transcritos sozinhos
-• Novo: offload remoto (experimental, desligado por padrão): delegue os trabalhos longos ao seu próprio servidor
-• Novo: exporte os modelos baixados como pacotes offline para outro dispositivo
-• Novo: interface em chinês
-• Novo: catálogo da comunidade com mais de 30 modelos, filtrável por idioma (árabe leve, hebraico, persa, coreano, línguas indianas e mais)
+<pt-BR>Novidades da versão 1.14.0:
+• Novo: vigilância programada de pastas: novos áudios das pastas escolhidas são transcritos sozinhos
+• Novo: offload remoto (experimental, desligado por padrão): trabalhos longos no seu próprio servidor
+• Novo: exporte os modelos baixados como pacotes offline
+• Novo: interface em chinês; catálogo da comunidade com mais de 30 modelos, filtrável por idioma
 • Melhorado: seção Avançada compacta na aba Modelos, downloads do Gemma em página própria
-• Corrigido: correções de estabilidade e interface
 </pt-BR>
-<tr-TR>
-Sürüm 1.14.0'daki yenilikler:
-• Yeni: zamanlanmış klasör izleme: seçtiğiniz klasörlerdeki yeni ses dosyaları kendiliğinden metne çıkar
+<tr-TR>Sürüm 1.14.0'daki yenilikler:
+• Yeni: zamanlanmış klasör izleme: yeni ses dosyaları kendiliğinden metne çıkar
 • Yeni: uzak aktarım (deneysel, varsayılan olarak kapalı): uzun işleri kendi sunucunuza devredin
-• Yeni: indirilen modelleri başka bir cihaz için çevrimdışı paket olarak dışa aktarın
-• Yeni: Çince arayüz
-• Yeni: 30'dan fazla model içeren topluluk kataloğu, dile göre filtrelenebilir (hafif Arapça, İbranice, Farsça, Korece, Hint dilleri ve daha fazlası)
+• Yeni: indirilen modelleri çevrimdışı paket olarak dışa aktarın
+• Yeni: Çince arayüz; 30'dan fazla model içeren topluluk kataloğu, dile göre filtrelenebilir
 • İyileştirildi: Modeller sekmesinde kompakt Gelişmiş bölümü, Gemma indirmeleri kendi sayfasında
-• Düzeltildi: kararlılık ve arayüz düzeltmeleri
 </tr-TR>
-<pl-PL>
-Nowości w wersji 1.14.0:
-• Nowość: zaplanowane obserwowanie folderów: nowe pliki audio w wybranych folderach są transkrybowane automatycznie
-• Nowość: zdalny offload (eksperymentalne, domyślnie wyłączone): przekazuj długie zadania własnemu serwerowi
-• Nowość: eksport pobranych modeli jako pakiety offline na inne urządzenie
-• Nowość: interfejs w języku chińskim
-• Nowość: katalog społeczności ponad 30 modeli z filtrem według języka (lekki arabski, hebrajski, perski, koreański, języki indyjskie i więcej)
+<pl-PL>Nowości w wersji 1.14.0:
+• Nowość: zaplanowane obserwowanie folderów: nowe pliki audio są transkrybowane automatycznie
+• Nowość: zdalny offload (eksperymentalne, domyślnie wyłączone): długie zadania własnemu serwerowi
+• Nowość: eksport pobranych modeli jako pakiety offline
+• Nowość: interfejs w języku chińskim; katalog społeczności ponad 30 modeli z filtrem języka
 • Ulepszone: kompaktowa sekcja Zaawansowane w zakładce Modele, pobieranie Gemma na osobnej stronie
-• Poprawione: poprawki stabilności i interfejsu
 </pl-PL>
-<uk>
-Новинки версії 1.14.0:
+<uk>Новинки версії 1.14.0:
 • Нове: спостереження за папками: нові аудіофайли у вибраних папках транскрибуються самі
 • Нове: віддалене розвантаження (експериментально, вимкнено): довгі завдання можна відправити на свій сервер
 • Нове: експорт завантажених моделей офлайн-пакетами
 • Нове: інтерфейс китайською; каталог спільноти понад 30 моделей з фільтром мови
-• Покращено: компактний розділ «Додатково», завантаження Gemma на окремій сторінці
-</uk>
-<hi-IN>
-संस्करण 1.14.0 में नया क्या है:
-• नया: शेड्यूल्ड फ़ोल्डर निगरानी: आपकी चुनी फ़ोल्डरों की नई ऑडियो फ़ाइलें अपने आप ट्रांसक्राइब होती हैं
+• Покращено: компактний розділ «Додатково», завантаження Gemma на окремій сторінці</uk>
+<hi-IN>संस्करण 1.14.0 में नया क्या है:
+• नया: शेड्यूल्ड फ़ोल्डर निगरानी: चुनी गई फ़ोल्डरों की नई ऑडियो फ़ाइलें अपने आप ट्रांसक्राइब होती हैं
 • नया: रिमोट ऑफ़लोड (प्रायोगिक, डिफ़ॉल्ट रूप से बंद): लंबे काम अपने सर्वर को सौंपें
-• नया: डाउनलोड किए मॉडल दूसरे डिवाइस के लिए ऑफ़लाइन बंडल के रूप में निर्यात करें
-• नया: चीनी भाषा में इंटरफ़ेस
-• नया: 30 से ज़्यादा मॉडलों वाली कम्युनिटी कैटलॉग, भाषा के हिसाब से फ़िल्टर करें (हल्का अरबी, हिब्रू, फ़ारसी, कोरियाई, भारतीय भाषाएँ और भी)
+• नया: डाउनलोड किए मॉडल ऑफ़लाइन बंडल के रूप में निर्यात करें
+• नया: चीनी इंटरफ़ेस; 30+ मॉडलों वाली कम्युनिटी कैटलॉग, भाषा फ़िल्टर सहित
 • बेहतर: मॉडल टैब में कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अपने पेज पर
-• सुधार: स्थिरता और इंटरफ़ेस सुधार
 </hi-IN>
-<he-IL>
-מה חדש בגרסה 1.14.0:
+<he-IL>מה חדש בגרסה 1.14.0:
 • חדש: פיקוח תיקיות: קבצי אודיו חדשים בתיקיות שתבחרו מתומללים אוטומטית
 • חדש: היפרדות מרחוק (ניסיוני, כבוי): מטלות ארוכות יכולות לרוץ על השרת שלכם
 • חדש: ייצוא מודלים שהורדו כחבילות לא מקוונות
 • חדש: ממשק בסינית; קטלוג הקהילה מעל 30 מודלים, מסונן לפי שפה
-• שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן
-</he-IL>
-<fa-IR>
-چه چیز جدید‌های نسخه 1.14.0:
+• שופר: מקטע מתקדם קומפקטי, הורדות Gemma בעמוד משלהן</he-IL>
+<fa-IR>چه چیز جدید‌های نسخه 1.14.0:
 • جدید: پایش پوشه: فایل‌های صوتی جدید در پوشه‌های انتخابی خودکار تبدیل می‌شوند
 • جدید: بارگذاری به سرور راه دور (آزمایشی، خاموش): کارهای طولانی را به سرور خودتان بفرستید
 • جدید: مدل‌های دانلودشده را بسته آفلاین خارج کنید
 • جدید: رابط چینی؛ کاتالوگ جامعه بالای 30 مدل، فیلتر زبان
-• بهبود: بخش پیشرفته فشرده، دانلودهای Gemma در صفحه خودشان
-</fa-IR>
-<zh-CN>
-1.14.0 版本更新：
+• بهبود: بخش پیشرفته فشرده، دانلودهای Gemma در صفحه خودشان</fa-IR>
+<zh-CN>1.14.0 版本更新：
 • 新增：文件夹监视：所选文件夹中的新音频自动转录
 • 新增：远程卸载（实验性，默认关）：长任务可交给自己的服务器
 • 新增：已下载模型可导出为离线包
 • 新增：中文界面；社区目录超 30 个模型，可按语言筛选
-• 改进：高级区更紧凑，Gemma 下载独立成页
-</zh-CN>
+• 改进：高级区更紧凑，Gemma 下载独立成页</zh-CN>
