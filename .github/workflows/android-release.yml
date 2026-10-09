@@ -307,8 +307,28 @@ jobs:
             "$APKSIGNER" verify "test-apks/antivocale-fdroid-testsigned-${ABI}.apk"
           done
 
-      - name: Attach APKs to GitHub Release
+      # CHRONIC RED FIX (2026-10-09, since at least v1.13.1): in build-first
+      # flow the release already exists with all 12 canonical assets (attached
+      # atomically by release-create.sh BEFORE the release event fires), and
+      # the GITHUB_TOKEN cannot update a release authored by an external PAT
+      # ("Resource not accessible by integration" on update-a-release). The
+      # attach steps below are for the legacy workflow-publishes mode; skip
+      # them when the canonical signed set is already on the release.
+      - name: Probe release for canonical assets
         if: env.TAG_ANCHORED == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REL_TAG="${{ github.event.inputs.tag || github.ref_name }}"
+          if gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${REL_TAG}" --jq '.assets[].name' 2>/dev/null              | sort > /tmp/assets &&              grep -qx app-fdroid-armeabi-v7a-release.apk /tmp/assets &&              grep -qx app-fdroid-arm64-v8a-release.apk /tmp/assets &&              grep -qx app-fdroid-x86_64-release.apk /tmp/assets; then
+            echo "RELEASE_ASSETS_PRESENT=true" >> "$GITHUB_ENV"
+            echo "canonical signed assets already on $REL_TAG: attach steps will skip"
+          else
+            echo "RELEASE_ASSETS_PRESENT=false" >> "$GITHUB_ENV"
+            echo "canonical set incomplete on $REL_TAG: attach steps will run"
+          fi
+      - name: Attach APKs to GitHub Release
+        if: env.TAG_ANCHORED == 'true' && env.RELEASE_ASSETS_PRESENT != 'true'
         # TASK-683.9: v3 is the node24 runtime line; v3.0.0 is a runtime move only, no input changes.
         uses: softprops/action-gh-release@v3
         with:
@@ -323,7 +343,7 @@ jobs:
       # Issue #32: direct-download tester APKs (no GitHub login needed, unlike
       # workflow artifacts). Same trigger conditions as the attach step above.
       - name: Attach tester APKs to GitHub Release
-        if: env.TAG_ANCHORED == 'true'
+        if: env.TAG_ANCHORED == 'true' && env.RELEASE_ASSETS_PRESENT != 'true'
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.event.inputs.tag || '' }}
