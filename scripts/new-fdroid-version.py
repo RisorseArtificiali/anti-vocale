@@ -29,6 +29,7 @@ Prints the diff summary; applies nothing until --write is passed.
 """
 
 import argparse
+import os
 import re
 import subprocess
 import sys
@@ -223,6 +224,25 @@ def main() -> None:
     print(f"OK: {version} blocks {expected_codes} -> commit {commit[:12]}")
     print(f"    build blocks: {len(blocks)} -> {len(blocks) + len(abi_codes)}; CurrentVersionCode -> {base * 10 + max(abi_codes)}")
     if args.write:
+        # Branch precondition (the 1.14.0 Mac incident, closed at the root):
+        # every guard downstream warns AFTER the fact; the generator is the
+        # one tool every release path crosses, so it refuses to write release
+        # blocks onto any branch outside the sanctioned anti-vocale-* lane
+        # (the fork's default branch com.antivocale.app is a 1.8.1-era fossil).
+        recipe_dir = args.recipe if os.path.isdir(args.recipe) else os.path.dirname(args.recipe)
+        try:
+            branch = subprocess.run(
+                ["git", "-C", recipe_dir, "branch", "--show-current"],
+                capture_output=True, text=True, check=True).stdout.strip()
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            branch = ""
+        if not branch.startswith("anti-vocale-"):
+            sys.exit(
+                f"refusing --write: the recipe checkout is on branch "
+                f"'{branch or '(detached)'}', not an anti-vocale-* lane. "
+                "Run scripts/release-fork-bootstrap.sh first; the fork's "
+                "default branch is a fossil and must not carry release blocks."
+            )
         open(args.recipe, "w").write(out)
         print(f"    written to {args.recipe}")
     else:

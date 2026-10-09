@@ -13,6 +13,40 @@ proof required before it is considered done.
 - GitLab token at `~/.config/gl-token` (F-Droid MR polling; Pipeline:Read + MR read).
 - F-Droid data fork checked out at `~/data/repo/personal/fdroid-data`, on the current recipe branch (`anti-vocale-1.10.0` as of v1.11.0; check `git branch --show-current` there).
 
+## Step -1. Fresh host bootstrap (run once per host; nothing to remember)
+
+```bash
+scripts/release-fork-bootstrap.sh
+```
+
+One command produces the sanctioned fork-checkout state on any host. Why it
+exists (all learned running 1.14.0 from the Mac for the first time):
+
+- A fresh clone of the fork lands on its DEFAULT branch `com.antivocale.app`,
+  which is a **1.8.1-era fossil**: nobody has pushed it since the
+  checkupdates-bot flow started (the bot writes releases to fdroiddata
+  master; the fork branch is written only by finalize, and only when the bot
+  has not done the work). The mirror-sync guard fires on it, and its old
+  advice ("reset onto it") would have resurrected the fossil. The guard now
+tells fossils from maintainer edits by newest recipe version; the bootstrap
+simply never lands you there.
+- The sanctioned state is a **LOCAL-ONLY** recipe branch the origin does not
+  have (that is why the sync guard passes "at or past origin's" on bird).
+- The pre-push hook (signed-APK-URL gate) is installed in the clone.
+- The mirror checkout's push URL is re-pointed to SSH: GitHub https token
+  auth is not configured on every host, SSH is.
+- Host quirks already fixed in the scripts: BSD `wc` padding broke
+  check-fdroid-release.sh's srclib-pin compare on macOS (2026-10-09).
+
+**Why we still touch the recipe at every release (and why we no longer open
+MRs).** The two facts are easy to conflate into "the recipe is static now":
+the **MR is the bot's job** (Step 7b; AutoUpdateMode + CurrentVersionCode),
+but the **recipe block itself is still ours to generate**: our own
+reproducible-fdroid reference build clones the recipe from the MIRROR and
+builds exactly the block we wrote, producing the signed APKs the bot's
+pipeline then verifies against. Nobody's memory required: the guard and the
+bootstrap above encode both facts.
+
 ## The two stores, and what must stay in sync
 
 | Concern | F-Droid | Play Store |

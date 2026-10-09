@@ -23,6 +23,8 @@ FORK_CHECKOUT="${FORK_CHECKOUT:-$HOME/data/repo/personal/fdroid-data}"
 MIRROR_CHECKOUT="${MIRROR_CHECKOUT:-$HOME/data/repo/personal/fdroid-data-mirror}"
 MIRROR_URL="https://github.com/paoloantinori/fdroid-data-mirror.git"
 MIRROR_BRANCH="av1100-slim"
+HERE="$(cd "$(dirname "$0")" && pwd)"
+. "$HERE/fossil-guard.sh"
 RECIPE_REL="metadata/com.antivocale.app.yml"
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
@@ -78,6 +80,8 @@ ORIGIN_EXTRA="$(diff -u \
   <(git -C "$FORK_CHECKOUT" show "HEAD:$RECIPE_REL" | awk "$FILTER_AWK") \
   <(git -C "$FORK_CHECKOUT" show "origin/$FORK_BRANCH:$RECIPE_REL" 2>/dev/null | awk "$FILTER_AWK"))" || true
 if grep -qE '^\+[^+]' <<<"$ORIGIN_EXTRA"; then
+  # Fossil branch: the shared discriminator (scripts/fossil-guard.sh)
+  GUARD_BRANCH="$FORK_BRANCH"; GUARD_RECIPE="$RECIPE_REL" fossil_guard
   fail "origin/$FORK_BRANCH's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py; the finalize push would discard it"
 fi
 echo "== fork branch $FORK_BRANCH: recipe at or past origin's (remote written only at finalize)"

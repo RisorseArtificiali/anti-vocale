@@ -191,6 +191,8 @@ git -C "$FORK_CHECKOUT" fetch -q origin
 # "already merged upstream"; the check is directional on Builds content):
 # origin holding recipe lines this checkout lacks means the push would discard
 # them (!47391-style maintainer edits on our branch).
+HERE_VGW="$(cd "$(dirname "$0")" && pwd)"
+. "$HERE_VGW/fossil-guard.sh"
 FILTER_AWK='/^CurrentVersion(Code)?:/{next} 1'
 # capture, then grep: under pipefail the old `diff | grep -q` form could
 # NEVER fire (a real origin-side difference makes diff exit 1 and pipefail
@@ -201,7 +203,9 @@ ORIGIN_EXTRA="$(diff -u \
   <(git -C "$FORK_CHECKOUT" show "HEAD:metadata/com.antivocale.app.yml" | awk "$FILTER_AWK") \
   <(git -C "$FORK_CHECKOUT" show "origin/$CURRENT_BRANCH:metadata/com.antivocale.app.yml" 2>/dev/null | awk "$FILTER_AWK"))" || true
 if grep -qE '^\+[^+]' <<<"$ORIGIN_EXTRA"; then
-  fail "origin/$CURRENT_BRANCH's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py"
+  # Fossil branch: the shared discriminator (scripts/fossil-guard.sh)
+  GUARD_BRANCH="$CURRENT_BRANCH"; GUARD_RECIPE="metadata/com.antivocale.app.yml" fossil_guard
+    fail "origin/$CURRENT_BRANCH's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py"
 fi
 ok "origin's recipe adds nothing this checkout lacks"
 

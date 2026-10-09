@@ -10,7 +10,11 @@
 # status=SUCCESS for that task_id in the Room logs DB before the timeout.
 #
 # Usage:
-#   scripts/device-model-matrix.sh --audio SPEECH.wav [--download]
+#   scripts/device-model-matrix.sh --audio SPEECH.wav [--audio-<backend_id> SPEECH.wav] [--download]
+#     --audio-<backend_id>  per-backend clip override: monolingual models of
+#                           different languages cannot share one clip (GigaAM
+#                           needs the Russian sample while Distil needs the
+#                           Italian one); unmatched ids are refused.
 #     --audio     REQUIRED. A short REAL speech clip (any MediaCodec-decodable
 #                 format). Not a sine or silence: VAD strips speechless audio
 #                 and the run fails with "No transcription produced" (the
@@ -44,7 +48,16 @@
 
 set -euo pipefail
 
-ADB="${ADB:-$HOME/Android/Sdk/platform-tools/adb}"
+# adb discovery, portable across hosts (2026-10-09: the bird-only default
+# exit-127'd on the Mac): explicit ADB wins, then PATH, then the known
+# per-host install paths (bird: ~/Android/Sdk, mac: ~/Library/Android/sdk)
+if [ -z "${ADB:-}" ]; then
+  ADB="$(command -v adb || true)"
+  [ -n "$ADB" ] || for cand in "$HOME/Android/Sdk/platform-tools/adb" "$HOME/Library/Android/sdk/platform-tools/adb"; do
+    [ -x "$cand" ] && ADB="$cand" && break
+  done
+fi
+[ -n "$ADB" ] || { echo "FAIL: no adb found (set ADB=)"; exit 1; }
 PKG="com.antivocale.app.debug"
 DB_NAME="anti_vocale_database"
 POLL_SECS=5
@@ -57,16 +70,25 @@ OUT_DIR="${OUT_DIR:-/tmp/device-matrix-$(date +%Y%m%d-%H%M%S)}"
 
 AUDIO=""
 DOWNLOAD=0
+# per-backend clip overrides (2026-10-09, gigaam at 1.14.0): a single clip
+# cannot satisfy two monolingual models of different languages (Distil
+# Italian vs GigaAM Russian); --audio-<backend_id> wins over --audio for that
+# backend's request
+declare -A AUDIO_OVERRIDES
 while [ $# -gt 0 ]; do
   case "$1" in
     --audio) AUDIO="${2:?--audio needs a file}"; shift 2 ;;
+    --audio-*) id="${1#--audio-}"; AUDIO_OVERRIDES["$id"]="${2:?$1 needs a file}"; shift 2 ;;
     --download) DOWNLOAD=1; shift ;;
     -h|--help) sed -n '2,/^$/p' "$0" | sed '$d'; exit 0 ;;
     *) echo "unknown flag: $1 (see --help)" >&2; exit 2 ;;
   esac
 done
-[ -n "$AUDIO" ] || { echo "usage: $0 --audio SPEECH.wav [--download]" >&2; exit 2; }
+[ -n "$AUDIO" ] || { echo "usage: $0 --audio SPEECH.wav [--audio-<backend_id> SPEECH.wav] [--download]" >&2; exit 2; }
 [ -f "$AUDIO" ] || { echo "audio not found: $AUDIO" >&2; exit 2; }
+for id in "${!AUDIO_OVERRIDES[@]}"; do
+  [ -f "${AUDIO_OVERRIDES[$id]}" ] || { echo "audio not found for $id: ${AUDIO_OVERRIDES[$id]}" >&2; exit 2; }
+done
 
 # ── device selection (wireless serial carries spaces: capture verbatim) ─────
 serial="$("$ADB" devices 2>/dev/null | sed -n 's/^\(.*_adb-tls-connect\._tcp\)[[:space:]]*device$/\1/p' | head -1)"
@@ -179,14 +201,30 @@ done < "$catalog_tsv"
 #    filesDir/shared_audio; TASK-274 rejects every other path) ───────────────
 AUDIO_NAME="matrix-audio.${AUDIO##*.}"
 AUDIO_SANDBOX="/data/user/0/$PKG/files/shared_audio/$AUDIO_NAME"
-if [ -n "$serial" ]; then
-  "$ADB" -s "$serial" push "$AUDIO" /data/local/tmp/$AUDIO_NAME >/dev/null
+stage_clip() { # $1 = local file, $2 = sandbox leaf name
+  "$ADB" -s "$serial" push "$1" "/data/local/tmp/$2" >/dev/null
   "$ADB" -s "$serial" shell run-as "$PKG" mkdir -p files/shared_audio
-  "$ADB" -s "$serial" shell run-as "$PKG" cp /data/local/tmp/$AUDIO_NAME "files/shared_audio/$AUDIO_NAME"
+  "$ADB" -s "$serial" shell run-as "$PKG" cp "/data/local/tmp/$2" "files/shared_audio/$2"
+}
+if [ -n "$serial" ]; then
+  stage_clip "$AUDIO" "$AUDIO_NAME"
   echo "== audio staged: $AUDIO_SANDBOX"
+  for id in "${!AUDIO_OVERRIDES[@]}"; do
+    stage_clip "${AUDIO_OVERRIDES[$id]}" "matrix-audio-$id.${AUDIO_OVERRIDES[$id]##*.}"
+    echo "== override staged for $id"
+  done
 else
   echo "WARN: no device; audio staging skipped"
 fi
+# the path this backend's request will read: its override when staged, else the base clip
+audio_for() {
+  local ov="${AUDIO_OVERRIDES[$1]:-}"
+  if [ -n "$serial" ] && [ -n "$ov" ]; then
+    echo "/data/user/0/$PKG/files/shared_audio/matrix-audio-$1.${ov##*.}"
+  else
+    echo "$AUDIO_SANDBOX"
+  fi
+}
 
 # ── app state: launch once (stopped-state rule), save + flip the automation
 #    consent the Tasker receiver gates on, restore on exit ───────────────────
@@ -194,6 +232,7 @@ fi
 # must not leave the consent stuck ON (review F5), at worst it turns OFF a
 # toggle the user had flipped on a DEBUG install.
 PREV_AUTOMATION="false"
+PREV_LANG=""
 CAPTURE_OK=0
 if [ -n "$serial" ]; then
   "$ADB" -s "$serial" shell am start -n "$PKG/com.antivocale.app.MainActivity" >/dev/null 2>&1 || true
@@ -201,6 +240,12 @@ if [ -n "$serial" ]; then
   captured="$("$ADB" -s "$serial" shell am broadcast -a com.antivocale.app.TEST_SPI \
     -n "$PKG/com.antivocale.app.receiver.TestSpiReceiver" --es op get \
     | grep -o '"externalAutomationEnabled":[a-z]*' | cut -d: -f2 | tr -d '\r' || true)"
+  prev_lang="$("$ADB" -s "$serial" shell am broadcast -a com.antivocale.app.TEST_SPI \
+    -n "$PKG/com.antivocale.app.receiver.TestSpiReceiver" --es op get \
+    | grep -o '"transcriptionLanguage":"[^"]*"' | cut -d: -f2- | tr -d '"' | tr -d '\r' || true)"
+  if [ -n "$prev_lang" ]; then PREV_LANG="$prev_lang"; else
+    echo "WARN: could not read transcriptionLanguage via SPI; the run forces language=auto and cannot restore the previous pin"
+  fi
   if [ "$captured" = "true" ] || [ "$captured" = "false" ]; then
     PREV_AUTOMATION="$captured"; CAPTURE_OK=1
   else
@@ -209,6 +254,9 @@ if [ -n "$serial" ]; then
   "$ADB" -s "$serial" shell am broadcast -a com.antivocale.app.TEST_SPI \
     -n "$PKG/com.antivocale.app.receiver.TestSpiReceiver" \
     --es op set --es key external_automation --es value true >/dev/null
+  "$ADB" -s "$serial" shell am broadcast -a com.antivocale.app.TEST_SPI \
+    -n "$PKG/com.antivocale.app.receiver.TestSpiReceiver" \
+    --es op set --es key language --es value auto >/dev/null
 fi
 restore_automation() {
   if [ -n "$serial" ]; then
@@ -219,7 +267,14 @@ restore_automation() {
   fi
 }
 DB_TMP="$(mktemp -d)"
-cleanup() { restore_automation; rm -rf "$DB_TMP"; }
+restore_language() {
+  if [ -n "$serial" ] && [ -n "$PREV_LANG" ]; then
+    "$ADB" -s "$serial" shell am broadcast -a com.antivocale.app.TEST_SPI \
+      -n "$PKG/com.antivocale.app.receiver.TestSpiReceiver" \
+      --es op set --es key language --es value "$PREV_LANG" >/dev/null 2>&1 || true
+  fi
+}
+cleanup() { restore_automation; restore_language; rm -rf "$DB_TMP"; }
 trap cleanup EXIT
 poll_db() { # $1 EXACT task id -> echoes "STATUS|error|model|ms|audioSecs"
   # Deep-Doze lesson (first real run, 2026-09-26): the exec-out pulls return
@@ -258,6 +313,13 @@ PY
 # DB poll can match EXACTLY this run's row.
 RUN_TS="$(date +%s)"
 mapfile -t IDS < <(awk -F'\t' '!seen[$1]++ {print $1}' "$catalog_tsv")
+# a typo'd override id would stage a clip no request reads and silently fall
+# back to the base clip: refuse instead (2026-10-09 review)
+for oid in "${!AUDIO_OVERRIDES[@]}"; do
+  case " ${IDS[*]-} " in *" $oid "*) ;; *)
+    echo "FAIL: --audio-$oid does not match any catalog backend id (${IDS[*]:-none parsed})" >&2; exit 2 ;;
+  esac
+done
 
 for id in "${IDS[@]}"; do
   echo
@@ -273,7 +335,7 @@ for id in "${IDS[@]}"; do
   task_id="matrix-$id-$RUN_TS"
   "$ADB" -s "$serial" shell am broadcast -a com.antivocale.app.PROCESS_REQUEST \
     -n "$PKG/com.antivocale.app.receiver.TaskerRequestReceiver" \
-    --es request_type audio --es file_path "$AUDIO_SANDBOX" \
+    --es request_type audio --es file_path "$(audio_for "$id")" \
     --es task_id "$task_id" --es backend_id "$id" >/dev/null
   echo "request fired (backend_id=$id, task_id=$task_id); polling the logs DB (max ${TIMEOUT_SECS}s)"
 
@@ -318,7 +380,7 @@ if [ ${#FAILED[@]} -gt 0 ]; then
   sleep 3
   STILL_FAILED=()
   for id in ${FAILED[*]}; do
-    row="$(poll_db "$id" || true)"
+    row="$(poll_db "matrix-$id-$RUN_TS" || true)"
     if [ -n "$row" ]; then
       status="${row%%|*}"
       if [ "$status" = "SUCCESS" ] || [ "$status" = "ERROR" ]; then

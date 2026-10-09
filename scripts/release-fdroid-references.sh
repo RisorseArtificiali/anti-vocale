@@ -49,6 +49,8 @@ APP_REPO="$(cd "$HERE/.." && pwd)"
 REPO="RisorseArtificiali/anti-vocale"
 GL_PROJECT="paoloantinori%2Ffdroid-data"
 FORK_CHECKOUT="${FORK_CHECKOUT:-$HOME/data/repo/personal/fdroid-data}"
+HERE_FDREF="$(cd "$(dirname "$0")" && pwd)"
+. "$HERE_FDREF/fossil-guard.sh"
 RECIPE_REL="metadata/com.antivocale.app.yml"
 GL_TOKEN_READ="${GL_TOKEN_READ:-$HOME/.config/gl-token}"
 
@@ -283,7 +285,9 @@ else
     <(git -C "$FORK_CHECKOUT" show "HEAD:$RECIPE_REL" | awk "$FILTER_AWK") \
     <(git -C "$FORK_CHECKOUT" show "origin/$BR:$RECIPE_REL" 2>/dev/null | awk "$FILTER_AWK"))" || true
   if grep -qE '^\+[^+]' <<<"$ORIGIN_EXTRA"; then
-    fail "origin/$BR's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py; pushing now would discard it"
+  # Fossil branch: the shared discriminator (scripts/fossil-guard.sh)
+  GUARD_BRANCH="$BR"; GUARD_RECIPE="$RECIPE_REL" fossil_guard
+      fail "origin/$BR's recipe has content this checkout lacks (maintainer edits?): reset onto it and re-run scripts/new-fdroid-version.py; pushing now would discard it"
   fi
   run git -C "$FORK_CHECKOUT" push --force-with-lease origin "$BR"
   if [ "${DRY_RUN:-0}" = "1" ]; then
