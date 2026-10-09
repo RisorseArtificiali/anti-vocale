@@ -276,10 +276,10 @@ Novità dalla versione 1.0.3:
 • ETA di progresso basato su calibrazione e statistiche di prestazione
 • Backend LiteRT-LM per inferenza multimodale on-device (modelli Gemma con audio)</it-IT>
 
-<de-DE>Neu in Version 1.14.0:
+<de-DE>Neuigkeiten in Version 1.14.0:
 • Neu: Ordnerüberwachung: neue Audiodateien in gewählten Ordnern werden automatisch transkribiert
 • Neu: Remote-Offload (experimentell, standardmäßig aus): lange Aufträge können an deinen Server gehen
-• Neu: heruntergeladene Modelle als Offline-Bundles exportieren
+• Neu: Modelle als Offline-Bundles exportieren
 • Neu: chinesische Oberfläche; Community-Katalog über 30 Modelle, nach Sprache filterbar
 • Verbessert: kompakter Erweitert-Bereich, Gemma-Downloads auf eigener Seite</de-DE>
 
@@ -290,7 +290,7 @@ Novità dalla versione 1.0.3:
 • Nuevo: interfaz en chino; catálogo comunitario de más de 30 modelos, filtrable por idioma
 • Mejorado: sección Avanzado compacta, descargas de Gemma en su propia página</es-ES>
 
-<fr-FR>Nouveautés de la 1.14.0 :
+<fr-FR>Nouveautés de la version 1.14.0 :
 • Nouveau : surveillance de dossiers : les nouveaux fichiers audio choisis se transcrivent seuls
 • Nouveau : déport distant (expérimental, désactivé par défaut) : les longues tâches peuvent partir sur votre serveur
 • Nouveau : exportez les modèles téléchargés en paquets hors ligne
@@ -332,10 +332,10 @@ Novità dalla versione 1.0.3:
 • नया: चीनी इंटरफ़ेस; 30+ मॉडलों की कम्युनिटी कैटलॉग, भाषा से फ़िल्टर
 • बेहतर: कॉम्पैक्ट एडवांस्ड सेक्शन, Gemma डाउनलोड अलग पेज पर</hi-IN>
 
-<de-DE>Neu in Version 1.14.0:
+<de-DE>Neuigkeiten in Version 1.14.0:
 • Neu: geplante Ordnerüberwachung: neue Audiodateien in gewählten Ordnern werden automatisch transkribiert
 • Neu: Remote-Offload (experimentell, standardmäßig aus): lange Aufträge an deinen eigenen Server auslagern
-• Neu: heruntergeladene Modelle als Offline-Bundles exportieren
+• Neu: Modelle als Offline-Bundles exportieren
 • Neu: Oberfläche auf Chinesisch; Community-Katalog mit über 30 Modellen, nach Sprache filterbar
 • Verbessert: kompakter Erweitert-Bereich im Modell-Tab, Gemma-Downloads auf eigener Seite
 </de-DE>
@@ -346,7 +346,7 @@ Novità dalla versione 1.0.3:
 • Nuevo: interfaz en chino; catálogo comunitario con más de 30 modelos, filtrable por idioma
 • Mejorado: sección Avanzado compacta en la pestaña Modelos, descargas de Gemma en su propia página
 </es-ES>
-<fr-FR>Nouveautés de la 1.14.0 :
+<fr-FR>Nouveautés de la version 1.14.0 :
 Nouveau : dossier surveillé : les nouveaux fichiers audio se transcrivent seuls
 Nouveau : déport distant (expérimental, désactivé par défaut) : longues tâches sur votre serveur
 Nouveau : export des modèles téléchargés en paquets hors ligne

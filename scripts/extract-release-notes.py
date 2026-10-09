@@ -33,27 +33,48 @@ def parse_locale_sections(xml: str) -> dict[str, str]:
     return {m.group(1): m.group(2).strip() for m in pattern.finditer(xml)}
 
 
+# The version-heading table, module-level so the recognition check below can
+# share it with extract_latest_version. One alternative per shipped UI locale;
+# a heading form the table does not know makes the locale ship as one giant
+# blob (the masked-blob trap: tr-TR/hi-IN at 1.11.0, fa-IR/zh-CN at 1.14.0).
+VERSION_HEADING = re.compile(
+    r"^(?:What's new in|Novità della versione|Novità dalla versione|"
+    r"Neuigkeiten in Version|Novedades de la versión|Nouveautés de la version|"
+    r"Novidades da versão|Что нового в версии|Sürüm \S+ yenilikler|"
+    r"Nowości w wersji|Новинки версії|संस्करण \S+ में नया क्या है|"
+    r"چه چیز جدید‌های نسخه \S+|\S+ 版本更新|מה חדש בגרסה \S+)：?\s",
+    re.MULTILINE,
+)
+
+
+def check_headings_recognized(locale: str, notes: str) -> None:
+    """Fail when a locale has version headings the table above cannot recognize.
+
+    The heading heuristic is deliberately loose: a line that starts a section
+    (no bullet), carries a version number, and ends like a heading. When such
+    lines exist but none is recognized, the locale would ship as one giant
+    blob; fail HERE with the offending line, not downstream with a confusing
+    length error (or worse, silently while the blob is still short).
+    """
+    loose = re.compile(r"^[^\s•][^\n]*\d+\.\d+\.\d+\S*\s*[:：]\s*$", re.MULTILINE)
+    suspicious = loose.findall(notes)
+    if suspicious and not list(VERSION_HEADING.finditer(notes)):
+        raise ValueError(
+            f"locale {locale} has a version-heading line the extractor does not "
+            f"recognize: {suspicious[0]!r}; add it to VERSION_HEADING in "
+            "extract-release-notes.py or the locale ships as one giant blob"
+        )
+
+
 def extract_latest_version(notes: str) -> str:
     """Extract only the first (latest) version section from multi-version notes."""
     # NOTE: no uk-UA section on purpose: Play Console's release-notes form does
     # not support Ukrainian (rejected in the v1.11.0 edit, 2026-08-30); the app
     # itself and F-Droid/fastlane metadata remain localized in Ukrainian.
     # Headings must stay in sync with the locale blocks in release-notes.xml;
-    # a heading the regex does not know makes the whole locale's history ship
-    # as one blob (found when the 9 new locales of 1.11.0 were added; tr-TR and
-    # hi-IN still slipped through because full-sentence headings end with a
-    # colon and the Hindi one carries a "में" the pattern lacked; single-section
-    # locales masked both until 1.11.1 added a second section). The shared tail
-    # tolerates the colon so future full-sentence headings cannot reintroduce it.
-    version_heading = re.compile(
-        r"^(?:What's new in|Novità della versione|Novità dalla versione|"
-        r"Neuigkeiten in Version|Novedades de la versión|Nouveautés de la version|"
-        r"Novidades da versão|Что нового в версии|Sürüm \S+ yenilikler|"
-        r"Nowości w wersji|Новинки версії|संस्करण \S+ में नया क्या है|"
-        r"چه چیز جدید‌های نسخه \S+|\S+ 版本更新)：?\s",
-        re.MULTILINE,
-    )
-    headings = list(version_heading.finditer(notes))
+    # a heading the regex does not know is check_headings_recognized's failure
+    # to raise now, not a silent blob here.
+    headings = list(VERSION_HEADING.finditer(notes))
     if not headings:
         return notes
     start = headings[0].start()
@@ -101,6 +122,7 @@ def extract_notes(
     out.mkdir(parents=True, exist_ok=True)
 
     for locale, content in sorted(sections.items()):
+        check_headings_recognized(locale, content)
         latest = extract_latest_version(content)
         if not latest and locale == "en-US" and fallback:
             latest = fallback
